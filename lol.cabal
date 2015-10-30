@@ -147,14 +147,11 @@ test-suite lol-test-suite
   ghc-options: -threaded -rtsopts
 
   build-depends:
-    arithmoi,
     base,
     constraints,
-    deepseq,
     lol,
     MonadRandom,
     QuickCheck>=2.8 && < 2.9,
-    random,
     repa,
     test-framework >= 0.8 && < 0.9,
     test-framework-quickcheck2 >= 0.3 && < 0.4,

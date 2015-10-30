@@ -15,7 +15,6 @@ import Crypto.Lol.Cyclotomic.Tensor.CTensor
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor
 
 import Control.Applicative
-import Control.DeepSeq
 import Control.Monad.Random
 
 import Data.Array.Repa.Eval (Elt)

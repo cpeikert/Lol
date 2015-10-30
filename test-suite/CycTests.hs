@@ -14,15 +14,12 @@ import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IrreducibleChar2
 import Crypto.Lol.Types.ZPP
 
-import Control.DeepSeq
 import Control.Monad (join, liftM2)
 
 import Data.Array.Repa.Eval (Elt)
 import Data.Type.Natural hiding (zero)
 import Data.Vector.Unboxed (Vector, Unbox)
 import Data.Vector.Storable (Storable)
-
-import System.Random
 
 import Test.Framework (testGroup, Test, defaultMain)
 import Test.Framework.Providers.QuickCheck2 (testProperty)

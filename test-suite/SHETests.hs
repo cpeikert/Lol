@@ -9,7 +9,6 @@ module SHETests (sheTests) where
 import TestTypes
 
 import Control.Applicative hiding ((<$$>))
-import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Random
 
