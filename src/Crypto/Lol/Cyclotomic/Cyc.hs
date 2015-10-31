@@ -48,11 +48,10 @@ import Test.QuickCheck
 newtype Cyc t m r = Cyc { 
   -- | Unsafe deconstructor for 'Cyc'.
   unsafeUnCyc :: UCyc t m r }
-                    deriving (Arbitrary, Random)
+                    deriving (Arbitrary, NFData, Random)
 
 -- See: https://ghc.haskell.org/trac/ghc/ticket/11008
 -- for why I have to use StandaloneDeriving here
-deriving instance NFData (UCyc t m a) => NFData (Cyc t m a)
 deriving instance Show (UCyc t m a) => Show (Cyc t m a)
 deriving instance Eq (UCyc t m a) => Eq (Cyc t m a)
 deriving instance Additive (UCyc t m a) => Additive.C (Cyc t m a)

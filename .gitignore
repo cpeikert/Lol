@@ -1,8 +1,1 @@
 dist/
-.gitignore
-ghci
-.ghci
-reprof.py
-lol.sublime-project
-lol.sublime-workspace
-makefile

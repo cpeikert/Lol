@@ -75,14 +75,12 @@ wrapM f (ZV v) = liftM RT $ f $ zvToArr v
 
 instance Tensor RT where
 
-  type TElt RT r = (Unbox r, Elt r)
+  type TElt RT r = (IntegralDomain r, ZeroTestable r,
+                    Eq r, Random r, NFData r,
+                    Unbox r, Elt r)
 
   entailIndexT  = tag $ Sub Dict
-  entailEqT = tag $ Sub Dict
-  entailZTT = tag $ Sub Dict
-  entailRingT = tag $ Sub Dict
-  entailNFDataT = tag $ Sub Dict
-  entailRandomT = tag $ Sub Dict
+  entailFullT   = tag $ Sub Dict
 
   scalarPow = RT . scalarPow'
 

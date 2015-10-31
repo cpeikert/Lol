@@ -1,8 +1,8 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
              GeneralizedNewtypeDeriving, KindSignatures,
              MultiParamTypeClasses, NoImplicitPrelude, RoleAnnotations,
-             ScopedTypeVariables, StandaloneDeriving,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+             ScopedTypeVariables, TypeFamilies, TypeOperators,
+             UndecidableInstances #-}
 
 -- | Functions from one cyclotomic ring to another that are linear
 -- over a common subring.
@@ -22,8 +22,7 @@ import Control.DeepSeq
 
 -- | An @E@-linear function from @R@ to @S@.
 newtype Linear t z (e::Factored) (r::Factored) (s::Factored) = D [Cyc t s z]
-
-deriving instance (NFData (Cyc t s z)) => NFData (Linear t z e r s)
+  deriving (NFData)
 
 -- TODO: have constructor for both relative Pow basis of R/E?
 
