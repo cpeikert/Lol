@@ -54,15 +54,15 @@ class (TElt t Double, TElt t (Complex Double))
   type TElt t r :: Constraint
 
   -- | Properties that hold for any index. Use with '\\'.
-  entailIndexT :: Tagged (t m r)
-                  (Fact m :- (Applicative (t m), Traversable (t m)))
+  entailIndexT :: Tagged (t m r) (Fact m :- (Applicative (t m), Traversable (t m)))
   
   -- | Properties that hold for any (legal) fully-applied tensor. Use
   -- with '\\'.
-  entailFullT :: Tagged (t m r)
-                 ((Fact m, TElt t r) :- 
-                  (Eq (t m r), ZeroTestable (t m r), Ring (t m r), 
-                   NFData (t m r), Random (t m r)))
+  entailEqT :: Tagged (t m r) ((Fact m, TElt t r, Eq r) :- (Eq (t m r)))
+  entailZTT :: Tagged (t m r) ((Fact m, TElt t r, ZeroTestable r) :- (ZeroTestable (t m r)))
+  entailRingT :: Tagged (t m r) ((Fact m, TElt t r, Ring r) :- (Ring (t m r)))
+  entailNFDataT :: Tagged (t m r) ((Fact m, TElt t r, NFData r) :- (NFData (t m r)))
+  entailRandomT :: Tagged (t m r) ((Fact m, TElt t r, Random r) :- (Random (t m r)))
 
   -- | Converts a scalar to a tensor in the powerful basis
   scalarPow :: (Fact m, TElt t r) => r -> t m r

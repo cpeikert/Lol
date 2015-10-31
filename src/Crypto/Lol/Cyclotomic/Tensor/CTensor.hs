@@ -164,12 +164,15 @@ instance Fact m => Traversable (CT m) where
 
 instance Tensor CT where
 
-  type TElt CT r = (IntegralDomain r, ZeroTestable r, 
-                    Eq r, Random r, NFData r,
-                    Storable r, CRNS r)
+  type TElt CT r = (Storable r, CRNS r)
 
   entailIndexT = tag $ Sub Dict
-  entailFullT = tag $ Sub Dict
+  entailEqT = tag $ Sub Dict
+  entailZTT = tag $ Sub Dict
+  entailRingT = tag $ Sub Dict
+  entailNFDataT = tag $ Sub Dict
+  entailRandomT = tag $ Sub Dict
+
 
   scalarPow = CT . scalarPow' -- Vector code
 
