@@ -237,24 +237,24 @@ coerceBasis = coerce
 -- | Class to dispatch to the C backend for various element types.
 class CRNS r where
 
-  zipWrapper :: (Fact m) => 
-    (forall a . (TElt CT a, Dispatch a) => CT' m a -> CT' m a -> CT' m a)
+  zipWrapper :: (Fact m, Additive r) => 
+    (forall a . (TElt CT a, Dispatch a, Additive a) => CT' m a -> CT' m a -> CT' m a)
     -> CT' m r -> CT' m r -> CT' m r
 
-  crtWrapper :: (Fact m, CRTrans r) => 
-    (forall a . (TElt CT a, CRTrans a, Dispatch a) => Maybe (CT' m a -> CT' m a))
+  crtWrapper :: (Fact m, CRTrans r, ZeroTestable r, IntegralDomain r) => 
+    (forall a . (TElt CT a, CRTrans a, Dispatch a, ZeroTestable a, IntegralDomain a) => Maybe (CT' m a -> CT' m a))
     -> Maybe (CT' m r -> CT' m r)
 
-  lgWrapper :: (Fact m) => 
-    (forall a . (TElt CT a, Dispatch a) => CT' m a -> CT' m a)
+  lgWrapper :: (Fact m, Additive r) => 
+    (forall a . (TElt CT a, Dispatch a, Additive a) => CT' m a -> CT' m a)
     -> CT' m r -> CT' m r
 
-  divGWrapper :: (Fact m) => 
-    (forall a . (TElt CT a, Dispatch a) => CT' m a -> Maybe (CT' m a))
+  divGWrapper :: (Fact m, IntegralDomain r, ZeroTestable r) => 
+    (forall a . (TElt CT a, Dispatch a, IntegralDomain a, ZeroTestable a) => CT' m a -> Maybe (CT' m a))
     -> CT' m r -> Maybe (CT' m r)
 
-  gaussWrapper :: (Fact m, MonadRandom rnd) => 
-    (forall a . (TElt CT a, Dispatch a, OrdFloat a, MonadRandom rnd) => rnd (CT' m a))
+  gaussWrapper :: (Fact m, MonadRandom rnd, Random r) => 
+    (forall a . (TElt CT a, Dispatch a, OrdFloat a, MonadRandom rnd, Random a) => rnd (CT' m a))
     -> rnd (CT' m r)
 
 instance CRNS Double where
@@ -286,7 +286,12 @@ instance (TElt CT (ZqBasic q i), Dispatch (ZqBasic q i)) => CRNS (ZqBasic q i) w
   divGWrapper f = f
   gaussWrapper = error "Cannot call gaussianDec for ZqBasic"
 
-instance (Storable a, Storable b, CRNS a, CRNS b, CRTrans a, CRTrans b) 
+instance (Storable a, Storable b, 
+          CRNS a, CRNS b, 
+          CRTrans a, CRTrans b, 
+          ZeroTestable a, ZeroTestable b, 
+          IntegralDomain a, IntegralDomain b,
+          Random a, Random b) 
   => CRNS (a,b) where
   zipWrapper f (CT' x :: CT' m (a,b)) (CT' y) =
     let (a,b) = unzip x
@@ -322,13 +327,13 @@ instance (Storable a, Storable b, CRNS a, CRNS b, CRTrans a, CRTrans b)
     (CT' b) <- gaussWrapper f
     return $ CT' $ zip a b
 
-mulGPow' :: (TElt CT r, Fact m) => CT' m r -> CT' m r
+mulGPow' :: (TElt CT r, Fact m, Additive r) => CT' m r -> CT' m r
 mulGPow' = lgWrapper $ untag $ lgDispatch dmulgpow
 
-divGPow' :: forall m r . (TElt CT r, Fact m) => CT' m r -> Maybe (CT' m r)
+divGPow' :: forall m r . (TElt CT r, Fact m, IntegralDomain r, ZeroTestable r) => CT' m r -> Maybe (CT' m r)
 divGPow' = divGWrapper $ untag $ checkDiv $ lgDispatch dginvpow
 
-crt' :: forall m r . (TElt CT r, Fact m, CRTrans r) 
+crt' :: forall m r . (TElt CT r, Fact m, CRTrans r, ZeroTestable r, IntegralDomain r) 
   => TaggedT m Maybe (CT' m r -> CT' m r)
 crt' = tagT $ crtWrapper $ do
   f <- proxyT ctCRT (Proxy::Proxy m)
@@ -503,7 +508,7 @@ ruInv = do
         generate pp (\i -> wPow $ (-i*pow)))) $
       pureT ppsFact
 
-gCoeffsCRT, gInvCoeffsCRT :: (TElt CT r, CRTrans r, Fact m)
+gCoeffsCRT, gInvCoeffsCRT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r, IntegralDomain r)
   => TaggedT m Maybe (CT' m r)
 gCoeffsCRT = crt' <*> (return $ mulGPow' $ scalarPow' LP.one)
 -- It's necessary to call 'fromJust' here: otherwise 
@@ -522,7 +527,7 @@ gInvCoeffsCRT = ($ fromJust $ divGPow' $ scalarPow' LP.one) <$> crt'
 -- we can't put this in Extension with the rest of the twace/embed fucntions because it needs access to 
 -- the C backend
 twaceCRT' :: forall m m' r .
-             (TElt CT r, CRTrans r, m `Divides` m')
+             (TElt CT r, CRTrans r, m `Divides` m', ZeroTestable r, IntegralDomain r)
              => TaggedT '(m, m') Maybe (Vector r -> Vector r)
 twaceCRT' = tagT $ do -- Maybe monad
   (CT' g') <- proxyT gCoeffsCRT (Proxy::Proxy m')

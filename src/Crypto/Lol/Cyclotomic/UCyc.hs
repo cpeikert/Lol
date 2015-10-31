@@ -96,15 +96,15 @@ data UCyc t (m :: Factored) r where
 
 -- | Shorthand for frequently reused constraints that are needed for
 --  change of basis.
-type UCCtx t r = (Tensor t, CRTrans r, CRTrans (CRTExt r), CRTEmbed r,
-                  ZeroTestable r, TElt t r, TElt t (CRTExt r))
+type UCCtx t r = (Tensor t, CRTrans r, CRTrans (CRTExt r), CRTEmbed r, IntegralDomain r, IntegralDomain (CRTExt r),
+                  ZeroTestable r, ZeroTestable (CRTExt r), TElt t r, TElt t (CRTExt r))
 
 -- | Shorthand for frequently reused constraints that are needed for
 -- most functions involving 'UCyc' and 'Crypto.Lol.Cyclotomic.Cyc.Cyc'.
 
 -- EAC: duplicated UCCtx for haddock
-type CElt t r = (Tensor t, CRTrans r, CRTrans (CRTExt r), CRTEmbed r,
-                 ZeroTestable r, TElt t r, TElt t (CRTExt r), Eq r, NFData r)
+type CElt t r = (Tensor t, CRTrans r, CRTrans (CRTExt r), CRTEmbed r, IntegralDomain r, IntegralDomain (CRTExt r),
+                 ZeroTestable r, ZeroTestable (CRTExt r), TElt t r, TElt t (CRTExt r), Eq r, NFData r)
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.scalarCyc', but for 'UCyc'.
 scalarCyc :: (Fact m, CElt t a) => a -> UCyc t m a
@@ -620,7 +620,7 @@ instance (Tensor t, Fact m) => Traversable (UCyc t m) where
 
 ---------- Utility instances ----------
 
-instance (Tensor t, Fact m, TElt t r, CRTrans r, Random r) => Random (UCyc t m r) where
+instance (Tensor t, Fact m, TElt t r, CRTrans r, Random r, ZeroTestable r, IntegralDomain r) => Random (UCyc t m r) where
 
   -- create in CRTr basis if legal, otherwise in powerful
   random = let cons = fromMaybe Pow
