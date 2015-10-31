@@ -7,24 +7,23 @@
 
 module Crypto.Lol.Applications.SymmSHE
 (
--- * Algorithm inputs
+-- * Data types
 SK, PT, CT                    -- don't export constructors!
--- * Encryption functions
-, genSK, encrypt
--- * Decryption functions
+-- * Keygen, encryption, decryption
+, genSK
+, encrypt
 , errorTerm, errorTermUnrestricted, decrypt, decryptUnrestricted
--- * Functions for changing representation of a ciphertext
+-- * Encoding of plaintext
 , toMSD, toLSD
 -- * Arithmetic with public values
 , addScalar, addPublic, mulPublic
--- * Embedding/Twacing for keys and ciphertexts
-, embedSK, embedCT, twaceCT
--- * Functions for changing the CT/PT modulus
+-- * Modulus switching
 , rescaleLinearCT, modSwitchPT
 -- * Key switching
 , keySwitchLinear, keySwitchQuadCirc
 -- * Ring switching
-,tunnelCT
+, embedSK, embedCT, twaceCT
+, tunnelCT
 -- * Constraint synonyms
 , AddPublicCtx, MulPublicCtx, KeySwitchCtx, KSHintCtx, ModSwitchPTCtx
 , ToSDCtx, EncryptCtx, TunnelCtx, GenSKCtx, DecryptCtx
@@ -201,7 +200,7 @@ rescaleLinearMSD c = case coeffs c of
   _ -> error $ "rescaleLinearMSD: list too long (not linear): " ++
        show (length $ coeffs c)
 
--- | Rescale a linear ciphertext.
+-- | Rescale a linear ciphertext to a new modulus.
 rescaleLinearCT :: (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq)
            => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq')
 rescaleLinearCT ct = let CT MSD k l c = toMSD ct

@@ -4,21 +4,43 @@
              RankNTypes, RebindableSyntax, ScopedTypeVariables,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
--- | 'UCyc' represents a cyclotomic ring of given index over a given
--- base ring.  It transparently handles all necessary conversions
--- between internal representations to support fast ring operations,
--- and efficiently stores and operates upon elements that are known to
+-- | An implementation of cyclotomic rings.  WARNING: this module
+-- provides an experts-only, "unsafe" interface that may result in
+-- runtime errors if not used correctly!
+-- 'Crypto.Lol.Cyclotomic.Cyc.Cyc' provides a safe interface, and
+-- should be used in applications whenever possible.
+--
+-- 'UCyc' transparently handles all necessary conversions between
+-- internal representations to support fast ring operations, and
+-- efficiently stores and operates upon elements that are known to
 -- reside in subrings.
+--
+-- The 'Functor', 'Applicative', 'Foldable', and 'Traversable'
+-- instances of 'UCyc', as well as the 'fmapC' and 'fmapCM' functions,
+-- work over the element's /current/ @r@-basis representation (or
+-- 'pure' scalar representation as a special case, to satisfy the
+-- 'Applicative' laws), and the output remains in that representation.
+-- If the input's representation is not one of these, the behavior is
+-- a runtime error.  To ensure a valid representation when using the
+-- methods from these classes, first call 'forceBasis' or one of its
+-- specializations ('forcePow', 'forceDec', 'forceAny').
 
 module Crypto.Lol.Cyclotomic.UCyc
-( UCyc, CElt
+(
+-- * Data type
+  UCyc, CElt
+-- * Basic operations
 , mulG, divG
-, tGaussian, errorRounded, errorCoset
-, embed, twace, coeffsCyc, powBasis, crtSet
+, scalarCyc, liftCyc
 , adviseCRT
-, liftCyc, scalarCyc
-, fmapC, fmapCM
+-- * Error sampling
+, tGaussian, errorRounded, errorCoset
+-- * Sub/extension rings
+, embed, twace, coeffsCyc, powBasis, crtSet
+-- * Representations
 , forceBasis, forcePow, forceDec, forceAny
+-- * Specialized maps
+, fmapC, fmapCM
 , U.Basis(..), U.RescaleCyc
 ) where
 
@@ -78,7 +100,7 @@ type UCCtx t r = (Tensor t, CRTrans r, CRTrans (CRTExt r), CRTEmbed r,
                   ZeroTestable r, TElt t r, TElt t (CRTExt r))
 
 -- | Shorthand for frequently reused constraints that are needed for
--- most functions involving 'UCyc' and 'Cyc'.
+-- most functions involving 'UCyc' and 'Crypto.Lol.Cyclotomic.Cyc.Cyc'.
 
 -- EAC: duplicated UCCtx for haddock
 type CElt t r = (Tensor t, CRTrans r, CRTrans (CRTExt r), CRTEmbed r,
@@ -270,7 +292,7 @@ instance (Mod a, Field b, Lift a z, Reduce z b,
                  z = liftCyc bas a
              in (pure (recip (fromIntegral aval))) * (b - reduce z)
 
--- | Same as 'Crypto.Lol.Cyclotomic.Cyc.liftCyc', but for 'UCyc'
+-- | Same as 'Crypto.Lol.Cyclotomic.Cyc.liftCyc', but for 'UCyc'.
 liftCyc :: (Lift b a, Fact m, CElt t a, CElt t b)
            => U.Basis -> UCyc t m b -> UCyc t m a
 liftCyc U.Pow = fmapC lift . forceBasis (Just U.Pow)
@@ -391,15 +413,11 @@ crtSet =
 
 ----- "Unsafe" functions that expose or rely upon internal representation
 
--- | Yield an equivalent element whose internal representation
--- /must/ be in the indicated basis: powerful or decoding (for 'Just
--- Pow' and 'Just Dec' arguments, respectively), or any @r@-basis of
--- the implementation's choice (for 'Nothing' argument).  This
--- method affects the behavior of the 'Functor', 'Applicative',
--- etc. instances, and /must/ be called immediately before using the
--- methods of these classes, otherwise their behavior is undefined
--- and potentially an error.  (See also the convenient
--- specializations 'forcePow', 'forceDec', 'forceAny'.)
+-- | Yield an equivalent element whose internal representation /must/
+-- be in the indicated basis: powerful or decoding (for 'Just' 'Pow'
+-- and 'Just' 'Dec' arguments, respectively), or any @r@-basis of the
+-- implementation's choice (for 'Nothing' argument).  (See also the
+-- convenient specializations 'forcePow', 'forceDec', 'forceAny'.)
 forceBasis :: (Fact m, CElt t r) => Maybe U.Basis -> UCyc t m r -> UCyc t m r
 forceBasis (Just U.Pow) x = toPow' x
 forceBasis (Just U.Dec) x = toDec' x
@@ -529,15 +547,15 @@ errApp name = error $ "UCyc.Applicative: can't/won't handle " ++ name ++
 
 instance (Tensor t, Fact m) => Applicative (UCyc t m) where
 
-  -- This implementation is restricted to the Scalar, Pow, Dec, or CRTr
-  -- constructors, in order to force the client to choose a concrete
-  -- basis and avoid unanticipated non-failure behavior.  Encountering
-  -- a CRTe, or Sub constructor almost certainly means that the
-  -- client expressed something it did not intend (since it cannot
-  -- force such constructors to be used), so we want to raise an
-  -- exception early instead of doing unintended work.
+  -- This implementation is restricted to the Scalar, Pow, Dec, or
+  -- CRTr constructors, in order to force the client to choose a
+  -- concrete @r@-basis and avoid unanticipated non-failure behavior.
+  -- Encountering a CRTe, or Sub constructor almost certainly means
+  -- that the client expressed something it did not intend (since it
+  -- cannot force such constructors to be used), so we want to raise
+  -- an exception early instead of doing unintended work.
 
-  -- CJP: this implementation has one corner case that may
+  -- This implementation has one corner case that may
   -- yield unexpected non-failure behavior: consider
   --   fmap f (pure a) = (pure f) <*> (pure a) = (pure $ f a)
   -- which is required by the Applicative homomorphism law.
@@ -555,11 +573,7 @@ instance (Tensor t, Fact m) => Applicative (UCyc t m) where
   -- A solution is to introduce an explicit Pure constructor that's
   -- only ever applied in 'pure', and throw an error if we encounter a
   -- Scalar here.  Arithmetically we'd treat Pures as Scalars, but in
-  -- a one-way fashion (outputs of arith ops are never Pure).\
-
-  -- EAC: For the contract on Applicative instances for Cyclotomics,
-  -- we want to say that the operation outputs in the same basis as the input
-  -- Which basis do we use for (<*>)?
+  -- a one-way fashion (outputs of arith ops are never Pure).
 
   pure = Scalar
 

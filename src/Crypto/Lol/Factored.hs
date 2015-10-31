@@ -26,14 +26,16 @@ module Crypto.Lol.Factored
 , fGCD, FGCD, fLCM, FLCM, Coprime
 , fOddRadical, FOddRadical
 , pFree, PFree
--- * Coercions
+-- * Reflections
+, ppsFact, valueFact, totientFact, valueHatFact, radicalFact, oddRadicalFact
+, ppPPow, primePPow, exponentPPow, valuePPow, totientPPow
+, valueNatC
+-- * Number-theoretic laws
 , transDivides, gcdDivides, lcmDivides, lcm2Divides
 , pSplitTheorems, pFreeDivides
 , (\\) -- re-export from Data.Constraint for convenience
--- * Operations on factored integers and naturals
-, ppsFact, valueFact, totientFact, valueHatFact, radicalFact, oddRadicalFact
-, ppPPow, primePPow, exponentPPow, valuePPow, totientPPow
-, valueNatC, valueHat
+-- * Utility operations (on prime powers)
+, valueHat
 , PP, ppToPP, valuePP, totientPP, radicalPP, oddRadicalPP
 , valuePPs, totientPPs, radicalPPs, oddRadicalPPs
 -- * Type synonyms (not type families)
@@ -51,7 +53,7 @@ module Crypto.Lol.Factored
 
 import Data.Constraint hiding ((***))
 import Data.Functor.Trans.Tagged
-import Data.Singletons.Prelude hiding (sMin, sMax, MinSym0, MaxSym0)
+import Data.Singletons.Prelude hiding (sMin, sMax, MinSym0, MaxSym0, (:-))
 import Data.Singletons.TH
 import Data.Type.Natural         as N hiding ((:-))
 import Data.Typeable

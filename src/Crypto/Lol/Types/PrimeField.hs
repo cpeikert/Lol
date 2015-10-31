@@ -17,9 +17,10 @@ type PrimeField fp = (Enumerable fp, Eq fp, ZeroTestable fp, Field fp,
 -- | The characteristic of a field, represented as a type.
 type family CharOf (fp :: k) :: Nat
 
--- | Represents prime-order fields that support embedding into a larger finite field
--- using an irreducible polynomial. An instance of this class is defined in
--- 'Crypto.Lol.Types.IrreducibleChar2' and exported from 'Crypto.Lol'.
+-- | Represents prime-order fields over which we can get irreducible
+-- polynomials of desired degree.  (An instance of this class is
+-- defined in 'Crypto.Lol.Types.IrreducibleChar2' and exported from
+-- 'Crypto.Lol'.)
 class (Ring fp, Prime (CharOf fp)) => IrreduciblePoly fp where
   irreduciblePoly :: (Reflects deg Int) => Tagged deg (Polynomial fp)
 

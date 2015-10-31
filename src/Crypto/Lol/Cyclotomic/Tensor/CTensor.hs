@@ -231,11 +231,7 @@ coerceBasis ::
   => Tagged '(m,m') ([Vector r]) -> Tagged m [CT' m' r]
 coerceBasis = coerce
 
--- | Class to dispatch tuples to the C backend.  In a different life,
--- the library used product-ring representation at the 'Cyclotomic'
--- level, so 'FastCyc' called 'Tensor'-level functions on each
--- component of the product ring. This class emulates that behavior
--- because making C handle arbitrary product rings seems difficult.
+-- | Class to dispatch to the C backend for various element types.
 class CRNS r where
 
   zipWrapper :: (Fact m) => 

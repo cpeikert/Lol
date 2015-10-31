@@ -4,19 +4,25 @@
              RankNTypes, ScopedTypeVariables, StandaloneDeriving,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
--- | An implementation of cyclotomic rings.  All functions and
--- instances involving 'Cyc' expose nothing about the internal
--- representations of ring elements (e.g., the basis they are
+-- | An implementation of cyclotomic rings with safe interface:
+-- functions and instances involving 'Cyc' expose nothing about the
+-- internal representations of ring elements (e.g., the basis they are
 -- represented in).  For an experts-only, "unsafe" implementation that
--- offers limited exposure of internal representation, use 'UCyc'.
+-- offers limited exposure of internal representation, use
+-- 'Crypto.Lol.Cyclotomic.UCyc.UCyc'.
 
 module Crypto.Lol.Cyclotomic.Cyc
-( Cyc, U.CElt, cyc, unsafeUnCyc
+( 
+-- * Data type
+  Cyc, U.CElt, cyc, unsafeUnCyc
+-- * Basic operations
 , mulG, divG
-, tGaussian, errorRounded, errorCoset
-, embed, twace, powBasis, crtSet, coeffsCyc
+, scalarCyc, liftCyc
 , adviseCRT
-, liftCyc, scalarCyc
+-- * Error sampling
+, tGaussian, errorRounded, errorCoset
+-- * Sub/extension rings
+, embed, twace, powBasis, crtSet, coeffsCyc
 , module Crypto.Lol.Cyclotomic.Utility
 ) where
 

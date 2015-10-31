@@ -65,50 +65,51 @@ realToField = Algebra.ToRational.realToField
 
 -- use this if you need:
 {- isZero -}
--- | Sane synonym for 'Algebra.ZeroTestable.C'
+-- | Sane synonym for 'Algebra.ZeroTestable.C'.
 type ZeroTestable a = (Algebra.ZeroTestable.C a)
 
 {- - + negate -}
--- | Sane synonym for 'Algebra.Additive.C'
+-- | Sane synonym for 'Algebra.Additive.C'.
 type Additive a = (Algebra.Additive.C a)
 
 {- Additive, plus: * fromIntegral -}
--- | Sane synonym for 'Algebra.Ring.C'
+-- | Sane synonym for 'Algebra.Ring.C'.
 type Ring a = (Algebra.Ring.C a)
 
 {- Ring and Additive, plus: *> -}
+-- | Sane synonym for 'Algebra.Module.C'.
 type Module a v = (Algebra.Module.C a v)
 
 {- Ring, plus: div, mod, divmod -}
--- | Sane synonym for 'Algebra.IntegralDomain.C'
+-- | Sane synonym for 'Algebra.IntegralDomain.C'.
 type IntegralDomain a = (Algebra.IntegralDomain.C a)
 
 {- Ring, plus: abs signum toRational' -}
--- | Sane synonym for 'Algebra.ToRational.C'
+-- | Sane synonym for 'Algebra.ToRational.C'.
 type ToRational a = (Algebra.ToRational.C a)
 
 {- Ring, plus: / recip fromRational -}
--- | Sane synonym for 'Algebra.Field.C'
+-- | Sane synonym for 'Algebra.Field.C'.
 type Field a = (Algebra.Field.C a)
 
 {- Ring, plus: abs and rounding functions -}
--- | Sane synonym for 'Algebra.RealRing.C'
+-- | Sane synonym for 'Algebra.RealRing.C'.
 type RealRing a = (Algebra.RealRing.C a)
 
 {- Field, plus: abs signum round floor ceiling -}
--- | Sane synonym for 'Algebra.RealField.C'
+-- | Sane synonym for 'Algebra.RealField.C'.
 type RealField a = (Algebra.RealField.C a)
 
 {- Field, plus: sqrt root ^/ -}
--- | Sane synonym for 'Algebra.Algebraic.C'
+-- | Sane synonym for 'Algebra.Algebraic.C'.
 type Algebraic a = (Algebra.Algebraic.C a)
 
 {- Algebraic, plus: pi exp log sin atan -}
--- | Sane synonym for 'Algebra.Transcendental.C'
+-- | Sane synonym for 'Algebra.Transcendental.C'.
 type Transcendental a = (Algebra.Transcendental.C a)
 
 {- Transcendental and RealField, plus atan2 -}
--- | Sane synonym for 'Algebra.RealTranscendental.C'
+-- | Sane synonym for 'Algebra.RealTranscendental.C'.
 type RealTranscendental a = (Algebra.RealTranscendental.C a)
 
 {- Transcendental, plus: == <= >= < > -}
@@ -116,19 +117,19 @@ type RealTranscendental a = (Algebra.RealTranscendental.C a)
 type OrdFloat a = (Ord a, Transcendental a)
 
 {- ToRational and Ring, plus: toInteger div mod divmod quot rem quotrem -}
--- | Sane synonym for 'Algebra.ToInteger.C'
+-- | Sane synonym for 'Algebra.ToInteger.C'.
 type ToInteger a = (Algebra.ToInteger.C a)
 
--- | Sane synonym for 'Algebra.Absolute.C'
+-- | Sane synonym for 'Algebra.Absolute.C'.
 type Absolute a = (Algebra.Absolute.C a)
 
--- | Sane synonym for 'Algebra.RealIntegral.C'
+-- | Sane synonym for 'Algebra.RealIntegral.C'.
 type RealIntegral a = (Algebra.RealIntegral.C a)
 
--- | Sane synonym for 'Algebra.PrincipalIdealDomain.C'
+-- | Sane synonym for 'Algebra.PrincipalIdealDomain.C'.
 type PID a = (Algebra.PrincipalIdealDomain.C a)
 
--- | Sane synonym for 'MathObj.Polynomial.T'
+-- | Sane synonym for 'MathObj.Polynomial.T'.
 type Polynomial a = MathObj.Polynomial.T a
 
 -- | IntegralDomain instance for Double

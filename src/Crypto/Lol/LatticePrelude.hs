@@ -5,24 +5,24 @@
              ScopedTypeVariables, StandaloneDeriving, TemplateHaskell,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
--- | A substitute for the Prelude, much like
--- <https://hackage.haskell.org/package/numeric-prelude
--- numeric-prelude> (NP), but more sane.  This module exports most of
--- NP and other frequently-used modules, plus some missing instances
--- and assorted helper functions.
+-- | A substitute for the Prelude that is more suitable for Lol.  This
+-- module exports most of the Numeric Prelude and other frequently
+-- used modules, plus some low-level classes, missing instances, and
+-- assorted utility functions.
 
 module Crypto.Lol.LatticePrelude
 ( 
+-- * Classes
+  Enumerable(..)
+, Mod(..)
+, Reduce(..), Lift, Lift'(..), Rescale(..), Encode(..), msdToLSD
 -- * Numeric
-  module Crypto.Lol.Types.Numeric
+, module Crypto.Lol.Types.Numeric
 -- * Complex
 , module Crypto.Lol.Types.Complex
 -- * Factored
 , module Crypto.Lol.Factored
 -- * Miscellaneous
-, Enumerable(..)
-, Mod(..)
-, Reduce(..), Lift, Lift'(..), Rescale(..), Encode(..), msdToLSD
 , rescaleMod, roundCoset
 , pureT, peelT, pasteT, withWitness, withWitnessT
 , module Data.Functor.Trans.Tagged
@@ -69,7 +69,7 @@ instance Default Bool where def = False
 class Enumerable a where
   values :: [a]
 
--- | Says that @a@ represents a quotient group modulo some integer.
+-- | Represents a quotient group modulo some integer.
 class (ToInteger (ModRep a), Additive a) => Mod a where
   type ModRep a
   modulus :: Tagged a (ModRep a)

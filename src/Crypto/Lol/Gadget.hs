@@ -3,8 +3,7 @@
              NoImplicitPrelude, PolyKinds, ScopedTypeVariables,
              TupleSections, TypeFamilies, UndecidableInstances #-}
 
--- | Provides an interface for "gadgets" that allow for decomposition
--- and error correction.
+-- | Interfaces for "gadgets," decomposition, and error correction.
 
 module Crypto.Lol.Gadget
 ( Gadget(..), Decompose(..), Correct(..)
@@ -27,7 +26,10 @@ class Ring u => Gadget gad u where
   -- | The gadget vector over @u@.
   gadget :: Tagged gad [u]
 
-  -- | Yield an error-tolerant encoding of an element, using the gadget.
+  -- | Yield an error-tolerant encoding of an element with respect to
+  -- the gadget.  (Mathematically, this should just be the product of
+  -- the input with the gadget, but it is a class method to allow for
+  -- optimized implementations.)
   encode :: u -> Tagged gad [u]
   encode s = ((* s) <$>) <$> gadget
 
