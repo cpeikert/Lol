@@ -18,7 +18,7 @@ module Crypto.Lol.Cyclotomic.Cyc
 -- * Basic operations
 , mulG, divG
 , scalarCyc, liftCyc
-, adviseCRT
+, advisePow, adviseDec, adviseCRT
 -- * Error sampling
 , tGaussian, errorRounded, errorCoset
 -- * Sub/extension rings
@@ -94,12 +94,20 @@ instance (Decompose gad (UCyc t m zq),
 
 ---------- Core cyclotomic operations ----------
 
+adviseCRT, advisePow, adviseDec :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
+
 -- | Yield an equivalent element that /may/ be in a CRT
 -- representation.  This can serve as an optimization hint. E.g.,
 -- call 'adviseCRT' prior to multiplying the same value by many
 -- other values.
-adviseCRT :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
 adviseCRT = coerceCyc U.adviseCRT
+
+-- | Same as 'adviseCRT', but for the powerful-basis representation.
+advisePow = coerceCyc U.forcePow -- do it, but not required by contract
+
+-- | Same as 'adviseCRT', but for the powerful-basis representation.
+adviseDec = coerceCyc U.forceDec
+
 
 -- | Multiply by the special element @g@ of the @m@th cyclotomic.
 mulG :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
