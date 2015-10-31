@@ -6,12 +6,12 @@ name:                lol
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
 version:             0.0.1.0
-synopsis:            A general-purpose library for lattice cryptography.
+synopsis:            A library for lattice cryptography.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
 license:             GPL-2
 license-file:        LICENSE
-author:              Eric Crockett, Chris Peikert
+author:              Eric Crockett <ecrockett0@gmail.com>, Chris Peikert <cpeikert@alum.mit.edu>
 maintainer:          Eric Crockett <ecrockett0@gmail.com>
 copyright:           Eric Crockett, Chris Peikert
 category:            Crypto
@@ -25,7 +25,7 @@ extra-source-files:  README,
                      test-suite/TestTypes.hs,
                      test-suite/ZqTests.hs
 cabal-version:       >=1.10
-description:         \\Lambda \\ocirc \\lambda is a general-purpose library for ring-based lattice cryptography.
+description:         Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
 source-repository head
   type: git
   location: https://github.com/cpeikert/Lol
