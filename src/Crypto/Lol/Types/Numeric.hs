@@ -6,9 +6,9 @@
 -- package classes with Prelude data types
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
--- | This file imports NumericPrelude and defines constraint synonyms
--- for NumericPrelude classes to help with code readability, and defines
--- saner versions of some NumericPrelude functions -}
+-- | This module imports NumericPrelude and defines constraint
+-- synonyms for NumericPrelude classes to help with code readability,
+-- and defines saner versions of some NumericPrelude functions
 
 module Crypto.Lol.Types.Numeric
 ( module Crypto.Lol.Types.Numeric -- everything we define here

@@ -29,7 +29,7 @@ import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Monad.Random
 import           Data.Constraint
-import           Data.Singletons.Prelude hiding ((:-))
+import           Data.Singletons.Prelude
 import           Data.Traversable
 import           Data.Tuple           (swap)
 import qualified Data.Vector          as V

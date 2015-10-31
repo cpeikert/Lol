@@ -59,7 +59,6 @@ toRT :: Unbox r => RT m r -> RT m r
 toRT v@(RT _) = v
 toRT (ZV v) = RT $ zvToArr v
 
--- EAC: this does more work than is necessary, since any vector in RT m r should have length @m@.
 toZV :: Fact m => RT m r -> RT m r
 toZV (RT (Arr v)) = ZV $ fromMaybe (error "toZV: internal error") $
                     iZipVector $ convert $ toUnboxed v

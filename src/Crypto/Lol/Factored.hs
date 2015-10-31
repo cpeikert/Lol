@@ -51,7 +51,7 @@ module Crypto.Lol.Factored
 
 import Data.Constraint hiding ((***))
 import Data.Functor.Trans.Tagged
-import Data.Singletons.Prelude hiding (sMin, sMax, MinSym0, MaxSym0, (:-))
+import Data.Singletons.Prelude hiding (sMin, sMax, MinSym0, MaxSym0)
 import Data.Singletons.TH
 import Data.Type.Natural         as N hiding ((:-))
 import Data.Typeable

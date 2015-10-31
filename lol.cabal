@@ -6,7 +6,7 @@ name:                lol
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
 version:             0.0.1.0
-synopsis:            A library for lattice cryptography.
+synopsis:            A general-purpose library for lattice cryptography.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
 license:             GPL-2
@@ -25,7 +25,7 @@ extra-source-files:  README,
                      test-suite/TestTypes.hs,
                      test-suite/ZqTests.hs
 cabal-version:       >=1.10
-description:         The \\Lambda \\ocirc \\lambda library supports operations for ring-based lattice cryptography.
+description:         \\Lambda \\ocirc \\lambda is a general-purpose library for ring-based lattice cryptography.
 source-repository head
   type: git
   location: https://github.com/cpeikert/Lol
@@ -158,3 +158,33 @@ test-suite lol-test-suite
     time>=1.2 && < 1.6,
     type-natural,
     vector
+
+-- REMOVE THE FOLLOWING STUFF BEFORE GOING TO HACKAGE
+
+executable ast
+  default-language:   Haskell2010
+  hs-source-dirs: compiler
+  main-is: Main.hs
+  -- ghc optimizations
+  ghc-options: -threaded -rtsopts  
+  -- -fprof-auto -fprof-cafs
+
+  build-depends:
+    lol,
+    arithmoi,
+    base,
+    binary,
+    bytestring,
+    constraints,
+    crypto-api,
+    DRBG,
+    deepseq,
+    MonadRandom,
+    mtl,
+    numeric-prelude,
+    random,
+    time,
+    type-natural,
+    QuickCheck,
+    containers,
+    syntactic

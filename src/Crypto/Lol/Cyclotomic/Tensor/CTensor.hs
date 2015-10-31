@@ -6,7 +6,7 @@
              TypeSynonymInstances, UndecidableInstances,
              RebindableSyntax #-}
 
--- | The wrapper for a C implementation of the Tensor interface.
+-- | Wrapper for a C implementation of the 'Tensor' interface.
 
 module Crypto.Lol.Cyclotomic.Tensor.CTensor
 ( CT
@@ -64,16 +64,17 @@ import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
 import Algebra.ZeroTestable   as ZeroTestable (C)
 
 
--- | An implementation of 'Tensor' backed by C code.
-newtype CT' (m :: Factored) r = CT' { unCT :: Vector r } deriving (Show, Eq, NFData, Typeable)
+-- | Newtype wrapper around a Vector.
+newtype CT' (m :: Factored) r = CT' { unCT :: Vector r } 
+                              deriving (Show, Eq, NFData, Typeable)
 
 -- the first argument, though phantom, affects representation
 type role CT' representational nominal
 
 -- GADT wrapper that distinguishes between Unbox and unrestricted
 -- element types
--- | A wrapper type to seamlessly convert between internal representations
--- This type is an instance of 'Tensor'.
+
+-- | An implementation of 'Tensor' backed by C code.
 data CT (m :: Factored) r where 
   CT :: Storable r => CT' m r -> CT m r
   ZV :: IZipVector m r -> CT m r

@@ -100,15 +100,17 @@ mulG :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
 mulG = coerceCyc U.mulG
 
 -- | Divide by @g@, returning 'Nothing' if not evenly divisible.
--- WARNING: this is not a constant-time operation, so information
--- about the argument may be leaked through a timing channel.
+-- WARNING: this implementation is not a constant-time algorithm, so
+-- information about the argument may be leaked through a timing
+-- channel.
 divG :: (Fact m, CElt t r) => Cyc t m r -> Maybe (Cyc t m r)
 divG = coerceCyc U.divG
 
 -- | Sample from the "tweaked" Gaussian error distribution @t*D@ in
--- the decoding basis, where @D@ has scaled variance @v@.
--- Note: This implementation uses Double precision to generate the
--- Gaussian sample, which is not cryptographically secure.
+-- the decoding basis, where @D@ has scaled variance @v@.  Note: This
+-- implementation uses Double precision to generate the Gaussian
+-- sample, which may not be sufficient for rigorous proof-based
+-- security.
 tGaussian :: (Fact m, OrdFloat q, Random q, CElt t q,
               ToRational v, MonadRandom rnd)
              => v -> rnd (Cyc t m q)
