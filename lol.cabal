@@ -1,0 +1,160 @@
+name:                lol
+-- The package version.  See the Haskell package versioning policy (PVP) 
+-- for standards guiding when and how versions should be incremented.
+-- http://www.haskell.org/haskellwiki/Package_versioning_policy
+-- PVP summary:      +-+------- breaking API changes
+--                   | | +----- non-breaking API additions
+--                   | | | +--- code changes with no API change
+version:             0.0.1.0
+synopsis:            A general-purpose library for lattice cryptography.
+homepage:            https://github.com/cpeikert/Lol
+Bug-Reports:         https://github.com/cpeikert/Lol/issues
+license:             GPL-2
+license-file:        LICENSE
+author:              Eric Crockett, Chris Peikert
+maintainer:          Eric Crockett <ecrockett0@gmail.com>
+copyright:           Eric Crockett, Chris Peikert
+category:            Crypto
+stability:           experimental
+build-type:          Simple
+extra-source-files:  README, 
+                     src/Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h,
+                     test-suite/CycTests.hs,
+                     test-suite/SHETests.hs,
+                     test-suite/TensorTests.hs,
+                     test-suite/TestTypes.hs,
+                     test-suite/ZqTests.hs
+cabal-version:       >=1.10
+description:         \\Lambda \\ocirc \\lambda is a general-purpose library for ring-based lattice cryptography.
+source-repository head
+  type: git
+  location: https://github.com/cpeikert/Lol
+
+-- For information on compiling C with cabal: http://blog.ezyang.com/2010/06/setting-up-cabal-the-ffi-and-c2hs/
+
+Flag useICC
+  Description: Use ICC instead of GCC to compile C backend.
+  Default:     False
+
+Flag llvm
+  Description:  Compile via LLVM. This produces much better object code,
+                but you need to have the LLVM compiler installed.
+
+  Default:      False
+
+library
+  hs-source-dirs:     src
+  Include-dirs: src/Crypto/Lol/Cyclotomic/Tensor/CTensor
+  C-sources: src/Crypto/Lol/Cyclotomic/Tensor/CTensor/basic.c, 
+             src/Crypto/Lol/Cyclotomic/Tensor/CTensor/crt.c, 
+             src/Crypto/Lol/Cyclotomic/Tensor/CTensor/g.c, 
+             src/Crypto/Lol/Cyclotomic/Tensor/CTensor/generalfuncs.c, 
+             src/Crypto/Lol/Cyclotomic/Tensor/CTensor/l.c, 
+             src/Crypto/Lol/Cyclotomic/Tensor/CTensor/random.c
+  Includes: src/Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
+  default-language:   Haskell2010
+
+  if flag(useICC)
+    ghc-options: -pgml icc -optc-O3 
+    cc-options: -std=gnu99 -Wall -DSTATS -DCINTRIN
+  else
+    ghc-options: -pgml gcc -fPIC -optc-O3 
+    cc-options: -std=gnu99 -fPIC -Wall
+
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3
+
+  -- ghc optimizations
+  ghc-options: -O3 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
+  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+
+  exposed-modules: 
+    Crypto.Lol
+    Crypto.Lol.CRTrans
+    Crypto.Lol.Gadget
+    Crypto.Lol.LatticePrelude
+    
+    Crypto.Lol.Applications.SymmSHE
+    Crypto.Lol.Cyclotomic.Tensor
+    Crypto.Lol.Factored
+
+    Crypto.Lol.Cyclotomic.Cyc
+    Crypto.Lol.Cyclotomic.UCyc
+    Crypto.Lol.Cyclotomic.Utility
+    
+    Crypto.Lol.Cyclotomic.Linear
+
+    Crypto.Lol.Cyclotomic.Tensor.CTensor
+    Crypto.Lol.Cyclotomic.Tensor.RepaTensor
+    
+    Crypto.Lol.Types.FiniteField
+    Crypto.Lol.Types.PrimeField
+    Crypto.Lol.Types.IrreducibleChar2
+    
+    Crypto.Lol.Types.ZPP
+    Crypto.Lol.Types.ZqBasic
+
+    Crypto.Lol.Reflects
+
+  other-modules:
+        
+    Crypto.Lol.Types.ZmStar
+    Crypto.Lol.GaussRandom
+    Crypto.Lol.Types.Complex
+    Crypto.Lol.Types.IZipVector
+    Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
+    Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
+    Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Gauss
+    Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
+    Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon
+
+    Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
+    Crypto.Lol.Types.Numeric
+
+  build-depends:
+    arithmoi>=0.4.1.3 && <0.5,
+    base==4.8.*,
+    constraints==0.4.*,
+    containers>=0.5.6.2 && < 0.6,
+    data-default>=0.3.0 && < 0.6,
+    deepseq>=1.4.1.1 && <1.5,
+    MonadRandom>=0.2 && < 0.5,
+    mtl>=2.2.1 && < 2.3,
+    numeric-prelude>=0.4.2 && < 0.5,
+    QuickCheck>=2.8 && < 2.9,
+    random>=1.1 && < 1.2,
+    reflection>=1.5.1 && < 2.2,
+    repa==3.4.*,
+    singletons>=1.1.2.1 && < 2.1,
+    storable-record>=0.0.3 && < 0.1,
+    storable-tuple>=0.0.1 && < 0.1,
+    th-desugar>=1.5.4 && < 1.6,
+    type-natural>=0.2.3.2 && < 0.4,
+    tagged-transformer>=0.7 && < 0.9,
+    transformers>=0.4.2.0 && < 0.5,
+    vector==0.11.*,
+    vector-th-unbox>=0.2.1.0 && < 0.3
+
+  other-extensions: TemplateHaskell
+
+test-suite lol-test-suite
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     test-suite
+  default-language:   Haskell2010
+  main-is:            Main.hs
+
+  -- ghc optimizations
+  ghc-options: -threaded -rtsopts
+
+  build-depends:
+    base,
+    constraints,
+    lol,
+    MonadRandom,
+    QuickCheck>=2.8 && < 2.9,
+    repa,
+    test-framework >= 0.8 && < 0.9,
+    test-framework-quickcheck2 >= 0.3 && < 0.4,
+    time>=1.2 && < 1.6,
+    type-natural,
+    vector
