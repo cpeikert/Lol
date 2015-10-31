@@ -94,7 +94,7 @@ type EncryptCtx t m m' z zp zq =
   (Mod zp, Ring zp, Ring zq, Lift zp (ModRep zp),
    Reduce z zq, Reduce (LiftOf zp) zq,
    CElt t zq, CElt t zp, CElt t z, CElt t (LiftOf zp),
-   m `Divides` m')
+   m `Divides` m', Random zq)
 
 -- | Encrypt a plaintext under a secret key.
 encrypt :: forall t m m' z zp zq e rnd . (EncryptCtx t m m' z zp zq, MonadRandom rnd)
@@ -221,7 +221,7 @@ modSwitchPT ct = let CT MSD k l c = toMSD ct in
 ---------- Key switching ----------
 
 type LWECtx t m' z zq =
-  (ToInteger z, Reduce z zq, Ring zq, Fact m', CElt t z, CElt t zq)
+  (ToInteger z, Reduce z zq, Ring zq, Fact m', CElt t z, CElt t zq, Random zq)
 
 -- | An LWE sample for a given secret (corresponding to a linear
 -- ciphertext encrypting 0 in MSD form)
@@ -276,7 +276,7 @@ switch hint c = rescaleLinearMSD $ untag $ knapsack <$>
 
 -- | Constraint synonym for key switching.
 type KeySwitchCtx gad t m' zp zq zq' =
-  (ToSDCtx t m' zp zq,
+  (ToSDCtx t m' zp zq, NFData (Cyc t m' zq'),
    -- EAC: same as InnerKeySwitchCtx, but duplicated for haddock
    RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
    Decompose gad zq', KnapsackCtx t m' (DecompOf zq') zq')
@@ -458,7 +458,8 @@ type TunnelCtx t e r s e' r' s' z zp zq zq' gad =
    Reduce z zq,                     -- Reduce on Linear
    Lift zp z,                       -- liftLin
    CElt t zp,                       -- liftLin
-   KeySwitchCtx gad t s' zp zq zq') -- keySwitch
+   KeySwitchCtx gad t s' zp zq zq', -- keySwitch
+   NFData (Cyc t s' zq'))
 
 -- | Homomorphically apply the @E@-linear function that maps the
 -- elements of the decoding basis of @R\/E@ to the corresponding
