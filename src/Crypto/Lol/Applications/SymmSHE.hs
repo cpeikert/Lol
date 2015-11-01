@@ -276,7 +276,7 @@ switch hint c = rescaleLinearMSD $ untag $ knapsack <$>
 
 -- | Constraint synonym for key switching.
 type KeySwitchCtx gad t m' zp zq zq' =
-  (ToSDCtx t m' zp zq, 
+  (ToSDCtx t m' zp zq,
    -- EAC: same as InnerKeySwitchCtx, but duplicated for haddock
    RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
    Decompose gad zq', KnapsackCtx t m' (DecompOf zq') zq')
