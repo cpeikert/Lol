@@ -25,7 +25,7 @@ SK, PT, CT                    -- don't export constructors!
 , embedSK, embedCT, twaceCT
 , tunnelCT
 -- * Constraint synonyms
-, AddPublicCtx, MulPublicCtx, KeySwitchCtx, KSHintCtx, ModSwitchPTCtx
+, AddPublicCtx, MulPublicCtx, InnerKeySwitchCtx, KeySwitchCtx, KSHintCtx, ModSwitchPTCtx
 , ToSDCtx, EncryptCtx, TunnelCtx, GenSKCtx, DecryptCtx
 , ErrorTermCtx
 ) where
@@ -91,7 +91,7 @@ genSK v = liftM (SK v) $ errorRounded v
 
 -- | Constraint synonym for encryption.
 type EncryptCtx t m m' z zp zq =
-  (Mod zp, Ring zp, Ring zq, Random zq, Lift zp (ModRep zp),
+  (Mod zp, Ring zp, Ring zq, Lift zp (ModRep zp),
    Reduce z zq, Reduce (LiftOf zp) zq,
    CElt t zq, CElt t zp, CElt t z, CElt t (LiftOf zp),
    m `Divides` m')
@@ -221,7 +221,7 @@ modSwitchPT ct = let CT MSD k l c = toMSD ct in
 ---------- Key switching ----------
 
 type LWECtx t m' z zq =
-  (ToInteger z, Reduce z zq, Ring zq, Random zq, Fact m', CElt t z, CElt t zq)
+  (ToInteger z, Reduce z zq, Ring zq, Fact m', CElt t z, CElt t zq)
 
 -- | An LWE sample for a given secret (corresponding to a linear
 -- ciphertext encrypting 0 in MSD form)
@@ -276,10 +276,7 @@ switch hint c = rescaleLinearMSD $ untag $ knapsack <$>
 
 -- | Constraint synonym for key switching.
 type KeySwitchCtx gad t m' zp zq zq' =
-  (ToSDCtx t m' zp zq,
-   -- EAC: same as InnerKeySwitchCtx, but duplicated for haddock
-   RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
-   Decompose gad zq', KnapsackCtx t m' (DecompOf zq') zq')
+  (ToSDCtx t m' zp zq, InnerKeySwitchCtx gad t m' zq zq')
 
 -- | Switch a linear ciphertext under @s_in@ to a linear one under @s_out@
 keySwitchLinear :: forall gad t m' zp zq zq' z rnd m .

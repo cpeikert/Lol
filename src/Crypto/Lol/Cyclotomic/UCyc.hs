@@ -103,7 +103,7 @@ type RElt t r = (TElt t r, CRTrans r, IntegralDomain r, ZeroTestable r, NFData r
 
 -- | Shorthand for frequently reused constraints that are needed for
 -- most functions involving 'UCyc' and 'Crypto.Lol.Cyclotomic.Cyc.Cyc'.
-type CElt t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r, Eq r)
+type CElt t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r, Eq r, Random r)
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.scalarCyc', but for 'UCyc'.
 scalarCyc :: (Fact m, CElt t a) => a -> UCyc t m a
