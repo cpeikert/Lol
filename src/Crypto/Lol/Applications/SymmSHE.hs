@@ -276,7 +276,7 @@ switch hint c = rescaleLinearMSD $ untag $ knapsack <$>
 
 -- | Constraint synonym for key switching.
 type KeySwitchCtx gad t m' zp zq zq' =
-  (ToSDCtx t m' zp zq, NFData (Cyc t m' zq'),
+  (ToSDCtx t m' zp zq, 
    -- EAC: same as InnerKeySwitchCtx, but duplicated for haddock
    RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
    Decompose gad zq', KnapsackCtx t m' (DecompOf zq') zq')
@@ -458,8 +458,7 @@ type TunnelCtx t e r s e' r' s' z zp zq zq' gad =
    Reduce z zq,                     -- Reduce on Linear
    Lift zp z,                       -- liftLin
    CElt t zp,                       -- liftLin
-   KeySwitchCtx gad t s' zp zq zq', -- keySwitch
-   NFData (Cyc t s' zq'))
+   KeySwitchCtx gad t s' zp zq zq') -- keySwitch
 
 -- | Homomorphically apply the @E@-linear function that maps the
 -- elements of the decoding basis of @R\/E@ to the corresponding
