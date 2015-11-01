@@ -91,10 +91,10 @@ genSK v = liftM (SK v) $ errorRounded v
 
 -- | Constraint synonym for encryption.
 type EncryptCtx t m m' z zp zq =
-  (Mod zp, Ring zp, Ring zq, Lift zp (ModRep zp),
+  (Mod zp, Ring zp, Ring zq, Random zq, Lift zp (ModRep zp),
    Reduce z zq, Reduce (LiftOf zp) zq,
    CElt t zq, CElt t zp, CElt t z, CElt t (LiftOf zp),
-   m `Divides` m', Random zq)
+   m `Divides` m')
 
 -- | Encrypt a plaintext under a secret key.
 encrypt :: forall t m m' z zp zq e rnd . (EncryptCtx t m m' z zp zq, MonadRandom rnd)
@@ -221,7 +221,7 @@ modSwitchPT ct = let CT MSD k l c = toMSD ct in
 ---------- Key switching ----------
 
 type LWECtx t m' z zq =
-  (ToInteger z, Reduce z zq, Ring zq, Fact m', CElt t z, CElt t zq, Random zq)
+  (ToInteger z, Reduce z zq, Ring zq, Random zq, Fact m', CElt t z, CElt t zq)
 
 -- | An LWE sample for a given secret (corresponding to a linear
 -- ciphertext encrypting 0 in MSD form)
