@@ -1,7 +1,2 @@
+/.stack-work
 dist/
-.ghci
-ghci
-lol.sublime-project
-lol.sublime-workspace
-makefile
-reprof.py
