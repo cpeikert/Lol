@@ -28,7 +28,7 @@
 module Crypto.Lol.Cyclotomic.UCyc
 (
 -- * Data type
-  UCyc, CElt
+  UCyc, CElt, RElt
 -- * Basic operations
 , mulG, divG
 , scalarCyc, liftCyc
@@ -96,15 +96,14 @@ data UCyc t (m :: Factored) r where
 
 -- | Shorthand for frequently reused constraints that are needed for
 --  change of basis.
-type UCCtx t r = (Tensor t, CRTrans r, CRTrans (CRTExt r), CRTEmbed r, IntegralDomain r, IntegralDomain (CRTExt r),
-                  ZeroTestable r, ZeroTestable (CRTExt r), TElt t r, TElt t (CRTExt r))
+type UCCtx t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r)
+
+-- | Collection of constraints need to work on most functions over a particular base ring @r@.
+type RElt t r = (TElt t r, CRTrans r, IntegralDomain r, ZeroTestable r, NFData r)
 
 -- | Shorthand for frequently reused constraints that are needed for
 -- most functions involving 'UCyc' and 'Crypto.Lol.Cyclotomic.Cyc.Cyc'.
-
--- EAC: duplicated UCCtx for haddock
-type CElt t r = (Tensor t, CRTrans r, CRTrans (CRTExt r), CRTEmbed r, IntegralDomain r, IntegralDomain (CRTExt r),
-                 ZeroTestable r, ZeroTestable (CRTExt r), TElt t r, TElt t (CRTExt r), Eq r, NFData r)
+type CElt t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r, Eq r, Random r)
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.scalarCyc', but for 'UCyc'.
 scalarCyc :: (Fact m, CElt t a) => a -> UCyc t m a
@@ -645,7 +644,7 @@ instance (Arbitrary (t m r)) => Arbitrary (UCyc t m r) where
   arbitrary = liftM Pow arbitrary
   shrink = shrinkNothing
 
-instance (Tensor t, Fact m, NFData r, TElt t r, TElt t (CRTExt r), NFData (CRTExt r))
+instance (Tensor t, Fact m, TElt t r, TElt t (CRTExt r), NFData r, NFData (CRTExt r))
          => NFData (UCyc t m r) where
   rnf (Pow x)    = rnf x \\ witness entailNFDataT x
   rnf (Dec x)    = rnf x \\ witness entailNFDataT x
