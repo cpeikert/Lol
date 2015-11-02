@@ -51,6 +51,7 @@ import qualified Data.Vector.Unboxed  as U
 class (TElt t Double, TElt t (Complex Double))
       => Tensor (t :: Factored -> * -> *) where
 
+  -- | Constraints needed by @t@ to hold type @r@.
   type TElt t r :: Constraint
 
   -- | Properties that hold for any index. Use with '\\'.
