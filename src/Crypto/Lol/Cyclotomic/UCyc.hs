@@ -28,7 +28,7 @@
 module Crypto.Lol.Cyclotomic.UCyc
 (
 -- * Data type
-  UCyc, CElt
+  UCyc, CElt, RElt
 -- * Basic operations
 , mulG, divG
 , scalarCyc, liftCyc
@@ -96,15 +96,14 @@ data UCyc t (m :: Factored) r where
 
 -- | Shorthand for frequently reused constraints that are needed for
 --  change of basis.
-type UCCtx t r = (Tensor t, CRTrans r, CRTrans (CRTExt r), CRTEmbed r,
-                  ZeroTestable r, TElt t r, TElt t (CRTExt r))
+type UCCtx t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r)
+
+-- | Collection of constraints need to work on most functions over a particular base ring @r@.
+type RElt t r = (TElt t r, CRTrans r, IntegralDomain r, ZeroTestable r, NFData r)
 
 -- | Shorthand for frequently reused constraints that are needed for
 -- most functions involving 'UCyc' and 'Crypto.Lol.Cyclotomic.Cyc.Cyc'.
-
--- EAC: duplicated UCCtx for haddock
-type CElt t r = (Tensor t, CRTrans r, CRTrans (CRTExt r), CRTEmbed r,
-                 ZeroTestable r, TElt t r, TElt t (CRTExt r), Eq r, NFData r)
+type CElt t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r, Eq r, Random r)
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.scalarCyc', but for 'UCyc'.
 scalarCyc :: (Fact m, CElt t a) => a -> UCyc t m a
@@ -114,9 +113,9 @@ scalarCyc = Scalar
 instance (UCCtx t r, Fact m, Eq r) => Eq (UCyc t m r) where
   -- handle same bases when fidelity allows (i.e., *not* CRTe basis)
   (Scalar v1) == (Scalar v2) = v1 == v2
-  (Pow v1) == (Pow v2) = v1 == v2 \\ witness entailFullT v1
-  (Dec v1) == (Dec v2) = v1 == v2 \\ witness entailFullT v1
-  (CRTr v1) == (CRTr v2) = v1 == v2 \\ witness entailFullT v1
+  (Pow v1) == (Pow v2) = v1 == v2 \\ witness entailEqT v1
+  (Dec v1) == (Dec v2) = v1 == v2 \\ witness entailEqT v1
+  (CRTr v1) == (CRTr v2) = v1 == v2 \\ witness entailEqT v1
 
   (Sub (c1 :: UCyc t l1 r)) == (Sub (c2 :: UCyc t l2 r)) =
     (embed' c1 :: UCyc t (FLCM l1 l2) r) == embed' c2
@@ -131,9 +130,9 @@ instance (UCCtx t r, Fact m, Eq r) => Eq (UCyc t m r) where
 -- ZeroTestable instance
 instance (UCCtx t r, Fact m) => ZeroTestable.C (UCyc t m r) where
   isZero (Scalar v) = isZero v
-  isZero (Pow v) = isZero v \\ witness entailFullT v
-  isZero (Dec v) = isZero v \\ witness entailFullT v
-  isZero (CRTr v) = isZero v \\ witness entailFullT v
+  isZero (Pow v) = isZero v \\ witness entailZTT v
+  isZero (Dec v) = isZero v \\ witness entailZTT v
+  isZero (CRTr v) = isZero v \\ witness entailZTT v
   isZero x@(CRTe _) = isZero $ toPow' x
   isZero (Sub c) = isZero c
 
@@ -148,11 +147,11 @@ instance (UCCtx t r, Fact m) => Additive.C (UCyc t m r) where
 
   -- SAME CONSTRUCTORS
   (Scalar c1) + (Scalar c2) = Scalar (c1+c2)
-  (Pow v1) + (Pow v2) = Pow $ v1 + v2 \\ witness entailFullT v1
-  (Dec v1) + (Dec v2) = Dec $ v1 + v2 \\ witness entailFullT v1
-  (CRTr v1) + (CRTr v2) = CRTr $ v1 + v2 \\ witness entailFullT v1
+  (Pow v1) + (Pow v2) = Pow $ v1 + v2 \\ witness entailRingT v1
+  (Dec v1) + (Dec v2) = Dec $ v1 + v2 \\ witness entailRingT v1
+  (CRTr v1) + (CRTr v2) = CRTr $ v1 + v2 \\ witness entailRingT v1
   -- CJP: is this OK for precision?
-  (CRTe v1) + (CRTe v2) = CRTe $ v1 + v2 \\ witness entailFullT v1
+  (CRTe v1) + (CRTe v2) = CRTe $ v1 + v2 \\ witness entailRingT v1
   -- Sub plus Sub: work in compositum
   (Sub (c1 :: UCyc t m1 r)) + (Sub (c2 :: UCyc t m2 r)) =
     (Sub $ (embed' c1 :: UCyc t (FLCM m1 m2) r) + embed' c2)
@@ -205,8 +204,8 @@ instance (UCCtx t r, Fact m) => Ring.C (UCyc t m r) where
   _ * v2@(Scalar c2) | isZero c2 = v2
 
   -- BOTH IN A CRT BASIS
-  (CRTr v1) * (CRTr v2) = CRTr $ v1 * v2 \\ witness entailFullT v1
-  (CRTe v1) * (CRTe v2) = toPow' $ CRTe $ v1 * v2 \\ witness entailFullT v1
+  (CRTr v1) * (CRTr v2) = CRTr $ v1 * v2 \\ witness entailRingT v1
+  (CRTe v1) * (CRTe v2) = toPow' $ CRTe $ v1 * v2 \\ witness entailRingT v1
 
   -- AT LEAST ONE SCALAR
   (Scalar c1) * (Scalar c2) = Scalar $ c1 * c2
@@ -620,13 +619,13 @@ instance (Tensor t, Fact m) => Traversable (UCyc t m) where
 
 ---------- Utility instances ----------
 
-instance (Tensor t, Fact m, TElt t r, CRTrans r) => Random (UCyc t m r) where
+instance (Tensor t, Fact m, TElt t r, CRTrans r, Random r, ZeroTestable r, IntegralDomain r) => Random (UCyc t m r) where
 
   -- create in CRTr basis if legal, otherwise in powerful
   random = let cons = fromMaybe Pow
                       (proxyT hasCRTFuncs (Proxy::Proxy (t m r)) >> Just CRTr)
            in \g -> let (v,g') = random g
-                                 \\ proxy entailFullT (Proxy::Proxy (t m r))
+                                 \\ proxy entailRandomT (Proxy::Proxy (t m r))
                     in (cons v, g')
 
   randomR _ = error "randomR non-sensical for cyclotomic rings"
@@ -645,11 +644,11 @@ instance (Arbitrary (t m r)) => Arbitrary (UCyc t m r) where
   arbitrary = liftM Pow arbitrary
   shrink = shrinkNothing
 
-instance (Tensor t, Fact m, NFData r, TElt t r, TElt t (CRTExt r))
+instance (Tensor t, Fact m, TElt t r, TElt t (CRTExt r), NFData r, NFData (CRTExt r))
          => NFData (UCyc t m r) where
-  rnf (Pow x)    = rnf x \\ witness entailFullT x
-  rnf (Dec x)    = rnf x \\ witness entailFullT x
-  rnf (CRTr x)   = rnf x \\ witness entailFullT x
-  rnf (CRTe x)   = rnf x \\ witness entailFullT x
+  rnf (Pow x)    = rnf x \\ witness entailNFDataT x
+  rnf (Dec x)    = rnf x \\ witness entailNFDataT x
+  rnf (CRTr x)   = rnf x \\ witness entailNFDataT x
+  rnf (CRTe x)   = rnf x \\ witness entailNFDataT x
   rnf (Scalar x) = rnf x
   rnf (Sub x)    = rnf x

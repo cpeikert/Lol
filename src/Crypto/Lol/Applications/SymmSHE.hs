@@ -25,7 +25,7 @@ SK, PT, CT                    -- don't export constructors!
 , embedSK, embedCT, twaceCT
 , tunnelCT
 -- * Constraint synonyms
-, AddPublicCtx, MulPublicCtx, KeySwitchCtx, KSHintCtx, ModSwitchPTCtx
+, AddPublicCtx, MulPublicCtx, InnerKeySwitchCtx, KeySwitchCtx, KSHintCtx, ModSwitchPTCtx
 , ToSDCtx, EncryptCtx, TunnelCtx, GenSKCtx, DecryptCtx
 , ErrorTermCtx
 ) where
@@ -276,10 +276,7 @@ switch hint c = rescaleLinearMSD $ untag $ knapsack <$>
 
 -- | Constraint synonym for key switching.
 type KeySwitchCtx gad t m' zp zq zq' =
-  (ToSDCtx t m' zp zq,
-   -- EAC: same as InnerKeySwitchCtx, but duplicated for haddock
-   RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
-   Decompose gad zq', KnapsackCtx t m' (DecompOf zq') zq')
+  (ToSDCtx t m' zp zq, InnerKeySwitchCtx gad t m' zq zq')
 
 -- | Switch a linear ciphertext under @s_in@ to a linear one under @s_out@
 keySwitchLinear :: forall gad t m' zp zq zq' z rnd m .
