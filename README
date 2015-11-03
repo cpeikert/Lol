@@ -24,11 +24,11 @@ Overview of key modules, roughly from highest- to lowest-level:
 * CTensor.hs, which gives an
   implementation of the Tensor class using a C backend via Haskell's FFI.
 
-* FiniteField.hs, which gives an unoptimized implementation of finite field
-  arithmetic. To use this module, you will need an instance of IrreduciblePoly.
-  These instances provide irreducible polynomials for various degrees and base fields.
-  One instance is provided for characteristic 2 fields of size up to 2^32 in 
-  IrreducibleChar2.hs.
+* FiniteField.hs, which gives an unoptimized implementation of finite
+  field arithmetic. To use this module, you will need an instance of
+  IrreduciblePoly.  These instances provide irreducible polynomials
+  for various degrees and base fields.  One instance is provided for
+  characteristic 2 fields of size up to 2^32 in IrreducibleChar2.hs.
 
 * ZqBasic.hs, which is a basic implementation of Zq=Z/qZ arithmetic.
 
