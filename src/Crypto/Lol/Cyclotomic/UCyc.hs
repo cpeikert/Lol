@@ -251,14 +251,19 @@ instance (Gadget gad zq, Fact m, CElt t zq) => Gadget gad (UCyc t m zq) where
   encode s = ((* adviseCRT s) <$>) <$> gadget
 
 -- promote Decompose, using the powerful basis
-instance (Decompose gad zq, Fact m, CElt t zq,
-          Reduce (UCyc t m (DecompOf zq)) (UCyc t m zq))
+instance (Decompose gad zq, Fact m, 
+         -- these imply (superclass) Reduce on UCyc; needed for Sub case
+          CElt t zq, CElt t (DecompOf zq), Reduce (DecompOf zq) zq)
   => Decompose gad (UCyc t m zq) where
 
   type DecompOf (UCyc t m zq) = UCyc t m (DecompOf zq)
 
+  -- faster implementations: decompose directly in subring
+  decompose (Scalar c) = pasteT $ Scalar <$> (peelT $ decompose c)
+  decompose (Sub c) = pasteT $ Sub <$> (peelT $ decompose c)
+
   -- traverse: Traversable (c m) and Applicative (Tagged gad ZL)
-  decompose = fromZL . traverse (toZL . decompose) . forcePow
+  decompose x = fromZL $ traverse (toZL . decompose) $ forcePow x
     where toZL :: Tagged s [a] -> TaggedT s ZipList a
           toZL = coerce
           fromZL :: TaggedT s ZipList a -> Tagged s [a]
