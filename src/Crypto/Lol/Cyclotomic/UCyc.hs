@@ -210,6 +210,10 @@ instance (UCCtx t r, Fact m) => Ring.C (UCyc t m r) where
   (CRTr v1) * (CRTr v2) = CRTr $ v1 * v2 \\ witness entailRingT v1
   (CRTe v1) * (CRTe v2) = toPow' $ CRTe $ v1 * v2 \\ witness entailRingT v1
 
+  -- CRTr/CRTe mixture
+  (CRTr _) * (CRTe _) = error "UCyc.(*): mixed CRTr/CRTe"
+  (CRTe _) * (CRTr _) = error "UCyc.(*): mixed CRTr/CRTe"
+
   -- AT LEAST ONE SCALAR
   (Scalar c1) * (Scalar c2) = Scalar $ c1 * c2
 
