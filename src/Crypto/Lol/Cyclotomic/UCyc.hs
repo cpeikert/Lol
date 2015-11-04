@@ -67,7 +67,7 @@ import Data.Traversable
 import Data.Typeable
 import Test.QuickCheck
 
-import qualified Debug.Trace as DT
+--import qualified Debug.Trace as DT
 
 -- | A data type for representing cyclotomic rings such as @Z[zeta]@,
 -- @Zq[zeta]@, and @Q(zeta)@: @t@ is the 'Tensor' type for storing
@@ -98,12 +98,15 @@ data UCyc t (m :: Factored) r where
 --  change of basis.
 type UCCtx t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r)
 
--- | Collection of constraints need to work on most functions over a particular base ring @r@.
+-- | Collection of constraints need to work on most functions over a
+-- particular base ring @r@.
 type RElt t r = (TElt t r, CRTrans r, IntegralDomain r, ZeroTestable r, NFData r)
 
 -- | Shorthand for frequently reused constraints that are needed for
--- most functions involving 'UCyc' and 'Crypto.Lol.Cyclotomic.Cyc.Cyc'.
-type CElt t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r, Eq r, Random r)
+-- most functions involving 'UCyc' and
+-- 'Crypto.Lol.Cyclotomic.Cyc.Cyc'.
+type CElt t r = (Tensor t, RElt t r, RElt t (CRTExt r), 
+                 CRTEmbed r, Eq r, Random r)
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.scalarCyc', but for 'UCyc'.
 scalarCyc :: (Fact m, CElt t a) => a -> UCyc t m a
@@ -225,7 +228,7 @@ instance (UCCtx t r, Fact m) => Ring.C (UCyc t m r) where
   -- TWO SUBS: work in a CRT rep for compositum
   (Sub (c1 :: UCyc t m1 r)) * (Sub (c2 :: UCyc t m2 r)) =
     -- re-wrap c1, c2 as Subs of the composition, and force them to CRT
-    (Sub $ (toCRT' $ Sub c1 :: UCyc t (FLCM m1 m2) r) * (toCRT' $ Sub c2))
+    (Sub $ (toCRT' $ Sub c1 :: UCyc t (FLCM m1 m2) r) * toCRT' (Sub c2))
     \\ lcm2Divides (Proxy::Proxy m1) (Proxy::Proxy m2) (Proxy::Proxy m)
 
   -- ELSE: work in appropriate CRT rep
@@ -254,8 +257,8 @@ instance (Decompose gad zq, Fact m,
   type DecompOf (UCyc t m zq) = UCyc t m (DecompOf zq)
 
   -- faster implementations: decompose directly in subring
-  decompose (Scalar c) = pasteT $ Scalar <$> (peelT $ decompose c)
-  decompose (Sub c) = pasteT $ Sub <$> (peelT $ decompose c)
+  decompose (Scalar c) = pasteT $ Scalar <$> peelT (decompose c)
+  decompose (Sub c) = pasteT $ Sub <$> peelT (decompose c)
 
   -- traverse: Traversable (c m) and Applicative (Tagged gad ZL)
   decompose x = fromZL $ traverse (toZL . decompose) $ forcePow x
@@ -268,7 +271,7 @@ instance (Decompose gad zq, Fact m,
 instance (Correct gad zq, Fact m, CElt t zq)
          => Correct gad (UCyc t m zq) where
   -- sequenceA: Applicative (c m) and Traversable (TaggedT [])
-  correct bs = (correct . pasteT) <$> (sequenceA $ forceDec <$> peelT bs)
+  correct bs = (correct . pasteT) <$> sequenceA (forceDec <$> peelT bs)
 
 -- generic RescaleCyc instance
 
@@ -289,7 +292,7 @@ instance (Mod a, Field b, Lift a z, Reduce z b,
                  a = fmapC fst y
                  b = fmapC snd y
                  z = liftCyc bas a
-             in (pure (recip (fromIntegral aval))) * (b - reduce z)
+             in pure (recip (fromIntegral aval)) * (b - reduce z)
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.liftCyc', but for 'UCyc'.
 liftCyc :: (Lift b a, Fact m, CElt t a, CElt t b)
@@ -310,8 +313,8 @@ mulG (Sub c) = mulG $ embed' c                -- must go to full ring
 mulG (Pow v) = Pow $ mulGPow v
 mulG (Dec v) = Dec $ mulGDec v
 -- fromMaybe is safe here because we're already in CRTr
-mulG (CRTr v) = CRTr $ fromMaybe (error "UCyc.mulG CRTr") mulGCRT v
-mulG (CRTe v) = CRTe $ fromMaybe (error "UCyc.mulG CRTe") mulGCRT v
+mulG (CRTr v) = CRTr $ fromJust' "UCyc.mulG CRTr" mulGCRT v
+mulG (CRTe v) = CRTe $ fromJust' "UCyc.mulG CRTe" mulGCRT v
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.divG', but for 'UCyc'.
 divG :: (Fact m, CElt t r) => UCyc t m r -> Maybe (UCyc t m r)
@@ -320,8 +323,8 @@ divG (Sub c) = divG $ embed' c                      -- full ring
 divG (Pow v) = Pow <$> divGPow v
 divG (Dec v) = Dec <$> divGDec v
 -- fromMaybe is safe here because we're already in CRTr
-divG (CRTr v) = Just $ CRTr $ fromMaybe (error "UCyc.divG CRTr") divGCRT v
-divG (CRTe v) = Just $ CRTe $ fromMaybe (error "UCyc.divG CRTe") divGCRT v
+divG (CRTr v) = Just $ CRTr $ fromJust' "UCyc.divG CRTr" divGCRT v
+divG (CRTe v) = Just $ CRTe $ fromJust' "UCyc.divG CRTe" divGCRT v
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.tGaussian', but for 'UCyc'.
 tGaussian :: (Fact m, OrdFloat q, Random q, CElt t q,
@@ -377,9 +380,9 @@ twace x@(CRTr v) =
   fromMaybe (twace $ toPow' x) (CRTr <$> (twaceCRT <*> pure v))
 -- stay in CRTe iff CRTr is invalid for target, else go to Pow
 twace x@(CRTe v) =
-  fromMaybe (CRTe $ (fromMaybe (error "UCyc.twace CRTe") twaceCRT) v)
+  fromMaybe (CRTe $ fromJust' "UCyc.twace CRTe" twaceCRT v)
             (proxy (pasteT hasCRTFuncs) (Proxy::Proxy (t m r)) *>
-             (pure $ twace $ toPow' x))
+             pure (twace $ toPow' x))
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.coeffsCyc', but for 'UCyc'.
 coeffsCyc :: (m `Divides` m', CElt t r) 
@@ -485,7 +488,7 @@ embed' (Dec v) = Dec $ embedDec v
 embed' x@(CRTr v) =
     fromMaybe (embed' $ toPow' x) (CRTr <$> (embedCRT <*> pure v))
 embed' x@(CRTe v) = -- go to CRTe iff CRTr is invalid for target index 
-    fromMaybe (CRTe $ (fromMaybe (error "UCyc.embed' CRTe") embedCRT) v)
+    fromMaybe (CRTe $ fromJust' "UCyc.embed' CRTe" embedCRT v)
               (proxy (pasteT hasCRTFuncs) (Proxy::Proxy (t m r)) *>
                pure (embed' $ toPow' x))
 embed' (Sub (c :: UCyc t k r)) = embed' c
@@ -500,9 +503,9 @@ toPow' (Scalar c) = Pow $ scalarPow c
 toPow' (Sub c) = embed' $ toPow' c -- OK: embed' preserves Pow
 toPow' x@(Pow _) = x
 toPow' (Dec v) = Pow $ l v
-toPow' (CRTr v) = Pow $ fromMaybe (error "UCyc.toPow'") crtInv v
+toPow' (CRTr v) = Pow $ fromJust' "UCyc.toPow'" crtInv v
 toPow' (CRTe v) = 
-    Pow $ fmapT fromExt $ fromMaybe (error "UCyc.toPow' CRTe") crtInv v
+    Pow $ fmapT fromExt $ fromJust' "UCyc.toPow' CRTe" crtInv v
 
 -- | Force the argument into the decoding basis.
 toDec' x@(Scalar _) = toDec' $ toPow' x -- TODO: use scalarDec instead
@@ -520,8 +523,8 @@ toCRT' (Sub (c :: UCyc t l r)) =
     case (proxyT hasCRTFuncs (Proxy::Proxy (t l r)),
           proxyT hasCRTFuncs (Proxy::Proxy (t m r))) of
       (Just _, Just _) -> embed' $ toCRT' c -- fastest; embed' preserves CRTr
-      (_, Nothing) -> embed' $ toCRTe c  -- faster; temp violate CRTr/e invariant
-      _ -> toCRT' $ embed' c      -- fallback
+      (_, Nothing) -> embed' $ toCRTe c -- faster; temp violate CRTr/e invariant
+      _ -> toCRT' $ embed' c            -- fallback
 toCRT' x = fromMaybe (toCRTe x) (toCRTr <*> pure x)
 
 toCRTr :: forall t m r . (UCCtx t r, Fact m) => Maybe (UCyc t m r -> UCyc t m r)
@@ -533,19 +536,23 @@ toCRTr = do -- Maybe monad
                    (Scalar c) -> CRTr $ scalarCRT' c
                    (Pow v) -> CRTr $ crt' v
                    (Dec v) -> CRTr $ crt' $ l v
-                   x@(CRTr _) -> x
-                   x@(CRTe _) -> toCRTr' $ toPow' x
+                   c@(CRTr _) -> c
+                   c@(CRTe _) -> toCRTr' $ toPow' c
+                   (Sub _) -> error "UCyc.toCRTr: Sub"
 
 toCRTe :: forall t m r . (UCCtx t r, Fact m) => UCyc t m r -> UCyc t m r
 toCRTe = let m = proxy valueFact (Proxy::Proxy m)
-             crt' = fromMaybe (error $ "UCyc.toCRT': no crt': " ++ (show m)) crt :: t m (CRTExt r) -> t m (CRTExt r) -- must exist
-             scalarCRT' = fromMaybe (error "UCyc.toCRT': no scalar crt'") scalarCRT :: CRTExt r -> t m (CRTExt r)
+             crt' = fromJust' ("UCyc.toCRTe: no crt': " ++ show m) crt
+                  :: t m (CRTExt r) -> t m (CRTExt r) -- must exist
+             scalarCRT' = fromJust' "UCyc.toCRTe: no scalarCRT" scalarCRT
+                        :: CRTExt r -> t m (CRTExt r)
          in \x -> case x of
                     (Scalar c) -> CRTe $ scalarCRT' $ toExt c
                     (Pow v) -> CRTe $ crt' $ fmapT toExt v
                     (Dec v) -> CRTe $ crt' $ fmapT toExt $ l v
-                    x@(CRTr _) -> toCRTe $ toPow' x
-                    x@(CRTe _) -> x
+                    c@(CRTr _) -> toCRTe $ toPow' c
+                    c@(CRTe _) -> c
+                    (Sub _) -> error "UCyc.toCRTe: Sub"
 
 ---------- "Container" instances ----------
 
@@ -553,8 +560,9 @@ instance (Tensor t, Fact m) => Functor (UCyc t m) where
   -- Functor instance is implied by Applicative laws
   fmap f x = pure f <*> x
 
+errApp :: String -> a
 errApp name = error $ "UCyc.Applicative: can't/won't handle " ++ name ++
-              "; call forcePow|Dec first"
+              "; call forcePow|Dec|Any first"
 
 instance (Tensor t, Fact m) => Applicative (UCyc t m) where
 
@@ -606,12 +614,11 @@ instance (Tensor t, Fact m) => Applicative (UCyc t m) where
   (CRTr v) <*> (Scalar a) = CRTr $ v <*> pure a \\ witness entailIndexT v
 
   -- cases we can't/won't handle
-  (Pow _) <*> (Dec _) = error "UCyc.Applicative: Pow/Dec combo"
-  (Dec _) <*> (Pow _) = error "UCyc.Applicative: Pow/Dec combo"
   (Sub _) <*> _  = errApp "Sub"
   _ <*> (Sub _)  = errApp "Sub"
   (CRTe _) <*> _ = errApp "CRTe"
   _ <*> (CRTe _) = errApp "CRTe"
+  _ <*> _ = errApp "mismatched Pow/Dec/CRTr bases"
 
 instance (Tensor t, Fact m) => Foldable (UCyc t m) where
   foldr f b (Scalar r) = f r b

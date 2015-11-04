@@ -24,7 +24,7 @@ module Crypto.Lol.LatticePrelude
 , module Crypto.Lol.Factored
 -- * Miscellaneous
 , rescaleMod, roundCoset
-, pureT, peelT, pasteT, withWitness, withWitnessT
+, fromJust', pureT, peelT, pasteT, withWitness, withWitnessT
 , module Data.Functor.Trans.Tagged
 , module Data.Proxy
 ) where
@@ -221,6 +221,10 @@ instance (Random a, Random b) => Random (a,b) where
   randomR ((loa,lob), (hia,hib)) g = let (a,g') = randomR (loa,hia) g
                                          (b,g'') = randomR (lob,hib) g'
                                      in ((a,b),g'')
+
+-- | Version of 'fromJust' with an error message.
+fromJust' :: String -> Maybe a -> a
+fromJust' str = fromMaybe (error str)
 
 -- | Apply any applicative to a Tagged value.
 pureT :: Applicative f => TaggedT t Identity a -> TaggedT t f a
