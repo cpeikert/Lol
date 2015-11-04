@@ -531,13 +531,12 @@ toCRTr :: forall t m r . (UCCtx t r, Fact m) => Maybe (UCyc t m r -> UCyc t m r)
 toCRTr = do -- Maybe monad
   crt' <- crt
   scalarCRT' <- scalarCRT
-  toCRTr' <- toCRTr
   return $ \x -> case x of
                    (Scalar c) -> CRTr $ scalarCRT' c
                    (Pow v) -> CRTr $ crt' v
                    (Dec v) -> CRTr $ crt' $ l v
                    c@(CRTr _) -> c
-                   c@(CRTe _) -> toCRTr' $ toPow' c
+                   c@(CRTe _) -> fromJust' "UCyc.toCRTr CRTe" toCRTr $ toPow' c
                    (Sub _) -> error "UCyc.toCRTr: Sub"
 
 toCRTe :: forall t m r . (UCCtx t r, Fact m) => UCyc t m r -> UCyc t m r
