@@ -105,7 +105,7 @@ type RElt t r = (TElt t r, CRTrans r, IntegralDomain r, ZeroTestable r, NFData r
 -- | Shorthand for frequently reused constraints that are needed for
 -- most functions involving 'UCyc' and
 -- 'Crypto.Lol.Cyclotomic.Cyc.Cyc'.
-type CElt t r = (Tensor t, RElt t r, RElt t (CRTExt r), 
+type CElt t r = (Tensor t, RElt t r, RElt t (CRTExt r),
                  CRTEmbed r, Eq r, Random r)
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.scalarCyc', but for 'UCyc'.
@@ -249,7 +249,7 @@ instance (Gadget gad zq, Fact m, CElt t zq) => Gadget gad (UCyc t m zq) where
   encode s = ((* adviseCRT s) <$>) <$> gadget
 
 -- promote Decompose, using the powerful basis
-instance (Decompose gad zq, Fact m, 
+instance (Decompose gad zq, Fact m,
          -- these imply (superclass) Reduce on UCyc; needed for Sub case
           CElt t zq, CElt t (DecompOf zq), Reduce (DecompOf zq) zq)
   => Decompose gad (UCyc t m zq) where
@@ -336,7 +336,7 @@ tGaussian = liftM Dec . tGaussianDec
 errorRounded :: forall v rnd t m z .
                 (ToInteger z, Fact m, CElt t z, ToRational v, MonadRandom rnd)
                 => v -> rnd (UCyc t m z)
-errorRounded svar = 
+errorRounded svar =
   fmapC (roundMult one) <$> (tGaussian svar :: rnd (UCyc t m Double))
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.errorCoset', but for 'UCyc'.
@@ -385,7 +385,7 @@ twace x@(CRTe v) =
              pure (twace $ toPow' x))
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.coeffsCyc', but for 'UCyc'.
-coeffsCyc :: (m `Divides` m', CElt t r) 
+coeffsCyc :: (m `Divides` m', CElt t r)
              => U.Basis -> UCyc t m' r -> [UCyc t m r]
 coeffsCyc U.Pow (Pow v) = LP.map Pow $ coeffs v
 coeffsCyc U.Dec (Dec v) = LP.map Dec $ coeffs v
@@ -398,7 +398,7 @@ powBasis = map Pow <$> powBasisPow
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.crtSet', but for 'UCyc'.
 crtSet :: forall t m m' r p mbar m'bar .
-           (m `Divides` m', ZPP r, p ~ CharOf (ZPOf r), 
+           (m `Divides` m', ZPP r, p ~ CharOf (ZPOf r),
             mbar ~ PFree p m, m'bar ~ PFree p m',
             CElt t r, CElt t (ZPOf r))
            => Tagged m [UCyc t m' r]
@@ -487,7 +487,7 @@ embed' (Dec v) = Dec $ embedDec v
 -- stay in CRTr only if it's possible, otherwise go to Pow
 embed' x@(CRTr v) =
     fromMaybe (embed' $ toPow' x) (CRTr <$> (embedCRT <*> pure v))
-embed' x@(CRTe v) = -- go to CRTe iff CRTr is invalid for target index 
+embed' x@(CRTe v) = -- go to CRTe iff CRTr is invalid for target index
     fromMaybe (CRTe $ fromJust' "UCyc.embed' CRTe" embedCRT v)
               (proxy (pasteT hasCRTFuncs) (Proxy::Proxy (t m r)) *>
                pure (embed' $ toPow' x))
@@ -504,7 +504,7 @@ toPow' (Sub c) = embed' $ toPow' c -- OK: embed' preserves Pow
 toPow' x@(Pow _) = x
 toPow' (Dec v) = Pow $ l v
 toPow' (CRTr v) = Pow $ fromJust' "UCyc.toPow'" crtInv v
-toPow' (CRTe v) = 
+toPow' (CRTe v) =
     Pow $ fmapT fromExt $ fromJust' "UCyc.toPow' CRTe" crtInv v
 
 -- | Force the argument into the decoding basis.
