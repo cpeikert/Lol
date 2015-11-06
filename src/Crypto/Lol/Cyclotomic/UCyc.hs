@@ -244,7 +244,10 @@ instance (UCCtx t r, Fact m) => Ring.C (UCyc t m r) where
 instance (Reduce a b, Fact m, CElt t a, CElt t b)
   => Reduce (UCyc t m a) (UCyc t m b) where
 
-  reduce = fmapC reduce . forceAny
+  -- optimized for subring constructors
+  reduce (Scalar c) = Scalar $ reduce c
+  reduce (Sub (c :: UCyc t l a)) = Sub (reduce c :: UCyc t l b)
+  reduce x = fmapC reduce $ forceAny x
 
 -- promote Gadget from base ring
 instance (Gadget gad zq, Fact m, CElt t zq) => Gadget gad (UCyc t m zq) where
@@ -260,7 +263,8 @@ instance (Decompose gad zq, Fact m,
 
   type DecompOf (UCyc t m zq) = UCyc t m (DecompOf zq)
 
-  -- faster implementations: decompose directly in subring
+  -- faster implementations: decompose directly in subring, which is
+  -- correct because we decompose in powerful basis
   decompose (Scalar c) = pasteT $ Scalar <$> peelT (decompose c)
   decompose (Sub c) = pasteT $ Sub <$> peelT (decompose c)
 
@@ -281,28 +285,48 @@ instance (Correct gad zq, Fact m, CElt t zq)
 
 instance {-# OVERLAPS #-} (Rescale a b, CElt t a, CElt t b)
          => U.RescaleCyc (UCyc t) a b where
-  rescaleCyc b = fmapC rescale . forceBasis (Just b)
+
+  -- Optimized for subring constructors, for powerful basis.
+  -- Analogs for decoding basis are not quite correct, because (* -1)
+  -- doesn't commute with 'rescale' due to tiebreakers!
+  rescaleCyc U.Pow (Scalar c) = Scalar $ rescale c
+  rescaleCyc U.Pow (Sub (c :: UCyc t l a)) =
+    Sub (U.rescaleCyc U.Pow c :: UCyc t l b)
+
+  rescaleCyc b x = fmapC rescale $ forceBasis (Just b) x
 
 -- specialized instance for product rings: ~2x faster algorithm
-instance (Mod a, Field b, Lift a z, Reduce z b,
-          CElt t a, CElt t b, CElt t (a,b), CElt t z)
+instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
+          CElt t a, CElt t b, CElt t (a,b), CElt t (LiftOf a))
          => U.RescaleCyc (UCyc t) (a,b) b where
-  rescaleCyc bas =
+
+  -- optimized for subrings and powerful basis (see comments in other
+  -- instance for why this doesn't work for decoding basis)
+  rescaleCyc U.Pow (Scalar c) = Scalar $ rescale c
+  rescaleCyc U.Pow (Sub (c :: UCyc t l (a,b))) =
+    Sub (U.rescaleCyc U.Pow c :: UCyc t l b)
+
+  rescaleCyc bas x =
     let aval = proxy modulus (Proxy::Proxy a)
   -- CJP: could use unzipC here to get (a,b) in one pass, but it
   -- requires adding that method, and unzipT to Tensor and all its
   -- instances. Probably not worth it.
-    in \x -> let y = forceAny x
-                 a = fmapC fst y
-                 b = fmapC snd y
-                 z = liftCyc bas a
-             in pure (recip (fromIntegral aval)) * (b - reduce z)
+        y = forceAny x
+        a = fmapC fst y
+        b = fmapC snd y
+        z = liftCyc bas a
+    in Scalar (recip (reduce aval)) * (b - reduce z)
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.liftCyc', but for 'UCyc'.
 liftCyc :: (Lift b a, Fact m, CElt t a, CElt t b)
            => U.Basis -> UCyc t m b -> UCyc t m a
-liftCyc U.Pow = fmapC lift . forceBasis (Just U.Pow)
-liftCyc U.Dec = fmapC lift . forceBasis (Just U.Dec)
+-- optimized for subrings and powerful basis (see comments in
+-- RescaleCyc instances for why this doesn't work for decoding)
+liftCyc U.Pow (Scalar c) = Scalar $ lift c
+liftCyc U.Pow (Sub c) = Sub $ liftCyc U.Pow c
+
+liftCyc U.Pow x = fmapC lift $ forceBasis (Just U.Pow) x
+liftCyc U.Dec x = fmapC lift $ forceBasis (Just U.Dec) x
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.adviseCRT', but for 'UCyc'.
 adviseCRT :: (Fact m, CElt t r) => UCyc t m r -> UCyc t m r
