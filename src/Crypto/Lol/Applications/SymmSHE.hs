@@ -228,7 +228,8 @@ type LWECtx t m' z zq =
 lweSample :: (LWECtx t m' z zq, MonadRandom rnd)
              => SK (Cyc t m' z) -> rnd (Polynomial (Cyc t m' zq))
 lweSample (SK svar s) =
-  let sq = negate $ reduce s
+  -- adviseCRT because we call `replicateM (lweSample s)` below, but only want to do CRT once. 
+  let sq = adviseCRT $ negate $ reduce s 
   in do
     e <- errorRounded svar
     c1 <- adviseCRT <$> getRandom -- we would like hints to be in CRT form
@@ -245,8 +246,8 @@ type KSHintCtx gad t m' z zq =
 ksHint :: (KSHintCtx gad t m' z zq, MonadRandom rnd)
           => SK (Cyc t m' z) -> Cyc t m' z
           -> rnd (Tagged gad [Polynomial (Cyc t m' zq)])
-ksHint skout val = do           -- rnd monad
-  let valq = adviseCRT $ reduce val -- try to get CRT before encoding
+ksHint skout val = do -- rnd monad
+  let valq = reduce val
       valgad = encode valq
   -- CJP: clunky, but that's what we get without a MonadTagged
   samples <- DT.mapM (\as -> replicateM (length as) (lweSample skout)) valgad
