@@ -228,10 +228,10 @@ type LWECtx t m' z zq =
 lweSample :: (LWECtx t m' z zq, MonadRandom rnd)
              => SK (Cyc t m' z) -> rnd (Polynomial (Cyc t m' zq))
 lweSample (SK svar s) =
-  let sq = adviseCRT $ negate $ reduce s
+  let sq = negate $ reduce s
   in do
     e <- errorRounded svar
-    c1 <- getRandom
+    c1 <- adviseCRT <$> getRandom -- we would like hints to be in CRT form
     return $ fromCoeffs [c1 * sq + reduce (e `asTypeOf` s), c1]
 
 -- | Constraint synonym for generating key-switch hints.
@@ -246,7 +246,7 @@ ksHint :: (KSHintCtx gad t m' z zq, MonadRandom rnd)
           => SK (Cyc t m' z) -> Cyc t m' z
           -> rnd (Tagged gad [Polynomial (Cyc t m' zq)])
 ksHint skout val = do           -- rnd monad
-  let valq = reduce val
+  let valq = adviseCRT $ reduce val -- try to get CRT before encoding
       valgad = encode valq
   -- CJP: clunky, but that's what we get without a MonadTagged
   samples <- DT.mapM (\as -> replicateM (length as) (lweSample skout)) valgad
@@ -261,6 +261,7 @@ type KnapsackCtx t (m' :: Factored) z zq' =
 
 knapsack :: forall t m' z zq' . (KnapsackCtx t m' z zq')
             => [Polynomial (Cyc t m' zq')] -> [Cyc t m' z] -> Polynomial (Cyc t m' zq')
+-- adviseCRT here because we are about to map (*) onto each polynomial coeff
 knapsack hint xs = sum (zipWith (*>>) (adviseCRT <$> reduce <$> xs) hint)
 
 type InnerKeySwitchCtx gad t m' zq zq' =
@@ -470,6 +471,7 @@ tunnelCT :: forall gad t e r s e' r' s' z zp zq zq' rnd .
 tunnelCT f skout (SK _ sin) = tagT $ (do -- in rnd
   -- generate hints
   let f' = extendLin $ lift f :: Linear t z e' r' s'
+      f'q = reduce f' :: Linear t zq e' r' s'
       -- choice of basis here must match coeffsCyc basis below
       ps = proxy powBasis (Proxy::Proxy e')
       comps = (evalLin f' . (adviseCRT sin *)) <$> ps
@@ -478,7 +480,7 @@ tunnelCT f skout (SK _ sin) = tagT $ (do -- in rnd
     let CT MSD 0 s c = toMSD $ absorbGFactors ct'
         [c0,c1] = coeffs c
         -- apply E-linear function to constant term c0
-        c0' = evalLin (reduce f' :: Linear t zq e' r' s') c0
+        c0' = evalLin f'q c0
         -- apply E-linear function to c1 via key-switching
         -- this basis must match the basis used above to generate the hints
         c1s = coeffsCyc Pow c1 :: [Cyc t e' zq]
