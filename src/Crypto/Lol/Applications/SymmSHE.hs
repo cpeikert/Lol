@@ -450,9 +450,11 @@ twaceCT :: (CElt t zq, r `Divides` r', s' `Divides` r',
 twaceCT (CT d 0 l c) = CT d 0 l (twace <$> c)
 twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 
+
 -- | Constraint synonym for ring tunneling.
 type TunnelCtx t e r s e' r' s' z zp zq zq' gad =
   (ExtendLinIdx e r s e' r' s',     -- liftLin
+   e' ~ (e * (r' / r)),             -- convenience; implied by prev constraint
    KSHintCtx gad t r' z zq',        -- ksHint
    Reduce z zq,                     -- Reduce on Linear
    Lift zp z,                       -- liftLin
