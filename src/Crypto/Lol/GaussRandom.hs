@@ -26,7 +26,13 @@ realGaussian svar =
     in do (u,v) <- iterateWhile uvGuard getUV
           let t = u*u+v*v
               com = sqrt (-var * log t / t)
-          return (u * com, v * com)
+          -- we can either sample u,v from [-1,1]
+          -- or generate sign bits for the outputs
+          s1 <- getRandom
+          s2 <- getRandom
+          let u' = if s1 then u else -u
+              v' = if s2 then v else -v
+          return (u'*com,v'*com)
     where getUV = do u <- getRandomR (zero,one)
                      v <- getRandomR (zero,one)
                      return (u,v)
