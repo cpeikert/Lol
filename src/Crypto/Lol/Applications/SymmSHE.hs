@@ -97,14 +97,14 @@ type EncryptCtx t m m' z zp zq =
    m `Divides` m')
 
 -- | Encrypt a plaintext under a secret key.
-encrypt :: forall t m m' z zp zq e rnd . (EncryptCtx t m m' z zp zq, MonadRandom rnd)
+encrypt :: forall t m m' z zp zq rnd . (EncryptCtx t m m' z zp zq, MonadRandom rnd)
            => SK (Cyc t m' z) -> PT (Cyc t m zp) -> rnd (CT m zp (Cyc t m' zq))
 encrypt (SK svar s) =
-  let sq = reduce s
-  in (\pt -> do
-         e <- errorCoset svar (embed pt :: PT (Cyc t m' zp))
-         c1 <- getRandom
-         return $! CT LSD zero one $ fromCoeffs [reduce e - c1 * sq, c1])
+  let sq = adviseCRT $ reduce s
+  in \pt -> do
+    e <- errorCoset svar (embed pt :: PT (Cyc t m' zp))
+    c1 <- getRandom
+    return $! CT LSD zero one $ fromCoeffs [reduce e - c1 * sq, c1]
 
 -- | Constraint synonym for extracting the error term of a ciphertext.
 type ErrorTermCtx t m' z zp zq =
