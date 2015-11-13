@@ -5,7 +5,7 @@ name:                lol
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.0.1.0
+version:             0.1.0.0
 synopsis:            A library for lattice cryptography.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -17,7 +17,7 @@ copyright:           Eric Crockett, Chris Peikert
 category:            Crypto
 stability:           experimental
 build-type:          Simple
-extra-source-files:  README, 
+extra-source-files:  README, CHANGES.md,
                      src/Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h,
                      test-suite/CycTests.hs,
                      test-suite/SHETests.hs,
