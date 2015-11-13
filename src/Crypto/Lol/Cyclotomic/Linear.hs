@@ -47,7 +47,7 @@ evalLin :: forall t z e r s .
            (e `Divides` r, e `Divides` s, CElt t z)
            => Linear t z e r s -> Cyc t r z -> Cyc t s z
 evalLin (D ys) r = sum (zipWith (*) ys $
-                        embed <$> (coeffsCyc Pow r :: [Cyc t e z]))
+                        embed <$> (coeffsCyc Dec r :: [Cyc t e z]))
 
 instance Additive (Cyc t s z) => Additive.C (Linear t z e r s) where
   zero = D []
@@ -67,7 +67,7 @@ instance (CElt t zp, CElt t z, z ~ LiftOf zp, Lift zp z, Fact s)
          => Lift' (Linear t zp e r s) where
   type LiftOf (Linear t zp e r s) = Linear t (LiftOf zp) e r s
 
-  lift (D ys) = D $ liftCyc Dec <$> ys
+  lift (D ys) = D $ liftCyc Pow <$> ys
 
 -- | A convenient constraint synonym for extending a linear function
 -- to larger rings.
