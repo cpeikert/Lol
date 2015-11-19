@@ -9,24 +9,20 @@ module Crypto.Lol.CRTrans
 , CRTInfo
 , crtInfoFact, crtInfoPPow, crtInfoNatC
 , gEmbPPow, gEmbNatC
-, omegaPowMod, zqHasCRT
 ) where
 
 import Crypto.Lol.LatticePrelude
-
-import Math.NumberTheory.Primes.Factorisation (carmichael, factorise)
 
 import           Control.Arrow
 import           Data.Singletons
 import           Data.Singletons.Prelude
 import           Data.Type.Natural       (Sing (SS))
-import qualified Data.Vector             as V
 
 -- | Information that characterizes the (invertible) Chinese remainder
 -- transformation over a ring @r@, namely:
 --
---     (1) a function that returns the @i@th power of some @m@th root
---     of unity (for any integer @i@)
+--     (1) a function that returns the @i@th power of some /principal/
+--     @m@th root of unity (for any integer @i@)
 --
 --     (2) the multiplicative inverse of @\\hat{m}@ in @r@.
 
@@ -72,34 +68,6 @@ instance (CRTEmbed a, CRTEmbed b) => CRTEmbed (a,b) where
   toExt = toExt *** toExt
   fromExt = fromExt *** fromExt
 
--- | Default implementation of 'omegaPow' for 'Mod' types.  The
--- implementation finds an integer element of maximal multiplicative
--- order, and raises it to the appropriate power. Therefore, the
--- functions returned for different values of the first argument are
--- consistent, i.e., @omega_{m'}^(m'/m) = omega_m@.
-omegaPowMod :: forall r . (Mod r, Enumerable r, Ring r, Eq r)
-               => Int -> Maybe (Int -> r)
-omegaPowMod =                -- use Integers for all intermediate calcs
-
-  -- CJP: there's a mismatch here between the semantics of Mod and the
-  -- use of 'values'.  If r really represents *integers* modulo
-  -- something then we're fine, otherwise we might get weird behavior.
-
-    let -- the exponent of Z_q^*
-        exponent = carmichael $ fromIntegral (proxy modulus (Proxy::Proxy r))
-        -- all prime divisors of exponent
-        primes = map fst $ factorise exponent
-        -- the powers we need to check
-        exps = map (exponent `div`) primes
-        -- whether an element is a unit with maximal order
-        isGood x = (x^exponent == one) && all (\e -> x^e /= one) exps
-    in \m -> let (mq, mr) = exponent `divMod` fromIntegral m
-             in if mr == 0
-                then let omega = head (filter isGood values) ^ mq
-                         omegaPows = V.iterateN m (*omega) one
-                     in Just $ (omegaPows V.!) . (`mod` m)
-                else Nothing
-
 omegaPowC :: (Transcendental a) => Int -> Int -> Complex a
 omegaPowC m i = cis (2*pi*fromIntegral i / fromIntegral m)
 
@@ -128,15 +96,6 @@ gEmbNatC :: (NatC p, CRTrans r) => TaggedT p Maybe (Int -> r)
 gEmbNatC = do
   (f, _) <- crtInfoNatC
   return $ \i -> one - f i      -- not checking that i /= 0 (mod p)
-
--- | @zqHasCRT m q@ says whether @Z_q@ has an /invertible/ CRT
--- transform of index @m@, i.e., @Z_q@ has an element of
--- multiplicative order @m@, and @mhat@ is invertible in @Z_q@.
-zqHasCRT :: (ToInteger i, PID i) => i -> i -> Bool
-zqHasCRT m q = let exponent = fromIntegral $ carmichael $
-                            fromIntegral q
-                   mhat = if 2 `divides` m then m `div` 2 else m
-               in m `divides` exponent && fst (extendedGCD mhat q) == one
 
 -- the complex numbers have roots of unity of any order
 instance (Transcendental a) => CRTrans (Complex a) where

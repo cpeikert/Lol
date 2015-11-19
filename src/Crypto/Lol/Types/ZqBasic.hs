@@ -18,6 +18,9 @@ import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZPP
 import Crypto.Lol.Gadget
 
+import Math.NumberTheory.Primes.Testing
+import Math.NumberTheory.Primes.Factorisation
+
 import Control.Applicative
 import Control.DeepSeq        (NFData)
 import Control.Monad          (liftM)
@@ -29,7 +32,8 @@ import System.Random
 import Test.QuickCheck
 
 -- for the Unbox instances
-import qualified Data.Vector.Generic         as V
+import qualified Data.Vector             as V
+import qualified Data.Vector.Generic         as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed         as U
 
@@ -52,7 +56,7 @@ newtype ZqBasic q z = ZqB z
 -- the q argument, though phantom, matters for safety
 type role ZqBasic nominal representational
 
---deriving instance (U.Unbox i) => V.Vector U.Vector (ZqBasic q i)
+--deriving instance (U.Unbox i) => G.Vector U.Vector (ZqBasic q i)
 --deriving instance (U.Unbox i) => M.MVector U.MVector (ZqBasic q i)
 --deriving instance (U.Unbox i) => U.Unbox (ZqBasic q i)
 
@@ -113,16 +117,44 @@ instance (Reflects p z, ReflectsTI q z,
                    negqval :: z = negate $ proxy value (Proxy::Proxy q)
                in (reduce' negqval, recip $ reduce' pval)
 
+-- | Yield a /principal/ @m@th root of unity @omega_m \in @Z_q^*@.
+-- The implementation requires @q@ to be prime.  It works by finding a
+-- generator of @Z_q^*@ and raising it to the @(q-1)/m@ power.
+-- Therefore, outputs for different values of @m@ are consistent,
+-- i.e., @omega_{m'}^(m'/m) = omega_m@.
+
+principalRootUnity :: forall q z . (ReflectsTI q z, Enumerable (ZqBasic q z))
+                      => Int -> Maybe (Int -> ZqBasic q z)
+principalRootUnity =        -- use Integers for all intermediate calcs
+    let qval = fromIntegral $ (proxy value (Proxy::Proxy q) :: z)
+        -- order of Zq^* (assuming q prime)
+        order = qval-1
+        -- the primes dividing the order of Zq^*
+        primes = fst <$> factorise order
+        -- the powers we need to check
+        exps = div order <$> primes
+        -- whether an element is a generator of Zq^*
+        isGen x = (x^order == one) && all (\e -> x^e /= one) exps
+        -- for simplicity, require q to be prime
+    in if isPrime qval
+       then \m -> let (mq,mr) = order `divMod` fromIntegral m
+                  in if mr == 0
+                     then let omega = head (filter isGen values) ^ mq
+                              omegaPows = V.iterateN m (*omega) one
+                          in Just $ (omegaPows V.!) . (`mod` m)
+                     else Nothing
+       else const Nothing       -- fail if q composite
+
+
 -- instance of CRTrans
-instance (Reflects q z, PID z, r ~ (ZqBasic q z), Mod r, Enumerable r,
-          Show z) -- for DT.trace
+instance (ReflectsTI q z, PID z, Enumerable (ZqBasic q z))
          => CRTrans (ZqBasic q z) where
 
   crtInfo =
     --DT.trace ("ZqBasic.crtInfo: q = " ++ 
     --          show (proxy value (Proxy::Proxy q) :: z)) $
     let qval :: z = proxy value (Proxy::Proxy q)
-    in \m -> (,) <$> omegaPowMod m <*>
+    in \m -> (,) <$> principalRootUnity m <*>
   -- CJP: using coerce depends on modinv returning in [0..q-1]
                      (coerce $ fromIntegral (valueHat m) `modinv` qval)
 
@@ -246,11 +278,11 @@ instance (U.Unbox z) => M.MVector U.MVector (ZqBasic q z) where
   basicUnsafeMove (MV_ZqBasic v1) (MV_ZqBasic v2) = M.basicUnsafeMove v1 v2
   basicUnsafeGrow (MV_ZqBasic v) n = MV_ZqBasic `liftM` M.basicUnsafeGrow v n
 
-instance (U.Unbox z) => V.Vector U.Vector (ZqBasic q z) where
-  basicUnsafeFreeze (MV_ZqBasic v) = V_ZqBasic `liftM` V.basicUnsafeFreeze v
-  basicUnsafeThaw (V_ZqBasic v) = MV_ZqBasic `liftM` V.basicUnsafeThaw v
-  basicLength (V_ZqBasic v) = V.basicLength v
-  basicUnsafeSlice z n (V_ZqBasic v) = V_ZqBasic $ V.basicUnsafeSlice z n v
-  basicUnsafeIndexM (V_ZqBasic v) z = ZqB `liftM` V.basicUnsafeIndexM v z
-  basicUnsafeCopy (MV_ZqBasic mv) (V_ZqBasic v) = V.basicUnsafeCopy mv v
+instance (U.Unbox z) => G.Vector U.Vector (ZqBasic q z) where
+  basicUnsafeFreeze (MV_ZqBasic v) = V_ZqBasic `liftM` G.basicUnsafeFreeze v
+  basicUnsafeThaw (V_ZqBasic v) = MV_ZqBasic `liftM` G.basicUnsafeThaw v
+  basicLength (V_ZqBasic v) = G.basicLength v
+  basicUnsafeSlice z n (V_ZqBasic v) = V_ZqBasic $ G.basicUnsafeSlice z n v
+  basicUnsafeIndexM (V_ZqBasic v) z = ZqB `liftM` G.basicUnsafeIndexM v z
+  basicUnsafeCopy (MV_ZqBasic mv) (V_ZqBasic v) = G.basicUnsafeCopy mv v
   elemseq _ = seq
