@@ -1,8 +1,7 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveDataTypeable,
-             FlexibleContexts, FlexibleInstances,
-             GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RebindableSyntax,
-             RoleAnnotations, ScopedTypeVariables, 
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
+             FlexibleInstances, GeneralizedNewtypeDeriving,
+             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
+             RebindableSyntax, RoleAnnotations, ScopedTypeVariables,
              StandaloneDeriving, TypeFamilies, UndecidableInstances #-}
 
 -- | An implementation of modular arithmetic, i.e., the ring Zq.
@@ -11,28 +10,27 @@ module Crypto.Lol.Types.ZqBasic
 ( ZqBasic -- export the type, but not the constructor (for safety)
 ) where
 
-import Crypto.Lol.LatticePrelude as LP
-import Crypto.Lol.Reflects
 import Crypto.Lol.CRTrans
+import Crypto.Lol.Gadget
+import Crypto.Lol.LatticePrelude    as LP
+import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZPP
-import Crypto.Lol.Gadget
 
-import Math.NumberTheory.Primes.Testing
 import Math.NumberTheory.Primes.Factorisation
+import Math.NumberTheory.Primes.Testing
 
 import Control.Applicative
 import Control.DeepSeq        (NFData)
 import Control.Monad          (liftM)
 import Data.Coerce
 import Data.Maybe
-import Data.Typeable
 import NumericPrelude.Numeric as NP (round)
 import System.Random
 import Test.QuickCheck
 
 -- for the Unbox instances
-import qualified Data.Vector             as V
+import qualified Data.Vector                 as V
 import qualified Data.Vector.Generic         as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed         as U
@@ -84,8 +82,8 @@ instance (ReflectsTI q z) => Mod (ZqBasic q z) where
 
 type instance CharOf (ZqBasic p z) = p
 
-instance (PPow pp, zq ~ ZqBasic pp z, 
-          PrimeField (ZPOf zq), Ring zq, Ring (ZPOf zq)) 
+instance (PPow pp, zq ~ ZqBasic pp z,
+          PrimeField (ZPOf zq), Ring zq, Ring (ZPOf zq))
          => ZPP (ZqBasic (pp :: PrimePower) z) where
 
   type ZPOf (ZqBasic pp z) = ZqBasic (PrimePP pp) z
@@ -151,7 +149,7 @@ instance (ReflectsTI q z, PID z, Enumerable (ZqBasic q z))
          => CRTrans (ZqBasic q z) where
 
   crtInfo =
-    --DT.trace ("ZqBasic.crtInfo: q = " ++ 
+    --DT.trace ("ZqBasic.crtInfo: q = " ++
     --          show (proxy value (Proxy::Proxy q) :: z)) $
     let qval :: z = proxy value (Proxy::Proxy q)
     in \m -> (,) <$> principalRootUnity m <*>
@@ -171,9 +169,9 @@ instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
   -- https://ghc.haskell.org/trac/ghc/ticket/8848
   {-# SPECIALIZE instance ReflectsTI q Int => Additive.C (ZqBasic q Int) #-}
   {-# SPECIALIZE instance ReflectsTI q Int64 => Additive.C (ZqBasic q Int64) #-}
-  
+
   zero = ZqB zero
-  
+
   (+) = let qval = proxy value (Proxy::Proxy q)
         in \ (ZqB x) (ZqB y) ->
         let z = x + y
@@ -195,8 +193,8 @@ instance (ReflectsTI q z, PID z, Show z) => Field.C (ZqBasic q z) where
 
   recip = let qval = proxy value (Proxy::Proxy q)
               -- safe because modinv returns in range 0..qval-1
-          in \(ZqB x) -> ZqB $ 
-               fromMaybe (error $ "ZqB.recip fail: " ++ 
+          in \(ZqB x) -> ZqB $
+               fromMaybe (error $ "ZqB.recip fail: " ++
                          show x ++ "\t" ++ show qval) $ modinv x qval
 
 -- (canonical) instance of IntegralDomain, needed for FastCyc
@@ -206,7 +204,7 @@ instance (Field (ZqBasic q z)) => IntegralDomain.C (ZqBasic q z) where
 -- Gadget-related instances
 instance (ReflectsTI q z, Additive z)
          => Gadget TrivGad (ZqBasic q z) where
-  
+
   gadget = tag [one]
 
 instance (ReflectsTI q z, Ring z) => Decompose TrivGad (ZqBasic q z) where
@@ -220,7 +218,7 @@ instance (ReflectsTI q z, Ring z) => Correct TrivGad (ZqBasic q z) where
 
 instance (ReflectsTI q z, Additive z, Reflects b z)
          => Gadget (BaseBGad b) (ZqBasic q z) where
-  
+
   gadget = let qval = proxy value (Proxy :: Proxy q)
                bval = proxy value (Proxy :: Proxy b)
                k = logCeil bval qval
