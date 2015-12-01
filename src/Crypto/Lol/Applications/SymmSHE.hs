@@ -25,7 +25,7 @@ SK, PT, CT                    -- don't export constructors!
 , embedSK, embedCT, twaceCT
 , tunnelCT
 -- * Constraint synonyms
-, AddPublicCtx, MulPublicCtx, InnerKeySwitchCtx, KeySwitchCtx, KSHintCtx, ModSwitchPTCtx
+, AddPublicCtx, MulPublicCtx, SwitchCtx, KeySwitchCtx, KSHintCtx, ModSwitchPTCtx
 , ToSDCtx, EncryptCtx, TunnelCtx, GenSKCtx, DecryptCtx
 , ErrorTermCtx
 ) where
@@ -260,25 +260,25 @@ type KnapsackCtx t (m' :: Factored) z zq' =
 (*>>) :: Ring r => r -> Polynomial r -> Polynomial r
 (*>>) r = fmap (r *)
 
-knapsack :: forall t m' z zq' . (KnapsackCtx t m' z zq')
-            => [Polynomial (Cyc t m' zq')] -> [Cyc t m' z] -> Polynomial (Cyc t m' zq')
+knapsack :: (KnapsackCtx t m' z zq')
+            => [Polynomial (Cyc t m' zq')] -> [Cyc t m' z]
+            -> Polynomial (Cyc t m' zq')
 -- adviseCRT here because we are about to map (*) onto each polynomial coeff
 knapsack hint xs = sum (zipWith (*>>) (adviseCRT <$> reduce <$> xs) hint)
 
-type InnerKeySwitchCtx gad t m' zq zq' =
-  (RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
-   Decompose gad zq', KnapsackCtx t m' (DecompOf zq') zq')
+type SwitchCtx gad t m' zq =
+  (Decompose gad zq, KnapsackCtx t m' (DecompOf zq) zq)
 
 -- Helper function: applies key-switch hint to a ring element.
--- Signature is such that we should rescale input and output.
-switch :: forall gad t m' zq' zq . (InnerKeySwitchCtx gad t m' zq zq')
-  => Tagged gad [Polynomial (Cyc t m' zq')] -> Cyc t m' zq -> Polynomial (Cyc t m' zq)
-switch hint c = rescaleLinearMSD $ untag $ knapsack <$>
-                hint <*> decompose (rescaleCyc Pow c :: Cyc t m' zq')
+switch :: (SwitchCtx gad t m' zq)
+          => Tagged gad [Polynomial (Cyc t m' zq)] -> Cyc t m' zq
+          -> Polynomial (Cyc t m' zq)
+switch hint c = untag $ knapsack <$> hint <*> decompose c
 
 -- | Constraint synonym for key switching.
 type KeySwitchCtx gad t m' zp zq zq' =
-  (ToSDCtx t m' zp zq, InnerKeySwitchCtx gad t m' zq zq')
+  (RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
+   ToSDCtx t m' zp zq, SwitchCtx gad t m' zq')
 
 -- | Switch a linear ciphertext under @s_in@ to a linear one under @s_out@
 keySwitchLinear :: forall gad t m' zp zq zq' z rnd m .
@@ -291,7 +291,8 @@ keySwitchLinear skout (SK _ sin) = tagT $ do
   return $ hint `deepseq`
     (\ct -> let CT MSD k l c = toMSD ct
                 [c0,c1] = coeffs c
-            in CT MSD k l $ P.const c0 + switch hint c1)
+                c1' = rescaleCyc Pow c1
+            in CT MSD k l $ P.const c0 + rescaleLinearMSD (switch hint c1'))
 
 -- | Switch a quadratic ciphertext (i.e., one with three components)
 -- to a linear one under the /same/ key.
@@ -304,7 +305,8 @@ keySwitchQuadCirc sk@(SK _ s) = tagT $ do
   return $ hint `deepseq` (\ct ->
     let CT MSD k l c = toMSD ct
         [c0,c1,c2] = coeffs c
-    in CT MSD k l $ P.fromCoeffs [c0,c1] + switch hint c2)
+        c2' = rescaleCyc Pow c2
+    in CT MSD k l $ P.fromCoeffs [c0,c1] + rescaleLinearMSD (switch hint c2'))
 
 ---------- Misc homomorphic operations ----------
 
@@ -452,25 +454,26 @@ twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 
 
 -- | Constraint synonym for ring tunneling.
-type TunnelCtx t e r s e' r' s' z zp zq zq' gad =
+type TunnelCtx t e r s e' r' s' z zp zq gad =
   (ExtendLinIdx e r s e' r' s',     -- liftLin
    e' ~ (e * (r' / r)),             -- convenience; implied by prev constraint
-   KSHintCtx gad t r' z zq',        -- ksHint
+   ToSDCtx t r' zp zq,              -- toMSD
+   KSHintCtx gad t r' z zq,         -- ksHint
    Reduce z zq,                     -- Reduce on Linear
    Lift zp z,                       -- liftLin
    CElt t zp,                       -- liftLin
-   KeySwitchCtx gad t s' zp zq zq') -- keySwitch
+   SwitchCtx gad t s' zq)           -- switch
 
 -- | Homomorphically apply the @E@-linear function that maps the
 -- elements of the decoding basis of @R\/E@ to the corresponding
 -- @S@-elements in the input array.
-tunnelCT :: forall gad t e r s e' r' s' z zp zq zq' rnd .
-  (TunnelCtx t e r s e' r' s' z zp zq zq' gad,
+tunnelCT :: forall gad t e r s e' r' s' z zp zq rnd .
+  (TunnelCtx t e r s e' r' s' z zp zq gad,
    MonadRandom rnd)
   => Linear t zp e r s
   -> SK (Cyc t s' z)
   -> SK (Cyc t r' z)
-  -> TaggedT (gad,zq') rnd (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq))
+  -> TaggedT gad rnd (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq))
 tunnelCT f skout (SK _ sin) = tagT $ (do -- in rnd
   -- generate hints
   let f' = extendLin $ lift f :: Linear t z e' r' s'
@@ -478,9 +481,9 @@ tunnelCT f skout (SK _ sin) = tagT $ (do -- in rnd
       -- choice of basis here must match coeffsCyc basis below
       ps = proxy powBasis (Proxy::Proxy e')
       comps = (evalLin f' . (adviseCRT sin *)) <$> ps
-  hints :: [Tagged gad [Polynomial (Cyc t s' zq')]] <- CM.mapM (ksHint skout) comps
-  return $ hints `deepseq` \ct' ->
-    let CT MSD 0 s c = toMSD $ absorbGFactors ct'
+  hints :: [Tagged gad [Polynomial (Cyc t s' zq)]] <- CM.mapM (ksHint skout) comps
+  return $ hints `deepseq` \ct ->
+    let CT MSD 0 s c = toMSD $ absorbGFactors ct
         [c0,c1] = coeffs c
         -- apply E-linear function to constant term c0
         c0' = evalLin f'q c0

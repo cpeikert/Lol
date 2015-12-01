@@ -8,7 +8,7 @@ module SHETests (sheTests) where
 
 import TestTypes
 
-import Control.Applicative hiding ((<$$>))
+import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
 
@@ -240,12 +240,13 @@ tunnelTests =
     (prop_ringTunnel (Proxy::Proxy '(F40,ZQ1,F20,F60,TrivGad,ZQ2)) :: Cyc RT F8 ZP4 -> Property)]
 
 prop_ringTunnel :: forall c e r s e' r' s' z zp zq zq' gad . 
-  (TunnelCtx c e r s e' r' s' z zp zq zq' gad, 
+  (TunnelCtx c e r s e' r' s' z zp zq' gad,
+   RescaleCyc (Cyc c) zq zq', RescaleCyc (Cyc c) zq' zq,
    EncryptCtx c r r' z zp zq,
    GenSKCtx c r' z Double,
    GenSKCtx c s' z Double,
    DecryptCtx c s s' z zp zq,
-   Random (Cyc c s zp),
+   Random zp,
    e ~ FGCD r s, Fact e) 
   => Proxy '(r', zq, s, s', gad, zq') -> Cyc c r zp -> Property
 prop_ringTunnel _ x = monadicIO $ do
@@ -259,9 +260,10 @@ prop_ringTunnel _ x = monadicIO $ do
   skin :: SK (Cyc c r' (LiftOf zp)) <- genSK v
   skout :: SK (Cyc c s' (LiftOf zp)) <- genSK v
   y :: CT r zp (Cyc c r' zq) <- encrypt skin x
-  tunn <- proxyT (tunnelCT f skout skin) (Proxy::Proxy (gad,zq'))
-  let y' = tunn y
-      actual = decrypt skout y' :: Cyc c s zp
+  tunn <- proxyT (tunnelCT f skout skin) (Proxy::Proxy gad)
+  let y' = tunn $ rescaleLinearCT y :: CT s zp (Cyc c s' zq')
+      y'' = rescaleLinearCT y' :: CT s zp (Cyc c s' zq)
+      actual = decrypt skout y'' :: Cyc c s zp
   assert $ expected == actual
 
 
