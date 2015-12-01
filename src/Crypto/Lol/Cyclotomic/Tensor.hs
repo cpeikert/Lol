@@ -99,7 +99,7 @@ class (TElt t Double, TElt t (Complex Double))
                      t m r -> t m r, -- crt
                      t m r -> t m r) -- crtInv
 
-  -- | Sample from the "skewed" Gaussian error distribution @t*D@
+  -- | Sample from the "tweaked" Gaussian error distribution @t*D@
   -- in the decoding basis, where @D@ has scaled variance @v@.
   tGaussianDec :: (OrdFloat q, Random q, TElt t q,
                    ToRational v, Fact m, MonadRandom rnd)
