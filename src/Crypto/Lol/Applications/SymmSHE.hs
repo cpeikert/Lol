@@ -25,9 +25,10 @@ SK, PT, CT                    -- don't export constructors!
 , embedSK, embedCT, twaceCT
 , tunnelCT
 -- * Constraint synonyms
-, AddPublicCtx, MulPublicCtx, SwitchCtx, KeySwitchCtx, KSHintCtx, ModSwitchPTCtx
-, ToSDCtx, EncryptCtx, TunnelCtx, GenSKCtx, DecryptCtx
-, ErrorTermCtx
+, GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx, DecryptCtx
+, AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
+, SwitchCtx, KeySwitchCtx, KSHintCtx
+, TunnelCtx
 ) where
 
 import qualified Algebra.Additive as Additive (C)
@@ -108,8 +109,7 @@ encrypt (SK svar s) =
 
 -- | Constraint synonym for extracting the error term of a ciphertext.
 type ErrorTermCtx t m' z zp zq =
-  (Reduce z zq, Lift' zq, CElt t z, CElt t (LiftOf zq),
-   ToSDCtx t m' zp zq)
+  (Reduce z zq, Lift' zq, CElt t z, CElt t (LiftOf zq), ToSDCtx t m' zp zq)
 
 -- | Extract the error term of a ciphertext.
 errorTerm :: (ErrorTermCtx t m' z zp zq)
@@ -232,7 +232,7 @@ lweSample (SK svar s) =
   let sq = adviseCRT $ negate $ reduce s 
   in do
     e <- errorRounded svar
-    c1 <- adviseCRT <$> getRandom -- we would like hints to be in CRT form
+    c1 <- adviseCRT <$> getRandom -- want entire hint to be in CRT form
     return $ fromCoeffs [c1 * sq + reduce (e `asTypeOf` s), c1]
 
 -- | Constraint synonym for generating key-switch hints.
@@ -253,27 +253,22 @@ ksHint skout val = do -- rnd monad
   samples <- DT.mapM (\as -> replicateM (length as) (lweSample skout)) valgad
   return $ zipWith (+) <$> (map P.const <$> valgad) <*> samples
 
-type KnapsackCtx t (m' :: Factored) z zq' =
-  (Reduce z zq', Fact m', CElt t z, CElt t zq')
-
 -- poor man's module multiplication for knapsack
-(*>>) :: Ring r => r -> Polynomial r -> Polynomial r
+(*>>) :: (Ring r, Functor f) => r -> f r -> f r
 (*>>) r = fmap (r *)
 
-knapsack :: (KnapsackCtx t m' z zq')
-            => [Polynomial (Cyc t m' zq')] -> [Cyc t m' z]
-            -> Polynomial (Cyc t m' zq')
--- adviseCRT here because we are about to map (*) onto each polynomial coeff
-knapsack hint xs = sum (zipWith (*>>) (adviseCRT <$> reduce <$> xs) hint)
+knapsack :: (Fact m', CElt t zq, r'q ~ Cyc t m' zq)
+            => [Polynomial r'q] -> [r'q] -> Polynomial r'q
+-- adviseCRT here because we map (x *) onto each polynomial coeff
+knapsack hint xs = sum $ zipWith (*>>) (adviseCRT <$> xs) hint
 
-type SwitchCtx gad t m' zq =
-  (Decompose gad zq, KnapsackCtx t m' (DecompOf zq) zq)
+type SwitchCtx gad t m' zq = 
+  (Decompose gad zq, Fact m', CElt t zq, CElt t (DecompOf zq))
 
 -- Helper function: applies key-switch hint to a ring element.
-switch :: (SwitchCtx gad t m' zq)
-          => Tagged gad [Polynomial (Cyc t m' zq)] -> Cyc t m' zq
-          -> Polynomial (Cyc t m' zq)
-switch hint c = untag $ knapsack <$> hint <*> decompose c
+switch :: (SwitchCtx gad t m' zq, r'q ~ Cyc t m' zq)
+          => Tagged gad [Polynomial r'q] -> r'q -> Polynomial r'q
+switch hint c = untag $ knapsack <$> hint <*> (fmap reduce <$> decompose c)
 
 -- | Constraint synonym for key switching.
 type KeySwitchCtx gad t m' zp zq zq' =
