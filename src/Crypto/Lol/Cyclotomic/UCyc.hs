@@ -268,7 +268,7 @@ instance (Decompose gad zq, Fact m,
   decompose (Scalar c) = pasteT $ Scalar <$> peelT (decompose c)
   decompose (Sub c) = pasteT $ Sub <$> peelT (decompose c)
 
-  -- traverse: Traversable (c m) and Applicative (Tagged gad ZL)
+  -- traverse: Traversable (UCyc t m) and Applicative (Tagged gad ZL)
   decompose x = fromZL $ traverse (toZL . decompose) $ forcePow x
     where toZL :: Tagged s [a] -> TaggedT s ZipList a
           toZL = coerce
@@ -278,7 +278,7 @@ instance (Decompose gad zq, Fact m,
 -- promote Correct, using the decoding basis
 instance (Correct gad zq, Fact m, CElt t zq)
          => Correct gad (UCyc t m zq) where
-  -- sequenceA: Applicative (c m) and Traversable (TaggedT [])
+  -- sequenceA: Applicative (UCyc t m) and Traversable (TaggedT [])
   correct bs = (correct . pasteT) <$> sequenceA (forceDec <$> peelT bs)
 
 -- generic RescaleCyc instance
