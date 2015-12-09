@@ -212,8 +212,6 @@ scalarPow' = coerce . (go $ proxy totientFact (Proxy::Proxy m))
 
 -- | Forces a delayed array to a manifest array.
 force :: (Shape sh, Unbox r) => Array D sh r -> Array U sh r
--- CJP: computeS just until we figure out how to avoid nested parallel
--- computation!
 --force = computeS
 force = runIdentity . computeP
 
