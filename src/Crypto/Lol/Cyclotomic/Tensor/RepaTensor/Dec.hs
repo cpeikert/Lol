@@ -1,20 +1,19 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, NoImplicitPrelude,
              RebindableSyntax, ScopedTypeVariables #-}
 
--- | (Continuous) Gaussian sampling for Repa arrays
+-- | Linear transforms and operations related to the decoding basis.
 
-module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Gauss
-( tGaussianDec' ) where
+module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
+( tGaussianDec', gSqNormDec' ) where
 
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon
+import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as R
 import Crypto.Lol.GaussRandom
 import Crypto.Lol.LatticePrelude
 
 import Control.Monad.Random
 
--- | A function tagged by the cyclotomic index which,
--- given a (scaled) variance, outputs a Gaussian-distributed
--- vector in the decoding basis
+-- | Given @v=r^2@, yields the decoding-basis coefficients of a sample
+-- from the tweaked Gaussian @t_m \cdot D_r@.
 tGaussianDec' :: forall m v r rnd .
                  (Fact m, OrdFloat r, Random r, Unbox r, Elt r,
                   ToRational v, MonadRandom rnd)
@@ -27,25 +26,49 @@ tGaussianDec' =
   in \v -> do             -- rnd monad
     x <- realGaussians (v * fromIntegral (m `div` rad)) n
     let arr = Arr $ fromUnboxed (Z:.n) x
-    return $ fD arr
+    return $ fE arr
 
--- | The fully tensored D transformation
-fD :: (Fact m, Transcendental r, Unbox r, Elt r) => Arr m r -> Arr m r
-fD = eval $ fTensor $ ppTensor pD
+-- | The @E_m@ transformation for an arbitrary @m@.
+fE :: (Fact m, Transcendental r, Unbox r, Elt r) => Arr m r -> Arr m r
+fE = eval $ fTensor $ ppTensor pE
 
--- | The D transformation for a prime
-pD :: forall p r . (NatC p, Transcendental r, Unbox r, Elt r)
+-- | The @E_p@ transformation for a prime @p@.
+pE :: forall p r . (NatC p, Transcendental r, Unbox r, Elt r)
       => Tagged p (Trans r)
-pD = let pval = proxy valueNatC (Proxy::Proxy p)
-     in tag $
-        if pval==2
-        then Id 1
-        else trans (pval-1) $ mulMat $ force $
-                            fromFunction (Z :. pval-1 :. pval-1)
-                            (\(Z:.i:.j) ->
-                              -- mtx is sqrt(2)*[ cos(2pi*i*(j+1)/p) | sin(same) ]
-                              -- (signs of columns doesn't matter for our purposes.)
-                              let theta = 2 * pi * fromIntegral (i*(j+1)) /
-                                          fromIntegral pval
-                              in sqrt 2 * if j < pval `div` 2
-                                          then cos theta else sin theta)
+pE = let pval = proxy valueNatC (Proxy::Proxy p)
+     in tag $ if pval==2 then Id 1
+              else trans (pval-1) $ mulMat $ force $
+                   fromFunction (Z :. pval-1 :. pval-1)
+              (\(Z:.i:.j) ->
+               -- sqrt(2)*[ cos(2pi*i*(j+1)/p) | sin(same) ]
+               -- (signs of columns doesn't matter for our purposes.)
+               let theta = 2 * pi * fromIntegral (i*(j+1)) /
+                           fromIntegral pval
+               in sqrt 2 * if j < pval `div` 2
+                           then cos theta else sin theta)
+
+-- | Given coefficient tensor @e@ with respect to the decoding basis
+-- of @R@, yield the (scaled) squared norm of @g_m \cdot e@ under
+-- the canonical embedding, namely,
+--  @\hat{m}^{ -1 } \cdot || \sigma(g_m -- \cdot e) ||^2@ .
+gSqNormDec' :: (Fact m, Ring r, Unbox r, Elt r) => Arr m r -> r
+gSqNormDec' e@(Arr ae) = let (Arr ae') = fGramDec' e
+                         -- use sumAllP (define it in RTCommon)?
+                         in sumAllS $ force $ R.zipWith (*) ae ae'
+
+-- | Multiply by @\hat{m}@ times the Gram matrix of decoding basis of
+-- @R^vee@.
+fGramDec' :: (Fact m, Ring r, Unbox r, Elt r) => Arr m r -> Arr m r
+fGramDec' = eval $ fTensor $ ppTensor pGramDec
+
+-- | Multiply by (scaled) Gram matrix of decoding basis: (I_{p-1} + all-1s).
+pGramDec :: forall p r . (NatC p, Ring r, Unbox r, Elt r) => Tagged p (Trans r)
+pGramDec =
+  let pval = proxy valueNatC (Proxy::Proxy p)
+  in tag $ if pval==2 then Id 1
+           else trans (pval-1) $
+                    \arr -> let sums = sumS arr
+                            in fromFunction (extent arr)
+                                   (\sh@(sh' :. _) -> arr ! sh + sums ! sh')
+
+
