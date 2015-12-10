@@ -25,7 +25,10 @@ extra-source-files:  README, CHANGES.md,
                      test-suite/TestTypes.hs,
                      test-suite/ZqTests.hs
 cabal-version:       >=1.10
-description:         Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
+description:         
+    Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
+    For a detailed description of interfaces and functionality, see 
+    <https://eprint.iacr.org/2015/1134 Λ ○ λ: A Functional Library for Lattice Cryptography>.
 source-repository head
   type: git
   location: https://github.com/cpeikert/Lol
