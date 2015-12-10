@@ -184,10 +184,10 @@ instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
 instance (ReflectsTI q z, Ring z) => Ring.C (ZqBasic q z) where
     (ZqB x) * (ZqB y) = reduce' $ x * y
 
-    fromInteger x =
+    fromInteger =
       let qval = toInteger (proxy value (Proxy::Proxy q) :: z)
     -- this is safe as long as type z can hold the value of q
-      in ZqB $ fromInteger $ x `mod` qval
+      in \x -> ZqB $ fromInteger $ x `mod` qval
 
 -- instance of Field
 instance (ReflectsTI q z, PID z, Show z) => Field.C (ZqBasic q z) where
