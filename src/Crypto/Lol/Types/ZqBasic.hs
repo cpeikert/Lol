@@ -21,6 +21,7 @@ import Math.NumberTheory.Primes.Factorisation
 import Math.NumberTheory.Primes.Testing
 
 import Control.Applicative
+import Control.Arrow
 import Control.DeepSeq        (NFData)
 import Control.Monad          (liftM)
 import Data.Coerce
@@ -203,9 +204,7 @@ instance (Field (ZqBasic q z)) => IntegralDomain.C (ZqBasic q z) where
     divMod a b = (a/b, zero)
 
 -- Gadget-related instances
-instance (ReflectsTI q z, Additive z)
-         => Gadget TrivGad (ZqBasic q z) where
-
+instance (ReflectsTI q z, Additive z) => Gadget TrivGad (ZqBasic q z) where
   gadget = tag [one]
 
 instance (ReflectsTI q z, Ring z) => Decompose TrivGad (ZqBasic q z) where
@@ -225,7 +224,8 @@ instance (ReflectsTI q z, Additive z, Reflects b z)
                k = logCeil bval qval
            in tag $ map reduce' (take k (iterate (*bval) one))
 
-instance (ReflectsTI q z, Ring z, Reflects b z) => Decompose (BaseBGad b) (ZqBasic q z) where
+instance (ReflectsTI q z, Ring z, Reflects b z)
+    => Decompose (BaseBGad b) (ZqBasic q z) where
   type DecompOf (ZqBasic q z) = z
   decompose = let qval = proxy value (Proxy :: Proxy q)
                   bval = proxy value (Proxy :: Proxy b)
@@ -233,7 +233,49 @@ instance (ReflectsTI q z, Ring z, Reflects b z) => Decompose (BaseBGad b) (ZqBas
                   radices = replicate (k-1) bval
               in tag . decomp radices . lift
 
--- TODO: implement Correct for BaseBGad b
+correct' :: forall z . (IntegralDomain z, Ord z)
+            => z                   -- ^ modulus @q@
+            -> z                   -- ^ base @b@
+            -> [z]                 -- ^ input vector @v = s \cdot g^t + e@
+            -> (z, [z])            -- ^ (s, e)
+correct' q b v =
+  let (w, x) = barBtRnd (q `div` b) v
+      (v', s) = subDiv one v $ qbarD w x
+  in (s, zipWith (-) v' $ iterate (*b) s)
+    where
+
+      -- | Yield @w = round(\bar{B}^t \cdot v / q)@, along with the inner
+      -- product of @w@ with the top row of @q \bar{D}@.
+      barBtRnd :: z -> [z] -> ([z], z)
+      barBtRnd _ (_:[]) = ([], zero)
+      barBtRnd q' (v1:vs@(v2:_)) = let quo = fst $ divModCent (b*v1-v2) q
+                                       (w,acc') = barBtRnd (q' `div` b) vs
+                                   in (quo : w, quo*q' + acc')
+
+      -- | Yield @(q \bar{D}) \cdot w@, given precomputed first entry
+      qbarD :: [z] -> z -> [z]
+      qbarD [] x = [x]
+      qbarD (w0:ws) x = x : qbarD ws (b*x - q*w0)
+
+      -- | Yield the difference between the input vectors, along with
+      -- their final entry divided by appropriate power of @b@.
+      subDiv :: z -> [z] -> [z] -> ([z], z)
+      subDiv acc [v0] [v'0] = let y = v0-v'0 
+                              in ([y], fst $ y `divModCent` acc)
+      subDiv acc (v0:vs) (v'0:v's) = let (ys, s) = subDiv (acc*b) vs v's
+                                     in ((v0-v'0) : ys, s)
+
+instance (ReflectsTI q z, Ring z, Reflects b z)
+    => Correct (BaseBGad b) (ZqBasic q z) where
+
+  correct =
+    let qval = proxy value (Proxy :: Proxy q)
+        bval = proxy value (Proxy :: Proxy b)
+        k = logCeil bval qval
+    in \tv -> let v = untag tv
+              in if k == length v
+                 then first reduce $ correct' qval bval (lift <$> v)
+                 else error "Correct BaseBGad ZqBasic: wrong length"
 
 -- instance of Random
 instance (ReflectsTI q z, Random z) => Random (ZqBasic q z) where
