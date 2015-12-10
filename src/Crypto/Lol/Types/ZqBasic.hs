@@ -288,8 +288,9 @@ instance (ReflectsTI q z, Ring z, Reflects b z)
   correct =
     let qval = proxy value (Proxy :: Proxy q)
         bval = proxy value (Proxy :: Proxy b)
+        correct' = correctZ qval bval
     in \tv -> let v = untag tv
-                  es = correctZ qval bval (lift <$> v)
+                  es = correct' $ lift <$> v
               in (head v - reduce (head es), es)
 
 -- instance of Random
