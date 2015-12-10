@@ -172,6 +172,8 @@ crtSet :: (m `Divides` m', ZPP r, CElt t r, CElt t (ZPOf r))
           => Tagged m [Cyc t m' r]
 crtSet = coerceCyc U.crtSet
 
+type instance LiftOf (Cyc t m r) = Cyc t m (LiftOf r)
+
 -- | Lift in the specified basis.
 liftCyc :: (Lift b a, Fact m, CElt t a, CElt t b)
            => Basis -> Cyc t m b -> Cyc t m a

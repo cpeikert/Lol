@@ -19,6 +19,7 @@ import Algebra.Additive as Additive (C)
 import Algebra.Ring     as Ring (C)
 
 import Control.Applicative
+import Control.Arrow
 import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Identity
@@ -26,7 +27,7 @@ import Control.Monad.Random
 import Control.Monad.Trans (lift)
 
 import Data.Coerce
-import Data.Constraint
+import Data.Constraint  hiding ((***))
 import Data.Foldable as F
 import Data.Int
 import Data.Maybe
@@ -212,8 +213,15 @@ instance Tensor CT where
   fmapT f (CT v) = CT $ coerce (SV.map f) v
   fmapT f v@(ZV _) = fmapT f $ toCT v
 
-  fmapTM f (CT (CT' arr)) = liftM (CT . CT') $ SV.mapM f arr
+  fmapTM f (CT (CT' v)) = liftM (CT . CT') $ SV.mapM f v
   fmapTM f v@(ZV _) = fmapTM f $ toCT v
+
+  unzipTElt (CT (CT' v)) = (CT . CT') *** (CT . CT') $ unzip v
+  unzipTElt v = unzipTElt $ toCT v
+
+  unzipT v@(CT _) = unzipT $ toZV v
+  unzipT (ZV v) = ZV *** ZV $ unzipIZV v
+
 
 coerceTw :: (Functor mon) => (TaggedT '(m, m') mon (Vector r -> Vector r)) -> mon (CT' m' r -> CT' m r)
 coerceTw = (coerce <$>) . untagT
@@ -475,9 +483,7 @@ replM = let n = proxy totientFact (Proxy::Proxy m)
         in liftM coerce . SV.replicateM n
 
 --{-# INLINE scalarPow' #-}
-scalarPow' :: forall t m r v .
-  (Fact m, Additive r, Storable r)
-  => r -> CT' m r
+scalarPow' :: forall m r . (Fact m, Additive r, Storable r) => r -> CT' m r
 -- constant-term coefficient is first entry wrt powerful basis
 scalarPow' = 
   let n = proxy totientFact (Proxy::Proxy m)
@@ -676,10 +682,10 @@ instance (Reflects q Int64) => Dispatch (ZqBasic q Int64) where
   dmul aout bout totm =
     let q = proxy value (Proxy::Proxy q)
     in mulRq aout bout totm q
-  dgcrt pout totm pfac numFacts gcoeffs' = error "dgcrt zq"
+  dgcrt _ _ _ _ _ = error "dgcrt zq"
     --let q = proxy value (Proxy::Proxy q)
     --in tensorGCRTRq pout totm pfac numFacts gcoeffs' q
-  dginvcrt pout totm pfac numFacts gcoeffs' = error "dginvcrt zq"
+  dginvcrt _ _ _ _ _ = error "dginvcrt zq"
     --let q = proxy value (Proxy::Proxy q)
     --in tensorGInvCRTRq pout totm pfac numFacts gcoeffs' q
   dgaussdec = error "cannot call CT gaussianDec on type ZqBasic"

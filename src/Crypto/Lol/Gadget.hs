@@ -46,9 +46,9 @@ class (Gadget gad u, Reduce (DecompOf u) u) => Decompose gad u where
 
 class Gadget gad u => Correct gad u where
 
-  -- | Correct a "noisy" encoding of an element (see 'encode').
-  correct :: Tagged gad [u] -> u
-
+  -- | Error-correct a "noisy" encoding of an element (see 'encode'),
+  -- returning the encoded element and the error vector.
+  correct :: Tagged gad [u] -> (u, [LiftOf u])
 
 
 -- instances for products

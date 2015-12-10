@@ -145,6 +145,12 @@ class (TElt t Double, TElt t (Complex Double))
   fmapTM :: (Monad mon, Fact m, TElt t a, TElt t b)
              => (a -> mon b) -> t m a -> mon (t m b)
 
+  -- | Unzip for types that satisfy 'TElt'.
+  unzipTElt :: (Fact m, TElt t (a,b), TElt t a, TElt t b) 
+               => t m (a,b) -> (t m a, t m b)
+  -- | Unzip for arbitrary types.
+  unzipT :: (Fact m) => t m (a,b) -> (t m a, t m b)
+
 -- | Convenience value indicating whether 'crtFuncs' exists.
 hasCRTFuncs :: forall t m r . (ZeroTestable r, IntegralDomain r, CRTrans r, 
                                Tensor t, Fact m, TElt t r)

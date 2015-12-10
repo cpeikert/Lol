@@ -7,7 +7,7 @@
 -- | Provides applicative-like functions for indexed vectors
 
 module Crypto.Lol.Types.IZipVector
-( IZipVector, iZipVector, unIZipVector
+( IZipVector, iZipVector, unIZipVector, unzipIZV
 ) where
 
 import Crypto.Lol.Factored
@@ -42,6 +42,10 @@ iZipVector = let n = proxy totientFact (Proxy::Proxy m)
             in \vec -> if n == V.length vec
                        then Just $ IZipVector vec
                        else Nothing
+
+unzipIZV :: (Fact m) => IZipVector m (a,b) -> (IZipVector m a, IZipVector m b)
+unzipIZV (IZipVector v) = let (va,vb) = V.unzip v
+                          in (IZipVector va, IZipVector vb)
 
 -- don't export
 repl :: forall m a . (Fact m) => a -> IZipVector m a

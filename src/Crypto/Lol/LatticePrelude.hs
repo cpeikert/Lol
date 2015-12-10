@@ -15,7 +15,7 @@ module Crypto.Lol.LatticePrelude
 -- * Classes
   Enumerable(..)
 , Mod(..)
-, Reduce(..), Lift, Lift'(..), Rescale(..), Encode(..), msdToLSD
+, Reduce(..), LiftOf, Lift, Lift'(..), Rescale(..), Encode(..), msdToLSD
 -- * Numeric
 , module Crypto.Lol.Types.Numeric
 -- * Complex
@@ -81,9 +81,11 @@ class (Additive a, Additive b) => Reduce a b where
 -- | Represents that @b@ can be lifted to a "short" @a@ congruent to @b@.
 type Lift b a = (Lift' b, LiftOf b ~ a)
 
+-- | The type of representatives of @b@.
+type family LiftOf b
+
 -- | Fun-dep version of Lift.
 class (Reduce (LiftOf b) b) => Lift' b where
-  type LiftOf b
   lift :: b -> LiftOf b
 
 -- | Represents that @a@ can be rescaled to @b@, as an "approximate"
@@ -126,11 +128,11 @@ roundCoset = let pval = proxy modulus (Proxy::Proxy zp)
 
 ---------- Instances for product groups/rings ----------
 
+type instance LiftOf (a,b) = Integer
+
 instance (Mod a, Mod b, Lift' a, Lift' b, Reduce Integer (a,b),
           ToInteger (LiftOf a), ToInteger (LiftOf b))
          => Lift' (a,b) where
-
-  type LiftOf (a,b) = Integer
 
   lift (a,b) =
     let moda = toInteger $ proxy modulus (Proxy::Proxy a)

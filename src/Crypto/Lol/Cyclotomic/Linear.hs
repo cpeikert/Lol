@@ -63,10 +63,10 @@ instance (Reduce z zq, Fact s, CElt t z, CElt t zq)
          => Reduce (Linear t z e r s) (Linear t zq e r s) where
   reduce (D ys) = D $ reduce <$> ys
 
+type instance LiftOf (Linear t zp e r s) = Linear t (LiftOf zp) e r s
+
 instance (CElt t zp, CElt t z, z ~ LiftOf zp, Lift zp z, Fact s)
          => Lift' (Linear t zp e r s) where
-  type LiftOf (Linear t zp e r s) = Linear t (LiftOf zp) e r s
-
   lift (D ys) = D $ liftCyc Pow <$> ys
 
 -- | A convenient constraint synonym for extending a linear function

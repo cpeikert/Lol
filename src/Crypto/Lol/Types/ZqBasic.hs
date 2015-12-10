@@ -98,8 +98,9 @@ instance (ReflectsTI q z) => Reduce z (ZqBasic q z) where
 instance (Reflects q z, Ring (ZqBasic q z)) => Reduce Integer (ZqBasic q z) where
   reduce = fromInteger
 
+type instance LiftOf (ZqBasic q z) = z
+
 instance (ReflectsTI q z) => Lift' (ZqBasic q z) where
-  type LiftOf (ZqBasic q z) = z
   lift = decode'
 
 instance (ReflectsTI q z, ReflectsTI q' z, Ring z)
@@ -213,7 +214,7 @@ instance (ReflectsTI q z, Ring z) => Decompose TrivGad (ZqBasic q z) where
 
 instance (ReflectsTI q z, Ring z) => Correct TrivGad (ZqBasic q z) where
   correct a = case untag a of
-    [b] -> b
+    [b] -> (b, [zero])
     _ -> error "Correct TrivGad: wrong length"
 
 instance (ReflectsTI q z, Additive z, Reflects b z)

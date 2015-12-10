@@ -15,8 +15,7 @@ import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Gauss
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT
-import Crypto.Lol.LatticePrelude                         as LP hiding
-                                                                ((!!))
+import Crypto.Lol.LatticePrelude                         as LP hiding ((!!))
 import Crypto.Lol.Types.IZipVector
 
 import Algebra.Additive     as Additive (C)
@@ -24,11 +23,12 @@ import Algebra.Ring         as Ring (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
 import Control.Applicative
+import Control.Arrow         hiding (arr)
 import Control.DeepSeq       (NFData (rnf))
 import Control.Monad         (liftM)
 import Control.Monad.Random
 import Data.Coerce
-import Data.Constraint
+import Data.Constraint       hiding ((***))
 import Data.Foldable         as F
 import Data.Maybe
 import Data.Traversable      as T
@@ -131,7 +131,15 @@ instance Tensor RT where
   -- vector instead
   fmapTM f (RT (Arr arr)) = liftM (RT . Arr . fromUnboxed (extent arr)) $
                             U.mapM f $ toUnboxed arr
-  fmapTM f v@(ZV _) = fmapTM f $ toRT v
+  fmapTM f v = fmapTM f $ toRT v
+
+  unzipTElt (RT (Arr arr)) = (RT . Arr . fromUnboxed (extent arr)) ***
+                             (RT . Arr . fromUnboxed (extent arr)) $
+                             U.unzip $ toUnboxed arr
+  unzipTElt v = unzipTElt $ toRT v
+
+  unzipT v@(RT _) = unzipT $ toZV v
+  unzipT (ZV v) = ZV *** ZV $ unzipIZV v
 
 ---------- "Container" instances ----------
 
