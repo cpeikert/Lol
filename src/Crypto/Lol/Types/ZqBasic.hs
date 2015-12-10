@@ -216,41 +216,60 @@ instance (ReflectsTI q z, Ring z) => Correct TrivGad (ZqBasic q z) where
     [b] -> (b, [zero])
     _ -> error "Correct TrivGad: wrong length"
 
-instance (ReflectsTI q z, Additive z, Reflects b z)
+-- BaseBGad instances
+
+gadlen :: (RealIntegral z) => z -> z -> Int
+gadlen _ q | isZero q = 0
+gadlen b q = 1 + (gadlen b $ q `div` b)
+
+-- | The base-@b@ gadget for modulus @q@, over integers (not mod
+-- anything).
+gadgetZ :: (RealIntegral z) => z -> z -> [z]
+gadgetZ b q = take (gadlen b q) $ iterate (*b) one
+
+instance (ReflectsTI q z, RealIntegral z, Reflects b z)
          => Gadget (BaseBGad b) (ZqBasic q z) where
 
   gadget = let qval = proxy value (Proxy :: Proxy q)
                bval = proxy value (Proxy :: Proxy b)
-               k = logCeil bval qval
-           in tag $ map reduce' (take k (iterate (*bval) one))
+           in tag $ reduce' <$> gadgetZ bval qval
 
-instance (ReflectsTI q z, Ring z, Reflects b z)
+instance (ReflectsTI q z, Ring z, ZeroTestable z, Reflects b z)
     => Decompose (BaseBGad b) (ZqBasic q z) where
   type DecompOf (ZqBasic q z) = z
   decompose = let qval = proxy value (Proxy :: Proxy q)
                   bval = proxy value (Proxy :: Proxy b)
-                  k = logCeil bval qval
+                  k = gadlen bval qval
                   radices = replicate (k-1) bval
               in tag . decomp radices . lift
 
-correct' :: forall z . (IntegralDomain z, Ord z)
+-- | Yield the error vector for a noisy multiple of the gadget (all
+-- over the integers). 
+correctZ :: forall z . (RealIntegral z)
             => z                   -- ^ modulus @q@
             -> z                   -- ^ base @b@
             -> [z]                 -- ^ input vector @v = s \cdot g^t + e@
-            -> (z, [z])            -- ^ (s, e)
-correct' q b v =
-  let (w, x) = barBtRnd (q `div` b) v
-      (v', s) = subDiv one v $ qbarD w x
-  in (s, zipWith (-) v' $ iterate (*b) s)
-    where
+            -> [z]                 -- ^ error @e@
+correctZ q b =
+  let gadZ = gadgetZ b q
+      k = length gadZ
+      gadlast = last gadZ
+  in \v -> 
+    if length v /= k
+    then error $ "correctZ: wrong length: was " ++ show (length v) ++", expected " ++ show k
+    else let (w, x) = barBtRnd (q `div` b) v
+             (v', v'l) = subLast v $ qbarD w x
+             s = fst $ v'l `divModCent` gadlast
+         in zipWith (-) v' $ (s*) <$> gadZ
 
+    where
       -- | Yield @w = round(\bar{B}^t \cdot v / q)@, along with the inner
       -- product of @w@ with the top row of @q \bar{D}@.
       barBtRnd :: z -> [z] -> ([z], z)
       barBtRnd _ (_:[]) = ([], zero)
       barBtRnd q' (v1:vs@(v2:_)) = let quo = fst $ divModCent (b*v1-v2) q
-                                       (w,acc') = barBtRnd (q' `div` b) vs
-                                   in (quo : w, quo*q' + acc')
+                                   in (quo:) *** (quo*q' +) $
+                                      barBtRnd (q' `div` b) vs
 
       -- | Yield @(q \bar{D}) \cdot w@, given precomputed first entry
       qbarD :: [z] -> z -> [z]
@@ -258,12 +277,10 @@ correct' q b v =
       qbarD (w0:ws) x = x : qbarD ws (b*x - q*w0)
 
       -- | Yield the difference between the input vectors, along with
-      -- their final entry divided by appropriate power of @b@.
-      subDiv :: z -> [z] -> [z] -> ([z], z)
-      subDiv acc [v0] [v'0] = let y = v0-v'0 
-                              in ([y], fst $ y `divModCent` acc)
-      subDiv acc (v0:vs) (v'0:v's) = let (ys, s) = subDiv (acc*b) vs v's
-                                     in ((v0-v'0) : ys, s)
+      -- their final entry.
+      subLast :: [z] -> [z] -> ([z], z)
+      subLast [v0] [v'0] = let y = v0-v'0 in ([y], y)
+      subLast (v0:vs) (v'0:v's) = first ((v0-v'0):) $ subLast vs v's
 
 instance (ReflectsTI q z, Ring z, Reflects b z)
     => Correct (BaseBGad b) (ZqBasic q z) where
@@ -271,11 +288,9 @@ instance (ReflectsTI q z, Ring z, Reflects b z)
   correct =
     let qval = proxy value (Proxy :: Proxy q)
         bval = proxy value (Proxy :: Proxy b)
-        k = logCeil bval qval
     in \tv -> let v = untag tv
-              in if k == length v
-                 then first reduce $ correct' qval bval (lift <$> v)
-                 else error "Correct BaseBGad ZqBasic: wrong length"
+                  es = correctZ qval bval (lift <$> v)
+              in (head v - reduce (head es), es)
 
 -- instance of Random
 instance (ReflectsTI q z, Random z) => Random (ZqBasic q z) where

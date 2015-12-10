@@ -181,11 +181,6 @@ decomp [] v = [v]
 decomp (b:bs) v = let (q,r) = v `divModCent` b
                   in r : decomp bs q
 
--- | Yield @ceil (log_b(x))@.
-logCeil :: (ToInteger i) => i -> i -> Int
-logCeil _ 1 = 0
-logCeil b x = 1 + logCeil b (x `divUp` b)
-
 -- | Deterministically round to the nearest multiple of @i@.
 roundMult :: (RealField r, ToInteger i) => i -> r -> i
 roundMult 1 r  = round r
