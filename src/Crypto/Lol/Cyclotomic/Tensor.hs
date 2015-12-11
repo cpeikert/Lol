@@ -45,8 +45,15 @@ import qualified Data.Vector.Unboxed  as U
 -- well-defined only when a CRT basis exists over the ring @r@ for
 -- index @m@.
 
--- | The superclass constraint is for convenience, to ensure that we
+-- | The superclass constraints are for convenience, to ensure that we
 -- can sample error tensors of 'Double's.
+
+-- | __WARNING:__ as with all fixed-point arithmetic, the methods
+-- in 'Tensor' may result in overflow (and thereby incorrect answers
+-- and potential security flaws) if the input arguments are too close
+-- to the bounds imposed by the base type.  The acceptable range of
+-- inputs for each method is determined by the linear transform it
+-- implements.
 
 class (TElt t Double, TElt t (Complex Double))
       => Tensor (t :: Factored -> * -> *) where

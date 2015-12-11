@@ -4,9 +4,10 @@
              RankNTypes, RebindableSyntax, ScopedTypeVariables,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
--- | An implementation of cyclotomic rings.  WARNING: this module
--- provides an experts-only, "unsafe" interface that may result in
--- runtime errors if not used correctly!
+-- | An implementation of cyclotomic rings.
+
+-- | __WARNING:__ this module provides an experts-only, "unsafe"
+-- interface that may result in runtime errors if not used correctly!
 -- 'Crypto.Lol.Cyclotomic.Cyc.Cyc' provides a safe interface, and
 -- should be used in applications whenever possible.
 --
@@ -20,10 +21,17 @@
 -- work over the element's /current/ @r@-basis representation (or
 -- 'pure' scalar representation as a special case, to satisfy the
 -- 'Applicative' laws), and the output remains in that representation.
--- If the input's representation is not one of these, the behavior is
+-- If the input's representation is not one of these, the result is
 -- a runtime error.  To ensure a valid representation when using the
 -- methods from these classes, first call 'forceBasis' or one of its
 -- specializations ('forcePow', 'forceDec', 'forceAny').
+--
+-- | __WARNING:__ as with all fixed-point arithmetic, the functions
+-- associated with 'UCyc' may result in overflow (and thereby
+-- incorrect answers and potential security flaws) if the input
+-- arguments are too close to the bounds imposed by the base type.
+-- The acceptable range of inputs for each function is determined by
+-- the internal linear transforms and other operations it performs.
 
 module Crypto.Lol.Cyclotomic.UCyc
 (
