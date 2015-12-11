@@ -97,6 +97,23 @@ void tensorFuser (void* y, funcPtr f, hDim_t totm, PrimeExponent* peArr, hShort_
     }
 }
 
+void tensorFuserNorm (void* y, normFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* output, hInt_t q)
+{
+    hDim_t lts = totm;
+    hDim_t rts = 1;
+    hShort_t i;
+
+    for (i = 0; i < sizeOfPE; ++i)
+    {
+        PrimeExponent pe = peArr[i];
+        hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
+        hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
+        lts /= dim;
+        (*f) (y, pe, lts, rts, output, q);
+        rts  *= dim;
+    }
+}
+
 void tensorFuserCRT (void* y, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t q)
 {
     hDim_t lts = totm;
@@ -217,11 +234,14 @@ void getStats() {
     printf("L_D: %d\t%s\t%d\t%s\n", ldCtr, tsShow(ldTime, false, timeformat), lidCtr, tsShow(lidTime, false, timeformat));
     printf("L_C: %d\t%s\t%d\t%s\n", lcCtr, tsShow(lcTime, false, timeformat), licCtr, tsShow(licTime, false, timeformat));
 
+    printf("\nNorm Stats:\n");
+    printf("NormSq_R %d\t%s\n", normrCtr, tsShow(normrTime, false, timeformat));
+
     printf("\nBasic Stats:\n");
     printf("Mul: %d\t%s\n", mulCtr, tsShow(mulTime, false, timeformat));
     printf("Add: %d\t%s\n", addCtr, tsShow(addTime, false, timeformat));
 
-    total = tsAdd(crttime1, tsAdd(crtInvRqTime, tsAdd(crtCTime, tsAdd(crtInvCTime, tsAdd(gprTime, tsAdd(giprTime, tsAdd(gdrTime, tsAdd(gidrTime, tsAdd(gprqTime, tsAdd(giprqTime, tsAdd(gdrqTime, tsAdd(gidrqTime, tsAdd(gcrqTime, tsAdd(gccTime, tsAdd(lrTime, tsAdd(lirTime, tsAdd(lrqTime, tsAdd(lirqTime, tsAdd(ldTime, tsAdd(lidTime, tsAdd(lcTime, tsAdd(licTime, tsAdd(mulTime,addTime)))))))))))))))))))))));
+    total = tsAdd(norrTime, tsAdd(crttime1, tsAdd(crtInvRqTime, tsAdd(crtCTime, tsAdd(crtInvCTime, tsAdd(gprTime, tsAdd(giprTime, tsAdd(gdrTime, tsAdd(gidrTime, tsAdd(gprqTime, tsAdd(giprqTime, tsAdd(gdrqTime, tsAdd(gidrqTime, tsAdd(gcrqTime, tsAdd(gccTime, tsAdd(lrTime, tsAdd(lirTime, tsAdd(lrqTime, tsAdd(lirqTime, tsAdd(ldTime, tsAdd(lidTime, tsAdd(lcTime, tsAdd(licTime, tsAdd(mulTime,addTime))))))))))))))))))))))));
 
     printf("\nTotal C Time: %s\n\n", tsShow(total, false, timeformat));
 
@@ -252,6 +272,8 @@ void getStats() {
     lidCtr = 0;
     licCtr = 0;
 
+    normrCtr = 0;
+
     mulCtr = 0;
     addCtr = 0;
 
@@ -266,6 +288,8 @@ void getStats() {
     lirTime = (struct timespec){0,0};
     lidTime = (struct timespec){0,0};
     licTime = (struct timespec){0,0};
+
+    normrTime = (struct timespec){0,0};
 
     gprTime = (struct timespec){0,0};
     gprqTime = (struct timespec){0,0};
