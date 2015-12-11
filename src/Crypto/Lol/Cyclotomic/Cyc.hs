@@ -19,8 +19,8 @@ module Crypto.Lol.Cyclotomic.Cyc
 , mulG, divG
 , scalarCyc, liftCyc
 , advisePow, adviseDec, adviseCRT
--- * Error sampling
-, tGaussian, errorRounded, errorCoset
+-- * Error sampling and norm
+, tGaussian, errorRounded, errorCoset, gSqNorm
 -- * Sub/extension rings
 , embed, twace, powBasis, crtSet, coeffsCyc
 , module Crypto.Lol.Cyclotomic.Utility
@@ -131,6 +131,12 @@ tGaussian :: (Fact m, OrdFloat q, Random q, CElt t q,
              => v -> rnd (Cyc t m q)
 tGaussian = (Cyc <$>) . U.tGaussian
 
+-- | Yield the scaled squared norm of @g_m \cdot e@ under
+-- the canonical embedding, namely, 
+-- @\hat{m}^{ -1 } \cdot || \sigma(g_m \cdot e) ||^2@ .
+gSqNorm :: (Fact m, CElt t r) => Cyc t m r -> r
+gSqNorm (Cyc c) = U.gSqNorm c
+
 -- | Generate an LWE error term with given scaled variance,
 -- deterministically rounded in the decoding basis.
 errorRounded :: (ToInteger z, Fact m, CElt t z,
@@ -180,5 +186,3 @@ liftCyc = coerceCyc U.liftCyc
 -- | Embed a scalar from the base ring as a cyclotomic element.
 scalarCyc :: (Fact m, CElt t a) => a -> Cyc t m a
 scalarCyc = Cyc . U.scalarCyc
-
-
