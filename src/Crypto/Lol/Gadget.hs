@@ -13,6 +13,7 @@ module Crypto.Lol.Gadget
 import Crypto.Lol.LatticePrelude
 
 import Control.Applicative
+import Control.Arrow
 import Data.Typeable
 
 -- | Dummy type representing the gadget @[1]@.
@@ -61,13 +62,39 @@ instance (Decompose gad a, Decompose gad b, DecompOf a ~ DecompOf b)
          => Decompose gad (a,b) where
 
   type DecompOf (a,b) = DecompOf a
-
   decompose (a,b) = (++) <$> decompose a <*> decompose b
 
+instance (Correct gad a, Correct gad b,
+          Mod a, Mod b, Field a, Field b, Lift' a, Lift' b,
+          ToInteger (LiftOf a), ToInteger (LiftOf b))
+    => Correct gad (a,b) where
 
--- TODO: need some extra constraints on a,b, like Mod and maybe Rescale.
--- instance (Correct gad a, Correct gad b) => Correct gad (a,b) where
-
+  correct =
+    let gada = gadget :: Tagged gad [a]
+        gadb = gadget :: Tagged gad [b]
+        ka = length gada
+        qaval = toInteger $ proxy modulus (Proxy::Proxy a)
+        qbval = toInteger $ proxy modulus (Proxy::Proxy b)
+        qamod = fromIntegral qaval
+        qbmod = fromIntegral qbval
+        qainv = recip qamod
+        qbinv = recip qbmod
+    in \tv ->
+        let v = untag tv
+            (wa,wb) = splitAt ka v
+            (va,xb) = unzip $
+                      (\(a,b) -> let x = toInteger $ lift b
+                                 in (qbinv * (a - fromIntegral x), x)) <$> wa
+            (vb,xa) = unzip $
+                      (\(a,b) -> let x = toInteger $ lift a
+                                 in (qainv * (b - fromIntegral x), x)) <$> wb
+            (sa,ea) = (qbmod *) ***
+                      zipWith (\x e -> x + qbval * toInteger e) xb $
+                      correct (tag va `asTypeOf` gada)
+            (sb,eb) = (qamod *) ***
+                      zipWith (\x e -> x + qaval * toInteger e) xa $
+                      correct (tag vb `asTypeOf` gadb)
+        in ((sa,sb), ea ++ eb)
 
 
 {- CJP: strawman class for the more general view of LWE secrets as
