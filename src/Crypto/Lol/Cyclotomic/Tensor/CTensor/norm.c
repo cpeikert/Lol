@@ -8,10 +8,13 @@ struct timespec normrTime = {0,0};
 void pNormSqR (hInt_t* y, hDim_t lts, hDim_t rts, hDim_t p, hInt_t* tempSpace) {
   hDim_t blockOffset;
   hDim_t modOffset;
-  int i;
+  hDim_t i;
 
   if(p==2) {
-    return;
+    hDim_t totm = lts*rts*(p-1);
+    for (i = 0; i < totm; i++) {
+      tempSpace[i] = y[i];
+    }
   }
   hInt_t sum = 0;
 
