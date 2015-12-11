@@ -105,10 +105,10 @@ class (TElt t Double, TElt t (Complex Double))
                    ToRational v, Fact m, MonadRandom rnd)
                   => v -> rnd (t m q)
 
-  -- | Given coefficient tensor @e@ with respect to the decoding basis 
-  -- of @R@, yield the (scaled) squared norm of @g_m \cdot e@ under
-  -- the canonical embedding, namely,
-  --  @\hat{m}^{ -1 } \cdot || \sigma(g_m -- \cdot e) ||^2@ .
+  -- | Given the coefficient tensor of @e@ with respect to the
+  -- decoding basis of @R@, yield the (scaled) squared norm of @g_m
+  -- \cdot e@ under the canonical embedding, namely,
+  --  @\hat{m}^{ -1 } \cdot || \sigma(g_m \cdot e) ||^2@ .
   gSqNormDec :: (Ring r, Fact m, TElt t r) => t m r -> r
 
   -- | The @twace@ linear transformation, which is the same in both the
