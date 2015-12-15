@@ -201,8 +201,11 @@ roundScalarCentered p x =
 
 -- | Variant of 'Algebra.IntegralDomain.divMod' in which the remainder
 -- is in the range @[-b\/2,b\/2)@.
-divModCent :: (IntegralDomain i, Ord i) => i -> i -> (i,i)
-divModCent a b = let (q,r) = a `divMod` b
-                 in if 2*r < b -- divMod returns non-neg remainder
-                    then (q,r)
-                    else (q+1,r-b)
+divModCent :: (IntegralDomain i, Ord i)
+              => i              -- ^ dividend @a@
+              -> i              -- ^ divisor @b@
+              -> (i,i)          -- ^ (quotient, remainder)
+divModCent = flip (\b -> 
+             let shift = b `div` 2
+             in \a -> let (q,r) = (a+shift) `divMod` b
+                      in (q,r-shift))
