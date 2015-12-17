@@ -31,7 +31,7 @@ tensorTests =
   [testGroup "fmap comparison" $ groupTMR $ wrapTmrToBool prop_fmap,
    testGroup "fmap comparison 2" $ groupTMR $ wrapTmrToBool prop_fmap2,
    testGroup "Extension Mult" $ groupExtTests $ wrap2TmrToBool prop_mul_ext,
-   testGroup "GSqNormDec" $ groupM $ wrapMToBool prop_gsqnorm,
+   testGroup "GSqNormDec" $ groupNorm $ wrapNorm prop_gsqnorm,
 
    -- inverse property
    tremTests, 
@@ -127,13 +127,6 @@ prop_g_crt x = fromMaybe (error "no CRT in prop_g_crt") $ do
   crtInv' <- crtInv
   return $ (mulGCRT' x) == (crt' $ mulGPow $ crtInv' x) \\ witness entailEqT x
 
--- tests that gSqNormDec of two "random-looking" vectors agrees for RT and CT
-prop_gsqnorm :: forall m r . (MRWrapCtx m r) => Proxy m -> r -> Bool
-prop_gsqnorm _ x = 
-  let ct = mulGDec $ lInv $ scalarPow x :: CT m r
-      rt = mulGDec $ lInv $ scalarPow x :: RT m r
-  in gSqNormDec ct == gSqNormDec rt
-
 type TMRWrapCtx t m r = (TMRCtx t m r, Show (t m r), Arbitrary (t m r), Show r, Arbitrary r)
 
 wrap2TmrToBool :: (TMRWrapCtx t m r) => (t m r -> t m r -> Bool) 
@@ -147,9 +140,6 @@ wrapTmrToBool f _ _ = property f
 wrapRToBool :: (TMRWrapCtx t m r) => (Proxy (t m r) -> r -> Bool)
      -> Proxy t -> Proxy '(m,r) -> Property
 wrapRToBool f _ _ = property $ f Proxy 
-
-wrapMToBool :: forall m r . (MRWrapCtx m Int64) => (Proxy m -> Int64 -> Bool) -> Proxy m -> Property
-wrapMToBool f _ = property $ f Proxy
 
 groupTMR :: (forall t m r . (TMRWrapCtx t m r)
              => Proxy t
@@ -168,17 +158,6 @@ groupExtTests f =
    testGroup "RT" $ groupMRExt (f (Proxy::Proxy RT))]
 
 type MRWrapCtx m r = (TMRWrapCtx CT m r, TMRWrapCtx RT m r)
-
-groupM :: (forall m r . (MRWrapCtx m Int64) => Proxy m -> Property) 
-            -> [Test]
-groupM f = [testProperty "F7"  $ f (Proxy::Proxy F7),
-             testProperty "F12" $ f (Proxy::Proxy F12),
-             testProperty "F1"  $ f (Proxy::Proxy F1),
-             testProperty "F2"  $ f (Proxy::Proxy F2),
-             testProperty "F4"  $ f (Proxy::Proxy F4),
-             testProperty "F8"  $ f (Proxy::Proxy F8),
-             testProperty "F21" $ f (Proxy::Proxy F21),
-             testProperty "F42" $ f (Proxy::Proxy F42)]
 
 groupMR :: (forall m r . (MRWrapCtx m r) => Proxy '(m, r) -> Property) 
             -> [Test]
@@ -208,13 +187,39 @@ groupMRExt f = [testProperty "F7/Q29" $ f (Proxy::Proxy '(F7, Zq Q29)),
              testProperty "F42/ZQ2" $ f (Proxy::Proxy '(F42, ZQ2))]
 
 
+type NormCtx t m r = (TElt t r, TElt t (LiftOf r), 
+  Fact m, Lift' r, CRTrans r, Eq (LiftOf r),
+  ZeroTestable r, Ring (LiftOf r), Ring r, IntegralDomain r)
 
+type NormWrapCtx m r = (NormCtx CT m r, NormCtx RT m r)
 
+-- tests that gSqNormDec of two "random-looking" vectors agrees for RT and CT
+prop_gsqnorm :: forall m r . 
+  (NormWrapCtx m r) 
+  => Proxy m -> r -> Bool
+prop_gsqnorm _ x = 
+  let scCT = fromJust scalarCRT
+      scRT = fromJust scalarCRT
+      crtinvCT = fromJust crtInv
+      crtinvRT = fromJust crtInv
+      ct = fmapT lift (mulGDec $ lInv $ crtinvCT $ scCT x :: CT m r)
+      rt = fmapT lift (mulGDec $ lInv $ crtinvRT $ scRT x :: RT m r)
+  in gSqNormDec ct == gSqNormDec rt
 
+wrapNorm :: forall m r . (NormWrapCtx m r, Show r, Arbitrary r) => (Proxy m -> r -> Bool) -> Proxy '(m,r) -> Property
+wrapNorm f _ = property $ f Proxy
 
-
-
-
+groupNorm :: (forall m r . (NormWrapCtx m r, Show r, Arbitrary r) => Proxy '(m, r) -> Property) 
+            -> [Test]
+groupNorm f = [testProperty "F7/Q29" $ f (Proxy::Proxy '(F7, Zq Q29)),
+               testProperty "F12/SmoothZQ1" $ f (Proxy::Proxy '(F12, SmoothZQ1)),
+               testProperty "F1/Q17" $ f (Proxy::Proxy '(F1, Zq Q17)),
+               testProperty "F2/Q17" $ f (Proxy::Proxy '(F2, Zq Q17)),
+               testProperty "F4/Q17" $ f (Proxy::Proxy '(F4, Zq Q17)),
+               testProperty "F8/Q17" $ f (Proxy::Proxy '(F8, Zq Q17)),
+               testProperty "F21/Q8191" $ f (Proxy::Proxy '(F21, Zq Q8191)),
+               testProperty "F42/Q8191" $ f (Proxy::Proxy '(F42, Zq Q8191)),
+               testProperty "F42/ZQ1" $ f (Proxy::Proxy '(F42, ZQ1))]
 
 
 type TMM'RCtx t m m' r = (Tensor t, m `Divides` m', TElt t r, Ring r, CRTrans r, Eq r, ZeroTestable r, IntegralDomain r)
