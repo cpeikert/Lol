@@ -21,7 +21,7 @@ import Data.Coerce
 import Data.Singletons.Prelude
 import Data.Type.Natural       as N hiding (Z, one, zero)
 
--- | Embeds a scalar into the CRT-basis when such basis exists
+-- | Embeds a scalar into the CRT basis (when it exists).
 scalarCRT' :: forall m r . (Fact m, CRTrans r, Unbox r)
               => Maybe (r -> Arr m r)
 scalarCRT'
@@ -29,40 +29,36 @@ scalarCRT'
         sz = Z :. totientPPs pps
     in pure $ Arr . force . fromFunction sz . const
 
--- | Multiplies an array in the CRT basis by 'g', when the CRT basis exists
+-- | Multiply by @g_m@ in the CRT basis (when it exists).
 mulGCRT' :: forall m r . (Fact m, CRTrans r, Unbox r, Elt r)
             => Maybe (Arr m r -> Arr  m r)
 mulGCRT' = (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gCRT
 
--- | Divides an array in the CRT basis by 'g', when the CRT basis exists.
+-- | Divide by @g@ in the CRT basis (when it exists).
 divGCRT' :: (Fact m, CRTrans r, IntegralDomain r, ZeroTestable r,
              Unbox r, Elt r) => Maybe (Arr m r -> Arr m r)
 divGCRT' =  (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gInvCRT
 
--- | The CRT-basis representation of 'g'
-gCRT :: (Fact m, CRTrans r, Unbox r, Elt r)
-        => Maybe (Arr m r)
+-- | The representation of @g@ in the CRT basis (when it exists).
+gCRT :: (Fact m, CRTrans r, Unbox r, Elt r) => Maybe (Arr m r)
 gCRT = fCRT <*> pure (fGPow $ scalarPow' LP.one)
 
--- EAC: This was defined using (a safe call to) fromJust
-
--- | The CRT-basis representation of 'g^{ -1 }'
+-- | The representation of @g^{ -1 }@ in the CRT basis (when it exists).
 gInvCRT:: (Fact m, CRTrans r, IntegralDomain r,
            ZeroTestable r, Unbox r, Elt r)
           => Maybe (Arr m r)
 gInvCRT = fCRT <*> fGInvPow (scalarPow' LP.one)
 
-
 fCRT, fCRTInv ::
   forall m r . (Fact m, CRTrans r, Unbox r, Elt r)
   => Maybe (Arr m r -> Arr m r)
--- | The chinese remainder transform on Repa arrays.
--- Exists if and only if crt exists for all prime powers
+-- | The chinese remainder transform.
+-- Exists if and only if crt exists for all prime powers.
 fCRT = evalM $ fTensor ppCRT
 
 -- divide by mhat after doing crtInv'
--- | The inverse chinese remainder transform on Repa arrays.
--- Exists if and only if crt exists for all prime powers
+-- | The inverse chinese remainder transform.
+-- Exists if and only if crt exists for all prime powers.
 fCRTInv = do -- in Maybe
   (_, mhatInv) :: (CRTInfo r) <- proxyT crtInfoFact (Proxy :: Proxy m)
   let totm = proxy totientFact (Proxy :: Proxy m)

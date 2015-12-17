@@ -11,8 +11,8 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor
 
 import Crypto.Lol.Cyclotomic.Tensor                      as T
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
+import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Gauss
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT
 import Crypto.Lol.LatticePrelude                         as LP hiding ((!!))
@@ -92,8 +92,8 @@ instance Tensor RT where
   mulGPow = wrap fGPow
   mulGDec = wrap fGDec
 
-  divGPow = wrapM  fGInvPow
-  divGDec = wrapM  fGInvDec
+  divGPow = wrapM fGInvPow
+  divGDec = wrapM fGInvDec
 
   crtFuncs = (,,,,) <$>
              (liftM (RT .) scalarCRT') <*>
@@ -109,6 +109,9 @@ instance Tensor RT where
                   (Fact m, OrdFloat q, Random q, TElt RT q,
                    ToRational v, MonadRandom rnd) => v -> rnd (RT m q)
   tGaussianDec = liftM RT . tGaussianDec'
+
+  gSqNormDec (RT e) = gSqNormDec' e
+  gSqNormDec e = gSqNormDec $ toRT e
 
   twacePowDec = wrap twacePowDec'
 

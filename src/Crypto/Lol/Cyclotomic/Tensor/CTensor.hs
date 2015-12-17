@@ -34,7 +34,7 @@ import Data.Maybe
 import Data.Traversable as T
 import Data.Typeable
 import Data.Vector.Generic           as V (zip, unzip)
-import Data.Vector.Storable          as SV (Vector, replicate, replicateM, thaw, convert, foldl',
+import Data.Vector.Storable          as SV (Vector, (!), replicate, replicateM, thaw, convert, foldl',
                                             unsafeToForeignPtr0, unsafeSlice, mapM, fromList,
                                             generate, foldl1',
                                             unsafeWith, zipWith, map, length, unsafeFreeze, thaw)
@@ -174,7 +174,6 @@ instance Tensor CT where
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
 
-
   scalarPow = CT . scalarPow' -- Vector code
 
   l = wrap $ lgWrapper $ untag $ lgDispatch dl
@@ -200,6 +199,10 @@ instance Tensor CT where
 
   tGaussianDec v = liftM CT $ gaussWrapper $ cDispatchGaussian v
   --tGaussianDec v = liftM CT $ coerceT' $ gaussianDec v
+
+  -- we do not wrap thsi function because (currently) it can only be called on lifted types
+  gSqNormDec (CT v) = (normWrapper $ untag gSqNormDec') v
+  gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
 
   crtExtFuncs = (,) <$> (liftM wrap $ coerceTw twaceCRT')
                     <*> (liftM wrap $ coerceEm embedCRT')
@@ -257,6 +260,10 @@ class CRNS r where
     (forall a . (TElt CT a, Dispatch a, Additive a) => CT' m a -> CT' m a)
     -> CT' m r -> CT' m r
 
+  normWrapper :: (Fact m, Additive r) => 
+    (forall a . (TElt CT a, Dispatch a, Additive a) => CT' m a -> a)
+    -> CT' m r -> r
+
   divGWrapper :: (Fact m, IntegralDomain r, ZeroTestable r) => 
     (forall a . (TElt CT a, Dispatch a, IntegralDomain a, ZeroTestable a) => CT' m a -> Maybe (CT' m a))
     -> CT' m r -> Maybe (CT' m r)
@@ -269,6 +276,7 @@ instance CRNS Double where
   zipWrapper f = f
   crtWrapper f = f
   lgWrapper f = f
+  normWrapper f = error "Cannot call normWrapper for Double"
   divGWrapper f = f
   gaussWrapper f = f
 
@@ -276,6 +284,7 @@ instance CRNS Int64 where
   zipWrapper f = f
   crtWrapper f = f
   lgWrapper f = f
+  normWrapper f = f
   divGWrapper f = f
   gaussWrapper = error "Cannot call gaussianDec for Int64"
 
@@ -283,16 +292,18 @@ instance (TElt CT (Complex a), Dispatch (Complex a)) => CRNS (Complex a) where
   zipWrapper f = f
   crtWrapper f = f
   lgWrapper f = f
+  normWrapper f = error "Cannot call normWrapper for Complex"
   divGWrapper f = f
-  gaussWrapper = error "Cannot call gaussianDec for Complex"
+  gaussWrapper f = error "Cannot call gaussianDec for Complex"
 
 -- EAC: we need PolyKinds in paritcular for this instance
 instance (TElt CT (ZqBasic q i), Dispatch (ZqBasic q i)) => CRNS (ZqBasic q i) where
   zipWrapper f = f
   crtWrapper f = f
   lgWrapper f = f
+  normWrapper f = error "Cannot call normWrapper for ZqBasic"
   divGWrapper f = f
-  gaussWrapper = error "Cannot call gaussianDec for ZqBasic"
+  gaussWrapper f = error "Cannot call gaussianDec for ZqBasic"
 
 instance (Storable a, Storable b, 
           CRNS a, CRNS b, 
@@ -322,6 +333,8 @@ instance (Storable a, Storable b,
         (CT' a') = lgWrapper f (CT' a :: CT' m a)
         (CT' b') = lgWrapper f (CT' b :: CT' m b)
     in CT' $ zip a' b'
+
+  normWrapper f (CT' x :: CT' m (a,b)) = error "Cannot call normWrapper for pairs"
 
   divGWrapper f (CT' x :: CT' m (a,b)) = 
     let (a, b) = unzip x
@@ -362,6 +375,20 @@ lgDispatch f = do
       SV.unsafeWith factors (\pfac ->
         f pout totm pfac numFacts))
     unsafeFreeze yout
+
+gSqNormDec' :: forall m r .
+     (Storable r, Fact m, Additive r, Dispatch r)
+      => Tagged m (CT' m r -> r)
+gSqNormDec' = do
+  factors <- liftM marshalFactors ppsFact
+  totm <- liftM fromIntegral totientFact
+  let numFacts = fromIntegral $ SV.length factors
+  return $ (! 0) . (\(CT' yin) -> unsafePerformIO $ do -- in IO
+    yout <- SV.thaw yin
+    SM.unsafeWith yout (\pout ->
+      SV.unsafeWith factors (\pfac ->
+        dnorm pout totm pfac numFacts))
+    unsafeFreeze yout)
 
 --{-# INLINE ctCRT #-}
 ctCRT :: forall m r .
@@ -604,6 +631,8 @@ foreign import ccall unsafe "tensorLInvDouble" tensorLInvDouble :: Ptr Double ->
 foreign import ccall unsafe "tensorLC" tensorLC ::       Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorLInvC" tensorLInvC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 
+foreign import ccall unsafe "tensorNormSqR" tensorNormSqR ::            Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
+
 foreign import ccall unsafe "tensorGPowR" tensorGPowR ::         Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorGPowRq" tensorGPowRq ::       Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
 foreign import ccall unsafe "tensorGDecR" tensorGDecR ::         Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
@@ -638,6 +667,7 @@ class Dispatch r where
   dcrtinv :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr r) -> r -> IO ()
   dl :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
   dlinv :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  dnorm :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
   dmulgpow :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
   dmulgdec :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
   dginvpow :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
@@ -664,6 +694,7 @@ instance (Reflects q Int64) => Dispatch (ZqBasic q Int64) where
   dlinv pout totm pfac numFacts =
     let q = proxy value (Proxy::Proxy q)
     in tensorLInvRq pout totm pfac numFacts q
+  dnorm pout totm pfac numFacts = error "dnorm zq"
   dmulgpow pout totm pfac numFacts =
     let q = proxy value (Proxy::Proxy q)
     in tensorGPowRq pout totm pfac numFacts q
@@ -696,6 +727,7 @@ instance Dispatch (Complex Double) where
     tensorCRTInvC pout totm pfac numFacts ruptr (real minv)
   dl = tensorLC
   dlinv = tensorLInvC
+  dnorm = error "cannot call CT normSq on type Complex Double"
   dmulgpow = error "cannot call CT mulGPow on type Complex Double"
   dmulgdec = error "cannot call CT mulGDec on type Complex Double"
   dginvpow = error "cannot call CT divGPow on type Complex Double"
@@ -711,6 +743,7 @@ instance Dispatch Double where
   dcrtinv = error "cannot call CT CrtInv on type Double"
   dl = tensorLDouble
   dlinv = tensorLInvDouble
+  dnorm = error "cannot call CT normSq on type Double"
   dmulgpow = error "cannot call CT mulGPow on type Double"
   dmulgdec = error "cannot call CT mulGDec on type Double"
   dginvpow = error "cannot call CT divGPow on type Double"
@@ -726,6 +759,7 @@ instance Dispatch Int64 where
   dcrtinv = error "cannot call CT CrtInv on type Int64"
   dl = tensorLR
   dlinv = tensorLInvR
+  dnorm = tensorNormSqR
   dmulgpow = tensorGPowR
   dmulgdec = tensorGDecR
   dginvpow = tensorGInvPowR

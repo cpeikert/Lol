@@ -52,6 +52,8 @@ extern int lirCtr;
 extern int lidCtr;
 extern int licCtr;
 
+extern int normrCtr;
+
 extern int mulCtr;
 extern struct timespec mulTime;
 extern int addCtr;
@@ -65,6 +67,8 @@ extern struct timespec lirqTime;
 extern struct timespec lirTime;
 extern struct timespec lidTime;
 extern struct timespec licTime;
+
+extern struct timespec normrTime;
 
 extern struct timespec crttime1;
 extern struct timespec crttime2;
@@ -162,6 +166,9 @@ void addD (double* a, double* b, hDim_t totm);
 typedef void (*funcPtr) (void* outputVec, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q);
 void tensorFuser (void* y, funcPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q);
 
+typedef void (*normFuncPtr) (void* outputVec, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* output, hInt_t q);
+void tensorFuserNorm (void* y, normFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* output, hInt_t q);
+
 typedef void (*crtFuncPtr) (void* y, hDim_t lts, hDim_t rts, PrimeExponent pe, void* ru, hInt_t q);
 void tensorFuserCRT (void* y, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t q);
 
@@ -194,6 +201,8 @@ void tensorGInvCRTC (complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t s
 void tensorLRq (hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q);
 
 void tensorLR (hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
+
+void tensorNormSqR (hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
 
 void tensorLDouble (double* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
 

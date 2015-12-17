@@ -31,6 +31,7 @@ tensorTests =
   [testGroup "fmap comparison" $ groupTMR $ wrapTmrToBool prop_fmap,
    testGroup "fmap comparison 2" $ groupTMR $ wrapTmrToBool prop_fmap2,
    testGroup "Extension Mult" $ groupExtTests $ wrap2TmrToBool prop_mul_ext,
+   testGroup "GSqNormDec" $ groupNorm $ wrapNorm prop_gsqnorm,
 
    -- inverse property
    tremTests, 
@@ -45,7 +46,6 @@ tensorTests =
    testGroup "Scalar" $ groupTMR $ wrapRToBool prop_scalar_crt,
    twaceInvarTests
    ]
-
 
 type TMRCtx t m r = (Tensor t, Fact m, m `Divides` m, CRTrans r, TElt t r, CRTEmbed r, 
                      TElt t (CRTExt r), Eq r, ZeroTestable r, IntegralDomain r)
@@ -187,13 +187,39 @@ groupMRExt f = [testProperty "F7/Q29" $ f (Proxy::Proxy '(F7, Zq Q29)),
              testProperty "F42/ZQ2" $ f (Proxy::Proxy '(F42, ZQ2))]
 
 
+type NormCtx t m r = (TElt t r, TElt t (LiftOf r), 
+  Fact m, Lift' r, CRTrans r, Eq (LiftOf r),
+  ZeroTestable r, Ring (LiftOf r), Ring r, IntegralDomain r)
 
+type NormWrapCtx m r = (NormCtx CT m r, NormCtx RT m r)
 
+-- tests that gSqNormDec of two "random-looking" vectors agrees for RT and CT
+prop_gsqnorm :: forall m r . 
+  (NormWrapCtx m r) 
+  => Proxy m -> r -> Bool
+prop_gsqnorm _ x = 
+  let crtCT = fromJust crt
+      crtRT = fromJust crt
+      -- not mathematically meaningful, we just need some "random" coefficients
+      ct = fmapT lift (mulGDec $ lInv $ crtCT $ scalarPow x :: CT m r)
+      rt = fmapT lift (mulGDec $ lInv $ crtRT $ scalarPow x :: RT m r)
+  in gSqNormDec ct == gSqNormDec rt
 
+wrapNorm :: forall m r . (NormWrapCtx m r, Show r, Arbitrary r) => (Proxy m -> r -> Bool) -> Proxy '(m,r) -> Property
+wrapNorm f _ = property $ f Proxy
 
-
-
-
+-- these tests all use "good" moduli that lift to Int64
+groupNorm :: (forall m r . (NormWrapCtx m r, Show r, Arbitrary r) => Proxy '(m, r) -> Property) 
+            -> [Test]
+groupNorm f = [testProperty "F7/Q29" $ f (Proxy::Proxy '(F7, Zq Q29)),
+               testProperty "F12/SmoothZQ1" $ f (Proxy::Proxy '(F12, SmoothZQ1)),
+               testProperty "F1/Q17" $ f (Proxy::Proxy '(F1, Zq Q17)),
+               testProperty "F2/Q17" $ f (Proxy::Proxy '(F2, Zq Q17)),
+               testProperty "F4/Q17" $ f (Proxy::Proxy '(F4, Zq Q17)),
+               testProperty "F8/Q17" $ f (Proxy::Proxy '(F8, Zq Q17)),
+               testProperty "F21/Q8191" $ f (Proxy::Proxy '(F21, Zq Q8191)),
+               testProperty "F42/Q8191" $ f (Proxy::Proxy '(F42, Zq Q8191)),
+               testProperty "F42/ZQ1" $ f (Proxy::Proxy '(F42, ZQ1))]
 
 
 type TMM'RCtx t m m' r = (Tensor t, m `Divides` m', TElt t r, Ring r, CRTrans r, Eq r, ZeroTestable r, IntegralDomain r)

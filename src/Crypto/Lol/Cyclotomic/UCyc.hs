@@ -41,8 +41,8 @@ module Crypto.Lol.Cyclotomic.UCyc
 , mulG, divG
 , scalarCyc, liftCyc
 , adviseCRT
--- * Error sampling
-, tGaussian, errorRounded, errorCoset
+-- * Error sampling and norm
+, tGaussian, errorRounded, errorCoset, gSqNorm
 -- * Sub/extension rings
 , embed, twace, coeffsCyc, powBasis, crtSet
 -- * Representations
@@ -107,7 +107,7 @@ data UCyc t (m :: Factored) r where
 --  change of basis.
 type UCCtx t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r)
 
--- | Collection of constraints need to work on most functions over a
+-- | Collection of constraints needed for most functions over a
 -- particular base ring @r@.
 type RElt t r = (TElt t r, CRTrans r, IntegralDomain r, ZeroTestable r, NFData r)
 
@@ -377,6 +377,11 @@ tGaussian :: (Fact m, OrdFloat q, Random q, CElt t q,
               ToRational v, MonadRandom rnd)
              => v -> rnd (UCyc t m q)
 tGaussian = liftM Dec . tGaussianDec
+
+-- | Same as 'Crypto.Lol.Cyclotomic.Cyc.gSqNorm', but for 'UCyc'.
+gSqNorm :: (Fact m, CElt t r) => UCyc t m r -> r
+gSqNorm (Dec v) = gSqNormDec v
+gSqNorm c = gSqNorm $ toDec' c
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.errorRounded', but for 'UCyc'.
 errorRounded :: forall v rnd t m z .
