@@ -97,23 +97,6 @@ void tensorFuser (void* y, funcPtr f, hDim_t totm, PrimeExponent* peArr, hShort_
     }
 }
 
-void tensorFuserNorm (void* y, normFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* output, hInt_t q)
-{
-    hDim_t lts = totm;
-    hDim_t rts = 1;
-    hShort_t i;
-
-    for (i = 0; i < sizeOfPE; ++i)
-    {
-        PrimeExponent pe = peArr[i];
-        hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
-        hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
-        lts /= dim;
-        (*f) (y, pe, lts, rts, output, q);
-        rts  *= dim;
-    }
-}
-
 void tensorFuserCRT (void* y, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t q)
 {
     hDim_t lts = totm;
