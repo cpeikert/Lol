@@ -198,17 +198,17 @@ prop_gsqnorm :: forall m r .
   (NormWrapCtx m r) 
   => Proxy m -> r -> Bool
 prop_gsqnorm _ x = 
-  let scCT = fromJust scalarCRT
-      scRT = fromJust scalarCRT
-      crtinvCT = fromJust crtInv
-      crtinvRT = fromJust crtInv
-      ct = fmapT lift (mulGDec $ lInv $ crtinvCT $ scCT x :: CT m r)
-      rt = fmapT lift (mulGDec $ lInv $ crtinvRT $ scRT x :: RT m r)
+  let crtCT = fromJust crt
+      crtRT = fromJust crt
+      -- not mathematically meaningful, we just need some "random" coefficients
+      ct = fmapT lift (mulGDec $ lInv $ crtCT $ scalarPow x :: CT m r)
+      rt = fmapT lift (mulGDec $ lInv $ crtRT $ scalarPow x :: RT m r)
   in gSqNormDec ct == gSqNormDec rt
 
 wrapNorm :: forall m r . (NormWrapCtx m r, Show r, Arbitrary r) => (Proxy m -> r -> Bool) -> Proxy '(m,r) -> Property
 wrapNorm f _ = property $ f Proxy
 
+-- these tests all use "good" moduli that lift to Int64
 groupNorm :: (forall m r . (NormWrapCtx m r, Show r, Arbitrary r) => Proxy '(m, r) -> Property) 
             -> [Test]
 groupNorm f = [testProperty "F7/Q29" $ f (Proxy::Proxy '(F7, Zq Q29)),
