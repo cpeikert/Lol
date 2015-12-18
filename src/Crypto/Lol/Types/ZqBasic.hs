@@ -84,13 +84,12 @@ instance (ReflectsTI q z) => Mod (ZqBasic q z) where
 type instance CharOf (ZqBasic p z) = p
 
 instance (PPow pp, zq ~ ZqBasic pp z,
-          PrimeField (ZPOf zq), Ring zq, Ring (ZPOf zq))
+          PrimeField (ZpOf zq), Ring zq, Ring (ZpOf zq))
          => ZPP (ZqBasic (pp :: PrimePower) z) where
 
-  type ZPOf (ZqBasic pp z) = ZqBasic (PrimePP pp) z
+  type ZpOf (ZqBasic pp z) = ZqBasic (PrimePP pp) z
 
   modulusZPP = retag (ppPPow :: Tagged pp PP)
-
   liftZp = coerce
 
 instance (ReflectsTI q z) => Reduce z (ZqBasic q z) where

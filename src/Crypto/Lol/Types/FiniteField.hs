@@ -1,24 +1,23 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts,
-             GeneralizedNewtypeDeriving, 
-             NoImplicitPrelude, PolyKinds,
-             RebindableSyntax, RoleAnnotations, ScopedTypeVariables #-}
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, GeneralizedNewtypeDeriving,
+             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
+             RebindableSyntax, RoleAnnotations, ScopedTypeVariables,
+             TypeFamilies, UndecidableInstances #-}
 
 -- CJP: need PolyKinds to allow deg to have non-* kind
 
 -- | Basic (unoptimized) finite field arithmetic.
 
 module Crypto.Lol.Types.FiniteField
-( PrimeField, CharOf, GF   -- export type but not constructor
+( PrimeField, GF   -- export type but not constructor
 , trace
 , size
+, IrreduciblePoly(..), X(..), (^^)
 ) where
 
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Factored
 import           Crypto.Lol.LatticePrelude
 import           Crypto.Lol.Reflects
-import           Crypto.Lol.Types.PrimeField hiding ((^))
-import qualified Crypto.Lol.Types.PrimeField as PF
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Field        as Field (C)
@@ -31,7 +30,7 @@ import Math.NumberTheory.Primes.Factorisation
 import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Monad
-import qualified Data.Vector              as V
+import qualified Data.Vector         as V
 
 --import qualified Debug.Trace as DT
 
@@ -41,6 +40,9 @@ newtype GF fp deg = GF (Polynomial fp)
 
 -- the second argument, though phantom, affects representation
 type role GF representational representational
+
+type PrimeField fp = (Enumerable fp, Field fp, Eq fp, ZeroTestable fp,
+                      NatC (CharOf fp), IrreduciblePoly fp)
 
 type GFCtx fp deg = (PrimeField fp, Reflects deg Int)
 
@@ -104,13 +106,13 @@ trace = let ts = proxy powTraces (Proxy::Proxy (GF fp deg))
 
 -- | Traces of the power basis elements 1, x, x^2, ..., x^(deg-1).
 powTraces :: forall fp deg . (GFCtx fp deg) => Tagged (GF fp deg) [fp]
-powTraces = 
-  --DT.trace ("FiniteField.powTraces: p = " ++ 
+powTraces =
+  --DT.trace ("FiniteField.powTraces: p = " ++
   --          show (proxy value (Proxy::Proxy (CharOf fp)) :: Int) ++
   --          ", d = " ++ show (proxy value (Proxy::Proxy deg) :: Int)) $
   let d = proxy value (Proxy :: Proxy deg)
   in tag $ map trace' $ take d $
-     iterate (* (GF (X PF.^ 1))) (one :: GF fp deg)
+     iterate (* (GF (X ^^ 1))) (one :: GF fp deg)
 
 -- helper that computes trace via brute force: sum frobenius
 -- automorphisms
@@ -120,3 +122,17 @@ trace' e = let (p,d) = witness sizePP e
                -- t is a constant polynomial
            in head $ coeffs t
 
+-- | Represents fields over which we can get irreducible
+-- polynomials of desired degrees.  (An instance of this class is
+-- defined in 'Crypto.Lol.Types.IrreducibleChar2' and exported from
+-- 'Crypto.Lol'.)
+class Field fp => IrreduciblePoly fp where
+  irreduciblePoly :: (Reflects deg Int) => Tagged deg (Polynomial fp)
+
+-- | Convenience data type for writing 'IrreduciblePoly' instances.
+data X = X
+
+-- | Convenience function for writing 'IrreduciblePoly' instances.
+(^^) :: Ring a => X -> Int -> Polynomial a
+X ^^ i | i >= 0 = fromCoeffs $ replicate i 0 ++ [1]
+_ ^^ _ = error "FiniteField.(^^) only defined for non-negative exponents."

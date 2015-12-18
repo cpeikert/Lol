@@ -12,10 +12,11 @@
 
 module Crypto.Lol.LatticePrelude
 ( 
--- * Classes
+-- * Classes and families
   Enumerable(..)
 , Mod(..)
 , Reduce(..), LiftOf, Lift, Lift'(..), Rescale(..), Encode(..), msdToLSD
+, CharOf
 -- * Numeric
 , module Crypto.Lol.Types.Numeric
 -- * Complex
@@ -64,6 +65,9 @@ derivingUnbox "Maybe"
   [| \ (b, x) -> if b then Just x else Nothing |]
 
 instance Default Bool where def = False
+
+-- | The characteristic of a ring, represented as a type.
+type family CharOf (fp :: k) :: Nat
 
 -- | Poor man's 'Enum'.
 class Enumerable a where

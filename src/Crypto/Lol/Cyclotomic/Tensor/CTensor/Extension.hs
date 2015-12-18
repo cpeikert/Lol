@@ -100,8 +100,9 @@ powBasisPow' = do
 -- | A list of vectors representing the mod-p CRT set of the
 -- extension O_m'/O_m
 crtSetDec' :: forall m m' fp .
-  (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m',
-   SV.Storable fp)
+  (m `Divides` m', PrimeField fp, SV.Storable fp)
+  -- removed; see comments in Tensor.hs
+  -- Coprime (PToF (CharOf fp)) m')
   => Tagged '(m, m') [SV.Vector fp]
 crtSetDec' =
   let m'p = Proxy :: Proxy m'

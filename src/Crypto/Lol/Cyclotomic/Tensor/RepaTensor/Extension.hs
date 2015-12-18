@@ -7,7 +7,7 @@
 
 module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 ( twacePowDec', twaceCRT', embedPow', embedDec', embedCRT'
-, coeffs', powBasisPow', crtSetDec' --, fromCoeffs'
+, coeffs', powBasisPow', crtSetDec'
 ) where
 
 import           Crypto.Lol.LatticePrelude              as LP hiding (lift, (!!))
@@ -125,8 +125,9 @@ powBasisPow' = return $
 -- | A list of arrays representing the mod-p CRT set of the
 -- extension O_m'/O_m
 crtSetDec' :: forall m m' fp .
-              (m `Divides` m', PrimeField fp, 
-               Coprime (PToF (CharOf fp)) m', Unbox fp)
+              (m `Divides` m', PrimeField fp, Unbox fp)
+              -- removed; see comments in Tensor.hs
+              -- Coprime (PToF (CharOf fp)) m')
               => Tagged m [Arr m' fp]
 crtSetDec' = return $ 
   let m'p = Proxy :: Proxy m'

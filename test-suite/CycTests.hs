@@ -33,7 +33,7 @@ cycTests = [testGroup "coeffsPow" $ groupC $ wrapCmm'rToBool prop_coeffsBasis,
 
 
 type BasisCtx t m m' r = 
-  (m `Divides` m', ZPP r, CElt t r, CElt t (ZPOf r))
+  (m `Divides` m', ZPP r, CElt t r, CElt t (ZpOf r))
 
 prop_coeffsBasis :: forall t m m' r . (BasisCtx t m m' r)
   => Proxy m -> Cyc t m' r -> Bool

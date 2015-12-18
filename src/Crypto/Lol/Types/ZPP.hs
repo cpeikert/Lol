@@ -10,14 +10,14 @@ import Crypto.Lol.LatticePrelude
 import Crypto.Lol.Types.FiniteField
 
 -- | Represents integers modulo a prime power.
-class (PrimeField (ZPOf zq), Ring zq, Ring (ZPOf zq)) => ZPP zq where
+class (PrimeField (ZpOf zq), Ring zq) => ZPP zq where
 
   -- | An implementation of the integers modulo the prime base.
-  type ZPOf zq
+  type ZpOf zq
 
   -- | The prime and exponent of the modulus.
   modulusZPP :: Tagged zq PP
 
   -- | Lift from @Z_p@ to a representative.
-  liftZp :: ZPOf zq -> zq
+  liftZp :: ZpOf zq -> zq
 

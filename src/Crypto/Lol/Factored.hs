@@ -15,7 +15,7 @@ module Crypto.Lol.Factored
 -- * Prime powers
 , PrimePower(..), SPrimePower, PPow, Sing (SPP)
 -- * Naturals
-, Nat, NatC, PrimeNat, Prime
+, Nat, NatC
 -- * Constructors
 , toPP, sToPP, ToPP, ppToF, sPpToF, PpToF, PToF
 -- * Unwrappers
@@ -38,7 +38,7 @@ module Crypto.Lol.Factored
 , valueHat
 , PP, ppToPP, valuePP, totientPP, radicalPP, oddRadicalPP
 , valuePPs, totientPPs, radicalPPs, oddRadicalPPs
--- * Type synonyms (not type families)
+-- * Promoted 'Factored' types
 , F1, F2, F3, F4, F5, F6, F7, F8, F9, F10
 , F11, F12, F13, F14, F15, F16, F17, F18, F19, F20
 , F21, F22, F24, F25, F26, F27, F28, F30
@@ -130,34 +130,24 @@ singletons [d|
 
 -- ARITHMETIC OPERATIONS
 singletons [d|
-            -- Smart constructor that checks that the first arg is
-            -- prime (< 20) and the second arg is positive
+            -- Smart constructor that checks that the second arg is
+            -- strictly positive.  Caller must guarantee that first
+            -- arg is prime.
             toPP :: Nat -> Nat -> PrimePower
-            toPP p e | primeNat p && (n1 <<= e) = PP (p,e)
+            toPP p e | n1 <<= e = PP (p,e)
 
-            -- EAC: isn't there a singletons promotion for 'F'
-            -- that could replace this function?
             ppToF :: PrimePower -> Factored
             ppToF pp = F [pp]
 
+            -- Caller must guarantee that argument is prime.
             primeToF :: Nat -> Factored
-            primeToF p | primeNat p = ppToF $ PP (p, n1)
+            primeToF p = ppToF $ PP (p, n1)
             
             fGCD, fLCM :: Factored -> Factored -> Factored
             fDivides :: Factored -> Factored -> Bool
             fDiv :: Factored -> Factored -> Factored
             fOddRadical :: Factored -> Factored
             
-            -- can't pattern-match on n*, but can test equality
-            primeNat n
-              | n==n2 = True
-              | n==n3 = True
-              | n==n5 = True
-              | n==n7 = True
-              | n==n11 = True
-              | n==n13 = True
-              | n==n17 = True
-              | n==n19 = True
             fGCD (F pps1) (F pps2) = F (ppsGCD pps1 pps2)
             fLCM (F pps1) (F pps2) = F (ppsLCM pps1 pps2)
 
@@ -322,8 +312,6 @@ type PPow (pp :: PrimePower) = SingI pp
 -- | Kind-restricted synonym for 'SingI'. Use this in constraints 
 -- for types requiring a 'Nat' type.
 type NatC (p :: Nat) = SingI p
-
-type Prime p = (NatC p, PrimeNat p ~ 'True)
 
 -- | Constraint synonym for divisibility of 'Factored' types
 type Divides m m' = (Fact m, Fact m', FDivides m m' ~ 'True)

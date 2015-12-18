@@ -449,9 +449,9 @@ powBasis = map Pow <$> powBasisPow
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.crtSet', but for 'UCyc'.
 crtSet :: forall t m m' r p mbar m'bar .
-           (m `Divides` m', ZPP r, p ~ CharOf (ZPOf r),
+           (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r),
             mbar ~ PFree p m, m'bar ~ PFree p m',
-            CElt t r, CElt t (ZPOf r))
+            CElt t r, CElt t (ZpOf r))
            => Tagged m [UCyc t m' r]
 crtSet =
   -- CJP: consider using traceEvent or traceMarker
@@ -463,7 +463,7 @@ crtSet =
       pm = Proxy::Proxy m
       pm' = Proxy::Proxy m'
   in retag (fmap (embed . (^(p^(e-1))) . Dec . fmapT liftZp) <$>
-            (crtSetDec :: Tagged mbar [t m'bar (ZPOf r)]))
+            (crtSetDec :: Tagged mbar [t m'bar (ZpOf r)]))
      \\ pFreeDivides pp pm pm'
      \\ pSplitTheorems pp pm \\ pSplitTheorems pp pm'
 

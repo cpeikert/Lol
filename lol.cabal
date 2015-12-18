@@ -92,7 +92,6 @@ library
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor
     
     Crypto.Lol.Types.FiniteField
-    Crypto.Lol.Types.PrimeField
     Crypto.Lol.Types.IrreducibleChar2
     
     Crypto.Lol.Types.ZPP

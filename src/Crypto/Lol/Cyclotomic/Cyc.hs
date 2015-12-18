@@ -183,8 +183,8 @@ coeffsCyc = coerceCyc U.coeffsCyc
 powBasis :: (m `Divides` m', CElt t r) => Tagged m [Cyc t m' r]
 powBasis = coerceCyc U.powBasis
 
--- | The relative mod-@r@ "CRT set" of the extension.
-crtSet :: (m `Divides` m', ZPP r, CElt t r, CElt t (ZPOf r))
+-- | The relative mod-@r@ CRT set of the extension.
+crtSet :: (m `Divides` m', ZPP r, CElt t r, CElt t (ZpOf r))
           => Tagged m [Cyc t m' r]
 crtSet = coerceCyc U.crtSet
 
