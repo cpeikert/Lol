@@ -147,9 +147,8 @@ class (TElt t Double, TElt t (Complex Double))
 
   -- | A list of tensors representing the mod-@p@ CRT set of the
   -- extension.
-  crtSetDec :: (m `Divides` m', PrimeField fp, TElt t fp)
-               -- CJP: removed; can't enforce it for larger prime fields
-               -- Coprime (PToF (CharOf fp)) m')
+  crtSetDec :: (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m',
+                TElt t fp)
                => Tagged m [t m' fp]
 
   -- | Potentially optimized version of 'fmap' when the input and

@@ -125,9 +125,8 @@ powBasisPow' = return $
 -- | A list of arrays representing the mod-p CRT set of the
 -- extension O_m'/O_m
 crtSetDec' :: forall m m' fp .
-              (m `Divides` m', PrimeField fp, Unbox fp)
-              -- removed; see comments in Tensor.hs
-              -- Coprime (PToF (CharOf fp)) m')
+              (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m',
+               Unbox fp)
               => Tagged m [Arr m' fp]
 crtSetDec' = return $ 
   let m'p = Proxy :: Proxy m'
