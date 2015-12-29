@@ -1,23 +1,24 @@
-{-# LANGUAGE ConstraintKinds, DataKinds,
-             GADTs, KindSignatures, PolyKinds,
-             ScopedTypeVariables, TemplateHaskell, TypeFamilies,
-             TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, ExplicitNamespaces, GADTs,
+             InstanceSigs, KindSignatures, PolyKinds, ScopedTypeVariables,
+             TemplateHaskell, TypeFamilies, TypeOperators,
+             UndecidableInstances #-}
 
--- | This file defines types and operations for type-level
--- representation and manipulation of factored integers. It relies on
--- TH, so the documentation will be difficult to read. See comments
--- for better documentation.
+-- | This module defines types and operations for type-level
+-- representation and manipulation of natural numbers, as represented
+-- by their prime-power factorizations.  It relies on TH, so the
+-- documentation may be difficult to read.  See source-level comments
+-- for further details.
 
 module Crypto.Lol.Factored
 (
 -- * Factored natural numbers
-  Factored(..), SFactored, Fact
--- * Prime powers
-, PrimePower(..), SPrimePower, PPow, Sing (SPP)
+  Factored, SFactored, Fact
 -- * Naturals
-, Nat, NatC
+, Pos(..), SPos, Sing(SO,SS), Bin(..), SBin, Sing(SBO,SD,SDI), BinC
+-- * Prime powers
+, PrimePower(..), SPrimePower, Sing(SPP), PPow
 -- * Constructors
-, toPP, sToPP, ToPP, ppToF, sPpToF, PpToF, PToF
+, ppToF, sPpToF, PpToF, PToF
 -- * Unwrappers
 , unF, sUnF, UnF, unPP, sUnPP, UnPP, primePP, PrimePP, exponentPP, ExponentPP
 -- * Arithmetic operations
@@ -26,10 +27,10 @@ module Crypto.Lol.Factored
 , fGCD, FGCD, fLCM, FLCM, Coprime
 , fOddRadical, FOddRadical
 , pFree, PFree
--- * Reflections
+-- * Convenient reflections
 , ppsFact, valueFact, totientFact, valueHatFact, radicalFact, oddRadicalFact
 , ppPPow, primePPow, exponentPPow, valuePPow, totientPPow
-, valueNatC
+, valueBinC
 -- * Number-theoretic laws
 , transDivides, gcdDivides, lcmDivides, lcm2Divides
 , pSplitTheorems, pFreeDivides
@@ -38,6 +39,7 @@ module Crypto.Lol.Factored
 , valueHat
 , PP, ppToPP, valuePP, totientPP, radicalPP, oddRadicalPP
 , valuePPs, totientPPs, radicalPPs, oddRadicalPPs
+{-
 -- * Promoted 'Factored' types
 , F1, F2, F3, F4, F5, F6, F7, F8, F9, F10
 , F11, F12, F13, F14, F15, F16, F17, F18, F19, F20
@@ -49,51 +51,104 @@ module Crypto.Lol.Factored
 , F70, F72, F75, F76, F77, F78, F80, F81, F84, F85, F88
 , F90, F91, F95, F96, F98, F99
 , F128, F256, F512, F1024, F2048
+-}
 ) where
 
-import Data.Constraint hiding ((***))
+import Data.Constraint           hiding ((***))
 import Data.Functor.Trans.Tagged
-import Data.Singletons.Prelude hiding (sMin, sMax, MinSym0, MaxSym0, (:-))
+import Data.Singletons.Prelude   hiding ((:-))
 import Data.Singletons.TH
-import Data.Type.Natural         as N hiding ((:-))
-import Data.Typeable
 
 import Control.Arrow ((***))
 import Unsafe.Coerce
 
--- | Copied from Data.Type.Natural because the data-level version
--- is not exported there.
-(<<=) :: Nat -> Nat -> Bool
-Z   <<= _   = True
-S _ <<= Z   = False
-S n <<= S m = n <<= m
+singletons [d|
+            -- | Positive naturals (1, 2, ...) in Peano representation.
+            data Pos = O     -- ^ one
+                     | S Pos -- ^ successor
+                       deriving (Show, Eq)
+
+            instance Ord Pos where
+              compare O O          = EQ
+              compare O (S _)      = LT
+              compare (S _) O      = GT
+              compare (S a) (S b)  = compare a b
+
+            addPos :: Pos -> Pos -> Pos
+            addPos O b      = S b
+            addPos (S a) b  = S $ addPos a b
+
+            subPos :: Pos -> Pos -> Pos
+            subPos (S a) O      = a
+            subPos (S a) (S b)  = subPos a b
+            subPos O _          = error "Invalid call to subPos: a <= b"
+
+           |]
+
+posToInt :: Num z => Pos -> z
+posToInt O = 1
+posToInt (S a) = 1 + posToInt a
+
+singletons [d|
+            -- | Positive naturals in binary representation.
+            data Bin = BO       -- ^ 1
+                     | D Bin    -- ^ 2*b (double)
+                     | DI Bin   -- ^ 1 + 2*b (double and increment)
+                       deriving (Show, Eq)
+
+            instance Ord Bin where
+              compare BO BO          = EQ
+              compare BO (D _)       = LT
+              compare BO (DI _)      = LT
+              compare (D _) BO       = GT
+              compare (DI _) BO      = GT
+              compare (D a) (D b)    = compare a b
+              compare (DI a) (DI b)  = compare a b
+              compare (D a) (DI b)   = case compare a b of
+                                       EQ -> LT
+                                       LT -> LT
+                                       GT -> GT
+              compare (DI a) (D b)   = case compare a b of
+                                       EQ -> GT
+                                       LT -> LT
+                                       GT -> GT
+
+           |]
+
+-- not promotable due to Int
+
+binToInt :: Num z => Bin -> z
+binToInt BO = 1
+binToInt (D a) = 2 * binToInt a
+binToInt (DI a) = 1 + 2 * binToInt a
 
 singletons [d|
 
-            -- Invariant: first component is prime, second component
-            -- (the exponent) is positive (nonzero)
-            newtype PrimePower = PP (Nat,Nat) deriving (Eq,Show,Typeable)
+            -- | First component must be prime.
+            newtype PrimePower = PP (Bin,Pos) deriving (Eq,Show)
 
-            -- List invariant: primes appear in strictly increasing
-            -- order (no duplicates)
-            newtype Factored = F [PrimePower] deriving (Eq,Show,Typeable)
+            -- | Invariant: primes appear in strictly increasing
+            -- order (no duplicates).
+            newtype Factored = F [PrimePower] deriving (Eq,Show)
 
-            -- unwrap 'Factored'
+            -- | Unwrap 'Factored'.
             unF :: Factored -> [PrimePower]
             unF (F pps) = pps
 
-            -- unwrap 'PrimePower'
-            unPP :: PrimePower -> (Nat,Nat)
+            -- | Unwrap 'PrimePower'.
+            unPP :: PrimePower -> (Bin,Pos)
             unPP (PP pp) = pp
 
-            -- grab individual components of a 'PrimePower'
-            primePP, exponentPP :: PrimePower -> Nat
+            -- | Prime component of a 'PrimePower'.
+            primePP :: PrimePower -> Bin
             primePP = fst . unPP
+
+            -- | Exponent component of a 'PrimePower'.
+            exponentPP :: PrimePower -> Pos
             exponentPP = snd . unPP
 
             |]
 
--- SMART CONSTRUCTORS
 singletons [d|
 
             fPPMul :: PrimePower -> Factored -> Factored
@@ -101,8 +156,7 @@ singletons [d|
 
             -- constructor implementations
             -- multiply a new 'PrimePower' into a 'Factored' number
-            fPPMul (PP(_,Z)) y = y -- throw away trivial prime power
-            fPPMul pp@(PP(_,S _)) (F pps) = F (ppMul pp pps)
+            fPPMul pp (F pps) = F (ppMul pp pps)
 
             -- multiply two 'Factored' numbers
             fMul (F pps1) (F pps2) = F (ppsMul pps1 pps2)
@@ -115,12 +169,14 @@ singletons [d|
             -- when compiling with -O2
             -- reported as #10924
             -- singletons-2.0 doesn't work well with guards: https://github.com/goldfirere/singletons/issues/131
+
             ppMul :: PrimePower -> [PrimePower] -> [PrimePower]
             ppMul x [] = [x]
-            ppMul (PP(p,e)) (PP (p',e'):pps') =
-              if p == p' then PP(p,e + e'):pps'
-              else if p <<= p' then (PP(p,e)):(PP (p',e'):pps')
-              else (PP(p',e')):ppMul (PP(p,e)) pps'
+            ppMul pp'@(PP (p',e')) pps@(pp@(PP (p,e)):pps') =
+              case compare p' p of
+                EQ -> PP (p, addPos e e') : pps'
+                LT -> pp' : pps
+                GT -> pp : ppMul pp' pps'
 
             ppsMul :: [PrimePower] -> [PrimePower] -> [PrimePower]
             ppsMul [] ys = ys
@@ -130,24 +186,18 @@ singletons [d|
 
 -- ARITHMETIC OPERATIONS
 singletons [d|
-            -- Smart constructor that checks that the second arg is
-            -- strictly positive.  Caller must guarantee that first
-            -- arg is prime.
-            toPP :: Nat -> Nat -> PrimePower
-            toPP p e | n1 <<= e = PP (p,e)
-
             ppToF :: PrimePower -> Factored
             ppToF pp = F [pp]
 
             -- Caller must guarantee that argument is prime.
-            primeToF :: Nat -> Factored
-            primeToF p = ppToF $ PP (p, n1)
-            
+            pToF :: Bin -> Factored
+            pToF p = ppToF $ PP (p, O)
+
             fGCD, fLCM :: Factored -> Factored -> Factored
             fDivides :: Factored -> Factored -> Bool
             fDiv :: Factored -> Factored -> Factored
             fOddRadical :: Factored -> Factored
-            
+
             fGCD (F pps1) (F pps2) = F (ppsGCD pps1 pps2)
             fLCM (F pps1) (F pps2) = F (ppsLCM pps1 pps2)
 
@@ -160,49 +210,49 @@ singletons [d|
             -- of Factored lists, and need to ensure that output lists
             -- also obey the invariant.
             ppsGCD :: [PrimePower] -> [PrimePower] -> [PrimePower]
-            ppsGCD [] [] = []
-            ppsGCD [] (_:_) = []
+            ppsGCD [] _ = []
             ppsGCD (_:_) [] = []
-            ppsGCD (PP (p,e) : xs') (PP (p',e') : ys') =
-              if p == p' then PP (p,N.min e e') : ppsGCD xs' ys'
-              else if p <<= p' then ppsGCD xs' (PP (p',e') : ys')
-              else ppsGCD (PP (p,e) : xs') ys'
+            ppsGCD xs@(PP (p,e) : xs') ys@(PP (p',e') : ys') =
+              case compare p p' of
+                EQ -> PP (p, min e e') : ppsGCD xs' ys'
+                LT -> ppsGCD xs' ys
+                GT -> ppsGCD xs  ys'
 
             ppsLCM :: [PrimePower] -> [PrimePower] -> [PrimePower]
-            ppsLCM [] [] = []
-            ppsLCM [] ys@(_:_) = ys
+            ppsLCM [] ys = ys
             ppsLCM xs@(_:_) [] = xs
-            ppsLCM ((PP (p,e)) : xs') ((PP (p',e')) : ys') =
-              if p == p' then PP (p,N.max e e') : ppsLCM xs' ys'
-              else if p <<= p' then (PP (p,e)) : ppsLCM xs' ((PP (p',e')) : ys')
-              else (PP (p',e')) : ppsLCM ((PP (p,e)) : xs') ys'
+            ppsLCM xs@(pp@(PP (p,e)) : xs') ys@(pp'@(PP (p',e')) : ys') =
+              case compare p p' of
+                EQ -> PP (p, max e e') : ppsLCM xs' ys'
+                LT -> pp  : ppsLCM xs' ys
+                GT -> pp' : ppsLCM xs ys'
 
             ppsDivides :: [PrimePower] -> [PrimePower] -> Bool
             ppsDivides [] _ = True
             ppsDivides (_:_) [] = False
-            ppsDivides (PP (p,e) : xs') (PP (p',e') : ys') =
-              if p == p' then (e <<= e') && ppsDivides xs' ys'
-              else not (p <<= p') && ppsDivides (PP (p,e) : xs') ys'
+            ppsDivides xs@(PP (p,e) : xs') (PP (p',e') : ys') =
+              if p == p' then (e <= e') && ppsDivides xs' ys'
+              else (p > p') && ppsDivides xs ys'
 
             ppsDiv :: [PrimePower] -> [PrimePower] -> [PrimePower]
             ppsDiv xs [] = xs
-            ppsDiv ((PP (p,e)) : xs') (PP (p',e') : ys') =
+            ppsDiv (pp@(PP (p,e)) : xs') ys@(PP (p',e') : ys') =
               if p == p' && e' == e then ppsDiv xs' ys'
-              else if p == p' && e' <<= e then PP (p,e-e') : ppsDiv xs' ys'
-              else if p <<= p' then (PP (p,e)) : ppsDiv xs' (PP (p',e') : ys')
-              else error "type error in ppsDiv"                -- if p' <<= p then it's an error
+              else if p == p' && e' <= e then PP (p, subPos e e') : ppsDiv xs' ys'
+              else if p <= p' then pp : ppsDiv xs' ys
+              else error "invalid call to ppsDiv"
 
             ppsOddRad :: [PrimePower] -> [PrimePower]
             ppsOddRad [] = []
-            ppsOddRad (PP ((S (S Z)),_) : xs') = ppsOddRad xs'
-            -- need to expand to avoid overlapping with previous case
-            ppsOddRad (PP (p@(S (S (S _))),_) : xs') = PP (p,n1) : ppsOddRad xs'
+            ppsOddRad (PP (p, _) : xs') =
+                if p == D BO then ppsOddRad xs' -- D BO == 2
+                else PP (p,O) : ppsOddRad xs'
 
             |]
 
 singletons [d|
-            -- removes all @p@-factors from a 'Factored'
-            pFree :: Nat -> Factored -> Factored
+            -- | Remove all @p@-factors from a 'Factored'.
+            pFree :: Bin -> Factored -> Factored
             pFree n (F pps) = F (go pps)
               where go [] = []
                     go (pp@(PP (p,_)) : ps) =
@@ -213,6 +263,7 @@ singletons [d|
 singletons [d|
 
             f1 = F []
+{-
             f2 = primeToF n2
             f3 = primeToF n3
             f4 = f2 `fMul` f2
@@ -288,6 +339,7 @@ singletons [d|
             f512 = f2 `fMul` f256
             f1024 = f2 `fMul` f512
             f2048 = f2 `fMul` f1024
+-}
             |]
 
 -- | Type (family) synonym for division of 'Factored' types
@@ -296,33 +348,27 @@ type a / b = FDiv a b
 -- | Type (family) synonym for multiplication of 'Factored' types
 type a * b = FMul a b
 
--- | Type (family) synonym to create a Factored from a prime Nat
-type PToF p = PpToF (ToPP p N1)
-
 -- convenience aliases: enforce kind, hide SingI
 
--- | Kind-restricted synonym for 'SingI'. Use this in constraints 
--- for types requiring a 'Factored' type.
+-- | Kind-restricted synonym for 'SingI'.
 type Fact (m :: Factored) = SingI m
 
--- | Kind-restricted synonym for 'SingI'. Use this in constraints 
--- for types requiring a 'PrimePower' type.
+-- | Kind-restricted synonym for 'SingI'.
 type PPow (pp :: PrimePower) = SingI pp
 
--- | Kind-restricted synonym for 'SingI'. Use this in constraints 
--- for types requiring a 'Nat' type.
-type NatC (p :: Nat) = SingI p
+-- | Kind-restricted synonym for 'SingI'.
+type BinC (p :: Bin) = SingI p
 
--- | Constraint synonym for divisibility of 'Factored' types
+-- | Constraint synonym for divisibility of 'Factored' types.
 type Divides m m' = (Fact m, Fact m', FDivides m m' ~ 'True)
 
--- | Constraint synonym for coprimality of 'Factored' types
+-- | Constraint synonym for coprimality of 'Factored' types.
 type Coprime m m' = (FGCD m m' ~ F1)
 
 -- coercions: using proxy arguments here due to compiler bugs in usage
 
 -- coerce any divisibility relationship we want
-coerceFDivs :: p m -> p' m' -> (() :- (FDivides m m' ~ True))
+coerceFDivs :: p m -> p' m' -> (() :- (FDivides m m' ~ 'True))
 coerceFDivs _ _ = Sub $ unsafeCoerce (Dict :: Dict ())
 
 -- coerce any GCD we want
@@ -335,8 +381,8 @@ transDivides :: forall k l m . Proxy k -> Proxy l -> Proxy m ->
                 ((k `Divides` l, l `Divides` m) :- (k `Divides` m))
 transDivides k _ m = Sub Dict \\ coerceFDivs k m
 
--- | Entails constraint for divisibility by GCD, i.e.
--- if @g=GCD(m1,m2)@, then @g|m1@ and @g|m2@.
+-- | Entailment for divisibility by GCD:
+-- if @g=GCD(m1,m2)@ then @g|m1@ and @g|m2@.
 gcdDivides :: forall m1 m2 g . Proxy m1 -> Proxy m2 ->
               ((Fact m1, Fact m2, g ~ FGCD m1 m2) :-
                (g `Divides` m1, g `Divides` m2))
@@ -345,47 +391,47 @@ gcdDivides m1 m2 =
   Dict \\ coerceFDivs (Proxy::Proxy g) m1
        \\ coerceFDivs (Proxy::Proxy g) m2
 
--- | Entails constraint for LCM divisibility, i.e.
--- if @l=LCM(m1,m2)@, then @m1|l@ and @m2|l@.
+-- | Entailment for LCM divisibility:
+-- if @l=LCM(m1,m2)@ then @m1|l@ and @m2|l@.
 lcmDivides :: forall m1 m2 l . Proxy m1 -> Proxy m2 ->
               ((Fact m1, Fact m2, l ~ FLCM m1 m2) :-
                (m1 `Divides` l, m2 `Divides` l))
-lcmDivides m1 m2 = 
+lcmDivides m1 m2 =
   Sub $ withSingI (sFLCM (sing :: SFactored m1) (sing :: SFactored m2))
   Dict \\ coerceFDivs m1 (Proxy::Proxy l)
        \\ coerceFDivs m2 (Proxy::Proxy l)
 
--- | Entails constraint for LCM divisibility, i.e.
+-- | Entailment for LCM divisibility:
 -- the LCM of two divisors of @m@ also divides @m@.
 lcm2Divides :: forall m1 m2 l m . Proxy m1 -> Proxy m2 -> Proxy m ->
                ((m1 `Divides` m, m2 `Divides` m, l ~ FLCM m1 m2) :-
                 (m1 `Divides` l, m2 `Divides` l, (FLCM m1 m2) `Divides` m))
-lcm2Divides m1 m2 m = 
+lcm2Divides m1 m2 m =
   Sub $ withSingI (sFLCM (sing :: SFactored m1) (sing :: SFactored m2))
   Dict \\ coerceFDivs (Proxy::Proxy (FLCM m1 m2)) m \\ lcmDivides m1 m2
 
--- | Entails basic facts for @p@-free division, i.e.
+-- | Entailment for @p@-free division:
 -- if @f@ is @m@ after removing all @p@-factors, then @f|m@ and
--- @gcd(f,p)=1@
+-- @gcd(f,p)=1@.
 pSplitTheorems :: forall p m f . Proxy p -> Proxy m ->
-                  ((NatC p, Fact m, f ~ PFree p m) :-
+                  ((BinC p, Fact m, f ~ PFree p m) :-
                    (f `Divides` m, Coprime (PToF p) f))
 pSplitTheorems _ m =
-  Sub $ withSingI (sPFree (sing :: SNat p) (sing :: SFactored m))
-  Dict \\ coerceFDivs (Proxy::Proxy f) m 
+  Sub $ withSingI (sPFree (sing :: SBin p) (sing :: SFactored m))
+  Dict \\ coerceFDivs (Proxy::Proxy f) m
   \\ coerceGCD (Proxy::Proxy (PToF p)) (Proxy::Proxy f) (Proxy::Proxy F1)
 
--- | Entails basic facts for @p@-free division, i.e.,
--- if @m|m'@, then @p-free(m) | p-free(m')@
+-- | Entailment for @p@-free division:
+-- if @m|m'@, then @p-free(m) | p-free(m')@.
 pFreeDivides :: forall p m m' . Proxy p -> Proxy m -> Proxy m' ->
-                ((NatC p, m `Divides` m') :-
+                ((BinC p, m `Divides` m') :-
                  ((PFree p m) `Divides` (PFree p m')))
 pFreeDivides _ _ _ =
-  Sub $ withSingI (sPFree (sing :: SNat p) (sing :: SFactored m)) $
-        withSingI (sPFree (sing :: SNat p) (sing :: SFactored m')) $
+  Sub $ withSingI (sPFree (sing :: SBin p) (sing :: SFactored m)) $
+        withSingI (sPFree (sing :: SBin p) (sing :: SFactored m')) $
         Dict \\ coerceFDivs (Proxy::Proxy (PFree p m)) (Proxy::Proxy (PFree p m'))
 
--- | Type synonym for @(prime :: Int, exponent :: Int)@ pair
+-- | Type synonym for @(prime, exponent)@ pair.
 type PP = (Int, Int)
 
 -- | Value-level prime-power factorization tagged by a 'Factored' type.
@@ -393,68 +439,64 @@ ppsFact :: forall m . (Fact m) => Tagged m [PP]
 ppsFact = tag $ map ppToPP $ unF $ fromSing (sing :: SFactored m)
 
 valueFact, totientFact, valueHatFact, radicalFact, oddRadicalFact ::
-  (Fact m) => Tagged m Int
+  Fact m => Tagged m Int
 
--- | @Int@ representing the value of a 'Factored' type
+-- | The value of a 'Factored' type.
 valueFact = valuePPs <$> ppsFact
 
--- | @Int@ representing the totient of a 'Factored' type's value
+-- | The totient of a 'Factored' type's value.
 totientFact = totientPPs <$> ppsFact
 
--- | @Int@ representing the "hat" of a 'Factored' type's value @m@:
--- @m@, if @m@ is odd, or @m/2@ otherwise.
+-- | The "hat" of a 'Factored' type's value:
+-- @\hat{m}@ is @m@ if @m@ is odd, and @m/2@ otherwise.
 valueHatFact = valueHat <$> valueFact
 
--- | @Int@ representing the radical (product of prime divisors)
--- of a 'Factored' type
+-- | The radical (product of prime divisors) of a 'Factored' type.
 radicalFact = radicalPPs <$> ppsFact
 
--- | @Int@ representing the odd radical (product of odd prime divisors)
--- of a 'Factored' type
+-- | The odd radical (product of odd prime divisors) of a 'Factored'
+-- type.
 oddRadicalFact = oddRadicalPPs <$> ppsFact
 
--- | Reflects a 'PrimePower' type to a 'PP' value
-ppPPow :: forall pp . (PPow pp) => Tagged pp PP
+-- | Reflect a 'PrimePower' type to a 'PP' value.
+ppPPow :: forall pp . PPow pp => Tagged pp PP
 ppPPow = tag $ ppToPP $ fromSing (sing :: SPrimePower pp)
 
 primePPow, exponentPPow, valuePPow, totientPPow :: (PPow pp) => Tagged pp Int
--- | Reflects the prime component of a 'PrimePower' type
+-- | Reflect the prime component of a 'PrimePower' type.
 primePPow = fst <$> ppPPow
--- | Reflects the exponent component of a 'PrimePower' type
+-- | Reflect the exponent component of a 'PrimePower' type.
 exponentPPow = snd <$> ppPPow
--- | @Int@ representing the value of a 'PrimePower' type
+-- | The value of a 'PrimePower' type.
 valuePPow = valuePP <$> ppPPow
--- | @Int@ representing the totient of a 'PrimePower' type's value
+-- | The totient of a 'PrimePower' type's value.
 totientPPow = totientPP <$> ppPPow
 
--- | @Int@ representing the value of a 'Nat'
-valueNatC :: forall p . (NatC p) => Tagged p Int
-valueNatC = tag $ sNatToInt (sing :: SNat p)
+-- | The value of a 'Bin' type.
+valueBinC :: forall p . BinC p => Tagged p Int
+valueBinC = tag $ binToInt $ fromSing (sing :: SBin p)
 
--- | Returns @m@, if @m@ is odd, or @m/2@ otherwise
-valueHat :: (Integral i) => i -> i
+-- | Return @m@ if @m@ is odd, and @m/2@ otherwise.
+valueHat :: Integral i => i -> i
 valueHat m = if m `mod` 2 == 0 then m `div` 2 else m
 
--- | Converts a 'Nat' prime-power pair to an @Int@ prime-power pair
+-- | Convert to an @Int@ pair.
 ppToPP :: PrimePower -> PP
-ppToPP = (natToInt *** natToInt) . unPP
+ppToPP = (binToInt *** posToInt) . unPP
 
 valuePP, totientPP, radicalPP, oddRadicalPP :: PP -> Int
--- | Evaluates a prime-power pair @(p,e)@ to @p^e@
+-- | The value of a prime power.
 valuePP (p,e) = p^e
 
--- | Euler's totient function of a prime-power pair
+-- | Totient of a prime power.
 totientPP (_,0) = 1
 totientPP (p,e) = (p-1)*(p^(e-1))
 
--- | The prime component of a prime-power pair
+-- | The prime component of a prime power.
 radicalPP (_,0) = 1
 radicalPP (p,_) = p
 
--- | The odd radical of a prime-power pair (p,_):
--- p if p is odd,
--- 1 if p==2
-oddRadicalPP (_,0) = 1
+-- | The odd radical of a prime power.
 oddRadicalPP (2,_) = 1
 oddRadicalPP (p,_) = p
 
