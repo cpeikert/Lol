@@ -132,7 +132,6 @@ library
     storable-record>=0.0.3 && < 0.1,
     storable-tuple>=0.0.1 && < 0.1,
     th-desugar>=1.5.4 && < 1.6,
-    type-natural>=0.2.3.2 && < 0.4,
     tagged-transformer>=0.7 && < 0.9,
     transformers>=0.4.2.0 && < 0.5,
     vector==0.11.*,
@@ -159,5 +158,4 @@ test-suite lol-test-suite
     test-framework >= 0.8 && < 0.9,
     test-framework-quickcheck2 >= 0.3 && < 0.4,
     time>=1.2 && < 1.6,
-    type-natural,
     vector
