@@ -1,8 +1,8 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
              GeneralizedNewtypeDeriving, KindSignatures,
              MultiParamTypeClasses, NoImplicitPrelude, RoleAnnotations,
-             ScopedTypeVariables, StandaloneDeriving,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+             ScopedTypeVariables, StandaloneDeriving, TypeFamilies,
+             TypeOperators, UndecidableInstances #-}
 
 -- | Functions from one cyclotomic ring to another that are linear
 -- over a common subring.
@@ -21,11 +21,12 @@ import Control.Applicative
 import Control.DeepSeq
 
 -- | An @E@-linear function from @R@ to @S@.
-newtype Linear t z (e::Factored) (r::Factored) (s::Factored) = D [Cyc t s z]
+
+-- CJP: also have constructor for relative Pow basis of R/E?  So far
+-- not needed.
+newtype Linear t z (e::Factored) (r::Factored) (s::Factored) = RD [Cyc t s z]
 
 deriving instance (NFData (Cyc t s z)) => NFData (Linear t z e r s)
-
--- TODO: have constructor for both relative Pow basis of R/E?
 
 -- some params are phantom but matter for safety
 type role Linear representational nominal representational representational nominal
@@ -37,37 +38,37 @@ linearDec :: forall t z e r s .
              (e `Divides` r, e `Divides` s, CElt t z)
              => [Cyc t s z] -> Linear t z e r s
 linearDec ys = let ps = proxy powBasis (Proxy::Proxy e) `asTypeOf` ys
-               in if length ys <= length ps then D (adviseCRT <$> ys)
+               in if length ys <= length ps then RD (adviseCRT <$> ys)
                else error $ "linearDec: too many entries: "
-                           ++ show (length ys) ++ " versus "
-                           ++ show (length ps)
+                        ++ show (length ys) ++ " versus "
+                        ++ show (length ps)
 
 -- | Evaluates the given linear function on the input.
 evalLin :: forall t z e r s .
            (e `Divides` r, e `Divides` s, CElt t z)
            => Linear t z e r s -> Cyc t r z -> Cyc t s z
-evalLin (D ys) r = sum (zipWith (*) ys $
-                        embed <$> (coeffsCyc Dec r :: [Cyc t e z]))
+evalLin (RD ys) r = sum (zipWith (*) ys $
+                         embed <$> (coeffsCyc Dec r :: [Cyc t e z]))
 
 instance Additive (Cyc t s z) => Additive.C (Linear t z e r s) where
-  zero = D []
+  zero = RD []
 
-  (D as) + (D bs) = D $ sumall as bs
+  (RD as) + (RD bs) = RD $ sumall as bs
     where sumall [] ys = ys
           sumall xs [] = xs
           sumall (x:xs) (y:ys) = x+y : sumall xs ys
 
-  negate (D as) = D $ negate <$> as
+  negate (RD as) = RD $ negate <$> as
 
 instance (Reduce z zq, Fact s, CElt t z, CElt t zq)
          => Reduce (Linear t z e r s) (Linear t zq e r s) where
-  reduce (D ys) = D $ reduce <$> ys
+  reduce (RD ys) = RD $ reduce <$> ys
 
 type instance LiftOf (Linear t zp e r s) = Linear t (LiftOf zp) e r s
 
 instance (CElt t zp, CElt t z, z ~ LiftOf zp, Lift zp z, Fact s)
          => Lift' (Linear t zp e r s) where
-  lift (D ys) = D $ liftCyc Pow <$> ys
+  lift (RD ys) = RD $ liftCyc Pow <$> ys
 
 -- | A convenient constraint synonym for extending a linear function
 -- to larger rings.
@@ -86,4 +87,4 @@ extendLin :: (ExtendLinIdx e r s e' r' s', CElt t z)
 -- identical decoding bases, because R' \cong R \otimes_E E'.  If we
 -- relax the constraint on E then we'd have to change the
 -- implementation to something more difficult.
-extendLin (D ys) = D (embed <$> ys)
+extendLin (RD ys) = RD (embed <$> ys)

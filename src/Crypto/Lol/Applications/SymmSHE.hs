@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveDataTypeable,
+{-# LANGUAGE ConstraintKinds, DataKinds,
              FlexibleContexts, FlexibleInstances, GADTs,
              MultiParamTypeClasses, NoImplicitPrelude, ScopedTypeVariables,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
@@ -46,7 +46,6 @@ import Control.Monad        as CM
 import Control.Monad.Random
 import Data.Maybe
 import Data.Traversable     as DT
-import Data.Typeable
 
 import MathObj.Polynomial as P
 
@@ -67,7 +66,7 @@ data CT (m :: Factored) zp r'q =
   !Int                          -- accumulated power of g_m' in c(s)
   !zp                           -- factor to mul by upon decryption
   !(Polynomial r'q)             -- the polynomial c(s)
-  deriving (Typeable, Show)
+  deriving (Show)
 
 -- Note: do *not* give an Eq instance for CT, because it's not
 -- meaningful to compare ciphertexts for equality

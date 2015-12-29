@@ -17,8 +17,6 @@ import Crypto.Lol
 import Crypto.Lol.Reflects
 import Crypto.Lol.Factored
 
-import Data.Type.Natural
-
 import Test.QuickCheck.Monadic
 
 instance (MonadRandom m) => MonadRandom (PropertyM m) where
@@ -77,13 +75,13 @@ instance (ToInteger i) => Reflects SmoothQ3 i where value = return 2150668801
 type Zq (q :: k) = ZqBasic q Z
 type Z = Int64
 
-type PP2 e = ToPP N2 e
-type PP3 e = ToPP N3 e
+type PP2 e = 'PP '(B2,e)
+type PP3 e = 'PP '(B3,e)
 
-type ZP2 = Zq (PP2 N1)
-type ZP3 = Zq (PP3 N1)
-type ZP4 = Zq (PP2 N2)
-type ZP8 = Zq (PP2 N3)
+type ZP2 = Zq (PP2 P1)
+type ZP3 = Zq (PP3 P1)
+type ZP4 = Zq (PP2 P2)
+type ZP8 = Zq (PP2 P3)
 
 type SmoothZQ1 = Zq SmoothQ1
 type SmoothZQ2 = (Zq SmoothQ2, SmoothZQ1)

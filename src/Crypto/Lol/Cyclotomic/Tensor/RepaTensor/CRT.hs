@@ -19,7 +19,6 @@ import Crypto.Lol.LatticePrelude                        as LP
 import Control.Applicative
 import Data.Coerce
 import Data.Singletons.Prelude
-import Data.Type.Natural       as N hiding (Z, one, zero)
 
 -- | Embeds a scalar into the CRT basis (when it exists).
 scalarCRT' :: forall m r . (Fact m, CRTrans r, Unbox r)
@@ -70,32 +69,31 @@ ppDFT, ppDFTInv', ppCRT, ppCRTInv' ::
   => TaggedT pp Maybe (Trans r)
 
 ppDFT = case (sing :: SPrimePower pp) of
-  (SPP (STuple2 _ SZ)) -> return $ Id 1
-  spp@(SPP (STuple2 sp (SS se1))) ->
+  (SPP (STuple2 sp SO)) -> tagT $ withWitnessT pDFT sp
+  spp@(SPP (STuple2 sp (SS se'))) ->
     tagT $ do
-      let spp' = SPP (STuple2 sp se1)
+      let spp' = SPP (STuple2 sp se')
       pp'dft <- withWitnessT ppDFT spp'
       pptwid <- withWitnessT (ppTwid False) spp
       pdft <- withWitnessT pDFT sp
       return $ (pp'dft @* Id (dim pdft)) .* pptwid .* (Id (dim pp'dft) @* pdft)
 
 ppDFTInv' = case (sing :: SPrimePower pp) of
-  (SPP (STuple2 _ SZ)) -> return $ Id 1
-  spp@(SPP (STuple2 sp (SS se1))) ->
+  (SPP (STuple2 sp SO)) -> tagT $ withWitnessT pDFTInv' sp
+  spp@(SPP (STuple2 sp (SS se'))) ->
     tagT $ do
-      let spp' = SPP (STuple2 sp se1)
+      let spp' = SPP (STuple2 sp se')
       pp'dftInv' <- withWitnessT ppDFTInv' spp'
       pptwidInv <- withWitnessT (ppTwid True) spp
       pdftInv' <- withWitnessT pDFTInv' sp
-      return $
-        (Id (dim pp'dftInv') @* pdftInv') .* pptwidInv .*
-        (pp'dftInv' @* Id (dim pdftInv'))
+      return $ (Id (dim pp'dftInv') @* pdftInv') .* pptwidInv .*
+                 (pp'dftInv' @* Id (dim pdftInv'))
 
 ppCRT = case (sing :: SPrimePower pp) of
-  (SPP (STuple2 _ SZ)) -> return $ Id 1
-  spp@(SPP (STuple2 sp (SS se1))) ->
+  (SPP (STuple2 sp SO)) -> tagT $ withWitnessT pCRT sp
+  spp@(SPP (STuple2 sp (SS se'))) ->
     tagT $ do
-      let spp' = SPP (STuple2 sp se1)
+      let spp' = SPP (STuple2 sp se')
       pp'dft <- withWitnessT ppDFT spp'
       pptwid <- withWitnessT (ppTwidHat False) spp
       pcrt <- withWitnessT pCRT sp
@@ -105,51 +103,50 @@ ppCRT = case (sing :: SPrimePower pp) of
         (if dim pcrt > 1 then Id (dim pp'dft) @* pcrt else Id (dim pp'dft))
 
 ppCRTInv' = case (sing :: SPrimePower pp) of
-  (SPP (STuple2 _ SZ)) -> return $ Id 1
-  spp@(SPP (STuple2 sp (SS se1))) ->
+  (SPP (STuple2 sp SO)) -> tagT $ withWitnessT pCRTInv' sp
+  spp@(SPP (STuple2 sp (SS se'))) ->
     tagT $ do
-      let spp' = SPP (STuple2 sp se1)
+      let spp' = SPP (STuple2 sp se')
       pp'dftInv' <- withWitnessT ppDFTInv' spp'
       pptwidInv <- withWitnessT (ppTwidHat True) spp
       pcrtInv' <- withWitnessT pCRTInv' sp
-      return $ -- special case for p=2 (necessary for scaling!)
-        (if dim pcrtInv' > 1
-         then Id (dim pp'dftInv') @* pcrtInv' else Id (dim pp'dftInv')) .*
-        pptwidInv .* (pp'dftInv' @* Id (dim pcrtInv'))
+      return $
+        (Id (dim pp'dftInv') @* pcrtInv') .* pptwidInv .*
+        (pp'dftInv' @* Id (dim pcrtInv'))
 
--- DFT_p, CRT_p, (scaled) DFT_p^-1, etc.
+-- DFT_p, CRT_p, scaled DFT_p^{ -1 } and CRT_p^{ -1 }
 pDFT, pDFTInv', pCRT, pCRTInv' ::
-  forall p r . (NatC p, CRTrans r, Unbox r, Elt r)
+  forall p r . (BinC p, CRTrans r, Unbox r, Elt r)
   => TaggedT p Maybe (Trans r)
 
-pDFT = let pval = proxy valueNatC (Proxy::Proxy p)
-       in do (omegaPPow, _) <- crtInfoNatC
+pDFT = let pval = proxy valueBinC (Proxy::Proxy p)
+       in do (omegaPPow, _) <- crtInfoBinC
              return $ trans pval $ mulMat $ force $
                                    fromFunction (Z :. pval :. pval)
                                    (\(Z:.i:.j) -> omegaPPow (i*j))
 
-pDFTInv' = let pval = proxy valueNatC (Proxy::Proxy p)
-           in do (omegaPPow, _) <- crtInfoNatC
+pDFTInv' = let pval = proxy valueBinC (Proxy::Proxy p)
+           in do (omegaPPow, _) <- crtInfoBinC
                  return $ trans pval $ mulMat $ force $
                                        fromFunction (Z :. pval :. pval)
                                        (\(Z:.i:.j) -> omegaPPow (-i*j))
 
-pCRT = let pval = proxy valueNatC (Proxy::Proxy p)
-       in do (omegaPPow, _) <- crtInfoNatC
+pCRT = let pval = proxy valueBinC (Proxy::Proxy p)
+       in do (omegaPPow, _) <- crtInfoBinC
              return $ trans (pval-1) $ mulMat $ force $
                                      fromFunction (Z :. pval-1 :. pval-1)
                                      (\(Z:.i:.j) -> omegaPPow ((i+1)*j))
 
--- crt_p * this = pI, for all values of p.  For p=2 this isn't the
--- matrix we "want," but it doesn't matter because we don't use it in
--- ppCRTInv'
+-- crt_p * this = \hat{p}*I, for all prime p.
 pCRTInv' =
-  let pval = proxy valueNatC (Proxy::Proxy p)
-  in do (omegaPPow, _) <- crtInfoNatC
-        return $ trans (pval-1) $  mulMat $ force $
-                                fromFunction (Z :. pval-1 :. pval-1)
-                                (\(Z:.i:.j) -> omegaPPow (negate i*(j+1)) -
-                                               omegaPPow (j+1))
+  let pval = proxy valueBinC (Proxy::Proxy p)
+  in if pval == 2 then return $ Id 1
+     else do
+       (omegaPPow, _) <- crtInfoBinC
+       return $ trans (pval-1) $  mulMat $ force $
+              fromFunction (Z :. pval-1 :. pval-1)
+                               (\(Z:.i:.j) -> omegaPPow (negate i*(j+1)) -
+                                              omegaPPow (j+1))
 
 -- twiddle factors for DFT_pp and CRT_pp decompositions
 ppTwid, ppTwidHat ::

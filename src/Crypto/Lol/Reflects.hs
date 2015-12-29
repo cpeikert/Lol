@@ -26,14 +26,14 @@ class Reflects a i where
 instance (KnownNat a, Integral i) => Reflects (a :: TL.Nat) i where
   value = return $ fromIntegral $ natVal (Proxy::Proxy a)
 
-instance (NatC a, Integral i) => Reflects a i where
-  value = fmap fromIntegral valueNatC
+instance (BinC a, Integral i) => Reflects a i where
+  value = fromIntegral <$> valueBinC
 
 instance (PPow pp, Integral i) => Reflects pp i where
-  value = fmap fromIntegral valuePPow
+  value = fromIntegral <$> valuePPow
 
 instance (Fact m, Integral i) => Reflects m i where
-  value = fmap fromIntegral valueFact
+  value = fromIntegral <$> valueFact
 
 instance {-# OVERLAPS #-} (Reifies rei a) => Reflects (rei :: *) a where
   value = tag $ reflect (Proxy::Proxy rei)

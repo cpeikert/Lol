@@ -30,7 +30,6 @@ import Data.Array.Repa.Repr.Unboxed
 import Data.Coerce
 import Data.Singletons
 import Data.Singletons.Prelude      hiding ((:.))
-import Data.Type.Natural            hiding (Z)
 import Data.Typeable
 import qualified Data.Vector.Unboxed as U
 import Test.QuickCheck
@@ -91,18 +90,16 @@ fTensor func = tagT $ go $ sUnF (sing :: SFactored m)
             func' <- withWitnessT func spp
             return $ rest' @* func'
 
--- | For a prime power pp > 1, tensors up any function f defined for
--- (and tagged by) a prime to (I_(pp/p) \otimes f)
+-- | For a prime power p^e, tensors up any function f defined for
+-- (and tagged by) a prime to @I_(p^{e-1}) \otimes f@
 ppTensor :: forall pp r mon . (PPow pp, Monad mon)
-            => (forall p . (NatC p) => TaggedT p mon (Trans r))
+            => (forall p . (BinC p) => TaggedT p mon (Trans r))
             -> TaggedT pp mon (Trans r)
 
 ppTensor func = tagT $ case (sing :: SPrimePower pp) of
-  -- intentionally no match for zero exponents, because that is
-  -- ill-formed and indicates an internal error
-  (SPP (STuple2 sp (SS se1))) -> do
+  pp@(SPP (STuple2 sp _)) -> do
     func' <- withWitnessT func sp
-    let lts = withWitness valuePPow (SPP (STuple2 sp se1))
+    let lts = withWitness valuePPow pp `div` withWitness valueBinC sp
     return $ Id lts @* func'
 
 

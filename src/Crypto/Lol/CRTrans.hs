@@ -7,16 +7,15 @@
 module Crypto.Lol.CRTrans
 ( CRTrans(..), CRTEmbed(..)
 , CRTInfo
-, crtInfoFact, crtInfoPPow, crtInfoNatC
-, gEmbPPow, gEmbNatC
+, crtInfoFact, crtInfoPPow, crtInfoBinC
+, gEmbPPow, gEmbBinC
 ) where
 
 import Crypto.Lol.LatticePrelude
 
-import           Control.Arrow
-import           Data.Singletons
-import           Data.Singletons.Prelude
-import           Data.Type.Natural       (Sing (SS))
+import Control.Arrow
+import Data.Singletons
+import Data.Singletons.Prelude
 
 -- | Information that characterizes the (invertible) Chinese remainder
 -- transformation over a ring @r@, namely:
@@ -79,22 +78,21 @@ crtInfoFact = (tagT . crtInfo) =<< pureT valueFact
 crtInfoPPow :: (PPow pp, CRTrans r) => TaggedT pp Maybe (CRTInfo r)
 crtInfoPPow = (tagT . crtInfo) =<< pureT valuePPow
 
--- | 'crtInfo' wrapper for 'NatC' types.
-crtInfoNatC :: (NatC p, CRTrans r) => TaggedT p Maybe (CRTInfo r)
-crtInfoNatC = (tagT . crtInfo) =<< pureT valueNatC
+-- | 'crtInfo' wrapper for 'BinC' types.
+crtInfoBinC :: (BinC p, CRTrans r) => TaggedT p Maybe (CRTInfo r)
+crtInfoBinC = (tagT . crtInfo) =<< pureT valueBinC
 
 -- | A function that returns the 'i'th embedding of @g_{p^e} = g_p@ for
 -- @i@ in @Z*_{p^e}@.
 gEmbPPow :: forall pp r . (PPow pp, CRTrans r) => TaggedT pp Maybe (Int -> r)
 gEmbPPow = tagT $ case (sing :: SPrimePower pp) of
-  -- intentionally no match for zero exponents
-  (SPP (STuple2 sp (SS _))) -> withWitnessT gEmbNatC sp
+  (SPP (STuple2 sp _)) -> withWitnessT gEmbBinC sp
 
 -- | A function that returns the @i@th embedding of @g_p@ for @i@ in @Z*_p@,
 -- i.e., @1-omega_p^i@.
-gEmbNatC :: (NatC p, CRTrans r) => TaggedT p Maybe (Int -> r)
-gEmbNatC = do
-  (f, _) <- crtInfoNatC
+gEmbBinC :: (BinC p, CRTrans r) => TaggedT p Maybe (Int -> r)
+gEmbBinC = do
+  (f, _) <- crtInfoBinC
   return $ \i -> one - f i      -- not checking that i /= 0 (mod p)
 
 -- the complex numbers have roots of unity of any order

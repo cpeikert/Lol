@@ -1,8 +1,8 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveDataTypeable,
-             FlexibleContexts, FlexibleInstances, GADTs, InstanceSigs,
-             MultiParamTypeClasses, NoImplicitPrelude, RebindableSyntax,
-             RoleAnnotations, ScopedTypeVariables, StandaloneDeriving,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
+             FlexibleInstances, GADTs, InstanceSigs, MultiParamTypeClasses,
+             NoImplicitPrelude, RebindableSyntax, RoleAnnotations,
+             ScopedTypeVariables, StandaloneDeriving, TypeFamilies,
+             TypeOperators, UndecidableInstances #-}
 
 -- | A pure, repa-based implementation of the Tensor interface.
 
@@ -23,24 +23,22 @@ import Algebra.Ring         as Ring (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
 import Control.Applicative
-import Control.Arrow         hiding (arr)
-import Control.DeepSeq       (NFData (rnf))
-import Control.Monad         (liftM)
+import Control.Arrow        hiding (arr)
+import Control.DeepSeq      (NFData (rnf))
+import Control.Monad        (liftM)
 import Control.Monad.Random
 import Data.Coerce
-import Data.Constraint       hiding ((***))
-import Data.Foldable         as F
+import Data.Constraint      hiding ((***))
+import Data.Foldable        as F
 import Data.Maybe
-import Data.Traversable      as T
-import Data.Typeable
-import Data.Vector.Unboxed   as U hiding (force)
+import Data.Traversable     as T
+import Data.Vector.Unboxed  as U hiding (force)
 import Test.QuickCheck
 
 -- | An implementation of 'Tensor' backed by repa.
 data RT (m :: Factored) r where
   RT :: Unbox r => !(Arr m r) -> RT m r
   ZV :: IZipVector m r -> RT m r
-  deriving (Typeable)
 
 deriving instance Show r => Show (RT m r)
 

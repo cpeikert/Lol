@@ -2,7 +2,7 @@
              RebindableSyntax, ScopedTypeVariables, TypeFamilies,
              UndecidableInstances #-}
 
--- | (Orphan) instance of 'IrreduciblePoly' for characteristic 2 fields.
+-- | Orphan instance of 'IrreduciblePoly' for characteristic-2 fields.
 
 module Crypto.Lol.Types.IrreducibleChar2 () where
 
@@ -10,18 +10,20 @@ import Crypto.Lol.LatticePrelude
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 
-import Data.Type.Natural (N2)
-
 -- | Convenience function.
 taggedProxy :: Tagged s (Proxy s)
 taggedProxy = tag Proxy
+
+-- CJP: we should perhaps prefer ternary (or 5-ary) polynomials over
+-- Conway polynomials, because we don't use the special properties of
+-- Conways, and reduction modulo sparse polynomials should be faster.
 
 -- conway
 --generate in Python (or choose any irreducible polynomial)
 -- to generate with Sage, start sage and type:
 --      conway_polynomial(p,e)
 -- then copy and paste
-instance (CharOf a ~ N2, Field a) => IrreduciblePoly a where
+instance (CharOf a ~ B2, Field a) => IrreduciblePoly a where
   irreduciblePoly = do
     pn <- taggedProxy
     let n = proxy value pn :: Int

@@ -14,10 +14,10 @@ module Crypto.Lol.Types.FiniteField
 , IrreduciblePoly(..), X(..), (^^)
 ) where
 
-import           Crypto.Lol.CRTrans
-import           Crypto.Lol.Factored
-import           Crypto.Lol.LatticePrelude
-import           Crypto.Lol.Reflects
+import Crypto.Lol.CRTrans
+import Crypto.Lol.Factored
+import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Reflects
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Field        as Field (C)
@@ -42,7 +42,7 @@ newtype GF fp deg = GF (Polynomial fp)
 type role GF representational representational
 
 type PrimeField fp = (Enumerable fp, Field fp, Eq fp, ZeroTestable fp,
-                      NatC (CharOf fp), IrreduciblePoly fp)
+                      BinC (CharOf fp), IrreduciblePoly fp)
 
 type GFCtx fp deg = (PrimeField fp, Reflects deg Int)
 

@@ -17,7 +17,6 @@ import Crypto.Lol.Types.ZPP
 import Control.Monad (join, liftM2)
 
 import Data.Array.Repa.Eval (Elt)
-import Data.Type.Natural hiding (zero)
 import Data.Vector.Unboxed (Vector, Unbox)
 import Data.Vector.Storable (Storable)
 
@@ -84,8 +83,8 @@ type BasisWrapCCtx m m' r =
 groupMM'R :: 
   (forall m m' r . (BasisWrapCCtx m m' r) => Proxy '(m, m', r) -> Property) 
   -> [Test]
-groupMM'R f = [testProperty "F1/F7/PP8" $ f (Proxy::Proxy '(F1, F7, Zq (PP2 N3))), 
-               testProperty "F1/F7/PP2" $ f (Proxy::Proxy '(F1, F7, Zq (PP2 N1)))] -- add some more test cases
+groupMM'R f = [testProperty "F1/F7/PP8" $ f (Proxy::Proxy '(F1, F7, Zq (PP2 P3))), 
+               testProperty "F1/F7/PP2" $ f (Proxy::Proxy '(F1, F7, Zq (PP2 P1)))] -- add some more test cases
 
 
 
