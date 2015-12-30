@@ -97,6 +97,8 @@ posToInt :: Num z => Pos -> z
 posToInt O = 1
 posToInt (S a) = 1 + posToInt a
 
+-- | Generate a Template Haskell splice for the type-level 'Pos'
+-- representing a given 'Int', e.g., @$(pos 8)@.
 pos :: Int -> TypeQ
 pos n
     | n <= 0 = error "pos requires a positive argument"
@@ -136,13 +138,16 @@ binToInt B1 = 1
 binToInt (D0 a) = 2 * binToInt a
 binToInt (D1 a) = 1 + 2 * binToInt a
 
+-- | Generate a Template Haskell splice for the type-level 'Bin'
+-- representing a given 'Int', e.g., @$(bin 89)@.
 bin :: Int -> TypeQ
 bin n
     | n <= 0 = error "bin requires a positive argument"
     | otherwise = case n `quotRem` 2 of
                     (0,1) -> conT 'B1
-                    (q,0) -> conT 'D0  `appT` bin q
+                    (q,0) -> conT 'D0 `appT` bin q
                     (q,1) -> conT 'D1 `appT` bin q
+                    _ -> error "internal error in Factored.bin"
                  
 singletons [d|
 
