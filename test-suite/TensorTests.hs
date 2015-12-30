@@ -36,8 +36,8 @@ tensorTests =
    -- inverse property
    tremTests, 
    gInvGTests,
-   testGroup "CRTInv.CRT" $ groupTMR $ wrapTmrToBool prop_crt_inv,
-   testGroup "LInv.L" $ groupTMR $ wrapTmrToBool prop_l_inv,
+   testGroup "CRTInv.CRT == id" $ groupTMR $ wrapTmrToBool prop_crt_inv,
+   testGroup "LInv.L == id" $ groupTMR $ wrapTmrToBool prop_l_inv,
 
    -- commutative property
    gCommuteTests,
@@ -170,7 +170,8 @@ groupMR f = [testProperty "F7/Q29" $ f (Proxy::Proxy '(F7, Zq Q29)),
              testProperty "F21/Q8191" $ f (Proxy::Proxy '(F21, Zq Q8191)),
              testProperty "F42/Q8191" $ f (Proxy::Proxy '(F42, Zq Q8191)),
              testProperty "F42/ZQ1" $ f (Proxy::Proxy '(F42, ZQ1)),
-             testProperty "F42/ZQ2" $ f (Proxy::Proxy '(F42, ZQ2))]
+             testProperty "F42/ZQ2" $ f (Proxy::Proxy '(F42, ZQ2)),
+             testProperty "F89/Q179" $ f (Proxy::Proxy '(F89, Zq Q179))]
 
 -- we can't include a large modulus here because there is not enough
 -- precision in Doubles to handle the error
@@ -184,7 +185,8 @@ groupMRExt f = [testProperty "F7/Q29" $ f (Proxy::Proxy '(F7, Zq Q29)),
              testProperty "F21/Q8191" $ f (Proxy::Proxy '(F21, Zq Q8191)),
              testProperty "F42/Q8191" $ f (Proxy::Proxy '(F42, Zq Q8191)),
              testProperty "F42/ZQ1" $ f (Proxy::Proxy '(F42, ZQ1)),
-             testProperty "F42/ZQ2" $ f (Proxy::Proxy '(F42, ZQ2))]
+             testProperty "F42/ZQ2" $ f (Proxy::Proxy '(F42, ZQ2)),
+             testProperty "F89/Q179" $ f (Proxy::Proxy '(F89, Zq Q179))]
 
 
 type NormCtx t m r = (TElt t r, TElt t (LiftOf r), 
@@ -219,13 +221,14 @@ groupNorm f = [testProperty "F7/Q29" $ f (Proxy::Proxy '(F7, Zq Q29)),
                testProperty "F8/Q17" $ f (Proxy::Proxy '(F8, Zq Q17)),
                testProperty "F21/Q8191" $ f (Proxy::Proxy '(F21, Zq Q8191)),
                testProperty "F42/Q8191" $ f (Proxy::Proxy '(F42, Zq Q8191)),
-               testProperty "F42/ZQ1" $ f (Proxy::Proxy '(F42, ZQ1))]
+               testProperty "F42/ZQ1" $ f (Proxy::Proxy '(F42, ZQ1)),
+               testProperty "F89/Q179" $ f (Proxy::Proxy '(F89, Zq Q179))]
 
 
 type TMM'RCtx t m m' r = (Tensor t, m `Divides` m', TElt t r, Ring r, CRTrans r, Eq r, ZeroTestable r, IntegralDomain r)
 
 -- groups related tests
-tremTests = testGroup "Tr.Em == id" [
+tremTests = testGroup "Tw.Em == id" [
   testGroup "Pow basis" $ groupTMM'R $ wrapTmm'rToBool prop_trem_pow,
   testGroup "Dec basis" $ groupTMM'R $ wrapTmm'rToBool prop_trem_dec,
   testGroup "CRT basis" $ groupTMM'R $ wrapTmm'rToBool prop_trem_crt]

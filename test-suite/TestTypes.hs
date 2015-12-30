@@ -1,14 +1,14 @@
 {-# LANGUAGE KindSignatures, PolyKinds, DataKinds, FlexibleInstances, RankNTypes,
              TypeOperators, ConstraintKinds, FlexibleContexts, ScopedTypeVariables,
-             MultiParamTypeClasses, TypeFamilies, NoImplicitPrelude, RebindableSyntax #-}
+             MultiParamTypeClasses, TemplateHaskell, TypeFamilies, NoImplicitPrelude, RebindableSyntax #-}
 
 module TestTypes (
   ZP2, ZP3, ZP4, ZP8
-, PP2
+, PP2, F89
 , SmoothZQ1, SmoothZQ2, SmoothZQ3
 , SmoothQ1
 , Zq, ZQ1, ZQ2, ZQ3
-, Q17, Q29, Q8191, Q80221, Q536871001) where
+, Q17, Q29, Q179, Q8191, Q80221, Q536871001) where
 
 import Control.Monad
 import Control.Monad.Random
@@ -24,6 +24,8 @@ instance (MonadRandom m) => MonadRandom (PropertyM m) where
   getRandoms = run getRandoms
   getRandomR r = run $ getRandomR r
   getRandomRs r = run $ getRandomRs r
+
+type F89 = PToF $(bin 89)
 
 -- three 24-bit moduli, enough to handle rounding for p=32 (depth-4 circuit at ~17 bits per mul)
 data Q18869761
@@ -55,6 +57,7 @@ type ZQ6 = (Zq Q7338241, ZQ5)
 -- concrete types useful for building tests or real applications
 data Q17
 data Q29
+data Q179   -- = 1 mod 89
 data Q8191  -- 1028th prime, = 1 mod 21
 data Q80221  -- good for 28
 data Q536871001 
@@ -65,6 +68,7 @@ data SmoothQ3
 
 instance (ToInteger i) => Reflects Q17 i where value = return 17
 instance (ToInteger i) => Reflects Q29 i where value = return 29
+instance (ToInteger i) => Reflects Q179 i where value = return 179
 instance (ToInteger i) => Reflects Q8191 i where value = return 8191
 instance (ToInteger i) => Reflects Q536871001 i where value = return 536871001
 instance (ToInteger i) => Reflects Q80221 i where value = return 80221
