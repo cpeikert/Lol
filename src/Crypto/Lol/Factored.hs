@@ -106,23 +106,23 @@ pos n
 singletons [d|
             -- | Positive naturals in binary representation.
             data Bin = B1       -- ^ 1
-                     | D0 Bin    -- ^ 2*b (double)
+                     | D0 Bin   -- ^ 2*b (double)
                      | D1 Bin   -- ^ 1 + 2*b (double and increment)
                        deriving (Show, Eq)
 
             instance Ord Bin where
               compare B1 B1          = EQ
-              compare B1 (D0 _)       = LT
+              compare B1 (D0 _)      = LT
               compare B1 (D1 _)      = LT
-              compare (D0 _) B1       = GT
+              compare (D0 _) B1      = GT
               compare (D1 _) B1      = GT
-              compare (D0 a) (D0 b)    = compare a b
+              compare (D0 a) (D0 b)  = compare a b
               compare (D1 a) (D1 b)  = compare a b
-              compare (D0 a) (D1 b)   = case compare a b of
+              compare (D0 a) (D1 b)  = case compare a b of
                                        EQ -> LT
                                        LT -> LT
                                        GT -> GT
-              compare (D1 a) (D0 b)   = case compare a b of
+              compare (D1 a) (D0 b)  = case compare a b of
                                        EQ -> GT
                                        LT -> LT
                                        GT -> GT
@@ -141,8 +141,8 @@ bin n
     | n <= 0 = error "bin requires a positive argument"
     | otherwise = case n `quotRem` 2 of
                     (0,1) -> conT 'B1
-                    (q,0) -> conT 'D0  `appT` pos q
-                    (q,1) -> conT 'D1 `appT` pos q
+                    (q,0) -> conT 'D0  `appT` bin q
+                    (q,1) -> conT 'D1 `appT` bin q
                  
 singletons [d|
 
@@ -576,4 +576,3 @@ singletons [d|
             f1024 = f2 `fMul` f512
             f2048 = f2 `fMul` f1024
             |]
-
