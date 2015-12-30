@@ -16,7 +16,7 @@ module Crypto.Lol.Factored
 -- * Peano naturals
 , Pos(..), SPos, Sing(SO,SS), pos
 -- * Binary naturals
-, Bin(..), SBin, Sing(SBO,SD,SDI), BinC, bin
+, Bin(..), SBin, Sing(SB1,SD0,SD1), BinC, bin
 -- * Prime powers
 , PrimePower(..), SPrimePower, Sing(SPP), PPow
 -- * Constructors
@@ -45,7 +45,7 @@ module Crypto.Lol.Factored
 , P1, P2, P3, P4, P5, P6, P7, P8, P9, P10
 , P11, P12, P13, P14, P15, P16, P17, P18, P19, P20
 -- * Promoted 'Bin' types
-, B1, B2, B3, B4, B5, B6, B7, B8, B9, B10
+, B2, B3, B4, B5, B6, B7, B8, B9, B10
 , B11, B12, B13, B14, B15, B16, B17, B18, B19, B20
 , B32, B64, B128
 -- could also export the values and singletons
@@ -105,24 +105,24 @@ pos n
 
 singletons [d|
             -- | Positive naturals in binary representation.
-            data Bin = BO       -- ^ 1
-                     | D Bin    -- ^ 2*b (double)
-                     | DI Bin   -- ^ 1 + 2*b (double and increment)
+            data Bin = B1       -- ^ 1
+                     | D0 Bin    -- ^ 2*b (double)
+                     | D1 Bin   -- ^ 1 + 2*b (double and increment)
                        deriving (Show, Eq)
 
             instance Ord Bin where
-              compare BO BO          = EQ
-              compare BO (D _)       = LT
-              compare BO (DI _)      = LT
-              compare (D _) BO       = GT
-              compare (DI _) BO      = GT
-              compare (D a) (D b)    = compare a b
-              compare (DI a) (DI b)  = compare a b
-              compare (D a) (DI b)   = case compare a b of
+              compare B1 B1          = EQ
+              compare B1 (D0 _)       = LT
+              compare B1 (D1 _)      = LT
+              compare (D0 _) B1       = GT
+              compare (D1 _) B1      = GT
+              compare (D0 a) (D0 b)    = compare a b
+              compare (D1 a) (D1 b)  = compare a b
+              compare (D0 a) (D1 b)   = case compare a b of
                                        EQ -> LT
                                        LT -> LT
                                        GT -> GT
-              compare (DI a) (D b)   = case compare a b of
+              compare (D1 a) (D0 b)   = case compare a b of
                                        EQ -> GT
                                        LT -> LT
                                        GT -> GT
@@ -132,17 +132,17 @@ singletons [d|
 -- not promotable due to numeric output
 
 binToInt :: Num z => Bin -> z
-binToInt BO = 1
-binToInt (D a) = 2 * binToInt a
-binToInt (DI a) = 1 + 2 * binToInt a
+binToInt B1 = 1
+binToInt (D0 a) = 2 * binToInt a
+binToInt (D1 a) = 1 + 2 * binToInt a
 
 bin :: Int -> TypeQ
 bin n
     | n <= 0 = error "bin requires a positive argument"
     | otherwise = case n `quotRem` 2 of
-                    (0,1) -> conT 'BO
-                    (q,0) -> conT 'D  `appT` pos q
-                    (q,1) -> conT 'DI `appT` pos q
+                    (0,1) -> conT 'B1
+                    (q,0) -> conT 'D0  `appT` pos q
+                    (q,1) -> conT 'D1 `appT` pos q
                  
 singletons [d|
 
@@ -262,7 +262,7 @@ singletons [d|
             ppsOddRad :: [PrimePower] -> [PrimePower]
             ppsOddRad [] = []
             ppsOddRad (PP (p, _) : xs') =
-                if p == D BO then ppsOddRad xs' -- D BO == 2
+                if p == D0 B1 then ppsOddRad xs' -- D0 B1 == 2
                 else PP (p,O) : ppsOddRad xs'
 
             |]
@@ -472,29 +472,28 @@ singletons [d|
 
 singletons [d|
             
-            b1 = BO
-            b2 = D b1
-            b3 = DI b1
-            b4 = D b2
-            b5 = DI b2
-            b6 = D b3
-            b7 = DI b3
-            b8 = D b4
-            b9 = DI b4
-            b10 = D b5
-            b11 = DI b5
-            b12 = D b6
-            b13 = DI b6
-            b14 = D b7
-            b15 = DI b7
-            b16 = D b8
-            b17 = DI b8
-            b18 = D b9
-            b19 = DI b9
-            b20 = D b10
-            b32 = D b16
-            b64 = D b32
-            b128 = D b64
+            b2 = D0 B1
+            b3 = D1 B1
+            b4 = D0 b2
+            b5 = D1 b2
+            b6 = D0 b3
+            b7 = D1 b3
+            b8 = D0 b4
+            b9 = D1 b4
+            b10 = D0 b5
+            b11 = D1 b5
+            b12 = D0 b6
+            b13 = D1 b6
+            b14 = D0 b7
+            b15 = D1 b7
+            b16 = D0 b8
+            b17 = D1 b8
+            b18 = D0 b9
+            b19 = D1 b9
+            b20 = D0 b10
+            b32 = D0 b16
+            b64 = D0 b32
+            b128 = D0 b64
 
            |]
 
