@@ -1,7 +1,7 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveDataTypeable,
-             FlexibleContexts, FlexibleInstances, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, ScopedTypeVariables,
-             TupleSections, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
+             FlexibleInstances, MultiParamTypeClasses, NoImplicitPrelude,
+             PolyKinds, ScopedTypeVariables, TupleSections, TypeFamilies,
+             UndecidableInstances #-}
 
 -- | Interfaces for "gadgets," decomposition, and error correction.
 
@@ -14,12 +14,11 @@ import Crypto.Lol.LatticePrelude
 
 import Control.Applicative
 import Control.Arrow
-import Data.Typeable
 
 -- | Dummy type representing the gadget @[1]@.
-data TrivGad deriving (Typeable)
+data TrivGad
 -- | Dummy type representing the gadget @[1,b,b^2,...]@.
-data BaseBGad b deriving (Typeable)
+data BaseBGad b
 
 -- | "Gadget" vectors, parameterized by an index type.
 

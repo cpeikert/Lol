@@ -11,7 +11,7 @@
 -- assorted utility functions.
 
 module Crypto.Lol.LatticePrelude
-( 
+(
 -- * Classes and families
   Enumerable(..)
 , Mod(..)

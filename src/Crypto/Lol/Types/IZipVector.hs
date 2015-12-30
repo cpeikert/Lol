@@ -1,6 +1,5 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveDataTypeable,
-             DeriveTraversable, FlexibleContexts,
-             GeneralizedNewtypeDeriving, KindSignatures,
+{-# LANGUAGE ConstraintKinds, DataKinds, DeriveTraversable,
+             FlexibleContexts, GeneralizedNewtypeDeriving, KindSignatures,
              MultiParamTypeClasses, RoleAnnotations, ScopedTypeVariables,
              TypeFamilies, UndecidableInstances #-}
 
@@ -29,7 +28,7 @@ newtype IZipVector (m :: Factored) a =
                unIZipVector :: Vector a}
   -- not deriving Read, Monoid, Alternative, Monad[Plus], IsList
   -- because of different semantics and/or length restriction
-  deriving (Show, Eq, Data, NFData, Typeable, Functor,
+  deriving (Show, Eq, NFData, Functor,
             Foldable, Traversable, ZeroTestable.C)
 
 -- the first argument, though phantom, affects representation

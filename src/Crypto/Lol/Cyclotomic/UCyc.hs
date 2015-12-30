@@ -1,8 +1,8 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveDataTypeable,
-             FlexibleContexts, FlexibleInstances, GADTs, InstanceSigs,
-             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
-             RankNTypes, RebindableSyntax, ScopedTypeVariables,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
+             FlexibleInstances, GADTs, InstanceSigs, MultiParamTypeClasses,
+             NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
+             ScopedTypeVariables, TypeFamilies, TypeOperators,
+             UndecidableInstances #-}
 
 -- | An implementation of cyclotomic rings.
 
@@ -57,7 +57,6 @@ import           Crypto.Lol.Cyclotomic.Tensor  as T
 import qualified Crypto.Lol.Cyclotomic.Utility as U
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.LatticePrelude     as LP hiding ((*>))
-import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZPP
 
 import Algebra.Additive     as Additive (C)
@@ -73,7 +72,6 @@ import Data.Coerce
 import Data.Foldable          as F
 import Data.Maybe
 import Data.Traversable
-import Data.Typeable
 import Test.QuickCheck
 
 --import qualified Debug.Trace as DT
@@ -101,7 +99,6 @@ data UCyc t (m :: Factored) r where
 
   --EAC: Consider this representation for product rings, but beware of combinatorial explosion of cases.
   --Product :: !(UCyc t m a) -> !(UCyc t m b) -> UCyc t m (a,b)
-  deriving (Typeable)
 
 -- | Shorthand for frequently reused constraints that are needed for
 --  change of basis.
@@ -298,7 +295,7 @@ unzipCyc (Sub c) = Sub *** Sub $ unzipCyc c
 instance (Correct gad zq, Fact m, CElt t zq) => Correct gad (UCyc t m zq) where
   -- sequence: Monad [] and Traversable (UCyc t m)
   -- sequenceA: Applicative (UCyc t m) and Traversable (TaggedT gad [])
-  correct bs = second sequence $ unzipCyc $ (correct . pasteT) <$> 
+  correct bs = second sequence $ unzipCyc $ (correct . pasteT) <$>
                sequenceA (forceDec <$> peelT bs)
 
 -- generic RescaleCyc instance

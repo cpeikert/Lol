@@ -1,7 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables, 
              DataKinds, TypeOperators, KindSignatures, RankNTypes, GADTs,
              MultiParamTypeClasses, ConstraintKinds, FlexibleInstances, RebindableSyntax,
-             FlexibleContexts, UndecidableInstances, TypeFamilies, DeriveDataTypeable #-}
+             FlexibleContexts, UndecidableInstances, TypeFamilies #-}
 
 module TensorTests (tensorTests) where
 

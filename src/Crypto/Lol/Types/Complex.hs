@@ -1,8 +1,8 @@
-{-# LANGUAGE DataKinds, DeriveDataTypeable, FlexibleContexts,
-             FlexibleInstances, GeneralizedNewtypeDeriving,
-             MultiParamTypeClasses, NoImplicitPrelude, RebindableSyntax,
-             ScopedTypeVariables, StandaloneDeriving, TemplateHaskell,
-             TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances,
+             GeneralizedNewtypeDeriving, MultiParamTypeClasses,
+             NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables,
+             StandaloneDeriving, TemplateHaskell, TypeFamilies,
+             UndecidableInstances #-}
 
 -- | Data type, functions, and instances for complex numbers.
 

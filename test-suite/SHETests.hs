@@ -25,7 +25,6 @@ import Crypto.Lol.Cyclotomic.Tensor.CTensor hiding (CT)
 import Crypto.Lol.Types.ZqBasic
 
 import Data.Array.Repa.Eval (Elt)
-import Data.Typeable
 import Data.Vector.Unboxed (Unbox)
 import Data.Vector.Storable (Storable)
 

@@ -30,7 +30,6 @@ import Data.Array.Repa.Repr.Unboxed
 import Data.Coerce
 import Data.Singletons
 import Data.Singletons.Prelude      hiding ((:.))
-import Data.Typeable
 import qualified Data.Vector.Unboxed as U
 import Test.QuickCheck
 
@@ -39,7 +38,7 @@ import Test.QuickCheck
 
 -- | Indexed newtype for 1-dimensional Unbox repa arrays
 newtype Arr (m :: Factored) r = Arr (Array U DIM1 r)
-                              deriving (Eq, Show, Typeable, NFData)
+                              deriving (Eq, Show, NFData)
 
 -- the first argument, though phantom, affects representation
 -- CJP: why must the second arg be nominal?

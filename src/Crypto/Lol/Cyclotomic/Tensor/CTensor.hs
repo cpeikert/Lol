@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveDataTypeable, GADTs,
+{-# LANGUAGE ConstraintKinds, DataKinds, GADTs,
              FlexibleContexts, FlexibleInstances, TypeOperators, PolyKinds,
              GeneralizedNewtypeDeriving, InstanceSigs, RoleAnnotations,
              MultiParamTypeClasses, NoImplicitPrelude, StandaloneDeriving,
@@ -32,7 +32,6 @@ import Data.Foldable as F
 import Data.Int
 import Data.Maybe
 import Data.Traversable as T
-import Data.Typeable
 import Data.Vector.Generic           as V (zip, unzip)
 import Data.Vector.Storable          as SV (Vector, (!), replicate, replicateM, thaw, convert, foldl',
                                             unsafeToForeignPtr0, unsafeSlice, mapM, fromList,
@@ -67,7 +66,7 @@ import Algebra.ZeroTestable   as ZeroTestable (C)
 
 -- | Newtype wrapper around a Vector.
 newtype CT' (m :: Factored) r = CT' { unCT :: Vector r } 
-                              deriving (Show, Eq, NFData, Typeable)
+                              deriving (Show, Eq, NFData)
 
 -- the first argument, though phantom, affects representation
 type role CT' representational nominal
@@ -79,7 +78,6 @@ type role CT' representational nominal
 data CT (m :: Factored) r where 
   CT :: Storable r => CT' m r -> CT m r
   ZV :: IZipVector m r -> CT m r
-  deriving (Typeable)
 
 instance Eq r => Eq (CT m r) where
   (ZV x) == (ZV y) = x == y
