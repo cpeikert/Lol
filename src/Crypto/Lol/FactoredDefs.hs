@@ -11,7 +11,7 @@ module Crypto.Lol.FactoredDefs
 -- * Factored natural numbers
   Factored, SFactored, Fact, fType
 -- * Prime powers
-, PrimePower(..), SPrimePower, Sing(SPP), PPow
+, PrimePower, SPrimePower, Sing(SPP), PPow, ppType
 -- * Constructors
 , ppToF, sPpToF, PpToF, PToF
 -- * Unwrappers
@@ -365,14 +365,19 @@ factorize' ds@(d:ds') n =
 factorize :: Int -> [(Int,Int)]
 factorize = map (head &&& length) . group . factorize' primes
 
+promotePP :: (Int,Int) -> TypeQ
+promotePP (p,e) = conT 'PP `appT`
+                  (promotedTupleT 2 `appT` bin p `appT` pos e)
+
+-- | Generate a Template Haskell splice for a type synonym definition
+-- of a prime-power type @PPn@ for @n=p^e@.
+ppType :: PP -> DecQ
+ppType pp@(p,e) = tySynD (mkName $ "PP" ++ show (p^e)) [] $ promotePP pp
+
 -- | Generate a Template Haskell splice for a type synonym definition
 -- of a factored type @Fn@ for a positive integer @n@.
 fType :: Int -> DecQ
-fType n = tySynD (mkName $ 'F' : show n) [] $
-          conT 'F `appT` (promotePPs $ factorize n)
-  where promotePPs :: [(Int,Int)] -> TypeQ
-        promotePPs = foldr (\pp -> appT (promotedConsT `appT` promotePP pp)) promotedNilT
+fType n = tySynD (mkName $ 'F' : show n) [] $ conT 'F `appT`
+          (foldr (\pp -> appT (promotedConsT `appT` promotePP pp)) 
+                 promotedNilT $ factorize n)
 
-        promotePP :: (Int,Int) -> TypeQ
-        promotePP (p,e) = conT 'PP `appT`
-                          (promotedTupleT 2 `appT` bin p `appT` pos e)

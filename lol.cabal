@@ -101,18 +101,19 @@ library
 
   other-modules:
         
-    Crypto.Lol.Types.ZmStar
+    Crypto.Lol.FactoredDefs
+    Crypto.Lol.PosBinDefs
     Crypto.Lol.GaussRandom
+    Crypto.Lol.Types.ZmStar
     Crypto.Lol.Types.Complex
+    Crypto.Lol.Types.Numeric
     Crypto.Lol.Types.IZipVector
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon
-
     Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
-    Crypto.Lol.Types.Numeric
 
   build-depends:
     arithmoi >= 0.4.1.3 && <0.5,

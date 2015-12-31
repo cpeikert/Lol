@@ -83,8 +83,8 @@ type BasisWrapCCtx m m' r =
 groupMM'R :: 
   (forall m m' r . (BasisWrapCCtx m m' r) => Proxy '(m, m', r) -> Property) 
   -> [Test]
-groupMM'R f = [testProperty "F1/F7/PP8" $ f (Proxy::Proxy '(F1, F7, Zq (PP2 P3))), 
-               testProperty "F1/F7/PP2" $ f (Proxy::Proxy '(F1, F7, Zq (PP2 P1)))] -- add some more test cases
+groupMM'R f = [testProperty "F1/F7/PP8" $ f (Proxy::Proxy '(F1, F7, ZP8)), 
+               testProperty "F1/F7/PP2" $ f (Proxy::Proxy '(F1, F7, ZP2))] -- add some more test cases
 
 
 

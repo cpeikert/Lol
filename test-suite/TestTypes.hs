@@ -77,13 +77,10 @@ instance (ToInteger i) => Reflects SmoothQ3 i where value = return 2150668801
 type Zq (q :: k) = ZqBasic q Z
 type Z = Int64
 
-type PP2 e = 'PP '(B2,e)
-type PP3 e = 'PP '(B3,e)
-
-type ZP2 = Zq (PP2 P1)
-type ZP3 = Zq (PP3 P1)
-type ZP4 = Zq (PP2 P2)
-type ZP8 = Zq (PP2 P3)
+type ZP2 = Zq PP2
+type ZP3 = Zq PP3
+type ZP4 = Zq PP4
+type ZP8 = Zq PP8
 
 type SmoothZQ1 = Zq SmoothQ1
 type SmoothZQ2 = (Zq SmoothQ2, SmoothZQ1)
