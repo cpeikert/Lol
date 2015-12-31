@@ -25,8 +25,6 @@ instance (MonadRandom m) => MonadRandom (PropertyM m) where
   getRandomR r = run $ getRandomR r
   getRandomRs r = run $ getRandomRs r
 
-type F89 = PToF $(bin 89)
-
 -- three 24-bit moduli, enough to handle rounding for p=32 (depth-4 circuit at ~17 bits per mul)
 data Q18869761
 instance (ToInteger i) => Reflects Q18869761 i where value = return 18869761

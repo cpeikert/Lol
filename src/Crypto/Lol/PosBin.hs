@@ -1,12 +1,14 @@
 {-# LANGUAGE DataKinds, TemplateHaskell #-}
 
+-- | Positive naturals in Peano and binary representations,
+-- singletonized and promoted to type level.
+
 module Crypto.Lol.PosBin
 ( module Crypto.Lol.PosBinDefs
 , module Crypto.Lol.PosBin
 ) where
 
 import Crypto.Lol.PosBinDefs
-import Crypto.Lol.PosBinTH
 
 $(mapM (conType "P" pos) [1..16])
 

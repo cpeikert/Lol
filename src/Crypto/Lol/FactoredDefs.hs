@@ -3,16 +3,13 @@
              TemplateHaskell, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
 
--- | This module defines types and operations for type-level
--- representation and manipulation of natural numbers, as represented
--- by their prime-power factorizations.  It relies on TH, so the
--- documentation may be difficult to read.  See source-level comments
--- for further details.
+-- | This sub-module exists only because we can't define and use
+-- template Haskell splices in the same module.
 
 module Crypto.Lol.FactoredDefs
 (
 -- * Factored natural numbers
-  Factored, SFactored, Fact
+  Factored, SFactored, Fact, fType
 -- * Prime powers
 , PrimePower(..), SPrimePower, Sing(SPP), PPow
 -- * Constructors
@@ -43,11 +40,14 @@ module Crypto.Lol.FactoredDefs
 
 import Crypto.Lol.PosBin
 
-import Control.Arrow ((***))
-import Data.Constraint           hiding ((***))
+import Control.Arrow
+import Data.Constraint           hiding ((***), (&&&))
 import Data.Functor.Trans.Tagged
+import Data.List                 hiding ((\\))
 import Data.Singletons.Prelude   hiding ((:-))
 import Data.Singletons.TH
+import Language.Haskell.TH
+
 import Unsafe.Coerce
 
 singletons [d|
@@ -349,3 +349,30 @@ radicalPPs = product . map radicalPP
 oddRadicalPPs = product . map oddRadicalPP
 
 
+-- | Factorize a positive integer into an ordered list of its prime
+-- divisors, with multiplicities.  First argument is infinite list of
+-- primes left to consider.
+factorize' :: [Int] -> Int -> [Int]
+factorize' _ 1 = []
+factorize' ds@(d:ds') n =
+  if d * d > n then [n]
+  else let (q,r) = n `divMod` d
+       in if r == 0 then d : factorize' ds q
+          else factorize' ds' n
+
+-- | Factorize a positive integer into a list of (prime,exponent)
+-- pairs, in strictly increasing order by prime.
+factorize :: Int -> [(Int,Int)]
+factorize = map (head &&& length) . group . factorize' primes
+
+-- | Generate a Template Haskell splice for a type synonym definition
+-- of a factored type @Fn@ for a positive integer @n@.
+fType :: Int -> DecQ
+fType n = tySynD (mkName $ 'F' : show n) [] $
+          conT 'F `appT` (promotePPs $ factorize n)
+  where promotePPs :: [(Int,Int)] -> TypeQ
+        promotePPs = foldr (\pp -> appT (promotedConsT `appT` promotePP pp)) promotedNilT
+
+        promotePP :: (Int,Int) -> TypeQ
+        promotePP (p,e) = conT 'PP `appT`
+                          (promotedTupleT 2 `appT` bin p `appT` pos e)
