@@ -5,6 +5,7 @@
 
 module Crypto.Lol.PosBin
 ( module Crypto.Lol.PosBinDefs
+-- * Convenient aliases for 'Pos' and 'Bin' types
 , module Crypto.Lol.PosBin
 ) where
 
