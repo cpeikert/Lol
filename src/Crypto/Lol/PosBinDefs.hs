@@ -77,35 +77,40 @@ type PosC (p :: Pos) = SingI p
 -- | Kind-restricted synonym for 'SingI'.
 type BinC (b :: Bin) = SingI b
 
--- | Generate a Template Haskell splice for the type-level 'Pos'
--- representing a given 'Int', e.g., @$(pos 8)@.
-pos :: Int -> TypeQ
-pos n
+-- | Template Haskell splice for the 'Pos' type
+-- representing a given 'Int', e.g., @$(posType 8)@.
+posType :: Int -> TypeQ
+posType n
     | n <= 0 = error "pos requires a positive argument"
     | n == 1 = conT 'O
-    | otherwise = conT 'S `appT` pos (n-1)
+    | otherwise = conT 'S `appT` posType (n-1)
 
--- | Generate a Template Haskell splice for the type-level 'Bin'
--- representing a given 'Int', e.g., @$(bin 89)@.
-bin :: Int -> TypeQ
-bin n
+-- | Template Haskell splice for the 'Bin' type
+-- representing a given 'Int', e.g., @$(binType 89)@.
+binType :: Int -> TypeQ
+binType n
     | n <= 0 = error "bin requires a positive argument"
     | otherwise = case n `quotRem` 2 of
                     (0,1) -> conT 'B1
-                    (q,0) -> conT 'D0 `appT` bin q
-                    (q,1) -> conT 'D1 `appT` bin q
+                    (q,0) -> conT 'D0 `appT` binType q
+                    (q,1) -> conT 'D1 `appT` binType q
                     _ -> error "internal error in PosBinTH.bin"
 
--- | Generate a Template Haskell splice for a type synonym definition
--- @type <pfx>i = f i@.
-conType :: String               -- ^ @pfx@
-        -> (Int -> TypeQ)       -- ^ @f@
-        -> Int                  -- ^ @i@
-        -> DecQ
-conType pfx f i = tySynD (mkName $ pfx ++ show i) [] (f i)
+posDec, binDec :: Int -> DecQ
+-- | Template Haskell splice that defines the 'Pos' type synonym @Pn@.
+posDec = intDec "P" posType
+-- | Template Haskell splice that defines the 'Bin' type synonym @Bn@.
+binDec = intDec "B" binType
 
--- standard Sieve of Eratosthenes
--- defined here because we use it in a TH splice in PosBin
+-- | Template Haskell splice that declares a type synonym
+-- @<pfx>n@ as the type @f i@.
+intDec :: String               -- ^ @pfx@
+       -> (Int -> TypeQ)       -- ^ @f@
+       -> Int                  -- ^ @n@
+       -> DecQ
+intDec pfx f n = tySynD (mkName $ pfx ++ show n) [] (f n)
+
+-- | Infinite list of primes, using Sieve of Erastothenes.
 primes :: [Int]
 primes = 2 : 3 : 5 : primes'
   where

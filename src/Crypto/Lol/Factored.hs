@@ -13,9 +13,9 @@ module Crypto.Lol.Factored
 
 import Crypto.Lol.FactoredDefs
 
-$(mapM fType [1..128])
-$(mapM fType [256,512,1024,2048])
+$(mapM fDec [1..128])
+$(mapM fDec [256,512,1024,2048])
 
-$(mapM ppType $ (2,) <$> [1,2,3,4,5,6,7])
-$(mapM ppType $ (3,) <$> [1,2,3,4])
-$(mapM ppType $ (,1) <$> [5,7,11])
+$(mapM ppDec $ (2,) <$> [1,2,3,4,5,6,7])
+$(mapM ppDec $ (3,) <$> [1,2,3,4])
+$(mapM ppDec $ (,1) <$> [5,7,11])

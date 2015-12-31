@@ -9,9 +9,9 @@
 module Crypto.Lol.FactoredDefs
 (
 -- * Factored natural numbers
-  Factored, SFactored, Fact, fType
+  Factored, SFactored, Fact, fType, fDec
 -- * Prime powers
-, PrimePower, SPrimePower, Sing(SPP), PPow, ppType
+, PrimePower, SPrimePower, Sing(SPP), PPow, ppType, ppDec
 -- * Constructors
 , ppToF, sPpToF, PpToF, PToF
 -- * Unwrappers
@@ -354,30 +354,36 @@ oddRadicalPPs = product . map oddRadicalPP
 -- primes left to consider.
 factorize' :: [Int] -> Int -> [Int]
 factorize' _ 1 = []
-factorize' ds@(d:ds') n =
-  if d * d > n then [n]
-  else let (q,r) = n `divMod` d
-       in if r == 0 then d : factorize' ds q
-          else factorize' ds' n
+factorize' ds@(d:ds') n 
+  | n > 1 = if d * d > n then [n]
+            else let (q,r) = n `divMod` d
+                 in if r == 0 then d : factorize' ds q
+                    else factorize' ds' n
+  | otherwise = error "can only factorize positive integers"
 
 -- | Factorize a positive integer into a list of (prime,exponent)
 -- pairs, in strictly increasing order by prime.
 factorize :: Int -> [(Int,Int)]
 factorize = map (head &&& length) . group . factorize' primes
 
-promotePP :: (Int,Int) -> TypeQ
-promotePP (p,e) = conT 'PP `appT`
-                  (promotedTupleT 2 `appT` bin p `appT` pos e)
+-- | Template Haskell splice for the 'PrimePower' type corresponding to
+-- a given 'PP'.
+ppType :: PP -> TypeQ
+ppType (p,e) = conT 'PP `appT`
+               (promotedTupleT 2 `appT` binType p `appT` posType e)
 
--- | Generate a Template Haskell splice for a type synonym definition
--- of a prime-power type @PPn@ for @n=p^e@.
-ppType :: PP -> DecQ
-ppType pp@(p,e) = tySynD (mkName $ "PP" ++ show (p^e)) [] $ promotePP pp
+-- | Template Haskell splice for the 'Factored' type corresponding to a
+-- given positive integer.
+fType :: Int -> TypeQ
+fType n = conT 'F `appT` (foldr (\pp -> appT (promotedConsT `appT` ppType pp)) 
+                                promotedNilT $ factorize n)
 
--- | Generate a Template Haskell splice for a type synonym definition
--- of a factored type @Fn@ for a positive integer @n@.
-fType :: Int -> DecQ
-fType n = tySynD (mkName $ 'F' : show n) [] $ conT 'F `appT`
-          (foldr (\pp -> appT (promotedConsT `appT` promotePP pp)) 
-                 promotedNilT $ factorize n)
+-- | Template Haskell splice that defines the 'PrimePower' type synonym
+-- @PPn@, where @n=p^e@.
+ppDec :: PP -> DecQ
+ppDec pp@(p,e) = tySynD (mkName $ "PP" ++ show (p^e)) [] $ ppType pp
 
+-- | Template Haskell splice that defines the 'Factored' type synonym
+-- @Fn@ for a positive integer @n@.
+fDec :: Int -> DecQ
+fDec n = tySynD (mkName $ 'F' : show n) [] $ fType n

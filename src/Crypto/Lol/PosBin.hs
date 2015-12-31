@@ -10,8 +10,8 @@ module Crypto.Lol.PosBin
 
 import Crypto.Lol.PosBinDefs
 
-$(mapM (conType "P" pos) [1..16])
+$(mapM posDec [1..16])
 
-$(mapM (conType "B" bin) [1..128])
+$(mapM binDec [1..128])
 
-$(mapM (conType "Prime" bin) $ take 120 primes)
+$(mapM (intDec "Prime" binType) $ take 120 primes)
