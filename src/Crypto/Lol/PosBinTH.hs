@@ -5,10 +5,7 @@
 -- module from where they are invoked, which is the only reason for
 -- this extra module.
 
-module Crypto.Lol.PosBinTH
-( module Crypto.Lol.PosBinDefs
-, module Crypto.Lol.PosBinTH
-) where
+module Crypto.Lol.PosBinTH where
 
 import Crypto.Lol.PosBinDefs
 
@@ -34,15 +31,12 @@ bin n
                     _ -> error "internal error in PosBinTH.bin"
 
 -- | Generate a Template Haskell splice for a type synonym definition
--- of type @<pfx>i@, as @f i@.
+-- @type <pfx>i = f i@.
 conType :: String               -- ^ @pfx@
         -> (Int -> TypeQ)       -- ^ @f@
         -> Int                  -- ^ @i@
         -> DecQ
-conType pfx f i = do
-  let name = mkName $ pfx ++ show i
-  typ <- f i
-  return $ TySynD name [] typ
+conType pfx f i = tySynD (mkName $ pfx ++ show i) [] (f i)
 
 -- standard Sieve of Eratosthenes
 -- defined here because we use it in a TH splice in PosBin

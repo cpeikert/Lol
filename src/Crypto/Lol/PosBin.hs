@@ -1,10 +1,11 @@
 {-# LANGUAGE DataKinds, TemplateHaskell #-}
 
 module Crypto.Lol.PosBin
-( module Crypto.Lol.PosBin
-, module Crypto.Lol.PosBinTH
+( module Crypto.Lol.PosBinDefs
+, module Crypto.Lol.PosBin
 ) where
 
+import Crypto.Lol.PosBinDefs
 import Crypto.Lol.PosBinTH
 
 $(mapM (conType "P" pos) [1..16])
