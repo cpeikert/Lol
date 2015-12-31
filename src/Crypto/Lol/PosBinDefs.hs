@@ -110,9 +110,19 @@ intDec :: String               -- ^ @pfx@
        -> DecQ
 intDec pfx f n = tySynD (mkName $ pfx ++ show n) [] (f n)
 
--- | Infinite list of primes, using Sieve of Erastothenes.
+-- | Infinite list of primes, built using Sieve of Erastothenes.
 primes :: [Int]
 primes = 2 : 3 : 5 : primes'
   where
     isPrime (p:ps) n = p*p > n || n `rem` p /= 0 && isPrime ps n
     primes' = 7 : filter (isPrime primes') (scanl (+) 11 $ cycle [2,4,2,4,6,2,6,4])
+
+-- | Search for the argument in 'primes'.  This is not particularly
+-- fast, but works well enough for moderate-sized numbers that would
+-- appear as (divisors of) cyclotomic indices of interest.
+prime :: Int -> Bool
+prime = go primes
+    where go (p:ps) n = case compare p n of
+                          LT -> go ps n
+                          EQ -> True
+                          GT -> False

@@ -367,13 +367,19 @@ factorize :: Int -> [(Int,Int)]
 factorize = map (head &&& length) . group . factorize' primes
 
 -- | Template Haskell splice for the 'PrimePower' type corresponding to
--- a given 'PP'.
+-- a given 'PP'.  Uses 'prime' to enforce primality of the base, so
+-- should only be used on small-to-moderate-sized arguments.
 ppType :: PP -> TypeQ
-ppType (p,e) = conT 'PP `appT`
-               (promotedTupleT 2 `appT` binType p `appT` posType e)
+ppType (p,e)
+    | prime p = conT 'PP `appT`
+                (promotedTupleT 2 `appT` binType p `appT` posType e)
+    | otherwise = error $ "ppType: non-prime p = " ++ show p
 
 -- | Template Haskell splice for the 'Factored' type corresponding to a
--- given positive integer.
+-- given positive integer.  Factors its argument using a naive
+-- trial-division algorithm with 'primes', so should only be used on
+-- small-to-moderate-sized arguments (any reasonable cyclotomic index
+-- should be OK).
 fType :: Int -> TypeQ
 fType n = conT 'F `appT` (foldr (\pp -> appT (promotedConsT `appT` ppType pp)) 
                                 promotedNilT $ factorize n)
