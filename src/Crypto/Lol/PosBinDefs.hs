@@ -5,7 +5,20 @@
 -- | This sub-module exists only because we can't define and use
 -- template Haskell splices in the same module.
 
-module Crypto.Lol.PosBinDefs where
+module Crypto.Lol.PosBinDefs
+( -- * Positive naturals in Peano representation
+  Pos(..), Sing(SO, SS), SPos, PosC
+, posToInt, addPos, sAddPos, AddPos, subPos, sSubPos, SubPos
+, posType, posDec
+, OSym0, SSym0, SSym1, AddPosSym0, AddPosSym1, SubPosSym0, SubPosSym1
+  -- * Positive naturals in binary representation
+, Bin(..), Sing(SB1, SD0, SD1), SBin, BinC
+, binToInt, binType, binDec
+, B1Sym0, D0Sym0, D0Sym1, D1Sym0, D1Sym1
+  -- * Miscellaneous
+, intDec, primes, prime
+)
+where
 
 import Data.Singletons.Prelude
 import Data.Singletons.TH
@@ -34,6 +47,9 @@ singletons [d|
 
            |]
 
+-- not promotable due to numeric output
+
+-- | Convert a 'Pos' to an integral type.
 posToInt :: Num z => Pos -> z
 posToInt O = 1
 posToInt (S a) = 1 + posToInt a
@@ -64,8 +80,7 @@ singletons [d|
 
            |]
 
--- not promotable due to numeric output
-
+-- | Convert a 'Bin' to an integral type.
 binToInt :: Num z => Bin -> z
 binToInt B1 = 1
 binToInt (D0 a) = 2 * binToInt a

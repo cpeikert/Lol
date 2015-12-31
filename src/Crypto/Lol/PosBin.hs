@@ -1,11 +1,13 @@
 {-# LANGUAGE DataKinds, TemplateHaskell #-}
 
 -- | Positive naturals in Peano and binary representations,
--- singletonized and promoted to type level.
+-- singletonized and promoted to the type level.  This module relies
+-- on Template Haskell, so parts of the documentation may be difficult
+-- to read.  See source-level comments for further details.
 
 module Crypto.Lol.PosBin
 ( module Crypto.Lol.PosBinDefs
--- * Convenient aliases for 'Pos' and 'Bin' types
+-- * Convenient synonyms for 'Pos' and 'Bin' types
 , module Crypto.Lol.PosBin
 ) where
 

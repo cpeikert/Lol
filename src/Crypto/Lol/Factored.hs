@@ -2,13 +2,13 @@
 
 -- | This module defines types and operations for type-level
 -- representation and manipulation of natural numbers, as represented
--- by their prime-power factorizations.  It relies on TH, so the
--- documentation may be difficult to read.  See source-level comments
--- for further details.
+-- by their prime-power factorizations.  It relies on Template
+-- Haskell, so parts of the documentation may be difficult to read.
+-- See source-level comments for further details.
 
 module Crypto.Lol.Factored
 ( module Crypto.Lol.FactoredDefs
--- * Convenient aliases for 'PrimePower' and 'Factored' types
+-- * Convenient synonyms for 'PrimePower' and 'Factored' types
 , module Crypto.Lol.Factored
 ) where
 

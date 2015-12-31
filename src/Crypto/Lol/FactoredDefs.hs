@@ -30,11 +30,11 @@ module Crypto.Lol.FactoredDefs
 , transDivides, gcdDivides, lcmDivides, lcm2Divides
 , pSplitTheorems, pFreeDivides
 , (\\) -- re-export from Data.Constraint for convenience
--- * Utility operations (on prime powers)
+-- * Utility operations on prime powers
 , valueHat
 , PP, ppToPP, valuePP, totientPP, radicalPP, oddRadicalPP
 , valuePPs, totientPPs, radicalPPs, oddRadicalPPs
--- * Re-exported 'PosBin'
+-- * Re-export
 , module Crypto.Lol.PosBin
 ) where
 
