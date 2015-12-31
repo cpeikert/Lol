@@ -5,8 +5,8 @@
              UndecidableInstances #-}
 
 -- | An implementation of cyclotomic rings.
-
--- | __WARNING:__ this module provides an experts-only, "unsafe"
+--
+-- __WARNING:__ this module provides an experts-only, "unsafe"
 -- interface that may result in runtime errors if not used correctly!
 -- 'Crypto.Lol.Cyclotomic.Cyc.Cyc' provides a safe interface, and
 -- should be used in applications whenever possible.
@@ -26,7 +26,7 @@
 -- methods from these classes, first call 'forceBasis' or one of its
 -- specializations ('forcePow', 'forceDec', 'forceAny').
 --
--- | __WARNING:__ as with all fixed-point arithmetic, the functions
+-- __WARNING:__ as with all fixed-point arithmetic, the functions
 -- associated with 'UCyc' may result in overflow (and thereby
 -- incorrect answers and potential security flaws) if the input
 -- arguments are too close to the bounds imposed by the base type.
