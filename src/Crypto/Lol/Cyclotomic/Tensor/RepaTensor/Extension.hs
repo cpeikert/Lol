@@ -130,7 +130,7 @@ crtSetDec' :: forall m m' fp .
               => Tagged m [Arr m' fp]
 crtSetDec' = return $ 
   let m'p = Proxy :: Proxy m'
-      p = proxy value (Proxy::Proxy (CharOf fp))
+      p = proxy value (Proxy::Proxy (CharOf fp :: Bin))
       phi = proxy totientFact m'p
 
       d = proxy (order p) m'p

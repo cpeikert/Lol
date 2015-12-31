@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, GeneralizedNewtypeDeriving,
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, GeneralizedNewtypeDeriving,
              MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
              RebindableSyntax, RoleAnnotations, ScopedTypeVariables,
              TypeFamilies, UndecidableInstances #-}
@@ -82,7 +82,7 @@ instance (GFCtx fp deg) => CRTrans (GF fp deg) where
       scalarInv = Just $ recip $ fromIntegral $ valueHat m
 
 sizePP :: forall fp deg . (GFCtx fp deg) => Tagged (GF fp deg) PP
-sizePP = tag (proxy value (Proxy::Proxy (CharOf fp)),
+sizePP = tag (proxy value (Proxy::Proxy (CharOf fp :: Bin)),
               proxy value (Proxy::Proxy deg))
 
 -- | The order of the field: @size (GF fp deg) = p^deg@

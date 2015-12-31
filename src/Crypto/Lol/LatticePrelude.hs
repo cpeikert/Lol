@@ -70,7 +70,7 @@ instance Default Bool where def = False
 
 -- CJP: would prefer for this to be poly-kinded, but FiniteField
 -- fails to compile for reasons I am unable to discern.
-type family CharOf fp :: Bin
+type family CharOf fp :: k
 
 -- | Poor man's 'Enum'.
 class Enumerable a where
