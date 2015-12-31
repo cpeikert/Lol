@@ -81,7 +81,7 @@ type BinC (b :: Bin) = SingI b
 -- representing a given 'Int', e.g., @$(posType 8)@.
 posType :: Int -> TypeQ
 posType n
-    | n <= 0 = error "pos requires a positive argument"
+    | n <= 0 = fail $ "posType: non-positive argument n = " ++ show n
     | n == 1 = conT 'O
     | otherwise = conT 'S `appT` posType (n-1)
 
@@ -89,12 +89,12 @@ posType n
 -- representing a given 'Int', e.g., @$(binType 89)@.
 binType :: Int -> TypeQ
 binType n
-    | n <= 0 = error "bin requires a positive argument"
+    | n <= 0 = fail $ "binType: non-positive argument n = " ++ show n
     | otherwise = case n `quotRem` 2 of
                     (0,1) -> conT 'B1
                     (q,0) -> conT 'D0 `appT` binType q
                     (q,1) -> conT 'D1 `appT` binType q
-                    _ -> error "internal error in PosBinTH.bin"
+                    _ -> fail "internal error in PosBinTH.bin"
 
 posDec, binDec :: Int -> DecQ
 -- | Template Haskell splice that defines the 'Pos' type synonym @Pn@.

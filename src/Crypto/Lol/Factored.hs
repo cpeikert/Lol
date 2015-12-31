@@ -19,3 +19,6 @@ $(mapM fDec [256,512,1024,2048])
 $(mapM ppDec $ (2,) <$> [1,2,3,4,5,6,7])
 $(mapM ppDec $ (3,) <$> [1,2,3,4])
 $(mapM ppDec $ (,1) <$> [5,7,11])
+
+-- CJP: this fails to compile, as it should, because 4 is not prime
+-- $(sequence [ppDec (4,2)])

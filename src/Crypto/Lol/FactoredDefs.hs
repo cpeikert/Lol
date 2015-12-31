@@ -373,7 +373,7 @@ ppType :: PP -> TypeQ
 ppType (p,e)
     | prime p = conT 'PP `appT`
                 (promotedTupleT 2 `appT` binType p `appT` posType e)
-    | otherwise = error $ "ppType: non-prime p = " ++ show p
+    | otherwise = fail $ "ppType: non-prime p = " ++ show p
 
 -- | Template Haskell splice for the 'Factored' type corresponding to a
 -- given positive integer.  Factors its argument using a naive
