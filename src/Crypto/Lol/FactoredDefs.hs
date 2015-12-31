@@ -52,26 +52,26 @@ import Unsafe.Coerce
 
 singletons [d|
 
-            -- | First component must be prime.
+            -- First component must be prime.
             newtype PrimePower = PP (Bin,Pos) deriving (Eq,Show)
 
-            -- | Invariant: primes appear in strictly increasing
+            -- Invariant: primes appear in strictly increasing
             -- order (no duplicates).
             newtype Factored = F [PrimePower] deriving (Eq,Show)
 
-            -- | Unwrap 'Factored'.
+            -- Unwrap 'Factored'.
             unF :: Factored -> [PrimePower]
             unF (F pps) = pps
 
-            -- | Unwrap 'PrimePower'.
+            -- Unwrap 'PrimePower'.
             unPP :: PrimePower -> (Bin,Pos)
             unPP (PP pp) = pp
 
-            -- | Prime component of a 'PrimePower'.
+            -- Prime component of a 'PrimePower'.
             primePP :: PrimePower -> Bin
             primePP = fst . unPP
 
-            -- | Exponent component of a 'PrimePower'.
+            -- Exponent component of a 'PrimePower'.
             exponentPP :: PrimePower -> Pos
             exponentPP = snd . unPP
 
@@ -84,10 +84,10 @@ singletons [d|
             fPPMul :: PrimePower -> Factored -> Factored
             fMul :: Factored -> Factored -> Factored
 
-            -- | Multiply a 'PrimePower' into a 'Factored' number.
+            -- Multiply a 'PrimePower' into a 'Factored' number.
             fPPMul pp (F pps) = F (ppMul pp pps)
 
-            -- | Multiply two 'Factored' numbers.
+            -- Multiply two 'Factored' numbers.
             fMul (F pps1) (F pps2) = F (ppsMul pps1 pps2)
 
             -- helper functions (not for export)
@@ -112,7 +112,7 @@ singletons [d|
             ppToF :: PrimePower -> Factored
             ppToF pp = F [pp]
 
-            -- | Caller must ensure that argument is prime.
+            -- Caller must ensure that argument is prime.
             pToF :: Bin -> Factored
             pToF p = ppToF $ PP (p, O)
 
@@ -148,7 +148,7 @@ singletons [d|
               case compare p p' of
                 EQ -> PP (p, max e e') : ppsLCM xs' ys'
                 LT -> pp  : ppsLCM xs' ys
-                GT -> pp' : ppsLCM xs ys'
+                GT -> pp' : ppsLCM xs  ys'
 
             ppsDivides :: [PrimePower] -> [PrimePower] -> Bool
             ppsDivides [] _ = True
@@ -174,7 +174,7 @@ singletons [d|
             |]
 
 singletons [d|
-            -- | Remove all @p@-factors from a 'Factored'.
+            -- Remove all @p@-factors from a 'Factored'.
             pFree :: Bin -> Factored -> Factored
             pFree n (F pps) = F (go pps)
               where go [] = []

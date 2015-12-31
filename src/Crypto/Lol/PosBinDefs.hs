@@ -12,9 +12,9 @@ import Data.Singletons.TH
 import Language.Haskell.TH
 
 singletons [d|
-            -- | Positive naturals (1, 2, ...) in Peano representation.
-            data Pos = O     -- ^ one
-                     | S Pos -- ^ successor
+            -- Positive naturals (1, 2, ...) in Peano representation.
+            data Pos = O     -- one
+                     | S Pos -- successor
                        deriving (Show, Eq)
 
             instance Ord Pos where
@@ -39,10 +39,10 @@ posToInt O = 1
 posToInt (S a) = 1 + posToInt a
 
 singletons [d|
-            -- | Positive naturals in binary representation.
-            data Bin = B1       -- ^ 1
-                     | D0 Bin   -- ^ 2*b (double)
-                     | D1 Bin   -- ^ 1 + 2*b (double and increment)
+            -- Positive naturals in binary representation.
+            data Bin = B1       -- 1
+                     | D0 Bin   -- 2*b (double)
+                     | D1 Bin   -- 1 + 2*b (double and increment)
                        deriving (Show, Eq)
 
             instance Ord Bin where
