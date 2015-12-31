@@ -14,7 +14,7 @@
 -- offers limited exposure of internal representation, use
 -- 'Crypto.Lol.Cyclotomic.UCyc.UCyc'.
 --
--- | __WARNING:__ as with all fixed-point arithmetic, the functions
+-- __WARNING:__ as with all fixed-point arithmetic, the functions
 -- associated with 'Cyc' may result in overflow (and thereby
 -- incorrect answers and potential security flaws) if the input
 -- arguments are too close to the bounds imposed by the base type.
