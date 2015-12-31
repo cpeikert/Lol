@@ -13,10 +13,6 @@ module Crypto.Lol.Factored
 (
 -- * Factored natural numbers
   Factored, SFactored, Fact
--- * Peano naturals
-, Pos(..), SPos, Sing(SO,SS), pos
--- * Binary naturals
-, Bin(..), SBin, Sing(SB1,SD0,SD1), BinC, bin
 -- * Prime powers
 , PrimePower(..), SPrimePower, Sing(SPP), PPow
 -- * Constructors
@@ -41,114 +37,20 @@ module Crypto.Lol.Factored
 , valueHat
 , PP, ppToPP, valuePP, totientPP, radicalPP, oddRadicalPP
 , valuePPs, totientPPs, radicalPPs, oddRadicalPPs
--- * Promoted 'Pos' types
-, P1, P2, P3, P4, P5, P6, P7, P8, P9, P10
-, P11, P12, P13, P14, P15, P16, P17, P18, P19, P20
--- * Promoted 'Bin' types
-, B2, B3, B4, B5, B6, B7, B8, B9, B10
-, B11, B12, B13, B14, B15, B16, B17, B18, B19, B20
-, B32, B64, B128
--- could also export the values and singletons
--- * Promoted 'Factored' types
-, F1, F2, F3, F4, F5, F6, F7, F8, F9, F10
-, F11, F12, F13, F14, F15, F16, F17, F18, F19, F20
-, F21, F22, F24, F25, F26, F27, F28, F30
-, F32, F33, F34, F35, F36, F38, F39
-, F40, F42, F44, F45, F48, F49
-, F50, F51, F52, F54, F55, F56, F57
-, F60, F63, F64, F65, F66, F68
-, F70, F72, F75, F76, F77, F78, F80, F81, F84, F85, F88
-, F90, F91, F95, F96, F98, F99
-, F128, F256, F512, F1024, F2048
+-- * Re-exported 'PosBin'
+, module Crypto.Lol.PosBin
 ) where
+
+import Crypto.Lol.PosBin
+import Crypto.Lol.FactoredTH
 
 import Control.Arrow ((***))
 import Data.Constraint           hiding ((***))
 import Data.Functor.Trans.Tagged
 import Data.Singletons.Prelude   hiding ((:-))
 import Data.Singletons.TH
-import Language.Haskell.TH
 import Unsafe.Coerce
 
-singletons [d|
-            -- | Positive naturals (1, 2, ...) in Peano representation.
-            data Pos = O     -- ^ one
-                     | S Pos -- ^ successor
-                       deriving (Show, Eq)
-
-            instance Ord Pos where
-              compare O O          = EQ
-              compare O (S _)      = LT
-              compare (S _) O      = GT
-              compare (S a) (S b)  = compare a b
-
-            addPos :: Pos -> Pos -> Pos
-            addPos O b      = S b
-            addPos (S a) b  = S $ addPos a b
-
-            subPos :: Pos -> Pos -> Pos
-            subPos (S a) O      = a
-            subPos (S a) (S b)  = subPos a b
-            subPos O _          = error "Invalid call to subPos: a <= b"
-
-           |]
-
-posToInt :: Num z => Pos -> z
-posToInt O = 1
-posToInt (S a) = 1 + posToInt a
-
--- | Generate a Template Haskell splice for the type-level 'Pos'
--- representing a given 'Int', e.g., @$(pos 8)@.
-pos :: Int -> TypeQ
-pos n
-    | n <= 0 = error "pos requires a positive argument"
-    | n == 1 = conT 'O
-    | otherwise = conT 'S `appT` pos (n-1)
-
-singletons [d|
-            -- | Positive naturals in binary representation.
-            data Bin = B1       -- ^ 1
-                     | D0 Bin   -- ^ 2*b (double)
-                     | D1 Bin   -- ^ 1 + 2*b (double and increment)
-                       deriving (Show, Eq)
-
-            instance Ord Bin where
-              compare B1 B1          = EQ
-              compare B1 (D0 _)      = LT
-              compare B1 (D1 _)      = LT
-              compare (D0 _) B1      = GT
-              compare (D1 _) B1      = GT
-              compare (D0 a) (D0 b)  = compare a b
-              compare (D1 a) (D1 b)  = compare a b
-              compare (D0 a) (D1 b)  = case compare a b of
-                                       EQ -> LT
-                                       LT -> LT
-                                       GT -> GT
-              compare (D1 a) (D0 b)  = case compare a b of
-                                       EQ -> GT
-                                       LT -> LT
-                                       GT -> GT
-
-           |]
-
--- not promotable due to numeric output
-
-binToInt :: Num z => Bin -> z
-binToInt B1 = 1
-binToInt (D0 a) = 2 * binToInt a
-binToInt (D1 a) = 1 + 2 * binToInt a
-
--- | Generate a Template Haskell splice for the type-level 'Bin'
--- representing a given 'Int', e.g., @$(bin 89)@.
-bin :: Int -> TypeQ
-bin n
-    | n <= 0 = error "bin requires a positive argument"
-    | otherwise = case n `quotRem` 2 of
-                    (0,1) -> conT 'B1
-                    (q,0) -> conT 'D0 `appT` bin q
-                    (q,1) -> conT 'D1 `appT` bin q
-                    _ -> error "internal error in Factored.bin"
-                 
 singletons [d|
 
             -- | First component must be prime.
@@ -176,7 +78,7 @@ singletons [d|
 
             |]
 
-            -- singletons-2.0 doesn't work well with guards: https://github.com/goldfirere/singletons/issues/131
+type F1 = 'F '[]
 
 singletons [d|
 
@@ -296,14 +198,11 @@ type Fact (m :: Factored) = SingI m
 -- | Kind-restricted synonym for 'SingI'.
 type PPow (pp :: PrimePower) = SingI pp
 
--- | Kind-restricted synonym for 'SingI'.
-type BinC (p :: Bin) = SingI p
-
 -- | Constraint synonym for divisibility of 'Factored' types.
 type Divides m m' = (Fact m, Fact m', FDivides m m' ~ 'True)
 
 -- | Constraint synonym for coprimality of 'Factored' types.
-type Coprime m m' = (FGCD m m' ~ F '[])
+type Coprime m m' = (FGCD m m' ~ F1)
 
 -- coercions: using proxy arguments here due to compiler bugs in usage
 
@@ -359,7 +258,7 @@ pSplitTheorems :: forall p m f . Proxy p -> Proxy m ->
 pSplitTheorems _ m =
   Sub $ withSingI (sPFree (sing :: SBin p) (sing :: SFactored m))
   Dict \\ coerceFDivs (Proxy::Proxy f) m
-  \\ coerceGCD (Proxy::Proxy (PToF p)) (Proxy::Proxy f) (Proxy::Proxy (F '[]))
+  \\ coerceGCD (Proxy::Proxy (PToF p)) (Proxy::Proxy f) (Proxy::Proxy F1)
 
 -- | Entailment for @p@-free division:
 -- if @m|m'@, then @p-free(m) | p-free(m')@.
@@ -450,134 +349,4 @@ radicalPPs = product . map radicalPP
 -- | Product of odd radicals of individual 'PP's
 oddRadicalPPs = product . map oddRadicalPP
 
-singletons [d|
 
-            p1 = O
-            p2 = S p1
-            p3 = S p2
-            p4 = S p3
-            p5 = S p4
-            p6 = S p5
-            p7 = S p6
-            p8 = S p7
-            p9 = S p8
-            p10 = S p9
-            p11 = S p10
-            p12 = S p11
-            p13 = S p12
-            p14 = S p13
-            p15 = S p14
-            p16 = S p15
-            p17 = S p16
-            p18 = S p17
-            p19 = S p18
-            p20 = S p19
-
-           |]
-
-singletons [d|
-            
-            b2 = D0 B1
-            b3 = D1 B1
-            b4 = D0 b2
-            b5 = D1 b2
-            b6 = D0 b3
-            b7 = D1 b3
-            b8 = D0 b4
-            b9 = D1 b4
-            b10 = D0 b5
-            b11 = D1 b5
-            b12 = D0 b6
-            b13 = D1 b6
-            b14 = D0 b7
-            b15 = D1 b7
-            b16 = D0 b8
-            b17 = D1 b8
-            b18 = D0 b9
-            b19 = D1 b9
-            b20 = D0 b10
-            b32 = D0 b16
-            b64 = D0 b32
-            b128 = D0 b64
-
-           |]
-
-singletons [d|
-
-            f1 = F []
-            f2 = pToF b2
-            f3 = pToF b3
-            f4 = f2 `fMul` f2
-            f5 = pToF b5
-            f6 = f2 `fMul` f3
-            f7 = pToF b7
-            f8 = f2 `fMul` f4
-            f9 = f3 `fMul` f3
-            f10 = f2 `fMul` f5
-            f11 = pToF b11
-            f12 = f4 `fMul` f3
-            f13 = pToF b13
-            f14 = f2 `fMul` f7
-            f15 = f3 `fMul` f5
-            f16 = f2 `fMul` f8
-            f17 = pToF b17
-            f18 = f2 `fMul` f9
-            f19 = pToF b19
-            f20 = f2 `fMul` f10
-            f21 = f3 `fMul` f7
-            f22 = f2 `fMul` f11
-            f24 = f2 `fMul` f12
-            f25 = f5 `fMul` f5
-            f26 = f2 `fMul` f13
-            f27 = f3 `fMul` f9
-            f28 = f2 `fMul` f14
-            f30 = f2 `fMul` f15
-            f32 = f2 `fMul` f16
-            f33 = f3 `fMul` f11
-            f34 = f2 `fMul` f17
-            f35 = f5 `fMul` f7
-            f36 = f2 `fMul` f18
-            f38 = f2 `fMul` f19
-            f39 = f3 `fMul` f13
-            f40 = f2 `fMul` f20
-            f42 = f2 `fMul` f21
-            f44 = f2 `fMul` f22
-            f45 = f3 `fMul` f15
-            f48 = f2 `fMul` f24
-            f49 = f7 `fMul` f7
-            f50 = f2 `fMul` f25
-            f51 = f3 `fMul` f17
-            f52 = f2 `fMul` f26
-            f54 = f2 `fMul` f27
-            f55 = f5 `fMul` f11
-            f56 = f2 `fMul` f28
-            f57 = f3 `fMul` f19
-            f60 = f2 `fMul` f30
-            f63 = f3 `fMul` f21
-            f64 = f2 `fMul` f32
-            f65 = f5 `fMul` f13
-            f66 = f2 `fMul` f33
-            f68 = f2 `fMul` f34
-            f70 = f2 `fMul` f35
-            f72 = f2 `fMul` f36
-            f75 = f3 `fMul` f25
-            f76 = f2 `fMul` f38
-            f77 = f7 `fMul` f11
-            f78 = f2 `fMul` f39
-            f80 = f2 `fMul` f40
-            f81 = f3 `fMul` f27
-            f84 = f2 `fMul` f42
-            f85 = f5 `fMul` f17
-            f88 = f2 `fMul` f44
-            f90 = f2 `fMul` f45
-            f91 = f7 `fMul` f13
-            f95 = f5 `fMul` f19
-            f96 = f2 `fMul` f48
-            f98 = f2 `fMul` f49
-            f99 = f9 `fMul` f11
-            f128 = f2 `fMul` f64
-            f256 = f2 `fMul` f128
-            f512 = f2 `fMul` f256
-            f1024 = f2 `fMul` f512
-            f2048 = f2 `fMul` f1024
-            |]
