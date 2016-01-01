@@ -118,7 +118,7 @@ posDec = intDec "P" posType
 binDec = intDec "B" binType
 
 -- | Template Haskell splice that declares a type synonym
--- @<pfx>n@ as the type @f i@.
+-- @<pfx>n@ as the type @f n@.
 intDec :: String               -- ^ @pfx@
        -> (Int -> TypeQ)       -- ^ @f@
        -> Int                  -- ^ @n@
