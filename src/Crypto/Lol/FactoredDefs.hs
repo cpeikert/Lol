@@ -12,8 +12,10 @@ module Crypto.Lol.FactoredDefs
   Factored, SFactored, Fact, fType, fDec
 -- * Prime powers
 , PrimePower, SPrimePower, Sing(SPP), PPow, ppType, ppDec
+-- * Primes
+, Prime, SPrime, Prim, pType, pDec
 -- * Constructors
-, ppToF, sPpToF, PpToF, PToF
+, pToPP, sPToPP, PToPP, ppToF, sPpToF, PpToF, pToF, sPToF, PToF
 -- * Unwrappers
 , unF, sUnF, UnF, unPP, sUnPP, UnPP, primePP, PrimePP, exponentPP, ExponentPP
 -- * Arithmetic operations
@@ -25,7 +27,7 @@ module Crypto.Lol.FactoredDefs
 -- * Convenient reflections
 , ppsFact, valueFact, totientFact, valueHatFact, radicalFact, oddRadicalFact
 , ppPPow, primePPow, exponentPPow, valuePPow, totientPPow
-, valueBinC
+, valuePrime
 -- * Number-theoretic laws
 , transDivides, gcdDivides, lcmDivides, lcm2Divides
 , pSplitTheorems, pFreeDivides
@@ -52,23 +54,32 @@ import Unsafe.Coerce
 
 singletons [d|
 
-            -- First component must be prime.
-            newtype PrimePower = PP (Bin,Pos) deriving (Eq,Show)
+            -- CJP: record syntax doesn't work here with singletons;
+            -- something about "escaped type variables"
+
+            -- restrict to primes
+            newtype Prime = P Bin deriving (Eq,Ord,Show)
+
+            -- (prime, exponent) 
+            newtype PrimePower = PP (Prime,Pos) deriving (Eq,Show)
 
             -- Invariant: primes appear in strictly increasing
             -- order (no duplicates).
             newtype Factored = F [PrimePower] deriving (Eq,Show)
 
-            -- Unwrap 'Factored'.
+            -- Unwrap 'Prime'
+            unP :: Prime -> Bin
+            unP (P p) = p
+
+            -- Unwrap 'PrimePower'.
+            unPP :: PrimePower -> (Prime,Pos)
+            unPP (PP pp) = pp
+
             unF :: Factored -> [PrimePower]
             unF (F pps) = pps
 
-            -- Unwrap 'PrimePower'.
-            unPP :: PrimePower -> (Bin,Pos)
-            unPP (PP pp) = pp
-
             -- Prime component of a 'PrimePower'.
-            primePP :: PrimePower -> Bin
+            primePP :: PrimePower -> Prime
             primePP = fst . unPP
 
             -- Exponent component of a 'PrimePower'.
@@ -109,12 +120,14 @@ singletons [d|
 
 -- ARITHMETIC OPERATIONS
 singletons [d|
+            pToPP :: Prime -> PrimePower
+            pToPP p = PP (p, O)
+
             ppToF :: PrimePower -> Factored
             ppToF pp = F [pp]
 
-            -- Caller must ensure that argument is prime.
-            pToF :: Bin -> Factored
-            pToF p = ppToF $ PP (p, O)
+            pToF :: Prime -> Factored
+            pToF = ppToF . pToPP
 
             fGCD, fLCM :: Factored -> Factored -> Factored
             fDivides :: Factored -> Factored -> Bool
@@ -168,18 +181,18 @@ singletons [d|
             ppsOddRad :: [PrimePower] -> [PrimePower]
             ppsOddRad [] = []
             ppsOddRad (PP (p, _) : xs') =
-                if p == D0 B1 then ppsOddRad xs' -- D0 B1 == 2
+                if p == P (D0 B1) then ppsOddRad xs' -- D0 B1 == 2
                 else PP (p,O) : ppsOddRad xs'
 
             |]
 
 singletons [d|
             -- Remove all @p@-factors from a 'Factored'.
-            pFree :: Bin -> Factored -> Factored
-            pFree n (F pps) = F (go pps)
+            pFree :: Prime -> Factored -> Factored
+            pFree p (F pps) = F (go pps)
               where go [] = []
-                    go (pp@(PP (p,_)) : ps) =
-                      if n == p then ps
+                    go (pp@(PP (p',_)) : ps) =
+                      if p == p' then ps
                       else pp : (go ps)
             |]
 
@@ -192,10 +205,13 @@ type a * b = FMul a b
 -- convenience aliases: enforce kind, hide SingI
 
 -- | Kind-restricted synonym for 'SingI'.
-type Fact (m :: Factored) = SingI m
+type Prim (p :: Prime) = SingI p
 
 -- | Kind-restricted synonym for 'SingI'.
 type PPow (pp :: PrimePower) = SingI pp
+
+-- | Kind-restricted synonym for 'SingI'.
+type Fact (m :: Factored) = SingI m
 
 -- | Constraint synonym for divisibility of 'Factored' types.
 type Divides m m' = (Fact m, Fact m', FDivides m m' ~ 'True)
@@ -252,21 +268,21 @@ lcm2Divides m1 m2 m =
 -- if @f@ is @m@ after removing all @p@-factors, then @f|m@ and
 -- @gcd(f,p)=1@.
 pSplitTheorems :: forall p m f . Proxy p -> Proxy m ->
-                  ((BinC p, Fact m, f ~ PFree p m) :-
+                  ((Prim p, Fact m, f ~ PFree p m) :-
                    (f `Divides` m, Coprime (PToF p) f))
 pSplitTheorems _ m =
-  Sub $ withSingI (sPFree (sing :: SBin p) (sing :: SFactored m))
+  Sub $ withSingI (sPFree (sing :: SPrime p) (sing :: SFactored m))
   Dict \\ coerceFDivs (Proxy::Proxy f) m
   \\ coerceGCD (Proxy::Proxy (PToF p)) (Proxy::Proxy f) (Proxy::Proxy F1)
 
 -- | Entailment for @p@-free division:
 -- if @m|m'@, then @p-free(m) | p-free(m')@.
 pFreeDivides :: forall p m m' . Proxy p -> Proxy m -> Proxy m' ->
-                ((BinC p, m `Divides` m') :-
+                ((Prim p, m `Divides` m') :-
                  ((PFree p m) `Divides` (PFree p m')))
 pFreeDivides _ _ _ =
-  Sub $ withSingI (sPFree (sing :: SBin p) (sing :: SFactored m)) $
-        withSingI (sPFree (sing :: SBin p) (sing :: SFactored m')) $
+  Sub $ withSingI (sPFree (sing :: SPrime p) (sing :: SFactored m)) $
+        withSingI (sPFree (sing :: SPrime p) (sing :: SFactored m')) $
         Dict \\ coerceFDivs (Proxy::Proxy (PFree p m)) (Proxy::Proxy (PFree p m'))
 
 -- | Type synonym for @(prime, exponent)@ pair.
@@ -310,9 +326,9 @@ valuePPow = valuePP <$> ppPPow
 -- | The totient of a 'PrimePower' type's value.
 totientPPow = totientPP <$> ppPPow
 
--- | The value of a 'Bin' type.
-valueBinC :: forall p . BinC p => Tagged p Int
-valueBinC = tag $ binToInt $ fromSing (sing :: SBin p)
+-- | The value of a 'Prime' type.
+valuePrime :: forall p . Prim p => Tagged p Int
+valuePrime = tag $ binToInt $ unP $ fromSing (sing :: SPrime p)
 
 -- | Return @m@ if @m@ is odd, and @m/2@ otherwise.
 valueHat :: Integral i => i -> i
@@ -320,7 +336,7 @@ valueHat m = if m `mod` 2 == 0 then m `div` 2 else m
 
 -- | Convert to an @Int@ pair.
 ppToPP :: PrimePower -> PP
-ppToPP = (binToInt *** posToInt) . unPP
+ppToPP = (binToInt . unP *** posToInt) . unPP
 
 valuePP, totientPP, radicalPP, oddRadicalPP :: PP -> Int
 -- | The value of a prime power.
@@ -349,6 +365,50 @@ radicalPPs = product . map radicalPP
 oddRadicalPPs = product . map oddRadicalPP
 
 
+-- | Template Haskell splice for the 'Prime' type corresponding to a
+-- given positive prime integer.  (Uses 'prime' to enforce primality
+-- of the base, so should only be used on small-to-moderate-sized
+-- arguments.)  This is the preferred (and only) way of constructing a
+-- concrete 'Prime' type (and is used to define the @Primep@ type
+-- synonyms).
+pType :: Int -> TypeQ
+pType p
+    | prime p = conT 'P `appT` binType p
+    | otherwise = fail $ "pType : non-prime p " ++ show p
+
+-- | Template Haskell splice for the 'PrimePower' type corresponding to
+-- a given 'PP'.  (Calls 'pType' on the first component of its
+-- argument, so should only be used on small-to-moderate-sized
+-- numbers.)  This is the preferred (and only) way of constructing a
+-- concrete 'PrimePower' type.
+ppType :: PP -> TypeQ
+ppType (p,e) = conT 'PP `appT`
+               (promotedTupleT 2 `appT` pType p `appT` posType e)
+
+-- | Template Haskell splice for the 'Factored' type corresponding to a
+-- given positive integer.  Factors its argument using a naive
+-- trial-division algorithm with 'primes', so should only be used on
+-- small-to-moderate-sized arguments (any reasonable cyclotomic index
+-- should be OK).
+fType :: Int -> TypeQ
+fType n = conT 'F `appT` (foldr (\pp -> appT (promotedConsT `appT` ppType pp)) 
+                                promotedNilT $ factorize n)
+
+-- | Template Haskell splice that defines the 'Prime' type synonym
+-- @Pn@ for a positive prime integer @n@.
+pDec :: Int -> DecQ
+pDec p = tySynD (mkName $ "Prime" ++ show p) [] $ pType p
+
+-- | Template Haskell splice that defines the 'PrimePower' type synonym
+-- @PPn@, where @n=p^e@.
+ppDec :: PP -> DecQ
+ppDec pp@(p,e) = tySynD (mkName $ "PP" ++ show (p^e)) [] $ ppType pp
+
+-- | Template Haskell splice that defines the 'Factored' type synonym
+-- @Fn@ for a positive integer @n@.
+fDec :: Int -> DecQ
+fDec n = tySynD (mkName $ 'F' : show n) [] $ fType n
+
 -- | Factorize a positive integer into an ordered list of its prime
 -- divisors, with multiplicities.  First argument is infinite list of
 -- primes left to consider.
@@ -366,30 +426,3 @@ factorize' ds@(d:ds') n
 factorize :: Int -> [(Int,Int)]
 factorize = map (head &&& length) . group . factorize' primes
 
--- | Template Haskell splice for the 'PrimePower' type corresponding to
--- a given 'PP'.  Uses 'prime' to enforce primality of the base, so
--- should only be used on small-to-moderate-sized arguments.
-ppType :: PP -> TypeQ
-ppType (p,e)
-    | prime p = conT 'PP `appT`
-                (promotedTupleT 2 `appT` binType p `appT` posType e)
-    | otherwise = fail $ "ppType: non-prime p = " ++ show p
-
--- | Template Haskell splice for the 'Factored' type corresponding to a
--- given positive integer.  Factors its argument using a naive
--- trial-division algorithm with 'primes', so should only be used on
--- small-to-moderate-sized arguments (any reasonable cyclotomic index
--- should be OK).
-fType :: Int -> TypeQ
-fType n = conT 'F `appT` (foldr (\pp -> appT (promotedConsT `appT` ppType pp)) 
-                                promotedNilT $ factorize n)
-
--- | Template Haskell splice that defines the 'PrimePower' type synonym
--- @PPn@, where @n=p^e@.
-ppDec :: PP -> DecQ
-ppDec pp@(p,e) = tySynD (mkName $ "PP" ++ show (p^e)) [] $ ppType pp
-
--- | Template Haskell splice that defines the 'Factored' type synonym
--- @Fn@ for a positive integer @n@.
-fDec :: Int -> DecQ
-fDec n = tySynD (mkName $ 'F' : show n) [] $ fType n

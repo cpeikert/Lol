@@ -92,13 +92,13 @@ fTensor func = tagT $ go $ sUnF (sing :: SFactored m)
 -- | For a prime power p^e, tensors up any function f defined for
 -- (and tagged by) a prime to @I_(p^{e-1}) \otimes f@
 ppTensor :: forall pp r mon . (PPow pp, Monad mon)
-            => (forall p . (BinC p) => TaggedT p mon (Trans r))
+            => (forall p . (Prim p) => TaggedT p mon (Trans r))
             -> TaggedT pp mon (Trans r)
 
 ppTensor func = tagT $ case (sing :: SPrimePower pp) of
   pp@(SPP (STuple2 sp _)) -> do
     func' <- withWitnessT func sp
-    let lts = withWitness valuePPow pp `div` withWitness valueBinC sp
+    let lts = withWitness valuePPow pp `div` withWitness valuePrime sp
     return $ Id lts @* func'
 
 

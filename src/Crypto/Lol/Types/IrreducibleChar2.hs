@@ -23,7 +23,7 @@ taggedProxy = tag Proxy
 -- to generate with Sage, start sage and type:
 --      conway_polynomial(p,e)
 -- then copy and paste
-instance (CharOf a ~ B2, Field a) => IrreduciblePoly a where
+instance (CharOf a ~ Prime2, Field a) => IrreduciblePoly a where
   irreduciblePoly = do
     pn <- taggedProxy
     let n = proxy value pn :: Int

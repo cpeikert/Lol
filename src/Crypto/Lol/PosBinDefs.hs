@@ -1,6 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, GADTs, InstanceSigs,
-             KindSignatures, PolyKinds, ScopedTypeVariables,
-             TemplateHaskell, TypeFamilies, UndecidableInstances #-}
+             KindSignatures, NoImplicitPrelude, PolyKinds,
+             RebindableSyntax, ScopedTypeVariables, TemplateHaskell,
+             TypeFamilies, UndecidableInstances #-}
 
 -- | This sub-module exists only because we can't define and use
 -- template Haskell splices in the same module.
@@ -23,6 +24,9 @@ where
 import Data.Singletons.Prelude
 import Data.Singletons.TH
 import Language.Haskell.TH
+
+import Algebra.ToInteger as ToInteger
+import NumericPrelude
 
 singletons [d|
             -- Positive naturals (1, 2, ...) in Peano representation.
@@ -50,9 +54,9 @@ singletons [d|
 -- not promotable due to numeric output
 
 -- | Convert a 'Pos' to an integral type.
-posToInt :: Num z => Pos -> z
-posToInt O = 1
-posToInt (S a) = 1 + posToInt a
+posToInt :: ToInteger.C z => Pos -> z
+posToInt O = one
+posToInt (S a) = one + posToInt a
 
 singletons [d|
             -- Positive naturals in binary representation.
@@ -81,8 +85,8 @@ singletons [d|
            |]
 
 -- | Convert a 'Bin' to an integral type.
-binToInt :: Num z => Bin -> z
-binToInt B1 = 1
+binToInt :: ToInteger.C z => Bin -> z
+binToInt B1 = one
 binToInt (D0 a) = 2 * binToInt a
 binToInt (D1 a) = 1 + 2 * binToInt a
 

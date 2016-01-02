@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances,
-             KindSignatures, MultiParamTypeClasses, PolyKinds,
-             ScopedTypeVariables, UndecidableInstances #-}
+             KindSignatures, MultiParamTypeClasses, NoImplicitPrelude,
+             PolyKinds, ScopedTypeVariables, UndecidableInstances #-}
 
 -- | Generic interface for reflecting types to values.
 
@@ -8,8 +8,12 @@ module Crypto.Lol.Reflects
 ( Reflects(..)
 ) where
 
+import Algebra.ToInteger as ToInteger
+import NumericPrelude
+
 import Crypto.Lol.Factored
 
+import Control.Applicative
 import Data.Functor.Trans.Tagged
 import Data.Proxy
 import Data.Reflection
@@ -23,16 +27,30 @@ class Reflects a i where
   -- | Reflect the value assiated with the type @a@.
   value :: Tagged a i
 
-instance (KnownNat a, Integral i) => Reflects (a :: TL.Nat) i where
-  value = return $ fromIntegral $ natVal (Proxy::Proxy a)
+instance (KnownNat a, ToInteger.C i) => Reflects (a :: TL.Nat) i where
+  value = tag $ fromIntegral $ natVal (Proxy::Proxy a)
 
-instance (BinC a, Integral i) => Reflects a i where
-  value = fromIntegral <$> valueBinC
+{-
 
-instance (PPow pp, Integral i) => Reflects pp i where
+instance (PosC a, ToInteger.C i) => Reflects a i where
+  value = tag $ posToInt $ fromSing (sing :: Sing a)
+
+instance (BinC a, ToInteger.C i) => Reflects a i where
+  value = tag $ binToInt $ fromSing (sing :: Sing a)
+
+-}
+
+-- CJP: need reflections for Prime and PrimePower types because we use
+-- them with ZqBasic
+
+instance (Prim p, ToInteger.C i) => Reflects p i where
+  value = fromIntegral <$> valuePrime
+
+instance (PPow pp, ToInteger.C i) => Reflects pp i where
   value = fromIntegral <$> valuePPow
 
-instance (Fact m, Integral i) => Reflects m i where
+-- CJP: need this for Types.ZmStar, where we use ZqBasic m Int
+instance (Fact m, ToInteger.C i) => Reflects m i where
   value = fromIntegral <$> valueFact
 
 instance {-# OVERLAPS #-} (Reifies rei a) => Reflects (rei :: *) a where

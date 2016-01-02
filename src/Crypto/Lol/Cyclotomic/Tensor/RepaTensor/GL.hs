@@ -39,7 +39,7 @@ fGInvDec = wrapGInv' pGInvDec'
 
 wrapGInv' :: forall m r .
   (Fact m, IntegralDomain r, ZeroTestable r, Unbox r, Elt r)
-  => (forall p . BinC p => Tagged p (Trans r))
+  => (forall p . Prim p => Tagged p (Trans r))
   -> Arr m r -> Maybe (Arr m r)
 wrapGInv' ginv =
   let fGInv = eval $ fTensor $ ppTensor ginv
@@ -56,20 +56,20 @@ divCheck = coerce $  \ !arr den ->
       out = force $ RT.map fst qrs
   in if pass then Just out else Nothing
 
-pWrap :: forall p r . BinC p
+pWrap :: forall p r . Prim p
          => (forall rep . Source rep r => Int -> Array rep DIM2 r -> Array D DIM2 r)
          -> Tagged p (Trans r)
-pWrap f = let pval = proxy valueBinC (Proxy::Proxy p)
+pWrap f = let pval = proxy valuePrime (Proxy::Proxy p)
               -- special case: return identity function for p=2
           in return $ if pval > 2
                       then trans  (pval-1) $ f pval
                       else Id 1
 
 
-pL, pLInv, pGPow, pGDec :: (BinC p, Additive r, Unbox r, Elt r)
+pL, pLInv, pGPow, pGDec :: (Prim p, Additive r, Unbox r, Elt r)
   => Tagged p (Trans r)
 
-pGInvPow', pGInvDec' :: (BinC p, Ring r, Unbox r, Elt r)
+pGInvPow', pGInvDec' :: (Prim p, Ring r, Unbox r, Elt r)
   => Tagged p (Trans r)
 
 pL = pWrap (\_ !arr ->

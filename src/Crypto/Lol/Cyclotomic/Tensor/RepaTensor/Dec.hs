@@ -33,9 +33,9 @@ fE :: (Fact m, Transcendental r, Unbox r, Elt r) => Arr m r -> Arr m r
 fE = eval $ fTensor $ ppTensor pE
 
 -- | The @E_p@ transformation for a prime @p@.
-pE :: forall p r . (BinC p, Transcendental r, Unbox r, Elt r)
+pE :: forall p r . (Prim p, Transcendental r, Unbox r, Elt r)
       => Tagged p (Trans r)
-pE = let pval = proxy valueBinC (Proxy::Proxy p)
+pE = let pval = proxy valuePrime (Proxy::Proxy p)
      in tag $ if pval==2 then Id 1
               else trans (pval-1) $ mulMat $ force $
                    fromFunction (Z :. pval-1 :. pval-1)
@@ -62,9 +62,9 @@ fGramDec' :: (Fact m, Ring r, Unbox r, Elt r) => Arr m r -> Arr m r
 fGramDec' = eval $ fTensor $ ppTensor pGramDec
 
 -- | Multiply by (scaled) Gram matrix of decoding basis: (I_{p-1} + all-1s).
-pGramDec :: forall p r . (BinC p, Ring r, Unbox r, Elt r) => Tagged p (Trans r)
+pGramDec :: forall p r . (Prim p, Ring r, Unbox r, Elt r) => Tagged p (Trans r)
 pGramDec =
-  let pval = proxy valueBinC (Proxy::Proxy p)
+  let pval = proxy valuePrime (Proxy::Proxy p)
   in tag $ if pval==2 then Id 1
            else trans (pval-1) $
                     \arr -> let sums = sumS arr

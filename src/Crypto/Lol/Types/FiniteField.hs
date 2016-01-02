@@ -1,7 +1,8 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, GeneralizedNewtypeDeriving,
-             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
-             RebindableSyntax, RoleAnnotations, ScopedTypeVariables,
-             TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
+             GeneralizedNewtypeDeriving, MultiParamTypeClasses,
+             NoImplicitPrelude, PolyKinds, RebindableSyntax,
+             RoleAnnotations, ScopedTypeVariables, TypeFamilies,
+             UndecidableInstances #-}
 
 -- CJP: need PolyKinds to allow deg to have non-* kind
 
@@ -42,7 +43,7 @@ newtype GF fp deg = GF (Polynomial fp)
 type role GF representational representational
 
 type PrimeField fp = (Enumerable fp, Field fp, Eq fp, ZeroTestable fp,
-                      BinC (CharOf fp), IrreduciblePoly fp)
+                      Prim (CharOf fp), IrreduciblePoly fp)
 
 type GFCtx fp deg = (PrimeField fp, Reflects deg Int)
 
@@ -82,7 +83,7 @@ instance (GFCtx fp deg) => CRTrans (GF fp deg) where
       scalarInv = Just $ recip $ fromIntegral $ valueHat m
 
 sizePP :: forall fp deg . (GFCtx fp deg) => Tagged (GF fp deg) PP
-sizePP = tag (proxy value (Proxy::Proxy (CharOf fp)),
+sizePP = tag (proxy valuePrime (Proxy::Proxy (CharOf fp :: Prime)),
               proxy value (Proxy::Proxy deg))
 
 -- | The order of the field: @size (GF fp deg) = p^deg@

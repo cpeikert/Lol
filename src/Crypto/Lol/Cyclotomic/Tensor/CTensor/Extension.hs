@@ -104,7 +104,7 @@ crtSetDec' :: forall m m' fp .
   => Tagged '(m, m') [SV.Vector fp]
 crtSetDec' =
   let m'p = Proxy :: Proxy m'
-      p = proxy value (Proxy::Proxy (CharOf fp))
+      p = proxy valuePrime (Proxy::Proxy (CharOf fp :: Prime))
       phi = proxy totientFact m'p
       d = proxy (order p) m'p
       h :: Int = proxy valueHatFact m'p

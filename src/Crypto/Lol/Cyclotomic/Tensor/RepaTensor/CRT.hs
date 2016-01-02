@@ -116,33 +116,33 @@ ppCRTInv' = case (sing :: SPrimePower pp) of
 
 -- DFT_p, CRT_p, scaled DFT_p^{ -1 } and CRT_p^{ -1 }
 pDFT, pDFTInv', pCRT, pCRTInv' ::
-  forall p r . (BinC p, CRTrans r, Unbox r, Elt r)
+  forall p r . (Prim p, CRTrans r, Unbox r, Elt r)
   => TaggedT p Maybe (Trans r)
 
-pDFT = let pval = proxy valueBinC (Proxy::Proxy p)
-       in do (omegaPPow, _) <- crtInfoBinC
+pDFT = let pval = proxy valuePrime (Proxy::Proxy p)
+       in do (omegaPPow, _) <- crtInfoPrime
              return $ trans pval $ mulMat $ force $
                                    fromFunction (Z :. pval :. pval)
                                    (\(Z:.i:.j) -> omegaPPow (i*j))
 
-pDFTInv' = let pval = proxy valueBinC (Proxy::Proxy p)
-           in do (omegaPPow, _) <- crtInfoBinC
+pDFTInv' = let pval = proxy valuePrime (Proxy::Proxy p)
+           in do (omegaPPow, _) <- crtInfoPrime
                  return $ trans pval $ mulMat $ force $
                                        fromFunction (Z :. pval :. pval)
                                        (\(Z:.i:.j) -> omegaPPow (-i*j))
 
-pCRT = let pval = proxy valueBinC (Proxy::Proxy p)
-       in do (omegaPPow, _) <- crtInfoBinC
+pCRT = let pval = proxy valuePrime (Proxy::Proxy p)
+       in do (omegaPPow, _) <- crtInfoPrime
              return $ trans (pval-1) $ mulMat $ force $
                                      fromFunction (Z :. pval-1 :. pval-1)
                                      (\(Z:.i:.j) -> omegaPPow ((i+1)*j))
 
 -- crt_p * this = \hat{p}*I, for all prime p.
 pCRTInv' =
-  let pval = proxy valueBinC (Proxy::Proxy p)
+  let pval = proxy valuePrime (Proxy::Proxy p)
   in if pval == 2 then return $ Id 1
      else do
-       (omegaPPow, _) <- crtInfoBinC
+       (omegaPPow, _) <- crtInfoPrime
        return $ trans (pval-1) $  mulMat $ force $
               fromFunction (Z :. pval-1 :. pval-1)
                                (\(Z:.i:.j) -> omegaPPow (negate i*(j+1)) -

@@ -7,8 +7,8 @@
 module Crypto.Lol.CRTrans
 ( CRTrans(..), CRTEmbed(..)
 , CRTInfo
-, crtInfoFact, crtInfoPPow, crtInfoBinC
-, gEmbPPow, gEmbBinC
+, crtInfoFact, crtInfoPPow, crtInfoPrime
+, gEmbPPow, gEmbPrime
 ) where
 
 import Crypto.Lol.LatticePrelude
@@ -78,21 +78,21 @@ crtInfoFact = (tagT . crtInfo) =<< pureT valueFact
 crtInfoPPow :: (PPow pp, CRTrans r) => TaggedT pp Maybe (CRTInfo r)
 crtInfoPPow = (tagT . crtInfo) =<< pureT valuePPow
 
--- | 'crtInfo' wrapper for 'BinC' types.
-crtInfoBinC :: (BinC p, CRTrans r) => TaggedT p Maybe (CRTInfo r)
-crtInfoBinC = (tagT . crtInfo) =<< pureT valueBinC
+-- | 'crtInfo' wrapper for 'Prime' types.
+crtInfoPrime :: (Prim p, CRTrans r) => TaggedT p Maybe (CRTInfo r)
+crtInfoPrime = (tagT . crtInfo) =<< pureT valuePrime
 
 -- | A function that returns the 'i'th embedding of @g_{p^e} = g_p@ for
 -- @i@ in @Z*_{p^e}@.
 gEmbPPow :: forall pp r . (PPow pp, CRTrans r) => TaggedT pp Maybe (Int -> r)
 gEmbPPow = tagT $ case (sing :: SPrimePower pp) of
-  (SPP (STuple2 sp _)) -> withWitnessT gEmbBinC sp
+  (SPP (STuple2 sp _)) -> withWitnessT gEmbPrime sp
 
 -- | A function that returns the @i@th embedding of @g_p@ for @i@ in @Z*_p@,
 -- i.e., @1-omega_p^i@.
-gEmbBinC :: (BinC p, CRTrans r) => TaggedT p Maybe (Int -> r)
-gEmbBinC = do
-  (f, _) <- crtInfoBinC
+gEmbPrime :: (Prim p, CRTrans r) => TaggedT p Maybe (Int -> r)
+gEmbPrime = do
+  (f, _) <- crtInfoPrime
   return $ \i -> one - f i      -- not checking that i /= 0 (mod p)
 
 -- the complex numbers have roots of unity of any order

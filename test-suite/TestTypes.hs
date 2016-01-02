@@ -1,6 +1,7 @@
-{-# LANGUAGE KindSignatures, PolyKinds, DataKinds, FlexibleInstances, RankNTypes,
-             TypeOperators, ConstraintKinds, FlexibleContexts, ScopedTypeVariables,
-             MultiParamTypeClasses, TemplateHaskell, TypeFamilies, NoImplicitPrelude, RebindableSyntax #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
+             FlexibleInstances, KindSignatures, MultiParamTypeClasses,
+             NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
+             ScopedTypeVariables, TypeFamilies, TypeOperators #-}
 
 module TestTypes (
   ZP2, ZP3, ZP4, ZP8
@@ -15,7 +16,6 @@ import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Reflects
-import Crypto.Lol.Factored
 
 import Test.QuickCheck.Monadic
 
@@ -58,11 +58,11 @@ data Q29
 data Q179   -- = 1 mod 89
 data Q8191  -- 1028th prime, = 1 mod 21
 data Q80221  -- good for 28
-data Q536871001 
+data Q536871001
 -- the next three moduli are "good" for any index dividing 128*27*25*7
-data SmoothQ1 
-data SmoothQ2 
-data SmoothQ3 
+data SmoothQ1
+data SmoothQ2
+data SmoothQ3
 
 instance (ToInteger i) => Reflects Q17 i where value = return 17
 instance (ToInteger i) => Reflects Q29 i where value = return 29
