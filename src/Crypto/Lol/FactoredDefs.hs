@@ -334,7 +334,7 @@ valuePrime = tag $ binToInt $ unP $ fromSing (sing :: SPrime p)
 valueHat :: Integral i => i -> i
 valueHat m = if m `mod` 2 == 0 then m `div` 2 else m
 
--- | Convert to an @Int@ pair.
+-- | Conversion.
 ppToPP :: PrimePower -> PP
 ppToPP = (binToInt . unP *** posToInt) . unPP
 
@@ -346,7 +346,7 @@ valuePP (p,e) = p^e
 totientPP (_,0) = 1
 totientPP (p,e) = (p-1)*(p^(e-1))
 
--- | The prime component of a prime power.
+-- | The radical of a prime power.
 radicalPP (_,0) = 1
 radicalPP (p,_) = p
 
