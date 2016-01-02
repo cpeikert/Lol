@@ -395,7 +395,7 @@ fType n = conT 'F `appT` (foldr (\pp -> appT (promotedConsT `appT` ppType pp))
                                 promotedNilT $ factorize n)
 
 -- | Template Haskell splice that defines the 'Prime' type synonym
--- @Primen@ for a positive prime integer @n@.
+-- @Primep@ for a positive prime integer @p@.
 pDec :: Int -> DecQ
 pDec p = tySynD (mkName $ "Prime" ++ show p) [] $ pType p
 
