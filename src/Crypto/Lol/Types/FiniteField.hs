@@ -83,7 +83,7 @@ instance (GFCtx fp deg) => CRTrans (GF fp deg) where
       scalarInv = Just $ recip $ fromIntegral $ valueHat m
 
 sizePP :: forall fp deg . (GFCtx fp deg) => Tagged (GF fp deg) PP
-sizePP = tag (proxy valuePrime (Proxy::Proxy (CharOf fp :: Prime)),
+sizePP = tag (proxy valuePrime (Proxy::Proxy (CharOf fp)),
               proxy value (Proxy::Proxy deg))
 
 -- | The order of the field: @size (GF fp deg) = p^deg@

@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns, ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, MultiParamTypeClasses, NoImplicitPrelude,
-             ScopedTypeVariables, TemplateHaskell, TypeFamilies,
+             PolyKinds, ScopedTypeVariables, TemplateHaskell, TypeFamilies,
              TypeOperators #-}
 
 -- | RT-specific functions for embedding/twacing in various bases
@@ -130,7 +130,7 @@ crtSetDec' :: forall m m' fp .
               => Tagged m [Arr m' fp]
 crtSetDec' = return $ 
   let m'p = Proxy :: Proxy m'
-      p = proxy valuePrime (Proxy::Proxy (CharOf fp :: Prime))
+      p = proxy valuePrime (Proxy::Proxy (CharOf fp))
       phi = proxy totientFact m'p
 
       d = proxy (order p) m'p

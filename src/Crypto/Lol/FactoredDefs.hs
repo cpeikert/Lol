@@ -75,6 +75,7 @@ singletons [d|
             unPP :: PrimePower -> (Prime,Pos)
             unPP (PP pp) = pp
 
+            -- Unwrap 'Factored'
             unF :: Factored -> [PrimePower]
             unF (F pps) = pps
 

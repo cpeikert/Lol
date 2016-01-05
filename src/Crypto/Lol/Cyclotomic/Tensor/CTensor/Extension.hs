@@ -1,6 +1,6 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, MultiParamTypeClasses,
-             NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables,
-             TypeFamilies, TypeOperators, DataKinds #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, NoImplicitPrelude, 
+             PolyKinds, RebindableSyntax, ScopedTypeVariables,
+             TypeFamilies, TypeOperators #-}
 
 -- | CT-specific functions for embedding/twacing in various bases
 
@@ -104,7 +104,7 @@ crtSetDec' :: forall m m' fp .
   => Tagged '(m, m') [SV.Vector fp]
 crtSetDec' =
   let m'p = Proxy :: Proxy m'
-      p = proxy valuePrime (Proxy::Proxy (CharOf fp :: Prime))
+      p = proxy valuePrime (Proxy::Proxy (CharOf fp))
       phi = proxy totientFact m'p
       d = proxy (order p) m'p
       h :: Int = proxy valueHatFact m'p
