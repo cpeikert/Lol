@@ -42,7 +42,7 @@ iZipVector = let n = proxy totientFact (Proxy::Proxy m)
                        then Just $ IZipVector vec
                        else Nothing
 
-unzipIZV :: (Fact m) => IZipVector m (a,b) -> (IZipVector m a, IZipVector m b)
+unzipIZV :: IZipVector m (a,b) -> (IZipVector m a, IZipVector m b)
 unzipIZV (IZipVector v) = let (va,vb) = V.unzip v
                           in (IZipVector va, IZipVector vb)
 

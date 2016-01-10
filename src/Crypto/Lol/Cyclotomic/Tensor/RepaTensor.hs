@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, InstanceSigs, MultiParamTypeClasses,
+             FlexibleInstances, GADTs, MultiParamTypeClasses,
              NoImplicitPrelude, RebindableSyntax, RoleAnnotations,
              ScopedTypeVariables, StandaloneDeriving, TypeFamilies,
              TypeOperators, UndecidableInstances #-}
@@ -16,9 +16,12 @@ import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT
 import Crypto.Lol.LatticePrelude                         as LP hiding ((!!))
+import Crypto.Lol.Reflects
+import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
 
 import Algebra.Additive     as Additive (C)
+import Algebra.Module       as Module (C)
 import Algebra.Ring         as Ring (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
@@ -32,6 +35,7 @@ import Data.Constraint      hiding ((***))
 import Data.Foldable        as F
 import Data.Maybe
 import Data.Traversable     as T
+import Data.Vector          as V hiding (force)
 import Data.Vector.Unboxed  as U hiding (force)
 import Test.QuickCheck
 
@@ -100,12 +104,6 @@ instance Tensor RT where
              (wrap <$> fCRT) <*>
              (wrap <$> fCRTInv)
 
-  -- instance sigs are the cleanest way to handle many weird types
-  -- coming up
-
-  tGaussianDec :: forall v rnd m q .
-                  (Fact m, OrdFloat q, Random q, TElt RT q,
-                   ToRational v, MonadRandom rnd) => v -> rnd (RT m q)
   tGaussianDec = liftM RT . tGaussianDec'
 
   gSqNormDec (RT e) = gSqNormDec' e
@@ -116,8 +114,7 @@ instance Tensor RT where
   embedPow = wrap embedPow'
   embedDec = wrap embedDec'
 
-  crtExtFuncs = (,) <$> (liftM wrap twaceCRT')
-                    <*> (liftM wrap embedCRT')
+  crtExtFuncs = (,) <$> (liftM wrap twaceCRT') <*> (liftM wrap embedCRT')
 
   coeffs = wrapM coeffs'
 
@@ -141,6 +138,31 @@ instance Tensor RT where
 
   unzipT v@(RT _) = unzipT $ toZV v
   unzipT (ZV v) = ZV *** ZV $ unzipIZV v
+
+instance (GFCtx fp d, Fact m, Additive (RT m fp))
+    => Module.C (GF fp d) (RT m fp) where
+        
+  (*>) = let dval = proxy value (Proxy::Proxy d)
+             n = proxy totientFact (Proxy::Proxy m)
+         in if n `mod` dval /= 0 then 
+                error $ "RT: d (= " LP.++ show dval LP.++ 
+                          ") does not divide n (= " LP.++ show n LP.++ ")"
+            else \ r v ->
+              let go :: [fp] -> [fp] -- apply (r *) blockwise to coeff vector
+                  go fps = LP.concat ((FF.toList . (r *) . FF.fromList) <$>
+                                      chunksOf dval fps)
+              in case v of
+                RT (Arr arr) -> 
+                     RT $ Arr $ RT.fromList (extent arr) $ go $ RT.toList arr
+                ZV zv ->
+                     ZV $ fromJust $ iZipVector $ V.fromList $
+                        go $ V.toList $ unIZipVector zv
+
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf _ [] = []
+chunksOf n xs
+  | n > 0 = let (h,t) = LP.splitAt n xs in h : chunksOf n t
+  | otherwise = error "chunksOf: non-positive n"
 
 ---------- "Container" instances ----------
 

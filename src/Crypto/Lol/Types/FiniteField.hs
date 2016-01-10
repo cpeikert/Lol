@@ -4,14 +4,14 @@
              RoleAnnotations, ScopedTypeVariables, TypeFamilies,
              UndecidableInstances #-}
 
--- CJP: need PolyKinds to allow deg to have non-* kind
+-- CJP: need PolyKinds to allow d to have non-* kind
 
 -- | Basic (unoptimized) finite field arithmetic.
 
 module Crypto.Lol.Types.FiniteField
-( PrimeField, GF   -- export type but not constructor
-, trace
-, size
+( GF                            -- export type but not constructor
+, PrimeField, GFCtx
+, size, trace, toList, fromList
 , IrreduciblePoly(..), X(..), (^^)
 ) where
 
@@ -36,7 +36,7 @@ import qualified Data.Vector         as V
 --import qualified Debug.Trace as DT
 
 -- | A finite field of given degree over @F_p@.
-newtype GF fp deg = GF (Polynomial fp)
+newtype GF fp d = GF (Polynomial fp)
                   deriving (Eq, Show, Additive.C, ZeroTestable.C, NFData)
 
 -- the second argument, though phantom, affects representation
@@ -45,34 +45,34 @@ type role GF representational representational
 type PrimeField fp = (Enumerable fp, Field fp, Eq fp, ZeroTestable fp,
                       Prim (CharOf fp), IrreduciblePoly fp)
 
-type GFCtx fp deg = (PrimeField fp, Reflects deg Int)
+type GFCtx fp d = (PrimeField fp, Reflects d Int)
 
-instance (GFCtx fp deg) => Enumerable (GF fp deg) where
+instance (GFCtx fp d) => Enumerable (GF fp d) where
   values = GF <$> fromCoeffs <$>
            -- d-fold cartesian product of Fp values
-           replicateM (proxy value (Proxy::Proxy deg)) values
+           replicateM (proxy value (Proxy::Proxy d)) values
 
-instance (GFCtx fp deg) => Ring.C (GF fp deg) where
+instance (GFCtx fp d) => Ring.C (GF fp d) where
 
   one = GF one
 
-  (*) = let poly = proxy irreduciblePoly (Proxy :: Proxy deg)
+  (*) = let poly = proxy irreduciblePoly (Proxy :: Proxy d)
         in \(GF f) (GF g) -> GF $ (f*g) `mod` poly
 
   fromInteger = GF . fromInteger
 
-instance (GFCtx fp deg) => Field.C (GF fp deg) where
+instance (GFCtx fp d) => Field.C (GF fp d) where
 
-  recip = let g = proxy irreduciblePoly (Proxy :: Proxy deg)
+  recip = let g = proxy irreduciblePoly (Proxy :: Proxy d)
           in \(GF f) -> let (_,(a,_)) = extendedGCD f g
                            in GF a
 
-instance (GFCtx fp deg) => CRTrans (GF fp deg) where
+instance (GFCtx fp d) => CRTrans (GF fp d) where
 
   crtInfo m = (,) <$> omegaPow <*> scalarInv
     where
       omegaPow =
-        let size' = proxy size (Proxy :: Proxy (GF fp deg))
+        let size' = proxy size (Proxy :: Proxy (GF fp d))
             (q,r) = (size'-1) `quotRem` m
             gen = head $ filter isPrimitive values
             omega = gen^q
@@ -82,16 +82,31 @@ instance (GFCtx fp deg) => CRTrans (GF fp deg) where
            else Nothing
       scalarInv = Just $ recip $ fromIntegral $ valueHat m
 
-sizePP :: forall fp deg . (GFCtx fp deg) => Tagged (GF fp deg) PP
-sizePP = tag (proxy valuePrime (Proxy::Proxy (CharOf fp)),
-              proxy value (Proxy::Proxy deg))
+-- | Yield a list of length exactly @d@ (i.e., including trailing zeros)
+-- of the @fp@-coefficients with respect to the power basis
+toList :: forall fp d . (Reflects d Int, Additive fp) => GF fp d -> [fp]
+toList = let dval = proxy value (Proxy::Proxy d)
+         in \(GF p) -> let l = coeffs p
+                       in l ++ (take (dval - length l) $ repeat zero)
 
--- | The order of the field: @size (GF fp deg) = p^deg@
-size :: (GFCtx fp deg) => Tagged (GF fp deg) Int
+-- | Yield a field element given up to @d@ coefficients with respect
+-- to the power basis.
+fromList :: forall fp d . (Reflects d Int) => [fp] -> GF fp d
+fromList = let dval = proxy value (Proxy::Proxy d)
+           in \cs -> if length cs <= dval then GF $ fromCoeffs cs
+                     else error $ "FiniteField.fromList: length " ++ 
+                              show (length cs) ++ " > degree " ++ show dval
+
+sizePP :: forall fp d . (GFCtx fp d) => Tagged (GF fp d) PP
+sizePP = tag (proxy valuePrime (Proxy::Proxy (CharOf fp)),
+              proxy value (Proxy::Proxy d))
+
+-- | The order of the field: @size (GF fp d) = p^d@
+size :: (GFCtx fp d) => Tagged (GF fp d) Int
 size = uncurry (^) <$> sizePP
 
-isPrimitive :: forall fp deg . (GFCtx fp deg) => GF fp deg -> Bool
-isPrimitive = let q = proxy size (Proxy :: Proxy (GF fp deg))
+isPrimitive :: forall fp d . (GFCtx fp d) => GF fp d -> Bool
+isPrimitive = let q = proxy size (Proxy :: Proxy (GF fp d))
                   ps = map (fromIntegral . fst) $ factorise $
                        fromIntegral $ q-1
                   exps = map ((q-1) `div`) ps
@@ -101,23 +116,23 @@ dotp :: (Ring a) => [a] -> [a] -> a
 dotp a b = sum $ zipWith (*) a b
 
 -- | Trace into the prime subfield.
-trace :: forall fp deg . (GFCtx fp deg) => GF fp deg -> fp
-trace = let ts = proxy powTraces (Proxy::Proxy (GF fp deg))
+trace :: forall fp d . (GFCtx fp d) => GF fp d -> fp
+trace = let ts = proxy powTraces (Proxy::Proxy (GF fp d))
         in \(GF f) -> dotp ts (coeffs f)
 
--- | Traces of the power basis elements 1, x, x^2, ..., x^(deg-1).
-powTraces :: forall fp deg . (GFCtx fp deg) => Tagged (GF fp deg) [fp]
+-- | Traces of the power basis elements 1, x, x^2, ..., x^(d-1).
+powTraces :: forall fp d . (GFCtx fp d) => Tagged (GF fp d) [fp]
 powTraces =
   --DT.trace ("FiniteField.powTraces: p = " ++
   --          show (proxy value (Proxy::Proxy (CharOf fp)) :: Int) ++
-  --          ", d = " ++ show (proxy value (Proxy::Proxy deg) :: Int)) $
-  let d = proxy value (Proxy :: Proxy deg)
+  --          ", d = " ++ show (proxy value (Proxy::Proxy d) :: Int)) $
+  let d = proxy value (Proxy :: Proxy d)
   in tag $ map trace' $ take d $
-     iterate (* (GF (X ^^ 1))) (one :: GF fp deg)
+     iterate (* (GF (X ^^ 1))) (one :: GF fp d)
 
 -- helper that computes trace via brute force: sum frobenius
 -- automorphisms
-trace' :: (GFCtx fp deg) => GF fp deg -> fp
+trace' :: (GFCtx fp d) => GF fp d -> fp
 trace' e = let (p,d) = witness sizePP e
                (GF t) = sum $ take d $ iterate (^p) e
                -- t is a constant polynomial
@@ -128,7 +143,7 @@ trace' e = let (p,d) = witness sizePP e
 -- defined in 'Crypto.Lol.Types.IrreducibleChar2' and exported from
 -- 'Crypto.Lol'.)
 class Field fp => IrreduciblePoly fp where
-  irreduciblePoly :: (Reflects deg Int) => Tagged deg (Polynomial fp)
+  irreduciblePoly :: (Reflects d Int) => Tagged d (Polynomial fp)
 
 -- | Convenience data type for writing 'IrreduciblePoly' instances.
 data X = X
