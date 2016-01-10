@@ -15,8 +15,10 @@ module Crypto.Lol.Cyclotomic.Tensor.CTensor
 , Dispatch
 ) where
 
-import Algebra.Additive as Additive (C)
-import Algebra.Ring     as Ring (C)
+import Algebra.Additive       as Additive (C)
+import Algebra.Module         as Module (C)
+import Algebra.Ring           as Ring (C)
+import Algebra.ZeroTestable   as ZeroTestable (C)
 
 import Control.Applicative
 import Control.Arrow
@@ -32,10 +34,10 @@ import Data.Foldable as F
 import Data.Int
 import Data.Maybe
 import Data.Traversable as T
-import Data.Vector.Generic           as V (zip, unzip)
+import Data.Vector.Generic           as V (zip, unzip, toList, fromList)
 import Data.Vector.Storable          as SV (Vector, (!), replicate, replicateM, thaw, convert, foldl',
                                             unsafeToForeignPtr0, unsafeSlice, mapM, fromList,
-                                            generate, foldl1',
+                                            generate, foldl1', toList,
                                             unsafeWith, zipWith, map, length, unsafeFreeze, thaw)
 import Data.Vector.Storable.Internal (getPtr)
 import Data.Vector.Storable.Mutable  as SM hiding (replicate)
@@ -51,18 +53,14 @@ import           Test.QuickCheck         hiding (generate)
 import           Unsafe.Coerce
 
 import Crypto.Lol.CRTrans
+import Crypto.Lol.Cyclotomic.Tensor
+import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
+import Crypto.Lol.GaussRandom
 import Crypto.Lol.LatticePrelude as LP hiding (replicate, unzip, zip, lift)
 import Crypto.Lol.Reflects
-import Crypto.Lol.Cyclotomic.Tensor
-
+import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.ZqBasic
-import Crypto.Lol.GaussRandom
-
-import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
-
-import Algebra.ZeroTestable   as ZeroTestable (C)
-
 
 -- | Newtype wrapper around a Vector.
 newtype CT' (m :: Factored) r = CT' { unCT :: Vector r } 
@@ -134,6 +132,31 @@ instance (Fact m, Ring r, Storable r, CRNS r)
   a * b = (toCT a) * (toCT b)
 
   fromInteger = CT . repl . fromInteger
+
+instance (GFCtx fp d, Fact m, Additive (CT m fp))
+    => Module.C (GF fp d) (CT m fp) where
+        
+  (*>) = let dval = proxy value (Proxy::Proxy d)
+             n = proxy totientFact (Proxy::Proxy m)
+         in if n `mod` dval /= 0 then 
+                error $ "CT: d (= " LP.++ show dval LP.++ 
+                          ") does not divide n (= " LP.++ show n LP.++ ")"
+            else \ r v ->
+              let go :: [fp] -> [fp] -- apply (r *) blockwise to coeff vector
+                  go fps = LP.concat ((FF.toList . (r *) . FF.fromList) <$>
+                                      chunksOf dval fps)
+              in case v of
+                CT (CT' arr) -> 
+                     CT $ CT' $ SV.fromList $ go $ SV.toList arr
+                ZV zv ->
+                     ZV $ fromJust $ iZipVector $ V.fromList $
+                        go $ V.toList $ unIZipVector zv
+
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf _ [] = []
+chunksOf n xs
+  | n > 0 = let (h,t) = LP.splitAt n xs in h : chunksOf n t
+  | otherwise = error "chunksOf: non-positive n"
 
 instance (ZeroTestable r, Storable r, Fact m)
          => ZeroTestable.C (CT m r) where
