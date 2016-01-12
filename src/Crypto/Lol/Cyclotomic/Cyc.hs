@@ -38,6 +38,7 @@ module Crypto.Lol.Cyclotomic.Cyc
 
 import Algebra.Additive as Additive (C)
 import Algebra.Ring     as Ring (C)
+import Algebra.Module   as Module (C)
 
 import           Crypto.Lol.Cyclotomic.UCyc    (CElt, UCyc)
 import qualified Crypto.Lol.Cyclotomic.UCyc    as U
@@ -67,6 +68,7 @@ deriving instance Show (UCyc t m a) => Show (Cyc t m a)
 deriving instance Eq (UCyc t m a) => Eq (Cyc t m a)
 deriving instance Additive (UCyc t m a) => Additive.C (Cyc t m a)
 deriving instance Ring (UCyc t m a) => Ring.C (Cyc t m a)
+deriving instance Module r (UCyc t m a) => Module.C r (Cyc t m a)
 deriving instance Gadget gad (UCyc t m a) => Gadget gad (Cyc t m a)
 deriving instance Correct gad (UCyc t m a) => Correct gad (Cyc t m a)
 

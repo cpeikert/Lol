@@ -117,18 +117,17 @@ type family Em r where
 
 
 ---------- NUMERIC PRELUDE INSTANCES ----------
-instance (Additive r, Storable r, CRNS r, Fact m)
-  => Additive.C (CT m r) where
-  (CT a@(CT' _)) + (CT b@(CT' _)) = CT $ (zipWrapper $ untag $ cZipDispatch dadd) a b  --pack $ SV.zipWith (+) (unpack a) (unpack b) -- Vector code --
+
+instance (Additive r, Storable r, CRNS r, Fact m) => Additive.C (CT m r) where
+  (CT a@(CT' _)) + (CT b@(CT' _)) = CT $ (zipWrapper $ untag $ cZipDispatch dadd) a b
   a + b = (toCT a) + (toCT b)
   negate (CT (CT' a)) = CT $ CT' $ SV.map negate a -- EAC: This probably should be converted to C code
   negate a = negate $ toCT a
 
   zero = CT $ repl zero
 
-instance (Fact m, Ring r, Storable r, CRNS r)
-  => Ring.C (CT m r) where
-  (CT a@(CT' _)) * (CT b@(CT' _)) = CT $ (zipWrapper $ untag $ cZipDispatch dmul) a b  --pack $ SV.zipWith (*) (unpack a) (unpack b) -- Vector code --
+instance (Fact m, Ring r, Storable r, CRNS r) => Ring.C (CT m r) where
+  (CT a@(CT' _)) * (CT b@(CT' _)) = CT $ (zipWrapper $ untag $ cZipDispatch dmul) a b
   a * b = (toCT a) * (toCT b)
 
   fromInteger = CT . repl . fromInteger

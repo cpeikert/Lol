@@ -1,8 +1,8 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, GADTs, MultiParamTypeClasses,
-             NoImplicitPrelude, RebindableSyntax, RoleAnnotations,
-             ScopedTypeVariables, StandaloneDeriving, TypeFamilies,
-             TypeOperators, UndecidableInstances #-}
+             NoImplicitPrelude, PolyKinds, RebindableSyntax,
+             RoleAnnotations, ScopedTypeVariables, StandaloneDeriving,
+             TypeFamilies, TypeOperators, UndecidableInstances #-}
 
 -- | A pure, repa-based implementation of the Tensor interface.
 
@@ -15,7 +15,8 @@ import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT
-import Crypto.Lol.LatticePrelude                         as LP hiding ((!!))
+import Crypto.Lol.LatticePrelude                         as LP hiding
+                                                                ((!!))
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
@@ -140,31 +141,6 @@ instance Tensor RT where
   unzipT v@(RT _) = unzipT $ toZV v
   unzipT (ZV v) = ZV *** ZV $ unzipIZV v
 
-instance (GFCtx fp d, Fact m, Additive (RT m fp))
-    => Module.C (GF fp d) (RT m fp) where
-        
-  (*>) = let dval = proxy value (Proxy::Proxy d)
-             n = proxy totientFact (Proxy::Proxy m)
-         in if n `mod` dval /= 0 then 
-                error $ "RT: d (= " LP.++ show dval LP.++ 
-                          ") does not divide n (= " LP.++ show n LP.++ ")"
-            else \ r v ->
-              let go :: [fp] -> [fp] -- apply (r *) blockwise to coeff vector
-                  go fps = LP.concat ((FF.toList . (r *) . FF.fromList) <$>
-                                      chunksOf dval fps)
-              in case v of
-                RT (Arr arr) -> 
-                     RT $ Arr $ RT.fromList (extent arr) $ go $ RT.toList arr
-                ZV zv ->
-                     ZV $ fromJust $ iZipVector $ V.fromList $
-                        go $ V.toList $ unIZipVector zv
-
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf _ [] = []
-chunksOf n xs
-  | n > 0 = let (h,t) = LP.splitAt n xs in h : chunksOf n t
-  | otherwise = error "chunksOf: non-positive n"
-
 ---------- "Container" instances ----------
 
 instance Fact m => Functor (RT m) where
@@ -193,6 +169,10 @@ instance Fact m => Traversable (RT m) where
 -- possible to zipWith on IZipVector, so it's not *necessary* to
 -- convert toRT.
 
+instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (RT m r) where
+  isZero (RT (Arr a)) = isZero $ foldAllS (\ x y -> if isZero x then y else x) (a RT.! (Z:.0)) a
+  isZero (ZV v) = isZero v
+
 instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (RT m r) where
   (RT a) + (RT b) = RT $ coerce (\x -> force . RT.zipWith (+) x) a b
   a + b = toRT a + toRT b
@@ -208,10 +188,30 @@ instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (RT m r) where
 
   fromInteger = RT . repl . fromInteger
 
-instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (RT m r) where
-  -- not using 'zero' to avoid Additive r constraint
-  isZero (RT (Arr a)) = isZero $ foldAllS (\ x y -> if isZero x then y else x) (a RT.! (Z:.0)) a
-  isZero (ZV v) = isZero v
+instance (GFCtx fp d, Fact m, Additive (RT m fp))
+    => Module.C (GF fp d) (RT m fp) where
+
+  (*>) = let dval = proxy value (Proxy::Proxy d)
+             n = proxy totientFact (Proxy::Proxy m)
+         in if n `mod` dval /= 0 then
+                error $ "RT: d (= " LP.++ show dval LP.++
+                          ") does not divide n (= " LP.++ show n LP.++ ")"
+            else \ r v ->
+              let go :: [fp] -> [fp] -- apply (r *) blockwise to coeff vector
+                  go fps = LP.concat ((FF.toList . (r *) . FF.fromList) <$>
+                                      chunksOf dval fps)
+              in case v of
+                RT (Arr arr) ->
+                     RT $ Arr $ RT.fromList (extent arr) $ go $ RT.toList arr
+                ZV zv ->
+                     ZV $ fromJust $ iZipVector $ V.fromList $
+                        go $ V.toList $ unIZipVector zv
+
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf _ [] = []
+chunksOf n xs
+  | n > 0 = let (h,t) = LP.splitAt n xs in h : chunksOf n t
+  | otherwise = error "chunksOf: non-positive n"
 
 ---------- Miscellaneous instances ----------
 

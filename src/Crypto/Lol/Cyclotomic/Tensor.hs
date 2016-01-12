@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             NoImplicitPrelude, RankNTypes, ScopedTypeVariables, 
+             NoImplicitPrelude, PolyKinds, RankNTypes, ScopedTypeVariables, 
              TupleSections, TypeFamilies, TypeOperators, 
              UndecidableInstances #-}
 
@@ -77,7 +77,7 @@ class (TElt t Double, TElt t (Complex Double))
                    ((NFData r, Fact m, TElt t r) :- NFData (t m r))
   entailRandomT :: Tagged (t m r)
                    ((Random r, Fact m, TElt t r) :- Random (t m r))
-  entailModuleT :: Tagged (GF fp d, t m r)
+  entailModuleT :: Tagged (GF fp d, t m fp)
                    ((GFCtx fp d, Fact m, TElt t fp) :- Module (GF fp d) (t m fp))
 
   -- | Converts a scalar to a tensor in the powerful basis

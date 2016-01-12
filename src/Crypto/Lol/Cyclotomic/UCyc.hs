@@ -250,8 +250,15 @@ instance (UCCtx t r, Fact m) => Ring.C (UCyc t m r) where
 
 instance (UCCtx t fp, GFCtx fp d, Fact m)
          => Module.C (GF fp d) (UCyc t m fp) where
+  -- CJP: optimize for Scalar if we can: r *> (Scalar c) is the tensor
+  -- that has the coeffs of (r*c), followed by zeros.  (This assumes
+  -- that the powerful basis has 1 as its first element, and that
+  -- we're using pow to define the module mult.)
+
+  -- can use any r-basis to define module mult, but must be
+  -- consistent.
   r *> (Pow v) = Pow $ r LP.*> v \\ witness entailModuleT (r,v)
-  -- CJP: do the rest, optimize for Scalar?
+  r *> c = r LP.*> toPow' c
 
 -- reduces in any basis
 instance (Reduce a b, Fact m, CElt t a, CElt t b)
