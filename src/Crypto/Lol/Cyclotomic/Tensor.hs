@@ -68,15 +68,17 @@ class (TElt t Double, TElt t (Complex Double))
   -- | Properties that hold for any (legal) fully-applied tensor. Use
   -- with '\\'.
   entailEqT :: Tagged (t m r)
-               ((Eq r, Fact m, TElt t r) :- (Eq (t m r)))
+               ((Eq r, Fact m, TElt t r) :- Eq (t m r))
   entailZTT :: Tagged (t m r)
-               ((ZeroTestable r, Fact m, TElt t r) :- (ZeroTestable (t m r)))
+               ((ZeroTestable r, Fact m, TElt t r) :- ZeroTestable (t m r))
   entailRingT :: Tagged (t m r)
-                 ((Ring r, Fact m, TElt t r) :- (Ring (t m r)))
+                 ((Ring r, Fact m, TElt t r) :- Ring (t m r))
   entailNFDataT :: Tagged (t m r)
-                   ((NFData r, Fact m, TElt t r) :- (NFData (t m r)))
+                   ((NFData r, Fact m, TElt t r) :- NFData (t m r))
   entailRandomT :: Tagged (t m r)
-                   ((Random r, Fact m, TElt t r) :- (Random (t m r)))
+                   ((Random r, Fact m, TElt t r) :- Random (t m r))
+  entailModuleT :: Tagged (GF fp d, t m r)
+                   ((GFCtx fp d, Fact m, TElt t fp) :- Module (GF fp d) (t m fp))
 
   -- | Converts a scalar to a tensor in the powerful basis
   scalarPow :: (Ring r, Fact m, TElt t r) => r -> t m r

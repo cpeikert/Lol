@@ -56,14 +56,16 @@ import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.Tensor  as T
 import qualified Crypto.Lol.Cyclotomic.Utility as U
 import           Crypto.Lol.Gadget
-import           Crypto.Lol.LatticePrelude     as LP hiding ((*>))
+import           Crypto.Lol.LatticePrelude     as LP
+import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZPP
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Ring         as Ring (C)
+import Algebra.Module       as Module (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
-import Control.Applicative
+import Control.Applicative    as A
 import Control.Arrow
 import Control.DeepSeq
 import Control.Monad.Identity
@@ -245,6 +247,11 @@ instance (UCCtx t r, Fact m) => Ring.C (UCyc t m r) where
   p1 * p2 = toCRT' p1 * toCRT' p2
 
   fromInteger = Scalar . fromInteger
+
+instance (UCCtx t fp, GFCtx fp d, Fact m)
+         => Module.C (GF fp d) (UCyc t m fp) where
+  r *> (Pow v) = Pow $ r LP.*> v \\ witness entailModuleT (r,v)
+  -- CJP: do the rest, optimize for Scalar?
 
 -- reduces in any basis
 instance (Reduce a b, Fact m, CElt t a, CElt t b)
@@ -429,7 +436,7 @@ twace x@(CRTr v) =
 -- stay in CRTe iff CRTr is invalid for target, else go to Pow
 twace x@(CRTe v) =
   fromMaybe (CRTe $ fromJust' "UCyc.twace CRTe" twaceCRT v)
-            (proxy (pasteT hasCRTFuncs) (Proxy::Proxy (t m r)) *>
+            (proxy (pasteT hasCRTFuncs) (Proxy::Proxy (t m r)) A.*>
              pure (twace $ toPow' x))
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.coeffsCyc', but for 'UCyc'.
@@ -537,7 +544,7 @@ embed' x@(CRTr v) =
     fromMaybe (embed' $ toPow' x) (CRTr <$> (embedCRT <*> pure v))
 embed' x@(CRTe v) = -- go to CRTe iff CRTr is invalid for target index
     fromMaybe (CRTe $ fromJust' "UCyc.embed' CRTe" embedCRT v)
-              (proxy (pasteT hasCRTFuncs) (Proxy::Proxy (t m r)) *>
+              (proxy (pasteT hasCRTFuncs) (Proxy::Proxy (t m r)) A.*>
                pure (embed' $ toPow' x))
 embed' (Sub (c :: UCyc t k r)) = embed' c
   \\ transDivides (Proxy::Proxy k) (Proxy::Proxy l) (Proxy::Proxy m)

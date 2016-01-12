@@ -194,6 +194,7 @@ instance Tensor CT where
   entailRingT = tag $ Sub Dict
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
+  entailModuleT = tag $ Sub Dict
 
   scalarPow = CT . scalarPow' -- Vector code
 
