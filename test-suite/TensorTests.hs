@@ -161,32 +161,32 @@ type MRWrapCtx m r = (TMRWrapCtx CT m r, TMRWrapCtx RT m r)
 
 groupMR :: (forall m r . (MRWrapCtx m r) => Proxy '(m, r) -> Property) 
             -> [Test]
-groupMR f = [testProperty "F7/Q29" $ f (Proxy::Proxy '(F7, Zq Q29)),
+groupMR f = [testProperty "F7/29" $ f (Proxy::Proxy '(F7, Zq 29)),
              testProperty "F12/SmoothZQ1" $ f (Proxy::Proxy '(F12, SmoothZQ1)),
-             testProperty "F1/Q17" $ f (Proxy::Proxy '(F1, Zq Q17)),
-             testProperty "F2/Q17" $ f (Proxy::Proxy '(F2, Zq Q17)),
-             testProperty "F4/Q17" $ f (Proxy::Proxy '(F4, Zq Q17)),
-             testProperty "F8/Q17" $ f (Proxy::Proxy '(F8, Zq Q17)),
-             testProperty "F21/Q8191" $ f (Proxy::Proxy '(F21, Zq Q8191)),
-             testProperty "F42/Q8191" $ f (Proxy::Proxy '(F42, Zq Q8191)),
+             testProperty "F1/17" $ f (Proxy::Proxy '(F1, Zq 17)),
+             testProperty "F2/17" $ f (Proxy::Proxy '(F2, Zq 17)),
+             testProperty "F4/17" $ f (Proxy::Proxy '(F4, Zq 17)),
+             testProperty "F8/17" $ f (Proxy::Proxy '(F8, Zq 17)),
+             testProperty "F21/8191" $ f (Proxy::Proxy '(F21, Zq 8191)),
+             testProperty "F42/8191" $ f (Proxy::Proxy '(F42, Zq 8191)),
              testProperty "F42/ZQ1" $ f (Proxy::Proxy '(F42, ZQ1)),
              testProperty "F42/ZQ2" $ f (Proxy::Proxy '(F42, ZQ2)),
-             testProperty "F89/Q179" $ f (Proxy::Proxy '(F89, Zq Q179))]
+             testProperty "F89/179" $ f (Proxy::Proxy '(F89, Zq 179))]
 
 -- we can't include a large modulus here because there is not enough
 -- precision in Doubles to handle the error
 groupMRExt :: (forall m r . (MRWrapCtx m r) => Proxy '(m, r) -> Property) 
             -> [Test]
-groupMRExt f = [testProperty "F7/Q29" $ f (Proxy::Proxy '(F7, Zq Q29)),
-             testProperty "F1/Q17" $ f (Proxy::Proxy '(F1, Zq Q17)),
-             testProperty "F2/Q17" $ f (Proxy::Proxy '(F2, Zq Q17)),
-             testProperty "F4/Q17" $ f (Proxy::Proxy '(F4, Zq Q17)),
-             testProperty "F8/Q17" $ f (Proxy::Proxy '(F8, Zq Q17)),
-             testProperty "F21/Q8191" $ f (Proxy::Proxy '(F21, Zq Q8191)),
-             testProperty "F42/Q8191" $ f (Proxy::Proxy '(F42, Zq Q8191)),
+groupMRExt f = [testProperty "F7/29" $ f (Proxy::Proxy '(F7, Zq 29)),
+             testProperty "F1/17" $ f (Proxy::Proxy '(F1, Zq 17)),
+             testProperty "F2/17" $ f (Proxy::Proxy '(F2, Zq 17)),
+             testProperty "F4/17" $ f (Proxy::Proxy '(F4, Zq 17)),
+             testProperty "F8/17" $ f (Proxy::Proxy '(F8, Zq 17)),
+             testProperty "F21/8191" $ f (Proxy::Proxy '(F21, Zq 8191)),
+             testProperty "F42/8191" $ f (Proxy::Proxy '(F42, Zq 8191)),
              testProperty "F42/ZQ1" $ f (Proxy::Proxy '(F42, ZQ1)),
              testProperty "F42/ZQ2" $ f (Proxy::Proxy '(F42, ZQ2)),
-             testProperty "F89/Q179" $ f (Proxy::Proxy '(F89, Zq Q179))]
+             testProperty "F89/179" $ f (Proxy::Proxy '(F89, Zq 179))]
 
 
 type NormCtx t m r = (TElt t r, TElt t (LiftOf r), 
@@ -213,16 +213,16 @@ wrapNorm f _ = property $ f Proxy
 -- these tests all use "good" moduli that lift to Int64
 groupNorm :: (forall m r . (NormWrapCtx m r, Show r, Arbitrary r) => Proxy '(m, r) -> Property) 
             -> [Test]
-groupNorm f = [testProperty "F7/Q29" $ f (Proxy::Proxy '(F7, Zq Q29)),
+groupNorm f = [testProperty "F7/29" $ f (Proxy::Proxy '(F7, Zq 29)),
                testProperty "F12/SmoothZQ1" $ f (Proxy::Proxy '(F12, SmoothZQ1)),
-               testProperty "F1/Q17" $ f (Proxy::Proxy '(F1, Zq Q17)),
-               testProperty "F2/Q17" $ f (Proxy::Proxy '(F2, Zq Q17)),
-               testProperty "F4/Q17" $ f (Proxy::Proxy '(F4, Zq Q17)),
-               testProperty "F8/Q17" $ f (Proxy::Proxy '(F8, Zq Q17)),
-               testProperty "F21/Q8191" $ f (Proxy::Proxy '(F21, Zq Q8191)),
-               testProperty "F42/Q8191" $ f (Proxy::Proxy '(F42, Zq Q8191)),
+               testProperty "F1/17" $ f (Proxy::Proxy '(F1, Zq 17)),
+               testProperty "F2/17" $ f (Proxy::Proxy '(F2, Zq 17)),
+               testProperty "F4/17" $ f (Proxy::Proxy '(F4, Zq 17)),
+               testProperty "F8/17" $ f (Proxy::Proxy '(F8, Zq 17)),
+               testProperty "F21/8191" $ f (Proxy::Proxy '(F21, Zq 8191)),
+               testProperty "F42/8191" $ f (Proxy::Proxy '(F42, Zq 8191)),
                testProperty "F42/ZQ1" $ f (Proxy::Proxy '(F42, ZQ1)),
-               testProperty "F89/Q179" $ f (Proxy::Proxy '(F89, Zq Q179))]
+               testProperty "F89/179" $ f (Proxy::Proxy '(F89, Zq 179))]
 
 
 type TMM'RCtx t m m' r = (Tensor t, m `Divides` m', TElt t r, Ring r, CRTrans r, Eq r, ZeroTestable r, IntegralDomain r)
@@ -382,16 +382,16 @@ type MM'RWrapCtx m m' r = (TMM'RWrapCtx CT m m' r, TMM'RWrapCtx RT m m' r)
 
 groupMM'R :: (forall m m' r . (MM'RWrapCtx m m' r)
               => Proxy '(m, m', r) -> Property) -> [Test]
-groupMM'R f = [testProperty "F1/F7/Q29" $ f (Proxy::Proxy '(F1, F7, Zq Q29)),
-               testProperty "F4/F12/Q536871001" $ f (Proxy::Proxy '(F4, F12, Zq Q536871001)),
+groupMM'R f = [testProperty "F1/F7/29" $ f (Proxy::Proxy '(F1, F7, Zq 29)),
+               testProperty "F4/F12/536871001" $ f (Proxy::Proxy '(F4, F12, Zq 536871001)),
                testProperty "F4/F12/SmoothZQ1" $ f (Proxy::Proxy '(F4, F12, SmoothZQ1)),
-               testProperty "F2/F8/Q17" $ f (Proxy::Proxy '(F2, F8, Zq Q17)),
-               testProperty "F8/F8/Q17" $ f (Proxy::Proxy '(F8, F8, Zq Q17)),
+               testProperty "F2/F8/17" $ f (Proxy::Proxy '(F2, F8, Zq 17)),
+               testProperty "F8/F8/17" $ f (Proxy::Proxy '(F8, F8, Zq 17)),
                testProperty "F12/F12/SmoothZQ1" $ f (Proxy::Proxy '(F2, F8, SmoothZQ1)),
-               testProperty "F4/F8/Q17" $ f (Proxy::Proxy '(F4, F8, Zq Q17)),
-               testProperty "F3/F21/Q8191" $ f (Proxy::Proxy '(F3, F21, Zq Q8191)),
-               testProperty "F7/F21/Q8191" $ f (Proxy::Proxy '(F7, F21, Zq Q8191)),
-               testProperty "F3/F42/Q8191" $ f (Proxy::Proxy '(F3, F42, Zq Q8191)),
+               testProperty "F4/F8/17" $ f (Proxy::Proxy '(F4, F8, Zq 17)),
+               testProperty "F3/F21/8191" $ f (Proxy::Proxy '(F3, F21, Zq 8191)),
+               testProperty "F7/F21/8191" $ f (Proxy::Proxy '(F7, F21, Zq 8191)),
+               testProperty "F3/F42/8191" $ f (Proxy::Proxy '(F3, F42, Zq 8191)),
                testProperty "F3/F21/ZQ1" $ f (Proxy::Proxy '(F3, F21, ZQ1)),
                testProperty "F7/F21/ZQ2" $ f (Proxy::Proxy '(F7, F21, ZQ2)),
                testProperty "F3/F42/ZQ3" $ f (Proxy::Proxy '(F3, F42, ZQ3))]

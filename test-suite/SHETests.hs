@@ -189,8 +189,8 @@ groupTypesEnc ::
   -> [Test]
 groupTypesEnc f = [testProperty "F7/F7 /ZP2/ZQ2" $ f (Proxy::Proxy '(F7, F7,  ZP2, ZQ2)),
                    testProperty "F7/F21/ZP2/ZQ2" $ f (Proxy::Proxy '(F7, F21, ZP2, ZQ2)),
-                   testProperty "F2/F8 /ZP2/Q536871001" $ f (Proxy::Proxy '(F2,F8,ZP2,Zq Q536871001)),
-                   testProperty "F1/F8 /ZP2/Q536871001" $ f (Proxy::Proxy '(F1,F8,ZP2,Zq Q536871001)),
+                   testProperty "F2/F8 /ZP2/536871001" $ f (Proxy::Proxy '(F2,F8,ZP2,Zq 536871001)),
+                   testProperty "F1/F8 /ZP2/536871001" $ f (Proxy::Proxy '(F1,F8,ZP2,Zq 536871001)),
                    testProperty "F4/F12/ZP2/SmoothZQ1" $ f (Proxy::Proxy '(F4,F12,ZP2,SmoothZQ1)),
                    testProperty "F4/F8/ZP3/SmoothQ1" $ f (Proxy::Proxy '(F4,F8,ZP3, Zq SmoothQ1)),
                    testProperty "F7/F7 /ZP4/ZQ2" $ f (Proxy::Proxy '(F7, F7,  ZP4, ZQ2)),
@@ -199,9 +199,9 @@ groupTypesEnc f = [testProperty "F7/F7 /ZP2/ZQ2" $ f (Proxy::Proxy '(F7, F7,  ZP
                    testProperty "F4/F4/ZP4/ZQ1" $ f (Proxy::Proxy '(F4,F4,ZP4,ZQ1)),
                    testProperty "F14/F14/ZP4/ZQ1" $ f (Proxy::Proxy '(F14,F14,ZP4,ZQ1)),
                    testProperty "F28/F28/ZP4/ZQ1" $ f (Proxy::Proxy '(F28,F28,ZP4,ZQ1)),
-                   testProperty "F28/F28/ZP4/Q80221" $ f (Proxy::Proxy '(F28,F28,ZP4,Zq Q80221)),
-                   testProperty "F1/F8 /ZP4/Q536871001" $ f (Proxy::Proxy '(F1,F8,ZP4,Zq Q536871001)),
-                   testProperty "F2/F8 /ZP4/Q536871001" $ f (Proxy::Proxy '(F2,F8,ZP4,Zq Q536871001)),
+                   testProperty "F28/F28/ZP4/80221" $ f (Proxy::Proxy '(F28,F28,ZP4,Zq 80221)),
+                   testProperty "F1/F8 /ZP4/536871001" $ f (Proxy::Proxy '(F1,F8,ZP4,Zq 536871001)),
+                   testProperty "F2/F8 /ZP4/536871001" $ f (Proxy::Proxy '(F2,F8,ZP4,Zq 536871001)),
                    testProperty "F4/F12/ZP8/SmoothZQ1" $ f (Proxy::Proxy '(F4,F12,ZP8,SmoothZQ1))
                   ]
 
