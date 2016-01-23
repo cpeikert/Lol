@@ -67,7 +67,7 @@ wrap2Arg :: (BasicCtx t m r, MonadRandom rnd)
 wrap2Arg f _ _ str = (bench str) <$> (genArgs f)
 
 groupC :: (MonadRandom rnd) =>
-  (forall t m m' r . 
+  (forall t m r . 
        (BasicCtx t m r) 
        => Proxy t 
           -> Proxy '(m,r)
