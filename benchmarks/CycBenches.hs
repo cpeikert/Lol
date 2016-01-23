@@ -18,8 +18,9 @@ cycBenches = bgroupRnd "Cyc"
    --bgroupRnd "*" $ groupC $ wrap2Arg bench_mul,
    --bgroupRnd "id1" $ groupC $ wrap1Arg bench_adviseCRT,
    --bgroupRnd "id2" $ groupC $ wrap1Arg bench_advisePowPow,
-   bgroupRnd "crt" $ groupC $ wrap1Arg bench_advisePowCRT]
-   --bgroupRnd "crtInv" $ groupC $ wrap1Arg bench_advisePow]
+   bgroupRnd "crt" $ groupC $ wrap1Arg bench_advisePowCRT
+  --,bgroupRnd "crtInv" $ groupC $ wrap1Arg bench_advisePow
+  ]
 
 bench_mulPow :: (CElt t r, Fact m) => Cyc t m r -> Cyc t m r -> Benchmarkable
 bench_mulPow a b = 
@@ -54,7 +55,7 @@ wrap2Arg :: (BasicCtx t m r, MonadRandom rnd)
 wrap2Arg f _ _ str = (bench str) <$> (genArgs f)
 
 groupC :: (MonadRandom rnd) =>
-  (forall t m m' r . 
+  (forall t m r . 
        (BasicCtx t m r) 
        => Proxy t 
           -> Proxy '(m,r)
