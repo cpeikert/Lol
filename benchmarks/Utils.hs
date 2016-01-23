@@ -10,11 +10,11 @@ import Math.NumberTheory.Primes.Testing (isPrime)
 
 -- an infinite list of primes greater than the input and congruent to
 -- 1 mod m
-goodQs :: (ToInteger i) => i -> i -> [i]
+goodQs :: (Integral i) => i -> i -> [i]
 goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
   where checkVal v = if (isPrime (fromIntegral v :: Integer))
                      then v : checkVal (v+m)
-                     else checkVal (v+m)
+                    else checkVal (v+m)
 -}
 
 bgroupRnd :: (Monad rnd) => String -> [rnd Benchmark] -> rnd Benchmark
