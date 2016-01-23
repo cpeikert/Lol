@@ -1,9 +1,12 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, TypeFamilies, TypeOperators, PolyKinds #-}
 
 module Utils where
 
 import Control.Monad.Random
 import Criterion
+
+import Crypto.Lol (Int64)
+import Crypto.Lol.Types.ZqBasic
 
 {-
 import Math.NumberTheory.Primes.Testing (isPrime)
@@ -35,3 +38,9 @@ instance {-# Overlappable #-} (Random a, GenArgs b) => GenArgs (a -> b) where
   genArgs f = do
     x <- getRandom
     genArgs $ f x
+
+data a ** b
+
+type family Zq (a :: k) :: * where
+  Zq (a ** b) = (Zq a, Zq b)
+  Zq q = (ZqBasic q Int64)
