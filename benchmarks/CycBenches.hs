@@ -4,6 +4,7 @@
 
 module CycBenches (cycBenches) where
 
+import Control.Applicative
 import Control.Monad.Random
 
 import Crypto.Lol
@@ -16,20 +17,20 @@ cycBenches = bgroupRnd "Cyc"
   [bgroupRnd "CRT + *" $ groupC $ wrap2Arg bench_mulPow,
    bgroupRnd "*" $ groupC $ wrap2Arg bench_mul]
 
-bench_mulPow :: (CElt t r, Fact m) => Cyc t m r -> Cyc t m r -> String -> Benchmark
-bench_mulPow a b str = 
+bench_mulPow :: (CElt t r, Fact m) => Cyc t m r -> Cyc t m r -> Benchmarkable
+bench_mulPow a b = 
   let a' = advisePow a
       b' = advisePow b
-  in bench str $ nf (a' *) b'
+  in nf (a' *) b'
 
-bench_mul :: (CElt t r, Fact m) => Cyc t m r -> Cyc t m r -> String -> Benchmark
-bench_mul a b str = bench str $ nf (a *) b
+bench_mul :: (CElt t r, Fact m) => Cyc t m r -> Cyc t m r -> Benchmarkable
+bench_mul a b = nf (a *) b
 
 type BasicCtx t m r = (CElt t r, Fact m)
 
 wrap2Arg :: (BasicCtx t m r, MonadRandom rnd) 
-  => (Cyc t m r -> Cyc t m r -> String -> Benchmark) -> Proxy t -> Proxy '(m,r) -> String -> rnd Benchmark
-wrap2Arg f _ _ str = genArgs str f
+  => (Cyc t m r -> Cyc t m r -> Benchmarkable) -> Proxy t -> Proxy '(m,r) -> String -> rnd Benchmark
+wrap2Arg f _ _ str = (bench str) <$> (genArgs f)
 
 groupC :: (MonadRandom rnd) =>
   (forall t m m' r . 
@@ -48,4 +49,4 @@ groupMR :: (MonadRandom rnd) =>
   -> [rnd Benchmark]
 groupMR f = 
   [f (Proxy::Proxy '(F128, ZqBasic 257 Int64)) "F128/Q257", 
-   f (Proxy::Proxy '(PToF Prime281, ZqBasic 2 Int64)) "F281/Q2"]
+   f (Proxy::Proxy '(PToF Prime281, ZqBasic 563 Int64)) "F281/Q563"]
