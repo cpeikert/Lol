@@ -161,3 +161,18 @@ test-suite lol-test-suite
     test-framework-quickcheck2 >= 0.3 && < 0.4,
     time >= 1.2 && < 1.6,
     vector
+
+Benchmark bench-lol
+  type:               exitcode-stdio-1.0
+  hs-source-dirs:     benchmarks
+  default-language:   Haskell2010
+  main-is:            Main.hs
+
+  ghc-options: -threaded -rtsopts
+
+  build-depends:
+    base,
+    criterion,
+    lol,
+    MonadRandom
+
