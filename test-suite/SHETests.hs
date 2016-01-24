@@ -38,7 +38,6 @@ v = 1 :: Double
 sheTests = 
   [testGroup "Tunnel" $ tunnelTests,
    testGroup "Dec . Enc (Unrestricted)" $ groupCEnc $ wrapEnc prop_encDec,
-   testGroup "Dec . Enc (MSD)" $ groupCEnc $ wrapEnc prop_encDec_MSD,
    testGroup "AddPub" $ groupCEnc $ wrapEnc prop_addPub,
    testGroup "MulPub" $ groupCEnc $ wrapEnc prop_mulPub,
    testGroup "ScalarPub" $ groupCEnc $ wrapScalar prop_addScalar,
@@ -66,15 +65,6 @@ prop_encDec _ x = monadicIO $ do
   sk :: SK (Cyc c m' (LiftOf zp)) <- genSK v
   y :: CT m zp (Cyc c m' zq) <- encrypt sk x
   let x' = decryptUnrestricted sk $ y
-  assert $ x == x'
-
-prop_encDec_MSD :: forall m zp c m' zq . 
-  (EncDecCtx c m m' zp zq) 
-  => Proxy '(m', zq) -> Cyc c m zp -> Property
-prop_encDec_MSD _ x = monadicIO $ do
-  sk :: SK (Cyc c m' (LiftOf zp)) <- genSK v
-  y :: CT m zp (Cyc c m' zq) <- encrypt sk x
-  let x' = decryptUnrestricted sk $ toMSD y
   assert $ x == x'
 
 prop_addPub :: forall m zp c m' zq . 

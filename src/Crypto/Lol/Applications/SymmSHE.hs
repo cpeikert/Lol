@@ -13,8 +13,6 @@ SK, PT, CT                    -- don't export constructors!
 , genSK
 , encrypt
 , errorTerm, errorTermUnrestricted, decrypt, decryptUnrestricted
--- * Encoding of plaintext
-, toMSD, toLSD
 -- * Arithmetic with public values
 , addScalar, addPublic, mulPublic
 -- * Modulus switching
