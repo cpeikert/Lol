@@ -8,21 +8,23 @@ import Control.Applicative
 import Control.Monad.Random
 
 import Crypto.Lol
+import Crypto.Lol.Types.Random
+import Crypto.Random.DRBG
 
 import Criterion
 import Utils
 
 cycBenches :: (MonadRandom rnd) => rnd Benchmark
 cycBenches = bgroupRnd "Cyc"
-  [bgroupRnd "CRT + *" $ groupC $ wrap2Arg bench_mulPow,
-   bgroupRnd "*" $ groupC $ wrap2Arg bench_mul,
-   bgroupRnd "crt" $ groupC $ wrap1Arg bench_crt,
-   bgroupRnd "crtInv" $ groupC $ wrap1Arg bench_crtInv,
-   bgroupRnd "l" $ groupC $ wrap1Arg bench_l,
-   bgroupRnd "*g Pow" $ groupC $ wrap1Arg bench_mulgPow,
-   bgroupRnd "*g CRT" $ groupC $ wrap1Arg bench_mulgCRT,
-   bgroupRnd "lift" $ groupCLift $ wrapLift bench_liftPow,
-   bgroupRnd "error" $ groupCLift $ wrapError $ bench_errRounded 0.1]
+  [bgroupRnd "CRT + *" $ bench2Arg bench_mulPow,
+   bgroupRnd "*"       $ bench2Arg bench_mul,
+   bgroupRnd "crt"     $ bench1Arg bench_crt,
+   bgroupRnd "crtInv"  $ bench1Arg bench_crtInv,
+   bgroupRnd "l"       $ bench1Arg bench_l,
+   bgroupRnd "*g Pow"  $ bench1Arg bench_mulgPow,
+   bgroupRnd "*g CRT"  $ bench1Arg bench_mulgCRT,
+   bgroupRnd "lift"    $ groupCLift $ wrapLift bench_liftPow,
+   bgroupRnd "error"   $ groupGens $ wrapError $ bench_errRounded 0.1]
    -- sanity checks
    --bgroupRnd "^2" $ groupC $ wrap1Arg bench_sq,             -- should take same as bench_mul
    --bgroupRnd "id2" $ groupC $ wrap1Arg bench_advisePowPow,] -- should take a few nanoseconds: this is a no-op
@@ -39,7 +41,7 @@ bench_mul :: (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> Benchmarkable
 bench_mul a b = 
   let a' = adviseCRT a
       b' = adviseCRT b
-  in nf (a *) b
+  in nf (a' *) b'
 
 -- convert input from Pow basis to CRT basis
 bench_crt :: (BasicCtx t m r) => Cyc t m r -> Benchmarkable
@@ -65,8 +67,16 @@ bench_mulgPow x = let y = advisePow x in nf mulG y
 bench_mulgCRT :: (BasicCtx t m r) => Cyc t m r -> Benchmarkable
 bench_mulgCRT x = let y = adviseCRT x in nf mulG y
 
-bench_errRounded :: forall t m r . (LiftCtx t m r) => Double -> Proxy (t m r) -> Benchmarkable
-bench_errRounded v _ = nfIO (errorRounded v :: IO (Cyc t m (LiftOf r)))
+
+evalCryptoRandIO :: Rand (CryptoRand HashDRBG) a -> IO a
+evalCryptoRandIO x = do
+  gen <- newGenIO -- uses system entropy
+  return $ evalRand x gen
+
+bench_errRounded :: forall t m r rnd . (LiftCtx t m r, CryptoRandomGen rnd) => Double -> Proxy rnd -> Proxy (t m r) -> Benchmarkable
+bench_errRounded v _ _ = nfIO $ do
+  gen <- newGenIO -- uses system entropy
+  return $ evalRand (errorRounded v :: Rand (CryptoRand rnd) (Cyc t m (LiftOf r))) gen
 
 {-
 -- sanity check: this test should take the same amount of time as bench_mul
@@ -81,13 +91,15 @@ bench_advisePowPow x = let y = advisePow x in nf advisePow y
 
 type BasicCtx t m r = (CElt t r, Fact m)
 
+bench1Arg :: (MonadRandom rnd) => (forall t m r . (BasicCtx t m r) => Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
+bench1Arg g = groupC $ wrap1Arg g
+
+bench2Arg :: (MonadRandom rnd) => (forall t m r . (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
+bench2Arg g = groupC $ wrap2Arg g
+
 wrap1Arg :: (BasicCtx t m r, MonadRandom rnd) 
   => (Cyc t m r -> Benchmarkable) -> Proxy t -> Proxy '(m,r) -> String -> rnd Benchmark
 wrap1Arg f _ _ str = bench str <$> genArgs f
-
---wrap2 :: (BasicCtx t m r, MonadRandom rnd) 
---  => (Cyc t m r -> Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
---wrap2 f = groupC $ wrap2Arg f
 
 wrap2Arg :: (BasicCtx t m r, MonadRandom rnd) 
   => (Cyc t m r -> Cyc t m r -> Benchmarkable) -> Proxy t -> Proxy '(m,r) -> String -> rnd Benchmark
@@ -102,7 +114,7 @@ groupC :: (MonadRandom rnd) =>
           -> rnd Benchmark)
   -> [rnd Benchmark]
 groupC f =
-  [--bgroupRnd "Cyc CT" $ groupMR (f (Proxy::Proxy CT))]
+  [bgroupRnd "Cyc CT" $ groupMR (f (Proxy::Proxy CT)),
    bgroupRnd "Cyc RT" $ groupMR (f (Proxy::Proxy RT))]
 
 groupMR :: (MonadRandom rnd) =>
@@ -132,8 +144,21 @@ wrapLift :: (LiftCtx t m r, MonadRandom rnd)
 wrapLift f _ _ str = bench str <$> genArgs f
 
 wrapError :: (LiftCtx t m r, Monad rnd)
-  => (Proxy (t m r) -> Benchmarkable) -> Proxy t -> Proxy '(m,r) -> String -> rnd Benchmark
-wrapError f _ _ str = return $ bench str $ f Proxy
+  => (Proxy gen -> Proxy (t m r) -> Benchmarkable) -> Proxy gen -> Proxy t -> Proxy '(m,r) -> String -> rnd Benchmark
+wrapError f _ _ _ str = return $ bench str $ f Proxy Proxy
+
+groupGens :: (MonadRandom rnd) => 
+  (forall t m r gen .
+      (LiftCtx t m r, CryptoRandomGen gen)
+      => Proxy gen
+         -> Proxy t
+         -> Proxy '(m,r)
+         -> String
+         -> rnd Benchmark)
+  -> [rnd Benchmark]
+groupGens f = 
+  [bgroupRnd "HashDRBG" $ groupCLift $ f (Proxy :: Proxy HashDRBG),
+   bgroupRnd "StdGen" $ groupCLift $ f (Proxy :: Proxy SystemRandom)]
 
 groupCLift :: (MonadRandom rnd) =>
   (forall t m r . 
@@ -144,8 +169,8 @@ groupCLift :: (MonadRandom rnd) =>
           -> rnd Benchmark)
   -> [rnd Benchmark]
 groupCLift f =
-  [--bgroupRnd "Cyc CT" $ groupMRLift (f (Proxy::Proxy CT))]
-   bgroupRnd "Cyc RT" $ groupMRLift (f (Proxy::Proxy RT))]
+  [bgroupRnd "Cyc CT" $ groupMRLift $ f (Proxy::Proxy CT),
+   bgroupRnd "Cyc RT" $ groupMRLift $ f (Proxy::Proxy RT)]
 
 groupMRLift :: (MonadRandom rnd) =>
   (forall m r . (LiftCtx CT m r, LiftCtx RT m r) => Proxy '(m, r) -> String -> rnd Benchmark) 
