@@ -25,9 +25,60 @@ import Test.Framework.Providers.QuickCheck2 (testProperty)
 import Test.QuickCheck (Property, property, Arbitrary)
 
 cycTests = [testGroup "coeffsPow" $ groupC $ wrapCmm'rToBool prop_coeffsBasis,
+            testGroup "mulGPow" $ groupC' $ wrapCmrToBool prop_mulgPow,
+            testGroup "mulGDec" $ groupC' $ wrapCmrToBool prop_mulgDec,
+            testGroup "mulGCRT" $ groupC' $ wrapCmrToBool prop_mulgCRT,
             testGroup "crtSet" $ groupC $ wrapProxyCmm'rToBool prop_crtSet_pairs]
 
 
+prop_mulgPow :: (CElt t r, Fact m) => Cyc t m r -> Bool
+prop_mulgPow x =
+  let y = advisePow x
+  in y == (fromJust' "prop_mulgPow failed divisibility!" $ divG $ mulG y)
+
+prop_mulgDec :: (CElt t r, Fact m) => Cyc t m r -> Bool
+prop_mulgDec x = 
+  let y = adviseDec x
+  in y == (fromJust' "prop_mulgDec failed divisibility!" $ divG $ mulG y)
+
+prop_mulgCRT :: (CElt t r, Fact m) => Cyc t m r -> Bool
+prop_mulgCRT x = 
+  let y = adviseCRT x
+  in y == (fromJust' "prop_mulgCRT failed divisibility!" $ divG $ mulG y)
+
+wrapCmrToBool :: (CElt t r, Fact m, Show (Cyc t m r), Arbitrary (t m r)) 
+  => (Cyc t m r -> Bool) -> Proxy (Cyc t) -> Proxy '(m,r) -> Property
+wrapCmrToBool f _ _ = property f
+
+groupC' ::
+  (forall t m r . 
+       (CElt t r, Fact m, Show (Cyc t m r), Arbitrary (t m r))
+       => Proxy (Cyc t) 
+          -> Proxy '(m,r) 
+          -> Property)
+  -> [Test]
+groupC' f =
+  [testGroup "FC CT" $ groupMR (f (Proxy::Proxy (Cyc CT))),
+   testGroup "FC RT" $ groupMR (f (Proxy::Proxy (Cyc RT)))]
+
+groupMR :: (forall m r . (Fact m, 
+                          CElt CT r, Show (Cyc CT m r), Arbitrary (CT m r),
+                          CElt RT r, Show (Cyc RT m r), Arbitrary (RT m r)) 
+               => Proxy '(m, r) -> Property) 
+            -> [Test]
+groupMR f = [testProperty "F7/29" $ f (Proxy::Proxy '(F7, Zq 29)),
+             testProperty "F7/32" $ f (Proxy::Proxy '(F7, Zq 32)),
+             testProperty "F12/SmoothZQ1" $ f (Proxy::Proxy '(F12, SmoothZQ1)),
+             testProperty "F1/17" $ f (Proxy::Proxy '(F1, Zq 17)),
+             testProperty "F2/17" $ f (Proxy::Proxy '(F2, Zq 17)),
+             testProperty "F4/17" $ f (Proxy::Proxy '(F4, Zq 17)),
+             testProperty "F8/17" $ f (Proxy::Proxy '(F8, Zq 17)),
+             testProperty "F21/8191" $ f (Proxy::Proxy '(F21, Zq 8191)),
+             testProperty "F42/8191" $ f (Proxy::Proxy '(F42, Zq 8191)),
+             testProperty "F42/ZQ1" $ f (Proxy::Proxy '(F42, ZQ1)),
+             testProperty "F42/1024" $ f (Proxy::Proxy '(F42, Zq 1024)),
+             testProperty "F42/ZQ2" $ f (Proxy::Proxy '(F42, ZQ2)),
+             testProperty "F89/179" $ f (Proxy::Proxy '(F89, Zq 179))]
 
 
 
@@ -84,8 +135,7 @@ groupMM'R ::
   (forall m m' r . (BasisWrapCCtx m m' r) => Proxy '(m, m', r) -> Property) 
   -> [Test]
 groupMM'R f = [testProperty "F1/F7/PP8" $ f (Proxy::Proxy '(F1, F7, ZP8)), 
-               testProperty "F1/F7/PP2" $ f (Proxy::Proxy '(F1, F7, ZP2))] -- add some more test cases
-
+               testProperty "F1/F7/PP2" $ f (Proxy::Proxy '(F1, F7, ZP2))]
 
 
 

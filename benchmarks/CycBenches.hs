@@ -1,7 +1,6 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, NoImplicitPrelude, 
              RankNTypes, RebindableSyntax, ScopedTypeVariables, TypeOperators #-}
 
-
 module CycBenches (cycBenches) where
 
 import Control.Applicative

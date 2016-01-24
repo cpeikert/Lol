@@ -177,7 +177,9 @@ Benchmark bench-lol
   build-depends:
     base,
     criterion,
+    deepseq,
     DRBG,
     lol,
-    MonadRandom
+    MonadRandom,
+    mtl
 

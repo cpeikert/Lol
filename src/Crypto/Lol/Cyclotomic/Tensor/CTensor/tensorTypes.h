@@ -31,10 +31,12 @@ extern int crtCCtr;
 extern int crtInvCCtr;
 
 extern int gprCtr;
+extern int gpcCtr;
 extern int gprqCtr;
 extern int gdrCtr;
 extern int gdrqCtr;
 extern int giprCtr;
+extern int gipcCtr;
 extern int giprqCtr;
 extern int gidrCtr;
 extern int gidrqCtr;
@@ -79,10 +81,12 @@ extern struct timespec crtCTime;
 extern struct timespec crtInvCTime;
 
 extern struct timespec gprTime;
+extern struct timespec gpcTime;
 extern struct timespec gprqTime;
 extern struct timespec gdrTime;
 extern struct timespec gdrqTime;
 extern struct timespec giprTime;
+extern struct timespec gipcTime;
 extern struct timespec giprqTime;
 extern struct timespec gidrTime;
 extern struct timespec gidrqTime;
@@ -176,6 +180,8 @@ void tensorGPowR (hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfP
 
 void tensorGPowRq (hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q);
 
+void tensorGPowC (complex_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
+
 void tensorGDecR (hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
 
 void tensorGDecRq (hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q);
@@ -183,6 +189,8 @@ void tensorGDecRq (hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOf
 void tensorGInvPowR (hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
 
 void tensorGInvPowRq (hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q);
+
+void tensorGInvPowC (complex_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
 
 void tensorGInvDecR (hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
 

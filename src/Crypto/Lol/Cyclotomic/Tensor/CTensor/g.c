@@ -47,6 +47,29 @@ void gPowRq (hInt_t* y, hDim_t lts, hDim_t rts, hDim_t p, hInt_t q)
 	}
 }
 
+void gPowC (complex_t* y, hDim_t lts, hDim_t rts, hDim_t p)
+{
+  hDim_t tmp1 = rts*(p-1);
+  hDim_t tmp2 = tmp1 - rts;
+  hDim_t blockOffset, modOffset;
+  hDim_t i;
+  for (blockOffset = 0; blockOffset < lts; ++blockOffset)
+  {
+    hDim_t tmp3 = blockOffset * tmp1;
+    for (modOffset = 0; modOffset < rts; ++modOffset)
+    {
+      hDim_t tensorOffset = tmp3 + modOffset;
+      complex_t last = y[tensorOffset + tmp2];
+      for (i = p-2; i != 0; --i)
+      {
+        hDim_t idx = tensorOffset + i * rts;
+        CMPLX_IADD(y[idx],last);
+        CMPLX_ISUB(y[idx],y[idx-rts]);
+      }
+      CMPLX_IADD(y[tensorOffset],last);
+    }
+  }
+}
 
 void ppGPowR (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q)
 {
@@ -62,7 +85,6 @@ void ppGPowR (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q)
 	}
 }
 
-
 void ppGPowRq (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q)
 {
     hDim_t p = pe.prime;
@@ -73,7 +95,15 @@ void ppGPowRq (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q)
 	}
 }
 
-
+void ppGPowC (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q)
+{
+    hDim_t p = pe.prime;
+    hShort_t e = pe.exponent;
+  if (p != 2)
+  {
+    gPowC ((complex_t*)y, lts*ipow(p,e-1), rts, p);
+  }
+}
 
 void gDecR (hInt_t* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
@@ -215,6 +245,40 @@ void gInvPowRq (hInt_t* y, hDim_t lts, hDim_t rts, hDim_t p, hInt_t q)
 	}
 }
 
+void gInvPowC (complex_t* y, hDim_t lts, hDim_t rts, hDim_t p)
+{
+  hDim_t tmp1 = rts * (p-1);
+  hDim_t blockOffset, modOffset;
+  hDim_t i;
+
+  for (blockOffset = 0; blockOffset < lts; ++blockOffset)
+  {
+    hDim_t tmp2 = blockOffset * tmp1;
+    for (modOffset = 0; modOffset < rts; ++modOffset)
+    {
+      hDim_t tensorOffset = tmp2 + modOffset;
+      complex_t lelts = ((complex_t){0, 0});;
+      for (i = 0; i < p-1; ++i)
+      {
+        CMPLX_IADD(lelts,y[tensorOffset + i*rts]);
+      }
+      complex_t relts = ((complex_t){0, 0});;
+      for (i = p-2; i >= 0; --i)
+      {
+        hDim_t idx = tensorOffset + i*rts;
+        complex_t z = y[idx];
+
+        complex_t c1 = ((complex_t){p-1-i, 0});
+        complex_t c2 = ((complex_t){i+1, 0});
+        complex_t t1 = CMPLX_MUL(c1, lelts);
+        complex_t t2 = CMPLX_MUL(c2, relts);
+        y[idx] = CMPLX_SUB(t1,t2);
+        CMPLX_ISUB(lelts,z);
+        CMPLX_IADD(relts,z);
+      }
+    }
+  }
+}
 
 void ppGInvPowR (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q)
 {
@@ -237,6 +301,19 @@ void ppGInvPowRq (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q)
 	{
 		gInvPowRq ((hInt_t*)y, lts*ipow(p,e-1), rts, p, q);
 	}
+}
+
+void ppGInvPowC (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q)
+{
+#ifdef DEBUG_MODE
+  ASSERT (q==0);
+#endif
+    hDim_t p = pe.prime;
+    hShort_t e = pe.exponent;
+  if (p != 2)
+  {
+    gInvPowC ((complex_t*)y, lts*ipow(p,e-1), rts, p);
+  }
 }
 
 //do not call for p=2!
@@ -480,6 +557,21 @@ void tensorGPowRq (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOf
 #endif
 }
 
+void tensorGPowC (complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+{
+#ifdef STATS
+    gpcCtr++;
+    struct timespec s1,t1;
+    clock_gettime(CLOCK_REALTIME, &s1);
+#endif
+  tensorFuser (y, ppGPowC, totm, peArr, sizeOfPE, 0);
+
+#ifdef STATS
+    clock_gettime(CLOCK_REALTIME, &t1);
+    gpcTime = tsAdd(gpcTime, tsSubtract(t1,s1));
+#endif
+}
+
 void tensorGDecR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
 #ifdef STATS
@@ -552,6 +644,21 @@ void tensorGInvPowRq (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t siz
 #ifdef STATS
     clock_gettime(CLOCK_REALTIME, &t1);
     giprqTime = tsAdd(giprqTime, tsSubtract(t1,s1));
+#endif
+}
+
+void tensorGInvPowC (complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+{
+#ifdef STATS
+    gipcCtr++;
+    struct timespec s1,t1;
+    clock_gettime(CLOCK_REALTIME, &s1);
+#endif
+  tensorFuser (y, ppGInvPowC, totm, peArr, sizeOfPE, 0);
+
+#ifdef STATS
+    clock_gettime(CLOCK_REALTIME, &t1);
+    gipcTime = tsAdd(gipcTime, tsSubtract(t1,s1));
 #endif
 }
 

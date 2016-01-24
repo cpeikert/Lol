@@ -1,7 +1,4 @@
 
-
---module Tests where
-
 import SHETests
 import TensorTests
 import CycTests
