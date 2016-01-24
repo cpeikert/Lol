@@ -67,12 +67,6 @@ bench_mulgPow x = let y = advisePow x in nf mulG y
 bench_mulgCRT :: (BasicCtx t m r) => Cyc t m r -> Benchmarkable
 bench_mulgCRT x = let y = adviseCRT x in nf mulG y
 
-
-evalCryptoRandIO :: Rand (CryptoRand HashDRBG) a -> IO a
-evalCryptoRandIO x = do
-  gen <- newGenIO -- uses system entropy
-  return $ evalRand x gen
-
 bench_errRounded :: forall t m r rnd . (LiftCtx t m r, CryptoRandomGen rnd) => Double -> Proxy rnd -> Proxy (t m r) -> Benchmarkable
 bench_errRounded v _ _ = nfIO $ do
   gen <- newGenIO -- uses system entropy
