@@ -1,6 +1,8 @@
 
 
 import CycBenches
+import SHEBenches
+
 import Criterion.Main
 import Control.Monad
 
