@@ -15,18 +15,21 @@ import Utils
 
 cycBenches :: (MonadRandom rnd) => rnd Benchmark
 cycBenches = bgroupRnd "Cyc"
-  [bgroupRnd "CRT + *" $ bench2Arg bench_mulPow,
-   bgroupRnd "*"       $ bench2Arg bench_mul,
-   bgroupRnd "crt"     $ bench1Arg bench_crt,
-   bgroupRnd "crtInv"  $ bench1Arg bench_crtInv,
-   bgroupRnd "l"       $ bench1Arg bench_l,
-   bgroupRnd "*g Pow"  $ bench1Arg bench_mulgPow,
-   bgroupRnd "*g CRT"  $ bench1Arg bench_mulgCRT,
-   bgroupRnd "lift"    $ groupCLift $ wrapLift bench_liftPow,
-   bgroupRnd "error"   $ groupGens $ wrapError $ bench_errRounded 0.1]
+  [  
+   -- bgroupRnd "crt & *" $ bench2Arg bench_mulPow
+   -- , bgroupRnd "*"       $ bench2Arg bench_mul
+   bgroupRnd "crt"     $ bench1Arg bench_crt
+   -- , bgroupRnd "crtInv"  $ bench1Arg bench_crtInv
+   -- , bgroupRnd "l"       $ bench1Arg bench_l
+   -- , bgroupRnd "*g Pow"  $ bench1Arg bench_mulgPow
+   -- , bgroupRnd "*g CRT"  $ bench1Arg bench_mulgCRT
+   -- , bgroupRnd "lift"    $ groupCLift $ wrapLift bench_liftPow
+   -- , bgroupRnd "error"   $ groupGens $ wrapError $ bench_errRounded 0.1
+
    -- sanity checks
-   --bgroupRnd "^2" $ groupC $ wrap1Arg bench_sq,             -- should take same as bench_mul
-   --bgroupRnd "id2" $ groupC $ wrap1Arg bench_advisePowPow,] -- should take a few nanoseconds: this is a no-op
+   --, bgroupRnd "^2" $ groupC $ wrap1Arg bench_sq,             -- should take same as bench_mul
+   --, bgroupRnd "id2" $ groupC $ wrap1Arg bench_advisePowPow -- should take a few nanoseconds: this is a no-op
+  ]
 
 -- convert both arguments to CRT basis, then multiply them coefficient-wise
 bench_mulPow :: (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> Benchmarkable
@@ -113,25 +116,28 @@ groupC :: (Monad rnd) =>
           -> rnd Benchmark)
   -> [rnd Benchmark]
 groupC f =
-  [bgroupRnd "Cyc CT" $ groupMR (f (Proxy::Proxy CT)),
-   bgroupRnd "Cyc RT" $ groupMR (f (Proxy::Proxy RT))]
+  [
+  --bgroupRnd "Cyc CT" $ groupMR (f (Proxy::Proxy CT)),
+  bgroupRnd "Cyc RT" $ groupMR (f (Proxy::Proxy RT))
+  ]
 
 groupMR :: (Monad rnd) =>
   (forall m r . (BasicCtx CT m r, BasicCtx RT m r) => Proxy '(m, r) -> rnd Benchmark) 
   -> [rnd Benchmark]
 groupMR f = 
-  [f (Proxy::Proxy '(F128, Zq 257)),
-   f (Proxy::Proxy '(PToF Prime281, Zq 563)),
-   f (Proxy::Proxy '(F32 * F9, Zq 512)),
-   f (Proxy::Proxy '(F32 * F9, Zq 577)),
-   f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153))),
-   f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017))),
-   f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593))),
-   f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169))),
-   f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457))),
-   f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337))),
-   f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489))),
-   f (Proxy::Proxy '(F32 * F9 * F25, Zq 14401))]
+  [--f (Proxy::Proxy '(F128, Zq 257))
+   -- , f (Proxy::Proxy '(PToF Prime281, Zq 563)),
+   -- , f (Proxy::Proxy '(F32 * F9, Zq 512))
+   f (Proxy::Proxy '(F32 * F9, Zq 577))
+   , f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153)))
+   , f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017)))
+   , f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593)))
+   , f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169)))
+   -- , f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457)))
+   -- , f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337)))
+   -- , f (Proxy::Proxy '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489)))
+   -- , f (Proxy::Proxy '(F32 * F9 * F25, Zq 14401))
+  ]
 
 type LiftCtx t m r = (BasicCtx t m r, CElt t (LiftOf r), Lift' r, ToInteger (LiftOf r))
 
