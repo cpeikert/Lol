@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, 
              NoImplicitPrelude, RankNTypes, RebindableSyntax, ScopedTypeVariables,
-             TypeFamilies, UndecidableInstances #-}
+             TypeFamilies, TypeOperators, UndecidableInstances #-}
 
 module SHEBenches (sheBenches) where
 
@@ -20,14 +20,56 @@ import Crypto.Lol.Applications.SymmSHE
 
 sheBenches :: (MonadRandom rnd) => rnd Benchmark
 sheBenches = bgroupRnd "SHE"
-  []
+  [bgroupRnd "genSK,v=0.1" $ groupGens $ wrapGenSK $ bench_gensk 0.1,
+   bgroupRnd "genSK,v=1.0" $ groupGens $ wrapGenSK $ bench_gensk 1.0]
 
 -- generate a rounded error term
-bench_gensk :: forall t m r rnd . (GenSKCtx t m (LiftOf r) Double, CryptoRandomGen rnd) 
-  => Double -> Proxy rnd -> Proxy (t m r) -> Benchmarkable
-bench_gensk v _ _ = nfIO $ do
+bench_gensk :: forall t m gen . (GenSKCtx t m Int64 Double, CryptoRandomGen gen) 
+  => Double -> Proxy gen -> Proxy t -> Proxy m -> Benchmarkable
+bench_gensk v _ _ _ = nfIO $ do
   gen <- newGenIO -- uses system entropy
-  return $ evalRand (genSK v :: Rand (CryptoRand rnd) (SK (Cyc t m (LiftOf r)))) gen
+  return $ evalRand (genSK v :: Rand (CryptoRand gen) (SK (Cyc t m Int64))) gen
+
+wrapGenSK :: forall t m gen rnd . (GenSKCtx t m Int64 Double, CryptoRandomGen gen, Monad rnd)
+  => (Proxy gen -> Proxy t -> Proxy m -> Benchmarkable) 
+     -> Proxy gen -> Proxy t -> Proxy m -> rnd Benchmark
+wrapGenSK f _ _ _ = return $ bench (show (BT :: BenchType m)) $ f Proxy Proxy Proxy
+
+groupGens :: (Monad rnd) => 
+  (forall t m gen .
+      (GenSKCtx t m Int64 Double, CryptoRandomGen gen)
+      => Proxy gen
+         -> Proxy t
+         -> Proxy m
+         -> rnd Benchmark)
+  -> [rnd Benchmark]
+groupGens f = 
+  [bgroupRnd "HashDRBG" $ groupCLift $ f (Proxy :: Proxy HashDRBG),
+   bgroupRnd "SysRand" $ groupCLift $ f (Proxy :: Proxy SystemRandom)]
+
+groupCLift :: (Monad rnd) =>
+  (forall t m . 
+       (GenSKCtx t m Int64 Double) 
+       => Proxy t 
+          -> Proxy m
+          -> rnd Benchmark)
+  -> [rnd Benchmark]
+groupCLift f =
+  [bgroupRnd "Cyc CT" $ groupMRLift $ f (Proxy::Proxy CT.CT),
+   bgroupRnd "Cyc RT" $ groupMRLift $ f (Proxy::Proxy RT)]
+
+groupMRLift :: (Monad rnd) =>
+  (forall m . (GenSKCtx CT.CT m Int64 Double, GenSKCtx RT m Int64 Double) => Proxy m -> rnd Benchmark) 
+  -> [rnd Benchmark]
+groupMRLift f = 
+  [f (Proxy::Proxy F128),
+   f (Proxy::Proxy (PToF Prime281)),
+   f (Proxy::Proxy (F32 * F9)),
+   f (Proxy::Proxy (F32 * F9)),
+   f (Proxy::Proxy (F32 * F9 * F25))]
+
+
+
 
 bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRandomGen gen)
   => Proxy gen -> Proxy zq -> SK (Cyc t m' z) -> PT (Cyc t m zp) -> Benchmarkable
@@ -42,20 +84,34 @@ bench_mul :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq)))
   => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> Benchmarkable
 bench_mul a = nf (*a)
 
-bench_mulCycle :: forall gad z zp zq zq' zq'' t m m' rnd . (MonadRandom rnd,
+
+newtype KSHint m zp t m' zq gad zq' = KeySwitch (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
+
+-- EAC: split up
+bench_mulCycle :: forall gad z zp zq zq' zq'' t m m' . (
                    Ring (CT m zp (Cyc t m' zq')), NFData (CT m zp (Cyc t m' zq)),
-                   RescaleCyc (Cyc t) zq' zq, ToSDCtx t m' zp zq',
+                   RescaleCyc (Cyc t) zq' zq, ToSDCtx t m' zp zq', z~ModRep zp,
                    KeySwitchCtx gad t m' zp zq' zq'', KSHintCtx gad t m' z zq'') 
-  => Proxy zq -> Proxy (gad,zq'') -> SK (Cyc t m' z) -> CT m zp (Cyc t m' zq') -> CT m zp (Cyc t m' zq') -> rnd Benchmarkable
--- EAC: May need to change to output MBench rnd
-bench_mulCycle _ psw sk a b = do
-  kswq :: CT m zp (Cyc t m' zq') -> CT m zp (Cyc t m' zq') <- proxyT (keySwitchQuadCirc sk) psw
-  return $ nf (rescaleLinearCT . kswq . (a*) :: CT m zp (Cyc t m' zq') -> CT m zp (Cyc t m' zq)) b
+  => Proxy zq
+     -> KSHint m zp t m' zq' gad zq''
+     -> CT m zp (Cyc t m' zq') 
+     -> CT m zp (Cyc t m' zq') 
+     -> Benchmarkable
+bench_mulCycle _ (KeySwitch kswq) a b = 
+  nf (rescaleLinearCT . kswq . (a*) :: CT m zp (Cyc t m' zq') -> CT m zp (Cyc t m' zq)) b
+
+
+
+
+
+
 
 -- generates a secrete key with svar=1, using non-cryptographic randomness
-instance (GenSKCtx t m z Double, MonadRandom rnd, MonadState (Maybe (SK (Cyc t m z))) rnd, GenArgs rnd b)
-  => GenArgs rnd (SK (Cyc t m z) -> b) where
-  genArgs f = do
+instance (GenSKCtx t m z Double, 
+          MonadRandom rnd, 
+          MonadState (Maybe (SK (Cyc t m z))) rnd)
+  => GenArg rnd (SK (Cyc t m z)) where
+  genArg = do
     msk <- get
     sk <- case msk of
       Just sk -> return sk
@@ -63,12 +119,25 @@ instance (GenSKCtx t m z Double, MonadRandom rnd, MonadState (Maybe (SK (Cyc t m
         sk <- genSK (1 :: Double)
         put $ Just sk
         return sk
-    genArgs $ f sk
+    return sk
 
-instance (GenSKCtx t m z Double, 
-          EncryptCtx t m m' z zp zq, 
-          MonadRandom rnd, 
-          MonadState (Maybe (SK (Cyc t m' z))) rnd, 
-          GenArgs rnd b) 
-  => GenArgs rnd (CT m zp (Cyc t m' zq) -> b) where
-  genArgs f = genArgs $ (\sk pt -> MBench $ (genArgs =<< (f <$> (encrypt sk pt))) :: MBench rnd)
+instance (EncryptCtx t m m' z zp zq,
+          z ~ LiftOf zp,
+          MonadRandom rnd,
+          GenArg rnd (SK (Cyc t m' z)),
+          GenArg rnd (Cyc t m zp)) 
+  => GenArg rnd (CT m zp (Cyc t m' zq)) where
+  genArg = do
+    sk :: SK (Cyc t m' z) <- genArg
+    pt <- genArg
+    encrypt sk pt
+
+instance (GenArg rnd (SK (Cyc t m' z)),
+          z ~ LiftOf zp,
+          KeySwitchCtx gad t m' zp zq zq',
+          KSHintCtx gad t m' z zq', 
+          MonadRandom rnd)
+  => GenArg rnd (KSHint m zp t m' zq gad zq') where
+  genArg = do
+    sk :: SK (Cyc t m' z) <- genArg
+    KeySwitch <$> proxyT (keySwitchQuadCirc sk) (Proxy::Proxy (gad,zq'))
