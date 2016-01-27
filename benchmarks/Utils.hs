@@ -62,26 +62,33 @@ type family Zq (a :: k) :: * where
   Zq q = (ZqBasic q Int64)
 
 -- a wrapper type for printing test/benchmark names
-data BenchType (a :: k) = BT
+data BenchArgs (a :: k) = BT
 
-instance (Fact m) => Show (BenchType m) where
+instance (Fact m) => Show (BenchArgs m) where
   show _ = "F" ++ (show $ proxy valueFact (Proxy::Proxy m))
 
-instance (Mod (ZqBasic q i), Show i) => Show (BenchType (ZqBasic q i)) where
+instance (Mod (ZqBasic q i), Show i) => Show (BenchArgs (ZqBasic q i)) where
   show _ = "Q" ++ (show $ proxy modulus (Proxy::Proxy (ZqBasic q i)))
 
-instance Show (BenchType RT) where
+instance Show (BenchArgs RT) where
   show _ = "RT"
 
-instance Show (BenchType CT) where
+instance Show (BenchArgs CT) where
   show _ = "CT"
 
-instance (Show (BenchType a), Show (BenchType b)) => Show (BenchType (a,b)) where
-  show _ = (show (BT :: BenchType a)) ++ "*" ++ (show (BT :: BenchType b))
+instance (Show (BenchArgs a), Show (BenchArgs b)) => Show (BenchArgs (a,b)) where
+  show _ = (show (BT :: BenchArgs a)) ++ "*" ++ (show (BT :: BenchArgs b))
 
-instance (Show (BenchType a), Show (BenchType b), Show (BenchType t)) => Show (BenchType '((t :: Factored -> * -> *), (a :: Factored), (b :: *))) where
-  show _ = (show (BT :: BenchType t)) ++ " " ++ (show (BT :: BenchType a)) ++ " " ++ (show (BT :: BenchType b))
+instance (Show (BenchArgs t), Show (BenchArgs m), Show (BenchArgs r)) 
+  => Show (BenchArgs '((t :: Factored -> * -> *), (m :: Factored), (r :: *))) where
+  show _ = (show (BT :: BenchArgs t)) ++ " " ++ (show (BT :: BenchArgs m)) ++ " " ++ (show (BT :: BenchArgs r))
 
+instance (Show (BenchArgs t), Show (BenchArgs m), Show (BenchArgs m'), Show (BenchArgs r)) 
+  => Show (BenchArgs '((t :: Factored -> * -> *), (m :: Factored), (m' :: Factored), (r :: *))) where
+  show _ = (show (BT :: BenchArgs t)) ++ " " ++ 
+           (show (BT :: BenchArgs m)) ++ " " ++ 
+           (show (BT :: BenchArgs m')) ++ " " ++
+           (show (BT :: BenchArgs r))
 
 type family (f :: (k1 -> k2)) <$>  (xs :: [k1]) where
   f <$> '[] = '[]

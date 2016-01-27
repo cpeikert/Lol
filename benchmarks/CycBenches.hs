@@ -30,7 +30,9 @@ cycBenches = bgroupRnd "Cyc"
    bgroupRnd "*g Pow"  $ bench1Arg bench_mulgPow,
    bgroupRnd "*g CRT"  $ bench1Arg bench_mulgCRT,
    bgroupRnd "lift"    $ benchLift bench_liftPow,
-   bgroupRnd "error"   $ benchError $ bench_errRounded 0.1
+   bgroupRnd "error"   $ benchError $ bench_errRounded 0.1,
+   bgroupRnd "twace"   $ benchTwoIdx $ wrapTwace bench_twacePow,
+   bgroupRnd "embed"   $ benchTwoIdx $ wrapEmbed bench_embedPow
    -- sanity checks
    --, bgroupRnd "^2" $ groupC $ wrap1Arg bench_sq,             -- should take same as bench_mul
    --, bgroupRnd "id2" $ groupC $ wrap1Arg bench_advisePowPow -- should take a few nanoseconds: this is a no-op
@@ -81,6 +83,13 @@ bench_errRounded v _ _ = nfIO $ do
   gen <- newGenIO
   return $ evalRand (errorRounded v :: Rand (CryptoRand gen) (Cyc t m (LiftOf r))) gen
 
+bench_twacePow :: forall t m m' r . (TwoIdxCtx t m m' r) 
+  => Proxy m -> Cyc t m' r -> Benchmarkable
+bench_twacePow _ x = let y = advisePow x in nf (twace :: Cyc t m' r -> Cyc t m r) y
+
+bench_embedPow :: forall t m m' r . (TwoIdxCtx t m m' r) 
+  => Proxy m' -> Cyc t m r -> Benchmarkable
+bench_embedPow _ x = let y = advisePow x in nf (embed :: Cyc t m r -> Cyc t m' r) y
 {-
 -- sanity check: this test should take the same amount of time as bench_mul
 -- if it takes less, then random element generation is being counted!
@@ -122,7 +131,7 @@ type instance Apply RemoveM '(m,m',r) = '(m',r)
 
 
 data BasicCtxD
-type BasicCtx t m r = (CElt t r, Fact m, Show (BenchType '(t,m,r)))
+type BasicCtx t m r = (CElt t r, Fact m, Show (BenchArgs '(t,m,r)))
 data instance ArgsCtx BasicCtxD where
   BC :: (BasicCtx t m r) => Proxy '(t,m,r) -> ArgsCtx BasicCtxD
 hideTMR :: (forall t m r . (BasicCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> ArgsCtx BasicCtxD -> rnd Benchmark
@@ -134,7 +143,7 @@ instance (Run BasicCtxD params, BasicCtx t m r) => Run BasicCtxD ( '(t,m,r) ': p
 
 wrap1Arg :: forall t m r rnd . (BasicCtx t m r, MonadRandom rnd) 
   => (Cyc t m r -> Benchmarkable) -> Proxy '(t,m,r) -> rnd Benchmark
-wrap1Arg f _ = bench (show (BT :: BenchType '(t,m,r))) <$> genArgs f
+wrap1Arg f _ = bench (show (BT :: BenchArgs '(t,m,r))) <$> genArgs f
 
 bench1Arg :: (MonadRandom rnd)
   => (forall t m r . (BasicCtx t m r) => Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
@@ -142,7 +151,7 @@ bench1Arg g = runAll (Proxy::Proxy AllParams) $ hideTMR $ wrap1Arg g
 
 wrap2Arg :: forall t m r rnd . (BasicCtx t m r, MonadRandom rnd)
   => (Cyc t m r -> Cyc t m r -> Benchmarkable) -> Proxy '(t,m,r) -> rnd Benchmark
-wrap2Arg f _ = bench (show (BT :: BenchType '(t,m,r))) <$> genArgs f
+wrap2Arg f _ = bench (show (BT :: BenchArgs '(t,m,r))) <$> genArgs f
 
 bench2Arg :: (MonadRandom rnd) 
   => (forall t m r . (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
@@ -161,7 +170,7 @@ instance (Run LiftCtxD params, LiftCtx t m r) => Run LiftCtxD ( '(t,m,r) ': para
 
 wrapLift :: forall t m r rnd . (LiftCtx t m r, MonadRandom rnd)
   => (Cyc t m r -> Benchmarkable) -> Proxy '(t,m,r) -> rnd Benchmark
-wrapLift f _ = bench (show (BT :: BenchType '(t,m,r))) <$> genArgs f
+wrapLift f _ = bench (show (BT :: BenchArgs '(t,m,r))) <$> genArgs f
 
 benchLift :: (MonadRandom rnd) 
   => (forall t m r . (LiftCtx t m r) => Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
@@ -170,10 +179,33 @@ benchLift g = runAll (Proxy::Proxy LiftParams) $ hideLift $ wrapLift g
 wrapError :: forall t m r gen rnd . (LiftCtx t m r, CryptoRandomGen gen, Monad rnd)
   => (Proxy gen -> Proxy (t m r) -> Benchmarkable) 
      -> Proxy gen -> Proxy '(t,m,r) -> rnd Benchmark
-wrapError f _ _ = return $ bench (show (BT :: BenchType '(t,m,r))) $ f Proxy Proxy
+wrapError f _ _ = return $ bench (show (BT :: BenchArgs '(t,m,r))) $ f Proxy Proxy
 
 benchError :: (MonadRandom rnd) 
   => (forall t m r gen . (LiftCtx t m r, CryptoRandomGen gen) => Proxy gen -> Proxy (t m r) -> Benchmarkable) -> [rnd Benchmark]
 benchError g = [
   bgroupRnd "HashDRBG" $ runAll (Proxy::Proxy LiftParams) $ hideLift $ wrapError g (Proxy::Proxy HashDRBG),
   bgroupRnd "SysRand" $ runAll (Proxy::Proxy LiftParams) $ hideLift $ wrapError g (Proxy::Proxy SystemRandom)]
+
+
+data TwoIdxCtxD
+type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, Show (BenchArgs '(t,m,m',r)))
+data instance ArgsCtx TwoIdxCtxD where
+  TI :: (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> ArgsCtx TwoIdxCtxD
+hideTMM'R :: (forall t m m' r . (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> rnd Benchmark) -> ArgsCtx TwoIdxCtxD -> rnd Benchmark
+hideTMM'R f (TI p) = f p
+
+instance (Run TwoIdxCtxD params, TwoIdxCtx t m m' r) => Run TwoIdxCtxD ( '(t, '(m,m',r)) ': params) where
+  runAll _ f = (f $ TI (Proxy::Proxy '(t,m,m',r))) : (runAll (Proxy::Proxy params) f)
+
+wrapTwace :: forall t m m' r rnd . (TwoIdxCtx t m m' r, MonadRandom rnd)
+  => (Proxy m -> Cyc t m' r -> Benchmarkable) -> Proxy '(t,m,m',r) -> rnd Benchmark
+wrapTwace f _ = bench (show (BT :: BenchArgs '(t,m,m',r))) <$> genArgs (f Proxy)
+
+wrapEmbed :: forall t m m' r rnd . (TwoIdxCtx t m m' r, MonadRandom rnd)
+  => (Proxy m' -> Cyc t m r -> Benchmarkable) -> Proxy '(t,m,m',r) -> rnd Benchmark
+wrapEmbed f _ = bench (show (BT :: BenchArgs '(t,m,m',r))) <$> genArgs (f Proxy)
+
+benchTwoIdx :: (MonadRandom rnd)
+  => (forall t m m' r . (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> rnd Benchmark) -> [rnd Benchmark]
+benchTwoIdx f = runAll (Proxy::Proxy (( '(,) <$> Tensors) <*> MM'RCombos)) $ hideTMM'R f
