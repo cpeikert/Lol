@@ -35,10 +35,10 @@ cycBenches = bgroupRnd "Cyc"
    bgroupRnd "*g CRT"  $ bench1Arg bench_mulgCRT,
    bgroupRnd "lift"    $ benchLift bench_liftPow,
    bgroupRnd "error"   $ benchError $ bench_errRounded 0.1
-   ]
    -- sanity checks
-   --bgroupRnd "^2" $ groupC $ wrap1Arg bench_sq,             -- should take same as bench_mul
-   --bgroupRnd "id2" $ groupC $ wrap1Arg bench_advisePowPow,] -- should take a few nanoseconds: this is a no-op
+   --, bgroupRnd "^2" $ groupC $ wrap1Arg bench_sq,             -- should take same as bench_mul
+   --, bgroupRnd "id2" $ groupC $ wrap1Arg bench_advisePowPow -- should take a few nanoseconds: this is a no-op
+  ]
 
 -- convert both arguments to CRT basis, then multiply them coefficient-wise
 bench_mulPow :: (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> Benchmarkable
