@@ -1,8 +1,7 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, NoImplicitPrelude, 
-             RankNTypes, RebindableSyntax, ScopedTypeVariables, TypeOperators,
-             KindSignatures, GADTs, PolyKinds, MultiParamTypeClasses,
-             TypeFamilies, FlexibleInstances, UndecidableInstances,
-             AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances, 
+             GADTs, MultiParamTypeClasses,NoImplicitPrelude, RankNTypes, 
+             RebindableSyntax, ScopedTypeVariables, TypeFamilies, 
+             TypeOperators, UndecidableInstances #-}
 
 module CycBenches (cycBenches) where
 
@@ -13,13 +12,10 @@ import Crypto.Lol
 import Crypto.Lol.Types.Random
 import Crypto.Random.DRBG
 
-import GHC.Prim (Constraint)
 import Data.Singletons
-import Data.Promotion.Prelude.Base
 import Data.Promotion.Prelude.List
 import Data.Promotion.Prelude.Eq
 import Data.Singletons.TypeRepStar
-import Data.Constraint
 
 import Criterion
 import Utils
@@ -96,50 +92,45 @@ bench_advisePowPow :: (CElt t r, Fact m) => Cyc t m r -> Benchmarkable
 bench_advisePowPow x = let y = advisePow x in nf advisePow y
 -}
 
-
-
-
-
-
-
-
-
-
-
-
-type RandGens = '[HashDRBG, SystemRandom]
 type Tensors = '[CT,RT]
-type MRCombos = 
-  '[ '(F128, Zq 257),
-     '(PToF Prime281, Zq 563),
-     '(F32 * F9, Zq 512),
-     '(F32 * F9, Zq 577),
-     '(F32 * F9, Zq (577 ** 1153)),
-     '(F32 * F9, Zq (577 ** 1153 ** 2017)),
-     '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593)),
-     '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169)),
-     '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457)),
-     '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337)),
-     '(F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489)),
-     '(F32 * F9 * F25, Zq 14401)
+type MM'RCombos = 
+  '[ '(F4, F128, Zq 257),
+     '(F1, PToF Prime281, Zq 563),
+     '(F12, F32 * F9, Zq 512),
+     '(F12, F32 * F9, Zq 577),
+     '(F12, F32 * F9, Zq (577 ** 1153)),
+     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017)),
+     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593)),
+     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169)),
+     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457)),
+     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337)),
+     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489)),
+     '(F12, F32 * F9 * F25, Zq 14401)
     ]
-type AllParams = Map Unpack (( '(,) <$> Tensors) <*> MRCombos)
-type LiftParams = Filter Liftable AllParams
+-- EAC: must be careful where we use Nub: apparently TypeRepStar doesn't work well with the Tensor constructors
+type AllParams = Map Unpack (( '(,) <$> Tensors) <*> (Nub (Map RemoveM MM'RCombos)))
+type LiftParams = Map Unpack (( '(,) <$> Tensors) <*> (Nub (Filter Liftable (Map RemoveM MM'RCombos))))
 
 data Unpack :: TyFun (Factored -> * -> *, (Factored, *)) (Factored -> * -> *, Factored, *) -> *
-type instance Apply Unpack '(a, '(b,c)) = '(a,b,c)
+type instance Apply Unpack '(a, '(c,d)) = '(a,c,d)
 
-data Liftable :: TyFun (Factored -> * -> *, Factored, *) Bool -> *
-type instance Apply Liftable '(t,m,r) = Int64 :== (LiftOf r)
+data Liftable :: TyFun (Factored, *) Bool -> *
+type instance Apply Liftable '(m',r) = Int64 :== (LiftOf r)
 
-
+data RemoveM :: TyFun (Factored, Factored, *) (Factored, *) -> *
+type instance Apply RemoveM '(m,m',r) = '(m',r)
 
 
 data BasicCtxD
 type BasicCtx t m r = (CElt t r, Fact m, Show (BenchType '(t,m,r)))
-type instance CtxOf BasicCtxD t m r = BasicCtx t m r
+data instance ArgsCtx BasicCtxD where
+  BC :: (BasicCtx t m r) => Proxy '(t,m,r) -> ArgsCtx BasicCtxD
+hideTMR :: (forall t m r . (BasicCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> ArgsCtx BasicCtxD -> rnd Benchmark
+hideTMR f (BC p) = f p
+
 instance (Run BasicCtxD params, BasicCtx t m r) => Run BasicCtxD ( '(t,m,r) ': params) where
-  runAll _ pctx f = (f (Proxy::Proxy '(t,m,r))) : (runAll (Proxy::Proxy params) pctx f)
+  runAll _ f = (f $ BC (Proxy::Proxy '(t,m,r))) : (runAll (Proxy::Proxy params) f)
+
 
 wrap1Arg :: forall t m r rnd . (BasicCtx t m r, MonadRandom rnd) 
   => (Cyc t m r -> Benchmarkable) -> Proxy '(t,m,r) -> rnd Benchmark
@@ -147,7 +138,7 @@ wrap1Arg f _ = bench (show (BT :: BenchType '(t,m,r))) <$> genArgs f
 
 bench1Arg :: (MonadRandom rnd)
   => (forall t m r . (BasicCtx t m r) => Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
-bench1Arg g = runAll (Proxy::Proxy AllParams) (Proxy::Proxy BasicCtxD) $ wrap1Arg g
+bench1Arg g = runAll (Proxy::Proxy AllParams) $ hideTMR $ wrap1Arg g
 
 wrap2Arg :: forall t m r rnd . (BasicCtx t m r, MonadRandom rnd)
   => (Cyc t m r -> Cyc t m r -> Benchmarkable) -> Proxy '(t,m,r) -> rnd Benchmark
@@ -155,17 +146,18 @@ wrap2Arg f _ = bench (show (BT :: BenchType '(t,m,r))) <$> genArgs f
 
 bench2Arg :: (MonadRandom rnd) 
   => (forall t m r . (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
-bench2Arg g = runAll (Proxy::Proxy AllParams) (Proxy::Proxy BasicCtxD) $ wrap2Arg g
+bench2Arg g = runAll (Proxy::Proxy AllParams) $ hideTMR $ wrap2Arg g
 
 
 data LiftCtxD
 type LiftCtx t m r = (BasicCtx t m r, CElt t (LiftOf r), Lift' r, ToInteger (LiftOf r))
-type instance CtxOf LiftCtxD t m r = LiftCtx t m r
-instance (Run LiftCtxD params, LiftCtx t m r) => Run LiftCtxD ( '(t,m,r) ': params) where
-  runAll _ pctx f = (f (Proxy::Proxy '(t,m,r))) : (runAll (Proxy::Proxy params) pctx f)
+data instance ArgsCtx LiftCtxD where
+  LC :: (LiftCtx t m r) => Proxy '(t,m,r) -> ArgsCtx LiftCtxD
+hideLift :: (forall t m r . (LiftCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> ArgsCtx LiftCtxD -> rnd Benchmark
+hideLift f (LC p) = f p
 
-instance (Run LiftCtxD params, LiftCtx t m r, CryptoRandomGen gen) => Run LiftCtxD ( '(gen,t,m,r) ': params) where
-  runAll _ pctx f = (f (Proxy::Proxy '(t,m,r))) : (runAll (Proxy::Proxy params) pctx f)
+instance (Run LiftCtxD params, LiftCtx t m r) => Run LiftCtxD ( '(t,m,r) ': params) where
+  runAll _ f = (f $ LC (Proxy::Proxy '(t,m,r))) : (runAll (Proxy::Proxy params) f)
 
 wrapLift :: forall t m r rnd . (LiftCtx t m r, MonadRandom rnd)
   => (Cyc t m r -> Benchmarkable) -> Proxy '(t,m,r) -> rnd Benchmark
@@ -173,7 +165,7 @@ wrapLift f _ = bench (show (BT :: BenchType '(t,m,r))) <$> genArgs f
 
 benchLift :: (MonadRandom rnd) 
   => (forall t m r . (LiftCtx t m r) => Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
-benchLift g = runAll (Proxy::Proxy LiftParams) (Proxy::Proxy LiftCtxD) $ wrapLift g
+benchLift g = runAll (Proxy::Proxy LiftParams) $ hideLift $ wrapLift g
 
 wrapError :: forall t m r gen rnd . (LiftCtx t m r, CryptoRandomGen gen, Monad rnd)
   => (Proxy gen -> Proxy (t m r) -> Benchmarkable) 
@@ -183,5 +175,5 @@ wrapError f _ _ = return $ bench (show (BT :: BenchType '(t,m,r))) $ f Proxy Pro
 benchError :: (MonadRandom rnd) 
   => (forall t m r gen . (LiftCtx t m r, CryptoRandomGen gen) => Proxy gen -> Proxy (t m r) -> Benchmarkable) -> [rnd Benchmark]
 benchError g = [
-  bgroupRnd "HashDRBG" $ runAll (Proxy::Proxy LiftParams) (Proxy::Proxy LiftCtxD) $ wrapError g (Proxy::Proxy HashDRBG),
-  bgroupRnd "SysRand" $ runAll (Proxy::Proxy LiftParams) (Proxy::Proxy LiftCtxD) $ wrapError g (Proxy::Proxy SystemRandom)]
+  bgroupRnd "HashDRBG" $ runAll (Proxy::Proxy LiftParams) $ hideLift $ wrapError g (Proxy::Proxy HashDRBG),
+  bgroupRnd "SysRand" $ runAll (Proxy::Proxy LiftParams) $ hideLift $ wrapError g (Proxy::Proxy SystemRandom)]

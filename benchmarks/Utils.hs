@@ -96,17 +96,13 @@ type family Go (fs :: [k1 -> k2]) (xs :: [k1]) (ys :: [k1]) where
   Go (f ': fs) (x ': xs) ys = (f x) ': (Go (f ': fs) xs ys)
 
 
-type family CtxOf d (t :: Factored -> * -> *) (m :: Factored) (r :: *) :: Constraint
-
-class Run ctx params where
+class Run ctx (params :: [k]) where
   runAll :: (MonadRandom rnd) => 
             Proxy params
-            -> Proxy ctx
-            -> (forall t m r . (CtxOf ctx t m r) => Proxy '(t,m,r) -> rnd Benchmark) 
+            -> (ArgsCtx ctx -> rnd Benchmark) 
             -> [rnd Benchmark]
 
 instance Run ctx '[] where
-  runAll _ _ _ = []
+  runAll _ _ = []
 
-
-
+data family ArgsCtx ctx
