@@ -7,4 +7,4 @@ import Criterion.Main
 import Control.Monad
 
 main :: IO ()
-main = defaultMain =<< (sequence [cycBenches])
+main = defaultMain =<< (sequence [cycBenches, sheBenches])

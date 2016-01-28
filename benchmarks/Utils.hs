@@ -12,10 +12,7 @@ import Criterion
 import Crypto.Lol (Int64,Fact,Factored,valueFact,Mod(..), Proxy(..), proxy, Cyc, RT, CT)
 import Crypto.Lol.Types.ZqBasic
 import Crypto.Random.DRBG
-
-import Data.Constraint
-
-
+{-
 import Math.NumberTheory.Primes.Testing (isPrime)
 
 -- an infinite list of primes greater than the input and congruent to
@@ -25,7 +22,7 @@ goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
   where checkVal v = if (isPrime (fromIntegral v :: Integer))
                      then v : checkVal (v+m)
                     else checkVal (v+m)
-
+-}
 
 bgroupRnd :: (Monad rnd) => String -> [rnd Benchmark] -> rnd Benchmark
 bgroupRnd str = (bgroup str <$>) . sequence
