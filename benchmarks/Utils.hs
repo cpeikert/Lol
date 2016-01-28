@@ -6,17 +6,16 @@ module Utils where
 
 import Control.Monad.Random
 import Control.Monad (liftM)
-import Control.Exception
+
 import Criterion
 
 import Crypto.Lol (Int64,Fact,Factored,valueFact,Mod(..), Proxy(..), proxy, Cyc, RT, CT)
---import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Types.ZqBasic
 import Crypto.Random.DRBG
 
 import Data.Constraint
 
-{-
+
 import Math.NumberTheory.Primes.Testing (isPrime)
 
 -- an infinite list of primes greater than the input and congruent to
@@ -26,7 +25,7 @@ goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
   where checkVal v = if (isPrime (fromIntegral v :: Integer))
                      then v : checkVal (v+m)
                     else checkVal (v+m)
--}
+
 
 bgroupRnd :: (Monad rnd) => String -> [rnd Benchmark] -> rnd Benchmark
 bgroupRnd str = (bgroup str <$>) . sequence
@@ -54,6 +53,8 @@ class GenArg rnd arg where
 instance {-# Overlappable #-} (Random a, MonadRandom rnd) => GenArg rnd a where
   genArg = getRandom
 
+showProxy :: forall a . (Show (BenchArgs a)) => Proxy a -> String
+showProxy _ = show (BT :: BenchArgs a)
 
 data a ** b
 
@@ -79,16 +80,21 @@ instance Show (BenchArgs CT) where
 instance (Show (BenchArgs a), Show (BenchArgs b)) => Show (BenchArgs (a,b)) where
   show _ = (show (BT :: BenchArgs a)) ++ "*" ++ (show (BT :: BenchArgs b))
 
-instance (Show (BenchArgs t), Show (BenchArgs m), Show (BenchArgs r)) 
-  => Show (BenchArgs '((t :: Factored -> * -> *), (m :: Factored), (r :: *))) where
-  show _ = (show (BT :: BenchArgs t)) ++ " " ++ (show (BT :: BenchArgs m)) ++ " " ++ (show (BT :: BenchArgs r))
+instance (Show (BenchArgs a), Show (BenchArgs b)) 
+  => Show (BenchArgs '(a,b)) where
+  show _ = (show (BT :: BenchArgs a)) ++ " " ++ (show (BT :: BenchArgs b))
 
-instance (Show (BenchArgs t), Show (BenchArgs m), Show (BenchArgs m'), Show (BenchArgs r)) 
-  => Show (BenchArgs '((t :: Factored -> * -> *), (m :: Factored), (m' :: Factored), (r :: *))) where
-  show _ = (show (BT :: BenchArgs t)) ++ " " ++ 
-           (show (BT :: BenchArgs m)) ++ " " ++ 
-           (show (BT :: BenchArgs m')) ++ " " ++
-           (show (BT :: BenchArgs r))
+instance (Show (BenchArgs a), Show (BenchArgs '(b,c))) 
+  => Show (BenchArgs '(a,b,c)) where
+  show _ = (show (BT :: BenchArgs a)) ++ " " ++ (show (BT :: BenchArgs '(b,c)))
+
+instance (Show (BenchArgs a), Show (BenchArgs '(b,c,d))) 
+  => Show (BenchArgs '(a,b,c,d)) where
+  show _ = (show (BT :: BenchArgs a)) ++ " " ++ (show (BT :: BenchArgs '(b,c,d)))
+
+instance (Show (BenchArgs a), Show (BenchArgs '(b,c,d,e))) 
+  => Show (BenchArgs '(a,b,c,d,e)) where
+  show _ = (show (BT :: BenchArgs a)) ++ " " ++ (show (BT :: BenchArgs '(b,c,d,e)))
 
 type family (f :: (k1 -> k2)) <$>  (xs :: [k1]) where
   f <$> '[] = '[]
@@ -104,8 +110,7 @@ type family Go (fs :: [k1 -> k2]) (xs :: [k1]) (ys :: [k1]) where
 
 
 class Run ctx (params :: [k]) where
-  runAll :: (MonadRandom rnd) => 
-            Proxy params
+  runAll :: Proxy params
             -> (ArgsCtx ctx -> rnd Benchmark) 
             -> [rnd Benchmark]
 

@@ -22,15 +22,15 @@ import Utils
 
 cycBenches :: (MonadRandom rnd) => rnd Benchmark
 cycBenches = bgroupRnd "Cyc"
-  [bgroupRnd "CRT + *" $ bench2Arg bench_mulPow,
-   bgroupRnd "*"       $ bench2Arg bench_mul,
-   bgroupRnd "crt"     $ bench1Arg bench_crt,
-   bgroupRnd "crtInv"  $ bench1Arg bench_crtInv,
-   bgroupRnd "l"       $ bench1Arg bench_l,
-   bgroupRnd "*g Pow"  $ bench1Arg bench_mulgPow,
-   bgroupRnd "*g CRT"  $ bench1Arg bench_mulgCRT,
-   bgroupRnd "lift"    $ benchLift bench_liftPow,
-   bgroupRnd "error"   $ benchError $ bench_errRounded 0.1,
+  [bgroupRnd "CRT + *" $ benchBasic $ wrapCyc bench_mulPow,
+   bgroupRnd "*"       $ benchBasic $ wrapCyc bench_mul,
+   bgroupRnd "crt"     $ benchBasic $ wrapCyc bench_crt,
+   bgroupRnd "crtInv"  $ benchBasic $ wrapCyc bench_crtInv,
+   bgroupRnd "l"       $ benchBasic $ wrapCyc bench_l,
+   bgroupRnd "*g Pow"  $ benchBasic $ wrapCyc bench_mulgPow,
+   bgroupRnd "*g CRT"  $ benchBasic $ wrapCyc bench_mulgCRT,
+   bgroupRnd "lift"    $ benchLift  $ wrapCyc bench_liftPow,
+   bgroupRnd "error"   $ benchError $ wrapError $ bench_errRounded 0.1,
    bgroupRnd "twace"   $ benchTwoIdx $ wrapTwace bench_twacePow,
    bgroupRnd "embed"   $ benchTwoIdx $ wrapEmbed bench_embedPow
    -- sanity checks
@@ -117,11 +117,8 @@ type MM'RCombos =
      '(F12, F32 * F9 * F25, Zq 14401)
     ]
 -- EAC: must be careful where we use Nub: apparently TypeRepStar doesn't work well with the Tensor constructors
-type AllParams = Map Unpack (( '(,) <$> Tensors) <*> (Nub (Map RemoveM MM'RCombos)))
-type LiftParams = Map Unpack (( '(,) <$> Tensors) <*> (Nub (Filter Liftable (Map RemoveM MM'RCombos))))
-
-data Unpack :: TyFun (Factored -> * -> *, (Factored, *)) (Factored -> * -> *, Factored, *) -> *
-type instance Apply Unpack '(a, '(c,d)) = '(a,c,d)
+type AllParams = ( '(,) <$> Tensors) <*> (Nub (Map RemoveM MM'RCombos))
+type LiftParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable (Map RemoveM MM'RCombos)))
 
 data Liftable :: TyFun (Factored, *) Bool -> *
 type instance Apply Liftable '(m',r) = Int64 :== (LiftOf r)
@@ -137,25 +134,15 @@ data instance ArgsCtx BasicCtxD where
 hideTMR :: (forall t m r . (BasicCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> ArgsCtx BasicCtxD -> rnd Benchmark
 hideTMR f (BC p) = f p
 
-instance (Run BasicCtxD params, BasicCtx t m r) => Run BasicCtxD ( '(t,m,r) ': params) where
+instance (Run BasicCtxD params, BasicCtx t m r) => Run BasicCtxD ( '(t, '(m,r)) ': params) where
   runAll _ f = (f $ BC (Proxy::Proxy '(t,m,r))) : (runAll (Proxy::Proxy params) f)
 
+wrapCyc :: (Functor rnd, GenArgs rnd (Cyc t m r -> bnch), Show (BenchArgs '(t,m,r))) 
+  => (Cyc t m r -> bnch) -> Proxy '(t,m,r) -> rnd Benchmark
+wrapCyc f p = bench (showProxy p) <$> genArgs f
 
-wrap1Arg :: forall t m r rnd . (BasicCtx t m r, MonadRandom rnd) 
-  => (Cyc t m r -> Benchmarkable) -> Proxy '(t,m,r) -> rnd Benchmark
-wrap1Arg f _ = bench (show (BT :: BenchArgs '(t,m,r))) <$> genArgs f
-
-bench1Arg :: (MonadRandom rnd)
-  => (forall t m r . (BasicCtx t m r) => Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
-bench1Arg g = runAll (Proxy::Proxy AllParams) $ hideTMR $ wrap1Arg g
-
-wrap2Arg :: forall t m r rnd . (BasicCtx t m r, MonadRandom rnd)
-  => (Cyc t m r -> Cyc t m r -> Benchmarkable) -> Proxy '(t,m,r) -> rnd Benchmark
-wrap2Arg f _ = bench (show (BT :: BenchArgs '(t,m,r))) <$> genArgs f
-
-bench2Arg :: (MonadRandom rnd) 
-  => (forall t m r . (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
-bench2Arg g = runAll (Proxy::Proxy AllParams) $ hideTMR $ wrap2Arg g
+benchBasic :: (forall t m r . (BasicCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> [rnd Benchmark]
+benchBasic g = runAll (Proxy::Proxy AllParams) $ hideTMR g
 
 
 data LiftCtxD
@@ -165,27 +152,23 @@ data instance ArgsCtx LiftCtxD where
 hideLift :: (forall t m r . (LiftCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> ArgsCtx LiftCtxD -> rnd Benchmark
 hideLift f (LC p) = f p
 
-instance (Run LiftCtxD params, LiftCtx t m r) => Run LiftCtxD ( '(t,m,r) ': params) where
+instance (Run LiftCtxD params, LiftCtx t m r) => Run LiftCtxD ( '(t, '(m,r)) ': params) where
   runAll _ f = (f $ LC (Proxy::Proxy '(t,m,r))) : (runAll (Proxy::Proxy params) f)
 
-wrapLift :: forall t m r rnd . (LiftCtx t m r, MonadRandom rnd)
-  => (Cyc t m r -> Benchmarkable) -> Proxy '(t,m,r) -> rnd Benchmark
-wrapLift f _ = bench (show (BT :: BenchArgs '(t,m,r))) <$> genArgs f
+benchLift :: (forall t m r . (LiftCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> [rnd Benchmark]
+benchLift g = runAll (Proxy::Proxy LiftParams) $ hideLift g
 
-benchLift :: (MonadRandom rnd) 
-  => (forall t m r . (LiftCtx t m r) => Cyc t m r -> Benchmarkable) -> [rnd Benchmark]
-benchLift g = runAll (Proxy::Proxy LiftParams) $ hideLift $ wrapLift g
-
-wrapError :: forall t m r gen rnd . (LiftCtx t m r, CryptoRandomGen gen, Monad rnd)
-  => (Proxy gen -> Proxy (t m r) -> Benchmarkable) 
+wrapError ::(LiftCtx t m r, Monad rnd, CryptoRandomGen gen)
+  => (Proxy gen -> Proxy (t m r) -> Benchmarkable)
      -> Proxy gen -> Proxy '(t,m,r) -> rnd Benchmark
-wrapError f _ _ = return $ bench (show (BT :: BenchArgs '(t,m,r))) $ f Proxy Proxy
+wrapError f _ p = return $ bench (showProxy p) $ f Proxy Proxy
 
-benchError :: (MonadRandom rnd) 
-  => (forall t m r gen . (LiftCtx t m r, CryptoRandomGen gen) => Proxy gen -> Proxy (t m r) -> Benchmarkable) -> [rnd Benchmark]
+benchError :: (Monad rnd)
+  => (forall t m r gen . (LiftCtx t m r, CryptoRandomGen gen) => Proxy gen -> Proxy '(t,m,r) -> rnd Benchmark) 
+     -> [rnd Benchmark]
 benchError g = [
-  bgroupRnd "HashDRBG" $ runAll (Proxy::Proxy LiftParams) $ hideLift $ wrapError g (Proxy::Proxy HashDRBG),
-  bgroupRnd "SysRand" $ runAll (Proxy::Proxy LiftParams) $ hideLift $ wrapError g (Proxy::Proxy SystemRandom)]
+  bgroupRnd "HashDRBG" $ benchLift $ g (Proxy::Proxy HashDRBG),
+  bgroupRnd "SysRand"  $ benchLift $ g (Proxy::Proxy SystemRandom)]
 
 
 data TwoIdxCtxD
@@ -198,14 +181,13 @@ hideTMM'R f (TI p) = f p
 instance (Run TwoIdxCtxD params, TwoIdxCtx t m m' r) => Run TwoIdxCtxD ( '(t, '(m,m',r)) ': params) where
   runAll _ f = (f $ TI (Proxy::Proxy '(t,m,m',r))) : (runAll (Proxy::Proxy params) f)
 
-wrapTwace :: forall t m m' r rnd . (TwoIdxCtx t m m' r, MonadRandom rnd)
+wrapTwace :: (Fact m, Functor rnd, GenArgs rnd (Cyc t m' r -> Benchmarkable), Show (BenchArgs '(t,m,m',r)))
   => (Proxy m -> Cyc t m' r -> Benchmarkable) -> Proxy '(t,m,m',r) -> rnd Benchmark
-wrapTwace f _ = bench (show (BT :: BenchArgs '(t,m,m',r))) <$> genArgs (f Proxy)
+wrapTwace f p = bench (showProxy p) <$> genArgs (f Proxy)
 
-wrapEmbed :: forall t m m' r rnd . (TwoIdxCtx t m m' r, MonadRandom rnd)
+wrapEmbed :: (Fact m', Functor rnd, GenArgs rnd (Cyc t m r -> Benchmarkable), Show (BenchArgs '(t,m,m',r)))
   => (Proxy m' -> Cyc t m r -> Benchmarkable) -> Proxy '(t,m,m',r) -> rnd Benchmark
-wrapEmbed f _ = bench (show (BT :: BenchArgs '(t,m,m',r))) <$> genArgs (f Proxy)
+wrapEmbed f p = bench (showProxy p) <$> genArgs (f Proxy)
 
-benchTwoIdx :: (MonadRandom rnd)
-  => (forall t m m' r . (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> rnd Benchmark) -> [rnd Benchmark]
+benchTwoIdx :: (forall t m m' r . (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> rnd Benchmark) -> [rnd Benchmark]
 benchTwoIdx f = runAll (Proxy::Proxy (( '(,) <$> Tensors) <*> MM'RCombos)) $ hideTMM'R f
