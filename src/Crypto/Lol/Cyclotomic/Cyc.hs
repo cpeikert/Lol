@@ -112,6 +112,7 @@ adviseCRT, advisePow, adviseDec :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
 -- call 'adviseCRT' prior to multiplying the same value by many
 -- other values.
 adviseCRT = coerceCyc U.adviseCRT
+{-# INLINABLE adviseCRT #-}
 
 -- | Same as 'adviseCRT', but for the powerful-basis representation.
 advisePow = coerceCyc U.forcePow -- do it, but not required by contract

@@ -93,6 +93,7 @@ instance Tensor RT where
   divGPow = wrapM fGInvPow
   divGDec = wrapM fGInvDec
 
+  {-# INLINABLE crtFuncs #-}
   crtFuncs = (,,,,) <$>
              (liftM (RT .) scalarCRT') <*>
              (wrap <$> mulGCRT') <*>

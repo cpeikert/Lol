@@ -248,8 +248,10 @@ pasteT = coerce
 -- | Use a singleton as a witness to extract a value from a tagged value.
 withWitness :: forall n r . (SingI n => Tagged n r) -> Sing n -> r
 withWitness t wit = withSingI wit $ proxy t (Proxy::Proxy n)
+{-# INLINABLE withWitness #-}
 
 -- | Transformer version of 'withWitness'.
 withWitnessT :: forall n mon r .
                 (SingI n => TaggedT n mon r) -> Sing n -> mon r
 withWitnessT t wit = withSingI wit $ proxyT t (Proxy::Proxy n)
+{-# INLINABLE withWitnessT #-}

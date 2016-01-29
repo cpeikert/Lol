@@ -51,8 +51,10 @@ gInvCRT = fCRT <*> fGInvPow (scalarPow' LP.one)
 fCRT, fCRTInv ::
   forall m r . (Fact m, CRTrans r, Unbox r, Elt r)
   => Maybe (Arr m r -> Arr m r)
+
 -- | The chinese remainder transform.
 -- Exists if and only if crt exists for all prime powers.
+{-# INLINABLE fCRT #-}
 fCRT = evalM $ fTensor ppCRT
 
 -- divide by mhat after doing crtInv'
@@ -89,6 +91,7 @@ ppDFTInv' = case (sing :: SPrimePower pp) of
       return $ (Id (dim pp'dftInv') @* pdftInv') .* pptwidInv .*
                  (pp'dftInv' @* Id (dim pdftInv'))
 
+{-# INLINABLE ppCRT #-}
 ppCRT = case (sing :: SPrimePower pp) of
   (SPP (STuple2 sp SO)) -> tagT $ withWitnessT pCRT sp
   spp@(SPP (STuple2 sp (SS se'))) ->
@@ -114,28 +117,45 @@ ppCRTInv' = case (sing :: SPrimePower pp) of
         (Id (dim pp'dftInv') @* pcrtInv') .* pptwidInv .*
         (pp'dftInv' @* Id (dim pcrtInv'))
 
+butterfly :: (Additive r, Unbox r, Elt r) => Trans r
+butterfly = trans 2 $ \arr ->
+            fromFunction (extent arr) $
+                             \(sh:.j) -> case j of
+                                           0 -> arr ! (sh:.0) +
+                                                arr ! (sh:.1)
+                                           1 -> arr ! (sh:.0) -
+                                                arr ! (sh:.1)
+
 -- DFT_p, CRT_p, scaled DFT_p^{ -1 } and CRT_p^{ -1 }
 pDFT, pDFTInv', pCRT, pCRTInv' ::
   forall p r . (Prim p, CRTrans r, Unbox r, Elt r)
   => TaggedT p Maybe (Trans r)
 
+{-# INLINABLE pDFT #-}
 pDFT = let pval = proxy valuePrime (Proxy::Proxy p)
-       in do (omegaPPow, _) <- crtInfoPrime
-             return $ trans pval $ mulMat $ force $
-                                   fromFunction (Z :. pval :. pval)
-                                   (\(Z:.i:.j) -> omegaPPow (i*j))
+       in if pval == 2
+          then return butterfly
+          else do (omegaPPow, _) <- crtInfoPrime
+                  return $ trans pval $ mulMat $ force $
+                         fromFunction (Z :. pval :. pval)
+                                          (\(Z:.i:.j) -> omegaPPow (i*j))
 
 pDFTInv' = let pval = proxy valuePrime (Proxy::Proxy p)
-           in do (omegaPPow, _) <- crtInfoPrime
-                 return $ trans pval $ mulMat $ force $
-                                       fromFunction (Z :. pval :. pval)
-                                       (\(Z:.i:.j) -> omegaPPow (-i*j))
+           in if pval == 2
+              then return butterfly
+              else do (omegaPPow, _) <- crtInfoPrime
+                      return $ trans pval $ mulMat $ force $
+                             fromFunction (Z :. pval :. pval)
+                                              (\(Z:.i:.j) -> omegaPPow (-i*j))
 
+{-# INLINABLE pCRT #-}
 pCRT = let pval = proxy valuePrime (Proxy::Proxy p)
-       in do (omegaPPow, _) <- crtInfoPrime
-             return $ trans (pval-1) $ mulMat $ force $
-                                     fromFunction (Z :. pval-1 :. pval-1)
-                                     (\(Z:.i:.j) -> omegaPPow ((i+1)*j))
+       in if pval == 2
+          then return $ Id 1
+          else do (omegaPPow, _) <- crtInfoPrime
+                  return $ trans (pval-1) $ mulMat $ force $
+                         fromFunction (Z :. pval-1 :. pval-1)
+                                          (\(Z:.i:.j) -> omegaPPow ((i+1)*j))
 
 -- crt_p * this = \hat{p}*I, for all prime p.
 pCRTInv' =

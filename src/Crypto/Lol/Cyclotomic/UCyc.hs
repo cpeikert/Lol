@@ -344,6 +344,7 @@ liftCyc U.Pow x = fmapC lift $ forceBasis (Just U.Pow) x
 liftCyc U.Dec x = fmapC lift $ forceBasis (Just U.Dec) x
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.adviseCRT', but for 'UCyc'.
+{-# INLINABLE adviseCRT #-}
 adviseCRT :: (Fact m, CElt t r) => UCyc t m r -> UCyc t m r
 adviseCRT x@(Scalar _) = x
 adviseCRT (Sub c) = Sub $ adviseCRT c
@@ -564,6 +565,7 @@ toDec' x@(CRTr _) = toDec' $ toPow' x
 toDec' x@(CRTe _) = toDec' $ toPow' x
 
 -- | Force the argument into the "valid" CRT basis for our invariant.
+{-# INLINABLE toCRT' #-}
 toCRT' :: forall t m r . (UCCtx t r, Fact m) => UCyc t m r -> UCyc t m r
 toCRT' x@(CRTr _) = x
 toCRT' x@(CRTe _) = x

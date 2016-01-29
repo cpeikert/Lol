@@ -21,17 +21,17 @@ import Utils
 
 cycBenches :: (MonadRandom rnd) => rnd Benchmark
 cycBenches = bgroupRnd "Cyc"
-  [bgroupRnd "CRT + *" $ benchBasic $ wrapCyc bench_mulPow,
-   bgroupRnd "*"       $ benchBasic $ wrapCyc bench_mul,
-   bgroupRnd "crt"     $ benchBasic $ wrapCyc bench_crt,
-   bgroupRnd "crtInv"  $ benchBasic $ wrapCyc bench_crtInv,
-   bgroupRnd "l"       $ benchBasic $ wrapCyc bench_l,
-   bgroupRnd "*g Pow"  $ benchBasic $ wrapCyc bench_mulgPow,
-   bgroupRnd "*g CRT"  $ benchBasic $ wrapCyc bench_mulgCRT,
-   bgroupRnd "lift"    $ benchLift  $ wrapCyc bench_liftPow,
-   bgroupRnd "error"   $ benchError $ wrapError $ bench_errRounded 0.1,
-   bgroupRnd "twace"   $ benchTwoIdx $ wrapTwace bench_twacePow,
-   bgroupRnd "embed"   $ benchTwoIdx $ wrapEmbed bench_embedPow
+  [--bgroupRnd "CRT + *" $ benchBasic $ wrapCyc bench_mulPow,
+   --bgroupRnd "*"       $ benchBasic $ wrapCyc bench_mul,
+   bgroupRnd "crt"     $ benchBasic $ wrapCyc bench_crt
+   --bgroupRnd "crtInv"  $ benchBasic $ wrapCyc bench_crtInv,
+   --bgroupRnd "l"       $ benchBasic $ wrapCyc bench_l,
+   --bgroupRnd "*g Pow"  $ benchBasic $ wrapCyc bench_mulgPow,
+   --bgroupRnd "*g CRT"  $ benchBasic $ wrapCyc bench_mulgCRT,
+   --bgroupRnd "lift"    $ benchLift  $ wrapCyc bench_liftPow,
+   --bgroupRnd "error"   $ benchError $ wrapError $ bench_errRounded 0.1,
+   --bgroupRnd "twace"   $ benchTwoIdx $ wrapTwace bench_twacePow,
+   --bgroupRnd "embed"   $ benchTwoIdx $ wrapEmbed bench_embedPow
    -- sanity checks
    --, bgroupRnd "^2" $ groupC $ wrap1Arg bench_sq,             -- should take same as bench_mul
    --, bgroupRnd "id2" $ groupC $ wrap1Arg bench_advisePowPow -- should take a few nanoseconds: this is a no-op
@@ -52,6 +52,7 @@ bench_mul a b =
   in nf (a' *) b'
 
 -- convert input from Pow basis to CRT basis
+{-# SPECIALIZE bench_crt :: Cyc RT F288 (ZqBasic 577 Int64) -> NFValue #-}
 bench_crt :: (BasicCtx t m r) => Cyc t m r -> NFValue
 bench_crt x = let y = advisePow x in nf adviseCRT y
 
@@ -100,21 +101,22 @@ bench_advisePowPow :: (CElt t r, Fact m) => Cyc t m r -> NFValue
 bench_advisePowPow x = let y = advisePow x in nf advisePow y
 -}
 
-type Tensors = '[CT,RT]
+type Tensors = '[{-CT,-}RT]
 type MM'RCombos = 
-  '[ '(F4, F128, Zq 257),
-     '(F1, PToF Prime281, Zq 563),
-     '(F12, F32 * F9, Zq 512),
+  '[ --'(F4, F128, Zq 257),
+     --'(F1, PToF Prime281, Zq 563),
+     --'(F12, F32 * F9, Zq 512),
      '(F12, F32 * F9, Zq 577),
      '(F12, F32 * F9, Zq (577 ** 1153)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489)),
-     '(F12, F32 * F9 * F25, Zq 14401)
+     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017))
+     --'(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593))
+     --'(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169)),
+     --'(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457)),
+     --'(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337)),
+     --'(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489)),
+     --'(F12, F32 * F9 * F25, Zq 14401)
     ]
+
 -- EAC: must be careful where we use Nub: apparently TypeRepStar doesn't work well with the Tensor constructors
 type AllParams = ( '(,) <$> Tensors) <*> (Nub (Map RemoveM MM'RCombos))
 type LiftParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable (Map RemoveM MM'RCombos)))

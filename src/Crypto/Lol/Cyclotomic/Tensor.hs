@@ -190,6 +190,7 @@ mulGCRT = (\(_,f,_,_,_) -> f) <$> crtFuncs
 divGCRT = (\(_,_,f,_,_) -> f) <$> crtFuncs
 -- | The CRT transform.  (This function is simply an appropriate entry
 -- from 'crtFuncs'.)
+{-# INLINABLE crt #-}
 crt = (\(_,_,_,f,_) -> f) <$> crtFuncs
 -- | The inverse CRT transform.  (This function is simply an
 -- appropriate entry from 'crtFuncs'.)

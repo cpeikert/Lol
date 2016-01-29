@@ -173,6 +173,7 @@ instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
 
   zero = ZqB zero
 
+  {-# INLINABLE (+) #-}
   (+) = let qval = proxy value (Proxy::Proxy q)
         in \ (ZqB x) (ZqB y) ->
         let z = x + y
@@ -183,7 +184,8 @@ instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
 -- instance of Ring
 instance (ReflectsTI q z, Ring z) => Ring.C (ZqBasic q z) where
     (ZqB x) * (ZqB y) = reduce' $ x * y
-
+    {-# INLINABLE (*) #-}
+    
     fromInteger =
       let qval = toInteger (proxy value (Proxy::Proxy q) :: z)
     -- this is safe as long as type z can hold the value of q
