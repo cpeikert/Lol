@@ -80,7 +80,7 @@ hInt_t reciprocal (hInt_t a, hInt_t b)
 }
 
 //for square transforms
-void tensorFuser (void* y, funcPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
+void tensorFuser (void* y, hShort_t tupSize, funcPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
     hDim_t lts = totm;
     hDim_t rts = 1;
@@ -92,12 +92,12 @@ void tensorFuser (void* y, funcPtr f, hDim_t totm, PrimeExponent* peArr, hShort_
         hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
         hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
         lts /= dim;
-        (*f) (y, pe, lts, rts, q);
+        (*f) (y, tupSize, pe, lts, rts, qs);
         rts  *= dim;
     }
 }
 
-void tensorFuserCRT (void* y, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t q)
+void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t* q)
 {
     hDim_t lts = totm;
     hDim_t rts = 1;
@@ -109,7 +109,7 @@ void tensorFuserCRT (void* y, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, h
         hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
         hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
         lts /= dim;
-        (*f) (y, lts, rts, pe, ru[i], q);
+        (*f) (y, tupSize, lts, rts, pe, ru[i], q);
         rts  *= dim;
     }
 }
