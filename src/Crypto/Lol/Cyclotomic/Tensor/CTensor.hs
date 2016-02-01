@@ -582,7 +582,7 @@ instance (GetModPairs r, Storable (ModPairs r),
     let qs = proxy getModuli (Proxy::Proxy r)
         numPairs = proxy numComponents (Proxy::Proxy r)
     in with qs $ \qsptr ->
-        tensorLRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
+        tensorLInvRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
   dnorm = error "cannot call CT normSq on type ZqBasic"
   dmulgpow pout totm pfac numFacts =
     let qs = proxy getModuli (Proxy::Proxy r)

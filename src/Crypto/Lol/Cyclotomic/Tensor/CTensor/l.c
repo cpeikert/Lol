@@ -275,7 +275,7 @@ void tensorLRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, 
 #endif
   tensorFuser (y, tupSize, ppLRq, totm, peArr, sizeOfPE, qs); // don't need to shift here
 #ifdef DEBUG_MODE
-  for(i = 0; i < totm; i++) {
+  for(i = 0; i < totm*tupSize; i++) {
       if(y[i]<0) {
           printf("tensorLRq\n");
       }
@@ -368,10 +368,10 @@ void tensorLInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peAr
     struct timespec s1,t1;
     clock_gettime(CLOCK_REALTIME, &s1);
 #endif
-  tensorFuser (y, tupSize, ppLInvRq, totm, peArr, sizeOfPE, qs);  // don't need to shift here
+  tensorFuser (y, tupSize, ppLInvRq, totm, peArr, sizeOfPE, qs);
 #ifdef DEBUG_MODE
   hDim_t i;
-  for(i = 0; i < totm; i++)
+  for(i = 0; i < totm*tupSize; i++)
   {
       if(y[i]<0)
       {
