@@ -16,10 +16,10 @@ import Algebra.Ring     as Ring (C)
 import Algebra.ZeroTestable   as ZeroTestable (C)
 
 import Control.Applicative
-import Control.Arrow
+import Control.Arrow ((***))
 import Control.DeepSeq
-import Control.Monad
-import Control.Monad.Identity
+import Control.Monad (liftM)
+import Control.Monad.Identity (Identity(..), runIdentity)
 import Control.Monad.Random
 import Control.Monad.Trans (lift)
 
@@ -31,18 +31,15 @@ import Data.Maybe
 import Data.Traversable as T
 import Data.Vector.Generic           as V (zip, unzip)
 import Data.Vector.Storable          as SV (Vector, (!), replicate, replicateM, thaw, convert, foldl',
-                                            unsafeToForeignPtr0, unsafeSlice, mapM, fromList,
+                                            unsafeSlice, mapM, fromList,
                                             generate, foldl1',
                                             unsafeWith, zipWith, map, length, unsafeFreeze, thaw)
 import Data.Vector.Storable.Internal (getPtr)
 import Data.Vector.Storable.Mutable  as SM hiding (replicate)
 
-import           Foreign.ForeignPtr
-import           Foreign.Marshal.Array
 import           Foreign.Marshal.Utils (with)
 import           Foreign.Ptr
 import           Foreign.Storable        (Storable (..))
-import qualified Foreign.Storable.Record as Store
 import           Test.QuickCheck         hiding (generate)
 
 import Crypto.Lol.CRTrans
@@ -56,7 +53,6 @@ import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.ZqBasic
 
 import System.IO.Unsafe (unsafePerformIO)
-
 
 -- | Newtype wrapper around a Vector.
 newtype CT' (m :: Factored) r = CT' { unCT :: Vector r } 
@@ -167,8 +163,8 @@ instance Tensor CT where
 
   scalarPow = CT . scalarPow' -- Vector code
 
-  l = wrap $ untag $ lgDispatch dl
-  lInv = wrap $ untag $ lgDispatch dlinv
+  l = wrap $ untag $ basicDispatch dl
+  lInv = wrap $ untag $ basicDispatch dlinv
 
   mulGPow = wrap mulGPow'
   mulGDec = wrap $ untag $ basicDispatch dmulgdec
@@ -242,47 +238,48 @@ mulGPow' = untag $ basicDispatch dmulgpow
 divGPow' :: forall m r . (TElt CT r, Fact m, IntegralDomain r, ZeroTestable r) => CT' m r -> Maybe (CT' m r)
 divGPow' = untag $ checkDiv $ basicDispatch dginvpow
 
-lgDispatch :: forall m r .
-     (Storable r, Fact m, Additive r)
-      => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
-         -> Tagged m (CT' m r -> CT' m r)
-lgDispatch f = do
-  factors <- liftM marshalFactors ppsFact
-  totm <- liftM fromIntegral totientFact
-  let numFacts = fromIntegral $ SV.length factors
-  return $ coerce $ \yin -> unsafePerformIO $ do -- in IO
-    yout <- SV.thaw yin
+withBasicArgs :: forall m r . (Fact m, Storable r) 
+  => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()) 
+     -> CT' m r -> IO (CT' m r)
+withBasicArgs f =
+  let factors = proxy (marshalFactors <$> ppsFact) (Proxy::Proxy m)
+      totm = proxy (fromIntegral <$> totientFact) (Proxy::Proxy m)
+      numFacts = fromIntegral $ SV.length factors
+  in \(CT' x) -> do
+    yout <- SV.thaw x
     SM.unsafeWith yout (\pout ->
       SV.unsafeWith factors (\pfac ->
         f pout totm pfac numFacts))
-    unsafeFreeze yout
+    CT' <$> unsafeFreeze yout
 
 basicDispatch :: forall m r .
-     (Storable r, Fact m, Additive r, Dispatch r)
+     (Storable r, Fact m, Additive r)
       => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
          -> Tagged m (CT' m r -> CT' m r)
-basicDispatch f = (\g -> CT' . g . unCT) <$> withBasicArgs f
+basicDispatch f = return $ (unsafePerformIO . withBasicArgs f)
 
 gSqNormDec' :: forall m r .
      (Storable r, Fact m, Additive r, Dispatch r)
       => Tagged m (CT' m r -> r)
-gSqNormDec' = (\g -> (! 0) . g . unCT) <$> withBasicArgs dnorm
+gSqNormDec' = return $ ( (!0) . unCT . unsafePerformIO . withBasicArgs dnorm)
 
-ctCRT :: (Storable r, CRTrans r, Dispatch r,
+ctCRT :: forall m r . (Storable r, CRTrans r, Dispatch r,
           Fact m)
          => TaggedT m Maybe (CT' m r -> CT' m r)
-ctCRT = (\g -> CT' . g . unCT) <$> do -- in TaggedT m Maybe
+ctCRT = do -- in TaggedT m Maybe
   ru' <- ru
-  mapTaggedT (return . runIdentity) $ unsafePerformIO $ withPtrArray ru' (return . withBasicArgs . dcrt)
+  return $ \x -> unsafePerformIO $ 
+    withPtrArray ru' (flip withBasicArgs x . dcrt)
 
+-- CTensor CRT^(-1) functions take inverse rus
 ctCRTInv :: (Storable r, CRTrans r, Dispatch r,
           Fact m)
          => TaggedT m Maybe (CT' m r -> CT' m r)
-ctCRTInv = (\g -> CT' . g . unCT) <$> do -- in TaggedT m Maybe
-  ru' <- ruInv
+ctCRTInv = do -- in Maybe
   mhatInv <- liftM snd $ crtInfoFact
-  mapTaggedT (return . runIdentity) $ unsafePerformIO $ 
-    withPtrArray ru' $ \ruptr -> with mhatInv $ return . withBasicArgs . dcrtinv ruptr
+  ruinv' <- ruInv
+  return $ \x -> unsafePerformIO $ 
+    withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . (dcrtinv ruptr)))
 
 checkDiv :: forall m r . 
   (IntegralDomain r, Storable r, ZeroTestable r, 
@@ -315,23 +312,15 @@ cDispatchGaussian :: forall m r var rnd .
          (Storable r, Transcendental r, Dispatch r, Ord r,
           Fact m, ToRational var, Random r, MonadRandom rnd)
          => var -> rnd (CT' m r)
-cDispatchGaussian var = liftM CT' $ flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
+cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   -- get rus for (Complex r)
   ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) $ ruInv
-  factors <- liftM marshalFactors $ pureT ppsFact
   totm <- pureT totientFact
   m <- pureT valueFact
   rad <- pureT radicalFact
   yin <- lift $ realGaussians (var * fromIntegral (m `div` rad)) totm
-  let numFacts = fromIntegral $ SV.length factors
-  return $ unsafePerformIO $ do -- in IO
-    --let yin = create $ SM.new totm :: Vector r -- contents will be overwritten, so no need to initialize
-    yout <- SV.thaw yin
-    SM.unsafeWith yout (\pout ->
-      SV.unsafeWith factors (\pfac ->
-       withPtrArray ruinv' (\ruptr ->
-        dgaussdec ruptr pout (fromIntegral totm) pfac numFacts)))
-    unsafeFreeze yout
+  return $ unsafePerformIO $ 
+    withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdec ruptr) (CT' yin))
 
 instance (Arbitrary r, Fact m, Storable r) => Arbitrary (CT' m r) where
   arbitrary = replM arbitrary

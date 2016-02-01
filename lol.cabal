@@ -115,6 +115,7 @@ library
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon
     Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
+    Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
 
   build-depends:
     arithmoi >= 0.4.1.3 && <0.5,
