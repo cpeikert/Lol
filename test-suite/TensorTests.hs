@@ -28,15 +28,15 @@ import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck hiding (generate,output)
 
 tensorTests = 
-  [testGroup "fmap comparison" $ groupTMR $ wrapTmrToBool prop_fmap,
+  [{-testGroup "fmap comparison" $ groupTMR $ wrapTmrToBool prop_fmap,
    testGroup "fmap comparison 2" $ groupTMR $ wrapTmrToBool prop_fmap2,
    testGroup "Extension Mult" $ groupExtTests $ wrap2TmrToBool prop_mul_ext,
    testGroup "GSqNormDec" $ groupNorm $ wrapNorm prop_gsqnorm,
 
    -- inverse property
    tremTests, 
-   gInvGTests,
-   testGroup "CRTInv.CRT == id" $ groupTMR $ wrapTmrToBool prop_crt_inv,
+   gInvGTests,-}
+   --testGroup "CRTInv.CRT == id" $ groupTMR $ wrapTmrToBool prop_crt_inv,
    testGroup "LInv.L == id" $ groupTMR $ wrapTmrToBool prop_l_inv,
 
    -- commutative property
@@ -146,8 +146,8 @@ groupTMR :: (forall t m r . (TMRWrapCtx t m r)
              -> Proxy '(m,r) 
              -> Property) -> [Test]
 groupTMR f =
-  [testGroup "CT" $ groupMR (f (Proxy::Proxy CT)),
-   testGroup "RT" $ groupMR (f (Proxy::Proxy RT))]
+  [testGroup "CT" $ groupMR (f (Proxy::Proxy CT))]
+   --testGroup "RT" $ groupMR (f (Proxy::Proxy RT))]
 
 groupExtTests :: (forall t m r . (TMRWrapCtx t m r)
              => Proxy t
