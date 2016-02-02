@@ -5,6 +5,7 @@
 module SHEBenches (sheBenches) where
 
 import Utils
+import Harness.SHE
 
 import Control.Applicative
 import Control.DeepSeq
@@ -176,41 +177,6 @@ benchZq' ::
 benchZq' g = runAll (Proxy::Proxy Zq'Params) $ hideZq' g
 
 
-data KSQCtxD
-type KSQCtx t m m' zp zq zq' gad = 
-  (EncryptCtx t m m' (LiftOf zp) zp zq,
-   KeySwitchCtx gad t m' zp zq zq',
-   KSHintCtx gad t m' (LiftOf zp) zq',
-   -- ^ these provide the context to generate the parameters
-   Ring (CT m zp (Cyc t m' zq)),
-   NFData (CT m zp (Cyc t m' zq)),
-   ShowArgs '(t,m,m',zp,zq))
-instance (params `Satisfy` KSQCtxD, KSQCtx t m m' zp zq zq' gad) 
-  => ( '(gad, '(t, '(m,m',zp,zq,zq'))) ': params) `Satisfy` KSQCtxD where
-  data ArgsCtx KSQCtxD where
-    KSQD :: (KSQCtx t m m' zp zq zq' gad) 
-      => Proxy '(t,m,m',zp,zq,zq',gad) -> ArgsCtx KSQCtxD
-  runAll _ f = (f $ KSQD (Proxy::Proxy '(t,m,m',zp,zq,zq',gad))) : (runAll (Proxy::Proxy params) f)
-
-hideKSQ:: (forall t m m' zp zq zq' gad . (KSQCtx t m m' zp zq zq' gad) 
-  => Proxy '(t,m,m',zp,zq,zq',gad) -> rnd Benchmark) -> ArgsCtx KSQCtxD -> rnd Benchmark
-hideKSQ f (KSQD p) = f p
-
-
-
-wrapKSQ :: forall t m m' zp zq zq' gad rnd bnch . (WrapCtx t m m' zp zq rnd bnch,
-  bnch ~ (KSHint m zp t m' zq gad zq' -> CT m zp (Cyc t m' zq) -> NFValue))
-  => bnch -> Proxy '(t,m,m',zp,zq,zq',gad) -> rnd Benchmark
-wrapKSQ f _ = 
-  let p = Proxy::Proxy '(t,m,m',zp,zq)
-  in bench (showArgs p) <$> genSHEArgs p f
-
-benchKSQ :: 
-  (forall t m m' zp zq zq' gad . 
-    (KSQCtx t m m' zp zq zq' gad) 
-    => Proxy '(t,m,m',zp,zq,zq',gad) -> rnd Benchmark)
-  -> [rnd Benchmark]
-benchKSQ g = runAll (Proxy::Proxy KSQParams) $ hideKSQ g
 
 
 
@@ -252,53 +218,11 @@ type KSQParams = ( '(,) <$> Gadgets) <*> Zq'Params
 
 
 
-type family SKOf bnch where
-  SKOf (CT m zp (Cyc t m' zq) -> a) = SK (Cyc t m' (LiftOf zp))
-  SKOf (SK (Cyc t m' z) -> a) = SK (Cyc t m' z)
-  SKOf (KSHint m zp t m' zq gad zq' -> a) = SK (Cyc t m' (LiftOf zp))
-  SKOf (a -> b) = SKOf b
-type WrapCtx (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) zp zq rnd bnch = 
-  (Monad rnd, ShowArgs '(t,m,m',zp,zq), Benchmarkable (StateT (Maybe (SKOf bnch)) rnd) bnch)
+wrapKSQ :: forall t m m' zp zq zq' gad rnd bnch res . (WrapCtx t m m' zp zq rnd bnch,
+  bnch ~ (KSHint m zp t m' zq gad zq' -> CT m zp (Cyc t m' zq) -> res), res ~ ResultOf bnch, WrapFunc res)
+  => bnch -> Proxy '(t,m,m',zp,zq,zq',gad) -> rnd (WrapOf res)
+wrapKSQ f _ = 
+  let p = Proxy::Proxy '(t,m,m',zp,zq)
+  in wrap (showArgs p) <$> genSHEArgs p f
 
 
-genSHEArgs :: forall t (m :: Factored) m' z zp zq bnch rnd . 
-  (z ~ LiftOf zp, Benchmarkable (StateT (Maybe (SK (Cyc t m' z))) rnd) bnch, Monad rnd) 
-  => Proxy '(t,m,m',zp,zq) -> bnch -> rnd NFValue
-genSHEArgs _ f = evalStateT (genArgs f) (Nothing :: Maybe (SK (Cyc t m' z)))
-
--- generates a secrete key with svar=1, using non-cryptographic randomness
-instance (GenSKCtx t m z Double, 
-          MonadRandom rnd, 
-          MonadState (Maybe (SK (Cyc t m z))) rnd)
-  => Generatable rnd (SK (Cyc t m z)) where
-  genArg = do
-    msk <- get
-    sk <- case msk of
-      Just sk -> return sk
-      Nothing -> do
-        sk <- genSK (1 :: Double)
-        put $ Just sk
-        return sk
-    return sk
-
-instance (EncryptCtx t m m' z zp zq,
-          z ~ LiftOf zp,
-          MonadRandom rnd,
-          Generatable rnd (SK (Cyc t m' z)),
-          Generatable rnd (Cyc t m zp)) 
-  => Generatable rnd (CT m zp (Cyc t m' zq)) where
-  genArg = do
-    sk :: SK (Cyc t m' z) <- genArg
-    pt <- genArg
-    encrypt sk pt
-
-newtype KSHint m zp t m' zq gad zq' = KeySwitch (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
-instance (Generatable rnd (SK (Cyc t m' z)),
-          z ~ LiftOf zp,
-          KeySwitchCtx gad t m' zp zq zq',
-          KSHintCtx gad t m' z zq', 
-          MonadRandom rnd)
-  => Generatable rnd (KSHint m zp t m' zq gad zq') where
-  genArg = do
-    sk :: SK (Cyc t m' z) <- genArg
-    KeySwitch <$> proxyT (keySwitchQuadCirc sk) (Proxy::Proxy (gad,zq'))

@@ -136,7 +136,7 @@ instance (params `Satisfy` BasicCtxD, BasicCtx t m r) => ( '(t, '(m,r)) ': param
 hideTMR :: (forall t m r . (BasicCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> ArgsCtx BasicCtxD -> rnd Benchmark
 hideTMR f (BC p) = f p
 
-wrapCyc :: (Functor rnd, Benchmarkable rnd (Cyc t m r -> bnch), ShowArgs '(t,m,r)) 
+wrapCyc :: (Functor rnd, Benchmarkable rnd (Cyc t m r -> bnch), ResultOf bnch ~ NFValue, ShowArgs '(t,m,r)) 
   => (Cyc t m r -> bnch) -> Proxy '(t,m,r) -> rnd Benchmark
 wrapCyc f p = bench (showArgs p) <$> genArgs f
 

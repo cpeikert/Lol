@@ -147,7 +147,7 @@ library
 
 test-suite lol-test-suite
   type:               exitcode-stdio-1.0
-  hs-source-dirs:     test-suite
+  hs-source-dirs:     test-suite,utils
   default-language:   Haskell2010
   main-is:            Main.hs
 
@@ -156,13 +156,18 @@ test-suite lol-test-suite
   build-depends:
     base,
     constraints,
+    criterion,
+    deepseq,
+    DRBG,
     lol,
     MonadRandom,
+    mtl,
     QuickCheck >= 2.8 && < 2.9,
     repa,
+    singletons,
     test-framework >= 0.8 && < 0.9,
     test-framework-quickcheck2 >= 0.3 && < 0.4,
-    time >= 1.2 && < 1.6,
+    time >= 1.2 && < 1.6,   
     vector
 
 Benchmark bench-lol

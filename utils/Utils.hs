@@ -8,6 +8,7 @@ module Utils
 ,Benchmarkable(..)
 ,Generatable(..)
 ,NFValue
+,ResultOf
 
 ,Satisfy(..)
 
@@ -46,12 +47,19 @@ bgroupRnd str = (bgroup str <$>) . sequence
 
 type NFValue = C.Benchmarkable
 
+type family ResultOf a where
+  ResultOf (a -> b) = ResultOf b
+  ResultOf a = a
+
 -- bnch represents a function whose arguments can be generated,
 -- resulting in a "NFValue"
 class Benchmarkable rnd bnch where
-  genArgs :: bnch -> rnd NFValue
+  genArgs :: bnch -> rnd (ResultOf bnch)
 
 instance (Monad rnd) => Benchmarkable rnd NFValue where
+  genArgs = return
+
+instance (Monad rnd) => Benchmarkable rnd Bool where
   genArgs = return
 
 instance (Generatable rnd a, Benchmarkable rnd b, Monad rnd) => Benchmarkable rnd (a -> b) where
@@ -70,8 +78,8 @@ class (params :: [k]) `Satisfy` ctx  where
   data family ArgsCtx ctx
 
   runAll :: Proxy params
-            -> (ArgsCtx ctx -> rnd Benchmark) 
-            -> [rnd Benchmark]
+            -> (ArgsCtx ctx -> rnd res) 
+            -> [rnd res]
 
 instance '[] `Satisfy` ctx  where
   -- any implementation of ArgsCtx must conflict
