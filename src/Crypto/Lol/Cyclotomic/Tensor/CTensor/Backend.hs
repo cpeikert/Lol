@@ -73,7 +73,7 @@ instance Show CPP where
     show (CPP p e) = "(" LP.++ (show p) LP.++ "," LP.++ (show e) LP.++ ")"
 
 instance (Storable a, Storable b,
-          BasicTypeOf a ~ CTypeOf b) 
+          CTypeOf a ~ CTypeOf b) 
   -- enforces right associativity and that each type of 
   -- the tuple has the same C repr, so using an array repr is safe
   => Storable (a,b) where
@@ -96,40 +96,37 @@ data ComplexD
 data DoubleD
 data Int64D
 
-type family BasicTypeOf x where
-  BasicTypeOf (ZqBasic (q :: k) Int64) = ZqB64D
-  BasicTypeOf Double = DoubleD
-  BasicTypeOf Int64 = Int64D
-  BasicTypeOf (Complex Double) = ComplexD
-
 type family CTypeOf x where
-  CTypeOf (a,b) = BasicTypeOf a
-  CTypeOf a = BasicTypeOf a
+  CTypeOf (a,b) = CTypeOf a
+  CTypeOf (ZqBasic (q :: k) Int64) = ZqB64D
+  CTypeOf Double = DoubleD
+  CTypeOf Int64 = Int64D
+  CTypeOf (Complex Double) = ComplexD
 
 -- returns the modulus as a nested list of moduli
-class GetModPairs a where
+class (Tuple a) => ZqTuple a where
   type ModPairs a
   getModuli :: Tagged a (ModPairs a)
 
-instance (Reflects q Int64) => GetModPairs (ZqBasic q Int64) where
+instance (Reflects q Int64) => ZqTuple (ZqBasic q Int64) where
   type ModPairs (ZqBasic q Int64) = Int64
   getModuli = tag $ proxy value (Proxy::Proxy q)
 
-instance (GetModPairs b, Reflects q Int64) => GetModPairs (ZqBasic q Int64, b) where
-  type ModPairs (ZqBasic q Int64,b) = (Int64, ModPairs b)
+instance (ZqTuple a, ZqTuple b) => ZqTuple (a, b) where
+  type ModPairs (a,b) = (ModPairs a, ModPairs b)
   getModuli = 
-    let q = proxy value (Proxy::Proxy q)
-        qs = proxy getModuli (Proxy :: Proxy b)
-    in tag $ (q,qs)
+    let as = proxy getModuli (Proxy::Proxy a)
+        bs = proxy getModuli (Proxy :: Proxy b)
+    in tag $ (as,bs)
 
 -- counts components in a nested tuple
-class RingProduct a where
+class Tuple a where
   numComponents :: Tagged a Int16
 
-instance {-# Overlappable #-} RingProduct a where
+instance {-# Overlappable #-} Tuple a where
   numComponents = tag 1
 
-instance (RingProduct a, RingProduct b) => RingProduct (a,b) where
+instance (Tuple a, Tuple b) => Tuple (a,b) where
   numComponents = tag $ (proxy numComponents (Proxy::Proxy a)) + (proxy numComponents (Proxy::Proxy b))
 
 type Dispatch r = (Dispatch' (CTypeOf r) r)
@@ -151,8 +148,8 @@ class (repr ~ CTypeOf r) => Dispatch' repr r where
   dadd :: Ptr r -> Ptr r -> Int64 -> IO ()
   dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
 
-instance (GetModPairs r, Storable (ModPairs r),
-          RingProduct r, CTypeOf r ~ ZqB64D)
+instance (ZqTuple r, Storable (ModPairs r),
+          CTypeOf r ~ ZqB64D)
   => Dispatch' ZqB64D r where
   dcrt ruptr pout totm pfac numFacts = 
     let qs = proxy getModuli (Proxy::Proxy r)
@@ -207,7 +204,7 @@ instance (GetModPairs r, Storable (ModPairs r),
         mulRq numPairs (castPtr aout) (castPtr bout) totm (castPtr qsptr)
   dgaussdec = error "cannot call CT gaussianDec on type ZqBasic"
 
-instance (RingProduct r, CTypeOf r ~ ComplexD) => Dispatch' ComplexD r where
+instance (Tuple r, CTypeOf r ~ ComplexD) => Dispatch' ComplexD r where
   dcrt ruptr pout totm pfac numFacts = 
     tensorCRTC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr)
   dcrtinv ruptr minv pout totm pfac numFacts = 
@@ -229,7 +226,7 @@ instance (RingProduct r, CTypeOf r ~ ComplexD) => Dispatch' ComplexD r where
     mulC (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout) totm
   dgaussdec = error "cannot call CT gaussianDec on type Comple Double"
 
-instance (RingProduct r, CTypeOf r ~ DoubleD) => Dispatch' DoubleD r where
+instance (Tuple r, CTypeOf r ~ DoubleD) => Dispatch' DoubleD r where
   dcrt = error "cannot call CT Crt on type Double"
   dcrtinv = error "cannot call CT CrtInv on type Double"
   dl pout totm pfac numFacts = 
@@ -247,7 +244,7 @@ instance (RingProduct r, CTypeOf r ~ DoubleD) => Dispatch' DoubleD r where
   dgaussdec ruptr pout totm pfac numFacts = 
     tensorGaussianDec (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr)
 
-instance (RingProduct r, CTypeOf r ~ Int64D) => Dispatch' Int64D r where
+instance (Tuple r, CTypeOf r ~ Int64D) => Dispatch' Int64D r where
   dcrt = error "cannot call CT Crt on type Int64"
   dcrtinv = error "cannot call CT CrtInv on type Int64"
   dl pout totm pfac numFacts = 

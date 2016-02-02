@@ -21,8 +21,7 @@ import Utils
 
 cycBenches :: (MonadRandom rnd) => rnd Benchmark
 cycBenches = bgroupRnd "Cyc"
-  [bgroupRnd "CRT + *" $ benchBasic $ wrapCyc bench_mulPow,
-   bgroupRnd "*"       $ benchBasic $ wrapCyc bench_mul,
+  [bgroupRnd "*"       $ benchBasic $ wrapCyc bench_mul,
    bgroupRnd "crt"     $ benchBasic $ wrapCyc bench_crt,
    bgroupRnd "crtInv"  $ benchBasic $ wrapCyc bench_crtInv,
    bgroupRnd "l"       $ benchBasic $ wrapCyc bench_l,
@@ -36,13 +35,6 @@ cycBenches = bgroupRnd "Cyc"
    --, bgroupRnd "^2" $ groupC $ wrap1Arg bench_sq,             -- should take same as bench_mul
    --, bgroupRnd "id2" $ groupC $ wrap1Arg bench_advisePowPow -- should take a few nanoseconds: this is a no-op
   ]
-
--- convert both arguments to CRT basis, then multiply them coefficient-wise
-bench_mulPow :: (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> NFValue
-bench_mulPow a b = 
-  let a' = advisePow a
-      b' = advisePow b
-  in nf (a' *) b'
 
 -- no CRT conversion, just coefficient-wise multiplication
 bench_mul :: (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> NFValue
