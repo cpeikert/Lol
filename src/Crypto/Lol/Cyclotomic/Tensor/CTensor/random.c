@@ -5,7 +5,7 @@
 
 // this function takes *inverse* RUs, so no negation is needed on the indexing
 // I had been negating the ru-idx, but this was causing a *negative* mod, resulting in a hard-to-find bug
-void primeD (double *y, hDim_t lts, hDim_t rts, hDim_t p, hDim_t rustride, complex_t* ruinv)
+void primeD (double *y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p, hDim_t rustride, complex_t* ruinv)
 {
 	if(p == 2)
   {
@@ -27,25 +27,25 @@ void primeD (double *y, hDim_t lts, hDim_t rts, hDim_t p, hDim_t rustride, compl
         double acc = 0;
         for(col = 1; col <= (p>>1); col++)
         {
-          acc += 2 * ruinv[((row*col) % p)*rustride].real * y[tensorOffset+rts*(col-1)];
+          acc += 2 * ruinv[((row*col) % p)*rustride*tupSize].real * y[(tensorOffset+rts*(col-1))*tupSize];
         }
         for(col = (p>>1)+1; col <= p-1; col++)
         {
-          acc += 2 * ruinv[((row*col) % p)*rustride].imag * y[tensorOffset+rts*(col-1)];
+          acc += 2 * ruinv[((row*col) % p)*rustride*tupSize].imag * y[(tensorOffset+rts*(col-1))*tupSize];
         }
         tempSpace[row] = acc/sqrt(2);
       }
       
       for(row = 0; row < p-1; row++)
       {
-        y[tensorOffset+rts*row] = tempSpace[row];
+        y[(tensorOffset+rts*row)*tupSize] = tempSpace[row];
       }
     }
   }
   free(tempSpace);
 }
 
-void ppD (void *y, hDim_t lts, hDim_t rts, PrimeExponent pe, void *ruinv, hInt_t q)
+void ppD (void *y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, void *ruinv, hInt_t* qs)
 {
     hDim_t p = pe.prime;
     hDim_t e = pe.exponent;
@@ -53,11 +53,13 @@ void ppD (void *y, hDim_t lts, hDim_t rts, PrimeExponent pe, void *ruinv, hInt_t
     ASSERT(e != 0);
 #endif
     hDim_t mprime = ipow(p,e-1);
-    primeD (y, lts*mprime, rts, p, mprime, (complex_t*)ruinv);
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+      primeD (((double*)y)+tupIdx, tupSize, lts*mprime, rts, p, mprime, ((complex_t*)ruinv)+tupIdx);
+    }
 }
 
 //the contents of y will be destroyed, but should be initialized in Haskell-land to independent Guassians over the reals
-void tensorGaussianDec (double *y, hDim_t totm, PrimeExponent *peArr, hShort_t sizeOfPE, complex_t** ruinv)
+void tensorGaussianDec (hShort_t tupSize, double *y, hDim_t totm, PrimeExponent *peArr, hShort_t sizeOfPE, complex_t** ruinv)
 {
   void** ruinvs = (void**)malloc(sizeOfPE*sizeof(void*));
   hShort_t i;
@@ -66,7 +68,7 @@ void tensorGaussianDec (double *y, hDim_t totm, PrimeExponent *peArr, hShort_t s
       ruinvs[i] = (void*) (ruinv[i]);
   }
     
-	tensorFuserCRT (y, ppD, totm, peArr, sizeOfPE, ruinvs, 0);
+	tensorFuserCRT (y, tupSize, ppD, totm, peArr, sizeOfPE, ruinvs, (hInt_t*)0);
 	
 	free(ruinvs);
 }

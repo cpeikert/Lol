@@ -9,20 +9,17 @@
 -- | Wrapper for a C implementation of the 'Tensor' interface.
 
 module Crypto.Lol.Cyclotomic.Tensor.CTensor
-( CT
--- Exports below here are due solely to ticket #10338. See CycTests for more details
-, CRNS
-, Dispatch
-) where
+( CT ) where
 
 import Algebra.Additive as Additive (C)
 import Algebra.Ring     as Ring (C)
+import Algebra.ZeroTestable   as ZeroTestable (C)
 
 import Control.Applicative
-import Control.Arrow
+import Control.Arrow ((***))
 import Control.DeepSeq
-import Control.Monad
-import Control.Monad.Identity
+import Control.Monad (liftM)
+import Control.Monad.Identity (Identity(..), runIdentity)
 import Control.Monad.Random
 import Control.Monad.Trans (lift)
 
@@ -34,35 +31,28 @@ import Data.Maybe
 import Data.Traversable as T
 import Data.Vector.Generic           as V (zip, unzip)
 import Data.Vector.Storable          as SV (Vector, (!), replicate, replicateM, thaw, convert, foldl',
-                                            unsafeToForeignPtr0, unsafeSlice, mapM, fromList,
+                                            unsafeSlice, mapM, fromList,
                                             generate, foldl1',
                                             unsafeWith, zipWith, map, length, unsafeFreeze, thaw)
 import Data.Vector.Storable.Internal (getPtr)
 import Data.Vector.Storable.Mutable  as SM hiding (replicate)
 
-import           Foreign.ForeignPtr
-import           Foreign.Marshal.Array
+import           Foreign.Marshal.Utils (with)
 import           Foreign.Ptr
 import           Foreign.Storable        (Storable (..))
-import qualified Foreign.Storable.Record as Store
-import           Foreign.Storable.Tuple  ()
-import           System.IO.Unsafe
 import           Test.QuickCheck         hiding (generate)
-import           Unsafe.Coerce
 
 import Crypto.Lol.CRTrans
+import Crypto.Lol.Cyclotomic.Tensor
+import Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
+import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
+import Crypto.Lol.GaussRandom
 import Crypto.Lol.LatticePrelude as LP hiding (replicate, unzip, zip, lift)
 import Crypto.Lol.Reflects
-import Crypto.Lol.Cyclotomic.Tensor
-
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.ZqBasic
-import Crypto.Lol.GaussRandom
 
-import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
-
-import Algebra.ZeroTestable   as ZeroTestable (C)
-
+import System.IO.Unsafe (unsafePerformIO)
 
 -- | Newtype wrapper around a Vector.
 newtype CT' (m :: Factored) r = CT' { unCT :: Vector r } 
@@ -119,19 +109,18 @@ type family Em r where
 
 
 ---------- NUMERIC PRELUDE INSTANCES ----------
-instance (Additive r, Storable r, CRNS r, Fact m)
+instance (Additive r, Storable r, Fact m, Dispatch r)
   => Additive.C (CT m r) where
-  (CT a@(CT' _)) + (CT b@(CT' _)) = CT $ (zipWrapper $ untag $ cZipDispatch dadd) a b  --pack $ SV.zipWith (+) (unpack a) (unpack b) -- Vector code --
+  (CT a@(CT' _)) + (CT b@(CT' _)) = CT $ (untag $ cZipDispatch dadd) a b
   a + b = (toCT a) + (toCT b)
   negate (CT (CT' a)) = CT $ CT' $ SV.map negate a -- EAC: This probably should be converted to C code
   negate a = negate $ toCT a
 
   zero = CT $ repl zero
 
-instance (Fact m, Ring r, Storable r, CRNS r)
+instance (Fact m, Ring r, Storable r, Dispatch r)
   => Ring.C (CT m r) where
-  (CT a@(CT' _)) * (CT b@(CT' _)) = CT $ (zipWrapper $ untag $ cZipDispatch dmul) a b  --pack $ SV.zipWith (*) (unpack a) (unpack b) -- Vector code --
-  a * b = (toCT a) * (toCT b)
+  (CT a@(CT' _)) * (CT b@(CT' _)) = CT $ (untag $ cZipDispatch dmul) a b
 
   fromInteger = CT . repl . fromInteger
 
@@ -163,7 +152,7 @@ instance Fact m => Traversable (CT m) where
 
 instance Tensor CT where
 
-  type TElt CT r = (Storable r, CRNS r)
+  type TElt CT r = (Storable r, Dispatch r)
 
   entailIndexT = tag $ Sub Dict
   entailEqT = tag $ Sub Dict
@@ -174,32 +163,32 @@ instance Tensor CT where
 
   scalarPow = CT . scalarPow' -- Vector code
 
-  l = wrap $ lgWrapper $ untag $ lgDispatch dl
-  lInv = wrap $ lgWrapper $ untag $ lgDispatch dlinv
+  l = wrap $ untag $ basicDispatch dl
+  lInv = wrap $ untag $ basicDispatch dlinv
 
-  mulGPow = wrap mulGPow' -- mulGPow' already has lgWrapper
-  mulGDec = wrap $ lgWrapper $ untag $ lgDispatch dmulgdec
+  mulGPow = wrap mulGPow'
+  mulGDec = wrap $ untag $ basicDispatch dmulgdec
 
   divGPow = wrapM $ divGPow'
   -- we divide by p in the C code (for divGDec only(?)), do NOT call checkDiv!
-  divGDec = wrapM $ divGWrapper $ Just . (untag $ lgDispatch dginvdec)
+  divGDec = wrapM $ Just . (untag $ basicDispatch dginvdec)
 
   crtFuncs = (,,,,) <$>
     Just (CT . repl) <*>
-    (liftM wrap $ crtWrapper $ (untag $ cZipDispatch dmul) <$> untagT gCoeffsCRT) <*>
-    (liftM wrap $ crtWrapper $ (untag $ cZipDispatch dmul) <$> untagT gInvCoeffsCRT) <*>
-    (liftM wrap $ untagT $ crt') <*>
-    (liftM wrap $ crtWrapper $ untagT ctCRTInv) 
+    (liftM wrap $ (untag $ cZipDispatch dmul) <$> untagT gCoeffsCRT) <*>
+    (liftM wrap $ (untag $ cZipDispatch dmul) <$> untagT gInvCoeffsCRT) <*>
+    (liftM wrap $ untagT ctCRT) <*>
+    (liftM wrap $ untagT ctCRTInv) 
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
   embedPow = wrap $ runIdentity $ coerceEm embedPow'
   embedDec = wrap $ runIdentity $ coerceEm embedDec'
 
-  tGaussianDec v = liftM CT $ gaussWrapper $ cDispatchGaussian v
+  tGaussianDec v = liftM CT $ cDispatchGaussian v
   --tGaussianDec v = liftM CT $ coerceT' $ gaussianDec v
 
   -- we do not wrap thsi function because (currently) it can only be called on lifted types
-  gSqNormDec (CT v) = (normWrapper $ untag gSqNormDec') v
+  gSqNormDec (CT v) = (untag gSqNormDec') v
   gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
 
   crtExtFuncs = (,) <$> (liftM wrap $ coerceTw twaceCRT')
@@ -243,188 +232,54 @@ coerceBasis ::
   => Tagged '(m,m') ([Vector r]) -> Tagged m [CT' m' r]
 coerceBasis = coerce
 
--- | Class to dispatch to the C backend for various element types.
-class CRNS r where
-
-  zipWrapper :: (Fact m, Additive r) => 
-    (forall a . (TElt CT a, Dispatch a, Additive a) => CT' m a -> CT' m a -> CT' m a)
-    -> CT' m r -> CT' m r -> CT' m r
-
-  crtWrapper :: (Fact m, CRTrans r, ZeroTestable r, IntegralDomain r) => 
-    (forall a . (TElt CT a, CRTrans a, Dispatch a, ZeroTestable a, IntegralDomain a) => Maybe (CT' m a -> CT' m a))
-    -> Maybe (CT' m r -> CT' m r)
-
-  lgWrapper :: (Fact m, Additive r) => 
-    (forall a . (TElt CT a, Dispatch a, Additive a) => CT' m a -> CT' m a)
-    -> CT' m r -> CT' m r
-
-  normWrapper :: (Fact m, Additive r) => 
-    (forall a . (TElt CT a, Dispatch a, Additive a) => CT' m a -> a)
-    -> CT' m r -> r
-
-  divGWrapper :: (Fact m, IntegralDomain r, ZeroTestable r) => 
-    (forall a . (TElt CT a, Dispatch a, IntegralDomain a, ZeroTestable a) => CT' m a -> Maybe (CT' m a))
-    -> CT' m r -> Maybe (CT' m r)
-
-  gaussWrapper :: (Fact m, MonadRandom rnd, Random r) => 
-    (forall a . (TElt CT a, Dispatch a, OrdFloat a, MonadRandom rnd, Random a) => rnd (CT' m a))
-    -> rnd (CT' m r)
-
-instance CRNS Double where
-  zipWrapper f = f
-  crtWrapper f = f
-  lgWrapper f = f
-  normWrapper f = error "Cannot call normWrapper for Double"
-  divGWrapper f = f
-  gaussWrapper f = f
-
-instance CRNS Int64 where
-  zipWrapper f = f
-  crtWrapper f = f
-  lgWrapper f = f
-  normWrapper f = f
-  divGWrapper f = f
-  gaussWrapper = error "Cannot call gaussianDec for Int64"
-
-instance (TElt CT (Complex a), Dispatch (Complex a)) => CRNS (Complex a) where
-  zipWrapper f = f
-  crtWrapper f = f
-  lgWrapper f = f
-  normWrapper f = error "Cannot call normWrapper for Complex"
-  divGWrapper f = f
-  gaussWrapper f = error "Cannot call gaussianDec for Complex"
-
--- EAC: we need PolyKinds in paritcular for this instance
-instance (TElt CT (ZqBasic q i), Dispatch (ZqBasic q i)) => CRNS (ZqBasic q i) where
-  zipWrapper f = f
-  crtWrapper f = f
-  lgWrapper f = f
-  normWrapper f = error "Cannot call normWrapper for ZqBasic"
-  divGWrapper f = f
-  gaussWrapper f = error "Cannot call gaussianDec for ZqBasic"
-
-instance (Storable a, Storable b, 
-          CRNS a, CRNS b, 
-          CRTrans a, CRTrans b, 
-          ZeroTestable a, ZeroTestable b, 
-          IntegralDomain a, IntegralDomain b,
-          Random a, Random b) 
-  => CRNS (a,b) where
-  zipWrapper f (CT' x :: CT' m (a,b)) (CT' y) =
-    let (a,b) = unzip x
-        (c,d) = unzip y
-        (CT' ac) = zipWrapper f (CT' a :: CT' m a) (CT' c)
-        (CT' bd) = zipWrapper f (CT' b :: CT' m b) (CT' d)
-    in CT' $ zip ac bd
-
-  crtWrapper f = do
-    fa <- crtWrapper f
-    fb <- crtWrapper f
-    return $ \ (CT' x :: CT' m (a,b)) -> 
-      let (a,b) = unzip x
-          (CT' a') = fa (CT' a :: CT' m a)
-          (CT' b') = fb (CT' b :: CT' m b)
-      in CT' $ zip a' b'
-
-  lgWrapper f (CT' x :: CT' m (a,b)) = 
-    let (a, b) = unzip x
-        (CT' a') = lgWrapper f (CT' a :: CT' m a)
-        (CT' b') = lgWrapper f (CT' b :: CT' m b)
-    in CT' $ zip a' b'
-
-  normWrapper f (CT' x :: CT' m (a,b)) = error "Cannot call normWrapper for pairs"
-
-  divGWrapper f (CT' x :: CT' m (a,b)) = 
-    let (a, b) = unzip x
-    in do -- in Maybe
-      (CT' a') <- divGWrapper f (CT' a :: CT' m a)
-      (CT' b') <- divGWrapper f (CT' b :: CT' m b)
-      return $ CT' $ zip a' b'
-
-  gaussWrapper f = do
-    (CT' a) <- gaussWrapper f
-    (CT' b) <- gaussWrapper f
-    return $ CT' $ zip a b
-
 mulGPow' :: (TElt CT r, Fact m, Additive r) => CT' m r -> CT' m r
-mulGPow' = lgWrapper $ untag $ lgDispatch dmulgpow
+mulGPow' = untag $ basicDispatch dmulgpow
 
 divGPow' :: forall m r . (TElt CT r, Fact m, IntegralDomain r, ZeroTestable r) => CT' m r -> Maybe (CT' m r)
-divGPow' = divGWrapper $ untag $ checkDiv $ lgDispatch dginvpow
+divGPow' = untag $ checkDiv $ basicDispatch dginvpow
 
-crt' :: forall m r . (TElt CT r, Fact m, CRTrans r, ZeroTestable r, IntegralDomain r) 
-  => TaggedT m Maybe (CT' m r -> CT' m r)
-crt' = tagT $ crtWrapper $ do
-  f <- proxyT ctCRT (Proxy::Proxy m)
-  return $ CT' . f . unCT
-
---{-# INLINE lgDispatch #-}
-lgDispatch :: forall m r .
-     (Storable r, Fact m, Additive r)
-      => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
-         -> Tagged m (CT' m r -> CT' m r)
-lgDispatch f = do
-  factors <- liftM marshalFactors ppsFact
-  totm <- liftM fromIntegral totientFact
-  let numFacts = fromIntegral $ SV.length factors
-  return $ coerce $ \yin -> unsafePerformIO $ do -- in IO
-    yout <- SV.thaw yin
+withBasicArgs :: forall m r . (Fact m, Storable r) 
+  => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()) 
+     -> CT' m r -> IO (CT' m r)
+withBasicArgs f =
+  let factors = proxy (marshalFactors <$> ppsFact) (Proxy::Proxy m)
+      totm = proxy (fromIntegral <$> totientFact) (Proxy::Proxy m)
+      numFacts = fromIntegral $ SV.length factors
+  in \(CT' x) -> do
+    yout <- SV.thaw x
     SM.unsafeWith yout (\pout ->
       SV.unsafeWith factors (\pfac ->
         f pout totm pfac numFacts))
-    unsafeFreeze yout
+    CT' <$> unsafeFreeze yout
+
+basicDispatch :: forall m r .
+     (Storable r, Fact m, Additive r)
+      => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
+         -> Tagged m (CT' m r -> CT' m r)
+basicDispatch f = return $ (unsafePerformIO . withBasicArgs f)
 
 gSqNormDec' :: forall m r .
      (Storable r, Fact m, Additive r, Dispatch r)
       => Tagged m (CT' m r -> r)
-gSqNormDec' = do
-  factors <- liftM marshalFactors ppsFact
-  totm <- liftM fromIntegral totientFact
-  let numFacts = fromIntegral $ SV.length factors
-  return $ (! 0) . (\(CT' yin) -> unsafePerformIO $ do -- in IO
-    yout <- SV.thaw yin
-    SM.unsafeWith yout (\pout ->
-      SV.unsafeWith factors (\pfac ->
-        dnorm pout totm pfac numFacts))
-    unsafeFreeze yout)
+gSqNormDec' = return $ ( (!0) . unCT . unsafePerformIO . withBasicArgs dnorm)
 
---{-# INLINE ctCRT #-}
-ctCRT :: forall m r .
-         (Storable r, CRTrans r, Dispatch r,
+ctCRT :: forall m r . (Storable r, CRTrans r, Dispatch r,
           Fact m)
-         => TaggedT m Maybe (Vector r -> Vector r)
+         => TaggedT m Maybe (CT' m r -> CT' m r)
 ctCRT = do -- in TaggedT m Maybe
   ru' <- ru
-  factors <- pureT $ liftM marshalFactors ppsFact
-  totm <- pureT $ liftM fromIntegral totientFact
-  let numFacts = fromIntegral $ SV.length factors
-  return $ \yin -> unsafePerformIO $ do -- in IO
-    yout <- SV.thaw yin
-    SM.unsafeWith yout (\pout ->
-      SV.unsafeWith factors (\pfac ->
-        withPtrArray ru' (\ruptr ->
-          dcrt pout totm pfac numFacts ruptr)))
-    unsafeFreeze yout
+  return $ \x -> unsafePerformIO $ 
+    withPtrArray ru' (flip withBasicArgs x . dcrt)
 
 -- CTensor CRT^(-1) functions take inverse rus
---{-# INLINE ctCRTInv #-}
 ctCRTInv :: (Storable r, CRTrans r, Dispatch r,
           Fact m)
          => TaggedT m Maybe (CT' m r -> CT' m r)
 ctCRTInv = do -- in Maybe
   mhatInv <- liftM snd $ crtInfoFact
   ruinv' <- ruInv
-  factors <- pureT $ liftM marshalFactors ppsFact
-  totm <- pureT $ liftM fromIntegral totientFact
-  let numFacts = fromIntegral $ SV.length factors
-  -- EAC: can't use coerce here?
-  return $ \(CT' yin) -> unsafePerformIO $ do
-    yout <- SV.thaw yin
-    SM.unsafeWith yout (\pout ->
-      SV.unsafeWith factors (\pfac ->
-        withPtrArray ruinv' (\ruptr ->
-          dcrtinv pout totm pfac numFacts ruptr mhatInv)))
-    CT' <$> unsafeFreeze yout
+  return $ \x -> unsafePerformIO $ 
+    withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . (dcrtinv ruptr)))
 
 checkDiv :: forall m r . 
   (IntegralDomain r, Storable r, ZeroTestable r, 
@@ -457,23 +312,15 @@ cDispatchGaussian :: forall m r var rnd .
          (Storable r, Transcendental r, Dispatch r, Ord r,
           Fact m, ToRational var, Random r, MonadRandom rnd)
          => var -> rnd (CT' m r)
-cDispatchGaussian var = liftM CT' $ flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
+cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   -- get rus for (Complex r)
   ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) $ ruInv
-  factors <- liftM marshalFactors $ pureT ppsFact
   totm <- pureT totientFact
   m <- pureT valueFact
   rad <- pureT radicalFact
   yin <- lift $ realGaussians (var * fromIntegral (m `div` rad)) totm
-  let numFacts = fromIntegral $ SV.length factors
-  return $ unsafePerformIO $ do -- in IO
-    --let yin = create $ SM.new totm :: Vector r -- contents will be overwritten, so no need to initialize
-    yout <- SV.thaw yin
-    SM.unsafeWith yout (\pout ->
-      SV.unsafeWith factors (\pfac ->
-       withPtrArray ruinv' (\ruptr ->
-        dgaussdec pout (fromIntegral totm) pfac numFacts ruptr)))
-    unsafeFreeze yout
+  return $ unsafePerformIO $ 
+    withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdec ruptr) (CT' yin))
 
 instance (Arbitrary r, Fact m, Storable r) => Arbitrary (CT' m r) where
   arbitrary = replM arbitrary
@@ -541,7 +388,7 @@ ruInv = do
 
 gCoeffsCRT, gInvCoeffsCRT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r, IntegralDomain r)
   => TaggedT m Maybe (CT' m r)
-gCoeffsCRT = crt' <*> (return $ mulGPow' $ scalarPow' LP.one)
+gCoeffsCRT = ctCRT <*> (return $ mulGPow' $ scalarPow' LP.one)
 -- It's necessary to call 'fromJust' here: otherwise 
 -- sequencing functions in 'crtFuncs' relies on 'divGPow' having an
 -- implementation in C, which is not true for all types which have a C
@@ -553,7 +400,7 @@ gCoeffsCRT = crt' <*> (return $ mulGPow' $ scalarPow' LP.one)
 -- As an implementation note if I ever do fix this: the division by rad(m) can be
 -- tricky for Double/Complex Doubles, so be careful! This is why we have a custom
 -- Complex wrapper around NP.Complex.
-gInvCoeffsCRT = ($ fromJust $ divGPow' $ scalarPow' LP.one) <$> crt'
+gInvCoeffsCRT = ($ fromJust $ divGPow' $ scalarPow' LP.one) <$> ctCRT
 
 -- we can't put this in Extension with the rest of the twace/embed fucntions because it needs access to 
 -- the C backend
@@ -576,196 +423,3 @@ twaceCRT' = tagT $ do -- Maybe monad
   return $ \ arr -> -- take true trace after mul-by-tweak
     let v = backpermute' indices (SV.zipWith (*) tweak arr)
     in generate phi $ \i -> foldl1' (+) $ SV.unsafeSlice (i*reltot) reltot v
-
-
-
-
-
-
-
-
-
-
-
-
--- C-backend support
-
-marshalFactors :: [PP] -> Vector CPP
-marshalFactors = SV.fromList . LP.map (\(p,e) -> CPP (fromIntegral p) (fromIntegral e))
-
--- http://stackoverflow.com/questions/6517387/vector-vector-foo-ptr-ptr-foo-io-a-io-a
-withPtrArray :: (Storable a) => [Vector a] -> (Ptr (Ptr a) -> IO b) -> IO b
-withPtrArray v f = do
-  let vs = LP.map SV.unsafeToForeignPtr0 v
-      ptrV = LP.map (\(fp,_) -> getPtr fp) vs
-  res <- withArray ptrV f
-  LP.mapM_ (\(fp,_) -> touchForeignPtr fp) vs
-  return res
-
-data CPP = CPP {p' :: !Int32, e' :: !Int16}
--- stolen from http://hackage.haskell.org/packages/archive/numeric-prelude/0.4.0.3/doc/html/src/Number-Complex.html#T
--- the NumericPrelude Storable instance for complex numbers
-instance Storable CPP where
-   sizeOf    = Store.sizeOf store
-   alignment = Store.alignment store
-   peek      = Store.peek store
-   poke      = Store.poke store
-
-store :: Store.Dictionary CPP
-store = Store.run $
-   liftA2 CPP
-      (Store.element p')
-      (Store.element e')
-
-instance Show CPP where
-    show (CPP p e) = "(" LP.++ (show p) LP.++ "," LP.++ (show e) LP.++ ")"
-
-foreign import ccall unsafe "tensorLR" tensorLR ::                  Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorLInvR" tensorLInvR ::            Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorLRq" tensorLRq ::                Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
-foreign import ccall unsafe "tensorLInvRq" tensorLInvRq ::          Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
-foreign import ccall unsafe "tensorLDouble" tensorLDouble ::       Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorLInvDouble" tensorLInvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorLC" tensorLC ::       Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorLInvC" tensorLInvC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
-
-foreign import ccall unsafe "tensorNormSqR" tensorNormSqR ::            Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-
-foreign import ccall unsafe "tensorGPowR" tensorGPowR ::         Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorGPowRq" tensorGPowRq ::       Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
-foreign import ccall unsafe "tensorGPowC" tensorGPowC ::         Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorGDecR" tensorGDecR ::         Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorGDecRq" tensorGDecRq ::       Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
-foreign import ccall unsafe "tensorGInvPowR" tensorGInvPowR ::   Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorGInvPowRq" tensorGInvPowRq :: Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
-foreign import ccall unsafe "tensorGInvPowC" tensorGInvPowC ::   Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorGInvDecR" tensorGInvDecR ::   Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorGInvDecRq" tensorGInvDecRq :: Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
---foreign import ccall unsafe "tensorGCRTRq" tensorGCRTRq ::       Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (ZqBasic q Int64)) -> Int64   -> IO ()
---foreign import ccall unsafe "tensorGCRTC" tensorGCRTC ::         Ptr (Complex Double) ->   Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) -> IO ()
---foreign import ccall unsafe "tensorGInvCRTRq" tensorGInvCRTRq :: Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (ZqBasic q Int64)) -> Int64   -> IO ()
---foreign import ccall unsafe "tensorGInvCRTC" tensorGInvCRTC ::   Ptr (Complex Double) ->   Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) -> IO ()
-
-foreign import ccall unsafe "tensorCRTRq" tensorCRTRq ::         Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (ZqBasic q Int64)) -> Int64 -> IO ()
-foreign import ccall unsafe "tensorCRTC" tensorCRTC ::           Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) -> IO ()
-foreign import ccall unsafe "tensorCRTInvRq" tensorCRTInvRq ::   Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (ZqBasic q Int64)) -> Int64 -> Int64 -> IO ()
-foreign import ccall unsafe "tensorCRTInvC" tensorCRTInvC ::     Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) -> Double -> IO ()
-
-foreign import ccall unsafe "tensorGaussianDec" tensorGaussianDec :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) ->  IO ()
-
-foreign import ccall unsafe "mulRq" mulRq :: Ptr (ZqBasic q Int64) -> Ptr (ZqBasic q Int64) -> Int64 -> Int64 -> IO ()
-foreign import ccall unsafe "mulC" mulC :: Ptr (Complex Double) -> Ptr (Complex Double) -> Int64 -> IO ()
-
-foreign import ccall unsafe "addRq" addRq :: Ptr (ZqBasic q Int64) -> Ptr (ZqBasic q Int64) -> Int64 -> Int64 -> IO ()
-foreign import ccall unsafe "addR" addR :: Ptr Int64 -> Ptr Int64 -> Int64 -> IO ()
-foreign import ccall unsafe "addC" addC :: Ptr (Complex Double) -> Ptr (Complex Double) -> Int64 -> IO ()
-foreign import ccall unsafe "addD" addD :: Ptr Double -> Ptr Double -> Int64 -> IO ()
-
--- | Class to safely match Haskell types with the appropriate C function.
-class Dispatch r where
-  dcrt :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr r) -> IO ()
-  dcrtinv :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr r) -> r -> IO ()
-  dl :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  dlinv :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  dnorm :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  dmulgpow :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  dmulgdec :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  dginvpow :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  dginvdec :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  dadd :: Ptr r -> Ptr r -> Int64 -> IO ()
-  dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
-  dgcrt :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr r) -> IO ()
-  dginvcrt :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr r) -> IO ()
-  dgaussdec :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex r)) -> IO ()
-
-instance (Reflects q Int64) => Dispatch (ZqBasic q Int64) where
-  dcrt pout totm pfac numFacts ruptr = 
-    let q = proxy value (Proxy::Proxy q)
-    in tensorCRTRq pout totm pfac numFacts ruptr q
-  dcrtinv pout totm pfac numFacts ruptr minv =
-    let q = proxy value (Proxy::Proxy q)
-    --EAC: GHC doesn't like it if I change the type of minv to ZqBasic in the
-    -- signature of tensorCRTInvRq, and the constructor of ZqBasic isn't exposed
-    -- so using unsafeCoerce for now
-    in tensorCRTInvRq pout totm pfac numFacts ruptr (unsafeCoerce minv) q
-  dl pout totm pfac numFacts =
-    let q = proxy value (Proxy::Proxy q)
-    in tensorLRq pout totm pfac numFacts q
-  dlinv pout totm pfac numFacts =
-    let q = proxy value (Proxy::Proxy q)
-    in tensorLInvRq pout totm pfac numFacts q
-  dnorm pout totm pfac numFacts = error "dnorm zq"
-  dmulgpow pout totm pfac numFacts =
-    let q = proxy value (Proxy::Proxy q)
-    in tensorGPowRq pout totm pfac numFacts q
-  dmulgdec pout totm pfac numFacts =
-    let q = proxy value (Proxy::Proxy q)
-    in tensorGDecRq pout totm pfac numFacts q
-  dginvpow pout totm pfac numFacts =
-    let q = proxy value (Proxy::Proxy q)
-    in tensorGInvPowRq pout totm pfac numFacts q
-  dginvdec pout totm pfac numFacts =
-    let q = proxy value (Proxy::Proxy q)
-    in tensorGInvDecRq pout totm pfac numFacts q
-  dadd aout bout totm = 
-    let q = proxy value (Proxy::Proxy q)
-    in addRq aout bout totm q
-  dmul aout bout totm =
-    let q = proxy value (Proxy::Proxy q)
-    in mulRq aout bout totm q
-  dgcrt _ _ _ _ _ = error "dgcrt zq"
-    --let q = proxy value (Proxy::Proxy q)
-    --in tensorGCRTRq pout totm pfac numFacts gcoeffs' q
-  dginvcrt _ _ _ _ _ = error "dginvcrt zq"
-    --let q = proxy value (Proxy::Proxy q)
-    --in tensorGInvCRTRq pout totm pfac numFacts gcoeffs' q
-  dgaussdec = error "cannot call CT gaussianDec on type ZqBasic"
-
-instance Dispatch (Complex Double) where
-  dcrt = tensorCRTC
-  dcrtinv pout totm pfac numFacts ruptr minv = 
-    tensorCRTInvC pout totm pfac numFacts ruptr (real minv)
-  dl = tensorLC
-  dlinv = tensorLInvC
-  dnorm = error "cannot call CT normSq on type Complex Double"
-  dmulgpow = tensorGPowC
-  dmulgdec = error "cannot call CT mulGDec on type Complex Double"
-  dginvpow = tensorGInvPowC
-  dginvdec = error "cannot call CT divGDec on type Complex Double"
-  dadd = addC
-  dmul = mulC
-  dgcrt = error "tensorGCRTC"
-  dginvcrt = error "tensorGInvCRTC"
-  dgaussdec = error "cannot call CT gaussianDec on type Comple Double"
-
-instance Dispatch Double where
-  dcrt = error "cannot call CT Crt on type Double"
-  dcrtinv = error "cannot call CT CrtInv on type Double"
-  dl = tensorLDouble
-  dlinv = tensorLInvDouble
-  dnorm = error "cannot call CT normSq on type Double"
-  dmulgpow = error "cannot call CT mulGPow on type Double"
-  dmulgdec = error "cannot call CT mulGDec on type Double"
-  dginvpow = error "cannot call CT divGPow on type Double"
-  dginvdec = error "cannot call CT divGDec on type Double"
-  dadd = addD
-  dmul = error "cannot call CT (*) on type Double"
-  dgcrt = error "cannot call CT mulGCRT on type Double"
-  dginvcrt = error "cannot call CT divGCRT on type Double"
-  dgaussdec = tensorGaussianDec
-
-instance Dispatch Int64 where
-  dcrt = error "cannot call CT Crt on type Int64"
-  dcrtinv = error "cannot call CT CrtInv on type Int64"
-  dl = tensorLR
-  dlinv = tensorLInvR
-  dnorm = tensorNormSqR
-  dmulgpow = tensorGPowR
-  dmulgdec = tensorGDecR
-  dginvpow = tensorGInvPowR
-  dginvdec = tensorGInvDecR
-  dadd = addR
-  dmul = error "cannot call CT (*) on type Int64"
-  dgcrt = error "cannot call CT mulGCRT on type Int64"
-  dginvcrt = error "cannot call CT divGCRT on type Int64"
-  dgaussdec = error "cannot call CT gaussianDec on type Int64"

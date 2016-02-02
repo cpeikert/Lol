@@ -12,22 +12,25 @@ struct timespec addTime = {0,0};
 #endif
 
 //a = zipWith (*) a b
-void mulRq (hInt_t* a, hInt_t* b, hDim_t totm, hInt_t q) {
+void mulRq (hShort_t tupSize, hInt_t* a, hInt_t* b, hDim_t totm, hInt_t* qs) {
 #ifdef STATS
     mulCtr++;
     struct timespec s1,t1;
     clock_gettime(CLOCK_REALTIME, &s1);
 #endif
-    for(int i = 0; i < totm; i++) {
-        a[i] = (a[i]*b[i])%q;
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+        hInt_t q = qs[tupIdx];
+        for(int i = 0; i < totm; i++) {
+            a[i*tupSize+tupIdx] = (a[i*tupSize+tupIdx]*b[i*tupSize+tupIdx])%q;
+        }
     }
 #ifdef STATS
     clock_gettime(CLOCK_REALTIME, &t1);
     mulTime = tsAdd(mulTime, tsSubtract(t1,s1));
 #endif
 }
-
-void mulMq (hInt_t* a, const hInt_t* b, const hDim_t totm, const hByte_t logr, const hInt_t k, const hInt_t q) {
+/*
+void mulMq (hShort_t tupSize, hInt_t* a, const hInt_t* b, const hDim_t totm, const hByte_t logr, const hInt_t k, const hInt_t q) {
 #ifdef STATS
     mulCtr++;
     struct timespec s1,t1;
@@ -47,14 +50,14 @@ void mulMq (hInt_t* a, const hInt_t* b, const hDim_t totm, const hByte_t logr, c
     mulTime = tsAdd(mulTime, tsSubtract(t1,s1));
 #endif
 }
-
-void mulC (complex_t* a, complex_t* b, hDim_t totm) {
+*/
+void mulC (hShort_t tupSize, complex_t* a, complex_t* b, hDim_t totm) {
 #ifdef STATS
     mulCtr++;
     struct timespec s1,t1;
     clock_gettime(CLOCK_REALTIME, &s1);
 #endif
-    for(int i = 0; i < totm; i++)
+    for(int i = 0; i < totm*tupSize; i++)
     {
         CMPLX_IMUL(a[i],b[i]);
     }
@@ -65,34 +68,44 @@ void mulC (complex_t* a, complex_t* b, hDim_t totm) {
 }
 
 //a = zipWith (+) a b
-void addRq (hInt_t* a, const hInt_t* b, const hDim_t totm, const hInt_t q) {
+void addRq (hShort_t tupSize, hInt_t* a, const hInt_t* b, const hDim_t totm, const hInt_t* qs) {
 #ifdef STATS
     addCtr++;
     struct timespec s1,t1;
     clock_gettime(CLOCK_REALTIME, &s1);
 #endif
+/*
+need to check this code more carefully when tupSize > 1
 #ifdef CINTRIN
-    __m128i qs = _mm_set1_epi64x(q);
-    for(int i = 0; i < totm; i+=2) {
-        __m128i xs = _mm_load_si128((const __m128i*)(a+i));
-        __m128i ys = _mm_load_si128((const __m128i*)(b+i));
-        __m128i zs = _mm_add_epi64(xs,ys);
-        zs = _mm_rem_epi64(zs,qs);
-        _mm_store_si128((__m128i*)(a+i),zs);
+
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+        hInt_t q = qs[tupIdx];
+        __m128i qss = _mm_set1_epi64x(q);
+        for(int i = 0; i < totm; i+=2) {
+            __m128i xs = _mm_load_si128((const __m128i*)(a+(i*tupSize+tupIdx)));
+            __m128i ys = _mm_load_si128((const __m128i*)(b+(i*tupSize+tupIdx)));
+            __m128i zs = _mm_add_epi64(xs,ys);
+            zs = _mm_rem_epi64(zs,qss);
+            _mm_store_si128((__m128i*)(a+(i*tupSize+tupIdx)),zs);
+        }
     }
 #else
-    for(int i = 0; i < totm; i++) {
-        hInt_t temp = a[i]+b[i];
-        if (temp >= q) a[i]=temp-q;
-        else a[i] = temp;
+*/
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+        hInt_t q = qs[tupIdx];
+        for(int i = 0; i < totm; i++) {
+            hInt_t temp = a[i*tupSize+tupIdx]+b[i*tupSize+tupIdx];
+            if (temp >= q) a[i*tupSize+tupIdx]=temp-q;
+            else a[i*tupSize+tupIdx] = temp;
+        }
     }
-#endif
+//#endif
 #ifdef STATS
     clock_gettime(CLOCK_REALTIME, &t1);
     addTime = tsAdd(addTime, tsSubtract(t1,s1));
 #endif
 }
-
+/*
 void addMq (hInt_t* a, const hInt_t* b, const hDim_t totm, const hByte_t logr, const hInt_t k, const hInt_t q) {
 #ifdef STATS
     addCtr++;
@@ -111,15 +124,15 @@ void addMq (hInt_t* a, const hInt_t* b, const hDim_t totm, const hByte_t logr, c
     addTime = tsAdd(addTime, tsSubtract(t1,s1));
 #endif
 }
-
+*/
 //a = zipWith (+) a b
-void addR (hInt_t* a, hInt_t* b, hDim_t totm) {
+void addR (hShort_t tupSize, hInt_t* a, hInt_t* b, hDim_t totm) {
 #ifdef STATS
     addCtr++;
     struct timespec s1,t1;
     clock_gettime(CLOCK_REALTIME, &s1);
 #endif
-    for(int i = 0; i < totm; i++)    {
+    for(int i = 0; i < totm*tupSize; i++)    {
         a[i] += b[i];
     }
 #ifdef STATS
@@ -128,13 +141,13 @@ void addR (hInt_t* a, hInt_t* b, hDim_t totm) {
 #endif
 }
 
-void addC (complex_t* a, complex_t* b, hDim_t totm) {
+void addC (hShort_t tupSize, complex_t* a, complex_t* b, hDim_t totm) {
 #ifdef STATS
     addCtr++;
     struct timespec s1,t1;
     clock_gettime(CLOCK_REALTIME, &s1);
 #endif
-    for(int i = 0; i < totm; i++)
+    for(int i = 0; i < totm*tupSize; i++)
     {
         CMPLX_IADD(a[i],b[i]);
     }
@@ -144,13 +157,13 @@ void addC (complex_t* a, complex_t* b, hDim_t totm) {
 #endif
 }
 
-void addD (double* a, double* b, hDim_t totm) {
+void addD (hShort_t tupSize, double* a, double* b, hDim_t totm) {
 #ifdef STATS
     addCtr++;
     struct timespec s1,t1;
     clock_gettime(CLOCK_REALTIME, &s1);
 #endif
-    for(int i = 0; i < totm; i++)
+    for(int i = 0; i < totm*tupSize; i++)
     {
         a[i]+=b[i];
     }

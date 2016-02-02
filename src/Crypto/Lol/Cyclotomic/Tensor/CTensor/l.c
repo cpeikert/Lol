@@ -1,221 +1,237 @@
 #include "tensorTypes.h"
 
-void lpRq (hInt_t* y, hDim_t lts, hDim_t rts, hDim_t p, hInt_t q) {
-	hDim_t blockOffset;
-	hDim_t modOffset;
-	int i;
-	hDim_t tmp1 = rts*(p-1);
-	for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-		hDim_t tmp2 = blockOffset*tmp1;
-		for (modOffset = 0; modOffset < rts; ++modOffset) {
-			hDim_t idx = tmp2 + modOffset + rts;
-			for (i = 1; i < p-1; ++i) {
-        hInt_t temp = y[idx-rts] + y[idx];
-        if (temp >= q) y[idx]=temp-q;
-        else y[idx] = temp;
-				idx += rts;
-			}
-		}
-	}
+void lpRq (hInt_t* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p, hInt_t q) {
+  hDim_t blockOffset;
+  hDim_t modOffset;
+  int i;
+  hDim_t tmp1 = rts*(p-1);
+  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
+    hDim_t tmp2 = blockOffset*tmp1;
+    for (modOffset = 0; modOffset < rts; ++modOffset) {
+      hDim_t idx = tmp2 + modOffset + rts;
+      for (i = 1; i < p-1; ++i) {
+        hInt_t temp = y[(idx-rts)*tupSize] + y[idx*tupSize];
+        if (temp >= q) y[idx*tupSize]=temp-q;
+        else y[idx*tupSize] = temp;
+        idx += rts;
+      }
+    }
+  }
 }
 
-void lpR (hInt_t* y, hDim_t lts, hDim_t rts, hDim_t p) {
-	hDim_t blockOffset;
-	hDim_t modOffset;
-	int i;
+void lpR (hInt_t* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p) {
+  hDim_t blockOffset;
+  hDim_t modOffset;
+  int i;
 
-	hDim_t tmp1 = rts*(p-1);
-	for (blockOffset = 0; blockOffset < lts; ++blockOffset)	{
-		hDim_t tmp2 = blockOffset*tmp1;
-		for (modOffset = 0; modOffset < rts; ++modOffset) {
-			hDim_t idx = tmp2 + modOffset + rts;
-			for (i = 1; i < p-1; ++i) {
-				y[idx] += y[idx-rts];
-				idx += rts;
-			}
-		}
-	}
+  hDim_t tmp1 = rts*(p-1);
+  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
+    hDim_t tmp2 = blockOffset*tmp1;
+    for (modOffset = 0; modOffset < rts; ++modOffset) {
+      hDim_t idx = tmp2 + modOffset + rts;
+      for (i = 1; i < p-1; ++i) {
+        y[idx*tupSize] += y[(idx-rts)*tupSize];
+        idx += rts;
+      }
+    }
+  }
 }
 
-void lpDouble (double* y, hDim_t lts, hDim_t rts, hDim_t p) {
-	hDim_t blockOffset;
-	hDim_t modOffset;
-	int i;
+void lpDouble (double* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p) {
+  hDim_t blockOffset;
+  hDim_t modOffset;
+  int i;
 
-	hDim_t tmp1 = rts*(p-1);
-	for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-		hDim_t tmp2 = blockOffset*tmp1;
-		for (modOffset = 0; modOffset < rts; ++modOffset) {
-			hDim_t idx = tmp2 + modOffset + rts;
-			for (i = 1; i < p-1; ++i) {
-				y[idx] += y[idx-rts];
-				idx += rts;
-			}
-		}
-	}
+  hDim_t tmp1 = rts*(p-1);
+  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
+    hDim_t tmp2 = blockOffset*tmp1;
+    for (modOffset = 0; modOffset < rts; ++modOffset) {
+      hDim_t idx = tmp2 + modOffset + rts;
+      for (i = 1; i < p-1; ++i) {
+        y[idx*tupSize] += y[(idx-rts)*tupSize];
+        idx += rts;
+      }
+    }
+  }
 }
 
-void lpC (complex_t* y, hDim_t lts, hDim_t rts, hDim_t p) {
-	hDim_t blockOffset;
-	hDim_t modOffset;
-	int i;
+void lpC (complex_t* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p) {
+  hDim_t blockOffset;
+  hDim_t modOffset;
+  int i;
 
-	hDim_t tmp1 = rts*(p-1);
-	for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-		hDim_t tmp2 = blockOffset*tmp1;
-		for (modOffset = 0; modOffset < rts; ++modOffset) {
-			hDim_t idx = tmp2 + modOffset + rts;
-			for (i = 1; i < p-1; ++i) {
-				CMPLX_IADD (y[idx], y[idx-rts]);
-				idx += rts;
-			}
-		}
-	}
+  hDim_t tmp1 = rts*(p-1);
+  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
+    hDim_t tmp2 = blockOffset*tmp1;
+    for (modOffset = 0; modOffset < rts; ++modOffset) {
+      hDim_t idx = tmp2 + modOffset + rts;
+      for (i = 1; i < p-1; ++i) {
+        CMPLX_IADD (y[idx*tupSize], y[(idx-rts)*tupSize]);
+        idx += rts;
+      }
+    }
+  }
 }
 
-void lpInvRq (hInt_t* y, hDim_t lts, hDim_t rts, hDim_t p, hInt_t q) {
-	hDim_t blockOffset;
-	hDim_t modOffset;
-	int i;
+void lpInvRq (hInt_t* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p, hInt_t q) {
+  hDim_t blockOffset;
+  hDim_t modOffset;
+  int i;
 
-	hDim_t tmp1 = rts*(p-1);
-	for (blockOffset = 0; blockOffset < lts; ++blockOffset)	{
-		hDim_t tmp2 = blockOffset*tmp1;
-		for (modOffset = 0; modOffset < rts; ++ modOffset) {
-			hDim_t tensorOffset = tmp2 + modOffset;
-			hDim_t idx = tensorOffset + (p-2) * rts;
-			for (i = p-2; i != 0; --i) {
-        hInt_t temp = y[idx] - y[idx-rts] + q;
-        if (temp >= q) y[idx]=temp-q;
-        else y[idx] = temp;
-				idx -= rts;
-			}
-		}
-	}
+  hDim_t tmp1 = rts*(p-1);
+  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
+    hDim_t tmp2 = blockOffset*tmp1;
+    for (modOffset = 0; modOffset < rts; ++ modOffset) {
+      hDim_t tensorOffset = tmp2 + modOffset;
+      hDim_t idx = tensorOffset + (p-2) * rts;
+      for (i = p-2; i != 0; --i) {
+        hInt_t temp = y[idx*tupSize] - y[(idx-rts)*tupSize] + q;
+        if (temp >= q) y[idx*tupSize]=temp-q;
+        else y[idx*tupSize] = temp;
+        idx -= rts;
+      }
+    }
+  }
 }
 
-void lpInvR (hInt_t* y, hDim_t lts, hDim_t rts, hDim_t p) {
-	hDim_t blockOffset;
-	hDim_t modOffset;
-	int i;
+void lpInvR (hInt_t* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p) {
+  hDim_t blockOffset;
+  hDim_t modOffset;
+  int i;
 
-	hDim_t tmp1 = rts*(p-1);
-	for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-		hDim_t tmp2 = blockOffset*tmp1;
-		for (modOffset = 0; modOffset < rts; ++ modOffset) {
-			hDim_t tensorOffset = tmp2 + modOffset;
-			hDim_t idx = tensorOffset + (p-2) * rts;
-			for (i = p-2; i != 0; --i) {
-				y[idx] -= y[idx-rts] ;
-				idx -= rts;
-			}
-		}
-	}
+  hDim_t tmp1 = rts*(p-1);
+  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
+    hDim_t tmp2 = blockOffset*tmp1;
+    for (modOffset = 0; modOffset < rts; ++ modOffset) {
+      hDim_t tensorOffset = tmp2 + modOffset;
+      hDim_t idx = tensorOffset + (p-2) * rts;
+      for (i = p-2; i != 0; --i) {
+        y[idx*tupSize] -= y[(idx-rts)*tupSize] ;
+        idx -= rts;
+      }
+    }
+  }
 }
 
-void lpInvDouble (double* y, hDim_t lts, hDim_t rts, hDim_t p) {
-	hDim_t blockOffset;
-	hDim_t modOffset;
-	int i;
+void lpInvDouble (double* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p) {
+  hDim_t blockOffset;
+  hDim_t modOffset;
+  int i;
 
-	hDim_t tmp1 = rts*(p-1);
-	for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-		hDim_t tmp2 = blockOffset*tmp1;
-		for (modOffset = 0; modOffset < rts; ++ modOffset) {
-			hDim_t tensorOffset = tmp2 + modOffset;
-			hDim_t idx = tensorOffset + (p-2) * rts;
-			for (i = p-2; i != 0; --i) {
-				y[idx] -= y[idx-rts] ;
-				idx -= rts;
-			}
-		}
-	}
+  hDim_t tmp1 = rts*(p-1);
+  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
+    hDim_t tmp2 = blockOffset*tmp1;
+    for (modOffset = 0; modOffset < rts; ++ modOffset) {
+      hDim_t tensorOffset = tmp2 + modOffset;
+      hDim_t idx = tensorOffset + (p-2) * rts;
+      for (i = p-2; i != 0; --i) {
+        y[idx*tupSize] -= y[(idx-rts)*tupSize] ;
+        idx -= rts;
+      }
+    }
+  }
 }
 
-void lpInvC (complex_t* y, hDim_t lts, hDim_t rts, hDim_t p) {
-	hDim_t blockOffset;
-	hDim_t modOffset;
-	int i;
+void lpInvC (complex_t* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p) {
+  hDim_t blockOffset;
+  hDim_t modOffset;
+  int i;
 
-	hDim_t tmp1 = rts*(p-1);
-	for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-		hDim_t tmp2 = blockOffset*tmp1;
-		for (modOffset = 0; modOffset < rts; ++ modOffset) {
-			hDim_t tensorOffset = tmp2 + modOffset;
-			hDim_t idx = tensorOffset + (p-2) * rts;
-			for (i = p-2; i != 0; --i) {
-				CMPLX_ISUB (y[idx], y[idx-rts]);
-				idx -= rts;
-			}
-		}
-	}
+  hDim_t tmp1 = rts*(p-1);
+  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
+    hDim_t tmp2 = blockOffset*tmp1;
+    for (modOffset = 0; modOffset < rts; ++ modOffset) {
+      hDim_t tensorOffset = tmp2 + modOffset;
+      hDim_t idx = tensorOffset + (p-2) * rts;
+      for (i = p-2; i != 0; --i) {
+        CMPLX_ISUB (y[idx*tupSize], y[(idx-rts)*tupSize]);
+        idx -= rts;
+      }
+    }
+  }
 }
 
-void ppLRq (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q) {
+void ppLRq (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* qs) {
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
-	lpRq ((hInt_t*)y, lts*ipow(p,e-1), rts, p, q);
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+      lpRq (((hInt_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p, qs[tupIdx]);
+    }
 }
 
-void ppLR (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q) {
+void ppLR (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* qs) {
 #ifdef DEBUG_MODE
-	ASSERT (q==0);
+  ASSERT (q==0);
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
-	lpR ((hInt_t*)y, lts*ipow(p,e-1), rts, p);
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+      lpR (((hInt_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
+    }
 }
 
-void ppLDouble (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q) {
+void ppLDouble (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* qs) {
 #ifdef DEBUG_MODE
-	ASSERT (q==0);
+  ASSERT (q==0);
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
-	lpDouble ((double*)y, lts*ipow(p,e-1), rts, p);
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+      lpDouble (((double*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
+    }
 }
 
-void ppLC (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q) {
+void ppLC (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* qs) {
 #ifdef DEBUG_MODE
-	ASSERT (q==0);
+  ASSERT (q==0);
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
-	lpC ((complex_t*)y, lts*ipow(p,e-1), rts, p);
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+      lpC (((complex_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
+    }
 }
 
 
-void ppLInvRq (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q) {
+void ppLInvRq (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* qs) {
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
-	lpInvRq ((hInt_t*)y, lts*ipow(p,e-1), rts, p, q);
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+      lpInvRq (((hInt_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p, qs[tupIdx]);
+    }
 }
 
-void ppLInvR (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q) {
+void ppLInvR (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* qs) {
 #ifdef DEBUG_MODE
-	ASSERT (q==0);
+  ASSERT (q==0);
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
-	lpInvR ((hInt_t*)y, lts*ipow(p,e-1), rts, p);
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+      lpInvR (((hInt_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
+    }
 }
 
-void ppLInvDouble (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q) {
+void ppLInvDouble (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* qs) {
 #ifdef DEBUG_MODE
-	ASSERT (q==0);
+  ASSERT (q==0);
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
-	lpInvDouble ((double*)y, lts*ipow(p,e-1), rts, p);
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+      lpInvDouble (((double*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
+    }
 }
 
-void ppLInvC (void* y, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t q) {
+void ppLInvC (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* qs) {
 #ifdef DEBUG_MODE
-	ASSERT (q==0);
+  ASSERT (q==0);
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
-	lpInvC ((complex_t*)y, lts*ipow(p,e-1), rts, p);
+    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+      lpInvC (((complex_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
+    }
 }
 
 #ifdef STATS
@@ -239,7 +255,7 @@ struct timespec licTime = {0,0};
 #endif
 
 
-void tensorLRq (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q) {
+void tensorLRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs) {
 #ifdef STATS
     lrqCtr++;
     struct timespec s1,t1;
@@ -257,13 +273,13 @@ void tensorLRq (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE,
     }
     printf("]\n");
 #endif
-	tensorFuser (y, ppLRq, totm, peArr, sizeOfPE, q); // don't need to shift here
+  tensorFuser (y, tupSize, ppLRq, totm, peArr, sizeOfPE, qs); // don't need to shift here
 #ifdef DEBUG_MODE
-	for(i = 0; i < totm; i++) {
-	    if(y[i]<0) {
-	        printf("tensorLRq\n");
-	    }
-	}
+  for(i = 0; i < totm*tupSize; i++) {
+      if(y[i]<0) {
+          printf("tensorLRq\n");
+      }
+  }
 #endif
 #ifdef STATS
     clock_gettime(CLOCK_REALTIME, &t1);
@@ -271,7 +287,7 @@ void tensorLRq (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE,
 #endif
 }
 
-void tensorLR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+void tensorLR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     lrCtr++;
     struct timespec s1,t1;
@@ -289,14 +305,14 @@ void tensorLR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) 
     }
     printf("]\n");
 #endif
-	tensorFuser (y, ppLR, totm, peArr, sizeOfPE, 0);
+  tensorFuser (y, tupSize, ppLR, totm, peArr, sizeOfPE, (hInt_t*)0);
 #ifdef STATS
     clock_gettime(CLOCK_REALTIME, &t1);
     lrTime = tsAdd(lrTime, tsSubtract(t1,s1));
 #endif
 }
 
-void tensorLDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+void tensorLDouble (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     ldCtr++;
     struct timespec s1,t1;
@@ -314,14 +330,14 @@ void tensorLDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeO
     }
     printf("]\n");
 #endif
-	tensorFuser (y, ppLDouble, totm, peArr, sizeOfPE, 0);
+  tensorFuser (y, tupSize, ppLDouble, totm, peArr, sizeOfPE, (hInt_t*)0);
 #ifdef STATS
     clock_gettime(CLOCK_REALTIME, &t1);
     ldTime = tsAdd(ldTime, tsSubtract(t1,s1));
 #endif
 }
 
-void tensorLC (complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+void tensorLC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     lcCtr++;
     struct timespec s1,t1;
@@ -339,29 +355,29 @@ void tensorLC (complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfP
     }
     printf("]\n");
 #endif
-	tensorFuser (y, ppLC, totm, peArr, sizeOfPE, 0);
+  tensorFuser (y, tupSize, ppLC, totm, peArr, sizeOfPE, (hInt_t*)0);
 #ifdef STATS
     clock_gettime(CLOCK_REALTIME, &t1);
     lcTime = tsAdd(lcTime, tsSubtract(t1,s1));
 #endif
 }
 
-void tensorLInvRq (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q) {
+void tensorLInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs) {
 #ifdef STATS
     lirqCtr++;
     struct timespec s1,t1;
     clock_gettime(CLOCK_REALTIME, &s1);
 #endif
-	tensorFuser (y, ppLInvRq, totm, peArr, sizeOfPE, q);  // don't need to shift here
+  tensorFuser (y, tupSize, ppLInvRq, totm, peArr, sizeOfPE, qs);
 #ifdef DEBUG_MODE
-	hDim_t i;
-	for(i = 0; i < totm; i++)
-	{
-	    if(y[i]<0)
-	    {
-	        printf("tensorLInvRq\n");
-	    }
-	}
+  hDim_t i;
+  for(i = 0; i < totm*tupSize; i++)
+  {
+      if(y[i]<0)
+      {
+          printf("tensorLInvRq\n");
+      }
+  }
 #endif
 #ifdef STATS
     clock_gettime(CLOCK_REALTIME, &t1);
@@ -369,39 +385,39 @@ void tensorLInvRq (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOf
 #endif
 }
 
-void tensorLInvR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+void tensorLInvR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     lirCtr++;
     struct timespec s1,t1;
     clock_gettime(CLOCK_REALTIME, &s1);
 #endif
-	tensorFuser (y, ppLInvR, totm, peArr, sizeOfPE, 0);
+  tensorFuser (y, tupSize, ppLInvR, totm, peArr, sizeOfPE, (hInt_t*)0);
 #ifdef STATS
     clock_gettime(CLOCK_REALTIME, &t1);
     lirTime = tsAdd(lirTime, tsSubtract(t1,s1));
 #endif
 }
 
-void tensorLInvDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+void tensorLInvDouble (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     lidCtr++;
     struct timespec s1,t1;
     clock_gettime(CLOCK_REALTIME, &s1);
 #endif
-	tensorFuser (y, ppLInvDouble, totm, peArr, sizeOfPE, 0);
+  tensorFuser (y, tupSize, ppLInvDouble, totm, peArr, sizeOfPE, (hInt_t*)0);
 #ifdef STATS
     clock_gettime(CLOCK_REALTIME, &t1);
     lidTime = tsAdd(lidTime, tsSubtract(t1,s1));
 #endif
 }
 
-void tensorLInvC (complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+void tensorLInvC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     licCtr++;
     struct timespec s1,t1;
     clock_gettime(CLOCK_REALTIME, &s1);
 #endif
-	tensorFuser (y, ppLInvC, totm, peArr, sizeOfPE, 0);
+  tensorFuser (y, tupSize, ppLInvC, totm, peArr, sizeOfPE, (hInt_t*)0);
 #ifdef STATS
     clock_gettime(CLOCK_REALTIME, &t1);
     licTime = tsAdd(licTime, tsSubtract(t1,s1));

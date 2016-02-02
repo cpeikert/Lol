@@ -146,8 +146,8 @@ groupTMR :: (forall t m r . (TMRWrapCtx t m r)
              -> Proxy '(m,r) 
              -> Property) -> [Test]
 groupTMR f =
-  [testGroup "CT" $ groupMR (f (Proxy::Proxy CT)),
-   testGroup "RT" $ groupMR (f (Proxy::Proxy RT))]
+  [testGroup "CT" $ groupMR (f (Proxy::Proxy CT))]
+   --testGroup "RT" $ groupMR (f (Proxy::Proxy RT))]
 
 groupExtTests :: (forall t m r . (TMRWrapCtx t m r)
              => Proxy t
@@ -169,9 +169,16 @@ groupMR f = [testProperty "F7/29" $ f (Proxy::Proxy '(F7, Zq 29)),
              testProperty "F8/17" $ f (Proxy::Proxy '(F8, Zq 17)),
              testProperty "F21/8191" $ f (Proxy::Proxy '(F21, Zq 8191)),
              testProperty "F42/8191" $ f (Proxy::Proxy '(F42, Zq 8191)),
+             --testProperty "F42/Bad" $ f (Proxy::Proxy '(F42, (Zq 150, Zq 343))),
              testProperty "F42/ZQ1" $ f (Proxy::Proxy '(F42, ZQ1)),
+             testProperty "F2/ZQ2" $ f (Proxy::Proxy '(F2, ZQ2)),
+             testProperty "F3/ZQ2" $ f (Proxy::Proxy '(F3, ZQ2)),
+             testProperty "F7/ZQ2" $ f (Proxy::Proxy '(F7, ZQ2)),
+             testProperty "F6/ZQ2" $ f (Proxy::Proxy '(F6, ZQ2)),
+             testProperty "F42/SmoothZQ3" $ f (Proxy::Proxy '(F42, SmoothZQ3)),
              testProperty "F42/ZQ2" $ f (Proxy::Proxy '(F42, ZQ2)),
-             testProperty "F89/179" $ f (Proxy::Proxy '(F89, Zq 179))]
+             testProperty "F89/179" $ f (Proxy::Proxy '(F89, Zq 179))
+             ]
 
 -- we can't include a large modulus here because there is not enough
 -- precision in Doubles to handle the error

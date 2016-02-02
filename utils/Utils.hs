@@ -87,7 +87,7 @@ instance '[] `Satisfy` ctx  where
   runAll _ _ = []
 
 
-
+infixr 9 **
 data a ** b
 
 type family Zq (a :: k) :: * where
