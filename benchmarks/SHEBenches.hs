@@ -6,6 +6,7 @@ module SHEBenches (sheBenches) where
 
 import Utils
 import Harness.SHE
+import SHETests
 
 import Control.Applicative
 import Control.DeepSeq
@@ -19,10 +20,7 @@ import Crypto.Lol hiding (CT)
 import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 import Crypto.Lol.Applications.SymmSHE
 
-import Data.Singletons
 import Data.Promotion.Prelude.List
-import Data.Promotion.Prelude.Eq
-import Data.Singletons.TypeRepStar
 
 sheBenches :: (MonadRandom rnd) => rnd Benchmark
 sheBenches = bgroupRnd "SHE" [
@@ -31,7 +29,7 @@ sheBenches = bgroupRnd "SHE" [
    bgroupRnd "addPublic" $ benchCTFunc $ wrapPublic bench_addPublic,
    bgroupRnd "mulPublic" $ benchCTFunc $ wrapPublic bench_mulPublic,
    bgroupRnd "rescaleCT" $ benchZq'    $ wrapRescale bench_rescaleCT,
-   bgroupRnd "keySwitch" $ benchKSQ    $ wrapKSQ bench_keySwQ
+   bgroupRnd "keySwitch" $ benchKSQ (Proxy::Proxy KSQParams) $ wrapKSQ bench_keySwQ
    ]
 
 bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRandomGen gen)
@@ -60,8 +58,8 @@ bench_rescaleCT :: forall t m m' zp zq zq' .
 bench_rescaleCT _ = nf (rescaleLinearCT :: CT m zp (Cyc t m' zq') -> CT m zp (Cyc t m' zq))
 
 bench_keySwQ :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq))) 
-  => KSHint m zp t m' zq gad zq' -> CT m zp (Cyc t m' zq) -> NFValue
-bench_keySwQ (KeySwitch kswq) x = nf kswq $ x*x
+  => KSHint m zp t m' zq gad zq' -> CT m zp (Cyc t m' zq) -> NFValue' '(t,m,m',zp,zq,zq',gad)
+bench_keySwQ (KeySwitch kswq) x = nfv kswq $ x*x
 
 
 data CTCtxD
@@ -185,44 +183,24 @@ benchZq' g = runAll (Proxy::Proxy Zq'Params) $ hideZq' g
 
 
 
-
-
-
-
 type Gadgets = '[TrivGad, BaseBGad 2]
 type Tensors = '[CT.CT,RT]
-type MM'PQQ'Combos = 
-  '[ '(F4, F128, Zq 64, Zq 641, Zq (257 ** 641)),
-     '(F12, F32 * F9, Zq 64, Zq 1153, Zq (577 ** 1153)),
-     '(F12, F32 * F9, Zq 64, Zq (1153 ** 2017), Zq (577 ** 1153 ** 2017)),
-     '(F12, F32 * F9, Zq 64, Zq (1153 ** 2017 ** 2593), Zq (577 ** 1153 ** 2017 ** 2593)),
-     '(F12, F32 * F9, Zq 64, Zq (1153 ** 2017 ** 2593 ** 3169), Zq (577 ** 1153 ** 2017 ** 2593 ** 3169)),
-     '(F12, F32 * F9, Zq 64, Zq (1153 ** 2017 ** 2593 ** 3169 ** 3457), Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457)),
-     '(F12, F32 * F9, Zq 64, Zq (1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337), Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337)),
-     '(F12, F32 * F9, Zq 64, Zq (1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489), Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489)),
-     '(F12, F32 * F9 * F25, Zq 64, Zq 14401, Zq (14401 ** 21601))
+type MM'PQCombos = 
+  '[ '(F4, F128, Zq 64, Zq 257),
+     '(F4, F128, Zq 64, Zq (257 ** 641)),
+     '(F12, F32 * F9, Zq 64, Zq 577),
+     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153)),
+     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017)),
+     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017 ** 2593)),
+     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169)),
+     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457)),
+     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337)),
+     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489)),
+     '(F12, F32 * F9 * F25, Zq 64, Zq 14401),
+     '(F12, F32 * F9 * F25, Zq 64, Zq (14401 ** 21601))
     ]
 
-data RemoveZq' :: TyFun (Factored, Factored, *, *, *) (Factored, Factored, *, *) -> *
-type instance Apply RemoveZq' '(m,m',zp,zq,zq') = '(m,m',zp,zq)
-
-data Liftable :: TyFun (Factored, Factored, *, *) Bool -> *
-type instance Apply Liftable '(m,m',zp,zq) = Int64 :== (LiftOf zq)
-
-type CTParams = ( '(,) <$> Tensors) <*> (Nub (Map RemoveZq' MM'PQQ'Combos))
-type DecParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable (Map RemoveZq' MM'PQQ'Combos)))
-type Zq'Params = ( '(,) <$> Tensors) <*> MM'PQQ'Combos
+type CTParams  = ( '(,) <$> Tensors) <*> MM'PQCombos
+type DecParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable MM'PQCombos))
+type Zq'Params = ( '(,) <$> Tensors) <*> (Map AddZq (Filter NonLiftable MM'PQCombos))
 type KSQParams = ( '(,) <$> Gadgets) <*> Zq'Params
-
-
-
-
-
-wrapKSQ :: forall t m m' zp zq zq' gad rnd bnch res . (WrapCtx t m m' zp zq rnd bnch,
-  bnch ~ (KSHint m zp t m' zq gad zq' -> CT m zp (Cyc t m' zq) -> res), res ~ ResultOf bnch, WrapFunc res)
-  => bnch -> Proxy '(t,m,m',zp,zq,zq',gad) -> rnd (WrapOf res)
-wrapKSQ f _ = 
-  let p = Proxy::Proxy '(t,m,m',zp,zq)
-  in wrap (showArgs p) <$> genSHEArgs p f
-
-

@@ -11,6 +11,7 @@ import TestTypes hiding (Zq)
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
+import Control.Monad.State
 
 import Crypto.Lol.LatticePrelude hiding (lift)
 import Crypto.Lol.Cyclotomic.Cyc
@@ -36,6 +37,8 @@ import Test.QuickCheck.Monadic (monadicIO, assert)
 import Utils
 import Harness.SHE
 
+import Data.Promotion.Prelude.List
+
 v = 1 :: Double
 
 sheTests = 
@@ -53,35 +56,51 @@ sheTests =
    testGroup "KSQuad" $ groupCKS $ wrapKSQuad prop_ksQuad,
    testGroup "Embed" $ groupCTwEm $ wrapEm prop_ctembed,
    testGroup "Twace" $ groupCTwEm $ wrapTw prop_cttwace,-}
-   buildTest $ testGroup "keySwitch" <$> (sequence $ benchKSQ $ wrapKSQ prop_ksQuad2)
+   buildTest $ testGroup "keySwitch" <$> (sequence $ benchKSQ (Proxy::Proxy KSQParams) $ wrapKSQ prop_ksQuad2)
   ]
 
 
 
 
+  
 
 
 
+type Gadgets = '[TrivGad, BaseBGad 2]
+type Tensors = '[CT.CT,RT]
+type MM'PQCombos = 
+  '[ '(F1, F7, ZP2, ZQ2),
+     '(F2, F4, ZP8, SmoothZQ2),
+     '(F4, F12, ZP2, SmoothZQ2),
+     '(F8, F64, ZP2, SmoothZQ2),
+     '(F3, F27, ZP2, SmoothZQ2),
+     '(F2, F4, ZP8, SmoothZQ3),
+     '(F4, F12, ZP2, SmoothZQ3),
+     '(F8, F64, ZP2, SmoothZQ3),
+     '(F3, F27, ZP2, SmoothZQ3)]
 
-prop_ksQuad2 :: (Ring (CT m zp (Cyc t m' zq)), Eq (Cyc t m zp), Fact m, Fact m', CElt t zp, m `Divides` m',
-  Reduce z zq, Lift' zq, CElt t z, ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp)
-  => SK (Cyc t m' z) -> KSHint m zp t m' zq gad zq' -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> Bool
+type CTParams  = ( '(,) <$> Tensors) <*> MM'PQCombos
+type DecParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable MM'PQCombos))
+type Zq'Params = ( '(,) <$> Tensors) <*> (Map AddZq (Filter NonLiftable MM'PQCombos))
+type KSQParams = ( '(,) <$> Gadgets) <*> Zq'Params
+
+
+prop_ksQuad2 :: (Ring (CT m zp (Cyc t m' zq)),  CElt t zp, m `Divides` m',
+  Reduce z zq, Lift' zq, CElt t z, ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp, z ~ LiftOf zp)
+  => SK (Cyc t m' z) 
+     -> KSHint m zp t m' zq gad zq' 
+     -> CT m zp (Cyc t m' zq) 
+     -> CT m zp (Cyc t m' zq) 
+     -> TestBool '(t,m,m',zp,zq,zq',gad)
 prop_ksQuad2 sk (KeySwitch kswq) x1 x2 = 
   let x' = kswq $ x1*x2
       y1 = decryptUnrestricted sk x1
       y2 = decryptUnrestricted sk x2
       y = y1*y2
       x = decryptUnrestricted sk x'
-  in y == x
+  in test $ y == x
 
-f = wrapKSQ prop_ksQuad2
 
-wrapKSQ :: forall t m m' zp zq zq' gad rnd bnch res . (WrapCtx t m m' zp zq rnd bnch,
-  bnch ~ (SK (Cyc t m' (LiftOf zp)) -> KSHint m zp t m' zq gad zq' -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> res), res ~ ResultOf bnch, WrapFunc res)
-  => bnch -> Proxy '(t,m,m',zp,zq,zq',gad) -> rnd (WrapOf res)
-wrapKSQ f _ = 
-  let p = Proxy::Proxy '(t,m,m',zp,zq)
-  in wrap (showArgs p) <$> genSHEArgs p f
 {-
 prop_ksQuad :: forall m zp z c m' zq gad zq' deczq . (KsCtx m zp z c m' zq gad zq' deczq) 
   => Proxy '(m', zq, gad, zq', deczq) -> Cyc c m zp -> Cyc c m zp -> Property

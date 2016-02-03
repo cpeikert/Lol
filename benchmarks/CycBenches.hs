@@ -17,7 +17,7 @@ import Data.Promotion.Prelude.List
 import Data.Promotion.Prelude.Eq
 import Data.Singletons.TypeRepStar
 
-import Utils
+import Utils hiding (Liftable)
 
 cycBenches :: (MonadRandom rnd) => rnd Benchmark
 cycBenches = bgroupRnd "Cyc"
