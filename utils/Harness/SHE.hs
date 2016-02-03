@@ -5,15 +5,10 @@
 
 module Harness.SHE 
 (KSHint(..)
---,WrapCtx
 ,KSQCtxD
---,hideKSQ
 ,genSHEArgs
 
 ,wrap'
---,wrapKSQ
---,wrapRescale
---,wrapDec
 
 ,benchKSQ
 ,benchRescale
@@ -87,22 +82,14 @@ instance (params `Satisfy` KSQCtxD, KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))))
   data ArgsCtx KSQCtxD where
     KSQD :: (KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))))
       => Proxy '(t,m,m',zp,zq,zq',gad) -> ArgsCtx KSQCtxD
-
-  
-
   run _ f = (f $ KSQD (Proxy::Proxy '(t,m,m',zp,zq,zq',gad))) : (run (Proxy::Proxy params) f)
-
-hideKSQ :: (forall t m m' zp zq zq' gad . (KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))))
-  => Proxy '(t,m,m',zp,zq,zq',gad) -> rnd res) -> ArgsCtx KSQCtxD -> rnd res
-hideKSQ f (KSQD p) = f p
-
 
 benchKSQ :: (params `Satisfy` KSQCtxD) => 
   Proxy params ->
   (forall t m m' zp zq zq' gad . (KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))))
      => Proxy '(t,m,m',zp,zq,zq',gad) -> rnd res)
   -> [rnd res]
-benchKSQ p g = run p $ hideKSQ g
+benchKSQ p g = run p $ \(KSQD p) -> g p
 
 
 
@@ -123,16 +110,12 @@ instance (params `Satisfy` RescaleCtxD, RescaleCtx t m m' zp zq zq')
       => Proxy '(t,m,m',zp,zq,zq') -> ArgsCtx RescaleCtxD
   run _ f = (f $ RD (Proxy::Proxy '(t,m,m',zp,zq,zq'))) : (run (Proxy::Proxy params) f)
 
-hideRescale:: (forall t m m' zp zq zq' . (RescaleCtx t m m' zp zq zq') 
-  => Proxy '(t,m,m',zp,zq,zq') -> rnd res) -> ArgsCtx RescaleCtxD -> rnd res
-hideRescale f (RD p) = f p
-
 benchRescale :: (params `Satisfy` RescaleCtxD) =>
   Proxy params ->
   (forall t m m' zp zq zq' . (RescaleCtx t m m' zp zq zq') 
     => Proxy '(t,m,m',zp,zq,zq') -> rnd res)
   -> [rnd res]
-benchRescale p g = run p $ hideRescale g
+benchRescale p g = run p $ \(RD p) -> g p
 
 
 
@@ -153,16 +136,12 @@ instance (params `Satisfy` DecCtxD, DecCtx t m m' zp zq)
       => Proxy '(t,m,m',zp,zq) -> ArgsCtx DecCtxD
   run _ f = (f $ DecD (Proxy::Proxy '(t, m,m',zp,zq))) : (run (Proxy::Proxy params) f)
 
-hideDec:: (forall t m m' zp zq . (DecCtx t m m' zp zq) 
-  => Proxy '(t,m,m',zp,zq) -> rnd res) -> ArgsCtx DecCtxD -> rnd res
-hideDec f (DecD p) = f p
-
 benchDec :: (params `Satisfy` DecCtxD) =>
   Proxy params ->
   (forall t m m' zp zq . (DecCtx t m m' zp zq) 
         => Proxy '(t,m,m',zp,zq) -> rnd res)
      -> [rnd res]
-benchDec p g = run p $ hideDec g
+benchDec p g = run p $ \(DecD p) -> g p
 
 
 

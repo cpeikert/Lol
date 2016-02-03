@@ -78,14 +78,10 @@ instance (params `Satisfy` CTCtxD, CTCtx t m m' zp zq)
       => Proxy '(t,m,m',zp,zq) -> ArgsCtx CTCtxD
   run _ f = (f $ CTD (Proxy::Proxy '(t,m,m',zp,zq))) : (run (Proxy::Proxy params) f)
 
-hideCT :: (forall t m m' zp zq . (CTCtx t m m' zp zq) 
-  => Proxy '(t,m,m',zp,zq) -> rnd Benchmark) -> ArgsCtx CTCtxD -> rnd Benchmark
-hideCT f (CTD p) = f p
-
 benchCTFunc :: (forall t m m' zp zq . (CTCtx t m m' zp zq) 
   => Proxy '(t,m,m',zp,zq) -> rnd Benchmark)
     -> [rnd Benchmark]
-benchCTFunc g = run (Proxy::Proxy CTParams) $ hideCT g
+benchCTFunc g = run (Proxy::Proxy CTParams) $ \(CTD p) -> g p
 
 benchEnc :: (Monad rnd)
   => (forall t m m' zp zq gen . (CTCtx t m m' zp zq, CryptoRandomGen gen) 
