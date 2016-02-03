@@ -14,7 +14,6 @@ module Utils
 ,AddZq
 ,Liftable
 ,NonLiftable
-
 ,WrapFunc(..)
 
 ,Satisfy(..)
@@ -54,6 +53,8 @@ import Data.Singletons.TypeRepStar
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
+
+import GHC.Prim
 {-
 import Math.NumberTheory.Primes.Testing (isPrime)
 
@@ -113,17 +114,17 @@ instance {-# Overlappable #-} (Random a, MonadRandom rnd) => Generatable rnd a w
 
 
 
-class (params :: [k]) `Satisfy` ctx  where
-  data family ArgsCtx ctx
+class (params :: [k]) `Satisfy` (ctx :: *)  where
+  data ArgsCtx ctx
 
-  runAll :: Proxy params
+  run :: Proxy params
             -> (ArgsCtx ctx -> rnd res) 
             -> [rnd res]
 
 instance '[] `Satisfy` ctx  where
-  -- any implementation of ArgsCtx must conflict
+  -- any implementation of ArgsCtx would conflict with concrete instances, so skip
   
-  runAll _ _ = []
+  run _ _ = []
 
 class WrapFunc res where
   type WrapOf res
@@ -214,7 +215,7 @@ instance Show (BenchArgs CT) where
 instance Show (BenchArgs TrivGad) where
   show _ = "TrivGad"
 
-instance (Reflects b Integer) => Show (BenchArgs (BaseBGad b)) where
+instance (Reflects b Integer) => Show (BenchArgs (BaseBGad (b :: k))) where
   show _ = "Base" ++ (show $ (proxy value (Proxy::Proxy b) :: Integer)) ++ "Gad"
 
 -- for RNS-style moduli
@@ -242,3 +243,7 @@ instance (Show (BenchArgs a), Show (BenchArgs '(b,c,d,e)))
 instance (Show (BenchArgs a), Show (BenchArgs '(b,c,d,e,f))) 
   => Show (BenchArgs '(a,b,c,d,e,f)) where
   show _ = (show (BT :: BenchArgs a)) ++ " " ++ (show (BT :: BenchArgs '(b,c,d,e,f)))
+
+instance (Show (BenchArgs a), Show (BenchArgs '(b,c,d,e,f,g))) 
+  => Show (BenchArgs '(a,b,c,d,e,f,g)) where
+  show _ = (show (BT :: BenchArgs a)) ++ " " ++ (show (BT :: BenchArgs '(b,c,d,e,f,g)))

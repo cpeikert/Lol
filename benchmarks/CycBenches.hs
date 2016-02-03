@@ -123,7 +123,7 @@ type BasicCtx t m r = (CElt t r, Fact m, ShowArgs '(t,m,r))
 instance (params `Satisfy` BasicCtxD, BasicCtx t m r) => ( '(t, '(m,r)) ': params) `Satisfy` BasicCtxD where
   data ArgsCtx BasicCtxD where
     BC :: (BasicCtx t m r) => Proxy '(t,m,r) -> ArgsCtx BasicCtxD
-  runAll _ f = (f $ BC (Proxy::Proxy '(t,m,r))) : (runAll (Proxy::Proxy params) f)
+  run _ f = (f $ BC (Proxy::Proxy '(t,m,r))) : (run (Proxy::Proxy params) f)
 
 hideTMR :: (forall t m r . (BasicCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> ArgsCtx BasicCtxD -> rnd Benchmark
 hideTMR f (BC p) = f p
@@ -133,7 +133,7 @@ wrapCyc :: (Functor rnd, Benchmarkable rnd (Cyc t m r -> bnch), ResultOf bnch ~ 
 wrapCyc f p = bench (showArgs p) <$> genArgs f
 
 benchBasic :: (forall t m r . (BasicCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> [rnd Benchmark]
-benchBasic g = runAll (Proxy::Proxy AllParams) $ hideTMR g
+benchBasic g = run (Proxy::Proxy AllParams) $ hideTMR g
 
 
 data LiftCtxD
@@ -141,13 +141,13 @@ type LiftCtx t m r = (BasicCtx t m r, CElt t (LiftOf r), Lift' r, ToInteger (Lif
 instance (params `Satisfy` LiftCtxD, LiftCtx t m r) => ( '(t, '(m,r)) ': params) `Satisfy` LiftCtxD  where
   data ArgsCtx LiftCtxD where
     LC :: (LiftCtx t m r) => Proxy '(t,m,r) -> ArgsCtx LiftCtxD
-  runAll _ f = (f $ LC (Proxy::Proxy '(t,m,r))) : (runAll (Proxy::Proxy params) f)
+  run _ f = (f $ LC (Proxy::Proxy '(t,m,r))) : (run (Proxy::Proxy params) f)
 
 hideLift :: (forall t m r . (LiftCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> ArgsCtx LiftCtxD -> rnd Benchmark
 hideLift f (LC p) = f p
 
 benchLift :: (forall t m r . (LiftCtx t m r) => Proxy '(t,m,r) -> rnd Benchmark) -> [rnd Benchmark]
-benchLift g = runAll (Proxy::Proxy LiftParams) $ hideLift g
+benchLift g = run (Proxy::Proxy LiftParams) $ hideLift g
 
 wrapError ::(LiftCtx t m r, Monad rnd, CryptoRandomGen gen)
   => (Proxy gen -> Proxy (t m r) -> NFValue)
@@ -168,7 +168,7 @@ type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, ShowArgs '(t,m,m',r))
 instance (params `Satisfy` TwoIdxCtxD, TwoIdxCtx t m m' r) => ( '(t, '(m,m',r)) ': params) `Satisfy` TwoIdxCtxD where
   data ArgsCtx TwoIdxCtxD where
     TI :: (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> ArgsCtx TwoIdxCtxD
-  runAll _ f = (f $ TI (Proxy::Proxy '(t,m,m',r))) : (runAll (Proxy::Proxy params) f)
+  run _ f = (f $ TI (Proxy::Proxy '(t,m,m',r))) : (run (Proxy::Proxy params) f)
 
 hideTMM'R :: (forall t m m' r . (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> rnd Benchmark) -> ArgsCtx TwoIdxCtxD -> rnd Benchmark
 hideTMM'R f (TI p) = f p
@@ -182,4 +182,4 @@ wrapEmbed :: (Fact m', Functor rnd, Benchmarkable rnd (Cyc t m r -> NFValue), Sh
 wrapEmbed f p = bench (showArgs p) <$> genArgs (f Proxy)
 
 benchTwoIdx :: (forall t m m' r . (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> rnd Benchmark) -> [rnd Benchmark]
-benchTwoIdx f = runAll (Proxy::Proxy (( '(,) <$> Tensors) <*> MM'RCombos)) $ hideTMM'R f
+benchTwoIdx f = run (Proxy::Proxy (( '(,) <$> Tensors) <*> MM'RCombos)) $ hideTMM'R f
