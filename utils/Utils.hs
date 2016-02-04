@@ -9,7 +9,7 @@ module Utils
 ,Benchmarkable(..)
 ,Generatable(..)
 ,NFValue
-,NFValue'
+,NFValue'(..)
 ,ResultOf
 ,AddZq
 ,Liftable
@@ -200,6 +200,9 @@ showArgs _ = show (BT :: BenchArgs a)
 -- a wrapper type for printing test/benchmark names
 data BenchArgs (a :: k) = BT
 
+instance Show (BenchArgs HashDRBG) where
+  show _ = "HashDRBG"
+
 instance (Fact m) => Show (BenchArgs m) where
   show _ = "F" ++ (show $ proxy valueFact (Proxy::Proxy m))
 
@@ -211,6 +214,9 @@ instance Show (BenchArgs RT) where
 
 instance Show (BenchArgs CT) where
   show _ = "CT"
+
+instance Show (BenchArgs Int64) where
+  show _ = "Int64"
 
 instance Show (BenchArgs TrivGad) where
   show _ = "TrivGad"

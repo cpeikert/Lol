@@ -24,33 +24,35 @@ import Data.Promotion.Prelude.List
 
 sheBenches :: (MonadRandom rnd) => rnd Benchmark
 sheBenches = bgroupRnd "SHE" [
-   {-bgroupRnd "encrypt"   $ benchEnc    $ wrapEnc bench_enc,
-   bgroupRnd "*"         $ benchCTFunc $ wrapMul bench_mul,
-   bgroupRnd "addPublic" $ benchCTFunc $ wrapPublic bench_addPublic,
-   bgroupRnd "mulPublic" $ benchCTFunc $ wrapPublic bench_mulPublic,-}
+   bgroupRnd "encrypt"   $ benchEnc (Proxy::Proxy EncParams) $ wrap' bench_enc,
+   bgroupRnd "*"         $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' bench_mul,
+   bgroupRnd "addPublic" $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' bench_addPublic,
+   bgroupRnd "mulPublic" $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' bench_mulPublic,
+   bgroupRnd "dec"       $ benchDec (Proxy::Proxy DecParams) $ wrap' bench_dec,
    bgroupRnd "rescaleCT" $ benchRescale (Proxy::Proxy RescaleParams) $ wrap' bench_rescaleCT,
    bgroupRnd "keySwitch" $ benchKSQ (Proxy::Proxy KSQParams) $ wrap' bench_keySwQ
    ]
 
-bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRandomGen gen)
-  => Proxy gen -> Proxy zq -> SK (Cyc t m' z) -> PT (Cyc t m zp) -> NFValue
-bench_enc _ _ sk pt = nfIO $ do
+bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRandomGen gen, z ~ LiftOf zp)
+  => SK (Cyc t m' z) -> PT (Cyc t m zp) -> NFValue' '(t,m,m',zp,zq,gen)
+bench_enc sk pt = NFV $ nfIO $ do
   gen <- newGenIO
   return $ evalRand (encrypt sk pt :: Rand (CryptoRand gen) (CT m zp (Cyc t m' zq))) gen
 
 bench_mul :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq)))
-  => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> NFValue
-bench_mul a = nf (*a)
+  => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> NFValue' '(t,m,m',zp,zq)
+bench_mul a = nfv (*a)
 
-bench_addPublic :: (AddPublicCtx t m m' zp zq) => Cyc t m zp -> CT m zp (Cyc t m' zq) -> NFValue
-bench_addPublic a ct = nf (addPublic a) ct
+bench_addPublic :: (AddPublicCtx t m m' zp zq) => Cyc t m zp -> CT m zp (Cyc t m' zq) -> NFValue' '(t,m,m',zp,zq)
+bench_addPublic a ct = nfv (addPublic a) ct
 
-bench_mulPublic :: (MulPublicCtx t m m' zp zq) => Cyc t m zp -> CT m zp (Cyc t m' zq) -> NFValue
-bench_mulPublic a ct = nf (mulPublic a) ct
+bench_mulPublic :: (MulPublicCtx t m m' zp zq) => Cyc t m zp -> CT m zp (Cyc t m' zq) -> NFValue' '(t,m,m',zp,zq)
+bench_mulPublic a ct = nfv (mulPublic a) ct
 
 -- requires zq to be Liftable
-bench_dec :: (DecryptCtx t m m' z zp zq) => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> NFValue
-bench_dec sk ct = nf (decrypt sk) ct
+bench_dec :: (DecryptCtx t m m' z zp zq, z ~ LiftOf zp) 
+  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> NFValue' '(t,m,m',zp,zq)
+bench_dec sk ct = nfv (decrypt sk) ct
 
 bench_rescaleCT :: forall t m m' zp zq zq' . 
   (RescaleCyc (Cyc t) zq' zq, ToSDCtx t m' zp zq', NFData (CT m zp (Cyc t m' zq)))
@@ -62,51 +64,7 @@ bench_keySwQ :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq)))
 bench_keySwQ (KeySwitch kswq) x = nfv kswq $ x*x
 
 
-data CTCtxD
--- union of compatible constraints in benchmarks
-type CTCtx t m m' zp zq = 
-  (EncryptCtx t m m' (LiftOf zp) zp zq,
-   Ring (CT m zp (Cyc t m' zq)),
-   NFData (CT m zp (Cyc t m' zq)),
-   AddPublicCtx t m m' zp zq,
-   MulPublicCtx t m m' zp zq,
-   ShowArgs '(t,m,m',zp,zq))
-instance (params `Satisfy` CTCtxD, CTCtx t m m' zp zq) 
-  => ( '(t, '(m,m',zp,zq)) ': params) `Satisfy` CTCtxD where
-  data ArgsCtx CTCtxD where
-    CTD :: (CTCtx t m m' zp zq) 
-      => Proxy '(t,m,m',zp,zq) -> ArgsCtx CTCtxD
-  run _ f = (f $ CTD (Proxy::Proxy '(t,m,m',zp,zq))) : (run (Proxy::Proxy params) f)
-
-benchCTFunc :: (forall t m m' zp zq . (CTCtx t m m' zp zq) 
-  => Proxy '(t,m,m',zp,zq) -> rnd Benchmark)
-    -> [rnd Benchmark]
-benchCTFunc g = run (Proxy::Proxy CTParams) $ \(CTD p) -> g p
-
-benchEnc :: (Monad rnd)
-  => (forall t m m' zp zq gen . (CTCtx t m m' zp zq, CryptoRandomGen gen) 
-        => Proxy gen -> Proxy '(t,m,m',zp,zq) -> rnd Benchmark)
-     -> [rnd Benchmark]
-benchEnc g = [
-  bgroupRnd "HashDRBG" $ benchCTFunc $ g (Proxy::Proxy HashDRBG),
-  bgroupRnd "SysRand"  $ benchCTFunc $ g (Proxy::Proxy SystemRandom)]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+type Gens    = '[HashDRBG]
 type Gadgets = '[TrivGad, BaseBGad 2]
 type Tensors = '[CT.CT,RT]
 type MM'PQCombos = 
@@ -128,3 +86,4 @@ type CTParams  = ( '(,) <$> Tensors) <*> MM'PQCombos
 type DecParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable MM'PQCombos))
 type RescaleParams = ( '(,) <$> Tensors) <*> (Map AddZq (Filter NonLiftable MM'PQCombos))
 type KSQParams = ( '(,) <$> Gadgets) <*> RescaleParams
+type EncParams = ( '(,) <$> Gens) <*> CTParams

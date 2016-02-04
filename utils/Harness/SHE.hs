@@ -5,14 +5,14 @@
 
 module Harness.SHE 
 (KSHint(..)
-,KSQCtxD
 ,genSHEArgs
-
 ,wrap'
 
 ,benchKSQ
 ,benchRescale
 ,benchDec
+,benchCTFunc
+,benchEnc
 )where
 
 import Utils
@@ -31,6 +31,8 @@ import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck
 
 import GHC.Prim
+import Data.Constraint
+import Crypto.Random.DRBG
 
 
 
@@ -55,11 +57,53 @@ wrap' f p = wrap (showArgs p) <$> genSHEArgs (Proxy::Proxy (SKOf a)) f
 
 
 
+data DecCtxD
+type DecCtx t m m' zp zq = 
+  (EncryptCtx t m m' (LiftOf zp) zp zq,
+   -- ^ these provide the context to generate the parameters
+   DecryptCtx t m m' (LiftOf zp) zp zq,
+   ShowArgs '(t,m,m',zp,zq))
+instance (params `Satisfy` DecCtxD, DecCtx t m m' zp zq)
+  => ( '(t, '(m,m',zp,zq)) ': params) `Satisfy` DecCtxD where
+  data ArgsCtx DecCtxD where
+    DecD :: (DecCtx t m m' zp zq) 
+      => Proxy '(t,m,m',zp,zq) -> ArgsCtx DecCtxD
+  run _ f = (f $ DecD (Proxy::Proxy '(t,m,m',zp,zq))) : (run (Proxy::Proxy params) f)
+
+benchDec :: (params `Satisfy` DecCtxD) =>
+  Proxy params ->
+  (forall t m m' zp zq . (DecCtx t m m' zp zq) 
+        => Proxy '(t,m,m',zp,zq) -> rnd res)
+     -> [rnd res]
+benchDec params g = run params $ \(DecD p) -> g p
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 -- allowed args: CT, KSHint, SK
 -- context for (*), (==), decryptUnrestricted
 data KSQCtxD
-
-
 -- it'd be nice to make this associated to `Satsify`,
 -- but we have to use a *ton* of kind signatures if we do
 type family KSQCtx a where
@@ -89,10 +133,47 @@ benchKSQ :: (params `Satisfy` KSQCtxD) =>
   (forall t m m' zp zq zq' gad . (KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))))
      => Proxy '(t,m,m',zp,zq,zq',gad) -> rnd res)
   -> [rnd res]
-benchKSQ p g = run p $ \(KSQD p) -> g p
+benchKSQ params g = run params $ \(KSQD p) -> g p
 
+{-
+type Proxy' (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (zp :: *) (zq :: *) (zq' :: *) (gad :: *) = Proxy '(t,m,m',zp,zq,zq',gad)
+-- allowed args: CT, KSHint, SK
+-- context for (*), (==), decryptUnrestricted
+data KSQCtxD
+-- it'd be nice to make this associated to `Satsify`,
+-- but we have to use a *ton* of kind signatures if we do
+type family Ctx ctx (a :: k) :: Constraint
 
+type instance Ctx KSQCtxD '(gad, '(t, '(m,m',zp,zq,zq'))) = 
+    (EncryptCtx t m m' (LiftOf zp) zp zq,
+     KeySwitchCtx gad t m' zp zq zq',
+     KSHintCtx gad t m' (LiftOf zp) zq',
+     -- ^ these provide the context to generate the parameters
+     Ring (CT m zp (Cyc t m' zq)), 
+     Eq (Cyc t m zp), 
+     Fact m, Fact m', CElt t zp, m `Divides` m',
+     Reduce (LiftOf zp) zq, Lift' zq, CElt t (LiftOf zp), ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp,
+     -- ^ these provide the context for tests
+     NFData (CT m zp (Cyc t m' zq)),
+     ShowArgs '(t,m,m',zp,zq,zq',gad))
+     -- ^ these provide the context for benchmarks
 
+data instance ArgsCtx ctx where
+    KSQD :: (Ctx ctx a)
+      => Proxy a -> ArgsCtx ctx
+
+instance (params `Satisfy` ctx, Ctx ctx a)
+  => ( a ': params) `Satisfy` ctx where
+  
+  run _ f = (f $ KSQD (Proxy::Proxy a)) : (run (Proxy::Proxy params) f)
+
+benchKSQ :: (params `Satisfy` KSQCtxD) => 
+  Proxy params ->
+  (forall t m m' zp zq zq' gad . (Ctx KSQCtxD '(gad, '(t, '(m,m',zp,zq,zq'))))
+     => Proxy' t m m' zp zq zq' gad -> rnd res)
+  -> [rnd res]
+benchKSQ params g = run params $ \(KSQD p :: ArgsCtx KSQCtxD) -> g p
+-}
 
 
 
@@ -115,7 +196,7 @@ benchRescale :: (params `Satisfy` RescaleCtxD) =>
   (forall t m m' zp zq zq' . (RescaleCtx t m m' zp zq zq') 
     => Proxy '(t,m,m',zp,zq,zq') -> rnd res)
   -> [rnd res]
-benchRescale p g = run p $ \(RD p) -> g p
+benchRescale params g = run params $ \(RD p) -> g p
 
 
 
@@ -125,26 +206,64 @@ benchRescale p g = run p $ \(RD p) -> g p
 
 
 
-data DecCtxD
-type DecCtx t m m' zp zq = 
-  (DecryptCtx t m m' (LiftOf zp) zp zq,
+
+
+
+
+
+
+data CTCtxD
+-- union of compatible constraints in benchmarks
+type CTCtx t m m' zp zq = 
+  (EncryptCtx t m m' (LiftOf zp) zp zq,
+   Ring (CT m zp (Cyc t m' zq)),
+   NFData (CT m zp (Cyc t m' zq)),
+   AddPublicCtx t m m' zp zq,
+   MulPublicCtx t m m' zp zq,
    ShowArgs '(t,m,m',zp,zq))
-instance (params `Satisfy` DecCtxD, DecCtx t m m' zp zq) 
-  => ( '(t, '(m,m',zp,zq)) ': params) `Satisfy` DecCtxD where
-  data ArgsCtx DecCtxD where
-    DecD :: (DecCtx t m m' zp zq) 
-      => Proxy '(t,m,m',zp,zq) -> ArgsCtx DecCtxD
-  run _ f = (f $ DecD (Proxy::Proxy '(t, m,m',zp,zq))) : (run (Proxy::Proxy params) f)
+instance (params `Satisfy` CTCtxD, CTCtx t m m' zp zq) 
+  => ( '(t, '(m,m',zp,zq)) ': params) `Satisfy` CTCtxD where
+  data ArgsCtx CTCtxD where
+    CTD :: (CTCtx t m m' zp zq) 
+      => Proxy '(t,m,m',zp,zq) -> ArgsCtx CTCtxD
+  run _ f = (f $ CTD (Proxy::Proxy '(t,m,m',zp,zq))) : (run (Proxy::Proxy params) f)
 
-benchDec :: (params `Satisfy` DecCtxD) =>
-  Proxy params ->
-  (forall t m m' zp zq . (DecCtx t m m' zp zq) 
-        => Proxy '(t,m,m',zp,zq) -> rnd res)
-     -> [rnd res]
-benchDec p g = run p $ \(DecD p) -> g p
+benchCTFunc :: (params `Satisfy` CTCtxD) =>
+  Proxy params 
+  -> (forall t m m' zp zq . (CTCtx t m m' zp zq) 
+      => Proxy '(t,m,m',zp,zq) -> rnd res)
+  -> [rnd res]
+benchCTFunc params g = run params $ \(CTD p) -> g p
 
 
 
+
+
+
+
+
+data EncCtxD
+type EncCtx t m m' zp zq gen = 
+  (EncryptCtx t m m' (LiftOf zp) zp zq,
+   Ring (CT m zp (Cyc t m' zq)),
+   NFData (CT m zp (Cyc t m' zq)),
+   AddPublicCtx t m m' zp zq,
+   MulPublicCtx t m m' zp zq,
+   ShowArgs '(t,m,m',zp,zq,gen),
+   CryptoRandomGen gen)
+instance (params `Satisfy` EncCtxD, EncCtx t m m' zp zq gen) 
+  => ( '(gen, '(t, '(m,m',zp,zq))) ': params) `Satisfy` EncCtxD where
+  data ArgsCtx EncCtxD where
+    EncD :: (EncCtx t m m' zp zq gen) 
+      => Proxy '(t,m,m',zp,zq,gen) -> ArgsCtx EncCtxD
+  run _ f = (f $ EncD (Proxy::Proxy '(t,m,m',zp,zq,gen))) : (run (Proxy::Proxy params) f)
+
+benchEnc :: (params `Satisfy` EncCtxD) =>
+  Proxy params
+  -> (forall t m m' zp zq gen . (EncCtx t m m' zp zq gen) 
+      => Proxy '(t,m,m',zp,zq,gen) -> rnd res)
+  -> [rnd res]
+benchEnc params g = run params $ \(EncD p) -> g p
 
 
 
