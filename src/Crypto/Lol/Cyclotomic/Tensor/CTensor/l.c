@@ -154,6 +154,7 @@ void lpInvC (complex_t* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p) {
 void ppLRq (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* qs) {
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
+    if(p == 2) return;
     for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
       lpRq (((hInt_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p, qs[tupIdx]);
     }
@@ -165,6 +166,7 @@ void ppLR (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, 
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
+    if(p == 2) return;
     for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
       lpR (((hInt_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
     }
@@ -176,6 +178,7 @@ void ppLDouble (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t 
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
+    if(p == 2) return;
     for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
       lpDouble (((double*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
     }
@@ -187,6 +190,7 @@ void ppLC (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, 
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
+    if(p == 2) return;
     for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
       lpC (((complex_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
     }
@@ -196,6 +200,7 @@ void ppLC (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, 
 void ppLInvRq (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* qs) {
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
+    if(p == 2) return;
     for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
       lpInvRq (((hInt_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p, qs[tupIdx]);
     }
@@ -207,6 +212,7 @@ void ppLInvR (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rt
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
+    if(p == 2) return;
     for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
       lpInvR (((hInt_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
     }
@@ -218,6 +224,7 @@ void ppLInvDouble (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
+    if(p == 2) return;
     for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
       lpInvDouble (((double*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
     }
@@ -229,6 +236,7 @@ void ppLInvC (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rt
 #endif
     hDim_t p = pe.prime;
     hShort_t e = pe.exponent;
+    if(p == 2) return;
     for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
       lpInvC (((complex_t*)y)+tupIdx, tupSize, lts*ipow(p,e-1), rts, p);
     }
