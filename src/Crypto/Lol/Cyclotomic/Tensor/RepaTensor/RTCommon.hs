@@ -20,6 +20,10 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon
 
 import Crypto.Lol.LatticePrelude as LP hiding ((!!))
 
+import Algebra.Additive as Additive (C)
+import Algebra.Ring as Ring (C)
+import Algebra.ZeroTestable as ZeroTestable (C)
+
 import Control.DeepSeq              (NFData (..))
 import Control.Monad.Identity
 import Control.Monad.Random
@@ -58,6 +62,22 @@ replM :: forall m r mon . (Fact m, Unbox r, Monad mon)
          => mon r -> mon (Arr m r)
 replM = let n = proxy totientFact (Proxy::Proxy m)
         in liftM (Arr . fromUnboxed (Z:.n)) . U.replicateM n
+
+instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (Arr m r) where
+  zero = repl zero
+  (Arr a) + (Arr b) = Arr $ force $ R.zipWith (+) a b
+  negate (Arr a) = Arr $ force $ R.map negate a
+
+instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (Arr m r) where
+  one = repl one
+  (Arr a) * (Arr b) = Arr $ force $ R.zipWith (*) a b
+  fromInteger = repl . fromInteger
+
+instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (Arr m r) where
+  -- not using 'zero' to avoid Additive r constraint
+  isZero (Arr a) 
+      = isZero $ foldAllS (\ x y -> if isZero x then y else x) (a R.! (Z:.0)) a
+
 
 instance (Unbox r) => NFData (Array U DIM1 r) where
   -- EAC: Repa doesn't define any NFData instances,

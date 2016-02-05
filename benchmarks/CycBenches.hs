@@ -22,8 +22,8 @@ import Utils
 cycBenches :: (MonadRandom rnd) => rnd Benchmark
 cycBenches = bgroupRnd "Cyc"
   [--bgroupRnd "CRT + *" $ benchBasic $ wrapCyc bench_mulPow,
-   --bgroupRnd "*"       $ benchBasic $ wrapCyc bench_mul,
-   bgroupRnd "crt"     $ benchBasic $ wrapCyc bench_crt
+   bgroupRnd "*"       $ benchBasic $ wrapCyc bench_mul
+   --bgroupRnd "crt"     $ benchBasic $ wrapCyc bench_crt,
    --bgroupRnd "crtInv"  $ benchBasic $ wrapCyc bench_crtInv,
    --bgroupRnd "l"       $ benchBasic $ wrapCyc bench_l,
    --bgroupRnd "*g Pow"  $ benchBasic $ wrapCyc bench_mulgPow,
@@ -52,7 +52,6 @@ bench_mul a b =
   in nf (a' *) b'
 
 -- convert input from Pow basis to CRT basis
-{-# SPECIALIZE bench_crt :: Cyc RT F288 (ZqBasic 577 Int64) -> NFValue #-}
 bench_crt :: (BasicCtx t m r) => Cyc t m r -> NFValue
 bench_crt x = let y = advisePow x in nf adviseCRT y
 

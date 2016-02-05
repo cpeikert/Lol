@@ -172,23 +172,22 @@ instance Fact m => Traversable (RT m) where
 -- convert toRT.
 
 instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (RT m r) where
-  (RT a) + (RT b) = RT $ coerce (\x -> force . RT.zipWith (+) x) a b
+  (RT a) + (RT b) = RT $ a + b
   a + b = toRT a + toRT b
 
-  negate (RT a) = RT $ (coerce $ force . RT.map negate) a
+  negate (RT a) = RT $ negate a
   negate a = negate $ toRT a
 
-  zero = RT $ repl zero
+  zero = RT zero
 
 instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (RT m r) where
-  (RT a) * (RT b) = RT $ coerce (\x -> force . RT.zipWith (*) x) a b
-  a * b = (toRT a) * (toRT b)
+  (RT a) * (RT b) = RT $ a * b
+  a * b = toRT a * toRT b
 
-  fromInteger = RT . repl . fromInteger
+  fromInteger = RT . fromInteger
 
 instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (RT m r) where
-  -- not using 'zero' to avoid Additive r constraint
-  isZero (RT (Arr a)) = isZero $ foldAllS (\ x y -> if isZero x then y else x) (a RT.! (Z:.0)) a
+  isZero (RT a) = isZero a
   isZero (ZV v) = isZero v
 
 ---------- Miscellaneous instances ----------
