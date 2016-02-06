@@ -35,6 +35,9 @@ import Data.Traversable     as T
 import Data.Vector.Unboxed  as U hiding (force)
 import Test.QuickCheck
 
+-- just for specialization
+import Crypto.Lol.Types.ZqBasic
+
 -- | An implementation of 'Tensor' backed by repa.
 data RT (m :: Factored) r where
   RT :: Unbox r => !(Arr m r) -> RT m r
@@ -93,7 +96,6 @@ instance Tensor RT where
   divGPow = wrapM fGInvPow
   divGDec = wrapM fGInvDec
 
-  {-# INLINABLE crtFuncs #-}
   crtFuncs = (,,,,) <$>
              (liftM (RT .) scalarCRT') <*>
              (wrap <$> mulGCRT') <*>
@@ -181,8 +183,11 @@ instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (RT m r) where
   zero = RT zero
 
 instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (RT m r) where
+  {-# SPECIALIZE instance Ring.C (RT F288 (ZqBasic 577 Int64)) #-}
+
   (RT a) * (RT b) = RT $ a * b
   a * b = toRT a * toRT b
+  {-# INLINABLE (*) #-}
 
   fromInteger = RT . fromInteger
 
@@ -191,9 +196,6 @@ instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (RT m r) whe
   isZero (ZV v) = isZero v
 
 ---------- Miscellaneous instances ----------
-
--- CJP: shouldn't these instances be defined in RTCommon, where the
--- Arr data type is defined?  Here they are orphans.
 
 instance (Unbox r, Random (Arr m r)) => Random (RT m r) where
   random = runRand $ liftM RT (liftRand random)

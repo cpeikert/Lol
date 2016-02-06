@@ -21,6 +21,11 @@ import Utils
 
 cycBenches :: (MonadRandom rnd) => rnd Benchmark
 cycBenches = bgroupRnd "Cyc"
+{-
+             [
+              wrapCyc bench_mul $ (Proxy::Proxy '(RT,F288,Zq 577)) 
+             ]
+-}
   [--bgroupRnd "CRT + *" $ benchBasic $ wrapCyc bench_mulPow,
    bgroupRnd "*"       $ benchBasic $ wrapCyc bench_mul
    --bgroupRnd "crt"     $ benchBasic $ wrapCyc bench_crt,
@@ -50,6 +55,7 @@ bench_mul a b =
   let a' = adviseCRT a
       b' = adviseCRT b
   in nf (a' *) b'
+{-# SPECIALIZE bench_mul :: Cyc RT F288 (ZqBasic 577 Int64) -> Cyc RT F288 (ZqBasic 577 Int64) -> NFValue #-}
 
 -- convert input from Pow basis to CRT basis
 bench_crt :: (BasicCtx t m r) => Cyc t m r -> NFValue
@@ -105,9 +111,9 @@ type MM'RCombos =
   '[ --'(F4, F128, Zq 257),
      --'(F1, PToF Prime281, Zq 563),
      --'(F12, F32 * F9, Zq 512),
-     '(F12, F32 * F9, Zq 577),
-     '(F12, F32 * F9, Zq (577 ** 1153)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017))
+     '(F12, F32 * F9, Zq 577)
+     --'(F12, F32 * F9, Zq (577 ** 1153)),
+     --'(F12, F32 * F9, Zq (577 ** 1153 ** 2017))
      --'(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593))
      --'(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169)),
      --'(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457)),

@@ -37,6 +37,9 @@ import Data.Singletons.Prelude      hiding ((:.))
 import qualified Data.Vector.Unboxed as U
 import Test.QuickCheck
 
+-- just for specialization
+import Crypto.Lol.Types.ZqBasic
+
 -- always unboxed (manifest); intermediate calculations can use
 -- delayed arrays
 
@@ -69,8 +72,11 @@ instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (Arr m r) where
   negate (Arr a) = Arr $ force $ R.map negate a
 
 instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (Arr m r) where
+  {-# SPECIALIZE instance Ring.C (Arr F288 (ZqBasic 577 Int64)) #-}
+
   one = repl one
   (Arr a) * (Arr b) = Arr $ force $ R.zipWith (*) a b
+  {-# NOINLINE (*) #-}
   fromInteger = repl . fromInteger
 
 instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (Arr m r) where
@@ -135,8 +141,8 @@ type TransC r = (Tensorable r, Int, Int)
 
 -- full transform: sequence of zero or more components
 -- | a DSL for tensor transforms on Repa arrays
-data Trans r = Id Int           -- ^| identity sentinel
-             | TSnoc (Trans r) (TransC r) -- ^| (function) composition of transforms
+data Trans r = Id !Int                      -- ^| identity sentinel
+             | TSnoc !(Trans r) !(TransC r) -- ^| (function) composition of transforms
 
 dimC :: TransC r -> Int
 dimC (Tensorable d _, l, r) = l*d*r
@@ -241,6 +247,7 @@ scalarPow' = coerce . (go $ proxy totientFact (Proxy::Proxy m))
 force :: (Shape sh, Unbox r) => Array D sh r -> Array U sh r
 force = computeS
 --force = runIdentity . computeP
+{-# INLINABLE force #-}
 
 -- copied implementations of functions we need that normally require
 -- Num

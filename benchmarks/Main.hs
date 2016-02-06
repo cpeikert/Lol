@@ -1,13 +1,18 @@
 
 
-import CycBenches
---import SHEBenches
+--import CycBenches
+import UCycBenches
+-------import SHEBenches
+import ZqBenches
 
 import Criterion.Main
 import Control.Monad
 
 main :: IO ()
 main = defaultMain =<< (sequence [
-  cycBenches
-----  sheBenches
+--                         zqBenches
+    ucycBenches
+---  cycBenches
+
+---------  sheBenches
   ])

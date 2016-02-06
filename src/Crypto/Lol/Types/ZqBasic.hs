@@ -23,7 +23,6 @@ import Math.NumberTheory.Primes.Testing
 import Control.Applicative
 import Control.Arrow
 import Control.DeepSeq        (NFData)
-import Control.Monad          (liftM)
 import Data.Coerce
 import Data.Maybe
 import NumericPrelude.Numeric as NP (round)
@@ -63,7 +62,7 @@ type role ZqBasic nominal representational
 type ReflectsTI q z = (Reflects q z, ToInteger z)
 
 reduce' :: forall q z . (ReflectsTI q z) => z -> ZqBasic q z
-reduce' = coerce . (`mod` proxy value (Proxy::Proxy q))
+reduce' = ZqB . (`mod` proxy value (Proxy::Proxy q))
 
 -- puts value in range [-q/2, q/2)
 decode' :: forall q z . (ReflectsTI q z) => ZqBasic q z -> z
@@ -129,9 +128,9 @@ principalRootUnity =        -- use Integers for all intermediate calcs
         -- order of Zq^* (assuming q prime)
         order = qval-1
         -- the primes dividing the order of Zq^*
-        primes = fst <$> factorise order
+        pfactors = fst <$> factorise order
         -- the powers we need to check
-        exps = div order <$> primes
+        exps = div order <$> pfactors
         -- whether an element is a generator of Zq^*
         isGen x = (x^order == one) && all (\e -> x^e /= one) exps
         -- for simplicity, require q to be prime
@@ -154,8 +153,7 @@ instance (ReflectsTI q z, PID z, Enumerable (ZqBasic q z))
     --          show (proxy value (Proxy::Proxy q) :: z)) $
     let qval :: z = proxy value (Proxy::Proxy q)
     in \m -> (,) <$> principalRootUnity m <*>
-  -- CJP: using coerce depends on modinv returning in [0..q-1]
-                     (coerce $ fromIntegral (valueHat m) `modinv` qval)
+                     (reduce' <$> fromIntegral (valueHat m) `modinv` qval)
 
 -- instance of CRTEmbed
 instance (ReflectsTI q z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
@@ -166,14 +164,9 @@ instance (ReflectsTI q z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
 
 -- instance of Additive
 instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
-  -- CJP: "LHS too complicated to desugar"; might be fixed in 7.10:
-  -- https://ghc.haskell.org/trac/ghc/ticket/8848
-  {-# SPECIALIZE instance ReflectsTI q Int => Additive.C (ZqBasic q Int) #-}
-  {-# SPECIALIZE instance ReflectsTI q Int64 => Additive.C (ZqBasic q Int64) #-}
 
   zero = ZqB zero
 
-  {-# INLINABLE (+) #-}
   (+) = let qval = proxy value (Proxy::Proxy q)
         in \ (ZqB x) (ZqB y) ->
         let z = x + y
@@ -183,6 +176,8 @@ instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
 
 -- instance of Ring
 instance (ReflectsTI q z, Ring z) => Ring.C (ZqBasic q z) where
+    {-# SPECIALIZE instance Ring.C (ZqBasic 577 Int64) #-}
+
     (ZqB x) * (ZqB y) = reduce' $ x * y
     {-# INLINABLE (*) #-}
     
