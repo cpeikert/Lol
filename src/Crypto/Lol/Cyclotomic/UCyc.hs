@@ -208,13 +208,15 @@ instance (UCCtx t r, Fact m) => Additive.C (UCyc t m r) where
   negate (Sub c) = Sub $ negate c
 
 -- Ring instance
-instance (UCCtx t r, Fact m) => Ring.C (UCyc t m r) where
+instance (Tensor t, Fact m, CRTEmbed r,
+          TElt t r, CRTrans r, IntegralDomain r, ZeroTestable r, NFData r,
+          TElt t (CRTExt r), CRTrans (CRTExt r), IntegralDomain (CRTExt r), ZeroTestable (CRTExt r), NFData (CRTExt r))
+    => Ring.C (UCyc t m r) where
 
   {-# SPECIALIZE instance Ring.C (UCyc RT F288 (ZqBasic 577 Int64)) #-}
 
   one = Scalar one
 
-  {-# INLINABLE (*) #-}
   -- optimized mul-by-zero
   v1@(Scalar c1) * _ | isZero c1 = v1
   _ * v2@(Scalar c2) | isZero c2 = v2
@@ -351,7 +353,6 @@ liftCyc U.Pow x = fmapC lift $ forceBasis (Just U.Pow) x
 liftCyc U.Dec x = fmapC lift $ forceBasis (Just U.Dec) x
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.adviseCRT', but for 'UCyc'.
-{-# INLINABLE adviseCRT #-}
 adviseCRT :: (Fact m, CElt t r) => UCyc t m r -> UCyc t m r
 adviseCRT x@(Scalar _) = x
 adviseCRT (Sub c) = Sub $ adviseCRT c
@@ -572,7 +573,6 @@ toDec' x@(CRTr _) = toDec' $ toPow' x
 toDec' x@(CRTe _) = toDec' $ toPow' x
 
 -- | Force the argument into the "valid" CRT basis for our invariant.
-{-# INLINABLE toCRT' #-}
 toCRT' :: forall t m r . (UCCtx t r, Fact m) => UCyc t m r -> UCyc t m r
 toCRT' x@(CRTr _) = x
 toCRT' x@(CRTe _) = x

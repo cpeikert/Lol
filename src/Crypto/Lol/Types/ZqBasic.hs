@@ -330,6 +330,19 @@ instance U.Unbox z => M.MVector U.MVector (ZqBasic q z) where
   basicUnsafeCopy (MV_ZqBasic v1) (MV_ZqBasic v2) = M.basicUnsafeCopy v1 v2
   basicUnsafeMove (MV_ZqBasic v1) (MV_ZqBasic v2) = M.basicUnsafeMove v1 v2
   basicUnsafeGrow (MV_ZqBasic v) n = MV_ZqBasic <$> M.basicUnsafeGrow v n
+  {-# INLINABLE basicLength #-}
+  {-# INLINABLE basicUnsafeSlice #-}
+  {-# INLINABLE basicOverlaps #-}
+  {-# INLINABLE basicInitialize #-}
+  {-# INLINABLE basicUnsafeNew #-}
+  {-# INLINABLE basicUnsafeReplicate #-}
+  {-# INLINABLE basicUnsafeRead #-}
+  {-# INLINABLE basicUnsafeWrite #-}
+  {-# INLINABLE basicClear #-}
+  {-# INLINABLE basicSet #-}
+  {-# INLINABLE basicUnsafeCopy #-}
+  {-# INLINABLE basicUnsafeMove #-}
+  {-# INLINABLE basicUnsafeGrow #-}
 
 instance U.Unbox z => G.Vector U.Vector (ZqBasic q z) where
   basicUnsafeFreeze (MV_ZqBasic v) = V_ZqBasic <$> G.basicUnsafeFreeze v
@@ -339,4 +352,10 @@ instance U.Unbox z => G.Vector U.Vector (ZqBasic q z) where
   basicUnsafeIndexM (V_ZqBasic v) z = ZqB <$> G.basicUnsafeIndexM v z
   basicUnsafeCopy (MV_ZqBasic mv) (V_ZqBasic v) = G.basicUnsafeCopy mv v
   elemseq _ = seq
-  
+  {-# INLINABLE basicUnsafeFreeze #-}
+  {-# INLINABLE basicUnsafeThaw #-}
+  {-# INLINABLE basicLength #-}
+  {-# INLINABLE basicUnsafeSlice #-}
+  {-# INLINABLE basicUnsafeIndexM #-}
+  {-# INLINABLE basicUnsafeCopy #-}
+  {-# INLINABLE elemseq #-}

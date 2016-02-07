@@ -85,6 +85,13 @@ instance Tensor RT where
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
 
+  {-# INLINABLE entailIndexT #-}
+  {-# INLINABLE entailEqT #-}
+  {-# INLINABLE entailZTT #-}
+  {-# INLINABLE entailRingT #-}
+  {-# INLINABLE entailNFDataT #-}
+  {-# INLINABLE entailRandomT #-}
+
   scalarPow = RT . scalarPow'
 
   l = wrap fL
@@ -173,7 +180,7 @@ instance Fact m => Traversable (RT m) where
 -- possible to zipWith on IZipVector, so it's not *necessary* to
 -- convert toRT.
 
-instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (RT m r) where
+instance (Unbox r, Additive (Arr m r)) => Additive.C (RT m r) where
   (RT a) + (RT b) = RT $ a + b
   a + b = toRT a + toRT b
 
@@ -182,7 +189,7 @@ instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (RT m r) where
 
   zero = RT zero
 
-instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (RT m r) where
+instance (Unbox r, Ring (Arr m r)) => Ring.C (RT m r) where
   {-# SPECIALIZE instance Ring.C (RT F288 (ZqBasic 577 Int64)) #-}
 
   (RT a) * (RT b) = RT $ a * b
@@ -191,7 +198,8 @@ instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (RT m r) where
 
   fromInteger = RT . fromInteger
 
-instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (RT m r) where
+instance (ZeroTestable (Arr m r), ZeroTestable (IZipVector m r))
+    => ZeroTestable.C (RT m r) where
   isZero (RT a) = isZero a
   isZero (ZV v) = isZero v
 

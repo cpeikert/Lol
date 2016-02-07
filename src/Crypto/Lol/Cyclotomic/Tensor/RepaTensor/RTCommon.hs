@@ -76,7 +76,6 @@ instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (Arr m r) where
 
   one = repl one
   (Arr a) * (Arr b) = Arr $ force $ R.zipWith (*) a b
-  {-# NOINLINE (*) #-}
   fromInteger = repl . fromInteger
 
 instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (Arr m r) where
