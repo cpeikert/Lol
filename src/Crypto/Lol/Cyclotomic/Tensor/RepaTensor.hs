@@ -194,6 +194,7 @@ instance (Unbox r, Additive (Arr m r)) => Additive.C (RT m r) where
 instance (Unbox r, Ring (Arr m r)) => Ring.C (RT m r) where
   {-# SPECIALIZE instance Ring.C (RT F288 (ZqBasic 577 Int64)) #-}
 
+  {-# INLINABLE (*) #-}
   (RT a) * (RT b) = RT $ a * b
   a * b = toRT a * toRT b
 

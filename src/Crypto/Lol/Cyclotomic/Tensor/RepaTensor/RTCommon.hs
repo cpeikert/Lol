@@ -112,7 +112,6 @@ fTensor func = tagT $ go $ sUnF (sing :: SFactored m)
             rest' <- go rest
             func' <- withWitnessT func spp
             return $ rest' @* func'
-{-# INLINABLE fTensor #-}
 
 -- | For a prime power p^e, tensors up any function f defined for
 -- (and tagged by) a prime to @I_(p^{e-1}) \otimes f@
@@ -162,7 +161,6 @@ f .* g | dim f == dim g = f ..* g
   where
     f' ..* (Id _) = f'          -- drop sentinel
     f' ..* (TSnoc rest g') = TSnoc (f' ..* rest) g'
-{-# INLINABLE (.*) #-}
 
 -- | tensor/Kronecker product (otimes)
 (@*) :: Trans r -> Trans r -> Trans r
@@ -173,23 +171,19 @@ i@(Id n) @* (TSnoc g' (g, l, r)) = TSnoc (i @* g') (g, n*l, r)
 (TSnoc f' (f, l, r)) @* i@(Id n) = TSnoc (f' @* i) (f, l, r*n)
 -- no Ids: compose
 f @* g = (f @* Id (dim g)) .* (Id (dim f) @* g)
-{-# INLINABLE (@*) #-}
 
 evalC :: (Unbox r) => TransC r -> Array U DIM1 r -> Array U DIM1 r
 evalC (Tensorable d f, _, r) = force . unexpose r . f . expose d r
-{-# INLINABLE evalC #-}
 
 -- | Creates an evaluatable Haskell function from a tensored transform
 eval :: (Unbox r) => Tagged m (Trans r) -> Arr m r -> Arr m r
 eval x = coerce $ eval' $ untag x
   where eval' (Id _) = id
         eval' (TSnoc rest f) = eval' rest . evalC f
-{-# INLINABLE eval #-}
 
 -- | Monadic version of 'eval'
 evalM :: (Unbox r, Monad mon) => TaggedT m mon (Trans r) -> mon (Arr m r -> Arr m r)
 evalM = liftM (eval . return) . untagT
-{-# INLINABLE evalM #-}
 
 -- | maps the innermost dimension to a 2-dim array with innermost dim d,
 -- for performing a I_l \otimes f_d \otimes I_r transformation
@@ -200,7 +194,6 @@ expose !d !r !arr =
       f (Z :. i :. j) = let imodr = i `mod` r
                         in (Z :. (i-imodr)*d + j*r + imodr)
   in backpermute (Z :. sz `div` d :. d) f arr
-{-# INLINABLE expose #-}
 
 -- | inverse of expose
 unexpose :: (Source r1 r, Unbox r) => Int -> Array r1 DIM2 r -> Array D DIM1 r
@@ -210,7 +203,6 @@ unexpose !r !arr =
                        (idivrd,j) = idivr `divMod` d
                    in (Z :. r*idivrd + imodr :. j)
   in backpermute (Z :. sz*d) f arr
-{-# INLINABLE unexpose #-}
 
 -- | general matrix multiplication along innermost dim of v
 mulMat :: (Source r1 r, Source r2 r, Ring r, Unbox r, Elt r)
@@ -221,7 +213,6 @@ mulMat !m !v
         f (sh' :. i) = sumAllS $ R.zipWith (*) (slice m (Z:.i:.All)) $ slice v (sh':.All)
     in if mcols == vrows then fromFunction (sh :. mrows) f
        else error "mulMatVec: mcols != vdim"
-{-# INLINABLE mulMat #-}
 
             
 -- | multiplication by a diagonal matrix along innermost dim
@@ -229,7 +220,6 @@ mulDiag :: (Source r1 r, Source r2 r, Ring r, Unbox r, Elt r)
            => Array r1 DIM1 r -> Array r2 DIM2 r -> Array D DIM2 r
 mulDiag !diag !arr = fromFunction (extent arr) f
   where f idx@(_ :. i) = (arr ! idx) * (diag ! (Z:.i))
-{-# INLINABLE mulDiag #-}
 
 -- misc Tensor functions
 
@@ -245,7 +235,7 @@ scalarPow' = coerce . (go $ proxy totientFact (Proxy::Proxy m))
 force :: (Shape sh, Unbox r) => Array D sh r -> Array U sh r
 force = computeS
 --force = runIdentity . computeP
-{-# INLINABLE force #-}
+{-# INLINE force #-}
 
 -- copied implementations of functions we need that normally require
 -- Num

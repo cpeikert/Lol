@@ -8,7 +8,7 @@ module Utils
 ,Benchmarkable(..)
 ,Generatable(..)
 ,NFValue
-
+,BenchArgs
 ,Satisfy(..)
 
 ,Zq

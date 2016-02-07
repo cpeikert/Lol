@@ -61,6 +61,7 @@ type role ZqBasic nominal representational
 -- convenience synonym for many instances
 type ReflectsTI q z = (Reflects q z, ToInteger z)
 
+{-# INLINABLE reduce' #-}
 reduce' :: forall q z . (ReflectsTI q z) => z -> ZqBasic q z
 reduce' = ZqB . (`mod` proxy value (Proxy::Proxy q))
 
@@ -176,6 +177,7 @@ instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
 
 -- instance of Ring
 instance (ReflectsTI q z, Ring z) => Ring.C (ZqBasic q z) where
+  {-# INLINABLE (*) #-}
   (ZqB x) * (ZqB y) = reduce' $ x * y
     
   fromInteger =

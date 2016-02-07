@@ -76,10 +76,6 @@ import Test.QuickCheck
 
 --import qualified Debug.Trace as DT
 
--- imports just for specialization
-import Crypto.Lol.Types.ZqBasic (ZqBasic)
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor (RT)
-
 -- | A data type for representing cyclotomic rings such as @Z[zeta]@,
 -- @Zq[zeta]@, and @Q(zeta)@: @t@ is the 'Tensor' type for storing
 -- coefficients; @m@ is the cyclotomic index; @r@ is the base ring of
@@ -208,16 +204,13 @@ instance (UCCtx t r, Fact m) => Additive.C (UCyc t m r) where
   negate (Sub c) = Sub $ negate c
 
 -- Ring instance
-instance (Tensor t, Fact m, CRTEmbed r,
-          TElt t r, CRTrans r, IntegralDomain r, ZeroTestable r, NFData r,
-          TElt t (CRTExt r), CRTrans (CRTExt r), IntegralDomain (CRTExt r), ZeroTestable (CRTExt r), NFData (CRTExt r))
-    => Ring.C (UCyc t m r) where
+instance (UCCtx t r, Fact m) => Ring.C (UCyc t m r) where
 
-  {-# SPECIALIZE instance Ring.C (UCyc RT F288 (ZqBasic 577 Int64)) #-}
+  --{-# SPECIALIZE instance Ring.C (UCyc RT F288 (ZqBasic 577 Int64)) #-}
 
   one = Scalar one
 
-  --{-# INLINABLE (*) #-}
+  {-# INLINABLE (*) #-}
 
   -- optimized mul-by-zero
   v1@(Scalar c1) * _ | isZero c1 = v1
