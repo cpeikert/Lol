@@ -176,15 +176,12 @@ instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
 
 -- instance of Ring
 instance (ReflectsTI q z, Ring z) => Ring.C (ZqBasic q z) where
-    {-# SPECIALIZE instance Ring.C (ZqBasic 577 Int64) #-}
-
-    (ZqB x) * (ZqB y) = reduce' $ x * y
-    {-# INLINABLE (*) #-}
+  (ZqB x) * (ZqB y) = reduce' $ x * y
     
-    fromInteger =
-      let qval = toInteger (proxy value (Proxy::Proxy q) :: z)
+  fromInteger =
+    let qval = toInteger (proxy value (Proxy::Proxy q) :: z)
     -- this is safe as long as type z can hold the value of q
-      in \x -> ZqB $ fromInteger $ x `mod` qval
+    in \x -> ZqB $ fromInteger $ x `mod` qval
 
 -- instance of Field
 instance (ReflectsTI q z, PID z, Show z) => Field.C (ZqBasic q z) where
@@ -197,7 +194,7 @@ instance (ReflectsTI q z, PID z, Show z) => Field.C (ZqBasic q z) where
 
 -- (canonical) instance of IntegralDomain, needed for FastCyc
 instance (Field (ZqBasic q z)) => IntegralDomain.C (ZqBasic q z) where
-    divMod a b = (a/b, zero)
+  divMod a b = (a/b, zero)
 
 -- Gadget-related instances
 instance (ReflectsTI q z, Additive z) => Gadget TrivGad (ZqBasic q z) where
@@ -330,19 +327,6 @@ instance U.Unbox z => M.MVector U.MVector (ZqBasic q z) where
   basicUnsafeCopy (MV_ZqBasic v1) (MV_ZqBasic v2) = M.basicUnsafeCopy v1 v2
   basicUnsafeMove (MV_ZqBasic v1) (MV_ZqBasic v2) = M.basicUnsafeMove v1 v2
   basicUnsafeGrow (MV_ZqBasic v) n = MV_ZqBasic <$> M.basicUnsafeGrow v n
-  {-# INLINABLE basicLength #-}
-  {-# INLINABLE basicUnsafeSlice #-}
-  {-# INLINABLE basicOverlaps #-}
-  {-# INLINABLE basicInitialize #-}
-  {-# INLINABLE basicUnsafeNew #-}
-  {-# INLINABLE basicUnsafeReplicate #-}
-  {-# INLINABLE basicUnsafeRead #-}
-  {-# INLINABLE basicUnsafeWrite #-}
-  {-# INLINABLE basicClear #-}
-  {-# INLINABLE basicSet #-}
-  {-# INLINABLE basicUnsafeCopy #-}
-  {-# INLINABLE basicUnsafeMove #-}
-  {-# INLINABLE basicUnsafeGrow #-}
 
 instance U.Unbox z => G.Vector U.Vector (ZqBasic q z) where
   basicUnsafeFreeze (MV_ZqBasic v) = V_ZqBasic <$> G.basicUnsafeFreeze v
@@ -352,10 +336,3 @@ instance U.Unbox z => G.Vector U.Vector (ZqBasic q z) where
   basicUnsafeIndexM (V_ZqBasic v) z = ZqB <$> G.basicUnsafeIndexM v z
   basicUnsafeCopy (MV_ZqBasic mv) (V_ZqBasic v) = G.basicUnsafeCopy mv v
   elemseq _ = seq
-  {-# INLINABLE basicUnsafeFreeze #-}
-  {-# INLINABLE basicUnsafeThaw #-}
-  {-# INLINABLE basicLength #-}
-  {-# INLINABLE basicUnsafeSlice #-}
-  {-# INLINABLE basicUnsafeIndexM #-}
-  {-# INLINABLE basicUnsafeCopy #-}
-  {-# INLINABLE elemseq #-}

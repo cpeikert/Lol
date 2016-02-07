@@ -30,7 +30,6 @@ bench_mul a b =
   let a' = adviseCRT a
       b' = adviseCRT b
   in nf (a' *) b'
-{-# SPECIALIZE bench_mul :: UCyc RT F288 (ZqBasic 577 Int64) -> UCyc RT F288 (ZqBasic 577 Int64) -> NFValue #-}
 
 type Tensors = '[{-CT,-}RT]
 type MM'RCombos = 

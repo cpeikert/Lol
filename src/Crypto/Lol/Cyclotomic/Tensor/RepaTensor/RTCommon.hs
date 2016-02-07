@@ -72,9 +72,8 @@ instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (Arr m r) where
   negate (Arr a) = Arr $ force $ R.map negate a
 
 instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (Arr m r) where
-  {-# SPECIALIZE instance Ring.C (Arr F288 (ZqBasic 577 Int64)) #-}
-
   one = repl one
+  {-# INLINABLE (*) #-}
   (Arr a) * (Arr b) = Arr $ force $ R.zipWith (*) a b
   fromInteger = repl . fromInteger
 

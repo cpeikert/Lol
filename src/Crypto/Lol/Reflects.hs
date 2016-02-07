@@ -28,7 +28,6 @@ class Reflects a i where
   value :: Tagged a i
 
 instance (KnownNat a, ToInteger.C i) => Reflects (a :: TL.Nat) i where
-  --{-# INLINE value #-}
   value = tag $ fromIntegral $ natVal (Proxy::Proxy a)
 
 {-

@@ -85,12 +85,14 @@ instance Tensor RT where
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
 
-  {-# INLINABLE entailIndexT #-}
-  {-# INLINABLE entailEqT #-}
-  {-# INLINABLE entailZTT #-}
-  {-# INLINABLE entailRingT #-}
-  {-# INLINABLE entailNFDataT #-}
-  {-# INLINABLE entailRandomT #-}
+  -- CJP: these are critical for exposing dictionaries that contain
+  -- properly specialized methods
+  {-# INLINE entailIndexT #-}
+  {-# INLINE entailEqT #-}
+  {-# INLINE entailZTT #-}
+  {-# INLINE entailRingT #-}
+  {-# INLINE entailNFDataT #-}
+  {-# INLINE entailRandomT #-}
 
   scalarPow = RT . scalarPow'
 
@@ -194,7 +196,6 @@ instance (Unbox r, Ring (Arr m r)) => Ring.C (RT m r) where
 
   (RT a) * (RT b) = RT $ a * b
   a * b = toRT a * toRT b
-  {-# INLINABLE (*) #-}
 
   fromInteger = RT . fromInteger
 

@@ -217,6 +217,8 @@ instance (Tensor t, Fact m, CRTEmbed r,
 
   one = Scalar one
 
+  --{-# INLINABLE (*) #-}
+
   -- optimized mul-by-zero
   v1@(Scalar c1) * _ | isZero c1 = v1
   _ * v2@(Scalar c2) | isZero c2 = v2
