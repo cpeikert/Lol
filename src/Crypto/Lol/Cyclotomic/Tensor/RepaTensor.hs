@@ -85,15 +85,6 @@ instance Tensor RT where
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
 
-  -- CJP: these are critical for exposing dictionaries that contain
-  -- properly specialized methods
-  {-# INLINE entailIndexT #-}
-  {-# INLINE entailEqT #-}
-  {-# INLINE entailZTT #-}
-  {-# INLINE entailRingT #-}
-  {-# INLINE entailNFDataT #-}
-  {-# INLINE entailRandomT #-}
-
   scalarPow = RT . scalarPow'
 
   l = wrap fL
