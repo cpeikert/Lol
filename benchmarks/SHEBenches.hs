@@ -25,6 +25,7 @@ import Data.Promotion.Prelude.List
 sheBenches :: (MonadRandom rnd) => rnd Benchmark
 sheBenches = bgroupRnd "SHE" [
    bgroupRnd "encrypt"   $ benchEnc (Proxy::Proxy EncParams) $ wrap' bench_enc,
+   bgroupRnd "decrypt"   $ benchDec (Proxy::Proxy DecParams) $ wrap' bench_dec,
    bgroupRnd "*"         $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' bench_mul,
    bgroupRnd "addPublic" $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' bench_addPublic,
    bgroupRnd "mulPublic" $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' bench_mulPublic,
@@ -62,7 +63,6 @@ bench_rescaleCT = nfv (rescaleLinearCT :: CT m zp (Cyc t m' zq') -> CT m zp (Cyc
 bench_keySwQ :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq))) 
   => KSHint m zp t m' zq gad zq' -> CT m zp (Cyc t m' zq) -> NFValue' '(t,m,m',zp,zq,zq',gad)
 bench_keySwQ (KeySwitch kswq) x = nfv kswq $ x*x
-
 
 type Gens    = '[HashDRBG]
 type Gadgets = '[TrivGad, BaseBGad 2]
