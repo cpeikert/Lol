@@ -23,6 +23,7 @@ import Data.Singletons.Prelude
 -- | Embeds a scalar into the CRT basis (when it exists).
 scalarCRT' :: forall m r . (Fact m, CRTrans r, Unbox r)
               => Maybe (r -> Arr m r)
+{-# INLINABLE scalarCRT' #-}
 scalarCRT'
   = let pps = proxy ppsFact (Proxy::Proxy m)
         sz = Z :. totientPPs pps
@@ -31,30 +32,36 @@ scalarCRT'
 -- | Multiply by @g_m@ in the CRT basis (when it exists).
 mulGCRT' :: forall m r . (Fact m, CRTrans r, Unbox r, Elt r)
             => Maybe (Arr m r -> Arr  m r)
+{-# INLINABLE mulGCRT' #-}
 mulGCRT' = (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gCRT
 
 -- | Divide by @g@ in the CRT basis (when it exists).
 divGCRT' :: (Fact m, CRTrans r, IntegralDomain r, ZeroTestable r,
              Unbox r, Elt r) => Maybe (Arr m r -> Arr m r)
+{-# INLINABLE divGCRT' #-}
 divGCRT' =  (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gInvCRT
 
 -- | The representation of @g@ in the CRT basis (when it exists).
 gCRT :: (Fact m, CRTrans r, Unbox r, Elt r) => Maybe (Arr m r)
+{-# INLINABLE gCRT #-}
 gCRT = fCRT <*> pure (fGPow $ scalarPow' LP.one)
 
 -- | The representation of @g^{ -1 }@ in the CRT basis (when it exists).
 gInvCRT:: (Fact m, CRTrans r, IntegralDomain r,
            ZeroTestable r, Unbox r, Elt r)
           => Maybe (Arr m r)
+{-# INLINABLE gInvCRT #-}
 gInvCRT = fCRT <*> fGInvPow (scalarPow' LP.one)
 
 fCRT, fCRTInv ::
   forall m r . (Fact m, CRTrans r, Unbox r, Elt r)
   => Maybe (Arr m r -> Arr m r)
 
+{-# INLINABLE fCRT #-}
+{-# INLINABLE fCRTInv #-}
+
 -- | The chinese remainder transform.
 -- Exists if and only if crt exists for all prime powers.
-{-# INLINABLE fCRT #-}
 fCRT = evalM $ fTensor ppCRT
 
 -- divide by mhat after doing crtInv'
@@ -69,6 +76,11 @@ fCRTInv = do -- in Maybe
 ppDFT, ppDFTInv', ppCRT, ppCRTInv' ::
   forall pp r . (PPow pp, CRTrans r, Unbox r, Elt r)
   => TaggedT pp Maybe (Trans r)
+
+{-# INLINABLE ppDFT #-}
+{-# INLINABLE ppDFTInv' #-}
+{-# INLINABLE ppCRT #-}
+{-# INLINABLE ppCRTInv' #-}
 
 ppDFT = case (sing :: SPrimePower pp) of
   (SPP (STuple2 sp SO)) -> tagT $ withWitnessT pDFT sp
@@ -91,7 +103,6 @@ ppDFTInv' = case (sing :: SPrimePower pp) of
       return $ (Id (dim pp'dftInv') @* pdftInv') .* pptwidInv .*
                  (pp'dftInv' @* Id (dim pdftInv'))
 
-{-# INLINABLE ppCRT #-}
 ppCRT = case (sing :: SPrimePower pp) of
   (SPP (STuple2 sp SO)) -> tagT $ withWitnessT pCRT sp
   spp@(SPP (STuple2 sp (SS se'))) ->
@@ -132,6 +143,10 @@ pDFT, pDFTInv', pCRT, pCRTInv' ::
   => TaggedT p Maybe (Trans r)
 
 {-# INLINABLE pDFT #-}
+{-# INLINABLE pDFTInv' #-}
+{-# INLINABLE pCRT #-}
+{-# INLINABLE pCRTInv' #-}
+
 pDFT = let pval = proxy valuePrime (Proxy::Proxy p)
        in if pval == 2
           then return butterfly
@@ -148,7 +163,6 @@ pDFTInv' = let pval = proxy valuePrime (Proxy::Proxy p)
                              fromFunction (Z :. pval :. pval)
                                               (\(Z:.i:.j) -> omegaPPow (-i*j))
 
-{-# INLINABLE pCRT #-}
 pCRT = let pval = proxy valuePrime (Proxy::Proxy p)
        in if pval == 2
           then return $ Id 1
@@ -172,6 +186,9 @@ pCRTInv' =
 ppTwid, ppTwidHat ::
   forall pp r . (PPow pp, CRTrans r, Unbox r, Elt r)
   => Bool -> TaggedT pp Maybe (Trans r)
+
+{-# INLINABLE ppTwid #-}
+{-# INLINABLE ppTwidHat #-}
 
 ppTwid inv =
   let pp@(p,e) = proxy ppPPow (Proxy :: Proxy pp)

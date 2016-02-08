@@ -1,6 +1,6 @@
 
 
--------import CycBenches
+----------import CycBenches
 import UCycBenches
 -------import SHEBenches
 import ZqBenches
@@ -14,5 +14,5 @@ main = defaultMain =<< (sequence [
     ucycBenches
 ---  cycBenches
 
----------  sheBenches
+-----------  sheBenches
   ])

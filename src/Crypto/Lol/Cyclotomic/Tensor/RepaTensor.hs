@@ -65,10 +65,12 @@ toZV (RT (Arr v)) = ZV $ fromMaybe (error "toZV: internal error") $
                     iZipVector $ convert $ toUnboxed v
 toZV v@(ZV _) = v
 
+{-# INLINABLE wrap #-}
 wrap :: Unbox r => (Arr l r -> Arr m r) -> RT l r -> RT m r
 wrap f (RT v) = RT $ f v
 wrap f (ZV v) = RT $ f $ zvToArr v
 
+{-# INLINABLE wrapM #-}
 wrapM :: (Unbox r, Monad mon) => (Arr l r -> mon (Arr m r))
          -> RT l r -> mon (RT m r)
 wrapM f (RT v) = liftM RT $ f v
@@ -79,9 +81,9 @@ instance Tensor RT where
   type TElt RT r = (Unbox r, Elt r)
 
   entailIndexT  = tag $ Sub Dict
-  entailEqT = tag $ Sub Dict
-  entailZTT = tag $ Sub Dict
-  entailRingT = tag $ Sub Dict
+  entailEqT     = tag $ Sub Dict
+  entailZTT     = tag $ Sub Dict
+  entailRingT   = tag $ Sub Dict
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
 
@@ -96,6 +98,7 @@ instance Tensor RT where
   divGPow = wrapM fGInvPow
   divGDec = wrapM fGInvDec
 
+  {-# INLINABLE crtFuncs #-}
   crtFuncs = (,,,,) <$>
              (liftM (RT .) scalarCRT') <*>
              (wrap <$> mulGCRT') <*>
@@ -144,6 +147,7 @@ instance Tensor RT where
 
   unzipT v@(RT _) = unzipT $ toZV v
   unzipT (ZV v) = ZV *** ZV $ unzipIZV v
+
 
 ---------- "Container" instances ----------
 

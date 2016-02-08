@@ -14,10 +14,17 @@ import Data.Coerce
 
 fL, fLInv, fGPow, fGDec :: (Fact m, Additive r, Unbox r, Elt r)
   => Arr m r -> Arr m r
+{-# INLINABLE fL #-}
+{-# INLINABLE fLInv #-}
+{-# INLINABLE fGPow #-}
+{-# INLINABLE fGDec #-}
 
 fGInvPow, fGInvDec ::
  (Fact m, IntegralDomain r, ZeroTestable r, Unbox r, Elt r)
   => Arr m r -> Maybe (Arr m r)
+{-# INLINABLE fGInvPow #-}
+{-# INLINABLE fGInvDec #-}
+
 -- | Arbitrary-index @L@ transform, which converts from decoding-basis
 -- to powerful-basis representation.
 fL = eval $ fTensor $ ppTensor pL
@@ -45,6 +52,7 @@ wrapGInv' ginv =
   let fGInv = eval $ fTensor $ ppTensor ginv
       oddrad = fromIntegral $ proxy oddRadicalFact (Proxy::Proxy m)
   in (`divCheck` oddrad) . fGInv
+{-# INLINABLE wrapGInv' #-}
 
 -- | This is not a constant-time algorithm!  Depending on its usage,
 -- it might provide a timing side-channel.
@@ -55,6 +63,7 @@ divCheck = coerce $  \ !arr den ->
       pass = foldAllS (&&) True $ RT.map (isZero . snd) qrs
       out = force $ RT.map fst qrs
   in if pass then Just out else Nothing
+{-# INLINABLE divCheck #-}
 
 pWrap :: forall p r . Prim p
          => (forall rep . Source rep r => Int -> Array rep DIM2 r -> Array D DIM2 r)
@@ -64,6 +73,7 @@ pWrap f = let pval = proxy valuePrime (Proxy::Proxy p)
           in return $ if pval > 2
                       then trans  (pval-1) $ f pval
                       else Id 1
+{-# INLINABLE pWrap #-}
 
 
 pL, pLInv, pGPow, pGDec :: (Prim p, Additive r, Unbox r, Elt r)
@@ -71,6 +81,12 @@ pL, pLInv, pGPow, pGDec :: (Prim p, Additive r, Unbox r, Elt r)
 
 pGInvPow', pGInvDec' :: (Prim p, Ring r, Unbox r, Elt r)
   => Tagged p (Trans r)
+{-# INLINABLE pL #-}
+{-# INLINABLE pLInv #-}
+{-# INLINABLE pGPow #-}
+{-# INLINABLE pGDec #-}
+{-# INLINABLE pGInvPow' #-}
+{-# INLINABLE pGInvDec' #-}
 
 pL = pWrap (\_ !arr ->
              fromFunction (extent arr) $
