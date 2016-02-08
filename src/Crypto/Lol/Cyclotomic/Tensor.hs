@@ -168,6 +168,7 @@ class (TElt t Double, TElt t (Complex Double))
 hasCRTFuncs :: forall t m r . (ZeroTestable r, IntegralDomain r, CRTrans r, 
                                Tensor t, Fact m, TElt t r)
                => TaggedT (t m r) Maybe ()
+{-# INLINABLE hasCRTFuncs #-}
 hasCRTFuncs = tagT $ do
   (_ :: r -> t m r,_,_,_,_) <- crtFuncs
   return ()
@@ -176,12 +177,18 @@ hasCRTFuncs = tagT $ do
 -- simply an appropriate entry from 'crtFuncs'.)
 scalarCRT :: (ZeroTestable r, IntegralDomain r, CRTrans r, 
               Tensor t, Fact m, TElt t r) => Maybe (r -> t m r)
+{-# INLINABLE scalarCRT #-}
 scalarCRT = (\(f,_,_,_,_) -> f) <$> crtFuncs
 
 
 mulGCRT, divGCRT, crt, crtInv ::
   (ZeroTestable r, IntegralDomain r, CRTrans r, Tensor t, Fact m, TElt t r)
   => Maybe (t m r -> t m r)
+{-# INLINABLE mulGCRT #-}
+{-# INLINABLE divGCRT #-}
+{-# INLINABLE crt #-}
+{-# INLINABLE crtInv #-}
+
 -- | Multiply by @g@ in the CRT basis. (This function is simply an
 -- appropriate entry from 'crtFuncs'.)
 mulGCRT = (\(_,f,_,_,_) -> f) <$> crtFuncs

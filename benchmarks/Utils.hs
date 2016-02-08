@@ -8,7 +8,7 @@ module Utils
 ,Benchmarkable(..)
 ,Generatable(..)
 ,NFValue
-
+,BenchArgs
 ,Satisfy(..)
 
 ,Zq
@@ -22,6 +22,7 @@ module Utils
 
 import Control.Monad.Random
 import Control.Monad (liftM)
+import GHC.TypeLits
 
 import Criterion (Benchmark,bench,nf,nfIO,bgroup)
 import qualified Criterion as C
@@ -29,6 +30,9 @@ import qualified Criterion as C
 import Crypto.Lol (Int64,Fact,Factored,valueFact,Mod(..), Proxy(..), proxy, Cyc, RT, CT)
 import Crypto.Lol.Types.ZqBasic
 import Crypto.Random.DRBG
+import qualified Data.Vector.Unboxed as U
+import qualified Data.Array.Repa as R
+
 {-
 import Math.NumberTheory.Primes.Testing (isPrime)
 
@@ -65,6 +69,13 @@ class Generatable rnd arg where
 
 instance {-# Overlappable #-} (Random a, MonadRandom rnd) => Generatable rnd a where
   genArg = getRandom
+
+instance {-# Overlaps #-} (U.Unbox a, Random a, MonadRandom rnd) => Generatable rnd (U.Vector a) where
+  genArg = U.replicateM 100 getRandom
+
+instance {-# Overlaps #-} (U.Unbox a, Random a, MonadRandom rnd)
+    => Generatable rnd (R.Array R.U R.DIM1 a) where
+  genArg = R.fromUnboxed (R.Z R.:. 100) <$> genArg
 
 class (params :: [k]) `Satisfy` ctx  where
   data family ArgsCtx ctx
@@ -114,6 +125,9 @@ instance (Fact m) => Show (BenchArgs m) where
 
 instance (Mod (ZqBasic q i), Show i) => Show (BenchArgs (ZqBasic q i)) where
   show _ = "Q" ++ (show $ proxy modulus (Proxy::Proxy (ZqBasic q i)))
+
+instance (KnownNat q) => Show (BenchArgs (q :: Nat)) where
+  show _ = show $ natVal (Proxy::Proxy q)
 
 instance Show (BenchArgs RT) where
   show _ = "RT"

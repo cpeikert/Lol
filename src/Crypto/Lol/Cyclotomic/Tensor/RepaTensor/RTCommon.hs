@@ -20,6 +20,10 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon
 
 import Crypto.Lol.LatticePrelude as LP hiding ((!!))
 
+import Algebra.Additive as Additive (C)
+import Algebra.Ring as Ring (C)
+import Algebra.ZeroTestable as ZeroTestable (C)
+
 import Control.DeepSeq              (NFData (..))
 import Control.Monad.Identity
 import Control.Monad.Random
@@ -32,6 +36,9 @@ import Data.Singletons
 import Data.Singletons.Prelude      hiding ((:.))
 import qualified Data.Vector.Unboxed as U
 import Test.QuickCheck
+
+-- just for specialization
+import Crypto.Lol.Types.ZqBasic
 
 -- always unboxed (manifest); intermediate calculations can use
 -- delayed arrays
@@ -52,12 +59,37 @@ type role Arr nominal nominal
 repl :: forall m r . (Fact m, Unbox r) => r -> Arr m r
 repl = let n = proxy totientFact (Proxy::Proxy m)
        in Arr . fromUnboxed (Z:.n) . U.replicate n
+{-# INLINABLE repl #-}
 
 -- | Monadic version of 'repl'.
 replM :: forall m r mon . (Fact m, Unbox r, Monad mon)
          => mon r -> mon (Arr m r)
 replM = let n = proxy totientFact (Proxy::Proxy m)
         in liftM (Arr . fromUnboxed (Z:.n)) . U.replicateM n
+{-# INLINABLE replM #-}
+
+instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (Arr m r) where
+  zero = repl zero
+  (Arr a) + (Arr b) = Arr $ force $ R.zipWith (+) a b
+  negate (Arr a) = Arr $ force $ R.map negate a
+  {-# INLINABLE zero #-}
+  {-# INLINABLE (+) #-}
+  {-# INLINABLE negate #-}
+
+instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (Arr m r) where
+  one = repl one
+  (Arr a) * (Arr b) = Arr $ force $ R.zipWith (*) a b
+  fromInteger = repl . fromInteger
+  {-# INLINABLE one #-}
+  {-# INLINABLE (*) #-}
+  {-# INLINABLE fromInteger #-}
+
+instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (Arr m r) where
+  -- not using 'zero' to avoid Additive r constraint
+  isZero (Arr a) 
+      = isZero $ foldAllS (\ x y -> if isZero x then y else x) (a R.! (Z:.0)) a
+  {-# INLINABLE isZero #-}
+
 
 instance (Unbox r) => NFData (Array U DIM1 r) where
   -- EAC: Repa doesn't define any NFData instances,
@@ -88,6 +120,7 @@ fTensor func = tagT $ go $ sUnF (sing :: SFactored m)
             rest' <- go rest
             func' <- withWitnessT func spp
             return $ rest' @* func'
+{-# INLINABLE fTensor #-}
 
 -- | For a prime power p^e, tensors up any function f defined for
 -- (and tagged by) a prime to @I_(p^{e-1}) \otimes f@
@@ -100,6 +133,7 @@ ppTensor func = tagT $ case (sing :: SPrimePower pp) of
     func' <- withWitnessT func sp
     let lts = withWitness valuePPow pp `div` withWitness valuePrime sp
     return $ Id lts @* func'
+{-# INLINABLE ppTensor #-}
 
 
 -- deeply embedded DSL for transformations and their various
@@ -107,27 +141,30 @@ ppTensor func = tagT $ case (sing :: SPrimePower pp) of
 
 -- (dim(f), f) where f operates on innermost dimension of array
 data Tensorable r = Tensorable
-  Int (forall rep . Source rep r => Array rep DIM2 r -> Array D DIM2 r)
+  !Int !(forall rep . Source rep r => Array rep DIM2 r -> Array D DIM2 r)
 
 -- transform component: a Tensorable with particular I_l, I_r
 type TransC r = (Tensorable r, Int, Int)
 
 -- full transform: sequence of zero or more components
 -- | a DSL for tensor transforms on Repa arrays
-data Trans r = Id Int           -- ^| identity sentinel
-             | TSnoc (Trans r) (TransC r) -- ^| (function) composition of transforms
+data Trans r = Id !Int                      -- ^| identity sentinel
+             | TSnoc !(Trans r) !(TransC r) -- ^| (function) composition of transforms
 
 dimC :: TransC r -> Int
 dimC (Tensorable d _, l, r) = l*d*r
+{-# INLINABLE dimC #-}
 
 -- | Returns the (linear) dimension of a transform
 dim :: Trans r -> Int
 dim (Id n) = n
 dim (TSnoc _ f) = dimC f        -- just use dimension of head
+{-# INLINABLE dim #-}
 
 -- | smart constructor from a Tensorable
 trans :: Int -> (forall rep . Source rep r => Array rep DIM2 r -> Array D DIM2 r) -> Trans r
 trans d f = TSnoc (Id d) (Tensorable d f, 1, 1)
+{-# INLINABLE trans #-}
 
 -- | compose transforms
 (.*) :: Trans r -> Trans r -> Trans r
@@ -137,6 +174,7 @@ f .* g | dim f == dim g = f ..* g
   where
     f' ..* (Id _) = f'          -- drop sentinel
     f' ..* (TSnoc rest g') = TSnoc (f' ..* rest) g'
+{-# INLINABLE (.*) #-}
 
 -- | tensor/Kronecker product (otimes)
 (@*) :: Trans r -> Trans r -> Trans r
@@ -147,38 +185,44 @@ i@(Id n) @* (TSnoc g' (g, l, r)) = TSnoc (i @* g') (g, n*l, r)
 (TSnoc f' (f, l, r)) @* i@(Id n) = TSnoc (f' @* i) (f, l, r*n)
 -- no Ids: compose
 f @* g = (f @* Id (dim g)) .* (Id (dim f) @* g)
+{-# INLINABLE (@*) #-}
 
 evalC :: (Unbox r) => TransC r -> Array U DIM1 r -> Array U DIM1 r
-evalC (Tensorable d f, _, r) arr =
-  arr `deepSeqArray` force $ unexpose r $ f $ expose d r arr
+evalC (Tensorable d f, _, r) = force . unexpose r . f . expose d r
+{-# INLINABLE evalC #-}
 
 -- | Creates an evaluatable Haskell function from a tensored transform
 eval :: (Unbox r) => Tagged m (Trans r) -> Arr m r -> Arr m r
 eval x = coerce $ eval' $ untag x
   where eval' (Id _) = id
         eval' (TSnoc rest f) = eval' rest . evalC f
+{-# INLINABLE eval #-}
 
 -- | Monadic version of 'eval'
 evalM :: (Unbox r, Monad mon) => TaggedT m mon (Trans r) -> mon (Arr m r -> Arr m r)
 evalM = liftM (eval . return) . untagT
-
+{-# INLINE evalM #-}
 
 -- | maps the innermost dimension to a 2-dim array with innermost dim d,
 -- for performing a I_l \otimes f_d \otimes I_r transformation
+expose :: (Source r1 r, Unbox r)
+          => Int -> Int -> Array r1 DIM1 r -> Array D DIM2 r
 expose !d !r !arr =
-  let (sh :. sz) = extent arr
-      f (s :. i :. j) = let imodr = i `mod` r
-                            idx = (i-imodr)*d + j*r + imodr
-                        in arr ! (s :. idx)
-  in fromFunction (sh :. sz `div` d :. d) f
+  let (Z :. sz) = extent arr
+      f (Z :. i :. j) = let imodr = i `mod` r
+                        in (Z :. (i-imodr)*d + j*r + imodr)
+  in backpermute (Z :. sz `div` d :. d) f arr
+{-# INLINABLE expose #-}
 
 -- | inverse of expose
+unexpose :: (Source r1 r, Unbox r) => Int -> Array r1 DIM2 r -> Array D DIM1 r
 unexpose !r !arr =
-  let (sh:.sz:.d) = extent arr
-      f (s :. i) = let (idivr,imodr) = i `divMod` r
+  let (Z :. sz :. d) = extent arr
+      f (Z :. i) = let (idivr,imodr) = i `divMod` r
                        (idivrd,j) = idivr `divMod` d
-                   in arr ! (s :. r*idivrd + imodr :. j)
-  in fromFunction (sh :. sz*d) f
+                   in (Z :. r*idivrd + imodr :. j)
+  in backpermute (Z :. sz*d) f arr
+{-# INLINABLE unexpose #-}
 
 -- | general matrix multiplication along innermost dim of v
 mulMat :: (Source r1 r, Source r2 r, Ring r, Unbox r, Elt r)
@@ -189,12 +233,14 @@ mulMat !m !v
         f (sh' :. i) = sumAllS $ R.zipWith (*) (slice m (Z:.i:.All)) $ slice v (sh':.All)
     in if mcols == vrows then fromFunction (sh :. mrows) f
        else error "mulMatVec: mcols != vdim"
-
+{-# INLINABLE mulMat #-}
+            
 -- | multiplication by a diagonal matrix along innermost dim
 mulDiag :: (Source r1 r, Source r2 r, Ring r, Unbox r, Elt r)
            => Array r1 DIM1 r -> Array r2 DIM2 r -> Array D DIM2 r
 mulDiag !diag !arr = fromFunction (extent arr) f
-  where f idx@(_ :. i) = arr! idx * diag! (Z:.i)
+  where f idx@(_ :. i) = (arr ! idx) * (diag ! (Z:.i))
+{-# INLINABLE mulDiag #-}
 
 -- misc Tensor functions
 
@@ -205,11 +251,13 @@ scalarPow' = coerce . (go $ proxy totientFact (Proxy::Proxy m))
   where go n !r = let fct (Z:.0) = r
                       fct _ = LP.zero
                   in force $ fromFunction (Z:.n) fct
+{-# INLINABLE scalarPow' #-}
 
 -- | Forces a delayed array to a manifest array.
 force :: (Shape sh, Unbox r) => Array D sh r -> Array U sh r
---force = computeS
-force = runIdentity . computeP
+force = computeS
+--force = runIdentity . computeP
+{-# INLINABLE force #-}
 
 -- copied implementations of functions we need that normally require
 -- Num
@@ -219,9 +267,11 @@ sumS :: (Source r a, Elt a, Unbox a, Additive a, Shape sh)
   => Array r (sh :. Int) a
   -> Array U sh a
 sumS = foldS (+) LP.zero
+{-# INLINABLE sumS #-}
 
 -- | Sum all array indices to a scalar sequentially
 sumAllS :: (Shape sh, Source r a, Elt a, Unbox a, Additive a)
   => Array r sh a
   -> a
 sumAllS = foldAllS (+) LP.zero
+{-# INLINABLE sumAllS #-}

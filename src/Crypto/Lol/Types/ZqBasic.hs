@@ -23,7 +23,6 @@ import Math.NumberTheory.Primes.Testing
 import Control.Applicative
 import Control.Arrow
 import Control.DeepSeq        (NFData)
-import Control.Monad          (liftM)
 import Data.Coerce
 import Data.Maybe
 import NumericPrelude.Numeric as NP (round)
@@ -62,8 +61,9 @@ type role ZqBasic nominal representational
 -- convenience synonym for many instances
 type ReflectsTI q z = (Reflects q z, ToInteger z)
 
+{-# INLINABLE reduce' #-}
 reduce' :: forall q z . (ReflectsTI q z) => z -> ZqBasic q z
-reduce' = coerce . (`mod` proxy value (Proxy::Proxy q))
+reduce' = ZqB . (`mod` proxy value (Proxy::Proxy q))
 
 -- puts value in range [-q/2, q/2)
 decode' :: forall q z . (ReflectsTI q z) => ZqBasic q z -> z
@@ -129,9 +129,9 @@ principalRootUnity =        -- use Integers for all intermediate calcs
         -- order of Zq^* (assuming q prime)
         order = qval-1
         -- the primes dividing the order of Zq^*
-        primes = fst <$> factorise order
+        pfactors = fst <$> factorise order
         -- the powers we need to check
-        exps = div order <$> primes
+        exps = div order <$> pfactors
         -- whether an element is a generator of Zq^*
         isGen x = (x^order == one) && all (\e -> x^e /= one) exps
         -- for simplicity, require q to be prime
@@ -154,8 +154,7 @@ instance (ReflectsTI q z, PID z, Enumerable (ZqBasic q z))
     --          show (proxy value (Proxy::Proxy q) :: z)) $
     let qval :: z = proxy value (Proxy::Proxy q)
     in \m -> (,) <$> principalRootUnity m <*>
-  -- CJP: using coerce depends on modinv returning in [0..q-1]
-                     (coerce $ fromIntegral (valueHat m) `modinv` qval)
+                     (reduce' <$> fromIntegral (valueHat m) `modinv` qval)
 
 -- instance of CRTEmbed
 instance (ReflectsTI q z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
@@ -166,41 +165,43 @@ instance (ReflectsTI q z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
 
 -- instance of Additive
 instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
-  -- CJP: "LHS too complicated to desugar"; might be fixed in 7.10:
-  -- https://ghc.haskell.org/trac/ghc/ticket/8848
-  {-# SPECIALIZE instance ReflectsTI q Int => Additive.C (ZqBasic q Int) #-}
-  {-# SPECIALIZE instance ReflectsTI q Int64 => Additive.C (ZqBasic q Int64) #-}
 
+  {-# INLINABLE zero #-}
   zero = ZqB zero
 
+  {-# INLINABLE (+) #-}
   (+) = let qval = proxy value (Proxy::Proxy q)
         in \ (ZqB x) (ZqB y) ->
         let z = x + y
         in ZqB (if z >= qval then z - qval else z)
 
+  {-# INLINABLE negate #-}
   negate (ZqB x) = reduce' $ negate x
 
 -- instance of Ring
 instance (ReflectsTI q z, Ring z) => Ring.C (ZqBasic q z) where
-    (ZqB x) * (ZqB y) = reduce' $ x * y
-
-    fromInteger =
-      let qval = toInteger (proxy value (Proxy::Proxy q) :: z)
+  {-# INLINABLE (*) #-}
+  (ZqB x) * (ZqB y) = reduce' $ x * y
+    
+  {-# INLINABLE fromInteger #-}
+  fromInteger =
+    let qval = toInteger (proxy value (Proxy::Proxy q) :: z)
     -- this is safe as long as type z can hold the value of q
-      in \x -> ZqB $ fromInteger $ x `mod` qval
+    in \x -> ZqB $ fromInteger $ x `mod` qval
 
 -- instance of Field
 instance (ReflectsTI q z, PID z, Show z) => Field.C (ZqBasic q z) where
 
+  {-# INLINABLE recip #-}
   recip = let qval = proxy value (Proxy::Proxy q)
               -- safe because modinv returns in range 0..qval-1
           in \(ZqB x) -> ZqB $
                fromMaybe (error $ "ZqB.recip fail: " ++
                          show x ++ "\t" ++ show qval) $ modinv x qval
 
--- (canonical) instance of IntegralDomain, needed for FastCyc
+-- (canonical) instance of IntegralDomain, needed for Cyclotomics
 instance (Field (ZqBasic q z)) => IntegralDomain.C (ZqBasic q z) where
-    divMod a b = (a/b, zero)
+  divMod a b = (a/b, zero)
 
 -- Gadget-related instances
 instance (ReflectsTI q z, Additive z) => Gadget TrivGad (ZqBasic q z) where
@@ -315,30 +316,30 @@ newtype instance U.MVector s (ZqBasic q z) = MV_ZqBasic (U.MVector s z)
 newtype instance U.Vector (ZqBasic q z) = V_ZqBasic (U.Vector z)
 
 -- Unbox, when underlying representation is
-instance (U.Unbox z) => U.Unbox (ZqBasic q z)
+instance U.Unbox z => U.Unbox (ZqBasic q z)
 
 {- purloined and tweaked from code in `vector` package that defines
 types as unboxed -}
-instance (U.Unbox z) => M.MVector U.MVector (ZqBasic q z) where
+instance U.Unbox z => M.MVector U.MVector (ZqBasic q z) where
   basicLength (MV_ZqBasic v) = M.basicLength v
   basicUnsafeSlice z n (MV_ZqBasic v) = MV_ZqBasic $ M.basicUnsafeSlice z n v
   basicOverlaps (MV_ZqBasic v1) (MV_ZqBasic v2) = M.basicOverlaps v1 v2
   basicInitialize (MV_ZqBasic v) = M.basicInitialize v
-  basicUnsafeNew n = MV_ZqBasic `liftM` M.basicUnsafeNew n
-  basicUnsafeReplicate n (ZqB x) = MV_ZqBasic `liftM` M.basicUnsafeReplicate n x
-  basicUnsafeRead (MV_ZqBasic v) z = ZqB `liftM` M.basicUnsafeRead v z
+  basicUnsafeNew n = MV_ZqBasic <$> M.basicUnsafeNew n
+  basicUnsafeReplicate n (ZqB x) = MV_ZqBasic <$> M.basicUnsafeReplicate n x
+  basicUnsafeRead (MV_ZqBasic v) z = ZqB <$> M.basicUnsafeRead v z
   basicUnsafeWrite (MV_ZqBasic v) z (ZqB x) = M.basicUnsafeWrite v z x
   basicClear (MV_ZqBasic v) = M.basicClear v
   basicSet (MV_ZqBasic v) (ZqB x) = M.basicSet v x
   basicUnsafeCopy (MV_ZqBasic v1) (MV_ZqBasic v2) = M.basicUnsafeCopy v1 v2
   basicUnsafeMove (MV_ZqBasic v1) (MV_ZqBasic v2) = M.basicUnsafeMove v1 v2
-  basicUnsafeGrow (MV_ZqBasic v) n = MV_ZqBasic `liftM` M.basicUnsafeGrow v n
+  basicUnsafeGrow (MV_ZqBasic v) n = MV_ZqBasic <$> M.basicUnsafeGrow v n
 
-instance (U.Unbox z) => G.Vector U.Vector (ZqBasic q z) where
-  basicUnsafeFreeze (MV_ZqBasic v) = V_ZqBasic `liftM` G.basicUnsafeFreeze v
-  basicUnsafeThaw (V_ZqBasic v) = MV_ZqBasic `liftM` G.basicUnsafeThaw v
+instance U.Unbox z => G.Vector U.Vector (ZqBasic q z) where
+  basicUnsafeFreeze (MV_ZqBasic v) = V_ZqBasic <$> G.basicUnsafeFreeze v
+  basicUnsafeThaw (V_ZqBasic v) = MV_ZqBasic <$> G.basicUnsafeThaw v
   basicLength (V_ZqBasic v) = G.basicLength v
   basicUnsafeSlice z n (V_ZqBasic v) = V_ZqBasic $ G.basicUnsafeSlice z n v
-  basicUnsafeIndexM (V_ZqBasic v) z = ZqB `liftM` G.basicUnsafeIndexM v z
+  basicUnsafeIndexM (V_ZqBasic v) z = ZqB <$> G.basicUnsafeIndexM v z
   basicUnsafeCopy (MV_ZqBasic mv) (V_ZqBasic v) = G.basicUnsafeCopy mv v
   elemseq _ = seq
