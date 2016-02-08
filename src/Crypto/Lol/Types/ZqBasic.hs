@@ -166,13 +166,16 @@ instance (ReflectsTI q z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
 -- instance of Additive
 instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
 
+  {-# INLINABLE zero #-}
   zero = ZqB zero
 
+  {-# INLINABLE (+) #-}
   (+) = let qval = proxy value (Proxy::Proxy q)
         in \ (ZqB x) (ZqB y) ->
         let z = x + y
         in ZqB (if z >= qval then z - qval else z)
 
+  {-# INLINABLE negate #-}
   negate (ZqB x) = reduce' $ negate x
 
 -- instance of Ring
@@ -180,6 +183,7 @@ instance (ReflectsTI q z, Ring z) => Ring.C (ZqBasic q z) where
   {-# INLINABLE (*) #-}
   (ZqB x) * (ZqB y) = reduce' $ x * y
     
+  {-# INLINABLE fromInteger #-}
   fromInteger =
     let qval = toInteger (proxy value (Proxy::Proxy q) :: z)
     -- this is safe as long as type z can hold the value of q
@@ -188,13 +192,14 @@ instance (ReflectsTI q z, Ring z) => Ring.C (ZqBasic q z) where
 -- instance of Field
 instance (ReflectsTI q z, PID z, Show z) => Field.C (ZqBasic q z) where
 
+  {-# INLINABLE recip #-}
   recip = let qval = proxy value (Proxy::Proxy q)
               -- safe because modinv returns in range 0..qval-1
           in \(ZqB x) -> ZqB $
                fromMaybe (error $ "ZqB.recip fail: " ++
                          show x ++ "\t" ++ show qval) $ modinv x qval
 
--- (canonical) instance of IntegralDomain, needed for FastCyc
+-- (canonical) instance of IntegralDomain, needed for Cyclotomics
 instance (Field (ZqBasic q z)) => IntegralDomain.C (ZqBasic q z) where
   divMod a b = (a/b, zero)
 
