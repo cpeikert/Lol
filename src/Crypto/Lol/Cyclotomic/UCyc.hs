@@ -96,14 +96,6 @@ data UCyc t (m :: Factored) r where
   -- optimized storage of subring elements
   Sub  :: (l `Divides` m) => !(UCyc t l r) -> UCyc t m r
 
-
-  --EAC: Consider this representation for product rings, but beware of combinatorial explosion of cases.
-  --Product :: !(UCyc t m a) -> !(UCyc t m b) -> UCyc t m (a,b)
-
--- | Shorthand for frequently reused constraints that are needed for
---  change of basis.
-type UCCtx t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r)
-
 -- | Collection of constraints needed for most functions over a
 -- particular base ring @r@.
 type RElt t r = (TElt t r, CRTrans r, IntegralDomain r, ZeroTestable r, NFData r)
@@ -111,15 +103,14 @@ type RElt t r = (TElt t r, CRTrans r, IntegralDomain r, ZeroTestable r, NFData r
 -- | Shorthand for frequently reused constraints that are needed for
 -- most functions involving 'UCyc' and
 -- 'Crypto.Lol.Cyclotomic.Cyc.Cyc'.
-type CElt t r = (Tensor t, RElt t r, RElt t (CRTExt r),
-                 CRTEmbed r, Eq r, Random r)
+type CElt t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r, Eq r, Random r)
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.scalarCyc', but for 'UCyc'.
 scalarCyc :: (Fact m, CElt t a) => a -> UCyc t m a
 scalarCyc = Scalar
 
 -- Eq instance
-instance (UCCtx t r, Fact m, Eq r) => Eq (UCyc t m r) where
+instance (CElt t r, Fact m) => Eq (UCyc t m r) where
   -- handle same bases when fidelity allows (i.e., *not* CRTe basis)
   (Scalar v1) == (Scalar v2) = v1 == v2
   (Pow v1) == (Pow v2) = v1 == v2 \\ witness entailEqT v1
@@ -133,21 +124,21 @@ instance (UCCtx t r, Fact m, Eq r) => Eq (UCyc t m r) where
 
   -- otherwise compare in power basis for fidelity, which involves
   -- the most efficient transforms in all cases
-  p1 == p2 = toPow' p1 == toPow' p2
+  p1 == p2 = forcePow p1 == forcePow p2
 
 ---------- Numeric Prelude instances ----------
 
 -- ZeroTestable instance
-instance (UCCtx t r, Fact m) => ZeroTestable.C (UCyc t m r) where
+instance (CElt t r, Fact m) => ZeroTestable.C (UCyc t m r) where
   isZero (Scalar v) = isZero v
   isZero (Pow v) = isZero v \\ witness entailZTT v
   isZero (Dec v) = isZero v \\ witness entailZTT v
   isZero (CRTr v) = isZero v \\ witness entailZTT v
-  isZero x@(CRTe _) = isZero $ toPow' x
+  isZero x@(CRTe _) = isZero $ forcePow x
   isZero (Sub c) = isZero c
 
 -- Additive instance
-instance (UCCtx t r, Fact m) => Additive.C (UCyc t m r) where
+instance (CElt t r, Fact m) => Additive.C (UCyc t m r) where
 
   zero = Scalar zero
 
@@ -168,14 +159,14 @@ instance (UCCtx t r, Fact m) => Additive.C (UCyc t m r) where
 
   -- SCALAR PLUS SOMETHING ELSE
 
-  p1@(Scalar _) + p2@(Pow _) = toPow' p1 + p2
-  p1@(Scalar _) + p2@(Dec _) = toDec' p1 + p2
+  p1@(Scalar _) + p2@(Pow _) = forcePow p1 + p2
+  p1@(Scalar _) + p2@(Dec _) = forceDec p1 + p2
   p1@(Scalar _) + p2@(CRTr _) = toCRT' p1 + p2
   p1@(Scalar _) + p2@(CRTe _) = toCRT' p1 + p2
   (Scalar c1) + (Sub c2) = Sub $ Scalar c1 + c2 -- must re-wrap Scalar!
 
-  p1@(Pow _) + p2@(Scalar _) = p1 + toPow' p2
-  p1@(Dec _) + p2@(Scalar _) = p1 + toDec' p2
+  p1@(Pow _) + p2@(Scalar _) = p1 + forcePow p2
+  p1@(Dec _) + p2@(Scalar _) = p1 + forceDec p2
   p1@(CRTr _) + p2@(Scalar _) = p1 + toCRT' p2
   p1@(CRTe _) + p2@(Scalar _) = p1 + toCRT' p2
   (Sub c1) + (Scalar c2) = Sub $ c1 + Scalar c2
@@ -185,8 +176,8 @@ instance (UCCtx t r, Fact m) => Additive.C (UCyc t m r) where
   c1 + (Sub c2) = c1 + embed' c2
 
   -- mixed Dec and Pow: use linear time conversions
-  p1@(Dec _) + p2@(Pow _) = toPow' p1 + p2
-  p1@(Pow _) + p2@(Dec _) = p1 + toPow' p2
+  p1@(Dec _) + p2@(Pow _) = forcePow p1 + p2
+  p1@(Pow _) + p2@(Dec _) = p1 + forcePow p2
 
   -- one CRTr: convert other to CRTr
   p1@(CRTr _) + p2 = p1 + toCRT' p2
@@ -194,7 +185,7 @@ instance (UCCtx t r, Fact m) => Additive.C (UCyc t m r) where
 
   -- else, one is CRTe: convert both to Pow for fidelity and best
   -- efficiency
-  p1 + p2 = toPow' p1 + toPow' p2
+  p1 + p2 = forcePow p1 + forcePow p2
 
   negate (Scalar c) = Scalar (negate c)
   negate (Pow v) = Pow $ fmapT negate v
@@ -204,9 +195,13 @@ instance (UCCtx t r, Fact m) => Additive.C (UCyc t m r) where
   negate (Sub c) = Sub $ negate c
 
 -- Ring instance
-instance (UCCtx t r, Fact m) => Ring.C (UCyc t m r) where
+instance (CElt t r, Fact m) => Ring.C (UCyc t m r) where
+
+  --{-# SPECIALIZE instance Ring.C (UCyc RT F288 (ZqBasic 577 Int64)) #-}
 
   one = Scalar one
+
+  {-# INLINABLE (*) #-}
 
   -- optimized mul-by-zero
   v1@(Scalar c1) * _ | isZero c1 = v1
@@ -214,7 +209,7 @@ instance (UCCtx t r, Fact m) => Ring.C (UCyc t m r) where
 
   -- BOTH IN A CRT BASIS
   (CRTr v1) * (CRTr v2) = CRTr $ v1 * v2 \\ witness entailRingT v1
-  (CRTe v1) * (CRTe v2) = toPow' $ CRTe $ v1 * v2 \\ witness entailRingT v1
+  (CRTe v1) * (CRTe v2) = forcePow $ CRTe $ v1 * v2 \\ witness entailRingT v1
 
   -- CRTr/CRTe mixture
   (CRTr _) * (CRTe _) = error "UCyc.(*): mixed CRTr/CRTe"
@@ -378,7 +373,7 @@ tGaussian = liftM Dec . tGaussianDec
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.gSqNorm', but for 'UCyc'.
 gSqNorm :: (Fact m, CElt t r) => UCyc t m r -> r
 gSqNorm (Dec v) = gSqNormDec v
-gSqNorm c = gSqNorm $ toDec' c
+gSqNorm c = gSqNorm $ forceDec c
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.errorRounded', but for 'UCyc'.
 errorRounded :: forall v rnd t m z .
@@ -414,7 +409,7 @@ embed (Sub (c :: UCyc t l r)) = Sub c
 embed c = Sub c
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.twace', but for 'UCyc'.
-twace :: forall t r m m' . (UCCtx t r, m `Divides` m')
+twace :: forall t r m m' . (CElt t r, m `Divides` m')
          => UCyc t m' r -> UCyc t m r
 twace (Scalar c) = Scalar c
 -- twace on Sub goes to the largest common subring of O_l and O_m
@@ -425,20 +420,20 @@ twace (Pow v) = Pow $ twacePowDec v
 twace (Dec v) = Dec $ twacePowDec v
 -- stay in CRTr only iff it's valid for target, else go to Pow
 twace x@(CRTr v) =
-  fromMaybe (twace $ toPow' x) (CRTr <$> (twaceCRT <*> pure v))
+  fromMaybe (twace $ forcePow x) (CRTr <$> (twaceCRT <*> pure v))
 -- stay in CRTe iff CRTr is invalid for target, else go to Pow
 twace x@(CRTe v) =
   fromMaybe (CRTe $ fromJust' "UCyc.twace CRTe" twaceCRT v)
             (proxy (pasteT hasCRTFuncs) (Proxy::Proxy (t m r)) *>
-             pure (twace $ toPow' x))
+             pure (twace $ forcePow x))
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.coeffsCyc', but for 'UCyc'.
 coeffsCyc :: (m `Divides` m', CElt t r)
              => U.Basis -> UCyc t m' r -> [UCyc t m r]
 coeffsCyc U.Pow (Pow v) = LP.map Pow $ coeffs v
 coeffsCyc U.Dec (Dec v) = LP.map Dec $ coeffs v
-coeffsCyc U.Pow x = coeffsCyc U.Pow $ toPow' x
-coeffsCyc U.Dec x = coeffsCyc U.Dec $ toDec' x
+coeffsCyc U.Pow x = coeffsCyc U.Pow $ forcePow x
+coeffsCyc U.Dec x = coeffsCyc U.Dec $ forceDec x
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.powBasis', but for 'UCyc'.
 powBasis :: (m `Divides` m', CElt t r) => Tagged m [UCyc t m' r]
@@ -472,22 +467,14 @@ crtSet =
 -- implementation's choice (for 'Nothing' argument).  (See also the
 -- convenient specializations 'forcePow', 'forceDec', 'forceAny'.)
 forceBasis :: (Fact m, CElt t r) => Maybe U.Basis -> UCyc t m r -> UCyc t m r
-forceBasis (Just U.Pow) x = toPow' x
-forceBasis (Just U.Dec) x = toDec' x
-forceBasis Nothing x@(Scalar _) = toPow' x
+{-# INLINABLE forceBasis #-}
+forceBasis (Just U.Pow) x = forcePow x
+forceBasis (Just U.Dec) x = forceDec x
+forceBasis Nothing x@(Scalar _) = forcePow x
 -- force as outermost op to ensure we get an r-basis
 forceBasis Nothing (Sub c) = forceBasis Nothing $ embed' c
-forceBasis Nothing x@(CRTe _) = toPow' x
+forceBasis Nothing x@(CRTe _) = forcePow x
 forceBasis Nothing x = x
-
-forcePow, forceDec, forceAny :: (Fact m, CElt t r) => UCyc t m r -> UCyc t m r
--- | Force a cyclotomic element into the powerful basis.
-forcePow = forceBasis (Just U.Pow)
--- | Force a cyclotomic element into the decoding basis.
-forceDec = forceBasis (Just U.Dec)
--- | Force a cyclotomic into any @r@-basis of the implementation's
--- choice.
-forceAny = forceBasis Nothing
 
 -- | A more specialized version of 'fmap': apply a function
 -- coordinate-wise in the current representation.  The caller must
@@ -496,6 +483,7 @@ forceAny = forceBasis Nothing
 -- 'forceBasis' or its specializations ('forcePow', 'forceDec',
 -- 'forceAny').  Otherwise, behavior is undefined.
 fmapC :: (Fact m, CElt t a, CElt t b) => (a -> b) -> UCyc t m a -> UCyc t m b
+{-# INLINABLE fmapC #-}
 
 -- must be in an r-basis for correct semantics, e.g., f 0 = 1
 fmapC _ (Scalar _) = error "can't fmapC on Scalar.  Must forceBasis first!"
@@ -509,6 +497,7 @@ fmapC f (CRTr v) = CRTr $ fmapT f v
 -- | Monadic version of 'fmapC'.
 fmapCM :: (Fact m, CElt t a, CElt t b, Monad mon)
   => (a -> mon b) -> UCyc t m a -> mon (UCyc t m b)
+{-# INLINABLE fmapCM #-}
 
 -- must embed into full ring
 fmapCM _ (Scalar _) = error "can't fmapCM on Scalar. Must forceBasis first!"
@@ -528,43 +517,52 @@ fmapCM f (CRTr v) = liftM CRTr $ fmapTM f v
 -- Dec constructors, and CRTr/CRTe constructor if valid in both source
 -- and target ring (we rely on this in toCRT').
 embed' :: forall t r l m .
-          (UCCtx t r, l `Divides` m) => UCyc t l r -> UCyc t m r
+          (CElt t r, l `Divides` m) => UCyc t l r -> UCyc t m r
 embed' (Scalar x) = Scalar x    -- must re-wrap!
 embed' (Pow v) = Pow $ embedPow v
 embed' (Dec v) = Dec $ embedDec v
 -- stay in CRTr only if it's possible, otherwise go to Pow
 embed' x@(CRTr v) =
-    fromMaybe (embed' $ toPow' x) (CRTr <$> (embedCRT <*> pure v))
+    fromMaybe (embed' $ forcePow x) (CRTr <$> (embedCRT <*> pure v))
 embed' x@(CRTe v) = -- go to CRTe iff CRTr is invalid for target index
     fromMaybe (CRTe $ fromJust' "UCyc.embed' CRTe" embedCRT v)
               (proxy (pasteT hasCRTFuncs) (Proxy::Proxy (t m r)) *>
-               pure (embed' $ toPow' x))
+               pure (embed' $ forcePow x))
 embed' (Sub (c :: UCyc t k r)) = embed' c
   \\ transDivides (Proxy::Proxy k) (Proxy::Proxy l) (Proxy::Proxy m)
 
 
 --------- Basis conversion methods ------------------
 
-toPow', toDec' :: (UCCtx t r, Fact m) => UCyc t m r -> UCyc t m r
--- forces the argument into the powerful basis
-toPow' (Scalar c) = Pow $ scalarPow c
-toPow' (Sub c) = embed' $ toPow' c -- OK: embed' preserves Pow
-toPow' x@(Pow _) = x
-toPow' (Dec v) = Pow $ l v
-toPow' (CRTr v) = Pow $ fromJust' "UCyc.toPow'" crtInv v
-toPow' (CRTe v) =
-    Pow $ fmapT fromExt $ fromJust' "UCyc.toPow' CRTe" crtInv v
+forceAny, forcePow, forceDec :: (CElt t r, Fact m) => UCyc t m r -> UCyc t m r
+{-# INLINABLE forceAny #-}
+{-# INLINABLE forcePow #-}
+{-# INLINABLE forceDec #-}
 
--- | Force the argument into the decoding basis.
-toDec' x@(Scalar _) = toDec' $ toPow' x -- TODO: use scalarDec instead
-toDec' (Sub c) = embed' $ toDec' c      -- OK: embed' preserves Dec
-toDec' (Pow v) = Dec $ lInv v
-toDec' x@(Dec _) = x
-toDec' x@(CRTr _) = toDec' $ toPow' x
-toDec' x@(CRTe _) = toDec' $ toPow' x
+-- | Force a cyclotomic into any @r@-basis of the implementation's
+-- choice.
+forceAny = forceBasis Nothing
+
+-- | Force a cyclotomic element into the powerful basis.
+forcePow (Scalar c) = Pow $ scalarPow c
+forcePow (Sub c) = embed' $ forcePow c -- OK: embed' preserves Pow
+forcePow x@(Pow _) = x
+forcePow (Dec v) = Pow $ l v
+forcePow (CRTr v) = Pow $ fromJust' "UCyc.forcePow" crtInv v
+forcePow (CRTe v) =
+    Pow $ fmapT fromExt $ fromJust' "UCyc.forcePow CRTe" crtInv v
+
+-- | Force a cyclotomic element into the decoding basis.
+forceDec x@(Scalar _) = forceDec $ forcePow x -- TODO: use scalarDec instead
+forceDec (Sub c) = embed' $ forceDec c      -- OK: embed' preserves Dec
+forceDec (Pow v) = Dec $ lInv v
+forceDec x@(Dec _) = x
+forceDec x@(CRTr _) = forceDec $ forcePow x
+forceDec x@(CRTe _) = forceDec $ forcePow x
 
 -- | Force the argument into the "valid" CRT basis for our invariant.
-toCRT' :: forall t m r . (UCCtx t r, Fact m) => UCyc t m r -> UCyc t m r
+toCRT' :: forall t m r . (CElt t r, Fact m) => UCyc t m r -> UCyc t m r
+{-# INLINABLE toCRT' #-}
 toCRT' x@(CRTr _) = x
 toCRT' x@(CRTe _) = x
 toCRT' (Sub (c :: UCyc t l r)) =
@@ -575,7 +573,8 @@ toCRT' (Sub (c :: UCyc t l r)) =
       _ -> toCRT' $ embed' c            -- fallback
 toCRT' x = fromMaybe (toCRTe x) (toCRTr <*> pure x)
 
-toCRTr :: forall t m r . (UCCtx t r, Fact m) => Maybe (UCyc t m r -> UCyc t m r)
+toCRTr :: forall t m r . (CElt t r, Fact m) => Maybe (UCyc t m r -> UCyc t m r)
+{-# INLINABLE toCRTr #-}
 toCRTr = do -- Maybe monad
   crt' <- crt
   scalarCRT' <- scalarCRT
@@ -584,10 +583,11 @@ toCRTr = do -- Maybe monad
                    (Pow v) -> CRTr $ crt' v
                    (Dec v) -> CRTr $ crt' $ l v
                    c@(CRTr _) -> c
-                   c@(CRTe _) -> fromJust' "UCyc.toCRTr CRTe" toCRTr $ toPow' c
+                   c@(CRTe _) -> fromJust' "UCyc.toCRTr CRTe" toCRTr $ forcePow c
                    (Sub _) -> error "UCyc.toCRTr: Sub"
 
-toCRTe :: forall t m r . (UCCtx t r, Fact m) => UCyc t m r -> UCyc t m r
+toCRTe :: forall t m r . (CElt t r, Fact m) => UCyc t m r -> UCyc t m r
+{-# INLINABLE toCRTe #-}
 toCRTe = let m = proxy valueFact (Proxy::Proxy m)
              crt' = fromJust' ("UCyc.toCRTe: no crt': " ++ show m) crt
                   :: t m (CRTExt r) -> t m (CRTExt r) -- must exist
@@ -597,7 +597,7 @@ toCRTe = let m = proxy valueFact (Proxy::Proxy m)
                     (Scalar c) -> CRTe $ scalarCRT' $ toExt c
                     (Pow v) -> CRTe $ crt' $ fmapT toExt v
                     (Dec v) -> CRTe $ crt' $ fmapT toExt $ l v
-                    c@(CRTr _) -> toCRTe $ toPow' c
+                    c@(CRTr _) -> toCRTe $ forcePow c
                     c@(CRTe _) -> c
                     (Sub _) -> error "UCyc.toCRTe: Sub"
 
@@ -643,6 +643,7 @@ instance (Tensor t, Fact m) => Applicative (UCyc t m) where
 
   pure = Scalar
 
+  {-# INLINABLE (<*>) #-}
   -- homomorphism (of pure)
   (Scalar f) <*> (Scalar a) = Scalar $ f a
 
@@ -668,6 +669,7 @@ instance (Tensor t, Fact m) => Applicative (UCyc t m) where
   _ <*> _ = errApp "mismatched Pow/Dec/CRTr bases"
 
 instance (Tensor t, Fact m) => Foldable (UCyc t m) where
+  {-# INLINABLE foldr #-}
   foldr f b (Scalar r) = f r b
   foldr f b (Sub c) = F.foldr f b c
   foldr f b (Pow v) = F.foldr f b v \\ witness entailIndexT v
@@ -676,6 +678,7 @@ instance (Tensor t, Fact m) => Foldable (UCyc t m) where
   foldr _ _ (CRTe _) = error "UCyc.Foldable: can't handle CRTe"
 
 instance (Tensor t, Fact m) => Traversable (UCyc t m) where
+  {-# INLINABLE traverse #-}
   traverse f (Scalar r) = Scalar <$> f r
   traverse f (Sub c) = Sub <$> traverse f c
   traverse f (Pow v) = Pow <$> traverse f v \\ witness entailIndexT v
