@@ -126,6 +126,7 @@ instance '[] `Satisfy` ctx  where
   
   run _ _ = []
 
+
 class WrapFunc res where
   type WrapOf res
 

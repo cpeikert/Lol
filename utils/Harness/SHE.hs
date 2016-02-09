@@ -6,7 +6,6 @@
 module Harness.SHE 
 (KSHint(..)
 ,Tunnel(..)
-,genSHEArgs
 ,wrap'
 
 ,benchKSQ
@@ -38,13 +37,6 @@ import GHC.Prim
 import Data.Constraint
 import Crypto.Random.DRBG
 
-
-
-genSHEArgs :: forall sk bnch rnd . 
-  (Benchmarkable (StateT (Maybe sk) rnd) bnch, Monad rnd)
-  => Proxy sk -> bnch -> rnd (ResultOf bnch)
-genSHEArgs _ f = evalStateT (genArgs f) (Nothing :: Maybe sk)
-
 --extract an SK type from a tuple of params
 type family SKOf (a :: k) :: * where
   SKOf '(t,m,m',zp,zq)         = SK (Cyc t m' (LiftOf zp))
@@ -56,7 +48,8 @@ wrap' :: forall a rnd bnch res c .
   (Benchmarkable (StateT (Maybe (SKOf a)) rnd) bnch, Monad rnd, ShowArgs a,
    WrapFunc res, res ~ ResultOf bnch, res ~ c a)
   => bnch -> Proxy a -> rnd (WrapOf res)
-wrap' f p = wrap (showArgs p) <$> genSHEArgs (Proxy::Proxy (SKOf a)) f
+wrap' f p = wrap (showArgs p) <$> (evalStateT (genArgs f) (Nothing :: Maybe (SKOf a)))
+
 
 
 
