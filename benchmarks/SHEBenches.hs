@@ -31,7 +31,8 @@ sheBenches = bgroupRnd "SHE" [
    bgroupRnd "mulPublic" $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' bench_mulPublic,
    bgroupRnd "dec"       $ benchDec (Proxy::Proxy DecParams) $ wrap' bench_dec,
    bgroupRnd "rescaleCT" $ benchRescale (Proxy::Proxy RescaleParams) $ wrap' bench_rescaleCT,
-   bgroupRnd "keySwitch" $ benchKSQ (Proxy::Proxy KSQParams) $ wrap' bench_keySwQ
+   bgroupRnd "keySwitch" $ benchKSQ (Proxy::Proxy KSQParams) $ wrap' bench_keySwQ,
+   bgroupRnd "tunnel"    $ benchTunn (Proxy::Proxy TunnParams)  $ wrap' bench_tunnel
    ]
 
 bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRandomGen gen, z ~ LiftOf zp)
@@ -64,6 +65,10 @@ bench_keySwQ :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq)))
   => KSHint m zp t m' zq gad zq' -> CT m zp (Cyc t m' zq) -> NFValue' '(t,m,m',zp,zq,zq',gad)
 bench_keySwQ (KeySwitch kswq) x = nfv kswq $ x*x
 
+bench_tunnel :: (NFData (CT s zp (Cyc t s' zq))) 
+  => Tunnel t r r' s s' zp zq gad -> CT r zp (Cyc t r' zq) -> NFValue' '(t,r,r',s,s',zp,zq,gad)
+bench_tunnel (Tunnel f) x = nfv f x
+
 type Gens    = '[HashDRBG]
 type Gadgets = '[TrivGad, BaseBGad 2]
 type Tensors = '[CT.CT,RT]
@@ -87,3 +92,30 @@ type DecParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable MM'PQCombos))
 type RescaleParams = ( '(,) <$> Tensors) <*> (Map AddZq (Filter NonLiftable MM'PQCombos))
 type KSQParams = ( '(,) <$> Gadgets) <*> RescaleParams
 type EncParams = ( '(,) <$> Gens) <*> CTParams
+
+-- 3144961,5241601,7338241,9959041,10483201,11531521,12579841,15200641,18869761,19393921
+type TunnParams = 
+  ( '(,) <$> Gadgets) <*> 
+  (( '(,) <$> Tensors) <*> 
+  (( '(,) <$> TunnRings) <*> TunnMods))
+
+
+type TunnRings = '[
+  {- H0 -> H1 -} '(F128, F128 * F7 * F13, F64 * F7, F64 * F7 * F13),
+  {- H1 -> H2 -} '(F64 * F7, F64 * F7 * F13, F32 * F7 * F13, F32 * F7 * F13),
+  {- H2 -> H3 -} '(F32 * F7 * F13, F32 * F7 * F13, F8 * F5 * F7 * F13, F8 * F5 * F7 *F13),
+  {- H3 -> H4 -} '(F8 * F5 * F7 * F13, F8 * F5 * F7 *F13, F4 * F3 * F5 * F7 * F13, F4 * F3 * F5 * F7 * F13),
+  {- H4 -> H5 -} '(F4 * F3 * F5 * F7 * F13, F4 * F3 * F5 * F7 *F13, F9 * F5 * F7 * F13, F9 * F5 * F7 * F13)   
+    --{- H0 -> H5 -} '(F128, F128 * F7 * F13, F9 * F5 * F7 * F13, F9 * F5 * F7 * F13)
+    ]
+
+type TunnMods = '[
+  '(Zq PP32, Zq 3144961),
+  '(Zq PP32, Zq (3144961 ** 5241601)),
+  '(Zq PP32, Zq (3144961 ** 5241601 ** 7338241)),
+  '(Zq PP32, Zq (3144961 ** 5241601 ** 7338241 ** 9959041)),
+  '(Zq PP32, Zq (3144961 ** 5241601 ** 7338241 ** 9959041 ** 10483201)),
+  '(Zq PP32, Zq (3144961 ** 5241601 ** 7338241 ** 9959041 ** 10483201 ** 11531521)),
+  '(Zq PP32, Zq (3144961 ** 5241601 ** 7338241 ** 9959041 ** 10483201 ** 11531521 ** 12579841)){-,
+  '(Zq PP32, Zq (3144961 ** 5241601 ** 7338241 ** 9959041 ** 10483201 ** 11531521 ** 12579841 ** 15200641))-}
+  ]

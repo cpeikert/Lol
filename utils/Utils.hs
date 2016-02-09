@@ -253,3 +253,7 @@ instance (Show (BenchArgs a), Show (BenchArgs '(b,c,d,e,f)))
 instance (Show (BenchArgs a), Show (BenchArgs '(b,c,d,e,f,g))) 
   => Show (BenchArgs '(a,b,c,d,e,f,g)) where
   show _ = (show (BT :: BenchArgs a)) ++ " " ++ (show (BT :: BenchArgs '(b,c,d,e,f,g)))
+
+instance (Show (BenchArgs a), Show (BenchArgs '(b,c,d,e,f,g,h))) 
+  => Show (BenchArgs '(a,b,c,d,e,f,g,h)) where
+  show _ = (show (BT :: BenchArgs a)) ++ " " ++ (show (BT :: BenchArgs '(b,c,d,e,f,g,h)))

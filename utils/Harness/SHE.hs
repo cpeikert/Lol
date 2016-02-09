@@ -5,6 +5,7 @@
 
 module Harness.SHE 
 (KSHint(..)
+,Tunnel(..)
 ,genSHEArgs
 ,wrap'
 
@@ -13,6 +14,7 @@ module Harness.SHE
 ,benchDec
 ,benchCTFunc
 ,benchEnc
+,benchTunn
 )where
 
 import Utils
@@ -24,6 +26,8 @@ import Control.Monad.State
 
 import Crypto.Lol hiding (CT)
 import Crypto.Lol.Applications.SymmSHE
+import Crypto.Lol.Cyclotomic.Linear
+import Crypto.Lol.Types.ZPP
 import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 
 import Test.Framework
@@ -46,6 +50,7 @@ type family SKOf (a :: k) :: * where
   SKOf '(t,m,m',zp,zq)         = SK (Cyc t m' (LiftOf zp))
   SKOf '(t,m,m',zp,zq,zq')     = SK (Cyc t m' (LiftOf zp))
   SKOf '(t,m,m',zp,zq,zq',gad) = SK (Cyc t m' (LiftOf zp))
+  SKOf '(t,r,r',s,s',zp,zq,gad) = SK (Cyc t r' (LiftOf zp))
 
 wrap' :: forall a rnd bnch res c . 
   (Benchmarkable (StateT (Maybe (SKOf a)) rnd) bnch, Monad rnd, ShowArgs a,
@@ -80,23 +85,31 @@ benchDec params g = run params $ \(DecD p) -> g p
 
 
 
+data TunnCtxD
+-- union of compatible constraints in benchmarks
+type TunnCtx t r r' e e' s s' zp zq gad = 
+  (NFData (CT s zp (Cyc t s' zq)),
+   ShowArgs '(t,r,r',s,s',zp,zq,gad),
+   EncryptCtx t r r' (LiftOf zp) zp zq,
+   EncryptCtx t s s' (LiftOf zp) zp zq,
+   TunnelCtx t e r s e' r' s' (LiftOf zp) zp zq gad, 
+   e ~ FGCD r s,
+   ZPP zp,
+   Fact e,
+   CElt t (ZpOf zp))
+instance (params `Satisfy` TunnCtxD, TunnCtx t r r' e e' s s' zp zq gad) 
+  => ( '(gad, '(t, '( '(r,r',s,s'), '(zp,zq)))) ': params) `Satisfy` TunnCtxD where
+  data ArgsCtx TunnCtxD where
+    TunnD :: (TunnCtx t r r' e e' s s' zp zq gad) 
+      => Proxy '(t,r,r',s,s',zp,zq,gad) -> ArgsCtx TunnCtxD
+  run _ f = (f $ TunnD (Proxy::Proxy '(t,r,r',s,s',zp,zq,gad))) : (run (Proxy::Proxy params) f)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+benchTunn :: (params `Satisfy` TunnCtxD) =>
+  Proxy params ->
+  (forall t r r' e e' s s' zp zq gad . (TunnCtx t r r' e e' s s' zp zq gad) 
+       => Proxy '(t,r,r',s,s',zp,zq,gad) -> rnd Benchmark)
+    -> [rnd Benchmark]
+benchTunn params g = run params $ \(TunnD p) -> g p
 
 
 
@@ -135,45 +148,6 @@ benchKSQ :: (params `Satisfy` KSQCtxD) =>
   -> [rnd res]
 benchKSQ params g = run params $ \(KSQD p) -> g p
 
-{-
-type Proxy' (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (zp :: *) (zq :: *) (zq' :: *) (gad :: *) = Proxy '(t,m,m',zp,zq,zq',gad)
--- allowed args: CT, KSHint, SK
--- context for (*), (==), decryptUnrestricted
-data KSQCtxD
--- it'd be nice to make this associated to `Satsify`,
--- but we have to use a *ton* of kind signatures if we do
-type family Ctx ctx (a :: k) :: Constraint
-
-type instance Ctx KSQCtxD '(gad, '(t, '(m,m',zp,zq,zq'))) = 
-    (EncryptCtx t m m' (LiftOf zp) zp zq,
-     KeySwitchCtx gad t m' zp zq zq',
-     KSHintCtx gad t m' (LiftOf zp) zq',
-     -- ^ these provide the context to generate the parameters
-     Ring (CT m zp (Cyc t m' zq)), 
-     Eq (Cyc t m zp), 
-     Fact m, Fact m', CElt t zp, m `Divides` m',
-     Reduce (LiftOf zp) zq, Lift' zq, CElt t (LiftOf zp), ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp,
-     -- ^ these provide the context for tests
-     NFData (CT m zp (Cyc t m' zq)),
-     ShowArgs '(t,m,m',zp,zq,zq',gad))
-     -- ^ these provide the context for benchmarks
-
-data instance ArgsCtx ctx where
-    KSQD :: (Ctx ctx a)
-      => Proxy a -> ArgsCtx ctx
-
-instance (params `Satisfy` ctx, Ctx ctx a)
-  => ( a ': params) `Satisfy` ctx where
-  
-  run _ f = (f $ KSQD (Proxy::Proxy a)) : (run (Proxy::Proxy params) f)
-
-benchKSQ :: (params `Satisfy` KSQCtxD) => 
-  Proxy params ->
-  (forall t m m' zp zq zq' gad . (Ctx KSQCtxD '(gad, '(t, '(m,m',zp,zq,zq'))))
-     => Proxy' t m m' zp zq zq' gad -> rnd res)
-  -> [rnd res]
-benchKSQ params g = run params $ \(KSQD p :: ArgsCtx KSQCtxD) -> g p
--}
 
 
 
@@ -200,18 +174,6 @@ benchRescale params g = run params $ \(RD p) -> g p
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 data CTCtxD
 -- union of compatible constraints in benchmarks
 type CTCtx t m m' zp zq = 
@@ -234,9 +196,6 @@ benchCTFunc :: (params `Satisfy` CTCtxD) =>
       => Proxy '(t,m,m',zp,zq) -> rnd res)
   -> [rnd res]
 benchCTFunc params g = run params $ \(CTD p) -> g p
-
-
-
 
 
 
@@ -307,3 +266,28 @@ instance (Generatable rnd (SK (Cyc t m' z)),
   genArg = do
     sk :: SK (Cyc t m' z) <- genArg
     KeySwitch <$> proxyT (keySwitchQuadCirc sk) (Proxy::Proxy (gad,zq'))
+
+newtype Tunnel t r r' s s' zp zq gad = Tunnel (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq))
+instance (Generatable rnd (SK (Cyc t r' z)),
+          z ~ LiftOf zp,
+          TunnelCtx t e r s e' r' s' z zp zq gad, 
+          e ~ FGCD r s,
+          ZPP zp,
+          Fact e,
+          CElt t (ZpOf zp),
+          MonadRandom rnd,
+          Generatable (StateT (Maybe (SK (Cyc t s' z))) rnd) (SK (Cyc t s' z)))
+  => Generatable rnd (Tunnel t r r' s s' zp zq gad) where
+  genArg = do
+    skin :: SK (Cyc t r' z) <- genArg
+    -- EAC: bit of a hack for now
+    skout :: SK (Cyc t s' z) <- evalStateT genArg (Nothing :: Maybe (SK (Cyc t s' z)))
+    let crts :: [Cyc t s zp] = proxy crtSet (Proxy::Proxy e)\\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
+        r = proxy totientFact (Proxy::Proxy r)
+        e = proxy totientFact (Proxy::Proxy e)
+        dim = r `div` e
+        -- only take as many crts as we need
+        -- otherwise linearDec fails
+        linf :: Linear t zp e r s = linearDec (take dim crts) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
+    f <- proxyT (tunnelCT linf skout skin) (Proxy::Proxy gad)
+    return $ Tunnel f
