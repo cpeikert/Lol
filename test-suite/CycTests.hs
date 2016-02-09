@@ -1,40 +1,24 @@
-{-# LANGUAGE RankNTypes, ScopedTypeVariables, NoImplicitPrelude, RebindableSyntax,
-             TypeOperators, FlexibleContexts, ConstraintKinds, TypeFamilies, PolyKinds,
-             DataKinds #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, NoImplicitPrelude, PolyKinds,
+             ScopedTypeVariables, TypeOperators, TypeFamilies #-}
 module CycTests (cycTests) where
 
-import TestTypes hiding (Zq)
+import Control.Monad (liftM2,join)
 
-import Crypto.Lol.CRTrans
-import Crypto.Lol.Cyclotomic.Cyc
-import Crypto.Lol.LatticePrelude
-import Crypto.Lol.Cyclotomic.Tensor.CTensor
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor
-import Crypto.Lol.Types.FiniteField
-import Crypto.Lol.Types.IrreducibleChar2
+import Crypto.Lol
 import Crypto.Lol.Types.ZPP
 
-import Control.Applicative
-import Control.Monad (join, liftM2)
-
-import Data.Array.Repa.Eval (Elt)
-import Data.Vector.Unboxed (Vector, Unbox)
-import Data.Vector.Storable (Storable)
-
-import Test.Framework (testGroup, Test, defaultMain, buildTest)
-import Test.Framework.Providers.QuickCheck2 (testProperty)
-import Test.QuickCheck (Property, property, Arbitrary)
+import Test.Framework (buildTest)
 
 import Utils
 import Harness.Cyc
 
-cycTests = [buildTest $ testGroupRnd "coeffsPow" $ benchTwoIdx (Proxy::Proxy '[]) $ wrap' prop_coeffsBasis,
-            buildTest $ testGroupRnd "mulGPow" $ benchBasic (Proxy::Proxy AllParams) $ wrap' prop_mulgPow,
-            buildTest $ testGroupRnd "mulGDec" $ benchBasic (Proxy::Proxy AllParams) $ wrap' prop_mulgDec,
-            buildTest $ testGroupRnd "mulGCRT" $ benchBasic (Proxy::Proxy AllParams) $ wrap' prop_mulgCRT,
-            buildTest $ testGroupRnd "crtSet"  $ benchBasis (Proxy::Proxy BasisParams) $ wrap' prop_crtSet_pairs
-            ]
-
+cycTests = [
+  buildTest $ testGroupRnd "coeffsPow" $ benchTwoIdx (Proxy::Proxy '[]) $ wrap' prop_coeffsBasis,
+  buildTest $ testGroupRnd "mulGPow" $ benchBasic (Proxy::Proxy AllParams) $ wrap' prop_mulgPow,
+  buildTest $ testGroupRnd "mulGDec" $ benchBasic (Proxy::Proxy AllParams) $ wrap' prop_mulgDec,
+  buildTest $ testGroupRnd "mulGCRT" $ benchBasic (Proxy::Proxy AllParams) $ wrap' prop_mulgCRT,
+  buildTest $ testGroupRnd "crtSet"  $ benchBasis (Proxy::Proxy BasisParams) $ wrap' prop_crtSet_pairs
+  ]
 
 prop_mulgPow :: (CElt t r, Fact m) => Cyc t m r -> TestBool '(t,m,r)
 prop_mulgPow x =
@@ -71,27 +55,25 @@ type Tensors = '[CT,RT]
 type MRCombos = 
   '[ '(F7, Zq 29),
      '(F7, Zq 32),
-     '(F12, SmoothZQ1),
+     '(F12, Zq 2148249601),
      '(F1, Zq 17),
      '(F2, Zq 17),
      '(F4, Zq 17),
      '(F8, Zq 17),
      '(F21, Zq 8191),
      '(F42, Zq 8191),
-     '(F42, ZQ1),
+     '(F42, Zq 18869761),
      '(F42, Zq 1024),
-     '(F42, ZQ2),
+     '(F42, Zq (18869761 ** 19393921)),
      '(F89, Zq 179)
     ]
--- EAC: must be careful where we use Nub: apparently TypeRepStar doesn't work well with the Tensor constructors
-type AllParams = ( '(,) <$> Tensors) <*> MRCombos
-
-
 
 type MM'RCombos = '[
   '(F1, F7, Zq PP8),
   '(F1, F7, Zq PP2)
   ]
+
+type AllParams = ( '(,) <$> Tensors) <*> MRCombos
 type BasisParams = ( '(,) <$> Tensors) <*> MM'RCombos
 
 -- for crtSet, take all pairwise products 

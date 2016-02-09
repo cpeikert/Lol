@@ -23,7 +23,8 @@ SK, PT, CT                    -- don't export constructors!
 , embedSK, embedCT, twaceCT
 , tunnelCT
 -- * Constraint synonyms
-, GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx, DecryptCtx
+, GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx
+, DecryptCtx, DecryptUCtx
 , AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
 , SwitchCtx, KeySwitchCtx, KSHintCtx
 , TunnelCtx
@@ -134,6 +135,11 @@ decrypt sk ct =
 
 --- unrestricted versions ---
 
+type DecryptUCtx t m m' z zp zq =
+  (Fact m, Fact m', CElt t zp, m `Divides` m',
+   Reduce z zq, Lift' zq, CElt t z, 
+   ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp)
+
 -- | More general form of 'errorTerm' that works for unrestricted
 -- output coefficient types.
 errorTermUnrestricted :: 
@@ -146,11 +152,8 @@ errorTermUnrestricted (SK _ s) = let sq = reduce s in
 
 -- | More general form of 'decrypt' that works for unrestricted output
 -- coefficient types.
-decryptUnrestricted :: 
- (Fact m, Fact m', CElt t zp, m `Divides` m',
-  Reduce z zq, Lift' zq, CElt t z, ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp)
+decryptUnrestricted :: (DecryptUCtx t m m' z zp zq)
   => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> PT (Cyc t m zp)
-
 decryptUnrestricted (SK _ s) = let sq = reduce s in
   \ct -> let (CT LSD k l c) = toLSD ct
          in let eval = evaluate c sq

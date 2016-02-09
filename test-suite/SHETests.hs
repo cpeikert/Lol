@@ -84,9 +84,10 @@ type DecParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable MM'PQCombos))
 type Zq'Params = ( '(,) <$> Tensors) <*> (Map AddZq (Filter NonLiftable MM'PQCombos))
 type KSQParams = ( '(,) <$> Gadgets) <*> Zq'Params
 
-
-prop_ksQuad2 :: (Ring (CT m zp (Cyc t m' zq)),  CElt t zp, m `Divides` m',
-  Reduce z zq, Lift' zq, CElt t z, ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp, z ~ LiftOf zp)
+prop_ksQuad2 :: 
+  (Ring (CT m zp (Cyc t m' zq)),
+   DecryptUCtx t m m' z zp zq, 
+   Eq (Cyc t m zp))
   => SK (Cyc t m' z) 
      -> KSHint m zp t m' zq gad zq' 
      -> CT m zp (Cyc t m' zq) 
@@ -100,33 +101,33 @@ prop_ksQuad2 sk (KeySwitch kswq) x1 x2 =
       x = decryptUnrestricted sk x'
   in test $ y == x
 
+prop_addPub :: forall t m m' z zp zq . 
+  (DecryptUCtx t m m' z zp zq,
+   AddPublicCtx t m m' zp zq,
+   Eq (Cyc t m zp))
+  => SK (Cyc t m' z) 
+     -> Cyc t m zp 
+     -> CT m zp (Cyc t m' zq) 
+     -> TestBool '(t,m,m',zp,zq)
+prop_addPub sk x y = 
+  let xy = addPublic x y
+      xy' = decryptUnrestricted sk xy
+      y' = decryptUnrestricted sk y
+  in test $ xy' == (x+y')
 
-{-
-prop_ksQuad :: forall m zp z c m' zq gad zq' deczq . (KsCtx m zp z c m' zq gad zq' deczq) 
-  => Proxy '(m', zq, gad, zq', deczq) -> Cyc c m zp -> Cyc c m zp -> Property
-prop_ksQuad (_ :: Proxy '(m', zq, gad, zq', deczq)) x1 x2 = monadicIO $ do
-  sk :: SK (Cyc c m' (LiftOf zp)) <- genSK v
-  y1 :: CT m zp (Cyc c m' zq) <- encrypt sk x1
-  y2 :: CT m zp (Cyc c m' zq) <- encrypt sk x2
-  ks <- proxyT (keySwitchQuadCirc sk) (Proxy::Proxy (gad,zq'))
-  let y' = ks (y1*y2)
-      x' = decrypt sk (rescaleLinearCT y' :: CT m zp (Cyc c m' deczq))
-  assert $ x1*x2 == x'
-
-
-
-
-bench_keySwQ :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq))) 
-  => KSHint m zp t m' zq gad zq' -> CT m zp (Cyc t m' zq) -> NFValue
-bench_keySwQ (KeySwitch kswq) x = nf kswq $ x*x
--}
-
-
-
-
-
-
-
+prop_mulPub :: forall t m m' z zp zq . 
+  (DecryptUCtx t m m' z zp zq,
+   MulPublicCtx t m m' zp zq,
+   Eq (Cyc t m zp))
+  => SK (Cyc t m' z) 
+     -> Cyc t m zp 
+     -> CT m zp (Cyc t m' zq) 
+     -> TestBool '(t,m,m',zp,zq)
+prop_mulPub sk x y = 
+  let xy = mulPublic x y
+      xy' = decryptUnrestricted sk xy
+      y' = decryptUnrestricted sk y
+  in test $ xy' == (x*y')
 
 
 
@@ -151,25 +152,7 @@ prop_encDec _ x = monadicIO $ do
   let x' = decryptUnrestricted sk $ y
   assert $ x == x'
 
-prop_addPub :: forall m zp c m' zq . 
-  (EncDecCtx c m m' zp zq)
-  => Proxy '(m', zq) -> Cyc c m zp -> Property
-prop_addPub _ x = monadicIO $ do
-  sk :: SK (Cyc c m' (LiftOf zp)) <- genSK v
-  y :: CT m zp (Cyc c m' zq) <- encrypt sk x
-  let y' = addPublic x y
-      x' = decryptUnrestricted sk y'
-  assert $ x' == (x+x)
 
-prop_mulPub :: forall m zp c m' zq . 
-  (EncDecCtx c m m' zp zq)
-  => Proxy '(m', zq) -> Cyc c m zp -> Property
-prop_mulPub _ x = monadicIO $ do
-  sk :: SK (Cyc c m' (LiftOf zp)) <- genSK v
-  y :: CT m zp (Cyc c m' zq) <- encrypt sk x
-  let y' = mulPublic x y
-      x' = decryptUnrestricted sk y'
-  assert $ x' == (x*x)
 
 prop_addScalar :: forall m zp c m' zq . 
   (EncDecCtx c m m' zp zq)
