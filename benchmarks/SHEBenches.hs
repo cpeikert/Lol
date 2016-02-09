@@ -6,7 +6,6 @@ module SHEBenches (sheBenches) where
 
 import Utils
 import Harness.SHE
-import SHETests
 
 import Control.Applicative
 import Control.DeepSeq

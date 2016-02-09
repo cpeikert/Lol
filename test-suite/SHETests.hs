@@ -56,7 +56,7 @@ sheTests =
    testGroup "KSQuad" $ groupCKS $ wrapKSQuad prop_ksQuad,
    testGroup "Embed" $ groupCTwEm $ wrapEm prop_ctembed,
    testGroup "Twace" $ groupCTwEm $ wrapTw prop_cttwace,-}
-   buildTest $ testGroup "keySwitch" <$> (sequence $ benchKSQ (Proxy::Proxy KSQParams) $ wrap' prop_ksQuad2)
+   buildTest $ testGroupRnd "keySwitch" $ benchKSQ (Proxy::Proxy KSQParams) $ wrap' prop_ksQuad2
   ]
 
 

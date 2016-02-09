@@ -5,6 +5,7 @@
 
 module Utils 
 (bgroupRnd
+,testGroupRnd
 ,module Criterion
 ,Benchmarkable(..)
 ,Generatable(..)
@@ -69,6 +70,9 @@ goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
 
 bgroupRnd :: (Monad rnd) => String -> [rnd Benchmark] -> rnd Benchmark
 bgroupRnd str = (bgroup str <$>) . sequence
+
+testGroupRnd :: (Monad rnd) => String -> [rnd Test] -> rnd Test
+testGroupRnd str = (testGroup str <$>) . sequence
 
 type NFValue = C.Benchmarkable
 newtype NFValue' params = NFV C.Benchmarkable

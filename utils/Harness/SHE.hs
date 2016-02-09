@@ -100,8 +100,8 @@ instance (params `Satisfy` TunnCtxD, TunnCtx t r r' e e' s s' zp zq gad)
 benchTunn :: (params `Satisfy` TunnCtxD) =>
   Proxy params ->
   (forall t r r' e e' s s' zp zq gad . (TunnCtx t r r' e e' s s' zp zq gad) 
-       => Proxy '(t,r,r',s,s',zp,zq,gad) -> rnd Benchmark)
-    -> [rnd Benchmark]
+       => Proxy '(t,r,r',s,s',zp,zq,gad) -> rnd res)
+    -> [rnd res]
 benchTunn params g = run params $ \(TunnD p) -> g p
 
 
