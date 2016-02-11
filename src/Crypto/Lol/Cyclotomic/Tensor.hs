@@ -77,9 +77,14 @@ class (TElt t Double, TElt t (Complex Double))
                    ((NFData r, Fact m, TElt t r) :- (NFData (t m r)))
   entailRandomT :: Tagged (t m r)
                    ((Random r, Fact m, TElt t r) :- (Random (t m r)))
+  entailShowT :: Tagged (t m r)
+                 ((Show r, Fact m, TElt t r) :- (Show (t m r)))
 
-  -- | Converts a scalar to a tensor in the powerful basis
+  -- | Convert a scalar to a tensor in the powerful basis
   scalarPow :: (Ring r, Fact m, TElt t r) => r -> t m r
+
+  -- | Convert a scalar to a tensor in the decoding basis
+  scalarDec :: (Ring r, Fact m, TElt t r) => r -> t m r
 
   -- | 'l' converts from decoding-basis representation to
   -- powerful-basis representation; 'lInv' is its inverse.
