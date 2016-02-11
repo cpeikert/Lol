@@ -25,7 +25,7 @@ SK, PT, CT                    -- don't export constructors!
 -- * Constraint synonyms
 , GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx
 , DecryptCtx, DecryptUCtx
-, AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
+, AddScalarCtx, AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
 , SwitchCtx, KeySwitchCtx, KSHintCtx
 , TunnelCtx
 ) where
@@ -388,15 +388,6 @@ instance (ToSDCtx t m' zp zq, Additive (CT m zp (Cyc t m' zq)))
 
   -- else, second must be in LSD
   ct1 * ct2 = ct2 * ct1
-
-{- CJP: do we want/need this?  We have mulPublic...
-
-instance (MulPublicCtx t m m' zp zq, Reduce z' zp, CElt t z',
-          l `Divides` m, Additive (CT m zp (c m' zq)), Ring (c l z'))
-  => Module.C (c l z') (CT m zp (c m' zq)) where
-
-  (*>) a = mulPublic (embed $ reduce a)
--}
 
 ---------- Ring switching ----------
 

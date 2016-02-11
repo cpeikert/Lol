@@ -1,4 +1,5 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, 
+{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, GADTs,
+             GeneralizedNewtypeDeriving, MultiParamTypeClasses, 
              PolyKinds, RankNTypes, ConstraintKinds, ScopedTypeVariables, 
              KindSignatures,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
@@ -27,12 +28,14 @@ module Utils
 
 ,nfv
 ,TestBool
+,TestBoolRnd(..)
 ,test
+,Rand(..)
 
 ,showArgs
 ,ShowArgs) where
 
-import Control.Monad.Random
+import Control.Monad.Random hiding (Rand)
 import Control.Monad (liftM)
 import Control.Monad.State
 
@@ -71,8 +74,8 @@ goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
 bgroupRnd :: (Monad rnd) => String -> [rnd Benchmark] -> rnd Benchmark
 bgroupRnd str = (bgroup str <$>) . sequence
 
-testGroupRnd :: (Monad rnd) => String -> [rnd Test] -> rnd Test
-testGroupRnd str = (testGroup str <$>) . sequence
+testGroupRnd :: String -> [IO Test] -> Test
+testGroupRnd str = buildTest . ((testGroup str) <$>) . sequence
 
 type NFValue = C.Benchmarkable
 newtype NFValue' params = NFV C.Benchmarkable
@@ -82,11 +85,16 @@ nfv f = NFV . nf f
 
 newtype TestBool params = TestBool Bool
 
+-- rename TestBoolM
+data TestBoolRnd params where
+  TestBoolRnd :: (forall rnd . (MonadRandom rnd) => rnd Bool) -> TestBoolRnd params
+
 test :: Bool -> TestBool params
 test = TestBool
 
 type family ResultOf a where
   ResultOf (a -> b) = ResultOf b
+  ResultOf (TestBoolRnd params) = TestBool params
   ResultOf a = a
 
 -- bnch represents a function whose arguments can be generated,
@@ -103,6 +111,9 @@ instance (Monad rnd) => Benchmarkable rnd (NFValue' params) where
 instance (Monad rnd) => Benchmarkable rnd (TestBool params) where
   genArgs = return
 
+instance (MonadRandom rnd) => Benchmarkable rnd (TestBoolRnd params) where
+  genArgs (TestBoolRnd x) = TestBool <$> x
+
 instance (Generatable rnd a, Benchmarkable rnd b, Monad rnd) => Benchmarkable rnd (a -> b) where
   genArgs f = do
     x <- genArg
@@ -116,6 +127,7 @@ class Generatable rnd arg where
 instance {-# Overlappable #-} (Random a, MonadRandom rnd) => Generatable rnd a where
   genArg = getRandom
 
+newtype Rand a = Rand a deriving (Random)
 
 
 class (params :: [k]) `Satisfy` (ctx :: *)  where
@@ -148,7 +160,9 @@ instance WrapFunc (TestBool params) where
   type WrapOf (TestBool params) = Test
   wrap str (TestBool x) = testProperty str $ property x
 
-
+instance WrapFunc (TestBoolRnd params) where
+  type WrapOf (TestBoolRnd params) = Test
+  wrap str (TestBoolRnd x) = buildTest $ testProperty str <$> property <$> x
 
 
 

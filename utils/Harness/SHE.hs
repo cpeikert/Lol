@@ -6,6 +6,8 @@
 module Harness.SHE 
 (KSHint(..)
 ,Tunnel(..)
+,KSLinear(..)
+
 ,wrap'
 
 ,benchKSQ
@@ -14,6 +16,7 @@ module Harness.SHE
 ,benchCTFunc
 ,benchEnc
 ,benchTunn
+,benchCTTwEm
 )where
 
 import Utils
@@ -42,7 +45,9 @@ type family SKOf (a :: k) :: * where
   SKOf '(t,m,m',zp,zq)         = SK (Cyc t m' (LiftOf zp))
   SKOf '(t,m,m',zp,zq,zq')     = SK (Cyc t m' (LiftOf zp))
   SKOf '(t,m,m',zp,zq,zq',gad) = SK (Cyc t m' (LiftOf zp))
+  SKOf '(t,r,r',s,s',zp,zq)    = SK (Cyc t r' (LiftOf zp))
   SKOf '(t,r,r',s,s',zp,zq,gad) = SK (Cyc t r' (LiftOf zp))
+  SKOf '(t,'(m,m',zp,zp',zq)) = SK (Cyc t m' (LiftOf zp))
 
 wrap' :: forall a rnd bnch res c . 
   (Benchmarkable (StateT (Maybe (SKOf a)) rnd) bnch, Monad rnd, ShowArgs a,
@@ -105,6 +110,33 @@ benchTunn :: (params `Satisfy` TunnCtxD) =>
 benchTunn params g = run params $ \(TunnD p) -> g p
 
 
+
+data CTEmCtxD
+-- union of compatible constraints in benchmarks
+type CTEmCtx t r r' s s' zp zq = 
+  (DecryptUCtx t r r' (LiftOf zp) zp zq,
+   DecryptUCtx t s s' (LiftOf zp) zp zq,
+   --NFData (CT s zp (Cyc t s' zq)),
+   ShowArgs '(t,r,r',s,s',zp,zq),
+   EncryptCtx t r r' (LiftOf zp) zp zq,
+   r `Divides` s,
+   r' `Divides` s',
+   s `Divides` s',
+   r ~ (FGCD r' s),
+   Eq (Cyc t s zp))
+instance (params `Satisfy` CTEmCtxD, CTEmCtx t r r' s s' zp zq) 
+  => ( '(t, '(r,r',s,s',zp,zq)) ': params) `Satisfy` CTEmCtxD where
+  data ArgsCtx CTEmCtxD where
+    TwEmD :: (CTEmCtx t r r' s s' zp zq) 
+      => Proxy '(t,r,r',s,s',zp,zq) -> ArgsCtx CTEmCtxD
+  run _ f = (f $ TwEmD (Proxy::Proxy '(t,r,r',s,s',zp,zq))) : (run (Proxy::Proxy params) f)
+
+benchCTTwEm :: (params `Satisfy` CTEmCtxD, MonadRandom rnd) =>
+  Proxy params ->
+  (forall t r r' s s' zp zq . (CTEmCtx t r r' s s' zp zq) 
+       => Proxy '(t,r,r',s,s',zp,zq) -> rnd res)
+    -> [rnd res]
+benchCTTwEm params g = run params $ \(TwEmD p) -> g p
 
 
 -- allowed args: CT, KSHint, SK
@@ -174,6 +206,7 @@ type CTCtx t m m' zp zq =
    Ring (CT m zp (Cyc t m' zq)),
    NFData (CT m zp (Cyc t m' zq)),
    AddPublicCtx t m m' zp zq,
+   DecryptUCtx t m m' (LiftOf zp) zp zq,
    MulPublicCtx t m m' zp zq,
    ShowArgs '(t,m,m',zp,zq))
 instance (params `Satisfy` CTCtxD, CTCtx t m m' zp zq) 
@@ -274,7 +307,7 @@ instance (Generatable rnd (SK (Cyc t r' z)),
   genArg = do
     skin :: SK (Cyc t r' z) <- genArg
     -- EAC: bit of a hack for now
-    skout :: SK (Cyc t s' z) <- evalStateT genArg (Nothing :: Maybe (SK (Cyc t s' z)))
+    skout <- evalStateT genArg (Nothing :: Maybe (SK (Cyc t s' z)))
     let crts :: [Cyc t s zp] = proxy crtSet (Proxy::Proxy e)\\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
         r = proxy totientFact (Proxy::Proxy r)
         e = proxy totientFact (Proxy::Proxy e)
@@ -284,3 +317,17 @@ instance (Generatable rnd (SK (Cyc t r' z)),
         linf :: Linear t zp e r s = linearDec (take dim crts) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
     f <- proxyT (tunnelCT linf skout skin) (Proxy::Proxy gad)
     return $ Tunnel f
+
+data KSLinear t m m' z zp zq (zq' :: *) (gad :: *) = KSL (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)) (SK (Cyc t m' z))
+instance (KeySwitchCtx gad t m' zp zq zq', 
+          KSHintCtx gad t m' z zq', 
+          MonadRandom rnd,
+          Generatable rnd (SK (Cyc t m' z)), -- for skin
+          Generatable (StateT (Maybe (SK (Cyc t m' z))) rnd) (SK (Cyc t m' z))) -- for skout
+  => Generatable rnd (KSLinear t m m' z zp zq zq' gad) where
+  genArg = do
+    skin <- genArg
+    -- generate an independent key
+    skout <- evalStateT genArg (Nothing :: Maybe (SK (Cyc t m' z)))
+    ksl <- proxyT (keySwitchLinear skout skin) (Proxy::Proxy (gad,zq'))
+    return $ KSL ksl skout
