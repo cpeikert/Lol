@@ -231,6 +231,9 @@ prop_encDec sk x = testIO $ do
   let x' = decrypt sk $ y
   return $ x == x'
 
+helper :: (Proxy '(t,b) -> a) -> Proxy t -> Proxy b -> a
+helper f _ _ = f Proxy
+
 -- one-off tests, no hideSHEArgsper
 prop_modSwPT :: forall t m m' z zp zp' zq .
   (DecryptUCtx t m m' z zp zq,
@@ -241,24 +244,22 @@ prop_modSwPT :: forall t m m' z zp zp' zq .
    Eq (Cyc t m zp'),
    Mod zp, Mod zp',
    ModRep zp ~ ModRep zp') 
-  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Test '(t, '(m,m',zp,zp',zq))
+  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Test '(t, '(m,m',zp',zp,zq))
 prop_modSwPT sk y =
   let p = proxy modulus (Proxy::Proxy zp)
       p' = proxy modulus (Proxy::Proxy zp')
-      x = decryptUnrestricted sk y
-      x' = (fromIntegral $ p `div` p') * x
-      y' = modSwitchPT y :: CT m zp' (Cyc t m' zq)
+      z = (fromIntegral $ p `div` p')*y
+      x = decryptUnrestricted sk z
+      y' = modSwitchPT z :: CT m zp' (Cyc t m' zq)
       x'' = decryptUnrestricted sk y'
-  in test $ x'' == rescaleCyc Dec x'
+  in test $ x'' == rescaleCyc Dec x
 
 modSwPTTests = (modSwPTTests' (Proxy::Proxy CT.CT)) ++ (modSwPTTests' (Proxy::Proxy RT))
 
-helper :: (Proxy '(t,b) -> a) -> Proxy t -> Proxy b -> a
-helper f _ _ = f Proxy
-
 modSwPTTests' p = 
-  [helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F21,Zq 4,Zq 8, Zq 18869761)),
-   helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F42,Zq 2,Zq 4, Zq (18869761 ** 19393921)))]
+  [helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F21,Zq 4,Zq 8,Zq 18869761)),
+   helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F42,Zq 2,Zq 4,Zq (18869761 ** 19393921)))]
+
 
 tunnelTests = (tunnelTests' (Proxy::Proxy CT.CT)) ++ (tunnelTests' (Proxy::Proxy RT))
 
