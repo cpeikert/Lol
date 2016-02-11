@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds, FlexibleContexts,
-             NoImplicitPrelude, RebindableSyntax,
+             NoImplicitPrelude, PolyKinds, RebindableSyntax,
              ScopedTypeVariables, TypeFamilies, TypeOperators #-}
 
 module SHETests (sheTests) where
@@ -257,14 +257,14 @@ helper :: (Proxy '(t,b) -> a) -> Proxy t -> Proxy b -> a
 helper f _ _ = f Proxy
 
 modSwPTTests' p = 
-  []--helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F21,Zq 4,Zq 8, Zq 18869761)),
-   --helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F42,Zq 2,Zq 4, Zq (18869761 ** 19393921)))]
+  [helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F21,Zq 4,Zq 8, Zq 18869761)),
+   helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F42,Zq 2,Zq 4, Zq (18869761 ** 19393921)))]
 
 tunnelTests = (tunnelTests' (Proxy::Proxy CT.CT)) ++ (tunnelTests' (Proxy::Proxy RT))
 
 tunnelTests' p = 
-  []--helper (hideSHEArgs prop_ringTunnel) p 
-    --(Proxy::Proxy '(F8,F40,F20,F60,Zq 4,Zq (18869761 ** 19393921),TrivGad))]
+  [helper (hideSHEArgs prop_ringTunnel) p 
+    (Proxy::Proxy '(F8,F40,F20,F60,Zq 4,Zq (18869761 ** 19393921),TrivGad))]
 
 prop_ringTunnel :: forall t e r s e' r' s' z zp zq gad . 
   (TunnelCtx t e r s e' r' s' z zp zq gad,

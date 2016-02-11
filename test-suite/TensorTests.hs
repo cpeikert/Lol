@@ -146,8 +146,8 @@ groupTMR :: (forall t m r . (TMRWrapCtx t m r)
              -> Proxy '(m,r) 
              -> Property) -> [Test]
 groupTMR f =
-  [testGroup "CT" $ groupMR (f (Proxy::Proxy CT))]
-   --testGroup "RT" $ groupMR (f (Proxy::Proxy RT))]
+  [testGroup "CT" $ groupMR (f (Proxy::Proxy CT)),
+   testGroup "RT" $ groupMR (f (Proxy::Proxy RT))]
 
 groupExtTests :: (forall t m r . (TMRWrapCtx t m r)
              => Proxy t
