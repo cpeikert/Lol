@@ -29,34 +29,30 @@ import Data.Array.Repa.Eval (Elt)
 import Data.Vector.Unboxed (Unbox)
 import Data.Vector.Storable (Storable)
 
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
-import Test.QuickCheck hiding (generate,output)
-import Test.QuickCheck.Monadic (monadicIO, assert)
-
 import Utils
 import Harness.SHE
+import Tests
 
 import Data.Promotion.Prelude.List
 
 v = 1 :: Double
 
 sheTests = 
-  [testGroupRnd "Dec . Enc"  $ benchDec (Proxy::Proxy DecParams) $ wrap' prop_encDec,
-   testGroupRnd "DecU . Enc" $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' prop_encDecU,
-   testGroupRnd "AddPub"    $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' prop_addPub,
-   testGroupRnd "MulPub"    $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' prop_mulPub,
-   testGroupRnd "ScalarPub" $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' prop_addScalar,
-   testGroupRnd "CTAdd"     $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' prop_ctadd,
-   testGroupRnd "CTMul"     $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' prop_ctmul,
-   testGroupRnd "CT zero"   $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' prop_ctzero,
-   testGroupRnd "CT one"    $ benchCTFunc (Proxy::Proxy CTParams) $ wrap' prop_ctone,
-   testGroupRnd "ModSwitch PT" modSwPTTests,
-   testGroupRnd "Tunnel" tunnelTests,
-   testGroupRnd "Twace" $ benchCTTwEm (Proxy::Proxy TwoIdxParams) $ wrap' prop_cttwace,
-   testGroupRnd "Embed" $ benchCTTwEm (Proxy::Proxy TwoIdxParams) $ wrap' prop_ctembed,
-   testGroupRnd "KSLin" $ benchKSQ (Proxy::Proxy KSQParams) $ wrap' prop_ksLin,
-   testGroupRnd "keySwitch" $ benchKSQ (Proxy::Proxy KSQParams) $ wrap' prop_ksQuad
+  [testGroup "Dec . Enc"  $ applyDec (Proxy::Proxy DecParams) $ hideSHEArgs prop_encDec,
+   testGroup "DecU . Enc" $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_encDecU,
+   testGroup "AddPub"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_addPub,
+   testGroup "MulPub"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_mulPub,
+   testGroup "ScalarPub"  $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_addScalar,
+   testGroup "CTAdd"      $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctadd,
+   testGroup "CTMul"      $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctmul,
+   testGroup "CT zero"    $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctzero,
+   testGroup "CT one"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctone,
+   testGroup "ModSwitch PT" modSwPTTests,
+   testGroup "Tunnel" tunnelTests,
+   testGroup "Twace"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideSHEArgs prop_cttwace,
+   testGroup "Embed"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideSHEArgs prop_ctembed,
+   testGroup "KSLin"      $ applyKSQ (Proxy::Proxy KSQParams) $ hideSHEArgs prop_ksLin,
+   testGroup "keySwitch"  $ applyKSQ (Proxy::Proxy KSQParams) $ hideSHEArgs prop_ksQuad
   ]
 
 type CTCombos = '[
@@ -102,7 +98,7 @@ prop_ksLin :: (DecryptUCtx t m m' z zp zq, Eq (Cyc t m zp))
   => SK (Cyc t m' z) 
      -> KSLinear t m m' z zp zq zq' gad 
      -> CT m zp (Cyc t m' zq) 
-     -> TestBool '(t,m,m',zp,zq,zq',gad)
+     -> Test '(t,m,m',zp,zq,zq',gad)
 prop_ksLin skin (KSL kswlin skout) x =
   let x' = decryptUnrestricted skin x
       y = kswlin x
@@ -116,7 +112,7 @@ prop_ksQuad :: (Ring (CT m zp (Cyc t m' zq)),
      -> KSHint m zp t m' zq gad zq' 
      -> CT m zp (Cyc t m' zq) 
      -> CT m zp (Cyc t m' zq) 
-     -> TestBool '(t,m,m',zp,zq,zq',gad)
+     -> Test '(t,m,m',zp,zq,zq',gad)
 prop_ksQuad sk (KeySwitch kswq) x1 x2 = 
   let x' = kswq $ x1*x2
       y1 = decryptUnrestricted sk x1
@@ -132,7 +128,7 @@ prop_addPub :: forall t m m' z zp zq .
   => SK (Cyc t m' z) 
      -> Cyc t m zp 
      -> CT m zp (Cyc t m' zq) 
-     -> TestBool '(t,m,m',zp,zq)
+     -> Test '(t,m,m',zp,zq)
 prop_addPub sk x y = 
   let xy = addPublic x y
       xy' = decryptUnrestricted sk xy
@@ -145,7 +141,7 @@ prop_mulPub :: (DecryptUCtx t m m' z zp zq,
   => SK (Cyc t m' z) 
      -> Cyc t m zp 
      -> CT m zp (Cyc t m' zq) 
-     -> TestBool '(t,m,m',zp,zq)
+     -> Test '(t,m,m',zp,zq)
 prop_mulPub sk x y = 
   let xy = mulPublic x y
       xy' = decryptUnrestricted sk xy
@@ -155,8 +151,8 @@ prop_mulPub sk x y =
 prop_addScalar :: (DecryptUCtx t m m' z zp zq,
                    AddScalarCtx t m' zp zq,
                    Eq (Cyc t m zp))
-  => SK (Cyc t m' z) -> Rand zp -> CT m zp (Cyc t m' zq) -> TestBool '(t,m,m',zp,zq)
-prop_addScalar sk (Rand c) x =
+  => SK (Cyc t m' z) -> Arg zp -> CT m zp (Cyc t m' zq) -> Test '(t,m,m',zp,zq)
+prop_addScalar sk (Arg c) x =
   let cx = addScalar c x
       cx' = decryptUnrestricted sk cx
       x' = decryptUnrestricted sk x
@@ -165,7 +161,7 @@ prop_addScalar sk (Rand c) x =
 prop_ctadd :: (DecryptUCtx t m m' z zp zq,
                Additive (CT m zp (Cyc t m' zq)),
                Eq (Cyc t m zp))
-  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> TestBool '(t,m,m',zp,zq)
+  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> Test '(t,m,m',zp,zq)
 prop_ctadd sk x1 x2 = 
   let x1' = decryptUnrestricted sk x1
       x2' = decryptUnrestricted sk x2
@@ -176,7 +172,7 @@ prop_ctadd sk x1 x2 =
 prop_ctmul :: (DecryptUCtx t m m' z zp zq,
                Ring (CT m zp (Cyc t m' zq)),
                Eq (Cyc t m zp))
-  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> TestBool '(t,m,m',zp,zq)
+  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> Test '(t,m,m',zp,zq)
 prop_ctmul sk x1 x2 = 
   let x1' = decryptUnrestricted sk x1
       x2' = decryptUnrestricted sk x2
@@ -188,7 +184,7 @@ prop_ctzero :: forall t m m' z zp zq .
  (DecryptUCtx t m m' z zp zq,
   Additive (CT m zp (Cyc t m' zq)),
   Eq (Cyc t m zp)) 
-  => SK (Cyc t m' z) -> TestBool '(t,m,m',zp,zq)
+  => SK (Cyc t m' z) -> Test '(t,m,m',zp,zq)
 prop_ctzero sk =
   let z = decryptUnrestricted sk (zero :: CT m zp (Cyc t m' zq))
   in test $ zero == z
@@ -197,7 +193,7 @@ prop_ctone :: forall t m m' z zp zq .
   (DecryptUCtx t m m' z zp zq,
    Ring (CT m zp (Cyc t m' zq)),
    Eq (Cyc t m zp))
-  => SK (Cyc t m' z) -> TestBool '(t,m,m',zp,zq)
+  => SK (Cyc t m' z) -> Test '(t,m,m',zp,zq)
 prop_ctone sk = 
   let z = decryptUnrestricted sk (one :: CT m zp (Cyc t m' zq))
   in test $ one == z
@@ -210,7 +206,7 @@ prop_ctembed :: forall t r r' s s' z zp zq .
    r `Divides` s, 
    r' `Divides` s',
    Eq (Cyc t s zp))
-  => SK (Cyc t r' z) -> CT r zp (Cyc t r' zq) -> TestBool '(t,r,r',s,s',zp,zq)
+  => SK (Cyc t r' z) -> CT r zp (Cyc t r' zq) -> Test '(t,r,r',s,s',zp,zq)
 prop_ctembed sk x = 
   let y = embedCT x :: CT s zp (Cyc t s' zq)
       y' = decryptUnrestricted (embedSK sk) y
@@ -225,8 +221,8 @@ prop_cttwace :: forall t r r' s s' z zp zq .
    r' `Divides` s',
    s `Divides` s',
    r ~ (FGCD r' s))
-  => SK (Cyc t r' z) -> Cyc t s zp -> TestBoolRnd '(t,r,r',s,s',zp,zq)
-prop_cttwace sk x = TestBoolRnd $ do
+  => SK (Cyc t r' z) -> Cyc t s zp -> Test '(t,r,r',s,s',zp,zq)
+prop_cttwace sk x = testIO $ do
   y :: CT s zp (Cyc t s' zq) <- encrypt (embedSK sk) x
   let y' = twaceCT y :: CT r zp (Cyc t r' zq)
       x' = decryptUnrestricted sk y'
@@ -237,8 +233,8 @@ prop_encDecU :: forall t m m' z zp zq .
    EncryptCtx t m m' z zp zq, 
    DecryptUCtx t m m' z zp zq,
    Eq (Cyc t m zp))
-  => SK (Cyc t m' z) -> Cyc t m zp -> TestBoolRnd '(t,m,m',zp,zq)
-prop_encDecU sk x = TestBoolRnd $ do
+  => SK (Cyc t m' z) -> Cyc t m zp -> Test '(t,m,m',zp,zq)
+prop_encDecU sk x = testIO $ do
   y :: CT m zp (Cyc t m' zq) <- encrypt sk x
   let x' = decryptUnrestricted sk $ y
   return $ x == x'
@@ -248,13 +244,13 @@ prop_encDec :: forall t m m' z zp zq .
    EncryptCtx t m m' z zp zq, 
    DecryptCtx t m m' z zp zq,
    Eq (Cyc t m zp))
-  => SK (Cyc t m' z) -> Cyc t m zp -> TestBoolRnd '(t,m,m',zp,zq)
-prop_encDec sk x = TestBoolRnd $ do
+  => SK (Cyc t m' z) -> Cyc t m zp -> Test '(t,m,m',zp,zq)
+prop_encDec sk x = testIO $ do
   y :: CT m zp (Cyc t m' zq) <- encrypt sk x
   let x' = decrypt sk $ y
   return $ x == x'
 
--- one-off tests, no wrapper
+-- one-off tests, no hideSHEArgsper
 prop_modSwPT :: forall t m m' z zp zp' zq .
   (DecryptUCtx t m m' z zp zq,
    DecryptUCtx t m m' z zp' zq,
@@ -264,7 +260,7 @@ prop_modSwPT :: forall t m m' z zp zp' zq .
    Eq (Cyc t m zp'),
    Mod zp, Mod zp',
    ModRep zp ~ ModRep zp') 
-  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> TestBool '(t, '(m,m',zp,zp',zq))
+  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Test '(t, '(m,m',zp,zp',zq))
 prop_modSwPT sk y =
   let p = proxy modulus (Proxy::Proxy zp)
       p' = proxy modulus (Proxy::Proxy zp')
@@ -280,14 +276,14 @@ helper :: (Proxy '(t,b) -> a) -> Proxy t -> Proxy b -> a
 helper f _ _ = f Proxy
 
 modSwPTTests' p = 
-  [helper (wrap' prop_modSwPT) p (Proxy::Proxy '(F7,F21,Zq 4,Zq 8, Zq 18869761)),
-   helper (wrap' prop_modSwPT) p (Proxy::Proxy '(F7,F42,Zq 2,Zq 4, Zq (18869761 ** 19393921)))]
+  []--helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F21,Zq 4,Zq 8, Zq 18869761)),
+   --helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F42,Zq 2,Zq 4, Zq (18869761 ** 19393921)))]
 
 tunnelTests = (tunnelTests' (Proxy::Proxy CT.CT)) ++ (tunnelTests' (Proxy::Proxy RT))
 
 tunnelTests' p = 
-  [helper (wrap' prop_ringTunnel) p 
-    (Proxy::Proxy '(F8,F40,F20,F60,Zq 4,Zq (18869761 ** 19393921),TrivGad))]
+  []--helper (hideSHEArgs prop_ringTunnel) p 
+    --(Proxy::Proxy '(F8,F40,F20,F60,Zq 4,Zq (18869761 ** 19393921),TrivGad))]
 
 prop_ringTunnel :: forall t e r s e' r' s' z zp zq gad . 
   (TunnelCtx t e r s e' r' s' z zp zq gad,
@@ -297,8 +293,8 @@ prop_ringTunnel :: forall t e r s e' r' s' z zp zq gad .
    DecryptUCtx t s s' z zp zq,
    Random zp,
    e ~ FGCD r s, Fact e) 
-  => Cyc t r zp -> TestBoolRnd '(t,'(r,r',s,s',zp,zq,gad))
-prop_ringTunnel x = TestBoolRnd $ do
+  => Cyc t r zp -> Test '(t,'(r,r',s,s',zp,zq,gad))
+prop_ringTunnel x = testIO $ do
   let totr = proxy totientFact (Proxy::Proxy r)
       tote = proxy totientFact (Proxy::Proxy e)
       basisSize = totr `div` tote

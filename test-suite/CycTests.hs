@@ -11,32 +11,33 @@ import Test.Framework (buildTest)
 
 import Utils
 import Harness.Cyc
+import Tests
 
 cycTests = [
-  testGroupRnd "coeffsPow" $ benchTwoIdx (Proxy::Proxy '[]) $ wrap' prop_coeffsBasis,
-  testGroupRnd "mulGPow" $ benchBasic (Proxy::Proxy AllParams) $ wrap' prop_mulgPow,
-  testGroupRnd "mulGDec" $ benchBasic (Proxy::Proxy AllParams) $ wrap' prop_mulgDec,
-  testGroupRnd "mulGCRT" $ benchBasic (Proxy::Proxy AllParams) $ wrap' prop_mulgCRT,
-  testGroupRnd "crtSet"  $ benchBasis (Proxy::Proxy BasisParams) $ wrap' prop_crtSet_pairs
+  testGroup "coeffsPow" $ applyTwoIdx (Proxy::Proxy '[])      $ hideArgs prop_coeffsBasis,
+  testGroup "mulGPow" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgPow,
+  testGroup "mulGDec" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgDec,
+  testGroup "mulGCRT" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgCRT,
+  testGroup "crtSet"  $ applyBasis (Proxy::Proxy BasisParams) $ hideArgs prop_crtSet_pairs
   ]
 
-prop_mulgPow :: (CElt t r, Fact m) => Cyc t m r -> TestBool '(t,m,r)
+prop_mulgPow :: (CElt t r, Fact m) => Cyc t m r -> Test '(t,m,r)
 prop_mulgPow x =
   let y = advisePow x
   in test $ y == (fromJust' "prop_mulgPow failed divisibility!" $ divG $ mulG y)
 
-prop_mulgDec :: (CElt t r, Fact m) => Cyc t m r -> TestBool '(t,m,r)
+prop_mulgDec :: (CElt t r, Fact m) => Cyc t m r -> Test '(t,m,r)
 prop_mulgDec x = 
   let y = adviseDec x
   in test $ y == (fromJust' "prop_mulgDec failed divisibility!" $ divG $ mulG y)
 
-prop_mulgCRT :: (CElt t r, Fact m) => Cyc t m r -> TestBool '(t,m,r)
+prop_mulgCRT :: (CElt t r, Fact m) => Cyc t m r -> Test '(t,m,r)
 prop_mulgCRT x = 
   let y = adviseCRT x
   in test $ y == (fromJust' "prop_mulgCRT failed divisibility!" $ divG $ mulG y)
 
 prop_coeffsBasis :: forall t m m' r . (m `Divides` m', CElt t r)
-  => Cyc t m' r -> TestBool '(t,m,m',r)
+  => Cyc t m' r -> Test '(t,m,m',r)
 prop_coeffsBasis x = 
   let xs = map embed (coeffsCyc Pow x :: [Cyc t m r])
       bs = proxy powBasis (Proxy::Proxy m)
@@ -45,7 +46,7 @@ prop_coeffsBasis x =
 -- verifies that CRT set elements satisfy c_i * c_j = delta_ij * c_i
 -- necessary (not sufficient?) condition
 prop_crtSet_pairs :: forall t m m' r . (m `Divides` m', ZPP r, CElt t r, CElt t (ZpOf r))
-  => TestBool '(t,m,m',r)
+  => Test '(t,m,m',r)
 prop_crtSet_pairs = 
   let crtset = proxy crtSet (Proxy::Proxy m) :: [Cyc t m' r]
       pairs = join (liftM2 (,)) crtset

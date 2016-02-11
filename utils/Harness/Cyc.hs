@@ -11,26 +11,22 @@ import Crypto.Lol.Types.ZPP
 import Crypto.Random.DRBG
 
 import Utils
-
-wrap' :: forall a rnd bnch res c . 
-  (Benchmarkable rnd bnch, Monad rnd, ShowArgs a,
-   WrapFunc res, res ~ ResultOf bnch, res ~ c a)
-  => bnch -> Proxy a -> rnd (WrapOf res)
-wrap' f p = wrap (showArgs p) <$> genArgs f
+import Gen
+import Apply
 
 data BasicCtxD
-type BasicCtx t m r = (CElt t r, Fact m, ShowArgs '(t,m,r))
+type BasicCtx t m r = (CElt t r, Fact m, ShowType '(t,m,r))
 instance (params `Satisfy` BasicCtxD, BasicCtx t m r) 
   => ( '(t, '(m,r)) ': params) `Satisfy` BasicCtxD where
   data ArgsCtx BasicCtxD where
     BC :: (BasicCtx t m r) => Proxy '(t,m,r) -> ArgsCtx BasicCtxD
   run _ f = (f $ BC (Proxy::Proxy '(t,m,r))) : (run (Proxy::Proxy params) f)
 
-benchBasic :: (params `Satisfy` BasicCtxD) =>
+applyBasic :: (params `Satisfy` BasicCtxD) =>
   Proxy params 
   -> (forall t m r . (BasicCtx t m r) => Proxy '(t,m,r) -> rnd res) 
   -> [rnd res]
-benchBasic params g = run params $ \(BC p) -> g p
+applyBasic params g = run params $ \(BC p) -> g p
 
 
 data LiftCtxD
@@ -41,15 +37,15 @@ instance (params `Satisfy` LiftCtxD, LiftCtx t m r)
     LC :: (LiftCtx t m r) => Proxy '(t,m,r) -> ArgsCtx LiftCtxD
   run _ f = (f $ LC (Proxy::Proxy '(t,m,r))) : (run (Proxy::Proxy params) f)
 
-benchLift :: (params `Satisfy` LiftCtxD) =>
+applyLift :: (params `Satisfy` LiftCtxD) =>
   Proxy params 
   -> (forall t m r . (LiftCtx t m r) => Proxy '(t,m,r) -> rnd res) 
   -> [rnd res]
-benchLift params g = run params $ \(LC p) -> g p
+applyLift params g = run params $ \(LC p) -> g p
 
 
 data ErrorCtxD
-type ErrorCtx t m r gen = (CElt t r, Fact m, ShowArgs '(t,m,r,gen), 
+type ErrorCtx t m r gen = (CElt t r, Fact m, ShowType '(t,m,r,gen), 
                            CElt t (LiftOf r), Lift' r, 
                            ToInteger (LiftOf r), CryptoRandomGen gen)
 instance (params `Satisfy` ErrorCtxD, ErrorCtx t m r gen) 
@@ -58,15 +54,15 @@ instance (params `Satisfy` ErrorCtxD, ErrorCtx t m r gen)
     EC :: (ErrorCtx t m r gen) => Proxy '(t,m,r,gen) -> ArgsCtx ErrorCtxD
   run _ f = (f $ EC (Proxy::Proxy '(t,m,r,gen))) : (run (Proxy::Proxy params) f)
 
-benchError :: (params `Satisfy` ErrorCtxD, Monad rnd) =>
+applyError :: (params `Satisfy` ErrorCtxD, Monad rnd) =>
   Proxy params 
   -> (forall t m r gen . (ErrorCtx t m r gen) => Proxy '(t,m,r,gen) -> rnd res) 
   -> [rnd res]
-benchError params g = run params $ \(EC p) -> g p
+applyError params g = run params $ \(EC p) -> g p
 
 
 data TwoIdxCtxD
-type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, ShowArgs '(t,m,m',r))
+type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, ShowType '(t,m,m',r))
 
 instance (params `Satisfy` TwoIdxCtxD, TwoIdxCtx t m m' r) 
   => ( '(t, '(m,m',r)) ': params) `Satisfy` TwoIdxCtxD where
@@ -74,15 +70,15 @@ instance (params `Satisfy` TwoIdxCtxD, TwoIdxCtx t m m' r)
     TI :: (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> ArgsCtx TwoIdxCtxD
   run _ f = (f $ TI (Proxy::Proxy '(t,m,m',r))) : (run (Proxy::Proxy params) f)
 
-benchTwoIdx :: (params `Satisfy` TwoIdxCtxD) =>
+applyTwoIdx :: (params `Satisfy` TwoIdxCtxD) =>
   Proxy params 
   -> (forall t m m' r . (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> rnd res) 
   -> [rnd res]
-benchTwoIdx params g = run params $ \(TI p) -> g p
+applyTwoIdx params g = run params $ \(TI p) -> g p
 
 
 data BasisCtxD
-type BasisCtx t m m' r = (m `Divides` m', ZPP r, CElt t r, CElt t (ZpOf r), ShowArgs '(t,m,m',r))
+type BasisCtx t m m' r = (m `Divides` m', ZPP r, CElt t r, CElt t (ZpOf r), ShowType '(t,m,m',r))
 
 instance (params `Satisfy` BasisCtxD, BasisCtx t m m' r)
   => ( '(t, '(m,m',r)) ': params) `Satisfy` BasisCtxD where
@@ -90,8 +86,8 @@ instance (params `Satisfy` BasisCtxD, BasisCtx t m m' r)
     BsC :: (BasisCtx t m m' r) => Proxy '(t,m,m',r) -> ArgsCtx BasisCtxD
   run _ f = (f $ BsC (Proxy::Proxy '(t,m,m',r))) : (run (Proxy::Proxy params) f)
 
-benchBasis :: (params `Satisfy` BasisCtxD) =>
+applyBasis :: (params `Satisfy` BasisCtxD) =>
   Proxy params
   -> (forall t m m' r . (BasisCtx t m m' r) => Proxy '(t,m,m',r) -> rnd res)
   -> [rnd res]
-benchBasis params g = run params $ \(BsC p) -> g p
+applyBasis params g = run params $ \(BsC p) -> g p

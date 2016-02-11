@@ -19,66 +19,71 @@ import Data.Singletons.TypeRepStar
 
 import Utils hiding (Liftable)
 import Harness.Cyc
+import Benchmarks
 
-cycBenches :: (MonadRandom rnd) => rnd Benchmark
-cycBenches = bgroupRnd "Cyc"
-  [bgroupRnd "*"       $ benchBasic (Proxy::Proxy AllParams) $ wrap' bench_mul,
-   bgroupRnd "crt"     $ benchBasic (Proxy::Proxy AllParams) $ wrap' bench_crt,
-   bgroupRnd "crtInv"  $ benchBasic (Proxy::Proxy AllParams) $ wrap' bench_crtInv,
-   bgroupRnd "l"       $ benchBasic (Proxy::Proxy AllParams) $ wrap' bench_l,
-   bgroupRnd "*g Pow"  $ benchBasic (Proxy::Proxy AllParams) $ wrap' bench_mulgPow,
-   bgroupRnd "*g CRT"  $ benchBasic (Proxy::Proxy AllParams) $ wrap' bench_mulgCRT,
-   bgroupRnd "lift"    $ benchLift  (Proxy::Proxy LiftParams) $ wrap' bench_liftPow,
-   bgroupRnd "error"   $ benchError (Proxy::Proxy ErrorParams) $ wrap' $ bench_errRounded 0.1,
-   bgroupRnd "twace"   $ benchTwoIdx (Proxy::Proxy TwoIdxParams) $ wrap' bench_twacePow,
-   bgroupRnd "embed"   $ benchTwoIdx (Proxy::Proxy TwoIdxParams) $ wrap' bench_embedPow
+cycBenches :: (MonadRandom m) => m Benchmark
+cycBenches = benchGroup "Cyc" [
+  benchGroup "*"      $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_mul,
+  benchGroup "crt"    $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_crt,
+  benchGroup "crtInv" $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_crtInv,
+  benchGroup "l"      $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_l,
+  benchGroup "*g Pow" $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_mulgPow,
+  benchGroup "*g CRT" $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_mulgCRT,
+  benchGroup "lift"   $ applyLift  (Proxy::Proxy LiftParams) $ hideArgs bench_liftPow,
+  benchGroup "error"  $ applyError (Proxy::Proxy ErrorParams) $ hideArgs $ bench_errRounded 0.1,
+  benchGroup "twace"  $ applyTwoIdx (Proxy::Proxy TwoIdxParams) $ hideArgs bench_twacePow,
+  benchGroup "embed"  $ applyTwoIdx (Proxy::Proxy TwoIdxParams) $ hideArgs bench_embedPow
   ]
 
 -- no CRT conversion, just coefficient-wise multiplication
-bench_mul :: (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> NFValue' '(t,m,r)
+bench_mul :: (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> Bench '(t,m,r)
 bench_mul a b = 
   let a' = adviseCRT a
       b' = adviseCRT b
-  in nfv (a' *) b'
+  in bench (a' *) b'
 
 -- convert input from Pow basis to CRT basis
-bench_crt :: (BasicCtx t m r) => Cyc t m r -> NFValue' '(t,m,r)
-bench_crt x = let y = advisePow x in nfv adviseCRT y
+bench_crt :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
+bench_crt x = let y = advisePow x in bench adviseCRT y
 
 -- convert input from CRT basis to Pow basis
-bench_crtInv :: (BasicCtx t m r) => Cyc t m r -> NFValue' '(t,m,r)
-bench_crtInv x = let y = adviseCRT x in nfv advisePow y
+bench_crtInv :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
+bench_crtInv x = let y = adviseCRT x in bench advisePow y
 
 -- convert input from Dec basis to Pow basis
-bench_l :: (BasicCtx t m r) => Cyc t m r -> NFValue' '(t,m,r)
-bench_l x = let y = adviseDec x in nfv advisePow y
+bench_l :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
+bench_l x = let y = adviseDec x in bench advisePow y
 
 -- lift an element in the Pow basis
-bench_liftPow :: forall t m r . (LiftCtx t m r) => Cyc t m r -> NFValue' '(t,m,r)
-bench_liftPow x = let y = advisePow x in nfv (liftCyc Pow :: Cyc t m r -> Cyc t m (LiftOf r)) y
+bench_liftPow :: forall t m r . (LiftCtx t m r) => Cyc t m r -> Bench '(t,m,r)
+bench_liftPow x = let y = advisePow x in bench (liftCyc Pow :: Cyc t m r -> Cyc t m (LiftOf r)) y
 
 -- multiply by g when input is in Pow basis
-bench_mulgPow :: (BasicCtx t m r) => Cyc t m r -> NFValue' '(t,m,r)
-bench_mulgPow x = let y = advisePow x in nfv mulG y
+bench_mulgPow :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
+bench_mulgPow x = let y = advisePow x in bench mulG y
 
 -- multiply by g when input is in CRT basis
-bench_mulgCRT :: (BasicCtx t m r) => Cyc t m r -> NFValue' '(t,m,r)
-bench_mulgCRT x = let y = adviseCRT x in nfv mulG y
+bench_mulgCRT :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
+bench_mulgCRT x = let y = adviseCRT x in bench mulG y
 
 -- generate a rounded error term
 bench_errRounded :: forall t m r gen . (ErrorCtx t m r gen) 
-  => Double -> NFValue' '(t,m,r,gen)
-bench_errRounded v = NFV $ nfIO $ do
+  => Double -> Bench '(t,m,r,gen)
+bench_errRounded v = benchIO $ do
   gen <- newGenIO
   return $ evalRand (errorRounded v :: Rand (CryptoRand gen) (Cyc t m (LiftOf r))) gen
 
 bench_twacePow :: forall t m m' r . (TwoIdxCtx t m m' r) 
-  => Cyc t m' r -> NFValue' '(t,m,m',r)
-bench_twacePow x = let y = advisePow x in nfv (twace :: Cyc t m' r -> Cyc t m r) y
+  => Cyc t m' r -> Bench '(t,m,m',r)
+bench_twacePow x = 
+  let y = advisePow x 
+  in bench (twace :: Cyc t m' r -> Cyc t m r) y
 
 bench_embedPow :: forall t m m' r . (TwoIdxCtx t m m' r) 
-  => Cyc t m r -> NFValue' '(t,m,m',r)
-bench_embedPow x = let y = advisePow x in nfv (embed :: Cyc t m r -> Cyc t m' r) y
+  => Cyc t m r -> Bench '(t,m,m',r)
+bench_embedPow x = 
+  let y = advisePow x 
+  in bench (embed :: Cyc t m r -> Cyc t m' r) y
 
 type Tensors = '[CT,RT]
 type MM'RCombos = 

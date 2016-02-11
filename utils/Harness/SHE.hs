@@ -7,19 +7,20 @@ module Harness.SHE
 (KSHint(..)
 ,Tunnel(..)
 ,KSLinear(..)
+,SKOf
 
-,wrap'
-
-,benchKSQ
-,benchRescale
-,benchDec
-,benchCTFunc
-,benchEnc
-,benchTunn
-,benchCTTwEm
+,applyKSQ
+,applyRescale
+,applyDec
+,applyCTFunc
+,applyEnc
+,applyTunn
+,applyCTTwEm
 )where
 
 import Utils
+import Gen
+import Apply
 
 import Control.Applicative
 import Control.DeepSeq
@@ -32,12 +33,6 @@ import Crypto.Lol.Cyclotomic.Linear
 import Crypto.Lol.Types.ZPP
 import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
-import Test.QuickCheck
-
-import GHC.Prim
-import Data.Constraint
 import Crypto.Random.DRBG
 
 --extract an SK type from a tuple of params
@@ -49,23 +44,12 @@ type family SKOf (a :: k) :: * where
   SKOf '(t,r,r',s,s',zp,zq,gad) = SK (Cyc t r' (LiftOf zp))
   SKOf '(t,'(m,m',zp,zp',zq)) = SK (Cyc t m' (LiftOf zp))
 
-wrap' :: forall a rnd bnch res c . 
-  (Benchmarkable (StateT (Maybe (SKOf a)) rnd) bnch, Monad rnd, ShowArgs a,
-   WrapFunc res, res ~ ResultOf bnch, res ~ c a)
-  => bnch -> Proxy a -> rnd (WrapOf res)
-wrap' f p = wrap (showArgs p) <$> (evalStateT (genArgs f) (Nothing :: Maybe (SKOf a)))
-
-
-
-
-
-
 data DecCtxD
 type DecCtx t m m' zp zq = 
   (EncryptCtx t m m' (LiftOf zp) zp zq,
    -- ^ these provide the context to generate the parameters
    DecryptCtx t m m' (LiftOf zp) zp zq,
-   ShowArgs '(t,m,m',zp,zq))
+   ShowType '(t,m,m',zp,zq))
 instance (params `Satisfy` DecCtxD, DecCtx t m m' zp zq)
   => ( '(t, '(m,m',zp,zq)) ': params) `Satisfy` DecCtxD where
   data ArgsCtx DecCtxD where
@@ -73,12 +57,12 @@ instance (params `Satisfy` DecCtxD, DecCtx t m m' zp zq)
       => Proxy '(t,m,m',zp,zq) -> ArgsCtx DecCtxD
   run _ f = (f $ DecD (Proxy::Proxy '(t,m,m',zp,zq))) : (run (Proxy::Proxy params) f)
 
-benchDec :: (params `Satisfy` DecCtxD) =>
+applyDec :: (params `Satisfy` DecCtxD) =>
   Proxy params ->
   (forall t m m' zp zq . (DecCtx t m m' zp zq) 
         => Proxy '(t,m,m',zp,zq) -> rnd res)
      -> [rnd res]
-benchDec params g = run params $ \(DecD p) -> g p
+applyDec params g = run params $ \(DecD p) -> g p
 
 
 
@@ -87,7 +71,7 @@ data TunnCtxD
 -- union of compatible constraints in benchmarks
 type TunnCtx t r r' e e' s s' zp zq gad = 
   (NFData (CT s zp (Cyc t s' zq)),
-   ShowArgs '(t,r,r',s,s',zp,zq,gad),
+   ShowType '(t,r,r',s,s',zp,zq,gad),
    EncryptCtx t r r' (LiftOf zp) zp zq,
    EncryptCtx t s s' (LiftOf zp) zp zq,
    TunnelCtx t e r s e' r' s' (LiftOf zp) zp zq gad, 
@@ -102,12 +86,12 @@ instance (params `Satisfy` TunnCtxD, TunnCtx t r r' e e' s s' zp zq gad)
       => Proxy '(t,r,r',s,s',zp,zq,gad) -> ArgsCtx TunnCtxD
   run _ f = (f $ TunnD (Proxy::Proxy '(t,r,r',s,s',zp,zq,gad))) : (run (Proxy::Proxy params) f)
 
-benchTunn :: (params `Satisfy` TunnCtxD) =>
+applyTunn :: (params `Satisfy` TunnCtxD) =>
   Proxy params ->
   (forall t r r' e e' s s' zp zq gad . (TunnCtx t r r' e e' s s' zp zq gad) 
        => Proxy '(t,r,r',s,s',zp,zq,gad) -> rnd res)
     -> [rnd res]
-benchTunn params g = run params $ \(TunnD p) -> g p
+applyTunn params g = run params $ \(TunnD p) -> g p
 
 
 
@@ -117,7 +101,7 @@ type CTEmCtx t r r' s s' zp zq =
   (DecryptUCtx t r r' (LiftOf zp) zp zq,
    DecryptUCtx t s s' (LiftOf zp) zp zq,
    --NFData (CT s zp (Cyc t s' zq)),
-   ShowArgs '(t,r,r',s,s',zp,zq),
+   ShowType '(t,r,r',s,s',zp,zq),
    EncryptCtx t r r' (LiftOf zp) zp zq,
    r `Divides` s,
    r' `Divides` s',
@@ -131,12 +115,12 @@ instance (params `Satisfy` CTEmCtxD, CTEmCtx t r r' s s' zp zq)
       => Proxy '(t,r,r',s,s',zp,zq) -> ArgsCtx CTEmCtxD
   run _ f = (f $ TwEmD (Proxy::Proxy '(t,r,r',s,s',zp,zq))) : (run (Proxy::Proxy params) f)
 
-benchCTTwEm :: (params `Satisfy` CTEmCtxD, MonadRandom rnd) =>
+applyCTTwEm :: (params `Satisfy` CTEmCtxD, MonadRandom rnd) =>
   Proxy params ->
   (forall t r r' s s' zp zq . (CTEmCtx t r r' s s' zp zq) 
        => Proxy '(t,r,r',s,s',zp,zq) -> rnd res)
     -> [rnd res]
-benchCTTwEm params g = run params $ \(TwEmD p) -> g p
+applyCTTwEm params g = run params $ \(TwEmD p) -> g p
 
 
 -- allowed args: CT, KSHint, SK
@@ -156,7 +140,7 @@ type family KSQCtx a where
      Reduce (LiftOf zp) zq, Lift' zq, CElt t (LiftOf zp), ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp,
      -- ^ these provide the context for tests
      NFData (CT m zp (Cyc t m' zq)),
-     ShowArgs '(t,m,m',zp,zq,zq',gad))
+     ShowType '(t,m,m',zp,zq,zq',gad))
      -- ^ these provide the context for benchmarks
 
 instance (params `Satisfy` KSQCtxD, KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))))
@@ -166,12 +150,12 @@ instance (params `Satisfy` KSQCtxD, KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))))
       => Proxy '(t,m,m',zp,zq,zq',gad) -> ArgsCtx KSQCtxD
   run _ f = (f $ KSQD (Proxy::Proxy '(t,m,m',zp,zq,zq',gad))) : (run (Proxy::Proxy params) f)
 
-benchKSQ :: (params `Satisfy` KSQCtxD) => 
+applyKSQ :: (params `Satisfy` KSQCtxD) => 
   Proxy params ->
   (forall t m m' zp zq zq' gad . (KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))))
      => Proxy '(t,m,m',zp,zq,zq',gad) -> rnd res)
   -> [rnd res]
-benchKSQ params g = run params $ \(KSQD p) -> g p
+applyKSQ params g = run params $ \(KSQD p) -> g p
 
 
 
@@ -179,7 +163,7 @@ benchKSQ params g = run params $ \(KSQD p) -> g p
 data RescaleCtxD
 type RescaleCtx t m m' zp zq zq' = 
   (EncryptCtx t m m' (LiftOf zp) zp zq',
-   ShowArgs '(t,m,m',zp,zq,zq'),
+   ShowType '(t,m,m',zp,zq,zq'),
    RescaleCyc (Cyc t) zq' zq,
    NFData (CT m zp (Cyc t m' zq)),
    ToSDCtx t m' zp zq')
@@ -190,12 +174,12 @@ instance (params `Satisfy` RescaleCtxD, RescaleCtx t m m' zp zq zq')
       => Proxy '(t,m,m',zp,zq,zq') -> ArgsCtx RescaleCtxD
   run _ f = (f $ RD (Proxy::Proxy '(t,m,m',zp,zq,zq'))) : (run (Proxy::Proxy params) f)
 
-benchRescale :: (params `Satisfy` RescaleCtxD) =>
+applyRescale :: (params `Satisfy` RescaleCtxD) =>
   Proxy params ->
   (forall t m m' zp zq zq' . (RescaleCtx t m m' zp zq zq') 
     => Proxy '(t,m,m',zp,zq,zq') -> rnd res)
   -> [rnd res]
-benchRescale params g = run params $ \(RD p) -> g p
+applyRescale params g = run params $ \(RD p) -> g p
 
 
 
@@ -208,7 +192,7 @@ type CTCtx t m m' zp zq =
    AddPublicCtx t m m' zp zq,
    DecryptUCtx t m m' (LiftOf zp) zp zq,
    MulPublicCtx t m m' zp zq,
-   ShowArgs '(t,m,m',zp,zq))
+   ShowType '(t,m,m',zp,zq))
 instance (params `Satisfy` CTCtxD, CTCtx t m m' zp zq) 
   => ( '(t, '(m,m',zp,zq)) ': params) `Satisfy` CTCtxD where
   data ArgsCtx CTCtxD where
@@ -216,12 +200,12 @@ instance (params `Satisfy` CTCtxD, CTCtx t m m' zp zq)
       => Proxy '(t,m,m',zp,zq) -> ArgsCtx CTCtxD
   run _ f = (f $ CTD (Proxy::Proxy '(t,m,m',zp,zq))) : (run (Proxy::Proxy params) f)
 
-benchCTFunc :: (params `Satisfy` CTCtxD) =>
+applyCTFunc :: (params `Satisfy` CTCtxD) =>
   Proxy params 
   -> (forall t m m' zp zq . (CTCtx t m m' zp zq) 
       => Proxy '(t,m,m',zp,zq) -> rnd res)
   -> [rnd res]
-benchCTFunc params g = run params $ \(CTD p) -> g p
+applyCTFunc params g = run params $ \(CTD p) -> g p
 
 
 
@@ -234,7 +218,7 @@ type EncCtx t m m' zp zq gen =
    NFData (CT m zp (Cyc t m' zq)),
    AddPublicCtx t m m' zp zq,
    MulPublicCtx t m m' zp zq,
-   ShowArgs '(t,m,m',zp,zq,gen),
+   ShowType '(t,m,m',zp,zq,gen),
    CryptoRandomGen gen)
 instance (params `Satisfy` EncCtxD, EncCtx t m m' zp zq gen) 
   => ( '(gen, '(t, '(m,m',zp,zq))) ': params) `Satisfy` EncCtxD where
@@ -243,12 +227,12 @@ instance (params `Satisfy` EncCtxD, EncCtx t m m' zp zq gen)
       => Proxy '(t,m,m',zp,zq,gen) -> ArgsCtx EncCtxD
   run _ f = (f $ EncD (Proxy::Proxy '(t,m,m',zp,zq,gen))) : (run (Proxy::Proxy params) f)
 
-benchEnc :: (params `Satisfy` EncCtxD) =>
+applyEnc :: (params `Satisfy` EncCtxD) =>
   Proxy params
   -> (forall t m m' zp zq gen . (EncCtx t m m' zp zq gen) 
       => Proxy '(t,m,m',zp,zq,gen) -> rnd res)
   -> [rnd res]
-benchEnc params g = run params $ \(EncD p) -> g p
+applyEnc params g = run params $ \(EncD p) -> g p
 
 
 

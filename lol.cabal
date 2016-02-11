@@ -162,7 +162,6 @@ test-suite lol-test-suite
   build-depends:
     base,
     constraints,
-    criterion,
     deepseq,
     DRBG,
     lol,
@@ -173,12 +172,11 @@ test-suite lol-test-suite
     singletons,
     test-framework >= 0.8 && < 0.9,
     test-framework-quickcheck2 >= 0.3 && < 0.4,
-    time >= 1.2 && < 1.6,   
     vector
 
 Benchmark bench-lol
   type:               exitcode-stdio-1.0
-  hs-source-dirs:     benchmarks
+  hs-source-dirs:     benchmarks,utils
   default-language:   Haskell2010
   main-is:            Main.hs
 
