@@ -5,15 +5,13 @@
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
 module Utils 
-(AddZq
-,Liftable
-,NonLiftable
-,Zq
+(Zq
 ,type (**)
 ,type (<$>)
 ,type (<*>)
 
 ,Arg(..)
+,module Data.Promotion.Prelude.List
 
 ,showType
 ,ShowType) where
@@ -29,11 +27,7 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.ZqBasic
 import Crypto.Random.DRBG
 
-import Data.Singletons
 import Data.Promotion.Prelude.List
-import Data.Promotion.Prelude.Eq
-import Data.Singletons.TypeRepStar
-
 {-
 import Math.NumberTheory.Primes.Testing (isPrime)
 
@@ -49,21 +43,6 @@ goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
 
 -- a wrapper for polymorphic arguments with a Random instance
 newtype Arg a = Arg a deriving (Random)
-
--- useful for generating parameters
-type family RoundDown zq where
-  RoundDown (a,(b,c)) = (b,c)
-  RoundDown ((a,b),c) = (a,b)
-  RoundDown (a,b) = a
-
-data AddZq :: TyFun (Factored, Factored, *, *) (Factored, Factored, *, *, *) -> *
-type instance Apply AddZq '(m,m',zp,zq) = '(m,m',zp,RoundDown zq,zq)
-
-data Liftable :: TyFun (Factored, Factored, *, *) Bool -> *
-type instance Apply Liftable '(m,m',zp,zq) = Int64 :== (LiftOf zq)
-
-data NonLiftable :: TyFun (Factored, Factored, *, *) Bool -> *
-type instance Apply NonLiftable '(m,m',zp,zq) = Integer :== (LiftOf zq)
 
 infixr 9 **
 data a ** b

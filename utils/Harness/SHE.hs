@@ -8,6 +8,10 @@ module Harness.SHE
 ,Tunnel(..)
 ,KSLinear(..)
 ,SKOf
+,AddZq
+,Liftable
+,NonLiftable
+,RoundDown
 
 ,applyKSQ
 ,applyRescale
@@ -35,6 +39,11 @@ import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 
 import Crypto.Random.DRBG
 
+import Data.Singletons
+import Data.Promotion.Prelude.List
+import Data.Promotion.Prelude.Eq
+import Data.Singletons.TypeRepStar
+
 --extract an SK type from a tuple of params
 type family SKOf (a :: k) :: * where
   SKOf '(t,m,m',zp,zq)         = SK (Cyc t m' (LiftOf zp))
@@ -43,6 +52,20 @@ type family SKOf (a :: k) :: * where
   SKOf '(t,r,r',s,s',zp,zq)    = SK (Cyc t r' (LiftOf zp))
   SKOf '(t,r,r',s,s',zp,zq,gad) = SK (Cyc t r' (LiftOf zp))
   SKOf '(t,'(m,m',zp,zp',zq)) = SK (Cyc t m' (LiftOf zp))
+
+data AddZq :: TyFun (Factored, Factored, *, *) (Factored, Factored, *, *, *) -> *
+type instance Apply AddZq '(m,m',zp,zq) = '(m,m',zp,RoundDown zq,zq)
+
+data Liftable :: TyFun (Factored, Factored, *, *) Bool -> *
+type instance Apply Liftable '(m,m',zp,zq) = Int64 :== (LiftOf zq)
+
+data NonLiftable :: TyFun (Factored, Factored, *, *) Bool -> *
+type instance Apply NonLiftable '(m,m',zp,zq) = Integer :== (LiftOf zq)
+
+type family RoundDown zq where
+  RoundDown (a,(b,c)) = (b,c)
+  RoundDown ((a,b),c) = (a,b)
+  RoundDown (a,b) = a
 
 data DecCtxD
 type DecCtx t m m' zp zq = 

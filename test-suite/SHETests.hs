@@ -1,39 +1,20 @@
-{-# LANGUAGE ScopedTypeVariables, NoImplicitPrelude, RebindableSyntax, 
-             DataKinds, TypeOperators, NoMonomorphismRestriction, NoMonoLocalBinds,
-             ConstraintKinds, TypeFamilies, FlexibleContexts, PartialTypeSignatures, 
-             RankNTypes, MultiParamTypeClasses, FlexibleInstances, UndecidableInstances, 
-             RebindableSyntax, GADTs, PolyKinds, KindSignatures #-}
+{-# LANGUAGE DataKinds, FlexibleContexts,
+             NoImplicitPrelude, RebindableSyntax,
+             ScopedTypeVariables, TypeFamilies, TypeOperators #-}
 
 module SHETests (sheTests) where
 
-import TestTypes hiding (Zq)
-
-import Control.Applicative
-import Control.Monad
-import Control.Monad.Random hiding (Rand)
-import Control.Monad.State
-
-import Crypto.Lol.LatticePrelude hiding (lift)
-import Crypto.Lol.Cyclotomic.Cyc
-import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.CRTrans
-import Crypto.Lol.Gadget
-import Crypto.Lol.Cyclotomic.Linear
-
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor
-import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
-import Crypto.Lol.Cyclotomic.Tensor.CTensor hiding (CT)
-import Crypto.Lol.Types.ZqBasic
-
-import Data.Array.Repa.Eval (Elt)
-import Data.Vector.Unboxed (Unbox)
-import Data.Vector.Storable (Storable)
-
-import Utils
 import Harness.SHE
 import Tests
+import Utils
 
-import Data.Promotion.Prelude.List
+import Control.Monad
+import Control.Monad.Random
+
+import Crypto.Lol hiding (CT)
+import Crypto.Lol.Applications.SymmSHE
+import Crypto.Lol.Cyclotomic.Linear
+import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 
 v = 1 :: Double
 
@@ -56,43 +37,43 @@ sheTests =
   ]
 
 type CTCombos = '[
-  '(F7, F7, ZP2,ZQ2),
-  '(F7, F21,ZP2,ZQ2),
-  '(F2, F8, ZP2,Zq 536871001),
-  '(F1, F8, ZP2,Zq 536871001),
-  '(F4, F12,ZP2,SmoothZQ1),
-  '(F4, F8, ZP3,Zq SmoothQ1),
-  '(F7, F7, ZP4,ZQ2),
-  '(F7, F21,ZP4,ZQ2),
-  '(F1, F4, ZP4,ZQ1),
-  '(F4, F4, ZP4,ZQ1),
-  '(F14,F14,ZP4,ZQ1),
-  '(F28,F28,ZP4,ZQ1),
-  '(F28,F28,ZP4,Zq 80221),
-  '(F1, F8, ZP4,Zq 536871001),
-  '(F2, F8, ZP4,Zq 536871001),
-  '(F4, F12,ZP8,SmoothZQ1)
+  '(F7, F7, Zq 2,Zq (19393921 ** 18869761)),
+  '(F7, F21,Zq 2,Zq (19393921 ** 18869761)),
+  '(F2, F8, Zq 2,Zq 536871001),
+  '(F1, F8, Zq 2,Zq 536871001),
+  '(F4, F12,Zq 2,Zq 2148249601),
+  '(F4, F8, Zq 3,Zq 2148249601),
+  '(F7, F7, Zq 4,Zq (19393921 ** 18869761)),
+  '(F7, F21,Zq 4,Zq (19393921 ** 18869761)),
+  '(F1, F4, Zq 4,Zq 18869761),
+  '(F4, F4, Zq 4,Zq 18869761),
+  '(F14,F14,Zq 4,Zq 18869761),
+  '(F28,F28,Zq 4,Zq 18869761),
+  '(F28,F28,Zq 4,Zq 80221),
+  '(F1, F8, Zq 4,Zq 536871001),
+  '(F2, F8, Zq 4,Zq 536871001),
+  '(F4, F12,Zq 8,Zq 2148249601)
   ]
 
 type Gadgets = '[TrivGad, BaseBGad 2]
 type Tensors = '[CT.CT,RT]
 type MM'PQCombos = 
-  '[ '(F1, F7, ZP2, ZQ2),
-     '(F2, F4, ZP8, SmoothZQ2),
-     '(F4, F12, ZP2, SmoothZQ2),
-     '(F8, F64, ZP2, SmoothZQ2),
-     '(F3, F27, ZP2, SmoothZQ2),
-     '(F2, F4, ZP8, SmoothZQ3),
-     '(F4, F12, ZP2, SmoothZQ3),
-     '(F8, F64, ZP2, SmoothZQ3),
-     '(F3, F27, ZP2, SmoothZQ3)]
+  '[ '(F1, F7, Zq 2, Zq (19393921 ** 18869761)),
+     '(F2, F4, Zq 8, Zq (2148854401 ** 2148249601)),
+     '(F4, F12, Zq 2, Zq (2148854401 ** 2148249601)),
+     '(F8, F64, Zq 2, Zq (2148854401 ** 2148249601)),
+     '(F3, F27, Zq 2, Zq (2148854401 ** 2148249601)),
+     '(F2, F4, Zq 8, Zq (2148854401 ** 2148249601 ** 2150668801)),
+     '(F4, F12, Zq 2, Zq (2148854401 ** 2148249601 ** 2150668801)),
+     '(F8, F64, Zq 2, Zq (2148854401 ** 2148249601 ** 2150668801)),
+     '(F3, F27, Zq 2, Zq (2148854401 ** 2148249601 ** 2150668801))]
 
 
 type CTParams  = ( '(,) <$> Tensors) <*> CTCombos
 type DecParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable CTCombos))
 type Zq'Params = ( '(,) <$> Tensors) <*> (Map AddZq (Filter NonLiftable MM'PQCombos))
 type KSQParams = ( '(,) <$> Gadgets) <*> Zq'Params
-type TwoIdxParams = ( '(,) <$> Tensors) <*> '[ '(F1, F7, F3, F21, Zq 2, ZQ1)]
+type TwoIdxParams = ( '(,) <$> Tensors) <*> '[ '(F1, F7, F3, F21, Zq 2, Zq 18869761)]
 
 prop_ksLin :: (DecryptUCtx t m m' z zp zq, Eq (Cyc t m zp))
   => SK (Cyc t m' z) 

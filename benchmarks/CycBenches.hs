@@ -1,11 +1,14 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances, 
-             GADTs, MultiParamTypeClasses,NoImplicitPrelude, RankNTypes, 
-             RebindableSyntax, ScopedTypeVariables, TypeFamilies, 
+{-# LANGUAGE DataKinds, FlexibleContexts, 
+             NoImplicitPrelude, RebindableSyntax, 
+             ScopedTypeVariables, TypeFamilies, 
              TypeOperators, UndecidableInstances #-}
 
 module CycBenches (cycBenches) where
 
-import Control.Applicative
+import Benchmarks
+import Harness.Cyc
+import Utils
+
 import Control.Monad.Random
 
 import Crypto.Lol
@@ -16,10 +19,6 @@ import Data.Singletons
 import Data.Promotion.Prelude.List
 import Data.Promotion.Prelude.Eq
 import Data.Singletons.TypeRepStar
-
-import Utils hiding (Liftable)
-import Harness.Cyc
-import Benchmarks
 
 cycBenches :: (MonadRandom m) => m Benchmark
 cycBenches = benchGroup "Cyc" [

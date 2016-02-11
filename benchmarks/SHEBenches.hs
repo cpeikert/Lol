@@ -1,6 +1,7 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances, GADTs, 
-             MultiParamTypeClasses, NoImplicitPrelude, RankNTypes, RebindableSyntax, 
-             ScopedTypeVariables, TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, 
+             NoImplicitPrelude, RebindableSyntax, 
+             ScopedTypeVariables, TypeFamilies, 
+             TypeOperators #-}
 
 module SHEBenches (sheBenches) where
 
@@ -8,16 +9,13 @@ import Utils
 import Harness.SHE
 import Benchmarks
 
-import Control.Applicative
 import Control.Monad.Random
 import Crypto.Random.DRBG
 
 import Crypto.Lol hiding (CT)
-import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 import Crypto.Lol.Applications.SymmSHE
+import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 import Crypto.Lol.Types.Random
-
-import Data.Promotion.Prelude.List
 
 sheBenches :: (MonadRandom m) => m Benchmark
 sheBenches = benchGroup "SHE" [
