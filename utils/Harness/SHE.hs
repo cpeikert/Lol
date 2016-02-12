@@ -223,9 +223,9 @@ instance (params `Satisfy` CTCtxD, CTCtx t m m' zp zq)
       => Proxy '(t,m,m',zp,zq) -> ArgsCtx CTCtxD
   run _ f = (f $ CTD (Proxy::Proxy '(t,m,m',zp,zq))) : (run (Proxy::Proxy params) f)
 
-applyCTFunc :: (params `Satisfy` CTCtxD) =>
+applyCTFunc :: (params `Satisfy` CTCtxD, MonadRandom rnd) =>
   Proxy params 
-  -> (forall t m m' zp zq . (CTCtx t m m' zp zq) 
+  -> (forall t m m' zp zq . (CTCtx t m m' zp zq, Generatable (StateT (Maybe (SK (Cyc t m' (LiftOf zp)))) rnd) zp) 
       => Proxy '(t,m,m',zp,zq) -> rnd res)
   -> [rnd res]
 applyCTFunc params g = run params $ \(CTD p) -> g p

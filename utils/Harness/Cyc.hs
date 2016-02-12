@@ -5,6 +5,7 @@
 module Harness.Cyc where
 
 import Control.Applicative
+import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor
@@ -12,8 +13,6 @@ import Crypto.Lol.Types.ZPP
 import Crypto.Random.DRBG
 
 import Data.Vector.Storable
-
-import System.Random
 
 import Utils
 import Gen
@@ -27,9 +26,9 @@ instance (params `Satisfy` BasicCtxD, BasicCtx t m r)
     BC :: (BasicCtx t m r) => Proxy '(t,m,r) -> ArgsCtx BasicCtxD
   run _ f = (f $ BC (Proxy::Proxy '(t,m,r))) : (run (Proxy::Proxy params) f)
 
-applyBasic :: (params `Satisfy` BasicCtxD) =>
+applyBasic :: (params `Satisfy` BasicCtxD, MonadRandom rnd) =>
   Proxy params 
-  -> (forall t m r . (BasicCtx t m r) => Proxy '(t,m,r) -> rnd res) 
+  -> (forall t m r . (BasicCtx t m r, Generatable rnd r) => Proxy '(t,m,r) -> rnd res) 
   -> [rnd res]
 applyBasic params g = run params $ \(BC p) -> g p
 
@@ -44,9 +43,9 @@ instance (params `Satisfy` LiftCtxD, LiftCtx t m r)
     LC :: (LiftCtx t m r) => Proxy '(t,m,r) -> ArgsCtx LiftCtxD
   run _ f = (f $ LC (Proxy::Proxy '(t,m,r))) : (run (Proxy::Proxy params) f)
 
-applyLift :: (params `Satisfy` LiftCtxD) =>
+applyLift :: (params `Satisfy` LiftCtxD, MonadRandom rnd) =>
   Proxy params 
-  -> (forall t m r . (LiftCtx t m r) => Proxy '(t,m,r) -> rnd res) 
+  -> (forall t m r . (LiftCtx t m r, Generatable rnd r) => Proxy '(t,m,r) -> rnd res) 
   -> [rnd res]
 applyLift params g = run params $ \(LC p) -> g p
 

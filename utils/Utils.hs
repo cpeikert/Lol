@@ -10,7 +10,6 @@ module Utils
 ,type (<$>)
 ,type (<*>)
 
-,Arg(..)
 ,module Data.Promotion.Prelude.List
 
 ,showType
@@ -39,10 +38,6 @@ goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
                      then v : checkVal (v+m)
                     else checkVal (v+m)
 -}
-
-
--- a wrapper for polymorphic arguments with a Random instance
-newtype Arg a = Arg a deriving (Random)
 
 infixr 9 **
 data a ** b

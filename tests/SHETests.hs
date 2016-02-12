@@ -29,7 +29,7 @@ sheTests =
    testGroupM "CT zero"    $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctzero,
    testGroupM "CT one"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctone,
    testGroupM "ModSwitch PT" modSwPTTests,
-   testGroupM "Tunnel" tunnelTests,
+   testGroupM "Tunnel"       tunnelTests,
    testGroupM "Twace"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideSHEArgs prop_cttwace,
    testGroupM "Embed"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideSHEArgs prop_ctembed,
    testGroupM "KSLin"      $ applyKSQ (Proxy::Proxy KSQParams) $ hideSHEArgs prop_ksLin,
@@ -129,12 +129,11 @@ prop_mulPub sk x y =
       y' = decryptUnrestricted sk y
   in test $ xy' == (x*y')
 
--- why do we need to use Arg here, but not in TensorTests?
 prop_addScalar :: (DecryptUCtx t m m' z zp zq,
                    AddScalarCtx t m' zp zq,
                    Eq (Cyc t m zp))
-  => SK (Cyc t m' z) -> Arg zp -> CT m zp (Cyc t m' zq) -> Test '(t,m,m',zp,zq)
-prop_addScalar sk (Arg c) x =
+  => SK (Cyc t m' z) -> zp -> CT m zp (Cyc t m' zq) -> Test '(t,m,m',zp,zq)
+prop_addScalar sk c x =
   let cx = addScalar c x
       cx' = decryptUnrestricted sk cx
       x' = decryptUnrestricted sk x

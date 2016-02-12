@@ -101,8 +101,8 @@ prop_l_inv x = test $ (lInv $ l x) == x \\ witness entailEqT x
 
 -- scalarCRT = crt . scalarPow
 prop_scalar_crt :: forall t m r . (Tensor t, TElt t r, Fact m, Eq r, ZeroTestable r, IntegralDomain r, CRTrans r)
-                => Arg r -> Test '(t,m,r)
-prop_scalar_crt (Arg r) = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
+                => r -> Test '(t,m,r)
+prop_scalar_crt r = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
   scalarCRT' <- scalarCRT
   crt' <- crt
   return $ (scalarCRT' r :: t m r) == (crt' $ scalarPow r)
@@ -134,8 +134,8 @@ type NormWrapCtx m r = (NormCtx CT m r, NormCtx RT m r)
 -- t is a dummy param
 prop_gsqnorm :: forall t m r . 
   (NormWrapCtx m r, NormCtx t m r) 
-  => Arg r -> Test '(t,m,r)
-prop_gsqnorm (Arg x) = test $
+  => r -> Test '(t,m,r)
+prop_gsqnorm x = test $
   let crtCT = fromJust crt
       crtRT = fromJust crt
       -- not mathematically meaningful, we just need some "random" coefficients
