@@ -7,6 +7,7 @@ module Harness.SHE
 (KSHint(..)
 ,Tunnel(..)
 ,KSLinear(..)
+,PTCT(..)
 ,SKOf
 ,AddZq
 ,Liftable
@@ -277,16 +278,11 @@ instance (GenSKCtx t m z Double,
         return sk
     return sk
 
-instance (EncryptCtx t m m' z zp zq,
-          z ~ LiftOf zp,
-          MonadRandom rnd,
-          Generatable rnd (SK (Cyc t m' z)),
-          Generatable rnd (Cyc t m zp)) 
+instance (Generatable rnd (PTCT m zp (Cyc t m' zq)), Monad rnd) 
   => Generatable rnd (CT m zp (Cyc t m' zq)) where
   genArg = do
-    sk :: SK (Cyc t m' z) <- genArg
-    pt <- genArg
-    encrypt sk pt
+    (PTCT _ ct) :: PTCT m zp (Cyc t m' zq) <- genArg
+    return ct
 
 -- use this data type in functions that need a circular key switch hint
 newtype KSHint m zp t m' zq gad zq' = KeySwitch (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
@@ -338,3 +334,18 @@ instance (KeySwitchCtx gad t m' zp zq zq',
     skout <- evalStateT genArg (Nothing :: Maybe (SK (Cyc t m' z)))
     ksl <- proxyT (keySwitchLinear skout skin) (Proxy::Proxy (gad,zq'))
     return $ KSL ksl skout
+
+data PTCT m zp rq where
+  PTCT :: Cyc t m zp -> CT m zp (Cyc t m' zq) -> PTCT m zp (Cyc t m' zq)
+instance (EncryptCtx t m m' z zp zq,
+          z ~ LiftOf zp,
+          MonadRandom rnd,
+          Generatable rnd (SK (Cyc t m' z)),
+          Generatable rnd (Cyc t m zp),
+          rq ~ Cyc t m' zq) 
+  => Generatable rnd (PTCT m zp rq) where
+  genArg = do
+    sk :: SK (Cyc t m' z) <- genArg
+    pt <- genArg
+    ct <- encrypt sk pt
+    return $ PTCT pt ct

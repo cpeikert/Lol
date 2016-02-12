@@ -78,11 +78,10 @@ type TwoIdxParams = ( '(,) <$> Tensors) <*> '[ '(F1, F7, F3, F21, Zq 2, Zq 18869
 prop_ksLin :: (DecryptUCtx t m m' z zp zq, Eq (Cyc t m zp))
   => SK (Cyc t m' z) 
      -> KSLinear t m m' z zp zq zq' gad 
-     -> CT m zp (Cyc t m' zq) 
+     -> PTCT m zp (Cyc t m' zq) 
      -> Test '(t,m,m',zp,zq,zq',gad)
-prop_ksLin skin (KSL kswlin skout) x =
-  let x' = decryptUnrestricted skin x
-      y = kswlin x
+prop_ksLin skin (KSL kswlin skout) (PTCT x' x) =
+  let y = kswlin x
       y' = decryptUnrestricted skout y
   in test $ x' == y'
 
@@ -91,13 +90,11 @@ prop_ksQuad :: (Ring (CT m zp (Cyc t m' zq)),
                 Eq (Cyc t m zp))
   => SK (Cyc t m' z) 
      -> KSHint m zp t m' zq gad zq' 
-     -> CT m zp (Cyc t m' zq) 
-     -> CT m zp (Cyc t m' zq) 
+     -> PTCT m zp (Cyc t m' zq)
+     -> PTCT m zp (Cyc t m' zq)
      -> Test '(t,m,m',zp,zq,zq',gad)
-prop_ksQuad sk (KeySwitch kswq) x1 x2 = 
+prop_ksQuad sk (KeySwitch kswq) (PTCT y1 x1) (PTCT y2 x2) = 
   let x' = kswq $ x1*x2
-      y1 = decryptUnrestricted sk x1
-      y2 = decryptUnrestricted sk x2
       y = y1*y2
       x = decryptUnrestricted sk x'
   in test $ y == x
@@ -108,12 +105,11 @@ prop_addPub :: forall t m m' z zp zq .
    Eq (Cyc t m zp))
   => SK (Cyc t m' z) 
      -> Cyc t m zp 
-     -> CT m zp (Cyc t m' zq) 
+     -> PTCT m zp (Cyc t m' zq) 
      -> Test '(t,m,m',zp,zq)
-prop_addPub sk x y = 
+prop_addPub sk x (PTCT y' y) = 
   let xy = addPublic x y
       xy' = decryptUnrestricted sk xy
-      y' = decryptUnrestricted sk y
   in test $ xy' == (x+y')
 
 prop_mulPub :: (DecryptUCtx t m m' z zp zq,
@@ -121,43 +117,43 @@ prop_mulPub :: (DecryptUCtx t m m' z zp zq,
                 Eq (Cyc t m zp))
   => SK (Cyc t m' z) 
      -> Cyc t m zp 
-     -> CT m zp (Cyc t m' zq) 
+     -> PTCT m zp (Cyc t m' zq)
      -> Test '(t,m,m',zp,zq)
-prop_mulPub sk x y = 
+prop_mulPub sk x (PTCT y' y) = 
   let xy = mulPublic x y
       xy' = decryptUnrestricted sk xy
-      y' = decryptUnrestricted sk y
   in test $ xy' == (x*y')
 
 prop_addScalar :: (DecryptUCtx t m m' z zp zq,
                    AddScalarCtx t m' zp zq,
                    Eq (Cyc t m zp))
-  => SK (Cyc t m' z) -> zp -> CT m zp (Cyc t m' zq) -> Test '(t,m,m',zp,zq)
-prop_addScalar sk c x =
+  => SK (Cyc t m' z) -> zp -> PTCT m zp (Cyc t m' zq) -> Test '(t,m,m',zp,zq)
+prop_addScalar sk c (PTCT x' x) =
   let cx = addScalar c x
       cx' = decryptUnrestricted sk cx
-      x' = decryptUnrestricted sk x
   in test $ cx' == ((scalarCyc c)+x')
 
 prop_ctadd :: (DecryptUCtx t m m' z zp zq,
                Additive (CT m zp (Cyc t m' zq)),
                Eq (Cyc t m zp))
-  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> Test '(t,m,m',zp,zq)
-prop_ctadd sk x1 x2 = 
-  let x1' = decryptUnrestricted sk x1
-      x2' = decryptUnrestricted sk x2
-      y = x1+x2
+  => SK (Cyc t m' z) 
+     -> PTCT m zp (Cyc t m' zq)
+     -> PTCT m zp (Cyc t m' zq)
+     -> Test '(t,m,m',zp,zq)
+prop_ctadd sk (PTCT x1' x1) (PTCT x2' x2) = 
+  let y = x1+x2
       y' = decryptUnrestricted sk y
   in test $ x1'+x2' == y'
 
 prop_ctmul :: (DecryptUCtx t m m' z zp zq,
                Ring (CT m zp (Cyc t m' zq)),
                Eq (Cyc t m zp))
-  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> Test '(t,m,m',zp,zq)
-prop_ctmul sk x1 x2 = 
-  let x1' = decryptUnrestricted sk x1
-      x2' = decryptUnrestricted sk x2
-      y = x1*x2
+  => SK (Cyc t m' z) 
+     -> PTCT m zp (Cyc t m' zq)
+     -> PTCT m zp (Cyc t m' zq)
+     -> Test '(t,m,m',zp,zq)
+prop_ctmul sk (PTCT x1' x1) (PTCT x2' x2) = 
+  let y = x1*x2
       y' = decryptUnrestricted sk y
   in test $ x1'*x2' == y'
 
@@ -187,11 +183,10 @@ prop_ctembed :: forall t r r' s s' z zp zq .
    r `Divides` s, 
    r' `Divides` s',
    Eq (Cyc t s zp))
-  => SK (Cyc t r' z) -> CT r zp (Cyc t r' zq) -> Test '(t,r,r',s,s',zp,zq)
-prop_ctembed sk x = 
+  => SK (Cyc t r' z) -> PTCT r zp (Cyc t r' zq) -> Test '(t,r,r',s,s',zp,zq)
+prop_ctembed sk (PTCT x' x) = 
   let y = embedCT x :: CT s zp (Cyc t s' zq)
       y' = decryptUnrestricted (embedSK sk) y
-      x' = decryptUnrestricted sk x
   in test $ (embed x' :: Cyc t s zp) == y'
 
 -- CT must be encrypted with key from small ring

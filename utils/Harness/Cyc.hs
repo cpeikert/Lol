@@ -19,7 +19,8 @@ import Gen
 import Apply
 
 data BasicCtxD
-type BasicCtx t m r = (CElt t r, Fact m, ShowType '(t,m,r), Random (t m r), m `Divides` m)
+type BasicCtx t m r = 
+  (CElt t r, Fact m, ShowType '(t,m,r), Random (t m r), m `Divides` m)
 instance (params `Satisfy` BasicCtxD, BasicCtx t m r) 
   => ( '(t, '(m,r)) ': params) `Satisfy` BasicCtxD where
   data ArgsCtx BasicCtxD where
@@ -28,7 +29,8 @@ instance (params `Satisfy` BasicCtxD, BasicCtx t m r)
 
 applyBasic :: (params `Satisfy` BasicCtxD, MonadRandom rnd) =>
   Proxy params 
-  -> (forall t m r . (BasicCtx t m r, Generatable rnd r) => Proxy '(t,m,r) -> rnd res) 
+  -> (forall t m r . (BasicCtx t m r, Generatable rnd r, Generatable rnd (t m r)) 
+       => Proxy '(t,m,r) -> rnd res)
   -> [rnd res]
 applyBasic params g = run params $ \(BC p) -> g p
 
@@ -76,9 +78,10 @@ instance (params `Satisfy` TwoIdxCtxD, TwoIdxCtx t m m' r)
     TI :: (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> ArgsCtx TwoIdxCtxD
   run _ f = (f $ TI (Proxy::Proxy '(t,m,m',r))) : (run (Proxy::Proxy params) f)
 
-applyTwoIdx :: (params `Satisfy` TwoIdxCtxD) =>
+applyTwoIdx :: (params `Satisfy` TwoIdxCtxD, MonadRandom rnd) =>
   Proxy params 
-  -> (forall t m m' r . (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> rnd res) 
+  -> (forall t m m' r . (TwoIdxCtx t m m' r, Generatable rnd (t m r), Generatable rnd (t m' r)) 
+        => Proxy '(t,m,m',r) -> rnd res) 
   -> [rnd res]
 applyTwoIdx params g = run params $ \(TI p) -> g p
 
