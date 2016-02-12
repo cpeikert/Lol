@@ -72,8 +72,6 @@ data P
 data D
 -- | Nullary type representing CRT basis.
 data C
--- | Nullary type representing CRT basis over extension ring.
-data CE
 
 -- | Represents cyclotomic rings such as @Z[zeta]@,
 -- @Zq[zeta]@, and @Q(zeta)@ in an explicit representation: @t@ is the
@@ -83,8 +81,10 @@ data CE
 data UCyc t m rep r where
   Pow  :: !(t m r) -> UCyc t m P r
   Dec  :: !(t m r) -> UCyc t m D r
+  -- Invariant: for a given (t,m,r), exactly one of these two is ever
+  -- used: CRTr if crtFuncs exists, otherwise CRTe
   CRTr :: !(t m r) -> UCyc t m C r
-  CRTe :: !(t m (CRTExt r)) -> UCyc t m CE r
+  CRTe :: !(t m (CRTExt r)) -> UCyc t m C r
 
 {-
   -- super-optimized storage of scalars
@@ -98,9 +98,6 @@ data UCyc t m rep r where
 -- particular base ring @r@.
 type RElt t r = (TElt t r, CRTrans r, IntegralDomain r, ZeroTestable r, NFData r)
 
--- | Shorthand for frequently reused constraints that are needed for
--- most functions involving 'UCyc' and
--- 'Crypto.Lol.Cyclotomic.Cyc.Cyc'.
 type CElt t r = (Tensor t, RElt t r, RElt t (CRTExt r), CRTEmbed r, Eq r, Random r)
 
 {-
@@ -117,10 +114,13 @@ instance (Eq r, Fact m, TElt t r) => Eq (UCyc t m P r) where
 instance (Eq r, Fact m, TElt t r) => Eq (UCyc t m D r) where
   (Dec v1) == (Dec v2) = v1 == v2 \\ witness entailEqT v1
 
+{- CJP: No Eq for C due to precision in CRTe case
+
 instance (Eq r, Fact m, TElt t r) => Eq (UCyc t m C r) where
   (CRTr v1) == (CRTr v2) = v1 == v2 \\ witness entailEqT v1
 
--- no Eq instance for CE, due to possible precision issues
+-} 
+
 
 {-
   -- compare in compositum
@@ -143,10 +143,12 @@ instance (ZeroTestable r, Fact m, TElt t r) => ZeroTestable.C (UCyc t m P r) whe
 instance (ZeroTestable r, Fact m, TElt t r) => ZeroTestable.C (UCyc t m D r) where
   isZero (Dec v) = isZero v \\ witness entailZTT v
 
+{- No ZT for C, due to precision in CRTe case
+
 instance (ZeroTestable r, Fact m, TElt t r) => ZeroTestable.C (UCyc t m C r) where
   isZero (CRTr v) = isZero v \\ witness entailZTT v
 
--- no ZT instance for CE, due to possible precision issues
+-}
 
 {-
   isZero x@(CRTe _) = isZero $ forcePow x
@@ -154,6 +156,11 @@ instance (ZeroTestable r, Fact m, TElt t r) => ZeroTestable.C (UCyc t m C r) whe
 -}
 
 -- Additive instances
+
+crtCons :: forall t m r . (Tensor t, Fact m, TElt t r, 
+                           ZeroTestable r, IntegralDomain r, CRTrans r)
+           => t m r -> UCyc t m C r
+crtCons = fromMaybe CRTe (proxyT hasCRTFuncs (Proxy::Proxy (t m r)) >> Just CRTr)
 
 instance (Ring r, Fact m, TElt t r) => Additive.C (UCyc t m P r) where
   zero = let v = scalarPow zero in Pow v \\ witness entailRingT v
@@ -167,11 +174,8 @@ instance (Ring r, Fact m, TElt t r) => Additive.C (UCyc t m D r) where
   (Dec v1) - (Dec v2) = Dec (v1-v2) \\ witness entailRingT v1
   negate (Dec v) = Dec $ negate v \\ witness entailRingT v
 
--- CJP: this instance is only meaningful if a CRTr basis actually
--- exists, but that is only known at compile time
 instance (Ring r, Fact m, TElt t r) => Additive.C (UCyc t m C r) where
-  -- CJP: this 'zero' works; we don't use scalarCRT because it's a Maybe
-  zero = let v = scalarPow zero in CRTr v \\ witness entailRingT v
+  zero = let v = scalarCRT zero in crtCons v \\ witness entailRingT v
   (CRTr v1) + (CRTr v2) = CRTr (v1+v2) \\ witness entailRingT v1
   (CRTr v1) - (CRTr v2) = CRTr (v1-v2) \\ witness entailRingT v1
   negate (CRTr v) = CRTr $ negate v \\ witness entailRingT v
@@ -639,7 +643,7 @@ embed (Pow v) = Pow $ embedPow v
 embed (Dec v) = Dec $ embedDec v
 -- what to do about CRTr?  Do we need separate functions?
 
-toPow :: UCyc t m rep r -> UCyc t m P r
+toPow :: (Tensor t, Fact m, TElt t r) => UCyc t m rep r -> UCyc t m P r
 {-# INLINABLE toPow #-}
 toPow x@(Pow _) = x
 toPow (Dec v) = Pow $ l v
@@ -782,9 +786,9 @@ instance (Tensor t, Fact m, TElt t r,
          => Random (Either (UCyc t m C r) (UCyc t m P r)) where
 
   -- create in CRTr basis if possible, otherwise in powerful
-  random = let cons = fromMaybe (Right . Pow)
+  random = let cons = fromMaybe Pow
                       (proxyT hasCRTFuncs (Proxy::Proxy (t m r))
-                       >> Just (Left . CRTr))
+                       >> Just CRTr)
            in \g -> let (v,g') = random g \\ witness entailRandomT v
                     in (cons v, g')
 
