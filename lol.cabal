@@ -168,6 +168,7 @@ test-suite test-lol
     MonadRandom,
     mtl,
     QuickCheck >= 2.8 && < 2.9,
+    random,
     repa,
     singletons,
     test-framework >= 0.8 && < 0.9,

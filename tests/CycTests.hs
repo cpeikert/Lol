@@ -14,11 +14,11 @@ import Harness.Cyc
 import Tests
 
 cycTests = [
-  testGroup "coeffsPow" $ applyTwoIdx (Proxy::Proxy '[])      $ hideArgs prop_coeffsBasis,
-  testGroup "mulGPow" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgPow,
-  testGroup "mulGDec" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgDec,
-  testGroup "mulGCRT" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgCRT,
-  testGroup "crtSet"  $ applyBasis (Proxy::Proxy BasisParams) $ hideArgs prop_crtSet_pairs
+  testGroupM "coeffsPow" $ applyTwoIdx (Proxy::Proxy '[])      $ hideArgs prop_coeffsBasis,
+  testGroupM "mulGPow" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgPow,
+  testGroupM "mulGDec" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgDec,
+  testGroupM "mulGCRT" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgCRT,
+  testGroupM "crtSet"  $ applyBasis (Proxy::Proxy BasisParams) $ hideArgs prop_crtSet_pairs
   ]
 
 prop_mulgPow :: (CElt t r, Fact m) => Cyc t m r -> Test '(t,m,r)

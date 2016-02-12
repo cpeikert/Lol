@@ -3,7 +3,8 @@
 module Tests
 (test
 ,testIO
-,testGroup
+,TF.testGroup
+,testGroupM
 ,hideArgs
 ,hideSHEArgs
 ,Test) where
@@ -27,8 +28,8 @@ test = Test
 testIO :: (forall m . MonadRandom m => m Bool) -> Test params
 testIO = TestM
 
-testGroup :: String -> [IO TF.Test] -> TF.Test
-testGroup str = TF.buildTest . ((TF.testGroup str) <$>) . sequence
+testGroupM :: String -> [IO TF.Test] -> TF.Test
+testGroupM str = TF.buildTest . ((TF.testGroup str) <$>) . sequence
 
 -- normalizes any function resulting in a Benchmark to 
 -- one that takes a proxy for its arguments

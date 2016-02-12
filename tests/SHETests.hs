@@ -19,21 +19,21 @@ import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 v = 1 :: Double
 
 sheTests = 
-  [testGroup "Dec . Enc"  $ applyDec (Proxy::Proxy DecParams) $ hideSHEArgs prop_encDec,
-   testGroup "DecU . Enc" $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_encDecU,
-   testGroup "AddPub"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_addPub,
-   testGroup "MulPub"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_mulPub,
-   testGroup "ScalarPub"  $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_addScalar,
-   testGroup "CTAdd"      $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctadd,
-   testGroup "CTMul"      $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctmul,
-   testGroup "CT zero"    $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctzero,
-   testGroup "CT one"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctone,
-   testGroup "ModSwitch PT" modSwPTTests,
-   testGroup "Tunnel" tunnelTests,
-   testGroup "Twace"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideSHEArgs prop_cttwace,
-   testGroup "Embed"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideSHEArgs prop_ctembed,
-   testGroup "KSLin"      $ applyKSQ (Proxy::Proxy KSQParams) $ hideSHEArgs prop_ksLin,
-   testGroup "keySwitch"  $ applyKSQ (Proxy::Proxy KSQParams) $ hideSHEArgs prop_ksQuad
+  [testGroupM "Dec . Enc"  $ applyDec (Proxy::Proxy DecParams) $ hideSHEArgs prop_encDec,
+   testGroupM "DecU . Enc" $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_encDecU,
+   testGroupM "AddPub"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_addPub,
+   testGroupM "MulPub"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_mulPub,
+   testGroupM "ScalarPub"  $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_addScalar,
+   testGroupM "CTAdd"      $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctadd,
+   testGroupM "CTMul"      $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctmul,
+   testGroupM "CT zero"    $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctzero,
+   testGroupM "CT one"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctone,
+   testGroupM "ModSwitch PT" modSwPTTests,
+   testGroupM "Tunnel" tunnelTests,
+   testGroupM "Twace"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideSHEArgs prop_cttwace,
+   testGroupM "Embed"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideSHEArgs prop_ctembed,
+   testGroupM "KSLin"      $ applyKSQ (Proxy::Proxy KSQParams) $ hideSHEArgs prop_ksLin,
+   testGroupM "keySwitch"  $ applyKSQ (Proxy::Proxy KSQParams) $ hideSHEArgs prop_ksQuad
   ]
 
 type CTCombos = '[
@@ -129,6 +129,7 @@ prop_mulPub sk x y =
       y' = decryptUnrestricted sk y
   in test $ xy' == (x*y')
 
+-- why do we need to use Arg here, but not in TensorTests?
 prop_addScalar :: (DecryptUCtx t m m' z zp zq,
                    AddScalarCtx t m' zp zq,
                    Eq (Cyc t m zp))

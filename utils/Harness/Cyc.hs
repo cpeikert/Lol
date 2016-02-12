@@ -6,16 +6,21 @@ module Harness.Cyc where
 
 import Control.Applicative
 
-import Crypto.Lol hiding (CT)
+import Crypto.Lol
+import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types.ZPP
 import Crypto.Random.DRBG
+
+import Data.Vector.Storable
+
+import System.Random
 
 import Utils
 import Gen
 import Apply
 
 data BasicCtxD
-type BasicCtx t m r = (CElt t r, Fact m, ShowType '(t,m,r))
+type BasicCtx t m r = (CElt t r, Fact m, ShowType '(t,m,r), Random (t m r), m `Divides` m)
 instance (params `Satisfy` BasicCtxD, BasicCtx t m r) 
   => ( '(t, '(m,r)) ': params) `Satisfy` BasicCtxD where
   data ArgsCtx BasicCtxD where
@@ -28,9 +33,11 @@ applyBasic :: (params `Satisfy` BasicCtxD) =>
   -> [rnd res]
 applyBasic params g = run params $ \(BC p) -> g p
 
-
+-- r is Liftable
 data LiftCtxD
-type LiftCtx t m r = (BasicCtx t m r, CElt t (LiftOf r), Lift' r, ToInteger (LiftOf r))
+type LiftCtx t m r = 
+  (BasicCtx t m r, CElt t (LiftOf r), Lift' r, ToInteger (LiftOf r), 
+   TElt CT r, TElt RT r, TElt CT (LiftOf r), TElt RT (LiftOf r))
 instance (params `Satisfy` LiftCtxD, LiftCtx t m r) 
   => ( '(t, '(m,r)) ': params) `Satisfy` LiftCtxD  where
   data ArgsCtx LiftCtxD where
@@ -43,7 +50,7 @@ applyLift :: (params `Satisfy` LiftCtxD) =>
   -> [rnd res]
 applyLift params g = run params $ \(LC p) -> g p
 
-
+-- similar to LiftCtxD, but with a `gen` param
 data ErrorCtxD
 type ErrorCtx t m r gen = (CElt t r, Fact m, ShowType '(t,m,r,gen), 
                            CElt t (LiftOf r), Lift' r, 
@@ -62,7 +69,7 @@ applyError params g = run params $ \(EC p) -> g p
 
 
 data TwoIdxCtxD
-type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, ShowType '(t,m,m',r))
+type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, ShowType '(t,m,m',r), Random (t m r), Random (t m' r))
 
 instance (params `Satisfy` TwoIdxCtxD, TwoIdxCtx t m m' r) 
   => ( '(t, '(m,m',r)) ': params) `Satisfy` TwoIdxCtxD where
@@ -76,7 +83,7 @@ applyTwoIdx :: (params `Satisfy` TwoIdxCtxD) =>
   -> [rnd res]
 applyTwoIdx params g = run params $ \(TI p) -> g p
 
-
+-- similar to TwoIdxCtxD, but r must be a prime-power
 data BasisCtxD
 type BasisCtx t m m' r = (m `Divides` m', ZPP r, CElt t r, CElt t (ZpOf r), ShowType '(t,m,m',r))
 
