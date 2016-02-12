@@ -74,31 +74,29 @@ library
 
   exposed-modules: 
     Crypto.Lol
+    Crypto.Lol.PosBin
+    Crypto.Lol.Factored
+    Crypto.Lol.Reflects
     Crypto.Lol.CRTrans
     Crypto.Lol.Gadget
     Crypto.Lol.LatticePrelude
     
     Crypto.Lol.Applications.SymmSHE
-    Crypto.Lol.Cyclotomic.Tensor
-    Crypto.Lol.Factored
 
     Crypto.Lol.Cyclotomic.Cyc
     Crypto.Lol.Cyclotomic.UCyc
     Crypto.Lol.Cyclotomic.Utility
-    
     Crypto.Lol.Cyclotomic.Linear
 
+    Crypto.Lol.Cyclotomic.Tensor
     Crypto.Lol.Cyclotomic.Tensor.CTensor
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor
     
     Crypto.Lol.Types.Random
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
-    
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.ZqBasic
-
-    Crypto.Lol.Reflects
 
   other-modules:
         
@@ -122,7 +120,7 @@ library
     base==4.8.*,
     binary,
     bytestring,
-    constraints==0.4.*,
+    constraints,
     containers >= 0.5.6.2 && < 0.6,
     crypto-api,
     data-default >= 0.3.0 && < 0.6,
