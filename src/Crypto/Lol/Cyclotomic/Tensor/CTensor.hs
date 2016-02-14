@@ -20,7 +20,7 @@ import Algebra.Module         as Module (C)
 import Algebra.Ring           as Ring (C)
 import Algebra.ZeroTestable   as ZeroTestable (C)
 
-import Control.Applicative
+import Control.Applicative hiding ((*>))
 import Control.Arrow
 import Control.DeepSeq
 import Control.Monad
@@ -135,27 +135,9 @@ instance (Fact m, Ring r, Storable r, CRNS r) => Ring.C (CT m r) where
 instance (GFCtx fp d, Fact m, Additive (CT m fp))
     => Module.C (GF fp d) (CT m fp) where
         
-  (*>) = let dval = proxy value (Proxy::Proxy d)
-             n = proxy totientFact (Proxy::Proxy m)
-         in if n `mod` dval /= 0 then 
-                error $ "CT: d (= " LP.++ show dval LP.++ 
-                          ") does not divide n (= " LP.++ show n LP.++ ")"
-            else \ r v ->
-              let go :: [fp] -> [fp] -- apply (r *) blockwise to coeff vector
-                  go fps = LP.concat ((FF.toList . (r *) . FF.fromList) <$>
-                                      chunksOf dval fps)
-              in case v of
-                CT (CT' arr) -> 
-                     CT $ CT' $ SV.fromList $ go $ SV.toList arr
-                ZV zv ->
-                     ZV $ fromJust $ iZipVector $ V.fromList $
-                        go $ V.toList $ unIZipVector zv
-
-chunksOf :: Int -> [a] -> [[a]]
-chunksOf _ [] = []
-chunksOf n xs
-  | n > 0 = let (h,t) = LP.splitAt n xs in h : chunksOf n t
-  | otherwise = error "chunksOf: non-positive n"
+  r *> v = case v of
+    CT (CT' arr) -> CT $ CT' $ SV.fromList $ r *> SV.toList arr
+    ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $
 
 instance (ZeroTestable r, Storable r, Fact m)
          => ZeroTestable.C (CT m r) where

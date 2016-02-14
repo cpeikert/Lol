@@ -1,0 +1,3 @@
+#!/bin/bash
+cabal configure --enable-tests --enable-benchmarks --disable-library-profiling -f -opt
+exit

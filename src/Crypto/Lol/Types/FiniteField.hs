@@ -22,13 +22,14 @@ import Crypto.Lol.Reflects
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Field        as Field (C)
+import Algebra.Module       as Module (C)
 import Algebra.Ring         as Ring (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 import MathObj.Polynomial
 
 import Math.NumberTheory.Primes.Factorisation
 
-import           Control.Applicative
+import           Control.Applicative hiding ((*>))
 import           Control.DeepSeq
 import           Control.Monad
 import qualified Data.Vector         as V
@@ -81,6 +82,23 @@ instance (GFCtx fp d) => CRTrans (GF fp d) where
            then Just $ (omegaPows V.!) . (`mod` m)
            else Nothing
       scalarInv = Just $ recip $ fromIntegral $ valueHat m
+
+instance {-# OVERLAPS #-} (Additive fp, Ring (GF fp d), Reflects d Int)
+  => Module.C (GF fp d) [fp] where
+
+  r *> fps = 
+    let dval = proxy value (Proxy::Proxy d)
+        n = length fps
+    in if n `mod` dval /= 0 then
+                error $ "FiniteField: d (= " ++ show dval ++
+                          ") does not divide n (= " ++ show n ++ ")"
+       else concat ((toList . (r *) . fromList) <$> chunksOf dval fps)
+
+chunksOf :: Int -> [a] -> [[a]]
+chunksOf _ [] = []
+chunksOf n xs
+  | n > 0 = let (h,t) = splitAt n xs in h : chunksOf n t
+  | otherwise = error "chunksOf: non-positive n"
 
 -- | Yield a list of length exactly @d@ (i.e., including trailing zeros)
 -- of the @fp@-coefficients with respect to the power basis
