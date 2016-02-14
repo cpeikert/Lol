@@ -87,7 +87,7 @@ toZV (CT (CT' v)) = ZV $ fromMaybe (error "toZV: internal error") $
 toZV v@(ZV _) = v
 
 zvToCT' :: forall m r . (Storable r) => IZipVector m r -> CT' m r
-zvToCT' v = coerce $ (convert $ unIZipVector v :: Vector r)
+zvToCT' v = coerce (convert $ unIZipVector v :: Vector r)
 
 wrap :: (Storable r) => (CT' l r -> CT' m r) -> (CT l r -> CT m r)
 wrap f (CT v) = CT $ f v
@@ -95,8 +95,8 @@ wrap f (ZV v) = CT $ f $ zvToCT' v
 
 wrapM :: (Storable r, Monad mon) => (CT' l r -> mon (CT' m r))
          -> (CT l r -> mon (CT m r))
-wrapM f (CT v) = liftM CT $ f v
-wrapM f (ZV v) = liftM CT $ f $ zvToCT' v
+wrapM f (CT v) = CT <$> f v
+wrapM f (ZV v) = CT <$> f (zvToCT' v)
 
 -- convert an CT' *twace* signature to Tagged one
 type family Tw (r :: *) :: * where
@@ -169,32 +169,32 @@ instance Tensor CT where
   mulGPow = wrap mulGPow'
   mulGDec = wrap $ untag $ basicDispatch dmulgdec
 
-  divGPow = wrapM $ divGPow'
+  divGPow = wrapM divGPow'
   -- we divide by p in the C code (for divGDec only(?)), do NOT call checkDiv!
-  divGDec = wrapM $ Just . (untag $ basicDispatch dginvdec)
+  divGDec = wrapM $ Just . untag (basicDispatch dginvdec)
 
   crtFuncs = (,,,,) <$>
     Just (CT . repl) <*>
-    (liftM wrap $ (untag $ cZipDispatch dmul) <$> untagT gCoeffsCRT) <*>
-    (liftM wrap $ (untag $ cZipDispatch dmul) <$> untagT gInvCoeffsCRT) <*>
-    (liftM wrap $ untagT ctCRT) <*>
-    (liftM wrap $ untagT ctCRTInv) 
+    (wrap <$> untag (cZipDispatch dmul) <$> untagT gCoeffsCRT) <*>
+    (wrap <$> untag (cZipDispatch dmul) <$> untagT gInvCoeffsCRT) <*>
+    (wrap <$> untagT ctCRT) <*>
+    (wrap <$> untagT ctCRTInv) 
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
   embedPow = wrap $ runIdentity $ coerceEm embedPow'
   embedDec = wrap $ runIdentity $ coerceEm embedDec'
 
-  tGaussianDec v = liftM CT $ cDispatchGaussian v
-  --tGaussianDec v = liftM CT $ coerceT' $ gaussianDec v
+  tGaussianDec v = CT <$> cDispatchGaussian v
+  --tGaussianDec v = CT <$> coerceT' (gaussianDec v)
 
   -- we do not wrap thsi function because (currently) it can only be called on lifted types
-  gSqNormDec (CT v) = (untag gSqNormDec') v
+  gSqNormDec (CT v) = untag gSqNormDec' v
   gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
 
-  crtExtFuncs = (,) <$> (liftM wrap $ coerceTw twaceCRT')
-                    <*> (liftM wrap $ coerceEm embedCRT')
+  crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT')
+                    <*> (wrap <$> coerceEm embedCRT')
 
-  coeffs = wrapM $ coerceCoeffs $ coeffs'
+  coeffs = wrapM $ coerceCoeffs coeffs'
 
   powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
 
@@ -203,7 +203,7 @@ instance Tensor CT where
   fmapT f (CT v) = CT $ coerce (SV.map f) v
   fmapT f v@(ZV _) = fmapT f $ toCT v
 
-  fmapTM f (CT (CT' v)) = liftM (CT . CT') $ SV.mapM f v
+  fmapTM f (CT (CT' v)) = (CT . CT') <$> SV.mapM f v
   fmapTM f v@(ZV _) = fmapTM f $ toCT v
 
   unzipTElt (CT (CT' v)) = (CT . CT') *** (CT . CT') $ unzip v
@@ -213,10 +213,10 @@ instance Tensor CT where
   unzipT (ZV v) = ZV *** ZV $ unzipIZV v
 
 
-coerceTw :: (Functor mon) => (TaggedT '(m, m') mon (Vector r -> Vector r)) -> mon (CT' m' r -> CT' m r)
+coerceTw :: (Functor mon) => TaggedT '(m, m') mon (Vector r -> Vector r) -> mon (CT' m' r -> CT' m r)
 coerceTw = (coerce <$>) . untagT
 
-coerceEm :: (Functor mon) => (TaggedT '(m, m') mon (Vector r -> Vector r)) -> mon (CT' m r -> CT' m' r)
+coerceEm :: (Functor mon) => TaggedT '(m, m') mon (Vector r -> Vector r) -> mon (CT' m r -> CT' m' r)
 coerceEm = (coerce <$>) . untagT
 
 -- | Useful coersion for defining @coeffs@ in the @Tensor@
@@ -229,7 +229,7 @@ coerceCoeffs = coerce
 -- interface. Using 'coerce' alone is insufficient for type inference.
 coerceBasis :: 
   (Fact m, Fact m')
-  => Tagged '(m,m') ([Vector r]) -> Tagged m [CT' m' r]
+  => Tagged '(m,m') [Vector r] -> Tagged m [CT' m' r]
 coerceBasis = coerce
 
 mulGPow' :: (TElt CT r, Fact m, Additive r) => CT' m r -> CT' m r
@@ -256,12 +256,12 @@ basicDispatch :: forall m r .
      (Storable r, Fact m, Additive r)
       => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
          -> Tagged m (CT' m r -> CT' m r)
-basicDispatch f = return $ (unsafePerformIO . withBasicArgs f)
+basicDispatch f = return $ unsafePerformIO . withBasicArgs f
 
 gSqNormDec' :: forall m r .
      (Storable r, Fact m, Additive r, Dispatch r)
       => Tagged m (CT' m r -> r)
-gSqNormDec' = return $ ( (!0) . unCT . unsafePerformIO . withBasicArgs dnorm)
+gSqNormDec' = return $ (!0) . unCT . unsafePerformIO . withBasicArgs dnorm
 
 ctCRT :: forall m r . (Storable r, CRTrans r, Dispatch r,
           Fact m)
@@ -276,10 +276,10 @@ ctCRTInv :: (Storable r, CRTrans r, Dispatch r,
           Fact m)
          => TaggedT m Maybe (CT' m r -> CT' m r)
 ctCRTInv = do -- in Maybe
-  mhatInv <- liftM snd $ crtInfoFact
+  mhatInv <- snd <$> crtInfoFact
   ruinv' <- ruInv
   return $ \x -> unsafePerformIO $ 
-    withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . (dcrtinv ruptr)))
+    withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinv ruptr))
 
 checkDiv :: forall m r . 
   (IntegralDomain r, Storable r, ZeroTestable r, 
@@ -287,10 +287,10 @@ checkDiv :: forall m r .
     => Tagged m (CT' m r -> CT' m r) -> Tagged m (CT' m r -> Maybe (CT' m r))
 checkDiv f = do
   f' <- f
-  oddRad' <- liftM fromIntegral oddRadicalFact
+  oddRad' <- fromIntegral <$> oddRadicalFact
   return $ \x -> 
     let (CT' y) = f' x
-    in CT' <$> (SV.mapM (`divIfDivis` oddRad')) y
+    in CT' <$> SV.mapM (`divIfDivis` oddRad') y
 
 divIfDivis :: (IntegralDomain r, ZeroTestable r) => r -> r -> Maybe r
 divIfDivis num den = let (q,r) = num `divMod` den
@@ -300,7 +300,7 @@ cZipDispatch :: (Storable r, Fact m, Additive r)
   => (Ptr r -> Ptr r -> Int64 -> IO ())
      -> Tagged m (CT' m r -> CT' m r -> CT' m r)
 cZipDispatch f = do -- in Tagged m
-  totm <- liftM fromIntegral $ totientFact
+  totm <- fromIntegral <$> totientFact
   return $ coerce $ \a b -> unsafePerformIO $ do
     yout <- SV.thaw a
     SM.unsafeWith yout (\pout ->
@@ -314,7 +314,7 @@ cDispatchGaussian :: forall m r var rnd .
          => var -> rnd (CT' m r)
 cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   -- get rus for (Complex r)
-  ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) $ ruInv
+  ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) ruInv
   totm <- pureT totientFact
   m <- pureT valueFact
   rad <- pureT radicalFact
@@ -337,7 +337,7 @@ instance (Storable r, Random r, Fact m) => Random (CT' m r) where
 
 instance (Storable r, Random (CT' m r)) => Random (CT m r) where
   --{-# INLINABLE random #-}
-  random = runRand $ liftM CT (liftRand random)
+  random = runRand $ CT <$> liftRand random
 
   randomR = error "randomR nonsensical for CT"
 
@@ -352,7 +352,7 @@ repl = let n = proxy totientFact (Proxy::Proxy m)
 replM :: forall m r mon . (Fact m, Storable r, Monad mon) 
          => mon r -> mon (CT' m r)
 replM = let n = proxy totientFact (Proxy::Proxy m)
-        in liftM coerce . SV.replicateM n
+        in fmap coerce . SV.replicateM n
 
 --{-# INLINE scalarPow' #-}
 scalarPow' :: forall m r . (Fact m, Additive r, Storable r) => r -> CT' m r
@@ -367,28 +367,28 @@ ru, ruInv :: forall r m .
 --{-# INLINE ru #-}
 ru = do
   mval <- pureT valueFact
-  wPow <- liftM fst $ crtInfoFact
-  liftM (LP.map
+  wPow <- fst <$> crtInfoFact
+  LP.map
     (\(p,e) -> do
         let pp = p^e
             pow = mval `div` pp
-        generate pp (wPow . (*pow)))) $
+        generate pp (wPow . (*pow))) <$>
       pureT ppsFact
 
 --{-# INLINE ruInv #-}
 ruInv = do
   mval <- pureT valueFact
-  wPow <- liftM fst $ crtInfoFact
-  liftM (LP.map
+  wPow <- fst <$> crtInfoFact
+  LP.map
     (\(p,e) -> do
         let pp = p^e
             pow = mval `div` pp
-        generate pp (\i -> wPow $ (-i*pow)))) $
+        generate pp (\i -> wPow $ -i*pow)) <$>
       pureT ppsFact
 
 gCoeffsCRT, gInvCoeffsCRT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r, IntegralDomain r)
   => TaggedT m Maybe (CT' m r)
-gCoeffsCRT = ctCRT <*> (return $ mulGPow' $ scalarPow' LP.one)
+gCoeffsCRT = ctCRT <*> return (mulGPow' $ scalarPow' LP.one)
 -- It's necessary to call 'fromJust' here: otherwise 
 -- sequencing functions in 'crtFuncs' relies on 'divGPow' having an
 -- implementation in C, which is not true for all types which have a C

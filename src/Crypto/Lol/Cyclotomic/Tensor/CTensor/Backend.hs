@@ -70,7 +70,7 @@ store = Store.run $
       (Store.element e')
 
 instance Show CPP where
-    show (CPP p e) = "(" LP.++ (show p) LP.++ "," LP.++ (show e) LP.++ ")"
+    show (CPP p e) = "(" LP.++ show p LP.++ "," LP.++ show e LP.++ ")"
 
 instance (Storable a, Storable b,
           CTypeOf a ~ CTypeOf b) 
@@ -117,7 +117,7 @@ instance (ZqTuple a, ZqTuple b) => ZqTuple (a, b) where
   getModuli = 
     let as = proxy getModuli (Proxy::Proxy a)
         bs = proxy getModuli (Proxy :: Proxy b)
-    in tag $ (as,bs)
+    in tag (as,bs)
 
 -- counts components in a nested tuple
 class Tuple a where
@@ -209,37 +209,37 @@ instance (Tuple r, CTypeOf r ~ ComplexD) => Dispatch' ComplexD r where
     tensorCRTC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr)
   dcrtinv ruptr minv pout totm pfac numFacts = 
     tensorCRTInvC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv)
-  dl pout totm pfac numFacts = 
-    tensorLC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
-  dlinv pout totm pfac numFacts = 
-    tensorLInvC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
+  dl pout = 
+    tensorLC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+  dlinv pout = 
+    tensorLInvC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dnorm = error "cannot call CT normSq on type Complex Double"
-  dmulgpow pout totm pfac numFacts = 
-    tensorGPowC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
+  dmulgpow pout = 
+    tensorGPowC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dmulgdec = error "cannot call CT mulGDec on type Complex Double"
-  dginvpow pout totm pfac numFacts = 
-    tensorGInvPowC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
+  dginvpow pout = 
+    tensorGInvPowC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dginvdec = error "cannot call CT divGDec on type Complex Double"
-  dadd aout bout totm = 
-    addC (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout) totm
-  dmul aout bout totm = 
-    mulC (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout) totm
+  dadd aout bout = 
+    addC (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout)
+  dmul aout bout = 
+    mulC (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout)
   dgaussdec = error "cannot call CT gaussianDec on type Comple Double"
 
 instance (Tuple r, CTypeOf r ~ DoubleD) => Dispatch' DoubleD r where
   dcrt = error "cannot call CT Crt on type Double"
   dcrtinv = error "cannot call CT CrtInv on type Double"
-  dl pout totm pfac numFacts = 
-    tensorLDouble (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
-  dlinv pout totm pfac numFacts = 
-    tensorLInvDouble (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
+  dl pout = 
+    tensorLDouble (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+  dlinv pout = 
+    tensorLInvDouble (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dnorm = error "cannot call CT normSq on type Double"
   dmulgpow = error "cannot call CT mulGPow on type Double"
   dmulgdec = error "cannot call CT mulGDec on type Double"
   dginvpow = error "cannot call CT divGPow on type Double"
   dginvdec = error "cannot call CT divGDec on type Double"
-  dadd aout bout totm = 
-    addD (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout) totm
+  dadd aout bout = 
+    addD (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout)
   dmul = error "cannot call CT (*) on type Double"
   dgaussdec ruptr pout totm pfac numFacts = 
     tensorGaussianDec (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr)
@@ -247,22 +247,22 @@ instance (Tuple r, CTypeOf r ~ DoubleD) => Dispatch' DoubleD r where
 instance (Tuple r, CTypeOf r ~ Int64D) => Dispatch' Int64D r where
   dcrt = error "cannot call CT Crt on type Int64"
   dcrtinv = error "cannot call CT CrtInv on type Int64"
-  dl pout totm pfac numFacts = 
-    tensorLR (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
-  dlinv pout totm pfac numFacts = 
-    tensorLInvR (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
-  dnorm pout totm pfac numFacts = 
-    tensorNormSqR (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
-  dmulgpow pout totm pfac numFacts = 
-    tensorGPowR (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
-  dmulgdec pout totm pfac numFacts = 
-    tensorGDecR (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
-  dginvpow pout totm pfac numFacts = 
-    tensorGInvPowR (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
-  dginvdec pout totm pfac numFacts = 
-    tensorGInvDecR (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts
-  dadd aout bout totm = 
-    addR (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout) totm
+  dl pout = 
+    tensorLR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+  dlinv pout = 
+    tensorLInvR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+  dnorm pout = 
+    tensorNormSqR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+  dmulgpow pout = 
+    tensorGPowR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+  dmulgdec pout = 
+    tensorGDecR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+  dginvpow pout = 
+    tensorGInvPowR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+  dginvdec pout = 
+    tensorGInvDecR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+  dadd aout bout = 
+    addR (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout)
   dmul = error "cannot call CT (*) on type Int64"
   dgaussdec = error "cannot call CT gaussianDec on type Int64"
 

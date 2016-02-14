@@ -194,6 +194,7 @@ instance (CElt t r, Fact m) => Additive.C (UCyc t m r) where
   negate (CRTe v) = CRTe $ fmapT negate v
   negate (Sub c) = Sub $ negate c
 
+
 -- Ring instance
 instance (CElt t r, Fact m) => Ring.C (UCyc t m r) where
 
@@ -356,8 +357,8 @@ mulG (CRTe v) = CRTe $ fromJust' "UCyc.mulG CRTe" mulGCRT v
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.divG', but for 'UCyc'.
 divG :: (Fact m, CElt t r) => UCyc t m r -> Maybe (UCyc t m r)
-divG (Scalar c) = liftM Pow (divGPow $ scalarPow c) -- full ring
-divG (Sub c) = divG $ embed' c                      -- full ring
+divG (Scalar c) = Pow <$> divGPow (scalarPow c) -- full ring
+divG (Sub c) = divG $ embed' c                  -- full ring
 divG (Pow v) = Pow <$> divGPow v
 divG (Dec v) = Dec <$> divGDec v
 -- fromMaybe is safe here because we're already in CRTr
@@ -368,7 +369,7 @@ divG (CRTe v) = Just $ CRTe $ fromJust' "UCyc.divG CRTe" divGCRT v
 tGaussian :: (Fact m, OrdFloat q, Random q, CElt t q,
               ToRational v, MonadRandom rnd)
              => v -> rnd (UCyc t m q)
-tGaussian = liftM Dec . tGaussianDec
+tGaussian = fmap Dec . tGaussianDec
 
 -- | Same as 'Crypto.Lol.Cyclotomic.Cyc.gSqNorm', but for 'UCyc'.
 gSqNorm :: (Fact m, CElt t r) => UCyc t m r -> r
@@ -504,9 +505,9 @@ fmapCM _ (Scalar _) = error "can't fmapCM on Scalar. Must forceBasis first!"
 fmapCM _ (Sub _) = error "can't fmapCM on Sub. Must forceBasis first!"
 fmapCM _ (CRTe _) =  error "can't fmapCM on CRTe.  Must forceBasis first!"
 
-fmapCM f (Pow v) = liftM Pow $ fmapTM f v
-fmapCM f (Dec v) = liftM Dec $ fmapTM f v
-fmapCM f (CRTr v) = liftM CRTr $ fmapTM f v
+fmapCM f (Pow v) = Pow <$> fmapTM f v
+fmapCM f (Dec v) = Dec <$> fmapTM f v
+fmapCM f (CRTr v) = CRTr <$> fmapTM f v
 
 
 
@@ -710,7 +711,7 @@ instance (Show r, Show (t m r), Show (t m (CRTExt r)))
   show (CRTe v) = "CRTe basis coeffs " ++ show v
 
 instance (Arbitrary (t m r)) => Arbitrary (UCyc t m r) where
-  arbitrary = liftM Pow arbitrary
+  arbitrary = Pow <$> arbitrary
   shrink = shrinkNothing
 
 instance (Tensor t, Fact m, TElt t r, TElt t (CRTExt r), NFData r, NFData (CRTExt r))
