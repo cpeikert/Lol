@@ -19,7 +19,6 @@ module Crypto.Lol.Types.Numeric
 import Control.DeepSeq
 import Control.Monad.Random
 
-import           Algebra.IntegralDomain (divUp)
 -- NumericPrelude has silly types for these functions
 import           NumericPrelude         hiding (abs, max, min, (^))
 import qualified NumericPrelude.Numeric (abs)

@@ -24,7 +24,7 @@ import Data.Vector               as V
 -- proper lengths (and is necessary to implement 'pure').
 
 newtype IZipVector (m :: Factored) a =
-  IZipVector { -- | Deconstructor for IZipVector
+  IZipVector { -- | Deconstructor
                unIZipVector :: Vector a}
   -- not deriving Read, Monoid, Alternative, Monad[Plus], IsList
   -- because of different semantics and/or length restriction
