@@ -13,6 +13,7 @@ module Crypto.Lol.Types.FiniteField
 , PrimeField, GFCtx
 , size, trace, toList, fromList
 , IrreduciblePoly(..), X(..), (^^)
+, TensorCoeffs(..)
 ) where
 
 import Crypto.Lol.CRTrans
@@ -83,16 +84,17 @@ instance (GFCtx fp d) => CRTrans (GF fp d) where
            else Nothing
       scalarInv = Just $ recip $ fromIntegral $ valueHat m
 
-instance {-# OVERLAPS #-} (Additive fp, Ring (GF fp d), Reflects d Int)
-  => Module.C (GF fp d) [fp] where
+newtype TensorCoeffs a = Coeffs {unCoeffs :: [a]} deriving (Additive.C)
+instance (Additive fp, Ring (GF fp d), Reflects d Int)
+  => Module.C (GF fp d) (TensorCoeffs fp) where
 
-  r *> fps = 
+  r *> (Coeffs fps) = 
     let dval = proxy value (Proxy::Proxy d)
         n = length fps
     in if n `mod` dval /= 0 then
                 error $ "FiniteField: d (= " ++ show dval ++
                           ") does not divide n (= " ++ show n ++ ")"
-       else concat ((toList . (r *) . fromList) <$> chunksOf dval fps)
+       else Coeffs $ concat ((toList . (r *) . fromList) <$> chunksOf dval fps)
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []
@@ -105,7 +107,7 @@ chunksOf n xs
 toList :: forall fp d . (Reflects d Int, Additive fp) => GF fp d -> [fp]
 toList = let dval = proxy value (Proxy::Proxy d)
          in \(GF p) -> let l = coeffs p
-                       in l ++ (take (dval - length l) $ repeat zero)
+                       in l ++ (replicate (dval - length l) zero)
 
 -- | Yield a field element given up to @d@ coefficients with respect
 -- to the power basis.

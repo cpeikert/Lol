@@ -134,10 +134,10 @@ instance (Fact m, Ring r, Storable r, CRNS r) => Ring.C (CT m r) where
 
 instance (GFCtx fp d, Fact m, Additive (CT m fp))
     => Module.C (GF fp d) (CT m fp) where
-        
+
   r *> v = case v of
-    CT (CT' arr) -> CT $ CT' $ SV.fromList $ r *> SV.toList arr
-    ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $
+    CT (CT' arr) -> CT $ CT' $ SV.fromList $ unCoeffs $ r *> Coeffs $ SV.toList arr
+    ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $ unCoeffs $ r *> Coeffs $ V.toList $ unIZipVector zv
 
 instance (ZeroTestable r, Storable r, Fact m)
          => ZeroTestable.C (CT m r) where
