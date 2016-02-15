@@ -5,7 +5,7 @@ name:                lol
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            A library for lattice cryptography.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -19,11 +19,11 @@ stability:           experimental
 build-type:          Simple
 extra-source-files:  README, CHANGES.md,
                      src/Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h,
-                     test-suite/CycTests.hs,
-                     test-suite/SHETests.hs,
-                     test-suite/TensorTests.hs,
-                     test-suite/TestTypes.hs,
-                     test-suite/ZqTests.hs
+                     tests/CycTests.hs,
+                     tests/SHETests.hs,
+                     tests/TensorTests.hs,
+                     tests/TestTypes.hs,
+                     tests/ZqTests.hs
 cabal-version:       >= 1.10
 description:         
     Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
@@ -44,6 +44,11 @@ Flag llvm
                 but you need to have the LLVM compiler installed.
 
   Default:      True
+
+Flag opt
+  Description: Turn on library optimizations
+  Default:      True
+  Manual:       False
 
 library
   hs-source-dirs:     src
@@ -69,8 +74,9 @@ library
     ghc-options: -fllvm -optlo-O3
 
   -- ghc optimizations
-  ghc-options: -O3 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
-  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+  if flag(opt)
+    ghc-options: -O3 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
+    ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   exposed-modules: 
     Crypto.Lol
@@ -143,9 +149,9 @@ library
 
   other-extensions: TemplateHaskell
 
-test-suite lol-test-suite
+test-suite test-lol
   type:               exitcode-stdio-1.0
-  hs-source-dirs:     test-suite
+  hs-source-dirs:     tests,utils
   default-language:   Haskell2010
   main-is:            Main.hs
 
@@ -154,18 +160,22 @@ test-suite lol-test-suite
   build-depends:
     base,
     constraints,
+    deepseq,
+    DRBG,
     lol,
     MonadRandom,
+    mtl,
     QuickCheck >= 2.8 && < 2.9,
+    random,
     repa,
+    singletons,
     test-framework >= 0.8 && < 0.9,
     test-framework-quickcheck2 >= 0.3 && < 0.4,
-    time >= 1.2 && < 1.6,
     vector
 
 Benchmark bench-lol
   type:               exitcode-stdio-1.0
-  hs-source-dirs:     benchmarks
+  hs-source-dirs:     benchmarks,utils
   default-language:   Haskell2010
   main-is:            Main.hs
 

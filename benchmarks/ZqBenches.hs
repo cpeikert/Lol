@@ -1,37 +1,39 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, NoImplicitPrelude, PolyKinds, RankNTypes, TypeFamilies #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses,
+             NoImplicitPrelude, RankNTypes, TypeFamilies #-}
 
 module ZqBenches (zqBenches) where
-
-import Utils
 
 import Crypto.Lol
 
 import Control.Applicative
+import Control.Monad
 import Control.Monad.Random
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Array.Repa as R
 import GHC.TypeLits
 
+import Utils
+import Gen
+import Benchmarks
+
 type Arr = R.Array R.U R.DIM1
-type ZqB q = ZqBasic q Int64
 
 zqBenches :: MonadRandom rnd => rnd Benchmark
-zqBenches = bgroupRnd "ZqBasic" $
-            [ wrapZq bench_mul_unb $ (Proxy::Proxy 577),
-              wrapZq bench_mul_repa $ (Proxy::Proxy 577)
-            ]
+zqBenches = benchGroup "ZqBasic" [
+  hideArgs bench_mul_unb (Proxy::Proxy (Zq 577)),
+  hideArgs bench_mul_repa $ (Proxy::Proxy (Zq 577))
+  ]
 
-bench_mul_repa :: (Ring (ZqB q)) => Arr (ZqB q) -> Arr (ZqB q) -> NFValue
-bench_mul_repa a b = nf (R.computeUnboxedS . R.zipWith (*) a) b
+bench_mul_repa :: (Ring zq, U.Unbox zq) => Arr zq -> Arr zq -> Bench zq
+bench_mul_repa a b = bench (R.computeUnboxedS . R.zipWith (*) a) b
 
-bench_mul_unb :: (Ring (ZqB q)) => U.Vector (ZqB q) -> U.Vector (ZqB q) -> NFValue
-bench_mul_unb a b = nf (U.zipWith (*) a) b
+bench_mul_unb :: (Ring zq, U.Unbox zq) => U.Vector zq -> U.Vector zq -> Bench zq
+bench_mul_unb a b = bench (U.zipWith (*) a) b
 
+vecLen = 100 :: Int
 
-wrapZq :: (MonadRandom rnd, Benchmarkable rnd (v (ZqB q) -> a), ShowArgs q)
-          => (v (ZqB q) -> a) -> Proxy q -> rnd Benchmark
-wrapZq f pq = bench (showArgs pq) <$> genArgs f
+instance (U.Unbox zq, Random zq, MonadRandom rnd) => Generatable rnd (Arr zq) where
+  genArg = R.fromListUnboxed (R.Z R.:. vecLen) <$> replicateM vecLen getRandom
 
-monomorphize :: (forall q . KnownNat q => Proxy q -> rnd Benchmark)
-             -> rnd Benchmark
-monomorphize f = f (Proxy::Proxy 577)
+instance (U.Unbox zq, Random zq, MonadRandom rnd) => Generatable rnd (U.Vector zq) where
+  genArg = U.fromList <$> replicateM vecLen getRandom
