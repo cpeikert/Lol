@@ -23,8 +23,9 @@ SK, PT, CT                    -- don't export constructors!
 , embedSK, embedCT, twaceCT
 , tunnelCT
 -- * Constraint synonyms
-, GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx, DecryptCtx
-, AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
+, GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx
+, DecryptCtx, DecryptUCtx
+, AddScalarCtx, AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
 , SwitchCtx, KeySwitchCtx, KSHintCtx
 , TunnelCtx
 ) where
@@ -134,6 +135,11 @@ decrypt sk ct =
 
 --- unrestricted versions ---
 
+type DecryptUCtx t m m' z zp zq =
+  (Fact m, Fact m', CElt t zp, m `Divides` m',
+   Reduce z zq, Lift' zq, CElt t z, 
+   ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp)
+
 -- | More general form of 'errorTerm' that works for unrestricted
 -- output coefficient types.
 errorTermUnrestricted :: 
@@ -146,11 +152,8 @@ errorTermUnrestricted (SK _ s) = let sq = reduce s in
 
 -- | More general form of 'decrypt' that works for unrestricted output
 -- coefficient types.
-decryptUnrestricted :: 
- (Fact m, Fact m', CElt t zp, m `Divides` m',
-  Reduce z zq, Lift' zq, CElt t z, ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp)
+decryptUnrestricted :: (DecryptUCtx t m m' z zp zq)
   => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> PT (Cyc t m zp)
-
 decryptUnrestricted (SK _ s) = let sq = reduce s in
   \ct -> let (CT LSD k l c) = toLSD ct
          in let eval = evaluate c sq
@@ -385,15 +388,6 @@ instance (ToSDCtx t m' zp zq, Additive (CT m zp (Cyc t m' zq)))
 
   -- else, second must be in LSD
   ct1 * ct2 = ct2 * ct1
-
-{- CJP: do we want/need this?  We have mulPublic...
-
-instance (MulPublicCtx t m m' zp zq, Reduce z' zp, CElt t z',
-          l `Divides` m, Additive (CT m zp (c m' zq)), Ring (c l z'))
-  => Module.C (c l z') (CT m zp (c m' zq)) where
-
-  (*>) a = mulPublic (embed $ reduce a)
--}
 
 ---------- Ring switching ----------
 
