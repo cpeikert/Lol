@@ -67,7 +67,6 @@ derivingUnbox "Maybe"
 instance Default Bool where def = False
 
 -- | The characteristic of a ring, represented as a type.
-
 type family CharOf fp :: k
 
 -- | Poor man's 'Enum'.
@@ -112,12 +111,14 @@ class (Field src, Field tgt) => Encode src tgt where
 -- | Inverted entries of 'lsdToMSD'.
 msdToLSD :: (Encode src tgt) => (src, tgt)
 msdToLSD = (recip *** recip) lsdToMSD
+{-# INLINABLE msdToLSD #-}
 
 -- | A default implementation of rescaling for 'Mod' types.
 rescaleMod :: forall a b .
               (Mod a, Mod b, (ModRep a) ~ (ModRep b),
                Lift a (ModRep b), Ring b)
               => a -> b
+{-# INLINABLE rescaleMod #-}
 rescaleMod =
     let qval = proxy modulus (Proxy :: Proxy a)
         q'val = proxy modulus (Proxy :: Proxy b)
@@ -127,6 +128,7 @@ rescaleMod =
 -- | Deterministically round to a nearby value in the desired coset
 roundCoset :: forall zp z r .
               (Mod zp, z ~ ModRep zp, Lift zp z, RealField r) => zp -> r -> z
+{-# INLINABLE roundCoset #-}
 roundCoset = let pval = proxy modulus (Proxy::Proxy zp)
              in \ zp x -> let rep = lift zp
                           in rep + roundMult pval (x - fromIntegral rep)
@@ -139,6 +141,7 @@ instance (Mod a, Mod b, Lift' a, Lift' b, Reduce Integer (a,b),
           ToInteger (LiftOf a), ToInteger (LiftOf b))
          => Lift' (a,b) where
 
+  {-# INLINABLE lift #-}
   lift (a,b) =
     let moda = toInteger $ proxy modulus (Proxy::Proxy a)
         modb = toInteger $ proxy modulus (Proxy::Proxy b)
@@ -154,29 +157,37 @@ instance (Mod a, Mod b, Lift' a, Lift' b, Reduce Integer (a,b),
 -- NP should define Ring and Field instances for pairs, but doesn't.
 -- So we do it here.
 instance (Ring r1, Ring r2) => Ring.C (r1, r2) where
-
   (x1, x2) * (y1, y2) = (x1*y1, x2*y2)
   one = (one,one)
   fromInteger x = (fromInteger x, fromInteger x)
 
+  {-# INLINABLE (*) #-}
+  {-# INLINABLE one #-}
+  {-# INLINABLE fromInteger #-}
+
 instance (Field f1, Field f2) => Field.C (f1, f2) where
   (x1, x2) / (y1, y2) = (x1 / y1, x2 / y2)
   recip = recip *** recip
+  {-# INLINABLE (/) #-}
+  {-# INLINABLE recip #-}
 
 instance (IntegralDomain a, IntegralDomain b) => IntegralDomain.C (a,b) where
   (a1,b1) `divMod` (a2,b2) =
     let (da,ra) = (a1 `divMod` a2)
         (db,rb) = (b1 `divMod` b2)
     in ((da,db), (ra,rb))
+  {-# INLINABLE divMod #-}
 
 instance (Mod a, Mod b) => Mod (a,b) where
   type ModRep (a,b) = Integer
 
   modulus = tag $ fromIntegral (proxy modulus (Proxy::Proxy a)) *
             fromIntegral (proxy modulus (Proxy::Proxy b))
+  {-# INLINABLE modulus #-}
 
 instance (Reduce a b1, Reduce a b2) => Reduce a (b1, b2) where
   reduce x = (reduce x, reduce x)
+  {-# INLINABLE reduce #-}
 
 -- instances of Rescale for a product
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b)
@@ -184,36 +195,42 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b)
   rescale = let q1val = proxy modulus (Proxy::Proxy a)
                 q1inv = recip $ reduce q1val
             in \(x1,x2) -> q1inv * (x2 - reduce (lift x1))
+  {-# INLINABLE rescale #-}
 
 instance (Mod b, Field a, Lift b (ModRep b), Reduce (LiftOf b) a)
          => Rescale (a,b) a where
   rescale = let q2val = proxy modulus (Proxy::Proxy b)
                 q2inv = recip $ reduce q2val
             in \(x1,x2) -> q2inv * (x1 - reduce (lift x2))
+  {-# INLINABLE rescale #-}
 
 -- some multi-step scaledowns; could do this forever
 instance (Rescale (a,(b,c)) (b,c), Rescale (b,c) c)
          => Rescale (a,(b,c)) c where
   rescale = (rescale :: (b,c) -> c) . rescale
+  {-# INLINABLE rescale #-}
 
 instance (Rescale ((a,b),c) (a,b), Rescale (a,b) a)
          => Rescale ((a,b),c) a where
   rescale = (rescale :: (a,b) -> a) . rescale
+  {-# INLINABLE rescale #-}
 
 -- scaling up to a product
 instance (Ring a, Mod b, Reduce (ModRep b) a) => Rescale a (a,b) where
   -- multiply by q2
   rescale = let q2val = reduce $ proxy modulus (Proxy::Proxy b)
             in \x -> (q2val * x, zero)
+  {-# INLINABLE rescale #-}
 
 instance (Ring b, Mod a, Reduce (ModRep a) b) => Rescale b (a,b) where
   -- multiply by q1
   rescale = let q1val = reduce $ proxy modulus (Proxy::Proxy a)
             in \x -> (zero, q1val * x)
+  {-# INLINABLE rescale #-}
 
 -- Instance of 'Encode' for product ring.
 instance (Encode s t1, Encode s t2, Field (t1, t2)) => Encode s (t1, t2) where
-
+  {-# INLINABLE lsdToMSD #-}
   lsdToMSD = let (s1, t1conv) = lsdToMSD
                  (s2, t2conv) = lsdToMSD
              in (negate s1 * s2, (t1conv,t2conv))
@@ -221,10 +238,12 @@ instance (Encode s t1, Encode s t2, Field (t1, t2)) => Encode s (t1, t2) where
 -- Random could have defined this instance, but didn't, so we do it
 -- here.
 instance (Random a, Random b) => Random (a,b) where
+  {-# INLINABLE random #-}
   random g = let (a,g') = random g
                  (b, g'') = random g'
              in ((a,b), g'')
 
+  {-# INLINABLE randomR #-}
   randomR ((loa,lob), (hia,hib)) g = let (a,g') = randomR (loa,hia) g
                                          (b,g'') = randomR (lob,hib) g'
                                      in ((a,b),g'')

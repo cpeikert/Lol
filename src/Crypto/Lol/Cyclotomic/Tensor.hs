@@ -84,8 +84,11 @@ class (TElt t Double, TElt t (Complex Double))
   -- | Convert a scalar to a tensor in the powerful basis.
   scalarPow :: (Additive r, Fact m, TElt t r) => r -> t m r
 
+  {- CJP: suppressed to do annoyingly complicated algorithm
+
   -- | Convert a scalar to a tensor in the decoding basis.
   scalarDec :: (Additive r, Fact m, TElt t r) => r -> t m r
+  -}
 
   -- | 'l' converts from decoding-basis representation to
   -- powerful-basis representation; 'lInv' is its inverse.

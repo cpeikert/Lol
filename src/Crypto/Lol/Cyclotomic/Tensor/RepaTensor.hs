@@ -18,8 +18,8 @@ import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT
 import Crypto.Lol.LatticePrelude                         as LP hiding ((!!))
 import Crypto.Lol.Types.IZipVector
 
-import Algebra.Additive     as Additive (C)
-import Algebra.Ring         as Ring (C)
+--import Algebra.Additive     as Additive (C)
+--import Algebra.Ring         as Ring (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
 import Control.Applicative
@@ -35,9 +35,6 @@ import Data.Traversable     as T
 import Data.Vector.Unboxed  as U hiding (force)
 import Test.QuickCheck
 
--- just for specialization
-import Crypto.Lol.Types.ZqBasic
-
 -- | An implementation of 'Tensor' backed by repa.
 data RT (m :: Factored) r where
   RT :: Unbox r => !(Arr m r) -> RT m r
@@ -50,6 +47,7 @@ instance Eq r => Eq (RT m r) where
   (RT a) == (RT b) = a == b
   a@(RT _) == b = a == toRT b
   a == b@(RT _) = toRT a == b
+  {-# INLINABLE (==) #-}
 
 zvToArr :: Unbox r => IZipVector m r -> Arr m r
 zvToArr v = let vec = convert $ unIZipVector v
@@ -83,9 +81,10 @@ instance Tensor RT where
   entailIndexT  = tag $ Sub Dict
   entailEqT     = tag $ Sub Dict
   entailZTT     = tag $ Sub Dict
-  entailRingT   = tag $ Sub Dict
+  --entailRingT   = tag $ Sub Dict
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
+  entailShowT   = tag $ Sub Dict
 
   scalarPow = RT . scalarPow'
 
@@ -140,6 +139,9 @@ instance Tensor RT where
                             U.mapM f $ toUnboxed arr
   fmapTM f v = fmapTM f $ toRT v
 
+  zipWithT f (RT (Arr a1)) (RT (Arr a2)) = RT $ Arr $ force $ RT.zipWith f a1 a2
+  zipWithT f v1 v2 = zipWithT f (toRT v1) (toRT v2)
+
   unzipTElt (RT (Arr arr)) = (RT . Arr . fromUnboxed (extent arr)) ***
                              (RT . Arr . fromUnboxed (extent arr)) $
                              U.unzip $ toUnboxed arr
@@ -149,7 +151,7 @@ instance Tensor RT where
   unzipT (ZV v) = ZV *** ZV $ unzipIZV v
 
 
----------- "Container" instances ----------
+---------- Category-theoretic instances ----------
 
 instance Fact m => Functor (RT m) where
   -- Functor instance is implied by Applicative
@@ -173,32 +175,40 @@ instance Fact m => Traversable (RT m) where
 
 ---------- Numeric Prelude instances ----------
 
--- CJP: should Elt, Unbox be constraints on these instances?  It's
--- possible to zipWith on IZipVector, so it's not *necessary* to
--- convert toRT.
+{- CJP: Additive, Ring are not necessary when we use zipWithT
 
 instance (Unbox r, Additive (Arr m r)) => Additive.C (RT m r) where
+  zero = RT zero
+
   (RT a) + (RT b) = RT $ a + b
   a + b = toRT a + toRT b
+
+  (RT a) - (RT b) = RT $ a - b
+  a - b = toRT a - toRT b
 
   negate (RT a) = RT $ negate a
   negate a = negate $ toRT a
 
-  zero = RT zero
+  {-# INLINABLE (+) #-}
+  {-# INLINABLE (-) #-}
+  {-# INLINABLE zero #-}
+  {-# INLINABLE negate #-}
 
 instance (Unbox r, Ring (Arr m r)) => Ring.C (RT m r) where
-  {-# SPECIALIZE instance Ring.C (RT F288 (ZqBasic 577 Int64)) #-}
-
-  {-# INLINABLE (*) #-}
   (RT a) * (RT b) = RT $ a * b
   a * b = toRT a * toRT b
 
   fromInteger = RT . fromInteger
+  {-# INLINABLE (*) #-}
+  {-# INLINABLE fromInteger #-}
+
+-}
 
 instance (ZeroTestable (Arr m r), ZeroTestable (IZipVector m r))
     => ZeroTestable.C (RT m r) where
   isZero (RT a) = isZero a
   isZero (ZV v) = isZero v
+  {-# INLINABLE isZero #-}
 
 ---------- Miscellaneous instances ----------
 

@@ -24,9 +24,11 @@ module Crypto.Lol.Cyclotomic.Cyc
 -- * Data type and constraint
   Cyc, CElt
 -- * Constructors/deconstructors
-, cycPow, cycDec, cycCRT, scalarCyc, uncycPow, uncycDec, uncycCRT
+, cycPow, cycDec, cycCRT, scalarCyc
+, uncycPow, uncycDec, uncycCRT, unzipCyc, unzipCElt
 -- * Core cyclotomic operations
 , mulG, divG, gSqNorm, liftCyc, liftPow, liftDec
+-- * Representation advice
 , advisePow, adviseDec, adviseCRT
 -- * Error sampling
 , tGaussian, errorRounded, errorCoset
@@ -62,7 +64,11 @@ import Data.Traversable
 
 import Test.QuickCheck
 
--- | TODO documentation.
+-- | Represents a cyclotomic ring such as @Z[zeta]@,
+-- @Zq[zeta]@, and @Q(zeta)@ in an explicit representation: @t@ is the
+-- 'Tensor' type for storing coefficient tensors; @m@ is the
+-- cyclotomic index; @r@ is the base ring of the coefficients (e.g.,
+-- @Z@, @Zq@).
 data Cyc t m r where
   Pow :: !(UCyc t m P r) -> Cyc t m r
   Dec :: !(UCyc t m D r) -> Cyc t m r
@@ -101,29 +107,17 @@ scalarCyc = Scalar
 -- | Unwrap a 'Cyc' as a 'UCyc' in powerful-basis representation.
 uncycPow :: (Fact m, CElt t r) => Cyc t m r -> UCyc t m P r
 {-# INLINABLE uncycPow #-}
-uncycPow (Pow u) = u
-uncycPow (Dec u) = U.toPow u
-uncycPow (CRT u) = U.toPow u
-uncycPow (Scalar u) = scalarPow u
-uncycPow (Sub c) = uncycPow $ embed c
+uncycPow c = let (Pow u) = toPow' c in u
 
 -- | Unwrap a 'Cyc' as a 'UCyc' in decoding-basis representation.
 uncycDec :: (Fact m, CElt t r) => Cyc t m r -> UCyc t m D r
 {-# INLINABLE uncycDec #-}
-uncycDec (Pow u) = U.toDec u
-uncycDec (Dec u) = u
-uncycDec (CRT u) = U.toDec u
-uncycDec (Scalar u) = scalarDec u
-uncycDec (Sub c) = uncycDec $ embed c
+uncycDec c = let (Dec u) = toDec' c in u
 
 -- | Unwrap a 'Cyc' as a 'UCyc' in CRT-basis representation.
 uncycCRT :: (Fact m, CElt t r) => Cyc t m r -> UCyc t m C r
 {-# INLINABLE uncycCRT #-}
-uncycCRT (Pow u) = U.toCRT u
-uncycCRT (Dec u) = U.toCRT u
-uncycCRT (CRT u) = u
-uncycCRT (Scalar u) = scalarCRT u
-uncycCRT (Sub c) = uncycCRT $ embed c
+uncycCRT c = let (CRT u) = toCRT' c in u
 
 ---------- Algebraic instances ----------
 
@@ -148,9 +142,9 @@ instance (Eq r, Fact m, CElt t r) => Eq (Cyc t m r) where
 
   -- some other relatively efficient comparisons
   (Scalar c1) == (Pow u2) = scalarPow c1 == u2
-  (Scalar c1) == (Dec u2) = scalarDec c1 == u2
+  -- (Scalar c1) == (Dec u2) = scalarDec c1 == u2
   (Pow u1) == (Scalar c2) = u1 == scalarPow c2
-  (Dec u1) == (Scalar c2) = u1 == scalarDec c2
+  -- (Dec u1) == (Scalar c2) = u1 == scalarDec c2
 
   -- default: compare in powerful basis
   c1 == c2 = toPow' c1 == toPow' c2
@@ -179,12 +173,12 @@ instance (Fact m, CElt t r) => Additive.C (Cyc t m r) where
   -- SCALAR PLUS SOMETHING ELSE
 
   (Scalar c) + (Pow u) = Pow $ scalarPow c + u
-  (Scalar c) + (Dec u) = Dec $ scalarDec c + u
+  (Scalar c) + (Dec u) = Pow $ scalarPow c + toPow u -- workaround scalarDec
   (Scalar c) + (CRT u) = CRT $ scalarCRT c + u
   (Scalar c1) + (Sub c2) = Sub $ Scalar c1 + c2 -- must re-wrap Scalar!
 
   (Pow u) + (Scalar c) = Pow $ u + scalarPow c
-  (Dec u) + (Scalar c) = Dec $ u + scalarDec c
+  (Dec u) + (Scalar c) = Pow $ toPow u + scalarPow c -- workaround scalarDec
   (CRT u) + (Scalar c) = CRT $ u + scalarCRT c
   (Sub c1) + (Scalar c2) = Sub $ c1 + Scalar c2
 
@@ -305,8 +299,9 @@ gSqNorm :: forall t m r . (Fact m, CElt t r) => Cyc t m r -> r
 gSqNorm (Pow u) = U.gSqNorm $ toDec u
 gSqNorm (Dec u) = U.gSqNorm u
 gSqNorm (CRT u) = U.gSqNorm $ toDec u
--- CJP: don't really need to do this: gSqNorm of scalar 1 is known.
-gSqNorm (Scalar u) = U.gSqNorm (scalarDec u :: UCyc t m D r)
+-- CJP: this is suboptimal (gSqNorm of scalar 1 is known)
+-- also workaround scalarDec
+gSqNorm (Scalar u) = U.gSqNorm (toDec $ scalarPow u :: UCyc t m D r)
 gSqNorm (Sub c) = U.gSqNorm (U.embedDec $ uncycDec c :: UCyc t m D r)
 
 -- | Generate an LWE error term with given scaled variance,
@@ -393,7 +388,7 @@ instance (Reduce a b, Fact m, CElt t a, CElt t b)
 
 type instance LiftOf (Cyc t m r) = Cyc t m (LiftOf r)
 
--- | Lift in the specified basis.
+-- | Lift using the specified basis.
 liftCyc :: (Lift b a, Fact m, TElt t a, CElt t b)
            => R.Basis -> Cyc t m b -> Cyc t m a
 {-# INLINABLE liftCyc #-}
@@ -405,6 +400,8 @@ liftPow, liftDec :: (Lift b a, Fact m, TElt t a, CElt t b)
                     => Cyc t m b -> Cyc t m a
 {-# INLINABLE liftPow #-}
 {-# INLINABLE liftDec #-}
+
+-- | Lift using the powerful basis.
 liftPow (Pow u) = Pow $ lift u
 liftPow (Dec u) = Pow $ lift $ toPow u
 liftPow (CRT u) = Pow $ lift $ toPow u
@@ -413,18 +410,31 @@ liftPow (CRT u) = Pow $ lift $ toPow u
 liftPow (Scalar c) = Scalar $ lift c
 liftPow (Sub c) = Sub $ liftPow c
 
+-- | Lift using the decoding basis.
 liftDec (Pow u) = Dec $ lift $ toDec u
 liftDec (Dec u) = Dec $ lift u
 liftDec (CRT u) = Dec $ lift $ toDec u
-liftDec (Scalar c) = Dec $ lift $ scalarDec c
+liftDec (Scalar c) = Dec $ lift $ toDec $ scalarPow c -- workaround scalarDec
 liftDec (Sub c) = liftDec $ embed' c
 
+-- | Unzip for unrestricted types.
 unzipCyc :: (Tensor t, Fact m) => Cyc t m (a,b) -> (Cyc t m a, Cyc t m b)
+{-# INLINABLE unzipCyc #-}
 unzipCyc (Pow u) = Pow *** Pow $ U.unzipCyc u
 unzipCyc (Dec u) = Dec *** Dec $ U.unzipCyc u
 unzipCyc (CRT u) = CRT *** CRT $ U.unzipCyc u
 unzipCyc (Scalar c) = Scalar *** Scalar $ c
 unzipCyc (Sub c) = Sub *** Sub $ unzipCyc c
+
+-- | Type-restricted (and potentially more efficient) unzip.
+unzipCElt :: (Tensor t, Fact m, CElt t (a,b), CElt t a, CElt t b)
+             => Cyc t m (a,b) -> (Cyc t m a, Cyc t m b)
+{-# INLINABLE unzipCElt #-}
+unzipCElt (Pow u) = Pow *** Pow $ U.unzipUCElt u
+unzipCElt (Dec u) = Dec *** Dec $ U.unzipUCElt u
+unzipCElt (CRT u) = CRT *** CRT $ U.unzipUCElt u
+unzipCElt (Scalar c) = Scalar *** Scalar $ c
+unzipCElt (Sub c) = Sub *** Sub $ unzipCElt c
 
 -- generic RescaleCyc instance
 
@@ -443,7 +453,7 @@ instance {-# OVERLAPS #-} (Rescale a b, CElt t a, TElt t b)
 
 -- specialized instance for product rings: ~2x faster algorithm
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
-         CElt t a, CElt t b, CElt t (LiftOf a))
+         CElt t (a,b), CElt t a, CElt t b, CElt t (LiftOf a))
          => R.RescaleCyc (Cyc t) (a,b) b where
 
   -- optimized for subrings and powerful basis (see comments in other
@@ -452,7 +462,7 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
   rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
 
   rescaleCyc bas c = let aval = proxy modulus (Proxy::Proxy a)
-                         (a,b) = unzipCyc c
+                         (a,b) = unzipCElt c
                          z = liftCyc bas a
                      in Scalar (recip (reduce aval)) * (b - reduce z)
   {-# INLINABLE rescaleCyc #-}
@@ -462,6 +472,8 @@ instance (Gadget gad zq, Fact m, CElt t zq) => Gadget gad (Cyc t m zq) where
   gadget = (scalarCyc <$>) <$> gadget
   -- specialization fo 'encode', done efficiently
   encode s = ((* adviseCRT s) <$>) <$> gadget
+  {-# INLINABLE gadget #-}
+  {-# INLINABLE encode #-}
 
 -- promote Decompose, using the powerful basis
 instance (Decompose gad zq, Fact m, CElt t zq, CElt t (DecompOf zq))
@@ -478,6 +490,8 @@ instance (Decompose gad zq, Fact m, CElt t zq, CElt t (DecompOf zq))
   decompose (Pow u) = fromZL $ Pow <$> traverse (toZL . decompose) u
   decompose c = decompose $ toPow' c
 
+  {-# INLINABLE decompose #-}
+
 toZL :: Tagged s [a] -> TaggedT s ZipList a
 toZL = coerce
 
@@ -491,6 +505,7 @@ instance (Correct gad zq, Fact m, CElt t zq) => Correct gad (Cyc t m zq) where
   correct bs = Dec *** (Dec <$>) $
                second sequence $ U.unzipCyc $ (correct . pasteT) <$>
                sequenceA (uncycDec <$> peelT bs)
+  {-# INLINABLE correct #-}
 
 ---------- Change of representation (internal use only) ----------
 
@@ -510,7 +525,7 @@ toPow' (Sub c) = toPow' $ embed' c
 toDec' (Pow u) = Dec $ toDec u
 toDec' c@(Dec _) = c
 toDec' (CRT u) = Dec $ toDec u
-toDec' (Scalar c) = Dec $ scalarDec c
+toDec' (Scalar c) = Dec $ toDec $ scalarPow c -- workaround scalarDec
 toDec' (Sub c) = toDec' $ embed' c
 
 -- | Force to CRT representation (for internal use only).

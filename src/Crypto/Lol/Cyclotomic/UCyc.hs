@@ -20,9 +20,9 @@ module Crypto.Lol.Cyclotomic.UCyc
 -- * Data types and constraints
   UCyc, P, D, C, UCElt
 -- * Changing representation
-, toPow, toDec, toCRT, fmapPow, fmapDec, unzipCyc
+, toPow, toDec, toCRT, fmapPow, fmapDec, unzipCyc, unzipUCElt
 -- * Scalars
-, scalarPow, scalarDec, scalarCRT
+, scalarPow, scalarCRT          -- scalarDec suppressed
 -- * Basic operations
 , mulG, divG, gSqNorm
 -- * Error sampling
@@ -34,7 +34,7 @@ module Crypto.Lol.Cyclotomic.UCyc
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
-                                     scalarCRT, scalarDec, scalarPow,
+                                     scalarCRT, scalarPow, -- scalarDec
                                      twaceCRT)
 
 import           Crypto.Lol.CRTrans
@@ -91,10 +91,14 @@ scalarPow :: (Tensor t, Fact m, Ring r, TElt t r) => r -> UCyc t m P r
 scalarPow = Pow . T.scalarPow
 {-# INLINABLE scalarPow #-}
 
+{- CJP: suppressed
+
 -- | Embed a scalar from the base ring.
 scalarDec :: (Tensor t, Fact m, Ring r, TElt t r) => r -> UCyc t m D r
 scalarDec = Dec . T.scalarDec
 {-# INLINABLE scalarDec #-}
+
+-}
 
 -- | Embed a scalar from the base ring.
 scalarCRT :: (Fact m, UCElt t r) => r -> UCyc t m C r
@@ -154,7 +158,7 @@ instance (Additive r, Tensor t, Fact m, TElt t r) => Additive.C (UCyc t m P r) w
   {-# INLINABLE negate #-}
 
 instance (Additive r, Tensor t, Fact m, TElt t r) => Additive.C (UCyc t m D r) where
-  zero = Dec $ T.scalarDec zero
+  zero = Dec $ T.scalarPow zero -- scalarPow works because it's zero
   (Dec v1) + (Dec v2) = Dec $ zipWithT (+) v1 v2
   (Dec v1) - (Dec v2) = Dec $ zipWithT (-) v1 v2
   negate (Dec v) = Dec $ fmapT negate v
@@ -273,7 +277,7 @@ fmapDec :: (Tensor t, Fact m, TElt t a, TElt t b)
 fmapDec f (Dec v) = Dec $ fmapT f v
 {-# INLINABLE fmapDec #-}
 
--- | Unzip.
+-- | Unzip for unrestricted types.
 unzipCyc :: (Tensor t, Fact m)
             => UCyc t m rep (a,b) -> (UCyc t m rep a, UCyc t m rep b)
 {-# INLINABLE unzipCyc #-}
@@ -282,6 +286,14 @@ unzipCyc (Dec v) = Dec *** Dec $ unzipT v
 unzipCyc (CRTr v) = CRTr *** CRTr $ unzipT v
 unzipCyc (CRTe v) = CRTe *** CRTe $ unzipT v
 
+-- | Type-restricted (and potentially more efficient) unzip.
+unzipUCElt :: (Tensor t, Fact m, UCElt t (a,b), UCElt t a, UCElt t b)
+              => UCyc t m rep (a,b) -> (UCyc t m rep a, UCyc t m rep b)
+{-# INLINABLE unzipUCElt #-}
+unzipUCElt (Pow v) = Pow *** Pow $ unzipTElt v
+unzipUCElt (Dec v) = Dec *** Dec $ unzipTElt v
+unzipUCElt (CRTr v) = CRTr *** CRTr $ unzipTElt v
+unzipUCElt (CRTe v) = CRTe *** CRTe $ unzipTElt v
 
 -- | Multiply by the special element @g@.
 mulG :: (Tensor t, Fact m, UCElt t r) => UCyc t m rep r -> UCyc t m rep r
@@ -480,19 +492,6 @@ toCRT = let crte = CRTe . fromJust' "UCyc.toCRT: no crt for Ext" crt
                    (Pow v) -> fromPow v
                    (Dec v) -> fromPow $ l v
 
-{-
-
--- | Force a cyclotomic element into the decoding basis.
-forceDec x@(Scalar _) = forceDec $ forcePow x -- TODO: use scalarDec instead
-forceDec (Sub c) = embed' $ forceDec c      -- OK: embed' preserves Dec
-
-toCRT' (Sub (c :: UCyc t l r)) =
-    case (proxyT hasCRTFuncs (Proxy::Proxy (t l r)),
-          proxyT hasCRTFuncs (Proxy::Proxy (t m r))) of
-      (Just _, Just _) -> embed' $ toCRT' c -- fastest; embed' preserves CRTr
-      (_, Nothing) -> embed' $ toCRTe c -- faster; temp violate CRTr/e invariant
-      _ -> toCRT' $ embed' c            -- fallback
--}
 
 ---------- Category-theoretic instances ----------
 
