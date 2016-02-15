@@ -20,7 +20,7 @@ import Apply
 
 data BasicCtxD
 type BasicCtx t m r = 
-  (CElt t r, Fact m, ShowType '(t,m,r), Random (t m r), m `Divides` m)
+  (CElt t r, Fact m, Random r, Eq r, ShowType '(t,m,r), Random (t m r), m `Divides` m)
 instance (params `Satisfy` BasicCtxD, BasicCtx t m r) 
   => ( '(t, '(m,r)) ': params) `Satisfy` BasicCtxD where
   data ArgsCtx BasicCtxD where
@@ -70,7 +70,7 @@ applyError params g = run params $ \(EC p) -> g p
 
 
 data TwoIdxCtxD
-type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, ShowType '(t,m,m',r), Random (t m r), Random (t m' r))
+type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, Eq r, Random r, ShowType '(t,m,m',r), Random (t m r), Random (t m' r))
 
 instance (params `Satisfy` TwoIdxCtxD, TwoIdxCtx t m m' r) 
   => ( '(t, '(m,m',r)) ': params) `Satisfy` TwoIdxCtxD where
@@ -87,7 +87,7 @@ applyTwoIdx params g = run params $ \(TI p) -> g p
 
 -- similar to TwoIdxCtxD, but r must be a prime-power
 data BasisCtxD
-type BasisCtx t m m' r = (m `Divides` m', ZPP r, CElt t r, CElt t (ZpOf r), ShowType '(t,m,m',r))
+type BasisCtx t m m' r = (m `Divides` m', Eq r, ZPP r, CElt t r, CElt t (ZpOf r), ShowType '(t,m,m',r))
 
 instance (params `Satisfy` BasisCtxD, BasisCtx t m m' r)
   => ( '(t, '(m,m',r)) ': params) `Satisfy` BasisCtxD where

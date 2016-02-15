@@ -21,22 +21,22 @@ cycTests = [
   testGroupM "crtSet"  $ applyBasis (Proxy::Proxy BasisParams) $ hideArgs prop_crtSet_pairs
   ]
 
-prop_mulgPow :: (CElt t r, Fact m) => Cyc t m r -> Test '(t,m,r)
+prop_mulgPow :: (CElt t r, Fact m, Eq r) => Cyc t m r -> Test '(t,m,r)
 prop_mulgPow x =
   let y = advisePow x
   in test $ y == (fromJust' "prop_mulgPow failed divisibility!" $ divG $ mulG y)
 
-prop_mulgDec :: (CElt t r, Fact m) => Cyc t m r -> Test '(t,m,r)
+prop_mulgDec :: (CElt t r, Fact m, Eq r) => Cyc t m r -> Test '(t,m,r)
 prop_mulgDec x = 
   let y = adviseDec x
   in test $ y == (fromJust' "prop_mulgDec failed divisibility!" $ divG $ mulG y)
 
-prop_mulgCRT :: (CElt t r, Fact m) => Cyc t m r -> Test '(t,m,r)
+prop_mulgCRT :: (CElt t r, Fact m, Eq r) => Cyc t m r -> Test '(t,m,r)
 prop_mulgCRT x = 
   let y = adviseCRT x
   in test $ y == (fromJust' "prop_mulgCRT failed divisibility!" $ divG $ mulG y)
 
-prop_coeffsBasis :: forall t m m' r . (m `Divides` m', CElt t r)
+prop_coeffsBasis :: forall t m m' r . (m `Divides` m', CElt t r, Eq r)
   => Cyc t m' r -> Test '(t,m,m',r)
 prop_coeffsBasis x = 
   let xs = map embed (coeffsCyc Pow x :: [Cyc t m r])
@@ -44,8 +44,8 @@ prop_coeffsBasis x =
   in test $ (sum $ zipWith (*) xs bs) == x
 
 -- verifies that CRT set elements satisfy c_i * c_j = delta_ij * c_i
--- necessary (not sufficient?) condition
-prop_crtSet_pairs :: forall t m m' r . (m `Divides` m', ZPP r, CElt t r, CElt t (ZpOf r))
+-- necessary (but not sufficient) condition
+prop_crtSet_pairs :: forall t m m' r . (m `Divides` m', ZPP r, Eq r, CElt t r, CElt t (ZpOf r))
   => Test '(t,m,m',r)
 prop_crtSet_pairs = 
   let crtset = proxy crtSet (Proxy::Proxy m) :: [Cyc t m' r]

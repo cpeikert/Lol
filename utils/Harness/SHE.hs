@@ -70,9 +70,9 @@ type family RoundDown zq where
 
 data DecCtxD
 type DecCtx t m m' zp zq = 
-  (EncryptCtx t m m' (LiftOf zp) zp zq,
+  (EncryptCtx t m m' (LiftOf zp) zp zq, Random zp,
    -- ^ these provide the context to generate the parameters
-   DecryptCtx t m m' (LiftOf zp) zp zq,
+   DecryptCtx t m m' (LiftOf zp) zp zq, Eq zp,
    ShowType '(t,m,m',zp,zq))
 instance (params `Satisfy` DecCtxD, DecCtx t m m' zp zq)
   => ( '(t, '(m,m',zp,zq)) ': params) `Satisfy` DecCtxD where
@@ -122,7 +122,8 @@ applyTunn params g = run params $ \(TunnD p) -> g p
 data CTEmCtxD
 -- union of compatible constraints in benchmarks
 type CTEmCtx t r r' s s' zp zq = 
-  (DecryptUCtx t r r' (LiftOf zp) zp zq,
+  (Random zp, Eq zp,            -- CJP: added b/c CElt doesn't have them
+   DecryptUCtx t r r' (LiftOf zp) zp zq,
    DecryptUCtx t s s' (LiftOf zp) zp zq,
    --NFData (CT s zp (Cyc t s' zq)),
    ShowType '(t,r,r',s,s',zp,zq),
@@ -130,8 +131,7 @@ type CTEmCtx t r r' s s' zp zq =
    r `Divides` s,
    r' `Divides` s',
    s `Divides` s',
-   r ~ (FGCD r' s),
-   Eq (Cyc t s zp))
+   r ~ (FGCD r' s))
 instance (params `Satisfy` CTEmCtxD, CTEmCtx t r r' s s' zp zq) 
   => ( '(t, '(r,r',s,s',zp,zq)) ': params) `Satisfy` CTEmCtxD where
   data ArgsCtx CTEmCtxD where
@@ -154,12 +154,13 @@ data KSQCtxD
 -- but we have to use a *ton* of kind signatures if we do
 type family KSQCtx a where
   KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))) = 
-    (EncryptCtx t m m' (LiftOf zp) zp zq,
+    (Random zp, Eq zp,          -- CJP: added b/c CElt doesn't have them
+     EncryptCtx t m m' (LiftOf zp) zp zq,
      KeySwitchCtx gad t m' zp zq zq',
      KSHintCtx gad t m' (LiftOf zp) zq',
      -- ^ these provide the context to generate the parameters
      Ring (CT m zp (Cyc t m' zq)), 
-     Eq (Cyc t m zp), 
+     -- Eq (Cyc t m zp), 
      Fact m, Fact m', CElt t zp, m `Divides` m',
      Reduce (LiftOf zp) zq, Lift' zq, CElt t (LiftOf zp), ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp,
      -- ^ these provide the context for tests
@@ -210,7 +211,8 @@ applyRescale params g = run params $ \(RD p) -> g p
 data CTCtxD
 -- union of compatible constraints in benchmarks
 type CTCtx t m m' zp zq = 
-  (EncryptCtx t m m' (LiftOf zp) zp zq,
+  (Random zp, Eq zp,            -- CJP: added b/c CElt doesn't have it
+   EncryptCtx t m m' (LiftOf zp) zp zq,
    Ring (CT m zp (Cyc t m' zq)),
    NFData (CT m zp (Cyc t m' zq)),
    AddPublicCtx t m m' zp zq,

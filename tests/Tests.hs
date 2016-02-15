@@ -29,7 +29,7 @@ testIO :: (forall m . MonadRandom m => m Bool) -> Test params
 testIO = TestM
 
 testGroupM :: String -> [IO TF.Test] -> TF.Test
-testGroupM str = TF.buildTest . ((TF.testGroup str) <$>) . sequence
+testGroupM str = TF.buildTest . (TF.testGroup str <$>) . sequence
 
 -- normalizes any function resulting in a Benchmark to 
 -- one that takes a proxy for its arguments

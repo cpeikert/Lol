@@ -191,7 +191,8 @@ prop_ctembed sk (PTCT x' x) =
 
 -- CT must be encrypted with key from small ring
 prop_cttwace :: forall t r r' s s' z zp zq . 
-  (EncryptCtx t s s' z zp zq, 
+  (Eq zp,
+   EncryptCtx t s s' z zp zq, 
    DecryptUCtx t r r' z zp zq,
    r `Divides` s,
    r' `Divides` s',
@@ -231,12 +232,12 @@ helper f _ _ = f Proxy
 
 -- one-off tests, no hideSHEArgsper
 prop_modSwPT :: forall t m m' z zp zp' zq .
-  (DecryptUCtx t m m' z zp zq,
+  (Eq zp, Eq zp',
+   DecryptUCtx t m m' z zp zq,
    DecryptUCtx t m m' z zp' zq,
    ModSwitchPTCtx t m' zp zp' zq,
    RescaleCyc (Cyc t) zp zp',
    Ring (Cyc t m zp),
-   Eq (Cyc t m zp'),
    Mod zp, Mod zp',
    ModRep zp ~ ModRep zp') 
   => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Test '(t, '(m,m',zp',zp,zq))
@@ -268,7 +269,7 @@ prop_ringTunnel :: forall t e r s e' r' s' z zp zq gad .
    GenSKCtx t r' z Double,
    GenSKCtx t s' z Double,
    DecryptUCtx t s s' z zp zq,
-   Random zp,
+   Random zp, Eq zp,
    e ~ FGCD r s, Fact e) 
   => Cyc t r zp -> Test '(t,'(r,r',s,s',zp,zq,gad))
 prop_ringTunnel x = testIO $ do
