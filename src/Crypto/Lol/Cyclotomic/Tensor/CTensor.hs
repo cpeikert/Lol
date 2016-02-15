@@ -109,6 +109,9 @@ type family Em r where
 
 
 ---------- NUMERIC PRELUDE INSTANCES ----------
+
+{- CJP: Additive, Ring are not necessary when we use zipWithT
+
 instance (Additive r, Storable r, Fact m, Dispatch r)
   => Additive.C (CT m r) where
   (CT a@(CT' _)) + (CT b@(CT' _)) = CT $ (untag $ cZipDispatch dadd) a b
@@ -124,13 +127,15 @@ instance (Fact m, Ring r, Storable r, Dispatch r)
 
   fromInteger = CT . repl . fromInteger
 
+-}
+
 instance (ZeroTestable r, Storable r, Fact m)
          => ZeroTestable.C (CT m r) where
   --{-# INLINABLE isZero #-} 
   isZero (CT (CT' a)) = SV.foldl' (\ b x -> b && isZero x) True a
   isZero (ZV v) = isZero v
 
----------- "Container" instances ----------
+---------- Category-theoretic instances ----------
 
 instance Fact m => Functor (CT m) where
   -- Functor instance is implied by Applicative laws
@@ -157,9 +162,10 @@ instance Tensor CT where
   entailIndexT = tag $ Sub Dict
   entailEqT = tag $ Sub Dict
   entailZTT = tag $ Sub Dict
-  entailRingT = tag $ Sub Dict
+  -- entailRingT = tag $ Sub Dict
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
+  entailShowT = tag $ Sub Dict
 
   scalarPow = CT . scalarPow' -- Vector code
 
@@ -187,7 +193,7 @@ instance Tensor CT where
   tGaussianDec v = CT <$> cDispatchGaussian v
   --tGaussianDec v = CT <$> coerceT' (gaussianDec v)
 
-  -- we do not wrap thsi function because (currently) it can only be called on lifted types
+  -- we do not wrap this function because (currently) it can only be called on lifted types
   gSqNormDec (CT v) = untag gSqNormDec' v
   gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
 
@@ -206,11 +212,43 @@ instance Tensor CT where
   fmapTM f (CT (CT' v)) = (CT . CT') <$> SV.mapM f v
   fmapTM f v@(ZV _) = fmapTM f $ toCT v
 
+  zipWithT f (CT (CT' v1)) (CT (CT' v2)) = CT $ CT' $ SV.zipWith f v1 v2
+  zipWithT f v1 v2 = zipWithT f (toCT v1) (toCT v2)
+
   unzipTElt (CT (CT' v)) = (CT . CT') *** (CT . CT') $ unzip v
   unzipTElt v = unzipTElt $ toCT v
 
   unzipT v@(CT _) = unzipT $ toZV v
   unzipT (ZV v) = ZV *** ZV $ unzipIZV v
+
+  {-# INLINABLE entailIndexT #-}
+  {-# INLINABLE entailEqT #-}
+  {-# INLINABLE entailZTT #-}
+  {-# INLINABLE entailNFDataT #-}
+  {-# INLINABLE entailRandomT #-}
+  {-# INLINABLE entailShowT #-}
+  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE l #-}
+  {-# INLINABLE lInv #-}
+  {-# INLINABLE mulGPow #-}
+  {-# INLINABLE mulGDec #-}
+  {-# INLINABLE divGPow #-}
+  {-# INLINABLE divGDec #-}
+  {-# INLINABLE crtFuncs #-}
+  {-# INLINABLE twacePowDec #-}
+  {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
+  {-# INLINABLE tGaussianDec #-}
+  {-# INLINABLE gSqNormDec #-}
+  {-# INLINABLE crtExtFuncs #-}
+  {-# INLINABLE coeffs #-}
+  {-# INLINABLE powBasisPow #-}
+  {-# INLINABLE crtSetDec #-}
+  {-# INLINABLE fmapT #-}
+  {-# INLINABLE fmapTM #-}
+  {-# INLINABLE zipWithT #-}
+  {-# INLINABLE unzipTElt #-}
+  {-# INLINABLE unzipT #-}
 
 
 coerceTw :: (Functor mon) => TaggedT '(m, m') mon (Vector r -> Vector r) -> mon (CT' m' r -> CT' m r)

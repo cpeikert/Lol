@@ -35,7 +35,7 @@ module Crypto.Lol.Cyclotomic.Cyc
 -- * Sub/extension rings
 , embed, twace, coeffsCyc, powBasis, crtSet
 -- * Rescaling cyclotomic elements
-, R.RescaleCyc(..), R.Basis
+, R.RescaleCyc(..), R.Basis(..)
 ) where
 
 import qualified Algebra.Additive     as Additive (C)

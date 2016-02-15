@@ -91,7 +91,7 @@ library
 
     Crypto.Lol.Cyclotomic.Cyc
     Crypto.Lol.Cyclotomic.UCyc
-    Crypto.Lol.Cyclotomic.Utility
+    Crypto.Lol.Cyclotomic.RescaleCyc
     Crypto.Lol.Cyclotomic.Linear
 
     Crypto.Lol.Cyclotomic.Tensor

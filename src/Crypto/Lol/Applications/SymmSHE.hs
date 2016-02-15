@@ -33,8 +33,9 @@ SK, PT, CT                    -- don't export constructors!
 import qualified Algebra.Additive as Additive (C)
 import qualified Algebra.Ring     as Ring (C)
 
+import Crypto.Lol.CRTrans (CRTExt) -- CJP: only for NFData -- constraints; fix?
 import Crypto.Lol.Cyclotomic.Cyc
-import Crypto.Lol.Cyclotomic.UCyc (forceDec)
+import Crypto.Lol.Cyclotomic.UCyc (toDec)
 import Crypto.Lol.Cyclotomic.Linear
 import Crypto.Lol.Gadget
 import Crypto.Lol.LatticePrelude    as LP hiding (sin)
@@ -90,7 +91,7 @@ genSK v = liftM (SK v) $ errorRounded v
 
 -- | Constraint synonym for encryption.
 type EncryptCtx t m m' z zp zq =
-  (Mod zp, Ring zp, Ring zq, Lift zp (ModRep zp),
+  (Mod zp, Ring zp, Ring zq, Lift zp (ModRep zp), Random zq,
    Reduce z zq, Reduce (LiftOf zp) zq,
    CElt t zq, CElt t zp, CElt t z, CElt t (LiftOf zp),
    m `Divides` m')
@@ -148,7 +149,7 @@ errorTermUnrestricted ::
 errorTermUnrestricted (SK _ s) = let sq = reduce s in
   \ct -> let (CT LSD _ _ c) = toLSD ct
              eval = evaluate c sq
-         in cyc $ fmap lift $ forceDec $ unsafeUnCyc eval
+         in cycDec $ fmap lift $ uncycDec eval
 
 -- | More general form of 'decrypt' that works for unrestricted output
 -- coefficient types.
@@ -157,7 +158,7 @@ decryptUnrestricted :: (DecryptUCtx t m m' z zp zq)
 decryptUnrestricted (SK _ s) = let sq = reduce s in
   \ct -> let (CT LSD k l c) = toLSD ct
          in let eval = evaluate c sq
-                e = cyc $ fmap (reduce . lift) $ forceDec $ unsafeUnCyc eval
+                e = cycDec $ fmap (reduce . lift) $ uncycDec eval
                 l' = scalarCyc l
             in l' * twace (iterate divG' e !! k)
 
@@ -221,7 +222,7 @@ modSwitchPT ct = let CT MSD k l c = toMSD ct in
 ---------- Key switching ----------
 
 type LWECtx t m' z zq =
-  (ToInteger z, Reduce z zq, Ring zq, Fact m', CElt t z, CElt t zq)
+  (ToInteger z, Reduce z zq, Ring zq, Random zq, Fact m', CElt t z, CElt t zq)
 
 -- | An LWE sample for a given secret (corresponding to a linear
 -- ciphertext encrypting 0 in MSD form)
@@ -238,11 +239,13 @@ lweSample (SK svar s) =
 -- | Constraint synonym for generating key-switch hints.
 type KSHintCtx gad t m' z zq = 
   (LWECtx t m' z zq, Reduce (DecompOf zq) zq, Gadget gad zq,
-   CElt t (DecompOf zq))
+   NFData zq, NFData (CRTExt zq), CElt t (DecompOf zq))
 
 -- | Generate a hint that "encrypts" a value under a secret key, in
 -- the sense required for key-switching.  The hint works for any
 -- plaintext modulus, but must be applied on a ciphertext in MSD form.
+-- The output is 'force'd, i.e., evaluating it to whnf will actually
+-- cause it to be be evaluated to nf.
 ksHint :: (KSHintCtx gad t m' z zq, MonadRandom rnd)
           => SK (Cyc t m' z) -> Cyc t m' z
           -> rnd (Tagged gad [Polynomial (Cyc t m' zq)])
@@ -251,7 +254,7 @@ ksHint skout val = do -- rnd monad
       valgad = encode valq
   -- CJP: clunky, but that's what we get without a MonadTagged
   samples <- DT.mapM (\as -> replicateM (length as) (lweSample skout)) valgad
-  return $ zipWith (+) <$> (map P.const <$> valgad) <*> samples
+  return $! force $ zipWith (+) <$> (map P.const <$> valgad) <*> samples
 
 -- poor man's module multiplication for knapsack
 (*>>) :: (Ring r, Functor f) => r -> f r -> f r
@@ -283,7 +286,7 @@ keySwitchLinear :: forall gad t m' zp zq zq' z rnd m .
   -> TaggedT (gad, zq') rnd (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
 keySwitchLinear skout (SK _ sin) = tagT $ do
   hint :: Tagged gad [Polynomial (Cyc t m' zq')] <- ksHint skout sin
-  return $ hint `deepseq`
+  return $! hint `seq`
     (\ct -> let CT MSD k l c = toMSD ct
                 [c0,c1] = coeffs c
                 c1' = rescaleCyc Pow c1
@@ -297,7 +300,7 @@ keySwitchQuadCirc :: forall gad t m' zp zq zq' z m rnd .
   -> TaggedT (gad, zq') rnd (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
 keySwitchQuadCirc sk@(SK _ s) = tagT $ do
   hint :: Tagged gad [Polynomial (Cyc t m' zq')] <- ksHint sk (s*s)
-  return $ hint `deepseq` (\ct ->
+  return $ hint `seq` (\ct ->
     let CT MSD k l c = toMSD ct
         [c0,c1,c2] = coeffs c
         c2' = rescaleCyc Pow c2

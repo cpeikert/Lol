@@ -117,11 +117,9 @@ prop_mul_ext x y = test $
   let m = proxy valueFact (Proxy::Proxy m)
   in case (crtInfo m :: Maybe (CRTInfo r)) of
        Nothing -> error "mul have a CRT to call prop_mul_ext"
-       Just _ -> (let z = x * y
-                      z' = fmapT fromExt $ (fmapT toExt x) * (fmapT toExt y)
+       Just _ -> (let z = zipWithT (*) x y
+                      z' = fmapT fromExt $ zipWithT (*) (fmapT toExt x) (fmapT toExt y)
                   in z == z') \\ witness entailEqT x 
-                              \\ witness entailRingT x
-                              \\ witness entailRingT (fmap toExt x)
                               \\ witness entailIndexT x
 
 type NormCtx t m r = (TElt t r, TElt t (LiftOf r), 

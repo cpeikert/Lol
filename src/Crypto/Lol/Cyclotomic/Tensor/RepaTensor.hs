@@ -97,7 +97,6 @@ instance Tensor RT where
   divGPow = wrapM fGInvPow
   divGDec = wrapM fGInvDec
 
-  {-# INLINABLE crtFuncs #-}
   crtFuncs = (,,,,) <$>
              (liftM (RT .) scalarCRT') <*>
              (wrap <$> mulGCRT') <*>
@@ -149,6 +148,35 @@ instance Tensor RT where
 
   unzipT v@(RT _) = unzipT $ toZV v
   unzipT (ZV v) = ZV *** ZV $ unzipIZV v
+
+  {-# INLINABLE entailIndexT #-}
+  {-# INLINABLE entailEqT #-}
+  {-# INLINABLE entailZTT #-}
+  {-# INLINABLE entailNFDataT #-}
+  {-# INLINABLE entailRandomT #-}
+  {-# INLINABLE entailShowT #-}
+  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE l #-}
+  {-# INLINABLE lInv #-}
+  {-# INLINABLE mulGPow #-}
+  {-# INLINABLE mulGDec #-}
+  {-# INLINABLE divGPow #-}
+  {-# INLINABLE divGDec #-}
+  {-# INLINABLE crtFuncs #-}
+  {-# INLINABLE twacePowDec #-}
+  {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
+  {-# INLINABLE tGaussianDec #-}
+  {-# INLINABLE gSqNormDec #-}
+  {-# INLINABLE crtExtFuncs #-}
+  {-# INLINABLE coeffs #-}
+  {-# INLINABLE powBasisPow #-}
+  {-# INLINABLE crtSetDec #-}
+  {-# INLINABLE fmapT #-}
+  {-# INLINABLE fmapTM #-}
+  {-# INLINABLE zipWithT #-}
+  {-# INLINABLE unzipTElt #-}
+  {-# INLINABLE unzipT #-}
 
 
 ---------- Category-theoretic instances ----------
