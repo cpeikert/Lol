@@ -18,7 +18,7 @@
 module Crypto.Lol.Cyclotomic.UCyc
 (
 -- * Data types and constraints
-  UCyc, P, D, C, UCElt
+  UCyc, P, D, C, UCElt, NFElt
 -- * Changing representation
 , toPow, toDec, toCRT, fmapPow, fmapDec, unzipCyc, unzipUCElt
 -- * Scalars
@@ -85,6 +85,9 @@ data UCyc t m rep r where
 -- | Constraints needed for many operations involving the 'UCyc' CRT ('C')
 -- representation.
 type UCElt t r = (Tensor t, CRTEmbed r, CRTElt t r, CRTElt t (CRTExt r))
+
+-- | Convenient synonym for 'deepseq'-able element type.
+type NFElt r = (NFData r, NFData (CRTExt r))
 
 -- | Embed a scalar from the base ring.
 scalarPow :: (Tensor t, Fact m, Ring r, TElt t r) => r -> UCyc t m P r
@@ -574,8 +577,7 @@ instance (Arbitrary (t m r)) => Arbitrary (UCyc t m C r) where
   arbitrary = CRTr <$> arbitrary
   shrink = shrinkNothing
 
-instance (Tensor t, Fact m, NFData r, TElt t r,
-          NFData (CRTExt r), TElt t (CRTExt r))
+instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
          => NFData (UCyc t m rep r) where
   rnf (Pow x)    = rnf x \\ witness entailNFDataT x
   rnf (Dec x)    = rnf x \\ witness entailNFDataT x

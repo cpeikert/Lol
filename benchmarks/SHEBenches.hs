@@ -30,7 +30,7 @@ sheBenches = benchGroup "SHE" [
   benchGroup "tunnel"    $ applyTunn (Proxy::Proxy TunnParams)       $ hideSHEArgs bench_tunnel
   ]
 
-bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRandomGen gen, z ~ LiftOf zp)
+bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRandomGen gen, z ~ LiftOf zp, NFElt zp, NFElt zq)
   => SK (Cyc t m' z) -> PT (Cyc t m zp) -> Bench '(t,m,m',zp,zq,gen)
 bench_enc sk pt = benchIO $ do
   gen <- newGenIO
@@ -40,14 +40,14 @@ bench_mul :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq)))
   => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
 bench_mul a = bench (*a)
 
-bench_addPublic :: (AddPublicCtx t m m' zp zq) => Cyc t m zp -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
+bench_addPublic :: (AddPublicCtx t m m' zp zq, NFElt zp, NFElt zq) => Cyc t m zp -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
 bench_addPublic a ct = bench (addPublic a) ct
 
-bench_mulPublic :: (MulPublicCtx t m m' zp zq) => Cyc t m zp -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
+bench_mulPublic :: (MulPublicCtx t m m' zp zq, NFElt zp, NFElt zq) => Cyc t m zp -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
 bench_mulPublic a ct = bench (mulPublic a) ct
 
 -- requires zq to be Liftable
-bench_dec :: (DecryptCtx t m m' z zp zq, z ~ LiftOf zp) 
+bench_dec :: (DecryptCtx t m m' z zp zq, z ~ LiftOf zp, NFElt zp) 
   => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
 bench_dec sk ct = bench (decrypt sk) ct
 

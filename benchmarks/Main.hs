@@ -1,6 +1,6 @@
 
 import CycBenches
-import UCycBenches
+--import UCycBenches
 import SHEBenches
 import ZqBenches
 
@@ -9,7 +9,7 @@ import Control.Monad
 
 main :: IO ()
 main = defaultMain =<< (sequence [
-  ucycBenches,
+--  ucycBenches,
   cycBenches,
   sheBenches
   ])

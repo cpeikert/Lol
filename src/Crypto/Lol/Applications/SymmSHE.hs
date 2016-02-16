@@ -33,7 +33,6 @@ SK, PT, CT                    -- don't export constructors!
 import qualified Algebra.Additive as Additive (C)
 import qualified Algebra.Ring     as Ring (C)
 
-import Crypto.Lol.CRTrans (CRTExt) -- CJP: only for NFData -- constraints; fix?
 import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Cyclotomic.UCyc (toDec)
 import Crypto.Lol.Cyclotomic.Linear
@@ -239,7 +238,7 @@ lweSample (SK svar s) =
 -- | Constraint synonym for generating key-switch hints.
 type KSHintCtx gad t m' z zq = 
   (LWECtx t m' z zq, Reduce (DecompOf zq) zq, Gadget gad zq,
-   NFData zq, NFData (CRTExt zq), CElt t (DecompOf zq))
+   NFElt zq, CElt t (DecompOf zq))
 
 -- | Generate a hint that "encrypts" a value under a secret key, in
 -- the sense required for key-switching.  The hint works for any

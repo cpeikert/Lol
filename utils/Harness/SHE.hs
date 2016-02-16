@@ -70,7 +70,8 @@ type family RoundDown zq where
 
 data DecCtxD
 type DecCtx t m m' zp zq = 
-  (EncryptCtx t m m' (LiftOf zp) zp zq, Random zp,
+  (Random zp, NFElt zp,
+   EncryptCtx t m m' (LiftOf zp) zp zq,
    -- ^ these provide the context to generate the parameters
    DecryptCtx t m m' (LiftOf zp) zp zq, Eq zp,
    ShowType '(t,m,m',zp,zq))
@@ -100,7 +101,7 @@ type TunnCtx t r r' e e' s s' zp zq gad =
    EncryptCtx t s s' (LiftOf zp) zp zq,
    TunnelCtx t e r s e' r' s' (LiftOf zp) zp zq gad, 
    e ~ FGCD r s,
-   ZPP zp,
+   ZPP zp, Random zp,
    Fact e,
    CElt t (ZpOf zp))
 instance (params `Satisfy` TunnCtxD, TunnCtx t r r' e e' s s' zp zq gad) 
@@ -125,7 +126,6 @@ type CTEmCtx t r r' s s' zp zq =
   (Random zp, Eq zp,            -- CJP: added b/c CElt doesn't have them
    DecryptUCtx t r r' (LiftOf zp) zp zq,
    DecryptUCtx t s s' (LiftOf zp) zp zq,
-   --NFData (CT s zp (Cyc t s' zq)),
    ShowType '(t,r,r',s,s',zp,zq),
    EncryptCtx t r r' (LiftOf zp) zp zq,
    r `Divides` s,
@@ -187,7 +187,8 @@ applyKSQ params g = run params $ \(KSQD p) -> g p
 
 data RescaleCtxD
 type RescaleCtx t m m' zp zq zq' = 
-  (EncryptCtx t m m' (LiftOf zp) zp zq',
+  (Random zp,
+   EncryptCtx t m m' (LiftOf zp) zp zq',
    ShowType '(t,m,m',zp,zq,zq'),
    RescaleCyc (Cyc t) zq' zq,
    NFData (CT m zp (Cyc t m' zq)),
@@ -211,10 +212,9 @@ applyRescale params g = run params $ \(RD p) -> g p
 data CTCtxD
 -- union of compatible constraints in benchmarks
 type CTCtx t m m' zp zq = 
-  (Random zp, Eq zp,            -- CJP: added b/c CElt doesn't have it
+  (Random zp, Eq zp, NFElt zp, NFElt zq, -- CJP: CElt doesn't have these
    EncryptCtx t m m' (LiftOf zp) zp zq,
    Ring (CT m zp (Cyc t m' zq)),
-   NFData (CT m zp (Cyc t m' zq)),
    AddPublicCtx t m m' zp zq,
    DecryptUCtx t m m' (LiftOf zp) zp zq,
    MulPublicCtx t m m' zp zq,
@@ -239,9 +239,9 @@ applyCTFunc params g = run params $ \(CTD p) -> g p
 
 data EncCtxD
 type EncCtx t m m' zp zq gen = 
-  (EncryptCtx t m m' (LiftOf zp) zp zq,
+  (Random zp, NFElt zp, NFElt zq,
+   EncryptCtx t m m' (LiftOf zp) zp zq,
    Ring (CT m zp (Cyc t m' zq)),
-   NFData (CT m zp (Cyc t m' zq)),
    AddPublicCtx t m m' zp zq,
    MulPublicCtx t m m' zp zq,
    ShowType '(t,m,m',zp,zq,gen),

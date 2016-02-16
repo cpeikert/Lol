@@ -21,8 +21,8 @@
 
 module Crypto.Lol.Cyclotomic.Cyc
 (
--- * Data type and constraint
-  Cyc, CElt
+-- * Data type and constraints
+  Cyc, CElt, U.NFElt
 -- * Constructors/deconstructors
 , cycPow, cycDec, cycCRT, scalarCyc
 , uncycPow, uncycDec, uncycCRT, unzipCyc, unzipCElt

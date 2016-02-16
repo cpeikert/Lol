@@ -20,7 +20,7 @@ import Apply
 
 data BasicCtxD
 type BasicCtx t m r = 
-  (CElt t r, Fact m, Random r, Eq r, ShowType '(t,m,r), Random (t m r), m `Divides` m)
+  (CElt t r, Fact m, Random r, Eq r, NFElt r, ShowType '(t,m,r), Random (t m r), m `Divides` m)
 instance (params `Satisfy` BasicCtxD, BasicCtx t m r) 
   => ( '(t, '(m,r)) ': params) `Satisfy` BasicCtxD where
   data ArgsCtx BasicCtxD where
@@ -37,7 +37,7 @@ applyBasic params g = run params $ \(BC p) -> g p
 -- r is Liftable
 data LiftCtxD
 type LiftCtx t m r = 
-  (BasicCtx t m r, CElt t (LiftOf r), Lift' r, ToInteger (LiftOf r), 
+  (BasicCtx t m r, Lift' r, CElt t (LiftOf r), NFElt (LiftOf r), ToInteger (LiftOf r), 
    TElt CT r, TElt RT r, TElt CT (LiftOf r), TElt RT (LiftOf r))
 instance (params `Satisfy` LiftCtxD, LiftCtx t m r) 
   => ( '(t, '(m,r)) ': params) `Satisfy` LiftCtxD  where
@@ -54,7 +54,7 @@ applyLift params g = run params $ \(LC p) -> g p
 -- similar to LiftCtxD, but with a `gen` param
 data ErrorCtxD
 type ErrorCtx t m r gen = (CElt t r, Fact m, ShowType '(t,m,r,gen), 
-                           CElt t (LiftOf r), Lift' r, 
+                           CElt t (LiftOf r), NFElt (LiftOf r), Lift' r, 
                            ToInteger (LiftOf r), CryptoRandomGen gen)
 instance (params `Satisfy` ErrorCtxD, ErrorCtx t m r gen) 
   => ( '(gen, '(t, '(m,r))) ': params) `Satisfy` ErrorCtxD  where
@@ -70,7 +70,7 @@ applyError params g = run params $ \(EC p) -> g p
 
 
 data TwoIdxCtxD
-type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, Eq r, Random r, ShowType '(t,m,m',r), Random (t m r), Random (t m' r))
+type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, Eq r, Random r, NFElt r, ShowType '(t,m,m',r), Random (t m r), Random (t m' r))
 
 instance (params `Satisfy` TwoIdxCtxD, TwoIdxCtx t m m' r) 
   => ( '(t, '(m,m',r)) ': params) `Satisfy` TwoIdxCtxD where
