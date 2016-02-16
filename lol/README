@@ -1,9 +1,5 @@
 Overview of key modules, roughly from highest- to lowest-level:
 
-* SymmSHE.hs, an implementation of a symmetric-key,
-  somewhat-homomorphic encryption scheme that is essentially
-  equivalent to the one from the toolkit paper [LPR'13].
-
 * Cyc.hs, which defines an interface for using cyclotomic fields, 
   rings R, and quotient rings Rq=R/qR; as well as many other
   commonly used operations, e.g., converting

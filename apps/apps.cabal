@@ -23,12 +23,12 @@ extra-source-files:  README, CHANGES.md,
                      utils/Apply.hs,
                      utils/Benchmarks.hs,
                      utils/Gen.hs,
-                     utils/Test.hs,
+                     utils/Tests.hs,
                      utils/TestTypes.hs,
                      utils/Utils.hs
                      utils/Harness/SHE.hs
 cabal-version:       >= 1.10
-description:         
+description:
     This library contains example cryptographic applications built using 
     <https://hackage.haskell.org/package/lol Λ ○ λ>  (Lol), 
     a general-purpose library for ring-based lattice cryptography.

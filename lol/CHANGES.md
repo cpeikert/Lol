@@ -5,9 +5,10 @@ Changelog for lol project
 -----
  * Added benchmarks
  * Better performance for C backend with RNS base ring
- * Better RT performance
- * Safety improvements throughout
+ * UCyc exposes bases as type for safety
+ * Other safety improvements throughout
  * Easier index representation with TemplateHaskell
+ * Split SymmSHE into new package lol-apps.
 
 0.1.0.0
 -----

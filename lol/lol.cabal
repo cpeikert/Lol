@@ -26,10 +26,11 @@ extra-source-files:  README, CHANGES.md,
                      utils/Apply.hs,
                      utils/Benchmarks.hs,
                      utils/Gen.hs,
-                     utils/Test.hs,
+                     utils/Tests.hs,
                      utils/TestTypes.hs,
                      utils/Utils.hs,
-                     utils/Harness/Cyc.hs
+                     utils/Harness/Cyc.hs,
+                     src/Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
 cabal-version:       >= 1.10
 description:         
     Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
@@ -185,7 +186,7 @@ Benchmark bench-lol
 
   -- if flag(llvm)
   --   ghc-options: -fllvm -optlo-O3
-  -- ghc-options: -threaded -rtsopts
+  ghc-options: -threaded -rtsopts
   -- ghc-options: -O2 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
   -- ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
@@ -201,4 +202,3 @@ Benchmark bench-lol
     transformers,
     vector,
     repa                        
-

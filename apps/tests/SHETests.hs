@@ -14,8 +14,6 @@ import Control.Monad
 import Control.Monad.Random
 import Control.Monad.State
 
-import qualified Criterion as C
-
 import Crypto.Lol hiding (CT)
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Cyclotomic.Linear
