@@ -6,13 +6,11 @@ module Benchmarks
 ,benchIO
 ,benchGroup
 ,hideArgs
-,hideSHEArgs
 ,Bench
 ,Benchmark
 ,NFData) where
 
 import Gen
-import Harness.SHE
 import Utils
 
 import Control.DeepSeq
@@ -40,13 +38,6 @@ hideArgs :: (GenArgs rnd bnch, Monad rnd, ShowType a,
              ResultOf bnch ~ Bench a)
   => bnch -> Proxy a -> rnd Benchmark
 hideArgs f p = (C.bench (showType p) . unbench) <$> genArgs f
-
-hideSHEArgs :: forall a rnd bnch . 
-  (GenArgs (StateT (Maybe (SKOf a)) rnd) bnch, Monad rnd, ShowType a,
-   ResultOf bnch ~ Bench a)
-  => bnch -> Proxy a -> rnd Benchmark
-hideSHEArgs f p = (C.bench (showType p) . unbench) <$> 
-  (evalStateT (genArgs f) (Nothing :: Maybe (SKOf a)))
 
 newtype Bench params = Bench {unbench :: Benchmarkable}
 

@@ -1,9 +1,9 @@
-/.stack-work
-dist/
+lol/.stack-work
+lol/dist/
+lol/lol.sublime-project
+lol/lol.sublime-workspace
+lol/makefile
+lol/configure
+reprof.py
 .ghci
 ghci
-lol.sublime-project
-lol.sublime-workspace
-makefile
-reprof.py
-configure

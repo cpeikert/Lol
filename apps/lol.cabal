@@ -149,7 +149,7 @@ library
 
 test-suite test-lol
   type:               exitcode-stdio-1.0
-  hs-source-dirs:     tests,../utils
+  hs-source-dirs:     tests,utils
   default-language:   Haskell2010
   main-is:            Main.hs
 
@@ -173,15 +173,15 @@ test-suite test-lol
 
 Benchmark bench-lol
   type:               exitcode-stdio-1.0
-  hs-source-dirs:     benchmarks,../utils
+  hs-source-dirs:     benchmarks,utils
   default-language:   Haskell2010
   main-is:            Main.hs
 
-  -- if flag(llvm)
-  --   ghc-options: -fllvm -optlo-O3
-  -- ghc-options: -threaded -rtsopts
-  -- ghc-options: -O2 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
-  -- ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3
+  ghc-options: -threaded -rtsopts
+  ghc-options: -O2 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
+  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   build-depends:
     base,

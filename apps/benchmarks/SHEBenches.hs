@@ -12,7 +12,7 @@ import Benchmarks
 import Control.Monad.Random
 import Crypto.Random.DRBG
 
-import Crypto.Lol hiding (CT)
+import Crypto.Lol hiding (CT)f
 import Crypto.Lol.Applications.SymmSHE
 import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 import Crypto.Lol.Types.Random

@@ -75,7 +75,7 @@ wrap f (ZV v) = RT $ f $ zvToArr v
 wrapM :: (Unbox r, Monad mon) => (Arr l r -> mon (Arr m r))
          -> RT l r -> mon (RT m r)
 wrapM f (RT v) = RT <$> f v
-wrapM f (ZV v) = RT <$> f $ zvToArr v
+wrapM f (ZV v) = RT <$> f (zvToArr v)
 
 instance Tensor RT where
 
@@ -132,7 +132,7 @@ instance Tensor RT where
   -- Repa arrays don't have mapM, so apply to underlying Unboxed
   -- vector instead
   fmapTM f (RT (Arr arr)) = (RT . Arr . fromUnboxed (extent arr)) <$>
-                            U.mapM f $ toUnboxed arr
+                            U.mapM f (toUnboxed arr)
   fmapTM f v = fmapTM f $ toRT v
 
   zipWithT f (RT (Arr a1)) (RT (Arr a2)) = RT $ Arr $ force $ RT.zipWith f a1 a2
