@@ -28,7 +28,6 @@ import Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative  hiding ((*>))
 import Control.Arrow        hiding (arr)
 import Control.DeepSeq      (NFData (rnf))
-import Control.Monad        (liftM)
 import Control.Monad.Random
 import Data.Coerce
 import Data.Constraint      hiding ((***))
@@ -75,8 +74,8 @@ wrap f (ZV v) = RT $ f $ zvToArr v
 {-# INLINABLE wrapM #-}
 wrapM :: (Unbox r, Monad mon) => (Arr l r -> mon (Arr m r))
          -> RT l r -> mon (RT m r)
-wrapM f (RT v) = liftM RT $ f v
-wrapM f (ZV v) = liftM RT $ f $ zvToArr v
+wrapM f (RT v) = RT <$> f v
+wrapM f (ZV v) = RT <$> f $ zvToArr v
 
 instance Tensor RT where
 
@@ -103,13 +102,13 @@ instance Tensor RT where
   divGDec = wrapM fGInvDec
 
   crtFuncs = (,,,,) <$>
-             (liftM (RT .) scalarCRT') <*>
+             ((RT .) <$> scalarCRT') <*>
              (wrap <$> mulGCRT') <*>
              (wrap <$> divGCRT') <*>
              (wrap <$> fCRT) <*>
              (wrap <$> fCRTInv)
 
-  tGaussianDec = liftM RT . tGaussianDec'
+  tGaussianDec = fmap RT . tGaussianDec'
 
   gSqNormDec (RT e) = gSqNormDec' e
   gSqNormDec e = gSqNormDec $ toRT e
@@ -119,7 +118,7 @@ instance Tensor RT where
   embedPow = wrap embedPow'
   embedDec = wrap embedDec'
 
-  crtExtFuncs = (,) <$> (liftM wrap twaceCRT') <*> (liftM wrap embedCRT')
+  crtExtFuncs = (,) <$> (wrap <$> twaceCRT') <*> (wrap <$> embedCRT')
 
   coeffs = wrapM coeffs'
 
@@ -132,7 +131,7 @@ instance Tensor RT where
 
   -- Repa arrays don't have mapM, so apply to underlying Unboxed
   -- vector instead
-  fmapTM f (RT (Arr arr)) = liftM (RT . Arr . fromUnboxed (extent arr)) $
+  fmapTM f (RT (Arr arr)) = (RT . Arr . fromUnboxed (extent arr)) <$>
                             U.mapM f $ toUnboxed arr
   fmapTM f v = fmapTM f $ toRT v
 
@@ -247,7 +246,7 @@ instance (GFCtx fp d, Fact m, Additive (RT m fp))
 ---------- Miscellaneous instances ----------
 
 instance (Unbox r, Random (Arr m r)) => Random (RT m r) where
-  random = runRand $ liftM RT (liftRand random)
+  random = runRand $ RT <$> (liftRand random)
 
   randomR = error "randomR nonsensical for RT"
 

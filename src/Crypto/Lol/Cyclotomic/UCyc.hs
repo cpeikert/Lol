@@ -108,7 +108,7 @@ scalarDec = Dec . T.scalarDec
 scalarCRT :: (Fact m, UCElt t r) => r -> UCyc t m C r
 scalarCRT = fromMaybe
                (CRTe . fromJust' "UCyc: no CRT over CRTExt" T.scalarCRT . toExt)
-               (liftM (CRTr .) T.scalarCRT)
+               ((CRTr .) <$> T.scalarCRT)
 {-# INLINABLE scalarCRT #-}
 
 -- Eq instances
@@ -337,7 +337,7 @@ gSqNorm (Dec v) = gSqNormDec v
 tGaussian :: (Tensor t, Fact m, OrdFloat q, Random q, TElt t q,
               ToRational v, MonadRandom rnd)
              => v -> rnd (UCyc t m D q)
-tGaussian = liftM Dec . tGaussianDec
+tGaussian = fmap Dec . tGaussianDec
 {-# INLINABLE tGaussian #-}
 
 -- | Generate an LWE error term from the "tweaked" Gaussian with given
@@ -492,7 +492,7 @@ toCRT :: forall t m rep r . (Fact m, UCElt t r)
          => UCyc t m rep r -> UCyc t m C r
 {-# INLINABLE toCRT #-}
 toCRT = let crte = CRTe . fromJust' "UCyc.toCRT: no crt for Ext" crt
-            crtr = liftM (CRTr .) crt
+            crtr = fmap (CRTr .) crt
             fromPow :: t m r -> UCyc t m C r
             fromPow v = fromMaybe (crte $ fmapT toExt v) (crtr <*> Just v)
         in \x -> case x of
