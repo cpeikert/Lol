@@ -18,7 +18,15 @@ category:            Crypto
 stability:           experimental
 build-type:          Simple
 extra-source-files:  README, CHANGES.md,
-                     benchmarks/SHEBenches.hs
+                     benchmarks/SHEBenches.hs,
+                     tests/SHETests.hs,
+                     utils/Apply.hs,
+                     utils/Benchmarks.hs,
+                     utils/Gen.hs,
+                     utils/Test.hs,
+                     utils/TestTypes.hs,
+                     utils/Utils.hs
+                     utils/Harness/SHE.hs
 cabal-version:       >= 1.10
 description:         
     This library contains example cryptographic applications built using 

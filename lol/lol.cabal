@@ -17,7 +17,19 @@ copyright:           Eric Crockett, Chris Peikert
 category:            Crypto
 stability:           experimental
 build-type:          Simple
-extra-source-files:  README, CHANGES.md
+extra-source-files:  README, CHANGES.md,
+                     benchmarks/CycBenches.hs,
+                     benchmarks/ZqBenches.hs,
+                     tests/CycTests.hs,
+                     tests/ZqTests.hs,
+                     tests/TensorTests.hs,
+                     utils/Apply.hs,
+                     utils/Benchmarks.hs,
+                     utils/Gen.hs,
+                     utils/Test.hs,
+                     utils/TestTypes.hs,
+                     utils/Utils.hs,
+                     utils/Harness/Cyc.hs
 cabal-version:       >= 1.10
 description:         
     Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
