@@ -17,13 +17,7 @@ copyright:           Eric Crockett, Chris Peikert
 category:            Crypto
 stability:           experimental
 build-type:          Simple
-extra-source-files:  README, CHANGES.md,
-                     src/Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h,
-                     tests/CycTests.hs,
-                     tests/SHETests.hs,
-                     tests/TensorTests.hs,
-                     tests/TestTypes.hs,
-                     tests/ZqTests.hs
+extra-source-files:  README, CHANGES.md
 cabal-version:       >= 1.10
 description:         
     Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
@@ -47,8 +41,8 @@ Flag llvm
 
 Flag opt
   Description: Turn on library optimizations
-  Default:      True
-  Manual:       False
+  Default:     True
+  Manual:      False
 
 library
   hs-source-dirs:     src
@@ -149,7 +143,7 @@ library
 
 test-suite test-lol
   type:               exitcode-stdio-1.0
-  hs-source-dirs:     tests,../utils
+  hs-source-dirs:     tests,utils
   default-language:   Haskell2010
   main-is:            Main.hs
 
@@ -173,7 +167,7 @@ test-suite test-lol
 
 Benchmark bench-lol
   type:               exitcode-stdio-1.0
-  hs-source-dirs:     benchmarks,../utils
+  hs-source-dirs:     benchmarks,utils
   default-language:   Haskell2010
   main-is:            Main.hs
 
