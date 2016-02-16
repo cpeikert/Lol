@@ -6,7 +6,7 @@ module Benchmarks
 ,benchIO
 ,benchGroup
 ,hideArgs
-,Bench
+,Bench(..)
 ,Benchmark
 ,NFData) where
 

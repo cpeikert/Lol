@@ -5,11 +5,10 @@ module Tests
 ,testIO
 ,TF.testGroup
 ,testGroupM
-,hideSHEArgs
-,Test) where
+,hideArgs
+,Test(..)) where
 
 import Gen
-import Harness.SHE
 import Utils
 
 import Control.Monad.Random
@@ -32,12 +31,11 @@ testGroupM str = TF.buildTest . (TF.testGroup str <$>) . sequence
 
 -- normalizes any function resulting in a Benchmark to 
 -- one that takes a proxy for its arguments
-hideSHEArgs :: forall a rnd bnch. 
-  (GenArgs (StateT (Maybe (SKOf a)) rnd) bnch, MonadRandom rnd, 
-   ShowType a, ResultOf bnch ~ Test a)
+hideArgs :: (GenArgs rnd bnch, MonadRandom rnd, ShowType a,
+             ResultOf bnch ~ Test a)
   => bnch -> Proxy a -> rnd TF.Test
-hideSHEArgs f p = do
-  res <- evalStateT (genArgs f) (Nothing :: Maybe (SKOf a))
+hideArgs f p = do
+  res <- genArgs f
   case res of
     Test b -> return $ testProperty (showType p) b
     TestM b -> testProperty (showType p) <$> b

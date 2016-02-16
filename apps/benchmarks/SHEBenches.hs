@@ -1,33 +1,45 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, 
-             NoImplicitPrelude, RebindableSyntax, 
+             NoImplicitPrelude, PolyKinds, RebindableSyntax, 
              ScopedTypeVariables, TypeFamilies, 
              TypeOperators #-}
 
 module SHEBenches (sheBenches) where
 
+import Gen
 import Utils
 import Harness.SHE
-import Benchmarks
+import Benchmarks hiding (hideArgs)
 
+import Control.Applicative
 import Control.Monad.Random
+import Control.Monad.State
 import Crypto.Random.DRBG
 
-import Crypto.Lol hiding (CT)f
+import Crypto.Lol hiding (CT)
 import Crypto.Lol.Applications.SymmSHE
 import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 import Crypto.Lol.Types.Random
 
+import qualified Criterion as C
+
+hideArgs :: forall a rnd bnch . 
+  (GenArgs (StateT (Maybe (SKOf a)) rnd) bnch, Monad rnd, ShowType a,
+   ResultOf bnch ~ Bench a)
+  => bnch -> Proxy a -> rnd Benchmark
+hideArgs f p = (C.bench (showType p) . unbench) <$> 
+  (evalStateT (genArgs f) (Nothing :: Maybe (SKOf a)))
+
 sheBenches :: (MonadRandom m) => m Benchmark
 sheBenches = benchGroup "SHE" [
-  benchGroup "encrypt"   $ applyEnc (Proxy::Proxy EncParams)         $ hideSHEArgs bench_enc,
-  benchGroup "decrypt"   $ applyDec (Proxy::Proxy DecParams)         $ hideSHEArgs bench_dec,
-  benchGroup "*"         $ applyCTFunc (Proxy::Proxy CTParams)       $ hideSHEArgs bench_mul,
-  benchGroup "addPublic" $ applyCTFunc (Proxy::Proxy CTParams)       $ hideSHEArgs bench_addPublic,
-  benchGroup "mulPublic" $ applyCTFunc (Proxy::Proxy CTParams)       $ hideSHEArgs bench_mulPublic,
-  benchGroup "dec"       $ applyDec (Proxy::Proxy DecParams)         $ hideSHEArgs bench_dec,
-  benchGroup "rescaleCT" $ applyRescale (Proxy::Proxy RescaleParams) $ hideSHEArgs bench_rescaleCT,
-  benchGroup "keySwitch" $ applyKSQ (Proxy::Proxy KSQParams)         $ hideSHEArgs bench_keySwQ,
-  benchGroup "tunnel"    $ applyTunn (Proxy::Proxy TunnParams)       $ hideSHEArgs bench_tunnel
+  benchGroup "encrypt"   $ applyEnc (Proxy::Proxy EncParams)         $ hideArgs bench_enc,
+  benchGroup "decrypt"   $ applyDec (Proxy::Proxy DecParams)         $ hideArgs bench_dec,
+  benchGroup "*"         $ applyCTFunc (Proxy::Proxy CTParams)       $ hideArgs bench_mul,
+  benchGroup "addPublic" $ applyCTFunc (Proxy::Proxy CTParams)       $ hideArgs bench_addPublic,
+  benchGroup "mulPublic" $ applyCTFunc (Proxy::Proxy CTParams)       $ hideArgs bench_mulPublic,
+  benchGroup "dec"       $ applyDec (Proxy::Proxy DecParams)         $ hideArgs bench_dec,
+  benchGroup "rescaleCT" $ applyRescale (Proxy::Proxy RescaleParams) $ hideArgs bench_rescaleCT,
+  benchGroup "keySwitch" $ applyKSQ (Proxy::Proxy KSQParams)         $ hideArgs bench_keySwQ,
+  benchGroup "tunnel"    $ applyTunn (Proxy::Proxy TunnParams)       $ hideArgs bench_tunnel
   ]
 
 bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRandomGen gen, z ~ LiftOf zp, NFElt zp, NFElt zq)

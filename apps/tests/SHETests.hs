@@ -4,36 +4,55 @@
 
 module SHETests (sheTests) where
 
+import Gen
 import Harness.SHE
-import Tests
+import Tests hiding (hideArgs)
 import Utils
 
+import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
+import Control.Monad.State
+
+import qualified Criterion as C
 
 import Crypto.Lol hiding (CT)
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Cyclotomic.Linear
 import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 
+import qualified Test.Framework as TF
+import Test.Framework.Providers.QuickCheck2
+import Test.QuickCheck
+
 v = 1 :: Double
 
+hideArgs :: forall a rnd bnch. 
+  (GenArgs (StateT (Maybe (SKOf a)) rnd) bnch, MonadRandom rnd, 
+   ShowType a, ResultOf bnch ~ Test a)
+  => bnch -> Proxy a -> rnd TF.Test
+hideArgs f p = do
+  res <- evalStateT (genArgs f) (Nothing :: Maybe (SKOf a))
+  case res of
+    Test b -> return $ testProperty (showType p) b
+    TestM b -> testProperty (showType p) <$> b
+
 sheTests = 
-  [testGroupM "Dec . Enc"  $ applyDec (Proxy::Proxy DecParams) $ hideSHEArgs prop_encDec,
-   testGroupM "DecU . Enc" $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_encDecU,
-   testGroupM "AddPub"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_addPub,
-   testGroupM "MulPub"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_mulPub,
-   testGroupM "ScalarPub"  $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_addScalar,
-   testGroupM "CTAdd"      $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctadd,
-   testGroupM "CTMul"      $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctmul,
-   testGroupM "CT zero"    $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctzero,
-   testGroupM "CT one"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideSHEArgs prop_ctone,
+  [testGroupM "Dec . Enc"  $ applyDec (Proxy::Proxy DecParams) $ hideArgs prop_encDec,
+   testGroupM "DecU . Enc" $ applyCTFunc (Proxy::Proxy CTParams) $ hideArgs prop_encDecU,
+   testGroupM "AddPub"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideArgs prop_addPub,
+   testGroupM "MulPub"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideArgs prop_mulPub,
+   testGroupM "ScalarPub"  $ applyCTFunc (Proxy::Proxy CTParams) $ hideArgs prop_addScalar,
+   testGroupM "CTAdd"      $ applyCTFunc (Proxy::Proxy CTParams) $ hideArgs prop_ctadd,
+   testGroupM "CTMul"      $ applyCTFunc (Proxy::Proxy CTParams) $ hideArgs prop_ctmul,
+   testGroupM "CT zero"    $ applyCTFunc (Proxy::Proxy CTParams) $ hideArgs prop_ctzero,
+   testGroupM "CT one"     $ applyCTFunc (Proxy::Proxy CTParams) $ hideArgs prop_ctone,
    testGroupM "ModSwitch PT" modSwPTTests,
    testGroupM "Tunnel"       tunnelTests,
-   testGroupM "Twace"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideSHEArgs prop_cttwace,
-   testGroupM "Embed"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideSHEArgs prop_ctembed,
-   testGroupM "KSLin"      $ applyKSQ (Proxy::Proxy KSQParams) $ hideSHEArgs prop_ksLin,
-   testGroupM "keySwitch"  $ applyKSQ (Proxy::Proxy KSQParams) $ hideSHEArgs prop_ksQuad
+   testGroupM "Twace"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideArgs prop_cttwace,
+   testGroupM "Embed"      $ applyCTTwEm (Proxy::Proxy TwoIdxParams) $ hideArgs prop_ctembed,
+   testGroupM "KSLin"      $ applyKSQ (Proxy::Proxy KSQParams) $ hideArgs prop_ksLin,
+   testGroupM "keySwitch"  $ applyKSQ (Proxy::Proxy KSQParams) $ hideArgs prop_ksQuad
   ]
 
 type CTCombos = '[
@@ -230,7 +249,7 @@ prop_encDec sk x = testIO $ do
 helper :: (Proxy '(t,b) -> a) -> Proxy t -> Proxy b -> a
 helper f _ _ = f Proxy
 
--- one-off tests, no hideSHEArgsper
+-- one-off tests, no hideArgsper
 prop_modSwPT :: forall t m m' z zp zp' zq .
   (Eq zp, Eq zp',
    DecryptUCtx t m m' z zp zq,
@@ -253,14 +272,14 @@ prop_modSwPT sk y =
 modSwPTTests = (modSwPTTests' (Proxy::Proxy CT.CT)) ++ (modSwPTTests' (Proxy::Proxy RT))
 
 modSwPTTests' p = 
-  [helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F21,Zq 4,Zq 8,Zq 18869761)),
-   helper (hideSHEArgs prop_modSwPT) p (Proxy::Proxy '(F7,F42,Zq 2,Zq 4,Zq (18869761 ** 19393921)))]
+  [helper (hideArgs prop_modSwPT) p (Proxy::Proxy '(F7,F21,Zq 4,Zq 8,Zq 18869761)),
+   helper (hideArgs prop_modSwPT) p (Proxy::Proxy '(F7,F42,Zq 2,Zq 4,Zq (18869761 ** 19393921)))]
 
 
 tunnelTests = (tunnelTests' (Proxy::Proxy CT.CT)) ++ (tunnelTests' (Proxy::Proxy RT))
 
 tunnelTests' p = 
-  [helper (hideSHEArgs prop_ringTunnel) p 
+  [helper (hideArgs prop_ringTunnel) p 
     (Proxy::Proxy '(F8,F40,F20,F60,Zq 4,Zq (18869761 ** 19393921),TrivGad))]
 
 prop_ringTunnel :: forall t e r s e' r' s' z zp zq gad . 
