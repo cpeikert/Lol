@@ -11,11 +11,11 @@
 module Crypto.Lol.Cyclotomic.Tensor.CTensor
 ( CT ) where
 
-import Algebra.Additive as Additive (C)
-import Algebra.Ring     as Ring (C)
-import Algebra.ZeroTestable   as ZeroTestable (C)
+import Algebra.Additive     as Additive (C)
+import Algebra.Module       as Module (C)
+import Algebra.ZeroTestable as ZeroTestable (C)
 
-import Control.Applicative
+import Control.Applicative hiding ((*>))
 import Control.Arrow ((***))
 import Control.DeepSeq
 import Control.Monad (liftM)
@@ -29,18 +29,18 @@ import Data.Foldable as F
 import Data.Int
 import Data.Maybe
 import Data.Traversable as T
-import Data.Vector.Generic           as V (zip, unzip)
+import Data.Vector.Generic           as V (zip, unzip, fromList, toList)
 import Data.Vector.Storable          as SV (Vector, (!), replicate, replicateM, thaw, convert, foldl',
-                                            unsafeSlice, mapM, fromList,
+                                            unsafeSlice, mapM, fromList, toList,
                                             generate, foldl1',
                                             unsafeWith, zipWith, map, length, unsafeFreeze, thaw)
 import Data.Vector.Storable.Internal (getPtr)
 import Data.Vector.Storable.Mutable  as SM hiding (replicate)
 
-import           Foreign.Marshal.Utils (with)
-import           Foreign.Ptr
-import           Foreign.Storable        (Storable (..))
-import           Test.QuickCheck         hiding (generate)
+import Foreign.Marshal.Utils (with)
+import Foreign.Ptr
+import Foreign.Storable        (Storable (..))
+import Test.QuickCheck         hiding (generate)
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
@@ -49,6 +49,7 @@ import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
 import Crypto.Lol.GaussRandom
 import Crypto.Lol.LatticePrelude as LP hiding (replicate, unzip, zip, lift)
 import Crypto.Lol.Reflects
+import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.ZqBasic
 
@@ -110,7 +111,9 @@ type family Em r where
 
 ---------- NUMERIC PRELUDE INSTANCES ----------
 
-{- CJP: Additive, Ring are not necessary when we use zipWithT
+-- CJP: Additive, Ring are not necessary when we use zipWithT
+-- EAC: This has performance implications for the CT backend,
+--      which used a C function for zipWith (*)
 
 instance (Additive r, Storable r, Fact m, Dispatch r)
   => Additive.C (CT m r) where
@@ -121,12 +124,12 @@ instance (Additive r, Storable r, Fact m, Dispatch r)
 
   zero = CT $ repl zero
 
+{-
 instance (Fact m, Ring r, Storable r, Dispatch r)
   => Ring.C (CT m r) where
   (CT a@(CT' _)) * (CT b@(CT' _)) = CT $ (untag $ cZipDispatch dmul) a b
 
   fromInteger = CT . repl . fromInteger
-
 -}
 
 instance (ZeroTestable r, Storable r, Fact m)
@@ -134,6 +137,13 @@ instance (ZeroTestable r, Storable r, Fact m)
   --{-# INLINABLE isZero #-} 
   isZero (CT (CT' a)) = SV.foldl' (\ b x -> b && isZero x) True a
   isZero (ZV v) = isZero v
+
+instance (GFCtx fp d, Fact m, Additive (CT m fp))
+    => Module.C (GF fp d) (CT m fp) where
+
+  r *> v = case v of
+    CT (CT' arr) -> CT $ CT' $ SV.fromList $ unCoeffs $ r *> Coeffs $ SV.toList arr
+    ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $ unCoeffs $ r *> Coeffs $ V.toList $ unIZipVector zv
 
 ---------- Category-theoretic instances ----------
 
@@ -166,6 +176,7 @@ instance Tensor CT where
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
   entailShowT = tag $ Sub Dict
+  entailModuleT = tag $ Sub Dict
 
   scalarPow = CT . scalarPow' -- Vector code
 

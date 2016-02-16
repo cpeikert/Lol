@@ -1,8 +1,8 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, InstanceSigs, MultiParamTypeClasses,
-             NoImplicitPrelude, RebindableSyntax, RoleAnnotations,
-             ScopedTypeVariables, StandaloneDeriving, TypeFamilies,
-             TypeOperators, UndecidableInstances #-}
+             FlexibleInstances, GADTs, MultiParamTypeClasses,
+             NoImplicitPrelude, PolyKinds, RebindableSyntax,
+             RoleAnnotations, ScopedTypeVariables, StandaloneDeriving,
+             TypeFamilies, TypeOperators, UndecidableInstances #-}
 
 -- | A pure, repa-based implementation of the Tensor interface.
 
@@ -15,14 +15,17 @@ import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT
-import Crypto.Lol.LatticePrelude                         as LP hiding ((!!))
+import Crypto.Lol.LatticePrelude                         as LP hiding
+                                                                ((!!))
+import Crypto.Lol.Reflects
+import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
 
---import Algebra.Additive     as Additive (C)
---import Algebra.Ring         as Ring (C)
+import Algebra.Additive     as Additive (C)
+import Algebra.Module       as Module (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
-import Control.Applicative
+import Control.Applicative  hiding ((*>))
 import Control.Arrow        hiding (arr)
 import Control.DeepSeq      (NFData (rnf))
 import Control.Monad        (liftM)
@@ -32,6 +35,7 @@ import Data.Constraint      hiding ((***))
 import Data.Foldable        as F
 import Data.Maybe
 import Data.Traversable     as T
+import Data.Vector          as V hiding (force)
 import Data.Vector.Unboxed  as U hiding (force)
 import Test.QuickCheck
 
@@ -85,6 +89,7 @@ instance Tensor RT where
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
   entailShowT   = tag $ Sub Dict
+  entailModuleT = tag $ Sub Dict
 
   scalarPow = RT . scalarPow'
 
@@ -104,12 +109,6 @@ instance Tensor RT where
              (wrap <$> fCRT) <*>
              (wrap <$> fCRTInv)
 
-  -- instance sigs are the cleanest way to handle many weird types
-  -- coming up
-
-  tGaussianDec :: forall v rnd m q .
-                  (Fact m, OrdFloat q, Random q, TElt RT q,
-                   ToRational v, MonadRandom rnd) => v -> rnd (RT m q)
   tGaussianDec = liftM RT . tGaussianDec'
 
   gSqNormDec (RT e) = gSqNormDec' e
@@ -120,8 +119,7 @@ instance Tensor RT where
   embedPow = wrap embedPow'
   embedDec = wrap embedDec'
 
-  crtExtFuncs = (,) <$> (liftM wrap twaceCRT')
-                    <*> (liftM wrap embedCRT')
+  crtExtFuncs = (,) <$> (liftM wrap twaceCRT') <*> (liftM wrap embedCRT')
 
   coeffs = wrapM coeffs'
 
@@ -203,7 +201,8 @@ instance Fact m => Traversable (RT m) where
 
 ---------- Numeric Prelude instances ----------
 
-{- CJP: Additive, Ring are not necessary when we use zipWithT
+--CJP: Additive, Ring are not necessary when we use zipWithT
+--EAC: But we need an Additive instance for the Module instance
 
 instance (Unbox r, Additive (Arr m r)) => Additive.C (RT m r) where
   zero = RT zero
@@ -222,6 +221,7 @@ instance (Unbox r, Additive (Arr m r)) => Additive.C (RT m r) where
   {-# INLINABLE zero #-}
   {-# INLINABLE negate #-}
 
+{-
 instance (Unbox r, Ring (Arr m r)) => Ring.C (RT m r) where
   (RT a) * (RT b) = RT $ a * b
   a * b = toRT a * toRT b
@@ -229,7 +229,6 @@ instance (Unbox r, Ring (Arr m r)) => Ring.C (RT m r) where
   fromInteger = RT . fromInteger
   {-# INLINABLE (*) #-}
   {-# INLINABLE fromInteger #-}
-
 -}
 
 instance (ZeroTestable (Arr m r), ZeroTestable (IZipVector m r))
@@ -237,6 +236,13 @@ instance (ZeroTestable (Arr m r), ZeroTestable (IZipVector m r))
   isZero (RT a) = isZero a
   isZero (ZV v) = isZero v
   {-# INLINABLE isZero #-}
+
+instance (GFCtx fp d, Fact m, Additive (RT m fp))
+    => Module.C (GF fp d) (RT m fp) where
+
+  r *> v = case v of
+    RT (Arr arr) -> RT $ Arr $ RT.fromList (extent arr) $ unCoeffs $ r *> Coeffs $ RT.toList arr
+    ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $ unCoeffs $ r *> Coeffs $ V.toList $ unIZipVector zv
 
 ---------- Miscellaneous instances ----------
 

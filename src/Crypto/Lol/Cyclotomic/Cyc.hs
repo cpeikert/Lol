@@ -39,6 +39,7 @@ module Crypto.Lol.Cyclotomic.Cyc
 ) where
 
 import qualified Algebra.Additive     as Additive (C)
+import qualified Algebra.Module       as Module (C)
 import qualified Algebra.Ring         as Ring (C)
 import qualified Algebra.ZeroTestable as ZeroTestable (C)
 
@@ -52,6 +53,7 @@ import           Crypto.Lol.Cyclotomic.Tensor     (CRTElt, TElt, Tensor)
 import qualified Crypto.Lol.Cyclotomic.UCyc       as U
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.LatticePrelude        as LP
+import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZPP
 
 import Control.Applicative    hiding ((*>))
@@ -239,6 +241,17 @@ instance (Fact m, CElt t r) => Ring.C (Cyc t m r) where
 
   -- ELSE: work in appropriate CRT rep
   c1 * c2 = toCRT' c1 * toCRT' c2
+
+instance (GFCtx fp d, Fact m, CElt t fp) => Module.C (GF fp d) (Cyc t m fp) where
+  -- CJP: optimize for Scalar if we can: r *> (Scalar c) is the tensor
+  -- that has the coeffs of (r*c), followed by zeros.  (This assumes
+  -- that the powerful basis has 1 as its first element, and that
+  -- we're using pow to define the module mult.)
+
+  -- can use any r-basis to define module mult, but must be
+  -- consistent.
+  r *> (Pow v) = Pow $ r LP.*> v
+  r *> x = r *> toPow' x
 
 ---------- Core cyclotomic operations ----------
 

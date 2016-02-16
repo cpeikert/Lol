@@ -40,6 +40,7 @@ import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
 import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.Tensor as T
 import           Crypto.Lol.LatticePrelude    as LP
+import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZPP
 
 import qualified Algebra.Additive     as Additive (C)
@@ -220,6 +221,11 @@ instance (Ring r, Fact m, UCElt t r) => Module.C r (UCyc t m C r) where
   r *> (CRTr v) = CRTr $ fmapT (r *) v
   r *> (CRTe v) = CRTe $ fmapT (toExt r *) v
   {-# INLINABLE (*>) #-}
+
+instance (GFCtx fp d, Fact m, UCElt t fp) => Module.C (GF fp d) (UCyc t m P fp) where
+  -- can use any r-basis to define module mult, but must be
+  -- consistent.
+  r *> (Pow v) = Pow $ r LP.*> v \\ witness entailModuleT (r,v)
 
 
 instance (Reduce a b, Tensor t, Fact m, TElt t a, TElt t b)
