@@ -6,7 +6,7 @@ name:                lol-apps
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
 version:             0.0.0.1
-synopsis:            Cryptographic applications using <https://hackage.haskell.org/package/lol Λ ○ λ>.
+synopsis:            Lattice-based cryptographic applications using Lol.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
 license:             GPL-2
