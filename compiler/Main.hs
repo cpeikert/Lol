@@ -90,7 +90,7 @@ errRatio :: forall m zp t m' zq z .
    Ord (LiftOf zq), ToInteger (LiftOf zq))
   => SHE.CT m zp (Cyc t m' zq) -> SK (Cyc t m' z) -> Double
 errRatio ct sk = 
-  (fromIntegral $ maximum $ fmap abs $ uncycDec $ errorTermUnrestricted sk ct) / 
+  (fromIntegral $ maximum $ fmap abs $ errorTermUnrestricted sk ct) / 
   (fromIntegral $ proxy modulus (Proxy::Proxy zq))
 
 tunnelAST (_::Proxy t) (x :: CTExpr (SHE.CT H0 ZP2 (Cyc t H0' ZQ5))) =

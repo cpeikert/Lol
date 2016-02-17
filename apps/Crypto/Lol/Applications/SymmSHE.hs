@@ -34,7 +34,7 @@ import qualified Algebra.Additive as Additive (C)
 import qualified Algebra.Ring     as Ring (C)
 
 import Crypto.Lol.Cyclotomic.Cyc
-import Crypto.Lol.Cyclotomic.UCyc (toDec)
+import Crypto.Lol.Cyclotomic.UCyc (UCyc, D)
 import Crypto.Lol.Cyclotomic.Linear
 import Crypto.Lol.Gadget
 import Crypto.Lol.LatticePrelude    as LP hiding (sin)
@@ -144,11 +144,11 @@ type DecryptUCtx t m m' z zp zq =
 -- output coefficient types.
 errorTermUnrestricted :: 
   (Reduce z zq, Lift' zq, CElt t z, ToSDCtx t m' zp zq)
-  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Cyc t m' (LiftOf zq)
+  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> UCyc t m' D (LiftOf zq)
 errorTermUnrestricted (SK _ s) = let sq = reduce s in
   \ct -> let (CT LSD _ _ c) = toLSD ct
              eval = evaluate c sq
-         in cycDec $ fmap lift $ uncycDec eval
+         in fmap lift $ uncycDec eval
 
 -- | More general form of 'decrypt' that works for unrestricted output
 -- coefficient types.
