@@ -36,6 +36,7 @@ description:
     Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
     For a detailed description of interfaces and functionality, see 
     <https://eprint.iacr.org/2015/1134 Λ ○ λ: A Functional Library for Lattice Cryptography>.
+    For example cryptographic applications, see <https://hackage.haskell.org/package/lol-apps lol-apps>.
 source-repository head
   type: git
   location: https://github.com/cpeikert/Lol
