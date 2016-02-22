@@ -1,0 +1,64 @@
+Name:           numbers
+-- don't forget to bump the "this" source tag
+Version:        3000.2.0.1
+License:        BSD3
+License-file:   LICENSE
+Author:         Lennart Augustsson
+Maintainer:     johnw@newartisans.com
+Category:       Data, Math
+Synopsis:       Various number types
+Description:
+  Instances of the numerical classes for a variety of
+  different numbers: (computable) real numbers,
+  arbitrary precision fixed numbers,
+  arbitrary precision floating point numbers,
+  differentiable numbers, symbolic numbers,
+  natural numbers, interval arithmetic.
+Build-type:	    Simple
+
+cabal-version:  >= 1.8
+
+homepage:     https://github.com/jwiegley/numbers#readme
+bug-reports:  https://github.com/jwiegley/numbers/issues
+
+source-repository head
+  type:     git
+  location: git://github.com/jwiegley/numbers.git
+source-repository this
+  type:     git
+  location: git://github.com/jwiegley/numbers.git
+  tag:      numbers-3000.2.0.1
+
+Library
+  Build-Depends:
+    base >= 3 && < 5
+
+  Exposed-modules:
+    Data.Number.Symbolic Data.Number.Dif
+    Data.Number.CReal Data.Number.Fixed
+    Data.Number.Interval Data.Number.BigFloat
+    Data.Number.Natural
+    Data.Number.Vectorspace
+    Data.Number.FixedFunctions
+
+  Ghc-Options:
+    -Wall
+    -fno-warn-name-shadowing
+    -fno-warn-unused-binds
+    -fno-warn-unused-matches
+    -fno-warn-incomplete-patterns
+    -fno-warn-overlapping-patterns
+    -fno-warn-type-defaults
+
+test-suite testsuite
+  type: exitcode-stdio-1.0
+  main-is: TestSuite.hs
+  build-depends:
+    base                        >= 3 && < 5,
+    -- Additional test dependencies.
+    QuickCheck                  == 2.*,
+    test-framework              >= 0.6,
+    test-framework-quickcheck2  >= 0.2
+
+  other-modules:
+    Test.Data.Number.BigFloat
