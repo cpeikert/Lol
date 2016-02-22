@@ -1,6 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RankNTypes, ScopedTypeVariables,
+             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving, 
+             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds, 
+             RankNTypes, ScopedTypeVariables, StandaloneDeriving,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
 -- | An implementation of cyclotomic rings that hides the
@@ -62,9 +63,11 @@ import Control.DeepSeq
 import Control.Monad.Identity   -- needed for coerce
 import Control.Monad.Random
 import Data.Coerce
+import Data.Serialize
 import Data.Traversable
 
 import Test.QuickCheck
+import Text.Read (Read(readPrec))
 
 -- | Represents a cyclotomic ring such as @Z[zeta]@,
 -- @Zq[zeta]@, and @Q(zeta)@ in an explicit representation: @t@ is the
@@ -574,10 +577,27 @@ instance (Random r, Tensor t, Fact m, CRTElt t r) => Random (Cyc t m r) where
 instance (Arbitrary (UCyc t m P r)) => Arbitrary (Cyc t m r) where
   arbitrary = Pow <$> arbitrary
   shrink = shrinkNothing
-
+{-
 instance (Show r, Show (CRTExt r), Tensor t, Fact m, TElt t r, TElt t (CRTExt r)) => Show (Cyc t m r) where
   show (Scalar c) = "Cyc Scalar: " ++ show c
   show (Pow u) = "Cyc: " ++ show u
   show (Dec u) = "Cyc: " ++ show u
   show (CRT u) = "Cyc: " ++ show u
   show (Sub c) = "Cyc Sub: " ++ show c
+-}
+
+-- newtype for safety
+newtype CycPow t m r = SP {unSP :: UCyc t m P r} deriving (Read,Show)
+deriving instance (Serialize (UCyc t m P r)) => Serialize (CycPow t m r)
+-- always read in Pow basis
+-- EAC: If we define show for all bases, then if x is in Dec, read $ show x will fail. 
+-- One way around this is to always `show` in Pow basis. Can we get around that?
+instance (Read (t m r)) => Read (Cyc t m r) where
+  readPrec = (Pow . unSP) <$> readPrec
+instance (Fact m, CElt t r, Show (t m r)) => Show (Cyc t m r) where
+  show (Pow x) = show $ SP x
+  show x = show $ toPow' x
+instance (Serialize (UCyc t m P r), Fact m, CElt t r) => Serialize (Cyc t m r) where
+  get = (Pow . unSP) <$> get
+  put (Pow x) = put (SP x)
+  put x = put $ toPow' x

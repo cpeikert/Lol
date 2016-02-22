@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, MultiParamTypeClasses,
+             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving, MultiParamTypeClasses,
              NoImplicitPrelude, PolyKinds, RebindableSyntax,
              RoleAnnotations, ScopedTypeVariables, StandaloneDeriving,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
@@ -33,17 +33,36 @@ import Data.Coerce
 import Data.Constraint      hiding ((***))
 import Data.Foldable        as F
 import Data.Maybe
+import Data.Serialize
 import Data.Traversable     as T
 import Data.Vector          as V hiding (force)
 import Data.Vector.Unboxed  as U hiding (force)
 import Test.QuickCheck
+import Text.Read (Read(readPrec))
 
 -- | An implementation of 'Tensor' backed by repa.
 data RT (m :: Factored) r where
   RT :: Unbox r => !(Arr m r) -> RT m r
   ZV :: IZipVector m r -> RT m r
 
-deriving instance Show r => Show (RT m r)
+-- use Arr for safety, and define `show` and `read` so that
+-- no matter what, `read . show == id`.
+instance (Show r, Unbox r) => Show (RT m r) where
+  show (RT x) = show x
+  show x = show $ toRT x
+
+instance (Read r, Unbox r) => Read (RT m r) where
+  readPrec = RT <$> readPrec
+
+-- EAC: define a newtype wrapper for type safety, since I don't
+-- know proper way to define Serialize instances
+newtype ArrSerialize m r = AS {unAS :: U.Vector r} deriving (Serialize)
+-- could use ZV to avoid Unbox constraint
+instance (Serialize r, Unbox r, Fact m) => Serialize (RT m r) where
+  get = let n = proxy totientFact (Proxy::Proxy m)
+        in (RT . Arr . fromUnboxed (Z:.n) . unAS) <$> get
+  put (RT (Arr x)) = put $ AS $ toUnboxed x
+  put x = put $ toRT x
 
 instance Eq r => Eq (RT m r) where
   (ZV a) == (ZV b) = a == b

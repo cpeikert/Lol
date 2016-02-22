@@ -1,5 +1,6 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, InstanceSigs, MultiParamTypeClasses,
+             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving, 
+             InstanceSigs, MultiParamTypeClasses,
              NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
              ScopedTypeVariables, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
@@ -55,8 +56,10 @@ import Control.Monad
 import Control.Monad.Random
 import Data.Foldable          as F
 import Data.Maybe
+import Data.Serialize
 import Data.Traversable
 import Test.QuickCheck
+import Text.Read (Read(readPrec))
 
 --import qualified Debug.Trace as DT
 
@@ -564,13 +567,6 @@ instance (Random r, Tensor t, Fact m, CRTElt t r)
 
   randomR _ = error "randomR non-sensical for UCyc"
 
-instance (Show r, Show (CRTExt r), Tensor t, Fact m, TElt t r, TElt t (CRTExt r))
-    => Show (UCyc t m rep r) where
-  show (Pow  v) = "UCyc Pow: "  ++ show v \\ witness entailShowT v
-  show (Dec  v) = "UCyc Dec: "  ++ show v \\ witness entailShowT v
-  show (CRTr v) = "UCyc CRTr: " ++ show v \\ witness entailShowT v
-  show (CRTe v) = "UCyc CRTe: " ++ show v \\ witness entailShowT v
-
 instance (Arbitrary (t m r)) => Arbitrary (UCyc t m P r) where
   arbitrary = Pow <$> arbitrary
   shrink = shrinkNothing
@@ -589,3 +585,28 @@ instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
   rnf (Dec x)    = rnf x \\ witness entailNFDataT x
   rnf (CRTr x)   = rnf x \\ witness entailNFDataT x
   rnf (CRTe x)   = rnf x \\ witness entailNFDataT x
+
+-- newtype wrappers for safety
+newtype UPow t m r = UPow {unUPow :: t m r} deriving (Read, Serialize, Show)
+newtype UDec t m r = UDec {unUDec :: t m r} deriving (Read, Serialize, Show)
+instance (Read (t m r)) => Read (UCyc t m P r) where
+  readPrec = (Pow . unUPow) <$> readPrec
+instance (Read (t m r)) => Read (UCyc t m D r) where
+  readPrec = (Dec . unUDec) <$> readPrec
+instance (Read (t m r), Fact m, UCElt t r) => Read (UCyc t m C r) where
+  readPrec = (toCRT . Pow . unUPow) <$> readPrec
+instance (Show (t m r)) => Show (UCyc t m P r) where
+  show (Pow x) = show $ UPow x
+instance (Show (t m r)) => Show (UCyc t m D r) where
+  show (Dec x) = show $ UDec x
+instance (Show (t m r), Fact m, UCElt t r) => Show (UCyc t m C r) where
+  show x = show $ toPow x
+instance (Serialize (t m r), Fact m, UCElt t r) => Serialize (UCyc t m P r) where
+  get = (Pow . unUPow) <$> get
+  put (Pow x) = put $ UPow x
+instance (Serialize (t m r), Fact m, UCElt t r) => Serialize (UCyc t m D r) where
+  get = (Dec . unUDec) <$> get
+  put (Dec x) = put $ UDec x
+instance (Serialize (t m r), Fact m, UCElt t r) => Serialize (UCyc t m C r) where
+  get = toCRT <$> (get :: Get (UCyc t m P r))
+  put x = put $ toPow x

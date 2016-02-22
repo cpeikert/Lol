@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveGeneric, DeriveTraversable,
+{-# LANGUAGE ConstraintKinds, DataKinds, DeriveTraversable,
              FlexibleContexts, GeneralizedNewtypeDeriving, KindSignatures,
              MultiParamTypeClasses, RoleAnnotations, ScopedTypeVariables,
              TypeFamilies, UndecidableInstances #-}

@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveGeneric, GADTs,
+{-# LANGUAGE ConstraintKinds, DataKinds, GADTs,
              FlexibleContexts, FlexibleInstances, TypeOperators, PolyKinds,
              GeneralizedNewtypeDeriving, InstanceSigs, RoleAnnotations,
              MultiParamTypeClasses, NoImplicitPrelude, StandaloneDeriving,
@@ -41,6 +41,7 @@ import Foreign.Marshal.Utils (with)
 import Foreign.Ptr
 import Foreign.Storable        (Storable (..))
 import Test.QuickCheck         hiding (generate)
+import Text.Read (Read(readPrec))
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
@@ -55,7 +56,6 @@ import Crypto.Lol.Types.ZqBasic
 
 import System.IO.Unsafe (unsafePerformIO)
 
-import GHC.Generics
 import Data.Serialize
 import Data.Vector.Serialize
 
@@ -69,7 +69,7 @@ import Data.Vector.Serialize
 
 -- | Newtype wrapper around a Vector.
 newtype CT' (m :: Factored) r = CT' { unCT :: Vector r } 
-                              deriving (Show, Eq, NFData, Read, Generic, Serialize)
+                              deriving (Show, Eq, NFData, Read, Serialize)
 
 -- the first argument, though phantom, affects representation
 type role CT' representational nominal
@@ -88,14 +88,22 @@ instance Eq r => Eq (CT m r) where
   x@(CT _) == y = x == toCT y
   y == x@(CT _) = x == toCT y
 
-deriving instance Show r => Show (CT m r)
-deriving instance (Read r, Storable r) => Read (CT m r)
+-- use CT' for safety, and define `show` and `read` so that
+-- no matter what, `read . show == id`.
+instance (Show r, Storable r) => Show (CT m r) where
+  show (CT x) = show x
+  show x = show $ toCT x
 
--- serialize as a ZV to avoid the (Storable r) constraint
-instance (Serialize r, Fact m) => Serialize (CT m r) where
-  get = ZV <$> get
-  put (ZV x) = put x
-  put x = put $ toZV x
+instance (Read r, Storable r) => Read (CT m r) where
+  readPrec = CT <$> readPrec
+
+-- we could serialize with ZV to avoid the (Storable r) constraint
+-- we use the CT' wrapper for type safety, since I don't know the "proper"
+-- way to define Serialize instances.
+instance (Serialize r, Storable r, Fact m) => Serialize (CT m r) where
+  get = CT <$> get
+  put (CT x) = put x
+  put x = put $ toCT x
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
