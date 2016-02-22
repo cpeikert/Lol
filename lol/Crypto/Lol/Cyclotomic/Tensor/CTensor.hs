@@ -88,18 +88,13 @@ instance Eq r => Eq (CT m r) where
   x@(CT _) == y = x == toCT y
   y == x@(CT _) = x == toCT y
 
--- use CT' for safety, and define `show` and `read` so that
--- no matter what, `read . show == id`.
+-- no read/show for ZV right now
 instance (Show r, Storable r) => Show (CT m r) where
-  show (CT x) = show x
-  show x = show $ toCT x
-
+  showsPrec n (CT x) = showsPrec n x
+  showsPrec n x = showsPrec n $ toCT x
 instance (Read r, Storable r) => Read (CT m r) where
   readPrec = CT <$> readPrec
-
--- we could serialize with ZV to avoid the (Storable r) constraint
--- we use the CT' wrapper for type safety, since I don't know the "proper"
--- way to define Serialize instances.
+-- we don't support serialization of ZV right now
 instance (Serialize r, Storable r, Fact m) => Serialize (CT m r) where
   get = CT <$> get
   put (CT x) = put x

@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, GADTs, GeneralizedNewtypeDeriving, MultiParamTypeClasses,
              NoImplicitPrelude, PolyKinds, RebindableSyntax,
-             RoleAnnotations, ScopedTypeVariables, StandaloneDeriving,
+             RoleAnnotations, ScopedTypeVariables,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
 -- | A pure, repa-based implementation of the Tensor interface.
@@ -48,8 +48,8 @@ data RT (m :: Factored) r where
 -- use Arr for safety, and define `show` and `read` so that
 -- no matter what, `read . show == id`.
 instance (Show r, Unbox r) => Show (RT m r) where
-  show (RT x) = show x
-  show x = show $ toRT x
+  showsPrec n (RT x) = showsPrec n x
+  showsPrec n x = showsPrec n $ toRT x
 
 instance (Read r, Unbox r) => Read (RT m r) where
   readPrec = RT <$> readPrec
@@ -265,7 +265,7 @@ instance (GFCtx fp d, Fact m, Additive (RT m fp))
 ---------- Miscellaneous instances ----------
 
 instance (Unbox r, Random (Arr m r)) => Random (RT m r) where
-  random = runRand $ RT <$> (liftRand random)
+  random = runRand $ RT <$> liftRand random
 
   randomR = error "randomR nonsensical for RT"
 
