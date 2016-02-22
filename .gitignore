@@ -15,3 +15,10 @@ lol.sublime-project
 lol.sublime-workspace
 sandbox
 sandbox-init
+numbers/dist
+numbers/.git
+numbers/.travis.yml
+numbers/cabal.sandbox.config
+numbers/Test
+numbers/TestSuite.hs
+numbers/.gitignore

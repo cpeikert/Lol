@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, GADTs,
+{-# LANGUAGE ConstraintKinds, DataKinds, DeriveGeneric, GADTs,
              FlexibleContexts, FlexibleInstances, TypeOperators, PolyKinds,
              GeneralizedNewtypeDeriving, InstanceSigs, RoleAnnotations,
              MultiParamTypeClasses, NoImplicitPrelude, StandaloneDeriving,
@@ -55,9 +55,21 @@ import Crypto.Lol.Types.ZqBasic
 
 import System.IO.Unsafe (unsafePerformIO)
 
+import GHC.Generics
+import Data.Serialize
+import Data.Vector.Serialize
+
+-- EAC A note on Generic and Serialize:
+-- cereal-vector provides Serialize instances for vectors,
+-- but we can't use DeriveGeneric with GADTs. One solution
+-- is to make the (Storable r) constraint on the CT constructor
+-- an explicit dictionary, but then we still have to serialize
+-- the dictionary. Not sure if that's possible.
+-- Perhaps easiest thing to do is to define a custom Serialize instance.
+
 -- | Newtype wrapper around a Vector.
 newtype CT' (m :: Factored) r = CT' { unCT :: Vector r } 
-                              deriving (Show, Eq, NFData)
+                              deriving (Show, Eq, NFData, Read, Generic, Serialize)
 
 -- the first argument, though phantom, affects representation
 type role CT' representational nominal
@@ -77,6 +89,13 @@ instance Eq r => Eq (CT m r) where
   y == x@(CT _) = x == toCT y
 
 deriving instance Show r => Show (CT m r)
+deriving instance (Read r, Storable r) => Read (CT m r)
+
+-- serialize as a ZV to avoid the (Storable r) constraint
+instance (Serialize r, Fact m) => Serialize (CT m r) where
+  get = ZV <$> get
+  put (ZV x) = put x
+  put x = put $ toZV x
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
