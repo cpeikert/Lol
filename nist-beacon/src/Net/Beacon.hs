@@ -43,9 +43,9 @@ import Text.XML.Light.Input
 import Text.XML.Light.Proc
 import Text.XML.Light.Types
 
-import qualified Data.ByteString.Lazy.Char8 as B
+import qualified Data.ByteString.Lazy as B
 import Network.HTTP.Conduit (simpleHttp)
-
+import Numeric
 
 -- | A single record: the random data plus some additional information.
 data Record =
@@ -130,13 +130,26 @@ getRecord stuff = do
   xml <- parseXMLDoc stuff
   let fc = findChild' xml
   Record
-    <$>             fc "version"
-    <*> (read   <$> fc "frequency")
-    <*> (read   <$> fc "timeStamp")
-    <*> (B.pack <$> fc "seedValue")
-    <*> (B.pack <$> fc "previousOutputValue")
-    <*> (B.pack <$> fc "signatureValue")
-    <*> (B.pack <$> fc "outputValue")
-    <*> (read   <$> fc "statusCode")
+    <$>              fc "version"
+    <*> (read    <$> fc "frequency")
+    <*> (read    <$> fc "timeStamp")
+    <*> (hexToBS <$> fc "seedValue")
+    <*> (hexToBS <$> fc "previousOutputValue")
+    <*> (hexToBS <$> fc "signatureValue")
+    <*> (hexToBS <$> fc "outputValue")
+    <*> (read    <$> fc "statusCode")
   where
-    findChild' xml name = strContent <$> findChild (QName name (Just "http://beacon.nist.gov/record/0.1/") Nothing) xml
+    findChild' xml name = strContent <$> filterChildName ((name ==) . qName) xml
+
+-- input: even-length string of hex characters
+-- output: bytestring packed with the hex bits
+-- e.g. B.unpack $ hexToBS "1011" = [16,17]
+hexToBS :: String -> B.ByteString 
+hexToBS = B.pack . go
+  where go (a:b:xs) = 
+          let parses = readHex [a,b]
+          in case parses of
+              [(val,"")] -> val:(go xs)
+              _ -> error "parse error in hexToBS"
+        go [] = []
+        go _ = error "odd length input to hexToBS"

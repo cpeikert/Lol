@@ -48,6 +48,7 @@ type LWECtx t m z zp v q =
 data LWEInstance v t m zp = LWEInstance v (Cyc t m (LiftOf zp)) [LWESample t m zp] deriving (Generic)
 deriving instance (Read (Cyc t m (LiftOf zp)), Read v, Read (LWESample t m zp)) => Read (LWEInstance v t m zp)
 deriving instance (Show (Cyc t m (LiftOf zp)), Show v, Show (LWESample t m zp)) => Show (LWEInstance v t m zp)
+deriving instance (Eq (Cyc t m (LiftOf zp)), Eq v, Eq (LWESample t m zp)) => Eq (LWEInstance v t m zp)
 instance (Serialize (LWESample t m zp), Serialize (Cyc t m (LiftOf zp)), Serialize v) => Serialize (LWEInstance v t m zp) -- use Generics
 
 lweInstance :: forall t m q zp v rnd . 
@@ -61,6 +62,7 @@ lweInstance svar numSamples = do
 data LWESample t m r = LWESample (Cyc t m r) (Cyc t m r) deriving (Generic)
 deriving instance (Read (Cyc t m r)) => Read (LWESample t m r)
 deriving instance (Show (Cyc t m r)) => Show (LWESample t m r)
+deriving instance (Eq (Cyc t m r)) => Eq (LWESample t m r)
 instance (Serialize (Cyc t m r)) => Serialize (LWESample t m r) -- use Generics
 
 -- | An LWE sample for a given secret (corresponding to a linear
