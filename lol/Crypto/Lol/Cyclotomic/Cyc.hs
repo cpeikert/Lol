@@ -595,7 +595,7 @@ instance (Serialize (UCyc t m C r), Serialize (UCyc t m D r), Serialize (UCyc t 
 instance (Read (Cyc' t m r)) => Read (Cyc t m r) where
   readPrec = cyc'ToCyc <$> readPrec
 instance (Fact m, CElt t r, Show (Cyc' t m r)) => Show (Cyc t m r) where
-  show = show . cycToCyc'
+  showsPrec n = showsPrec n . cycToCyc'
 instance (Serialize (Cyc' t m r), Fact m, CElt t r) => Serialize (Cyc t m r) where
   get = cyc'ToCyc <$> get
   put = put . cycToCyc'
