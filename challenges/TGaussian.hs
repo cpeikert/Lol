@@ -6,7 +6,6 @@ import Control.Applicative
 import Control.Monad.Random
 
 import Crypto.Lol
-import Crypto.Lol.Cyclotomic.Cyc  as C
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Cyclotomic.UCyc as U
 

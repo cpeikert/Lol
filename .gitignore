@@ -22,3 +22,11 @@ numbers/cabal.sandbox.config
 numbers/Test
 numbers/TestSuite.hs
 numbers/.gitignore
+nist-beacon/dist
+nist-beacon/.git
+nist-beacon/.gitignore
+nist-beacon/.stack-work
+nist-beacon/cabal.sandbox.config
+nist-beacon/Test
+lwe.raw
+lwe.txt
