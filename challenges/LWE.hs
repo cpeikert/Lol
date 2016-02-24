@@ -14,13 +14,10 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Data.Serialize
 import GHC.Generics (Generic)
 
---verify bound
---does discretization throw it off at all?
-
 checkInstance :: forall v t m zp . 
   (Absolute (LiftOf zp), Ord (LiftOf zp), Fact m, Algebraic v,
    Lift zp (LiftOf zp), CElt t zp, CElt t (LiftOf zp), Ord v, 
-   ToInteger (LiftOf zp), Ring v) 
+   ToInteger (LiftOf zp), Ring v)
   => LWEInstance v t m zp -> Bool
 checkInstance (LWEInstance v sk pairs) = 
   let n = proxy totientFact (Proxy::Proxy m)
@@ -38,12 +35,10 @@ checkSample bound sk (LWESample a b) =
       norm = gSqNorm e
   in fromIntegral norm < bound
 
-
 type LWECtx t m z zp v q = 
   (ToInteger z, Reduce z zp, Ring zp, Random zp, Fact m, CElt t z, CElt t zp, 
    ToRational v,
    OrdFloat q, Random q, TElt t q, RealField q)
-
 
 data LWEInstance v t m zp = LWEInstance v (Cyc t m (LiftOf zp)) [LWESample t m zp] deriving (Generic)
 deriving instance (Read (Cyc t m (LiftOf zp)), Read v, Read (LWESample t m zp)) => Read (LWEInstance v t m zp)
@@ -58,7 +53,6 @@ lweInstance svar numSamples = do
   s :: Cyc t m (LiftOf zp) <- getRandom
   LWEInstance svar s <$> replicateM numSamples (lweSample svar s)
 
-
 data LWESample t m r = LWESample (Cyc t m r) (Cyc t m r) deriving (Generic)
 deriving instance (Read (Cyc t m r)) => Read (LWESample t m r)
 deriving instance (Show (Cyc t m r)) => Show (LWESample t m r)
@@ -70,8 +64,7 @@ instance (Serialize (Cyc t m r)) => Serialize (LWESample t m r) -- use Generics
 lweSample :: (MonadRandom rnd, LWECtx t m z zp v q)
           => v -> Cyc t m z -> TaggedT q rnd (LWESample t m zp)
 lweSample svar s =
-  -- adviseCRT because we call `replicateM (lweSample s)` below, but only want to do CRT once.
-  let sq = adviseCRT $ negate $ reduce s
+  let sq = reduce s
   in do
     e <- errorRounded svar
     a <- tagT $ adviseCRT <$> getRandom -- want entire hint to be in CRT form

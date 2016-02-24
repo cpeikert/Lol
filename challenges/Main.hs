@@ -34,10 +34,10 @@ main = do
       v = 1
 
   -- check LWE instance
-  inst :: LWEInstance Double RT F5 (Zq 101) <- proxyT (lweInstance v numSamples) (Proxy::Proxy (BigFloat (Prec 25)))
+  inst :: LWEInstance Double RT F11 (Zq 23) <- proxyT (lweInstance v numSamples) (Proxy::Proxy (BigFloat (Prec 25)))
   if checkInstance inst
-  then print "Instance passed!"
-  else print "Instance FAILED."
+  then print "Instance passed."
+  else print "Instance failed."
 
   -- check instance serialization
   BS.writeFile "lwe.raw" (encode inst)
