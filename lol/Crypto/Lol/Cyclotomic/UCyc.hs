@@ -1,8 +1,7 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveGeneric, FlexibleContexts,
-             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving, 
-             InstanceSigs, MultiParamTypeClasses,
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
+             FlexibleInstances, GADTs, InstanceSigs, MultiParamTypeClasses,
              NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
-             ScopedTypeVariables, StandaloneDeriving, TypeFamilies, TypeOperators,
+             ScopedTypeVariables, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
 
 -- | A low-level implementation of cyclotomic rings that allows (and
@@ -56,11 +55,8 @@ import Control.Monad
 import Control.Monad.Random
 import Data.Foldable          as F
 import Data.Maybe
-import Data.Serialize
 import Data.Traversable
 import Test.QuickCheck
-import Text.Read (Read(readPrec))
-import GHC.Generics (Generic)
 
 --import qualified Debug.Trace as DT
 
@@ -568,6 +564,13 @@ instance (Random r, Tensor t, Fact m, CRTElt t r)
 
   randomR _ = error "randomR non-sensical for UCyc"
 
+instance (Show r, Show (CRTExt r), Tensor t, Fact m, TElt t r, TElt t (CRTExt r))
+    => Show (UCyc t m rep r) where
+  show (Pow  v) = "UCyc Pow: "  ++ show v \\ witness entailShowT v
+  show (Dec  v) = "UCyc Dec: "  ++ show v \\ witness entailShowT v
+  show (CRTr v) = "UCyc CRTr: " ++ show v \\ witness entailShowT v
+  show (CRTe v) = "UCyc CRTe: " ++ show v \\ witness entailShowT v
+
 instance (Arbitrary (t m r)) => Arbitrary (UCyc t m P r) where
   arbitrary = Pow <$> arbitrary
   shrink = shrinkNothing
@@ -586,47 +589,3 @@ instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
   rnf (Dec x)    = rnf x \\ witness entailNFDataT x
   rnf (CRTr x)   = rnf x \\ witness entailNFDataT x
   rnf (CRTe x)   = rnf x \\ witness entailNFDataT x
-
--- newtype wrappers for safety
-newtype UPow t m r = UPow {unUPow :: t m r} deriving (Read, Serialize, Show)
-newtype UDec t m r = UDec {unUDec :: t m r} deriving (Read, Serialize, Show)
-data UCRT t m r = 
-  UCRTr (t m r)
-  | UCRTe (t m (CRTExt r))
-  deriving (Generic)
-instance (Serialize (t m r), Serialize (t m (CRTExt r))) => Serialize (UCRT t m r)
-deriving instance (Read (t m r), Read (t m (CRTExt r))) => Read (UCRT t m r)
-deriving instance (Show (t m r), Show (t m (CRTExt r))) => Show (UCRT t m r)
-
-instance (Read (t m r)) => Read (UCyc t m P r) where
-  readPrec = (Pow . unUPow) <$> readPrec
-instance (Read (t m r)) => Read (UCyc t m D r) where
-  readPrec = (Dec . unUDec) <$> readPrec
-instance (Read (UCRT t m r)) => Read (UCyc t m C r) where
-  readPrec = do
-    x <- readPrec
-    return $ case x of
-      (UCRTr x) -> CRTr x
-      (UCRTe x) -> CRTe x
-
-instance (Show (t m r)) => Show (UCyc t m P r) where
-  showsPrec n (Pow x) = showsPrec n $ UPow x
-instance (Show (t m r)) => Show (UCyc t m D r) where
-  showsPrec n  (Dec x) = showsPrec n  $ UDec x
-instance (Show (t m r), Show (t m (CRTExt r)), Fact m, UCElt t r) => Show (UCyc t m C r) where
-  showsPrec n  (CRTr x) = showsPrec n  $ UCRTr x
-  showsPrec n  (CRTe x) = showsPrec n  (UCRTe x :: UCRT t m r)
-instance (Serialize (t m r), Fact m, UCElt t r) => Serialize (UCyc t m P r) where
-  get = (Pow . unUPow) <$> get
-  put (Pow x) = put $ UPow x
-instance (Serialize (t m r), Fact m, UCElt t r) => Serialize (UCyc t m D r) where
-  get = (Dec . unUDec) <$> get
-  put (Dec x) = put $ UDec x
-instance (Serialize (t m r), Serialize (t m (CRTExt r)), Fact m, UCElt t r) => Serialize (UCyc t m C r) where
-  get = do
-    x <- get
-    return $ case x of
-      (UCRTr y) -> CRTr y
-      (UCRTe y) -> CRTe y
-  put (CRTr x) = put $ UCRTr x
-  put (CRTe x) = put (UCRTe x :: UCRT t m r)

@@ -131,8 +131,6 @@ library
     base==4.8.*,
     binary,
     bytestring,
-    cereal,
-    cereal-vector,
     constraints,
     containers >= 0.5.6.2 && < 0.6,
     crypto-api,

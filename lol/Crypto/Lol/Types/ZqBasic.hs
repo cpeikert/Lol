@@ -25,7 +25,6 @@ import Control.Arrow
 import Control.DeepSeq        (NFData)
 import Data.Coerce
 import Data.Maybe
-import Data.Serialize
 import NumericPrelude.Numeric as NP (round)
 import System.Random
 import Test.QuickCheck
@@ -50,7 +49,7 @@ import qualified Algebra.ZeroTestable   as ZeroTestable (C)
 -- | The ring @Z_q@ of integers modulo 'q', using underlying integer
 -- type 'z'.
 newtype ZqBasic q z = ZqB z
-                    deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable, Read, Serialize)
+                    deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable)
 
 -- the q argument, though phantom, matters for safety
 type role ZqBasic nominal representational

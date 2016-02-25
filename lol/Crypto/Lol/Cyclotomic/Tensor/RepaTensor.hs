@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving, MultiParamTypeClasses,
+             FlexibleInstances, GADTs, MultiParamTypeClasses,
              NoImplicitPrelude, PolyKinds, RebindableSyntax,
-             RoleAnnotations, ScopedTypeVariables,
+             RoleAnnotations, ScopedTypeVariables, StandaloneDeriving,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
 -- | A pure, repa-based implementation of the Tensor interface.
@@ -33,36 +33,17 @@ import Data.Coerce
 import Data.Constraint      hiding ((***))
 import Data.Foldable        as F
 import Data.Maybe
-import Data.Serialize
 import Data.Traversable     as T
 import Data.Vector          as V hiding (force)
 import Data.Vector.Unboxed  as U hiding (force)
 import Test.QuickCheck
-import Text.Read (Read(readPrec))
 
 -- | An implementation of 'Tensor' backed by repa.
 data RT (m :: Factored) r where
   RT :: Unbox r => !(Arr m r) -> RT m r
   ZV :: IZipVector m r -> RT m r
 
--- use Arr for safety, and define `show` and `read` so that
--- no matter what, `read . show == id`.
-instance (Show r, Unbox r) => Show (RT m r) where
-  showsPrec n (RT x) = showsPrec n x
-  showsPrec n x = showsPrec n $ toRT x
-
-instance (Read r, Unbox r) => Read (RT m r) where
-  readPrec = RT <$> readPrec
-
--- EAC: define a newtype wrapper for type safety, since I don't
--- know proper way to define Serialize instances
-newtype ArrSerialize m r = AS {unAS :: U.Vector r} deriving (Serialize)
--- could use ZV to avoid Unbox constraint
-instance (Serialize r, Unbox r, Fact m) => Serialize (RT m r) where
-  get = let n = proxy totientFact (Proxy::Proxy m)
-        in (RT . Arr . fromUnboxed (Z:.n) . unAS) <$> get
-  put (RT (Arr x)) = put $ AS $ toUnboxed x
-  put x = put $ toRT x
+deriving instance Show r => Show (RT m r)
 
 instance Eq r => Eq (RT m r) where
   (ZV a) == (ZV b) = a == b
@@ -265,7 +246,7 @@ instance (GFCtx fp d, Fact m, Additive (RT m fp))
 ---------- Miscellaneous instances ----------
 
 instance (Unbox r, Random (Arr m r)) => Random (RT m r) where
-  random = runRand $ RT <$> liftRand random
+  random = runRand $ RT <$> (liftRand random)
 
   randomR = error "randomR nonsensical for RT"
 

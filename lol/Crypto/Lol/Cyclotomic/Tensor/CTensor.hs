@@ -41,7 +41,6 @@ import Foreign.Marshal.Utils (with)
 import Foreign.Ptr
 import Foreign.Storable        (Storable (..))
 import Test.QuickCheck         hiding (generate)
-import Text.Read (Read(readPrec))
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
@@ -56,20 +55,9 @@ import Crypto.Lol.Types.ZqBasic
 
 import System.IO.Unsafe (unsafePerformIO)
 
-import Data.Serialize
-import Data.Vector.Serialize
-
--- EAC A note on Generic and Serialize:
--- cereal-vector provides Serialize instances for vectors,
--- but we can't use DeriveGeneric with GADTs. One solution
--- is to make the (Storable r) constraint on the CT constructor
--- an explicit dictionary, but then we still have to serialize
--- the dictionary. Not sure if that's possible.
--- Perhaps easiest thing to do is to define a custom Serialize instance.
-
 -- | Newtype wrapper around a Vector.
 newtype CT' (m :: Factored) r = CT' { unCT :: Vector r } 
-                              deriving (Show, Eq, NFData, Read, Serialize)
+                              deriving (Show, Eq, NFData)
 
 -- the first argument, though phantom, affects representation
 type role CT' representational nominal
@@ -88,17 +76,7 @@ instance Eq r => Eq (CT m r) where
   x@(CT _) == y = x == toCT y
   y == x@(CT _) = x == toCT y
 
--- no read/show for ZV right now
-instance (Show r, Storable r) => Show (CT m r) where
-  showsPrec n (CT x) = showsPrec n x
-  showsPrec n x = showsPrec n $ toCT x
-instance (Read r, Storable r) => Read (CT m r) where
-  readPrec = CT <$> readPrec
--- we don't support serialization of ZV right now
-instance (Serialize r, Storable r, Fact m) => Serialize (CT m r) where
-  get = CT <$> get
-  put (CT x) = put x
-  put x = put $ toCT x
+deriving instance Show r => Show (CT m r)
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v

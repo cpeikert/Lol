@@ -4,8 +4,8 @@ module DRBG (CryptoRand) where
 
 import "crypto-api" Crypto.Random
 import Data.Binary.Get
-import Data.ByteString
-import Data.ByteString.Lazy (fromStrict)
+import Data.ByteString hiding (pack)
+import Data.ByteString.Lazy (pack)
 import System.Random
 
 newtype CryptoRand g = CryptoRand g deriving (CryptoRandomGen)
@@ -16,8 +16,8 @@ intBytes =
 
 bytesToInt :: ByteString -> Int
 bytesToInt bs = case intBytes of
-  4 -> fromIntegral $ runGet getWord32host $ fromStrict bs
-  8 -> fromIntegral $ runGet getWord64host $ fromStrict bs
+  4 -> fromIntegral $ runGet getWord32host $ pack $ unpack bs
+  8 -> fromIntegral $ runGet getWord64host $ pack $ unpack bs
   _ -> error "Unsupported Int size in `bytesToInt`"
 
 -- | Yield @log_b(n)@ when it is a non-negative integer (otherwise

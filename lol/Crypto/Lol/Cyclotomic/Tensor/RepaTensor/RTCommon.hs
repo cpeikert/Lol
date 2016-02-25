@@ -45,7 +45,7 @@ import Crypto.Lol.Types.ZqBasic
 
 -- | Indexed newtype for 1-dimensional Unbox repa arrays
 newtype Arr (m :: Factored) r = Arr (Array U DIM1 r)
-                              deriving (Eq, Show, NFData, Read)
+                              deriving (Eq, Show, NFData)
 
 -- the first argument, though phantom, affects representation
 -- CJP: why must the second arg be nominal?
@@ -65,7 +65,7 @@ repl = let n = proxy totientFact (Proxy::Proxy m)
 replM :: forall m r mon . (Fact m, Unbox r, Monad mon)
          => mon r -> mon (Arr m r)
 replM = let n = proxy totientFact (Proxy::Proxy m)
-        in fmap (Arr . fromUnboxed (Z:.n)) . U.replicateM n
+        in liftM (Arr . fromUnboxed (Z:.n)) . U.replicateM n
 {-# INLINABLE replM #-}
 
 instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (Arr m r) where
@@ -200,7 +200,7 @@ eval x = coerce $ eval' $ untag x
 
 -- | Monadic version of 'eval'
 evalM :: (Unbox r, Monad mon) => TaggedT m mon (Trans r) -> mon (Arr m r -> Arr m r)
-evalM = fmap (eval . return) . untagT
+evalM = liftM (eval . return) . untagT
 {-# INLINE evalM #-}
 
 -- | maps the innermost dimension to a 2-dim array with innermost dim d,
