@@ -16,3 +16,4 @@ numbers
 cabal.config
 sandbox
 sandbox-init
+hackage-upload-docs.sh
