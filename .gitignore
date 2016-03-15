@@ -11,9 +11,17 @@ apps/configure
 apps/dist
 apps/.stack-work
 
+challenges/dist
+challenges/*.prof
+
 lol/configure
 lol/dist
 lol/makefile
 lol/.stack-work
+
+numbers/.gitignore
+numbers/.travis.yml
+numbers/Test
+numbers/TestSuite.hs
 
 sandbox
