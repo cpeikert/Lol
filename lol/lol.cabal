@@ -80,10 +80,10 @@ library
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
 
+  ghc-options: -fwarn-dodgy-imports
   -- ghc optimizations
   if flag(opt)
-    ghc-options: -O3 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
-    ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+    ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   exposed-modules: 
     Crypto.Lol
