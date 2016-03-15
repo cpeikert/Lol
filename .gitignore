@@ -4,18 +4,15 @@ ghci
 lol.sublime-project
 lol.sublime-workspace
 cabal.sandbox.config
+dist
 sandbox-init
 sandbox-reset
+*.prof
 
 apps/configure
-apps/dist
 apps/.stack-work
 
-challenges/dist
-challenges/*.prof
-
 lol/configure
-lol/dist
 lol/makefile
 lol/.stack-work
 
