@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, NoImplicitPrelude, PackageImports, RebindableSyntax, ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, NoImplicitPrelude, PackageImports, RebindableSyntax, ScopedTypeVariables #-}
 
 import TGaussian
 import LWE
@@ -7,9 +7,10 @@ import Random
 import Utils
 --import FiatShamir
 
-import Data.ByteString as BS hiding (init, tail, map)
+import Data.ByteString as BS hiding (init, tail, map, null)
+import Data.ByteString.Lazy (toStrict, fromStrict, null)
 import Data.Serialize
-import Crypto.Lol hiding (encode)
+import Crypto.Lol hiding (encode, null)
 import System.IO as IO
 import Algebra.IntegralDomain (divUp)
 
@@ -23,6 +24,14 @@ import Data.Char
 import Net.Beacon
 import Control.Monad.Random
 
+import Crypto.Lol.Types.Proto
+import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
+import System.Directory (removeFile)
+
+type F = Double
+type T = RT
+type M = F11
+
 main :: IO ()
 main = do
   -- Generate (numInstances * fsInstSize) LWE instances,
@@ -31,11 +40,11 @@ main = do
   let --numInstances = 1   -- number of secret LWE instances to generate
       numSamples   = 1  -- number of LWE samples per instance
       --fsInstSize   = 2   -- number of LWE instances per FS instance (we reveal keys for all but one)
-      v = 1
+      v = 1 :: F
 
   -- check LWE instance
-  inst :: LWEInstance Double RT F11 (Zq 23) <- proxyT (lweInstance v numSamples) (Proxy::Proxy (BigFloat (Prec 25)))
-  if checkInstance inst
+  (sk,inst) :: (Cyc T M Int64, LWEInstance F T M (Zq 23)) <- proxyT (lweInstance v numSamples) (Proxy::Proxy F)
+  if checkInstance sk inst
   then print "Instance passed."
   else print "Instance failed."
 
@@ -45,6 +54,15 @@ main = do
   if (bsInst == inst)
   then print "Serialization passed."
   else print "Serialization failed."
+  removeFile "lwe.raw"
+
+  -- check instance protocol buffer
+  BS.writeFile "lwe.proto" $ toStrict $ msgPut inst
+  prInst <- msgGet' <$> BS.readFile "lwe.proto"
+  if (prInst == inst)
+  then print "Protocol buffer passed."
+  else print "Protocol buffer failed."
+  removeFile "lwe.proto"
 
   -- check instance printing/parsing
   IO.writeFile "lwe.txt" (show inst)
@@ -52,6 +70,7 @@ main = do
   if(txInst == inst)
   then print "Text parse passed."
   else print "Text parse failed."
+  removeFile "lwe.txt"
 
   -- get Beacon
   time <- localDateToSeconds 2 24 2016 11 0
@@ -71,6 +90,14 @@ main = do
 
 
 
+msgGet' :: (ReflectDescriptor (ProtoType a), Wire (ProtoType a), Protoable a) => ByteString -> a
+msgGet' bs = 
+  case msgGet $ fromStrict bs of
+    (Left str) -> error $ "when getting protocol buffer. Got string " ++ str
+    (Right (a,bs')) -> 
+      if null bs'
+      then a
+      else error $ "when getting protocol buffer. There were leftover bits!"
 
 
 decode' :: (Serialize a) => ByteString -> a

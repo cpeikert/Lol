@@ -106,6 +106,15 @@ library
     Crypto.Lol.Types.Random
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
+    Crypto.Lol.Types.Proto
+    Crypto.Lol.Types.Proto.Basis
+    Crypto.Lol.Types.Proto.Coeffs
+    Crypto.Lol.Types.Proto.CycMsg
+    Crypto.Lol.Types.Proto.LWEInstance
+    Crypto.Lol.Types.Proto.LWEPair
+    Crypto.Lol.Types.Proto.TensorMsg
+    Crypto.Lol.Types.Proto.ZList
+    Crypto.Lol.Types.Proto.ZqList
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.ZqBasic
 
@@ -131,6 +140,8 @@ library
     base==4.8.*,
     binary,
     bytestring,
+    cereal,
+    cereal-vector,
     constraints,
     containers >= 0.5.6.2 && < 0.6,
     crypto-api,
@@ -140,6 +151,7 @@ library
     mtl >= 2.2.1 && < 2.3,
     numeric-prelude >= 0.4.2 && < 0.5,
     QuickCheck >= 2.8 && < 2.9,
+    protocol-buffers,
     random >= 1.1 && < 1.2,
     reflection >= 1.5.1 && < 2.2,
     repa==3.4.*,

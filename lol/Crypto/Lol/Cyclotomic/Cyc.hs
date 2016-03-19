@@ -71,6 +71,11 @@ import GHC.Generics (Generic)
 import Test.QuickCheck
 import Text.Read (Read(readPrec))
 
+import Crypto.Lol.Types.Proto
+import qualified Crypto.Lol.Types.Proto.Basis as B
+import Crypto.Lol.Types.Proto.CycMsg
+import Crypto.Lol.Types.Proto.TensorMsg (TensorMsg)
+
 -- | Represents a cyclotomic ring such as @Z[zeta]@,
 -- @Zq[zeta]@, and @Q(zeta)@ in an explicit representation: @t@ is the
 -- 'Tensor' type for storing coefficient tensors; @m@ is the
@@ -609,3 +614,13 @@ cyc'ToCyc (Pow' x) = Pow x
 cyc'ToCyc (Dec' x) = Dec x
 cyc'ToCyc (CRT' x) = CRT x
 cyc'ToCyc (Sc x) = Scalar x
+
+instance (Fact m, Protoable (t m r), ProtoType (t m r) ~ TensorMsg, CElt t r) => Protoable (Cyc t m r) where
+  type ProtoType (Cyc t m r) = CycMsg
+  toProto (Pow uc) = toProto uc
+  toProto (Dec uc) = toProto uc
+  toProto (CRT uc) = toProto uc
+  toProto x = toProto $ toPow' x
+  fromProto x@(CycMsg B.POW _) = Pow $ fromProto x
+  fromProto x@(CycMsg B.DEC _) = Dec $ fromProto x
+  fromProto x@(CycMsg B.CRT _) = CRT $ fromProto x

@@ -1,6 +1,6 @@
-{-# LANGUAGE ConstraintKinds, DeriveGeneric, FlexibleContexts, 
+{-# LANGUAGE ConstraintKinds, DeriveGeneric, FlexibleContexts, FlexibleInstances,
              NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables, 
-             StandaloneDeriving, TypeFamilies, UndecidableInstances #-}
+             StandaloneDeriving, TupleSections, TypeFamilies, UndecidableInstances #-}
 
 module LWE where
 
@@ -8,11 +8,17 @@ import TGaussian
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Random
+import Control.Monad.Random hiding (fromList)
 import Crypto.Lol hiding (errorRounded)
 import Crypto.Lol.Cyclotomic.Tensor
+import Data.Foldable (toList)
 import Data.Serialize
+import Data.Sequence (fromList)
 import GHC.Generics (Generic)
+
+import Crypto.Lol.Types.Proto
+import qualified Crypto.Lol.Types.Proto.LWEInstance as P
+import qualified Crypto.Lol.Types.Proto.LWEPair as P
 
 average xs = 
   let n = length xs
@@ -22,8 +28,8 @@ avgInstErr :: forall v t m zp .
   (Absolute (LiftOf zp), Ord (LiftOf zp), Fact m, Algebraic v,
    Lift zp (LiftOf zp), CElt t zp, CElt t (LiftOf zp), Ord v, 
    ToInteger (LiftOf zp), Ring v)
-  => LWEInstance v t m zp -> v
-avgInstErr (LWEInstance v sk pairs) = 
+  => Cyc t m (LiftOf zp) -> LWEInstance v t m zp -> v
+avgInstErr sk (LWEInstance v pairs) = 
   let n = proxy totientFact (Proxy::Proxy m)
       mhat = proxy valueHatFact (Proxy::Proxy m)
       bound = (fromIntegral $ mhat*n)*v
@@ -47,8 +53,8 @@ checkInstance :: forall v t m zp .
   (Absolute (LiftOf zp), Ord (LiftOf zp), Fact m, Algebraic v,
    Lift zp (LiftOf zp), CElt t zp, CElt t (LiftOf zp), Ord v, 
    ToInteger (LiftOf zp), Ring v)
-  => LWEInstance v t m zp -> Bool
-checkInstance (LWEInstance v sk pairs) = 
+  => Cyc t m (LiftOf zp) -> LWEInstance v t m zp -> Bool
+checkInstance sk (LWEInstance v pairs) = 
   let n = proxy totientFact (Proxy::Proxy m)
       mhat = proxy valueHatFact (Proxy::Proxy m)
       bound = (fromIntegral $ mhat*n)*v
@@ -69,24 +75,34 @@ type LWECtx t m z zp v q =
    ToRational v,
    OrdFloat q, Random q, TElt t q, RealField q)
 
-data LWEInstance v t m zp = LWEInstance v (Cyc t m (LiftOf zp)) [LWESample t m zp] deriving (Generic)
-deriving instance (Read (Cyc t m (LiftOf zp)), Read v, Read (LWESample t m zp)) => Read (LWEInstance v t m zp)
-deriving instance (Show (Cyc t m (LiftOf zp)), Show v, Show (LWESample t m zp)) => Show (LWEInstance v t m zp)
-deriving instance (Eq (Cyc t m (LiftOf zp)), Eq v, Eq (LWESample t m zp)) => Eq (LWEInstance v t m zp)
-instance (Serialize (LWESample t m zp), Serialize (Cyc t m (LiftOf zp)), Serialize v) => Serialize (LWEInstance v t m zp) -- use Generics
+data LWEInstance v t m zp = LWEInstance v [LWESample t m zp] deriving (Generic)
+deriving instance (Read v, Read (LWESample t m zp)) => Read (LWEInstance v t m zp)
+deriving instance (Show v, Show (LWESample t m zp)) => Show (LWEInstance v t m zp)
+deriving instance (Eq v, Eq (LWESample t m zp)) => Eq (LWEInstance v t m zp)
+instance (Serialize (LWESample t m zp), Serialize v) => Serialize (LWEInstance v t m zp) -- use Generics
+
+instance (Protoable (Cyc t m zp)) => Protoable (LWEInstance Double t m zp) where
+  type ProtoType (LWEInstance Double t m zp) = P.LWEInstance
+  toProto (LWEInstance v samples) = P.LWEInstance v $ fromList $ map toProto samples
+  fromProto (P.LWEInstance v samples) = LWEInstance v $ map fromProto $ toList samples
 
 lweInstance :: forall t m q zp v rnd . 
   (LWECtx t m (LiftOf zp) zp v q, MonadRandom rnd, Random (LiftOf zp))
-  => v -> Int -> TaggedT q rnd (LWEInstance v t m zp)
+  => v -> Int -> TaggedT q rnd ((Cyc t m (LiftOf zp), LWEInstance v t m zp))
 lweInstance svar numSamples = do
   s :: Cyc t m (LiftOf zp) <- getRandom
-  LWEInstance svar s <$> replicateM numSamples (lweSample svar s)
+  (s,) <$> LWEInstance svar <$> replicateM numSamples (lweSample svar s)
 
 data LWESample t m r = LWESample (Cyc t m r) (Cyc t m r) deriving (Generic)
 deriving instance (Read (Cyc t m r)) => Read (LWESample t m r)
 deriving instance (Show (Cyc t m r)) => Show (LWESample t m r)
 deriving instance (Eq (Cyc t m r)) => Eq (LWESample t m r)
 instance (Serialize (Cyc t m r)) => Serialize (LWESample t m r) -- use Generics
+
+instance (Protoable (Cyc t m r)) => Protoable (LWESample t m r) where
+  type ProtoType (LWESample t m r) = P.LWEPair
+  toProto (LWESample a b) = P.LWEPair (toProto a) (toProto b)
+  fromProto (P.LWEPair a b) = LWESample (fromProto a) (fromProto b)
 
 -- | An LWE sample for a given secret (corresponding to a linear
 -- ciphertext encrypting 0 in MSD form)

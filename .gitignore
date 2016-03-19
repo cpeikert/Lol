@@ -7,6 +7,7 @@ cabal.sandbox.config
 dist
 sandbox-init
 sandbox-reset
+rebuild-proto
 *.prof
 
 apps/configure
@@ -22,3 +23,4 @@ numbers/Test
 numbers/TestSuite.hs
 
 sandbox
+test

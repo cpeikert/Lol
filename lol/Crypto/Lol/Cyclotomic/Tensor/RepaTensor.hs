@@ -14,7 +14,7 @@ import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT
+import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT hiding ((++))
 import Crypto.Lol.LatticePrelude                         as LP hiding
                                                                 ((!!))
 import Crypto.Lol.Reflects
@@ -35,10 +35,16 @@ import Data.Foldable        as F
 import Data.Maybe
 import Data.Serialize
 import Data.Traversable     as T
-import Data.Vector          as V hiding (force)
-import Data.Vector.Unboxed  as U hiding (force)
+import Data.Vector          as V hiding (force,(++))
+import Data.Vector.Unboxed  as U hiding (force,(++))
 import Test.QuickCheck
 import Text.Read (Read(readPrec))
+
+import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.Proto.Coeffs
+import Crypto.Lol.Types.Proto.TensorMsg
+
+import qualified Data.Sequence as S
 
 -- | An implementation of 'Tensor' backed by repa.
 data RT (m :: Factored) r where
@@ -63,6 +69,28 @@ instance (Serialize r, Unbox r, Fact m) => Serialize (RT m r) where
         in (RT . Arr . fromUnboxed (Z:.n) . unAS) <$> get
   put (RT (Arr x)) = put $ AS $ toUnboxed x
   put x = put $ toRT x
+
+instance (Fact m, Protoable [r], ProtoType [r] ~ Coeffs, Unbox r) => Protoable (RT m r) where
+  type ProtoType (RT m r) = TensorMsg
+
+  toProto (RT (Arr xs)) = 
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+    in TensorMsg m $ return $ toProto $ RT.toList xs
+  toProto x@(ZV _) = toProto $ toRT x
+
+  fromProto (TensorMsg m' xs) = 
+    let m = proxy valueFact (Proxy::Proxy m)
+        n = proxy totientFact (Proxy::Proxy m)
+    in case xs of
+      Nothing -> error "Neither coeff structure is filled when reading proto stream for RT."
+      (Just cs) ->
+        let xs' = fromProto cs
+            len = F.length xs'
+        in if (m == (fromIntegral m') && len == n)
+           then RT $ Arr $ RT.fromList (Z:.n) xs'
+           else error $ "An error occurred while reading the proto type for RT.\n\
+            \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
+            \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "." 
 
 instance Eq r => Eq (RT m r) where
   (ZV a) == (ZV b) = a == b

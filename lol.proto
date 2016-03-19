@@ -1,0 +1,38 @@
+
+message ZList {
+  repeated sint64 xs = 1;
+}
+
+message ZqList {
+  required uint64 q = 1;
+  required ZList xs = 2;
+}
+
+message TensorMsg {
+  required uint32 m = 1;
+  oneof coeffs {
+    ZList zs = 2;
+    ZqList zqs = 3;
+  }
+}
+
+message CycMsg {
+  enum Basis {
+    POW=0;
+    DEC=1;
+    CRT=2; // to use this option, there must be an integral CRT basis
+  }
+  required Basis basis = 1;
+  required TensorMsg tensor = 2;
+  
+}
+
+message LWEPair {
+  required CycMsg a = 1;
+  required CycMsg b = 2;
+}
+
+message LWEInstance {
+  required double svar = 1;
+  repeated LWEPair samples = 2;
+}

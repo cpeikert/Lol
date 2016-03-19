@@ -59,6 +59,10 @@ import System.IO.Unsafe (unsafePerformIO)
 import Data.Serialize
 import Data.Vector.Serialize
 
+import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.Proto.Coeffs
+import Crypto.Lol.Types.Proto.TensorMsg
+
 -- EAC A note on Generic and Serialize:
 -- cereal-vector provides Serialize instances for vectors,
 -- but we can't use DeriveGeneric with GADTs. One solution
@@ -99,6 +103,28 @@ instance (Serialize r, Storable r, Fact m) => Serialize (CT m r) where
   get = CT <$> get
   put (CT x) = put x
   put x = put $ toCT x
+
+instance (Fact m, Protoable [r], ProtoType [r] ~ Coeffs, Storable r) => Protoable (CT m r) where
+  type ProtoType (CT m r) = TensorMsg
+
+  toProto (CT (CT' xs)) = 
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+    in TensorMsg m $ return $ toProto $ SV.toList xs
+  toProto x@(ZV _) = toProto $ toCT x
+
+  fromProto (TensorMsg m' xs) = 
+    let m = proxy valueFact (Proxy::Proxy m)
+        n = proxy totientFact (Proxy::Proxy m)
+    in case xs of
+      Nothing -> error "Neither coeff structure is filled when reading proto stream for RT."
+      (Just cs) ->
+        let xs' = fromProto cs
+            len = F.length xs'
+        in if (m == (fromIntegral m') && len == n)
+           then CT $ CT' $ SV.fromList xs'
+           else error $ "An error occurred while reading the proto type for RT.\n\
+            \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
+            \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "." 
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v

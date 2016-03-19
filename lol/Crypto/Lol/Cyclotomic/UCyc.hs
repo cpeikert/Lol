@@ -62,6 +62,11 @@ import Test.QuickCheck
 import Text.Read (Read(readPrec))
 import GHC.Generics (Generic)
 
+import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.Proto.Basis
+import Crypto.Lol.Types.Proto.CycMsg
+import Crypto.Lol.Types.Proto.TensorMsg (TensorMsg)
+
 --import qualified Debug.Trace as DT
 
 -- | Nullary index type representing the powerful basis.
@@ -630,3 +635,22 @@ instance (Serialize (t m r), Serialize (t m (CRTExt r)), Fact m, UCElt t r) => S
       (UCRTe y) -> CRTe y
   put (CRTr x) = put $ UCRTr x
   put (CRTe x) = put (UCRTe x :: UCRT t m r)
+
+instance (Fact m, Protoable (t m r), ProtoType (t m r) ~ TensorMsg) => Protoable (UCyc t m P r) where
+  type ProtoType (UCyc t m P r) = CycMsg
+  toProto (Pow t) = CycMsg POW $ toProto t
+  fromProto (CycMsg POW t) = Pow $ fromProto t
+  fromProto (CycMsg b _) = error $ "Wrong basis when reading proto for UCyc: Expected Pow, got " ++ (show b)
+
+instance (Fact m, Protoable (t m r), ProtoType (t m r) ~ TensorMsg) => Protoable (UCyc t m D r) where
+  type ProtoType (UCyc t m D r) = CycMsg
+  toProto (Dec t) = CycMsg DEC $ toProto t
+  fromProto (CycMsg DEC t) = Dec $ fromProto t
+  fromProto (CycMsg b _) = error $ "Wrong basis when reading proto for UCyc: Expected Dec, got " ++ (show b)
+
+instance (Fact m, Protoable (t m r), ProtoType (t m r) ~ TensorMsg, UCElt t r) => Protoable (UCyc t m C r) where
+  type ProtoType (UCyc t m C r) = CycMsg
+  toProto (CRTr t) = CycMsg CRT $ toProto t
+  toProto x@(CRTe _) = toProto $ toPow x
+  fromProto (CycMsg CRT t) = CRTr $ fromProto t
+  fromProto (CycMsg b _) = error $ "Wrong basis when reading proto for UCyc: Expected CRT, got " ++ (show b)
