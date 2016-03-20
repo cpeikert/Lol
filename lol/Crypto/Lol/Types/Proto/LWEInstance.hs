@@ -6,9 +6,9 @@ import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Crypto.Lol.Types.Proto.LWEPair as Lol (LWEPair)
+import qualified Crypto.Lol.Types.Proto.LWESample as Proto (LWESample)
 
-data LWEInstance = LWEInstance{svar :: !(P'.Double), samples :: !(P'.Seq Lol.LWEPair)}
+data LWEInstance = LWEInstance{id :: !(P'.Word32), samples :: !(P'.Seq Proto.LWESample)}
                  deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data)
 
 instance P'.Mergeable LWEInstance where
@@ -24,7 +24,7 @@ instance P'.Wire LWEInstance where
        11 -> P'.prependMessageSize calc'Size
        _ -> P'.wireSizeErr ft' self'
     where
-        calc'Size = (P'.wireSizeReq 1 1 x'1 + P'.wireSizeRep 1 11 x'2)
+        calc'Size = (P'.wireSizeReq 1 13 x'1 + P'.wireSizeRep 1 11 x'2)
   wirePut ft' self'@(LWEInstance x'1 x'2)
    = case ft' of
        10 -> put'Fields
@@ -35,7 +35,7 @@ instance P'.Wire LWEInstance where
     where
         put'Fields
          = do
-             P'.wirePutReq 9 1 x'1
+             P'.wirePutReq 8 13 x'1
              P'.wirePutRep 18 11 x'2
   wireGet ft'
    = case ft' of
@@ -45,7 +45,7 @@ instance P'.Wire LWEInstance where
     where
         update'Self wire'Tag old'Self
          = case wire'Tag of
-             9 -> Prelude'.fmap (\ !new'Field -> old'Self{svar = new'Field}) (P'.wireGet 1)
+             8 -> Prelude'.fmap (\ !new'Field -> old'Self{id = new'Field}) (P'.wireGet 13)
              18 -> Prelude'.fmap (\ !new'Field -> old'Self{samples = P'.append (samples old'Self) new'Field}) (P'.wireGet 11)
              _ -> let (field'Number, wire'Type) = P'.splitWireTag wire'Tag in P'.unknown field'Number wire'Type old'Self
 
@@ -55,10 +55,10 @@ instance P'.MessageAPI msg' (msg' -> LWEInstance) LWEInstance where
 instance P'.GPB LWEInstance
 
 instance P'.ReflectDescriptor LWEInstance where
-  getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList [9]) (P'.fromDistinctAscList [9, 18])
+  getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList [8]) (P'.fromDistinctAscList [8, 18])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".Lol.LWEInstance\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"LWEInstance\"}, descFilePath = [\"Lol\",\"LWEInstance.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lol.LWEInstance.svar\", haskellPrefix' = [], parentModule' = [MName \"Lol\",MName \"LWEInstance\"], baseName' = FName \"svar\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 9}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 1}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lol.LWEInstance.samples\", haskellPrefix' = [], parentModule' = [MName \"Lol\",MName \"LWEInstance\"], baseName' = FName \"samples\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Lol.LWEPair\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"LWEPair\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".Proto.LWEInstance\", haskellPrefix = [], parentModule = [MName \"Proto\"], baseName = MName \"LWEInstance\"}, descFilePath = [\"Proto\",\"LWEInstance.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Proto.LWEInstance.id\", haskellPrefix' = [], parentModule' = [MName \"Proto\",MName \"LWEInstance\"], baseName' = FName \"id\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 8}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 13}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Proto.LWEInstance.samples\", haskellPrefix' = [], parentModule' = [MName \"Proto\",MName \"LWEInstance\"], baseName' = FName \"samples\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Proto.LWESample\", haskellPrefix = [], parentModule = [MName \"Proto\"], baseName = MName \"LWESample\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
 
 instance P'.TextType LWEInstance where
   tellT = P'.tellSubMessage
@@ -67,18 +67,18 @@ instance P'.TextType LWEInstance where
 instance P'.TextMsg LWEInstance where
   textPut msg
    = do
-       P'.tellT "svar" (svar msg)
+       P'.tellT "id" (id msg)
        P'.tellT "samples" (samples msg)
   textGet
    = do
-       mods <- P'.sepEndBy (P'.choice [parse'svar, parse'samples]) P'.spaces
+       mods <- P'.sepEndBy (P'.choice [parse'id, parse'samples]) P'.spaces
        Prelude'.return (Prelude'.foldl (\ v f -> f v) P'.defaultValue mods)
     where
-        parse'svar
+        parse'id
          = P'.try
             (do
-               v <- P'.getT "svar"
-               Prelude'.return (\ o -> o{svar = v}))
+               v <- P'.getT "id"
+               Prelude'.return (\ o -> o{id = v}))
         parse'samples
          = P'.try
             (do

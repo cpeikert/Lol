@@ -108,10 +108,13 @@ library
     Crypto.Lol.Types.IrreducibleChar2
     Crypto.Lol.Types.Proto
     Crypto.Lol.Types.Proto.Basis
+    Crypto.Lol.Types.Proto.ChallSecrets
     Crypto.Lol.Types.Proto.Coeffs
     Crypto.Lol.Types.Proto.CycMsg
+    Crypto.Lol.Types.Proto.InstSecret
+    Crypto.Lol.Types.Proto.LWEChallenge
     Crypto.Lol.Types.Proto.LWEInstance
-    Crypto.Lol.Types.Proto.LWEPair
+    Crypto.Lol.Types.Proto.LWESample
     Crypto.Lol.Types.Proto.TensorMsg
     Crypto.Lol.Types.Proto.ZList
     Crypto.Lol.Types.Proto.ZqList

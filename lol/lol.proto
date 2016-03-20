@@ -27,12 +27,28 @@ message CycMsg {
   
 }
 
-message LWEPair {
+message LWESample {
   required CycMsg a = 1;
   required CycMsg b = 2;
 }
 
 message LWEInstance {
-  required double svar = 1;
-  repeated LWEPair samples = 2;
+  required uint32 id = 1;
+  repeated LWESample samples = 2;
+}
+
+message InstSecret {
+  required uint32 id = 1;
+  required CycMsg secret = 2;
+}
+
+message ChallSecrets {
+  repeated InstSecret secrets = 1;
+}
+
+message LWEChallenge {
+  required uint64 beaconTime = 1;
+  required uint32 bitOffset = 2;
+  required double svar = 3;
+  repeated LWEInstance instances = 4;
 }
