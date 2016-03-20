@@ -1,5 +1,5 @@
 
-module Random (getBeacon, gmtDateToSeconds, localDateToSeconds) where
+module Challenges.Random (getBeacon, gmtDateToSeconds, localDateToSeconds) where
 
 import Data.ByteString (ByteString)
 import Data.ByteString.Lazy (toStrict)

@@ -1,24 +1,32 @@
-{-# LANGUAGE DataKinds, GADTs, FlexibleContexts, NoImplicitPrelude, PackageImports, RebindableSyntax, ScopedTypeVariables #-}
-
-module Challenge where
+{-# LANGUAGE DataKinds, GADTs, FlexibleContexts, NoImplicitPrelude, PackageImports, 
+             RebindableSyntax, ScopedTypeVariables #-}
 
 import DRBG
-import LWE
-import Random
 import Utils
-import Verify
+import Challenges.LWE
+import Challenges.Random
+import Challenges.Verify
 
+import Control.Applicative
 import Control.DeepSeq
 import Control.Monad.Random
 import "crypto-api" Crypto.Random
 import Crypto.Random.DRBG
 import Control.Monad.State
 
-import Crypto.Lol hiding (writeFile, lift)
+import Crypto.Hash.SHA3 (hash)
+import Crypto.Lol hiding (readFile, writeFile, lift)
+import qualified Crypto.Lol (writeFile)
 import Crypto.Lol.Types.Proto
 
-import Data.ByteString (writeFile)
+import Data.ByteString (writeFile,readFile)
+import Data.ByteString.Builder
 import Data.ByteString.Lazy (toStrict, fromStrict, null)
+import Data.Char
+import Data.List
+import Data.List.Split (chunksOf)
+
+import Net.Beacon
 
 import System.Console.ANSI
 import System.Directory
@@ -30,10 +38,10 @@ import Text.ProtocolBuffers.Header
 beaconInit :: IO Int
 beaconInit = localDateToSeconds 2 24 2016 11 0
 
-beaconBitsPerChallenge = 4 :: Int
+beaconBitsPerChallenge = 2 :: Int
 -- during the verification purposes, we'll reveal secrets for all but one instance
 instancesPerChallenge = 2^beaconBitsPerChallenge :: Int
-samplesPerInstance = 128 :: Int
+samplesPerInstance = 8 :: Int
 
 
 data BeaconPos = BP {time::Int, offset::Int}
@@ -62,7 +70,7 @@ makeChallenge :: forall v q t m zp .
    Protoable (LWEChallenge v t m zp), NFData v, NFData (Cyc t m zp), NFData (Cyc t m (LiftOf zp)),
    ReflectDescriptor (ProtoType (LWEChallenge v t m zp)), 
    Wire (ProtoType (LWEChallenge v t m zp))) 
-              => Proxy q -> Proxy (Cyc t m zp) -> v -> StateT BeaconPos IO ()
+              => Proxy q -> Proxy (Cyc t m zp) -> v -> StateT BeaconPos IO FilePath
 makeChallenge _ _ svar = do  
   let m = proxy valueFact (Proxy::Proxy m)
       q = proxy modulus (Proxy::Proxy zp)
@@ -90,42 +98,76 @@ makeChallenge _ _ svar = do
   lift $ putStrLn $ "Beacon value for this challenge is " ++ (show time) ++ "+" ++ (show offset)
   let (sks, chall') = removeSecrets chall time offset
 
-  lift $ writeChallenge svar chall'
-  lift $ writeSecrets svar sks
+  let challName = challengeFileName chall'
+  lift $ writeChallenge challName chall'
+  lift $ writeSecrets challName sks
+  return challName
 
-writeChallenge :: forall v t m zp . 
-  (Fact m, Mod zp, Show (ModRep zp), Show v, 
-   Protoable (LWEChallenge v t m zp),
+challengeFileName :: forall v t m zp . (Fact m, Mod zp, Show (ModRep zp), Show v) 
+  => LWEChallenge v t m zp -> FilePath
+challengeFileName (LWEChallenge _ _ v _) = 
+  let m = proxy valueFact (Proxy::Proxy m)
+      q = proxy modulus (Proxy::Proxy zp)
+  in "lwe-" ++ (show m) ++ "-" ++ (show q) ++ "-" ++ (show v)
+
+writeChallenge :: 
+  (Protoable (LWEChallenge v t m zp),
    ReflectDescriptor (ProtoType (LWEChallenge v t m zp)), 
    Wire (ProtoType (LWEChallenge v t m zp))) 
-  => v -> LWEChallenge v t m zp -> IO ()
-writeChallenge v chall = do
-  let challDir = "challenge-files"
-  createDirectoryIfMissing False challDir
-  let m = proxy valueFact (Proxy::Proxy m)
-      q = proxy modulus (Proxy::Proxy zp)
-      challFile  = challDir  ++ "/lwe-" ++ (show m) ++ "-" ++ (show q) ++ "-" ++ (show v)
-  putStrLn $ "Writing challenge to " ++ challFile
+  => FilePath -> LWEChallenge v t m zp -> IO ()
+writeChallenge name chall = do
+  createDirectoryIfMissing False challengePath
+  let challFile = challengePath ++ "/" ++ name
+  putStrLn $ "Writing challenge to " ++ challFile ++ "..."
   writeFile challFile $ toStrict $ msgPut chall
 
-writeSecrets :: forall v t m zp . (Fact m, Mod zp, Show (ModRep zp), Show v, Protoable (ChallengeSecrets t m zp)) 
-             => v -> ChallengeSecrets t m zp -> IO ()
-writeSecrets v secrets = do
-  let secretDir = "top-secret-files"
-  createDirectoryIfMissing False secretDir
-  let m = proxy valueFact (Proxy::Proxy m)
-      q = proxy modulus (Proxy::Proxy zp)
-      secretFile = secretDir ++ "/lwe-" ++ (show m) ++ "-" ++ (show q) ++ "-" ++ (show v)
-  putStrLn $ "Writing secrets to " ++ secretFile
+writeSecrets :: (Protoable (ChallengeSecrets t m zp)) => FilePath -> ChallengeSecrets t m zp -> IO ()
+writeSecrets name secrets = do
+  createDirectoryIfMissing False topSecretPath
+  let secretFile = topSecretPath ++ "/" ++ name
+  putStrLn $ "Writing secrets to " ++ secretFile ++ "..."
   writeFile secretFile $ toStrict $ msgPut secrets
 
--- EAC TODO:
--- use good random source (currently using IO)
--- print out "Generating challenge for params blah..."  "done"
--- print out "Verifying challenge..." "done"
+-- SHA3-256
+hashFile :: FilePath -> IO String
+hashFile path = do
+  bs <- readFile $ challengePath ++ "/" ++ path
+  let hashLen = 512
+      h = hash hashLen bs
+      lineSize = 64
+      lineBreak = (replicate lineSize '-') ++ "\n"
+      header = "SHA3-" ++ (show hashLen) ++ " hash for challenge " ++ path ++ "\n" ++ lineBreak
+      hashStr = intercalate "\n" $ chunksOf lineSize $ map toUpper $ tail $ init $ show $ toLazyByteString $ byteStringHex h
+  return $ header ++ hashStr ++ "\n\n"
+
 main = do
   initTime <- beaconInit
-  flip evalStateT (BP initTime 0) $ sequence_ $ [
-    makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F32 (Zq 129))) (1::Double),
-    makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F32 (Zq 129))) (2::Double)
-    ]
+  currTime <- liftM (timeStamp . fromJust' "Failed to get last beacon") getLastRecord
+
+  when (initTime < currTime + 24*60*60) $ do
+    setSGR [SetColor Foreground Vivid Red]
+    putStrLn "WARNING: The reveal date is less than one day from now!"
+    setSGR [SetColor Foreground Vivid Black]
+
+  -- add challenges here
+  let challengeList = [
+        makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F8 (Zq 129))) (1::Double),
+        makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F8 (Zq 129))) (2::Double)
+        ]
+
+  names <- flip evalStateT (BP initTime 0) $ sequence challengeList
+
+  -- write list of all challenges generated for easy parsing/verification
+  let challListFile = challengePath ++ "/challenges.txt"
+  putStrLn $ "Writing list of challenges to " ++ challListFile
+  Crypto.Lol.writeFile challListFile $ intercalate "\n" names
+
+  -- write file containing hashes of each challenge
+  hashes <- concat <$> mapM hashFile names
+  let hashFilePath = challengePath ++ "/hashes.txt"
+  putStrLn $ "Writing hashes to " ++ hashFilePath
+  Crypto.Lol.writeFile hashFilePath hashes
+
+  -- EAC: TODO:
+  -- run full verifier at the end
+  -- investigate why I got a verification failure for m=8/q=129/v=1::Double

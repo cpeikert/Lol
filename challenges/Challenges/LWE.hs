@@ -2,21 +2,16 @@
              NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables, 
              StandaloneDeriving, TypeFamilies, UndecidableInstances #-}
 
-module LWE where
-
-import TGaussian
+module Challenges.LWE where
 
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Random hiding (fromList)
+
 import Crypto.Lol hiding (errorRounded)
 import Crypto.Lol.Cyclotomic.Tensor
-import Data.Foldable (toList)
-import Data.Serialize
-import Data.Sequence (fromList)
-import GHC.Generics (Generic)
-
+import Crypto.Lol.Cyclotomic.UCyc as U hiding (errorRounded)
 import Crypto.Lol.Types.Proto
 import qualified Crypto.Lol.Types.Proto.ChallSecrets as P
 import qualified Crypto.Lol.Types.Proto.InstSecret as P
@@ -24,6 +19,11 @@ import qualified Crypto.Lol.Types.Proto.LWEChallenge as P
 import qualified Crypto.Lol.Types.Proto.LWEInstance as P
 import qualified Crypto.Lol.Types.Proto.LWESample as P
 
+import Data.Foldable (toList)
+import Data.Serialize
+import Data.Sequence (fromList)
+
+import GHC.Generics (Generic)
 
 removeSecrets :: SecretLWEChallenge v t m zp -> Int -> Int -> (ChallengeSecrets t m zp, LWEChallenge v t m zp)
 removeSecrets (SLWEChallenge v sinsts) time offset = 
@@ -55,6 +55,14 @@ lweSample svar s =
     e <- errorRounded svar
     a <- tagT $ adviseCRT <$> getRandom -- want entire hint to be in CRT form
     return $ LWESample a $ a * sq + reduce (e `asTypeOf` s)
+
+errorRounded :: forall v rnd t m z q .
+                (ToInteger z, Tensor t, Fact m, TElt t z,
+                 ToRational v, MonadRandom rnd, 
+                 OrdFloat q, Random q, TElt t q, RealField q)
+                => v -> TaggedT q rnd (Cyc t m z)
+errorRounded svar = tagT $ cycDec <$>
+  U.fmapDec (roundMult one) <$> (U.tGaussian svar :: rnd (UCyc t m D q))
 
 type LWECtx t m z zp v q = 
   (ToInteger z, Reduce z zp, Ring zp, Random zp, Fact m, CElt t z, CElt t zp, 
