@@ -15,6 +15,9 @@ secretPath = "secret-files"
 topSecretPath :: FilePath
 topSecretPath = "top-secret-files"
 
+revealPath :: FilePath
+revealPath = "reveal-files"
+
 {-
 verifyChallenge :: FilePath -> IO Bool
 verifyChallenge challName = do

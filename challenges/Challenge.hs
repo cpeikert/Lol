@@ -4,6 +4,7 @@
 import DRBG
 import Utils
 import Challenges.LWE
+import Challenges.MakeReader
 import Challenges.Random
 import Challenges.Verify
 
@@ -22,7 +23,7 @@ import Crypto.Lol.Types.Proto
 import Data.ByteString (writeFile,readFile)
 import Data.ByteString.Builder
 import Data.ByteString.Lazy (toStrict, fromStrict, null)
-import Data.Char
+import Data.Char (toUpper)
 import Data.List
 import Data.List.Split (chunksOf)
 
@@ -140,6 +141,7 @@ hashFile path = do
       hashStr = intercalate "\n" $ chunksOf lineSize $ map toUpper $ tail $ init $ show $ toLazyByteString $ byteStringHex h
   return $ header ++ hashStr ++ "\n\n"
 
+main :: IO ()
 main = do
   initTime <- beaconInit
   currTime <- liftM (timeStamp . fromJust' "Failed to get last beacon") getLastRecord
@@ -158,9 +160,14 @@ main = do
   names <- flip evalStateT (BP initTime 0) $ sequence challengeList
 
   -- write list of all challenges generated for easy parsing/verification
+  -- EAC: we don't need this, but it seems convenient for others to have
   let challListFile = challengePath ++ "/challenges.txt"
   putStrLn $ "Writing list of challenges to " ++ challListFile
   Crypto.Lol.writeFile challListFile $ intercalate "\n" names
+
+  --create Parser.hs to reader challenges
+  putStrLn $ "Creating reader for challenges"
+  mkReader names
 
   -- write file containing hashes of each challenge
   hashes <- concat <$> mapM hashFile names

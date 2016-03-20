@@ -93,7 +93,7 @@ instance (Protoable (Cyc t m (LiftOf zp))) => Protoable (InstanceSecret t m zp) 
   fromProto (P.InstSecret id s) = 
     InstSecret (fromIntegral id) $ fromProto s
 
-data LWEChallenge v t m zp = LWEChallenge Int Int v [LWEInstance t m zp] deriving (Generic)
+data LWEChallenge v t m zp = LWEChallenge {beaconTime :: Int, bitOffset :: Int, svar :: v, insts :: [LWEInstance t m zp]} deriving (Generic)
 data SecretLWEChallenge v t m zp = SLWEChallenge v [SecretLWEInstance t m zp]
 instance (NFData v, NFData (SecretLWEInstance t m zp)) => NFData (SecretLWEChallenge v t m zp) where
   rnf (SLWEChallenge v insts) = (rnf v) `seq` (rnf insts) `seq` ()
