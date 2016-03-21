@@ -25,16 +25,15 @@ main :: IO ()
 main = do
   lastBeaconTime <- (timeStamp . fromJust' "Failed to get last beacon") <$> getLastRecord
   print lastBeaconTime
-
-  challs <- readChallenges (Proxy::Proxy RT)
-
   -- EAC: has the unforunate disadvantage of reading all the challenges into memory at once
-  beaconTimes <- mapM revealChallenge challs
+  challs <- readChallenges (Proxy::Proxy RT)
+  
+  
 
-  -- write out becaon xml files
+  -- write out beacon xml files
   putStrLn "Writing beacon XML files..."
-  let distinctTimes = nub $ catMaybes beaconTimes
-  mapM_ writeBeaconXML distinctTimes
+  let beaconTimes = nub $ map challengeTimestamp challs
+  mapM_ writeBeaconXML beaconTimes
 
 
   --EAC: todo: verify signature on XML files
@@ -50,5 +49,5 @@ writeBeaconXML ts = do
 
 
 --returns the beacon timestamp used by this challenge
-revealChallenge :: Challenge -> IO (Maybe Int)
-revealChallenge (Challenge _ x) = return $ Just $ beaconTime x
+challengeTimestamp :: Challenge -> Int
+challengeTimestamp (Challenge _ x) = beaconTime x

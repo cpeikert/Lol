@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, GADTs, FlexibleContexts, NoImplicitPrelude, PackageImports, 
+{-# LANGUAGE ConstraintKinds, DataKinds, GADTs, FlexibleContexts, NoImplicitPrelude, PackageImports, 
              RebindableSyntax, ScopedTypeVariables #-}
 
 import DRBG
@@ -42,7 +42,7 @@ beaconInit = localDateToSeconds 2 24 2016 11 0
 beaconBitsPerChallenge = 2 :: Int
 -- during the verification purposes, we'll reveal secrets for all but one instance
 instancesPerChallenge = 2^beaconBitsPerChallenge :: Int
-samplesPerInstance = 8 :: Int
+samplesPerInstance = 8000 :: Int
 
 
 data BeaconPos = BP {time::Int, offset::Int}
@@ -66,13 +66,14 @@ evalCryptoRandIO x = do
 
 -- generate the challenge, verify it, and write it out
 makeChallenge :: forall v q t m zp . 
-  (LWECtx t m (LiftOf zp) zp v q, Random (LiftOf zp), Lift' zp,
-   Mod zp, Show v, Show (ModRep zp), Protoable (ChallengeSecrets t m zp),
-   Protoable (LWEChallenge v t m zp), NFData v, NFData (Cyc t m zp), NFData (Cyc t m (LiftOf zp)),
-   ReflectDescriptor (ProtoType (LWEChallenge v t m zp)), 
-   Wire (ProtoType (LWEChallenge v t m zp))) 
+  (LWECtx t m (LiftOf zp) zp v q, Random (LiftOf zp),
+   Mod zp, Protoable (ChallengeSecrets t m zp),
+   Show v, Show (ModRep zp),
+   NFData v, NFData (Cyc t m zp), NFData (Cyc t m (LiftOf zp)),
+   CheckSample v t m zp,
+   ProtoWriteChallCtx v t m zp) 
               => Proxy q -> Proxy (Cyc t m zp) -> v -> StateT BeaconPos IO FilePath
-makeChallenge _ _ svar = do  
+makeChallenge _ _ svar = do
   let m = proxy valueFact (Proxy::Proxy m)
       q = proxy modulus (Proxy::Proxy zp)
   
@@ -111,10 +112,12 @@ challengeFileName (LWEChallenge _ _ v _) =
       q = proxy modulus (Proxy::Proxy zp)
   in "lwe-" ++ (show m) ++ "-" ++ (show q) ++ "-" ++ (show v)
 
-writeChallenge :: 
+type ProtoWriteChallCtx v t m zp = 
   (Protoable (LWEChallenge v t m zp),
    ReflectDescriptor (ProtoType (LWEChallenge v t m zp)), 
-   Wire (ProtoType (LWEChallenge v t m zp))) 
+   Wire (ProtoType (LWEChallenge v t m zp)))
+
+writeChallenge :: (ProtoWriteChallCtx v t m zp) 
   => FilePath -> LWEChallenge v t m zp -> IO ()
 writeChallenge name chall = do
   createDirectoryIfMissing False challengePath
@@ -153,8 +156,8 @@ main = do
 
   -- add challenges here
   let challengeList = [
-        makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F8 (Zq 129))) (1::Double),
-        makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F8 (Zq 129))) (2::Double)
+        makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F8 (Zq 257))) (1::Double),
+        makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F8 (Zq 257))) (2::Double)
         ]
 
   names <- flip evalStateT (BP initTime 0) $ sequence challengeList

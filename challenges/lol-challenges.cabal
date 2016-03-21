@@ -61,6 +61,7 @@ executable challenge
     storable-tuple,
     tagged-transformer,
     time,
+    transformers,
     vector
 
 executable reveal
