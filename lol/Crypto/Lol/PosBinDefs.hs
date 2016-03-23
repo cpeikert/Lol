@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, GADTs, InstanceSigs,
              KindSignatures, NoImplicitPrelude, PolyKinds,
-             RebindableSyntax, ScopedTypeVariables, TemplateHaskell,
-             TypeFamilies, UndecidableInstances #-}
+             RankNTypes, RebindableSyntax, ScopedTypeVariables, 
+             TemplateHaskell, TypeFamilies, UndecidableInstances #-}
 
 -- | This sub-module exists only because we can't define and use
 -- template Haskell splices in the same module.
@@ -10,10 +10,12 @@ module Crypto.Lol.PosBinDefs
 ( -- * Positive naturals in Peano representation
   Pos(..), Sing(SO, SS), SPos, PosC
 , posToInt, addPos, sAddPos, AddPos, subPos, sSubPos, SubPos
+, reifyPos, reifyPosI
 , posType, posDec
 , OSym0, SSym0, SSym1, AddPosSym0, AddPosSym1, SubPosSym0, SubPosSym1
   -- * Positive naturals in binary representation
 , Bin(..), Sing(SB1, SD0, SD1), SBin, BinC
+, reifyBin, reifyBinI
 , binToInt, binType, binDec
 , B1Sym0, D0Sym0, D0Sym1, D1Sym0, D1Sym1
   -- * Miscellaneous
@@ -93,8 +95,29 @@ binToInt (D1 a) = 1 + 2 * binToInt a
 -- | Kind-restricted synonym for 'SingI'.
 type PosC (p :: Pos) = SingI p
 
+-- | Reify a 'Pos' with a singleton.
+reifyPos :: Int -> (forall p . SPos p -> a) -> a
+reifyPos x _ | x < 1 = error "reifyPos only works for x >= 1"
+reifyPos 1 k = k SO
+reifyPos n k = reifyPos (n-1) (k . SS)
+
+-- | Reify a 'Pos' with a 'SingI' constraint.
+reifyPosI :: Int -> (forall p proxy. (PosC p) => proxy p -> a) -> a
+reifyPosI n k = reifyPos n $ (\(p::SPos p) -> withSingI p $ k (Proxy::Proxy p))
+
 -- | Kind-restricted synonym for 'SingI'.
 type BinC (b :: Bin) = SingI b
+
+-- | Reify a 'Bin' with a singleton.
+reifyBin :: Int -> (forall b . SBin b -> a) -> a
+reifyBin x _ | x < 1 = error "refiyBin only works for x >= 1"
+reifyBin 1 k = k SB1
+reifyBin x k | odd x = reifyBin ((x-1) `div` 2) (k . SD1)
+reifyBin x k = reifyBin (x `div` 2) (k . SD0)
+
+-- | Reify a 'Bin' with a 'SingI' constraint.
+reifyBinI :: Int -> (forall b proxy. (BinC b) => proxy b -> a) -> a
+reifyBinI n k = reifyBin n $ (\(b::SBin b) -> withSingI b $ k (Proxy::Proxy b))
 
 -- | Template Haskell splice for the 'Pos' type
 -- representing a given 'Int', e.g., @$(posType 8)@.

@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, ExplicitNamespaces, GADTs,
              InstanceSigs, KindSignatures, PolyKinds, ScopedTypeVariables,
-             TemplateHaskell, TypeFamilies, TypeOperators,
+             RankNTypes, TemplateHaskell, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
 
 -- | This sub-module exists only because we can't define and use
@@ -9,10 +9,13 @@
 module Crypto.Lol.FactoredDefs
 (
 -- * Factored natural numbers
-  Factored, SFactored, Fact, fType, fDec
+  reifyFact, reifyFactI
+, Factored, SFactored, Fact, fType, fDec
 -- * Prime powers
+, reifyPPow, reifyPPowI
 , PrimePower, SPrimePower, Sing(SPP), PPow, ppType, ppDec
 -- * Primes
+, reifyPrime, reifyPrimeI
 , Prime, SPrime, Prim, pType, pDec
 -- * Constructors
 , pToPP, sPToPP, PToPP, ppToF, sPpToF, PpToF, pToF, sPToF, PToF
@@ -208,11 +211,40 @@ type a * b = FMul a b
 -- | Kind-restricted synonym for 'SingI'.
 type Prim (p :: Prime) = SingI p
 
+-- | Reify a 'Prime' with a singleton.
+reifyPrime :: Int -> (forall p . SPrime p -> a) -> a
+reifyPrime x _ | not $ prime x = error "reifyPrime only works for prime x"
+reifyPrime x k = reifyBin x (k . SP)
+
+-- | Reify a 'Prime' with a 'Prim' constraint.
+reifyPrimeI :: Int -> (forall p proxy. (Prim p) => proxy p -> a) -> a
+reifyPrimeI n k = reifyPrime n $ (\(p::SPrime p) -> withSingI p $ k (Proxy::Proxy p))
+
 -- | Kind-restricted synonym for 'SingI'.
 type PPow (pp :: PrimePower) = SingI pp
 
+-- | Reify a 'PrimePower' with a singleton.
+reifyPPow :: (Int,Int) -> (forall pp . SPrimePower pp -> a) -> a
+reifyPPow (p,e) k = reifyPrime p (\sp -> reifyPos e (k . SPP . STuple2 sp))
+
+-- | Reify a 'PrimePower' with a 'PPow' constraint.
+reifyPPowI :: (Int,Int) -> (forall pp proxy. (PPow pp) => proxy pp -> a) -> a
+reifyPPowI pp k = reifyPPow pp $ (\(p::SPrimePower p) -> withSingI p $ k (Proxy::Proxy p))
+
 -- | Kind-restricted synonym for 'SingI'.
 type Fact (m :: Factored) = SingI m
+
+-- | Reify a 'Factored' with a singleton.
+reifyFact :: Int -> (forall m . SFactored m -> a) -> a
+reifyFact m = let pps = factorize m in reifyPps pps
+  where reifyPps :: [(Int,Int)] -> (forall m . SFactored m -> a) -> a
+        reifyPps [] k = k (SF SNil)
+        reifyPps (pp:pps) k = 
+          reifyPPow pp (\spp -> reifyPps pps (\(SF sm') -> k $ SF $ SCons spp sm'))
+
+-- | Reify a 'Factored' with a 'Fact' constraint.
+reifyFactI :: Int -> (forall m proxy. (Fact m) => proxy m -> a) -> a
+reifyFactI pps k = reifyFact pps $ (\(m::SFactored m) -> withSingI m $ k (Proxy::Proxy m))
 
 -- | Constraint synonym for divisibility of 'Factored' types.
 type Divides m m' = (Fact m, Fact m', FDivides m m' ~ 'True)
