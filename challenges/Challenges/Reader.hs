@@ -4,14 +4,14 @@
 
 module Challenges.Reader where
 
-import Challenges.LWE
 import Challenges.MakeReader
+import Challenges.ProtoReader
 import Control.Applicative
 import Control.Monad.Trans.Maybe
-import Crypto.Lol (fType,Proxy)
+import Crypto.Lol (fType,Proxy(..))
 import Data.Maybe
 import Utils
 
-readChallenges (_::Proxy t) = catMaybes <$> (sequence $ map runMaybeT [
-  Challenge "lwe-8-129-1.0" <$> (tryReadChallenge "lwe-8-129-1.0" :: MaybeT IO (LWEChallenge Double t $(fType 8) (Zq 129))),
-  Challenge "lwe-8-129-2.0" <$> (tryReadChallenge "lwe-8-129-2.0" :: MaybeT IO (LWEChallenge Double t $(fType 8) (Zq 129)))])
+readChallenges secretDir (_::Proxy t) = catMaybes <$> (mapM runMaybeT [
+  tryReadLWEChallenge secretDir "lwe-32-257-1.0" (Proxy::Proxy (LWEChallenge Double t $(fType 32) (Zq 257))),
+  tryReadLWEChallenge secretDir "lwe-32-257-2.0" (Proxy::Proxy (LWEChallenge Double t $(fType 32) (Zq 257)))])

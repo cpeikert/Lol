@@ -6,6 +6,7 @@
 
 module Crypto.Lol.Types.Random (CryptoRand) where
 
+import Crypto.Lol.LatticePrelude (intLog)
 import "crypto-api" Crypto.Random
 import Data.Binary.Get
 import Data.ByteString hiding (pack)
@@ -23,14 +24,6 @@ bytesToInt bs = case intBytes of
   4 -> fromIntegral $ runGet getWord32host $ pack $ unpack bs
   8 -> fromIntegral $ runGet getWord64host $ pack $ unpack bs
   _ -> error "Unsupported Int size in `bytesToInt`"
-
--- | Yield @log_b(n)@ when it is a non-negative integer (otherwise
--- error).
-intLog :: (Integral i) => i -> i -> Int
-intLog _ 1 = 0
--- correct because ceil (lg (x)) == ceil (log (ceil (x)))
-intLog b n | (n `mod` b) == 0 = 1 + intLog b (n `div` b)
-           | otherwise = error "invalid arguments to intLog"
 
 instance (CryptoRandomGen g) => RandomGen (CryptoRand g) where
   next (CryptoRand g) = case genBytes intBytes g of

@@ -1,14 +1,23 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving, PackageImports #-}
 
-module DRBG (CryptoRand) where
+module DRBG (CryptoRand, evalCryptoRandIO) where
 
+import Crypto.Lol.LatticePrelude (intLog, Proxy)
 import "crypto-api" Crypto.Random
+import Control.Monad.Random (Rand, evalRand)
 import Data.Binary.Get
 import Data.ByteString
 import Data.ByteString.Lazy (fromStrict)
 import System.Random
 
 newtype CryptoRand g = CryptoRand g deriving (CryptoRandomGen)
+
+-- This function keeps all of the code in the IO monad, which helps write clean code below
+-- No sequencing occurs between separate calls to this function.
+evalCryptoRandIO :: (CryptoRandomGen gen) => Proxy gen -> Rand (CryptoRand gen) a -> IO a
+evalCryptoRandIO _ x = do
+  gen <- newGenIO -- uses system entropy
+  return $ evalRand x gen
 
 intBytes = 
   let bits = intLog 2 $ (1 + (fromIntegral (maxBound :: Int)) - (fromIntegral (minBound :: Int)) :: Integer)
@@ -19,14 +28,6 @@ bytesToInt bs = case intBytes of
   4 -> fromIntegral $ runGet getWord32host $ fromStrict bs
   8 -> fromIntegral $ runGet getWord64host $ fromStrict bs
   _ -> error "Unsupported Int size in `bytesToInt`"
-
--- | Yield @log_b(n)@ when it is a non-negative integer (otherwise
--- error).
-intLog :: (Integral i) => i -> i -> Int
-intLog _ 1 = 0
--- correct because ceil (lg (x)) == ceil (log (ceil (x)))
-intLog b n | (n `mod` b) == 0 = 1 + intLog b (n `div` b)
-           | otherwise = error "invalid arguments to intLog"
 
 instance (CryptoRandomGen g) => RandomGen (CryptoRand g) where
   next (CryptoRand g) = case genBytes intBytes g of

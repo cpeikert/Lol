@@ -53,10 +53,8 @@ main = do
 -- and keeping all of the code in the IO monad, which helps write clean code below
 -- No sequencing occurs between separate calls to this function, but it would be hard
 -- to get timing any other way.
-evalCryptoRandIO :: Rand (CryptoRand HashDRBG) a -> IO a
-evalCryptoRandIO x = do
-  gen <- newGenIO -- uses system entropy
-  return $ evalRand x gen
+evalHashDRBG :: Rand (CryptoRand HashDRBG) a -> IO a
+evalHashDRBG = evalCryptoRandIO Proxy
 
 tunnelTest pc@(_::Proxy t) = do -- in IO
     let v = 0.1 :: Double

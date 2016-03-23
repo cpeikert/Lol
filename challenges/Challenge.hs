@@ -3,10 +3,12 @@
 
 import DRBG
 import Utils
+import Challenges.Beacon
 import Challenges.LWE
 import Challenges.MakeReader
-import Challenges.Random
+import Challenges.Parameters
 import Challenges.Verify
+import Challenges.Writer
 
 import Control.Applicative
 import Control.DeepSeq
@@ -34,36 +36,6 @@ import System.Directory
 
 import Text.ProtocolBuffers.Header
 
--- PARAMETERS
-
-beaconInit :: IO Int
-beaconInit = localDateToSeconds 2 24 2016 11 0
-
-beaconBitsPerChallenge = 2 :: Int
--- during the verification purposes, we'll reveal secrets for all but one instance
-instancesPerChallenge = 2^beaconBitsPerChallenge :: Int
-samplesPerInstance = 8000 :: Int
-
-
-data BeaconPos = BP {time::Int, offset::Int}
-
-nextBeaconPos :: BeaconPos -> BeaconPos
-nextBeaconPos (BP time offset) =
-  let nextOffset = offset+beaconBitsPerChallenge
-  -- we will use the time/offset from the state, unless there aren't enough bits left in this beacon
-  in if nextOffset+beaconBitsPerChallenge> 512 
-     then BP (time+60) 0
-     else BP time nextOffset
-
--- This function serves the dual purpose of specifying the random generator
--- and keeping all of the code in the IO monad, which helps write clean code below
--- No sequencing occurs between separate calls to this function, but it would be hard
--- to get timing any other way.
-evalCryptoRandIO :: Rand (CryptoRand HashDRBG) a -> IO a
-evalCryptoRandIO x = do
-  gen <- newGenIO -- uses system entropy
-  return $ evalRand x gen
-
 -- generate the challenge, verify it, and write it out
 makeChallenge :: forall v q t m zp . 
   (LWECtx t m (LiftOf zp) zp v q, Random (LiftOf zp),
@@ -80,7 +52,7 @@ makeChallenge _ _ svar = do
   lift $ putStr $ "Generating instance (v=" ++ (show svar) ++ ", m=" ++ (show m) ++ ", q=" ++ (show q) ++ ")..."
   -- EAC: probably want to add some more randomness
   -- also not no sequencing occurs between calls
-  chall <- lift $ evalCryptoRandIO $ proxyT (lweChallenge svar samplesPerInstance instancesPerChallenge) (Proxy::Proxy q)
+  chall <- lift $ evalCryptoRandIO (Proxy::Proxy HashDRBG) $ proxyT (lweChallenge svar samplesPerInstance instancesPerChallenge) (Proxy::Proxy q)
   chall `deepseq` lift $ putStr $ "Verifying..."
   let result = checkChallenge (chall :: SecretLWEChallenge v t m zp)
   if result
@@ -93,7 +65,7 @@ makeChallenge _ _ svar = do
   lift $ setSGR [SetColor Foreground Vivid Black]
 
   -- get the position for this challenge
-  BP time offset <- get
+  BP time offset _ _ _ <- get
   -- update the state for the next challenge
   modify nextBeaconPos
 
@@ -102,7 +74,7 @@ makeChallenge _ _ svar = do
 
   let challName = challengeFileName chall'
   lift $ writeChallenge challName chall'
-  lift $ writeSecrets challName sks
+  lift $ writeSecrets topSecretPath challName sks
   return challName
 
 challengeFileName :: forall v t m zp . (Fact m, Mod zp, Show (ModRep zp), Show v) 
@@ -125,23 +97,17 @@ writeChallenge name chall = do
   putStrLn $ "Writing challenge to " ++ challFile ++ "..."
   writeFile challFile $ toStrict $ msgPut chall
 
-writeSecrets :: (Protoable (ChallengeSecrets t m zp)) => FilePath -> ChallengeSecrets t m zp -> IO ()
-writeSecrets name secrets = do
-  createDirectoryIfMissing False topSecretPath
-  let secretFile = topSecretPath ++ "/" ++ name
-  putStrLn $ "Writing secrets to " ++ secretFile ++ "..."
-  writeFile secretFile $ toStrict $ msgPut secrets
 
--- SHA3-256
+
+-- SHA3
 hashFile :: FilePath -> IO String
 hashFile path = do
   bs <- readFile $ challengePath ++ "/" ++ path
-  let hashLen = 512
-      h = hash hashLen bs
-      lineSize = 64
-      lineBreak = (replicate lineSize '-') ++ "\n"
-      header = "SHA3-" ++ (show hashLen) ++ " hash for challenge " ++ path ++ "\n" ++ lineBreak
-      hashStr = intercalate "\n" $ chunksOf lineSize $ map toUpper $ tail $ init $ show $ toLazyByteString $ byteStringHex h
+  let h = hash hashOutputBits bs
+      lineBreak = (replicate hashPrettyPrintLineSize '-') ++ "\n"
+      header = "SHA3-" ++ (show hashOutputBits) ++ " hash for challenge " ++ path ++ "\n" ++ lineBreak
+      hashStr = intercalate "\n" $ chunksOf hashPrettyPrintLineSize $ 
+                  map toUpper $ tail $ init $ show $ toLazyByteString $ byteStringHex h
   return $ header ++ hashStr ++ "\n\n"
 
 main :: IO ()
@@ -156,11 +122,11 @@ main = do
 
   -- add challenges here
   let challengeList = [
-        makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F8 (Zq 257))) (1::Double),
-        makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F8 (Zq 257))) (2::Double)
+        makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F32 (Zq 257))) (1::Double),
+        makeChallenge (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT F32 (Zq 257))) (2::Double)
         ]
 
-  names <- flip evalStateT (BP initTime 0) $ sequence challengeList
+  names <- flip evalStateT (BP initTime 0 beaconBitsPerChallenge bitsPerBeacon beaconInterval) $ sequence challengeList
 
   -- write list of all challenges generated for easy parsing/verification
   -- EAC: we don't need this, but it seems convenient for others to have
@@ -180,4 +146,3 @@ main = do
 
   -- EAC: TODO:
   -- run full verifier at the end
-  -- investigate why I got a verification failure for m=8/q=129/v=1::Double

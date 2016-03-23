@@ -4,13 +4,12 @@ module Challenges.Verify where
 
 import Challenges.LWE
 
+import qualified Data.Map as M
+
 import Crypto.Lol
 
 challengePath :: FilePath
 challengePath = "challenge-files"
-
-secretPath :: FilePath
-secretPath = "secret-files"
 
 topSecretPath :: FilePath
 topSecretPath = "top-secret-files"
@@ -32,12 +31,15 @@ verifyChallenge challName = do
 -}
 
 
-checkChallenge :: (CheckSample v t m zp) => SecretLWEChallenge v t m zp -> Bool
-checkChallenge (SLWEChallenge v insts) = all (checkInstance v) insts
+checkChallenge :: (CheckSample v t m zp) => ChallengeSecrets t m (LiftOf zp) -> LWEChallenge v t m zp -> Bool
+checkChallenge (ChallengeSecrets secrets) (LWEChallenge _ v insts) = 
+  let comboMap = M.intersectionWith (,) secrets insts
+  in and $ map (uncurry $ checkInstance v) $ M.elems comboMap
+
 
 checkInstance :: forall v t m zp . (CheckSample v t m zp)
-  => v -> SecretLWEInstance t m zp -> Bool
-checkInstance v (SLWEInstance sk pairs) = 
+  => v -> Cyc t m (LiftOf zp) -> LWEInstance t m zp -> Bool
+checkInstance v sk (LWEInstance pairs) = 
   let n = proxy totientFact (Proxy::Proxy m)
       mhat = proxy valueHatFact (Proxy::Proxy m)
       bound = (fromIntegral $ mhat*n)*v

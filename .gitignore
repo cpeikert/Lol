@@ -17,11 +17,6 @@ lol/configure
 lol/makefile
 lol/.stack-work
 
-numbers/.gitignore
-numbers/.travis.yml
-numbers/Test
-numbers/TestSuite.hs
-
 sandbox
 test
 challenge-files
