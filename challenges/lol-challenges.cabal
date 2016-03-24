@@ -55,6 +55,7 @@ executable challenge
     numeric-prelude,
     protocol-buffers,
     random,
+    reflection,
     repa,
     singletons,
     split,

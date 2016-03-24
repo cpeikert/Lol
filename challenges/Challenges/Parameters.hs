@@ -13,8 +13,3 @@ samplesPerInstance = 10 :: Int
 -}
 hashOutputBits = 512 :: Int
 hashPrettyPrintLineSize = 64 :: Int
-
-
--- CONSTANTS
-bitsPerBeacon = 512 :: Int
-beaconInterval = 60 :: Int -- in seconds

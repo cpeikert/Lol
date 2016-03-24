@@ -1,7 +1,10 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, 
              NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
 
-module Challenges.LWE (lweChallenge, ChallengeSecrets(..), LWEChallenge(..), LWEInstance(..), LWESample(..)) where
+module Challenges.LWE 
+(lweInstance
+,LWECtx
+, module Challenges.ProtoReader) where
 
 import Challenges.Beacon
 import Challenges.ProtoReader
@@ -15,7 +18,7 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Cyclotomic.UCyc as U hiding (errorRounded)
 
 import Data.Map.Strict
-
+{-
 lweChallenge :: (LWECtx t m (LiftOf zp) zp v q, MonadRandom rnd, Random (LiftOf zp)) 
              => v -> Int -> Int -> BeaconPos -> TaggedT q rnd (ChallengeSecrets t m (LiftOf zp), LWEChallenge v t m zp)
 lweChallenge svar numSamples numInstances bp = do
@@ -23,14 +26,14 @@ lweChallenge svar numSamples numInstances bp = do
   let ids = [0..]
   return $ (ChallengeSecrets $ fromList $ zip ids secrets, 
             LWEChallenge bp svar $ fromList $ zip ids insts)
-
+-}
 lweInstance :: forall t m q zp v rnd .  
   (LWECtx t m (LiftOf zp) zp v q, MonadRandom rnd, Random (LiftOf zp))
-  => v -> Int -> TaggedT q rnd (Cyc t m (LiftOf zp), LWEInstance t m zp)
+  => v -> Int -> TaggedT q rnd (Cyc t m (LiftOf zp), [LWESample t m zp])
 lweInstance svar numSamples = do
   s :: Cyc t m (LiftOf zp) <- getRandom
   samples <- replicateM numSamples (lweSample svar s)
-  return (s, LWEInstance samples)
+  return (s, samples)
 
 -- | An LWE sample for a given secret (corresponding to a linear
 -- ciphertext encrypting 0 in MSD form)
