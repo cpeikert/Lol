@@ -1,154 +1,112 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, GADTs, FlexibleContexts, KindSignatures, NoImplicitPrelude, PackageImports, 
-             RebindableSyntax, ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, RecordWildCards, ScopedTypeVariables #-}
 
-import DRBG
-import Utils
+import DRBG (evalCryptoRandIO)
 import Challenges.Beacon
+import Challenges.Common
 import Challenges.LWE
---import Challenges.MakeReader
---import Challenges.Parameters
---import Challenges.Verify
---import Challenges.Writer
 
-import Control.Applicative
-import Control.DeepSeq
-import Control.Monad.Random
-import "crypto-api" Crypto.Random
-import Crypto.Random.DRBG
+import Control.Monad.Trans (lift)
 import Control.Monad.State
+import Crypto.Random.DRBG
 
-import Crypto.Hash.SHA3 (hash)
-import Crypto.Lol hiding (readFile, writeFile, lift)
-import qualified Crypto.Lol (writeFile)
-import Crypto.Lol.Reflects
+import Crypto.Lol (Int64, ZqBasic, Proxy(..), CT, RT, reifyFactI, proxyT, Fact, intLog)
 import Crypto.Lol.Types.Proto
 
-import Data.ByteString (writeFile,readFile)
-import Data.ByteString.Builder
-import Data.ByteString.Lazy (toStrict, fromStrict, null)
-import Data.Char (toUpper)
-import Data.List
-import Data.List.Split (chunksOf)
+import Data.ByteString as BS (writeFile)
+import Data.ByteString.Lazy as BS (toStrict)
 import Data.Reflection
 
-import Net.Beacon
+import Prelude as P
 
-import System.Console.ANSI
-import System.Directory
+import System.Directory (createDirectoryIfMissing)
 
 import Text.ProtocolBuffers.Header
+
+-- the Tensor type to use to generate the instances
+type T = CT
+
+beaconInit :: IO Int
+beaconInit = localDateToSeconds 2 24 2016 11 0
+
+data ChallengeParams = CP {m::Int, p::Int, v::Double, numSamples::Int, numInstances::Int}
 
 main :: IO ()
 main = do
   -- EAC: Read from command line
   let numInstances = 4 :: Int
-      numSamples = 8 :: Int
-      m = 32 :: Int
-      p = 257 :: Int64
-      v = 1.0 :: Double
+      numSamples = 8
 
-  path <- do
-    inTopLevelLol <- doesDirectoryExist "challenges"
-    return $ if inTopLevelLol
-      then "challenges/challenge-files"
-      else "challenge-files"
+  path <- absPath
 
-  putStrLn $ "Generating instances (m=" ++ (show m) ++ ", p=" ++ (show p) ++ ", v=" ++ (show v) ++ ")..."
-  let idxs = take numInstances [0..]
+  let cps = [
+        CP 32 257 1.0 numSamples numInstances,
+        CP 64 257 1.1 numSamples numInstances
+        ]
 
-  reify p (\(p::Proxy p) -> 
-    reifyFactI m (\(_::proxy m) -> 
-      mapM_ (makeInstance (Proxy::Proxy Double) (Proxy::Proxy (Cyc RT m (ZqBasic p Int64))) v numSamples path) idxs))
+  initTime <- beaconInit
+  flip evalStateT (BP initTime 0) $ mapM_ (challengeMain path) cps
 
-(</>) :: FilePath -> FilePath -> FilePath
-a </> b = a ++ "/" ++ b
+challengeMain :: FilePath -> ChallengeParams -> StateT BeaconPos IO ()
+challengeMain path cp@CP{..} = do
+  let name = challengeName m p v
+  lift $ makeChallenge cp path name
+  stampChallenge name numSamples
 
--- generate the instance and write it out
-makeInstance :: forall v q t m z zp . 
-  (LWECtx t m z zp v q, Random z,
-   v ~ Double, z ~ LiftOf zp,
-   Show v, Show (ModRep zp),
-   NFData v, NFData (Cyc t m zp), NFData (Cyc t m z),
-   ProtoWriteCtx (LWEInstance v t m zp),
-   ProtoWriteCtx (LWESecret t m z))
-  => Proxy q -> Proxy (Cyc t m zp) -> v -> Int -> FilePath -> Int -> IO ()
-makeInstance _ _ svar numSamples mainPath idx = do
-  -- EAC: probably want to add some more randomness
-  -- also not no sequencing occurs between calls
-  (sk,samples) <- evalCryptoRandIO (Proxy::Proxy HashDRBG) $ 
-    proxyT (lweInstance svar numSamples) (Proxy::Proxy q)
- 
-  let inst = LWEInstance idx svar samples :: LWEInstance v t m zp
-      secret = LWESecret idx sk
-      m = proxy valueFact (Proxy::Proxy m)
-      q = proxy value (Proxy::Proxy m)
-      challName = challengeDirName m q svar
-      challDir = mainPath </> challName
+stampChallenge :: String -> Int -> StateT BeaconPos IO ()
+stampChallenge name numSamples = do
+  let numBits = intLog 2 numSamples
+  abspath <- lift absPath
+  let path = abspath </> challengeFilesDir </> name
+  -- advance to the next place we can use 'numBits' bits and return it
+  (BP time offset) <- (modify $ getBeaconPos numBits) >> get
+  let revealFile = path </> revealFileName
+  lift $ P.writeFile revealFile name
+  lift $ P.appendFile revealFile $ "\n" ++ show time
+  lift $ P.appendFile revealFile $ "\n" ++ show offset
+  -- advance the state by 'numBits'
+  modify (advanceBeaconPos numBits)
+
+-- outputs the challenge name and the number of instances for this challenge
+makeChallenge :: ChallengeParams -> FilePath -> String -> IO ()
+makeChallenge CP{..} path challName = reify (fromIntegral p :: Int64) (\(proxyp::Proxy p) -> 
+  reifyFactI m (\(proxym::proxy m) -> do      
+    putStrLn $ "Generating challenge (m=" ++ (show m) ++ ", p=" ++ (show p) ++ ", v=" ++ (show v) ++ ")..."
+    let idxs = take numInstances [0..]
+    mapM_ (genInstance proxyp proxym challName path v numSamples) idxs))
+
+genInstance :: forall p proxy m . (Fact m, Reifies p Int64) 
+  => Proxy p -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
+genInstance _ _ challName path v numSamples idx = do
+  -- EAC: might want to add some more randomness, since this uses IO to get seed
+  (secret', samples :: [LWESample T m (ZqBasic p Int64)]) <- 
+    evalCryptoRandIO (Proxy::Proxy HashDRBG) $ 
+      proxyT (lweInstance v numSamples) (Proxy::Proxy Double)
+  let secret = LWESecret idx secret'
+      inst = LWEInstance idx v samples
+      secretFile = secretFileName idx
       instFile = instFileName idx
-      secretFile = secretFileName idx 
+  writeProtoType (path </> challengeFilesDir </> challName) instFile inst
+  writeProtoType (path </> secretFilesDir </> challName) secretFile secret
 
-  putStrLn $ "Writing instance " ++ (show idx) ++ " to " ++ challDir ++ "..."
-  writeProtoType challDir instFile inst
-  writeProtoType challDir secretFile secret
-
-challengeDirName :: Int -> Int -> Double -> FilePath
-challengeDirName m p v = "chall-m" ++ (show m) ++ "-p" ++ (show p) ++ "-v" ++ (show v)
-
-instFileName :: Int -> FilePath
-instFileName idx = "instance" ++ (show idx) ++ ".bin"
-
-secretFileName :: Int -> FilePath
-secretFileName idx = "secret" ++ (show idx) ++ ".bin"
-
-type ProtoWriteCtx a = 
+writeProtoType :: 
   (Protoable a,
    ReflectDescriptor (ProtoType a), 
    Wire (ProtoType a))
-
-writeProtoType :: (ProtoWriteCtx a)
   => FilePath -> String -> a -> IO ()
 writeProtoType challPath instName inst = do
   createDirectoryIfMissing True challPath
   let instPath = challPath </> instName
-  writeFile instPath $ toStrict $ msgPut inst
-
+  BS.writeFile instPath $ toStrict $ msgPut inst
 
 
 
   
-
-  
-
   
 
   
 {-
 
-
-
-
-
-
-
-
-
--- generate the challenge, verify it, and write it out
-makeChallenge :: forall v q t m zp . 
-  (LWECtx t m (LiftOf zp) zp v q, Random (LiftOf zp),
-   Mod zp, Protoable (ChallengeSecrets t m zp),
-   Show v, Show (ModRep zp),
-   NFData v, NFData (Cyc t m zp), NFData (Cyc t m (LiftOf zp)),
-   CheckSample v t m zp,
-   ProtoWriteChallCtx v t m zp) 
-              => Proxy q -> Proxy (Cyc t m zp) -> v -> StateT BeaconPos IO FilePath
-makeChallenge _ _ svar = undefined {-
-  do
-  let m = proxy valueFact (Proxy::Proxy m)
-      q = proxy modulus (Proxy::Proxy zp)
-      beaconBitsPerChallenge = intLog 2 instancePerChallenge
-  lift $ putStr $ "Generating instance (v=" ++ (show svar) ++ ", m=" ++ (show m) ++ ", q=" ++ (show q) ++ ")..."
-  -- EAC: probably want to add some more randomness
-  -- also not no sequencing occurs between calls
+  
   chall <- lift $ evalCryptoRandIO (Proxy::Proxy HashDRBG) $ proxyT (lweChallenge svar samplesPerInstance instancesPerChallenge) (Proxy::Proxy q)
   chall `deepseq` lift $ putStr $ "Verifying..."
   let result = checkChallenge (chall :: SecretLWEChallenge v t m zp)
@@ -177,7 +135,7 @@ makeChallenge _ _ svar = undefined {-
 
 
 
-
+{-
 -- SHA3
 hashFile :: FilePath -> IO String
 hashFile path = do

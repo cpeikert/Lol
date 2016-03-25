@@ -9,9 +9,9 @@ import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Crypto.Lol.Types.Proto.InstSecret as Proto (InstSecret)
+import qualified Crypto.Lol.Types.Proto.LWESecret as Proto (LWESecret)
 
-data ChallSecrets = ChallSecrets{secrets :: !(P'.Seq Proto.InstSecret)}
+data ChallSecrets = ChallSecrets{secrets :: !(P'.Seq Proto.LWESecret)}
                   deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data)
 
 instance P'.Mergeable ChallSecrets where
@@ -59,7 +59,7 @@ instance P'.ReflectDescriptor ChallSecrets where
   getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList []) (P'.fromDistinctAscList [10])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".Proto.ChallSecrets\", haskellPrefix = [], parentModule = [MName \"Proto\"], baseName = MName \"ChallSecrets\"}, descFilePath = [\"Proto\",\"ChallSecrets.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Proto.ChallSecrets.secrets\", haskellPrefix' = [], parentModule' = [MName \"Proto\",MName \"ChallSecrets\"], baseName' = FName \"secrets\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Proto.InstSecret\", haskellPrefix = [], parentModule = [MName \"Proto\"], baseName = MName \"InstSecret\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".Proto.ChallSecrets\", haskellPrefix = [], parentModule = [MName \"Proto\"], baseName = MName \"ChallSecrets\"}, descFilePath = [\"Proto\",\"ChallSecrets.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Proto.ChallSecrets.secrets\", haskellPrefix' = [], parentModule' = [MName \"Proto\",MName \"ChallSecrets\"], baseName' = FName \"secrets\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Proto.LWESecret\", haskellPrefix = [], parentModule = [MName \"Proto\"], baseName = MName \"LWESecret\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
 
 instance P'.TextType ChallSecrets where
   tellT = P'.tellSubMessage

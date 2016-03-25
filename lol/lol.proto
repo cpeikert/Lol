@@ -39,7 +39,7 @@ message LWEInstance {
   repeated LWESample samples = 5;
 }
 
-message InstSecret {
+message LWESecret {
   required uint32 id = 1;
   required uint64 m = 2;
   required CycMsg secret = 3;

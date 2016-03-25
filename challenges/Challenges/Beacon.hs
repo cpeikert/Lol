@@ -4,6 +4,7 @@ module Challenges.Beacon
 (getBeacon
 ,gmtDateToSeconds
 ,localDateToSeconds
+,getBeaconPos
 ,advanceBeaconPos
 ,BeaconPos(..)
 ,bitsPerBeacon
@@ -28,13 +29,15 @@ data BeaconPos = BP Int Int deriving (Eq, Generic, Read, Show)
 instance NFData BeaconPos where rnf (BP a b) = (rnf a) `seq` (rnf b)
 instance Serialize BeaconPos -- use Generics
 
+-- returns the first available beacon position for k bits
+getBeaconPos :: Int -> BeaconPos -> BeaconPos
+getBeaconPos k bp@(BP time offset) = 
+  if (offset+k) > bitsPerBeacon
+  then BP (time+beaconInterval) 0
+  else bp
+
 advanceBeaconPos :: Int -> BeaconPos -> BeaconPos
-advanceBeaconPos bits (BP time offset) =
-  let nextOffset = offset+bits
-  -- we will use the time/offset from the state, unless there aren't enough bits left in this beacon
-  in if nextOffset > bitsPerBeacon 
-     then BP (time+beaconInterval) 0
-     else BP time nextOffset
+advanceBeaconPos k (BP time offset) = BP time $ offset+k
 
 -- returns seconds since epoch at midnight on the day/month/year/hour/minute of input
 -- takes GMT!!
