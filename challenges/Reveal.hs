@@ -1,17 +1,18 @@
 
 import Challenges.Beacon
 import Challenges.Common
+import Challenges.Read
 
 import Control.Applicative ((<$>))
 import Control.Monad (when)
+import Control.Monad.Except
 import Control.Monad.State
-import Control.Monad.Trans (lift)
 
-import Crypto.Lol (fromJust', intLog)
+import Crypto.Lol (intLog)
 
-import Data.BooleanList (byteStringToBooleanList)
 import Data.ByteString.Lazy (toStrict, writeFile)
 import Data.Map (Map, lookup, empty, insert)
+import Data.Maybe
 
 import Net.Beacon
 
@@ -19,84 +20,66 @@ import Network.HTTP.Conduit (simpleHttp)
 
 import Prelude hiding (lookup, writeFile)
 
-import System.Console.ANSI
-import System.Directory (doesFileExist, removeFile, getDirectoryContents)
---import System.IO
+import System.Directory (doesFileExist, doesDirectoryExist, removeFile, getDirectoryContents)
 
 main :: IO ()
 main = do
+  checkChallDirExists
+
   abspath <- absPath
-  challs <- filter (("chall" ==) . (take 5)) <$> (getDirectoryContents $ abspath </> challengeFilesDir)
-  flip evalStateT empty $ mapM_ (revealChallengeMain abspath) challs
-  return ()
+  let challDir = abspath </> challengeFilesDir
+  challs <- filter (("chall" ==) . (take 5)) <$> (getDirectoryContents challDir)
+  recs <- flip execStateT empty $ mapM_ (revealChallengeMain abspath) challs
+  mapM_ (writeBeaconXML abspath) recs
+  
+  getNistCert abspath
 
 revealChallengeMain :: FilePath -> String -> StateT (Map Int Record) IO ()
-revealChallengeMain abspath name = do
-  lift $ putStrLn $ "Revealing challenge " ++ name ++ "..."
-
+revealChallengeMain abspath name = printPassFail ("Revealing challenge " ++ name ++ ": ") $ do
   let challDir = abspath </> challengeFilesDir </> name
-      revealPath = challDir </> revealFileName
+  (BP time offset) <- readRevealData challDir 
 
-  revealExists <- lift $ doesFileExist revealPath
-  when (not revealExists) $ error $ revealPath ++ "does not exist."
-
-  [name, timeStr, offsetStr] <- lift $ lines <$> readFile revealPath
-  let time = read timeStr :: Int
-      offset = read offsetStr :: Int
-  numInsts <- lift $ length <$> filter ((".bin" ==) . lastK 4) <$> getDirectoryContents challDir
+  numInsts <- liftIO $ length <$> filter ((".bin" ==) . lastK 4) <$> getDirectoryContents challDir
   let numBits = intLog 2 numInsts
 
-  lastBeaconTime <- lift $ (timeStamp . fromJust' "Failed to get last beacon") <$> getLastRecord
+  lastRec <- liftIO getLastRecord
+  lastBeaconTime <- case lastRec of
+    Nothing -> throwError "Failed to get last beacon."
+    (Just r) -> return $ timeStamp r
 
-  when ((time `mod` beaconInterval /= 0) || offset < 0 || offset+numBits > bitsPerBeacon) $ lift $ do
-    setSGR [SetColor Foreground Vivid Red]
-    putStrLn $ "Invalid beacon position."
-    setSGR [SetColor Foreground Vivid Black]
-    error ""
+  when ((time `mod` beaconInterval /= 0) || offset < 0 || offset+numBits > bitsPerBeacon) $ 
+    throwError "Invalid beacon position."
 
-  when (time > lastBeaconTime) $ lift $ do
-    setSGR [SetColor Foreground Vivid Red]
-    putStrLn $ "Can't reveal challenge " ++ name ++ ": it's time has not yet come. Please wait " ++ 
+  when (time > lastBeaconTime) $
+    throwError $ "Can't reveal challenge " ++ name ++ 
+      ": it's time has not yet come. Please wait " ++ 
       (show $ time-lastBeaconTime) ++ " seconds for the assigned beacon."
-    setSGR [SetColor Foreground Vivid Black]
-    error ""
 
   rec <- retrieveRecord time
   let secretIdx = getSecretIdx rec offset numBits
       secDir = abspath </> secretFilesDir </> name
       secFile = secDir </> (secretFileName secretIdx)
 
-  secFileExists <- lift $ doesFileExist secFile
-  when (not secFileExists) $ error $ secFile ++ " does not exist."
+  secFileExists <- liftIO $ doesFileExist secFile
+  when (not secFileExists) $ throwError $ secFile ++ " does not exist."
 
-  lift $ putStrLn $ "Removing " ++ secFile
-  lift $ removeFile secFile
-
-  lift $ writeBeaconXML time (abspath </> secretFilesDir </> name)
+  liftIO $ putStrLn $ "\tRemoving " ++ secFile
+  liftIO $ removeFile secFile
 
 -- attempt to find the record in the state, otherwise read it from NIST
-retrieveRecord :: Int -> StateT (Map Int Record) IO Record
+retrieveRecord :: Int -> ExceptT String (StateT (Map Int Record) IO) Record
 retrieveRecord t = do
   mrec <- gets (lookup t)
   case mrec of
     (Just r) -> return r
     Nothing -> do
-      lift $ putStrLn $ "Downloading record " ++ (show t)
-      r <- lift $ getCurrentRecord t
+      liftIO $ putStrLn $ "\tDownloading record " ++ (show t)
+      r <- liftIO $ getCurrentRecord t
       case r of
         (Just r') -> do
           modify (insert t r')
           return r'
-        Nothing -> error $ "Couldn't get record " ++ (show t) ++ "from NIST servers."
-
-getSecretIdx :: Record -> Int -> Int -> Int
-getSecretIdx record offset numBits =
-  let output = outputValue record
-      bits = take numBits $ drop offset $ byteStringToBooleanList $ toStrict output
-      parseBitString [] = 0
-      parseBitString (True:xs) = 1+(2*(parseBitString xs))
-      parseBitString (False:xs) = 2*(parseBitString xs)
-  in parseBitString bits
+        Nothing -> throwError $ "Couldn't get record " ++ (show t) ++ "from NIST servers."
 
 -- returns last k characters in a string
 lastK :: Int -> String -> String
@@ -106,7 +89,15 @@ lastK k s =
      then drop (l-k) s
      else s
 
-writeBeaconXML :: Int -> FilePath -> IO ()
-writeBeaconXML t path = do
-  beacon <- simpleHttp $ "http://beacon.nist.gov/rest/record/" ++ (show t)
-  writeFile (path ++ "/" ++ (show t) ++ ".xml") beacon
+writeBeaconXML :: FilePath -> Record -> IO ()
+writeBeaconXML path rec = do
+  let beacon = toXML rec
+  writeFile (path </> secretFilesDir </> (xmlFileName $ timeStamp rec)) beacon
+
+getNistCert :: FilePath -> IO ()
+getNistCert path = do
+  let certPath = path </> secretFilesDir </> certFileName
+  putStrLn $ "Writing NIST certificate to " ++ certPath
+  bs <- simpleHttp "https://beacon.nist.gov/certificate/beacon.cer"
+  writeFile certPath bs
+  

@@ -2,6 +2,15 @@
 
 module Challenges.Common where
 
+import Control.Monad (when)
+import Control.Monad.Except
+import Control.Monad.IO.Class
+
+import Data.ByteString.Lazy (ByteString, toStrict)
+import Data.ByteString.Builder
+import Data.Char (toUpper)
+
+import System.Console.ANSI
 import System.Directory
 
 {- Directory structure:
@@ -15,7 +24,11 @@ challengeFilesDir
    challengeName
    -> ...
 secretFilesDir
--> challengeName
+-> beacon.cer
+   [beacon time 0].xml
+   [beacon time 1].xml
+   ...
+   challengeName
    -> secretFileName
       ...
       secretFileName
@@ -41,6 +54,12 @@ secretFileName idx = "secret" ++ (show idx) ++ ".bin"
 revealFileName :: FilePath
 revealFileName = "revealData.txt"
 
+xmlFileName :: Int -> FilePath
+xmlFileName t = (show t) ++ ".xml"
+
+certFileName :: FilePath
+certFileName = "beacon.cer"
+
 (</>) :: FilePath -> FilePath -> FilePath
 a </> b = a ++ "/" ++ b
 
@@ -51,3 +70,27 @@ absPath = do
   return $ if inTopLevelLol
     then "challenges"
     else "."
+
+checkChallDirExists :: IO ()
+checkChallDirExists = do
+  abspath <- absPath
+  let challDir = abspath </> challengeFilesDir
+  challDirExists <- doesDirectoryExist challDir
+  when (not challDirExists) $ error $ "Could not find " ++ challDir
+
+showHexBS :: ByteString -> String
+showHexBS = map toUpper . tail . init . show . toLazyByteString . byteStringHex . toStrict
+
+printPassFail :: (MonadIO m) => String -> ExceptT String m a -> m ()
+printPassFail str e = do
+  liftIO $ putStrLn str
+  res <- runExceptT e
+  case res of
+    (Left str) -> liftIO $ do
+      liftIO $ setSGR [SetColor Foreground Vivid Red]
+      liftIO $ putStrLn $ "\tFAIL: " ++ str
+    (Right a) -> do
+      liftIO $ setSGR [SetColor Foreground Vivid Green]
+      liftIO $ putStrLn "\tDONE"
+  liftIO $ setSGR [SetColor Foreground Vivid Black]
+  return ()

@@ -8,13 +8,11 @@ module Challenges.ProtoReader
 ,LWESample(..)
 ,LWESecret(..)
  -- untyped LWE data for self-contained reading
-,Secret(..)
-,Instance(..)
 ,InstanceWithSecret(..)) where
 
 import Control.DeepSeq
 
-import Crypto.Lol (Cyc, LiftOf, proxy, Proxy(..), reifyFactI, valueFact, Int64, modulus, Mod(..), Fact, CT, RT, ZqBasic)
+import Crypto.Lol (Cyc, CElt, LiftOf, proxy, Proxy(..), reifyFactI, valueFact, Int64, Lift', ToInteger, modulus, Mod(..), Fact, CT, RT, ZqBasic)
 import Crypto.Lol.Types.Proto
 --import qualified Crypto.Lol.Types.Proto.ChallSecrets as P
 --import qualified Crypto.Lol.Types.Proto.LWEChallenge as P
@@ -36,70 +34,10 @@ import GHC.Generics (Generic)
 -- for untyped, self-contained reading
 type UntypedConstraints t m z = 
   (NFData (Cyc t m z), Protoable (Cyc t m z), 
-   Fact m, Show (Cyc t m z))
-
-data Secret t where
-  Secret :: (UntypedConstraints t m z)
-         => Int -> Int -> Cyc t m z -> Secret t
-deriving instance Show (Secret t)
-instance NFData (Secret t) where
-  rnf (Secret idx m sk) = (rnf idx) `seq` (rnf m) `seq` (rnf sk)
-instance Protoable (Secret RT) where
-  type ProtoType (Secret RT) = P.LWESecret
-  toProto (Secret idx m (s :: Cyc RT m z)) = 
-    P.LWESecret (fromIntegral idx) (fromIntegral m) $ toProto s
-  fromProto (P.LWESecret idx m s) = 
-    reifyFactI (fromIntegral m) (\(_::proxy m) -> 
-      Secret (fromIntegral idx) (fromIntegral m) (fromProto s :: Cyc RT m Int64))
-instance Protoable (Secret CT) where
-  type ProtoType (Secret CT) = P.LWESecret
-  toProto (Secret idx m (s :: Cyc CT m z)) = 
-    P.LWESecret (fromIntegral idx) (fromIntegral m) $ toProto s
-  fromProto (P.LWESecret idx m s) = 
-    reifyFactI (fromIntegral m) (\(_::proxy m) -> 
-      Secret (fromIntegral idx) (fromIntegral m) (fromProto s :: Cyc CT m Int64))
-
-data Instance t where
-  Instance :: (UntypedConstraints t m zp, Mod zp, ModRep zp ~ Int64) 
-           => Int -> Int -> Int -> Double -> [LWESample t m zp] -> Instance t
-deriving instance Show (Instance t)
-instance NFData (Instance t) where
-  rnf (Instance idx m p v samples) = (rnf idx) `seq` (rnf m) `seq` (rnf p) `seq` (rnf v) `seq` (rnf samples)
-instance Protoable (Instance RT) where
-  type ProtoType (Instance RT) = P.LWEInstance
-  toProto (Instance idx m p v (samples :: [LWESample RT m zp])) = 
-    P.LWEInstance (fromIntegral idx)
-                  (fromIntegral m)
-                  (fromIntegral p)
-                  v
-                  (toProtoSeq samples)
-  fromProto (P.LWEInstance idx m p v inst) =
-    reify (fromIntegral p :: Int64) (\(_::Proxy p) -> 
-      reifyFactI (fromIntegral m) (\(_::proxy m) -> 
-        Instance (fromIntegral idx) 
-                 (fromIntegral m) 
-                 (fromIntegral p) 
-                 v 
-                 (fromProtoSeq inst :: [LWESample RT m (ZqBasic p Int64)])))
-instance Protoable (Instance CT) where
-  type ProtoType (Instance CT) = P.LWEInstance
-  toProto (Instance idx m p v (samples :: [LWESample CT m zp])) = 
-    P.LWEInstance (fromIntegral idx)
-                  (fromIntegral m)
-                  (fromIntegral p)
-                  v
-                  (toProtoSeq samples)
-  fromProto (P.LWEInstance idx m p v inst) =
-    reify (fromIntegral p :: Int64) (\(_::Proxy p) -> 
-      reifyFactI (fromIntegral m) (\(_::proxy m) -> 
-        Instance (fromIntegral idx) 
-                 (fromIntegral m) 
-                 (fromIntegral p) 
-                 v 
-                 (fromProtoSeq inst :: [LWESample CT m (ZqBasic p Int64)])))
+   Fact m, Show (Cyc t m z), CElt t z)
 
 data InstanceWithSecret t where
-  InstanceWithSecret :: (UntypedConstraints t m (LiftOf zp), UntypedConstraints t m zp, Mod zp, ModRep zp ~ Int64)
+  InstanceWithSecret :: (UntypedConstraints t m (LiftOf zp), UntypedConstraints t m zp, Lift' zp, ToInteger (LiftOf zp), Mod zp, ModRep zp ~ Int64)
     => Int -> Int -> Int -> Double -> Cyc t m (LiftOf zp) -> [LWESample t m zp] -> InstanceWithSecret t
 deriving instance Show (InstanceWithSecret t)
 instance NFData (InstanceWithSecret t) where
@@ -186,6 +124,68 @@ instance (Protoable (Cyc t m r)) => Protoable (LWESample t m r) where
   type ProtoType (LWESample t m r) = P.LWESample
   toProto (LWESample a b) = P.LWESample (toProto a) (toProto b)
   fromProto (P.LWESample a b) = LWESample (fromProto a) (fromProto b)
+
+{-
+data Secret t where
+  Secret :: (UntypedConstraints t m z)
+         => Int -> Int -> Cyc t m z -> Secret t
+deriving instance Show (Secret t)
+instance NFData (Secret t) where
+  rnf (Secret idx m sk) = (rnf idx) `seq` (rnf m) `seq` (rnf sk)
+instance Protoable (Secret RT) where
+  type ProtoType (Secret RT) = P.LWESecret
+  toProto (Secret idx m (s :: Cyc RT m z)) = 
+    P.LWESecret (fromIntegral idx) (fromIntegral m) $ toProto s
+  fromProto (P.LWESecret idx m s) = 
+    reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+      Secret (fromIntegral idx) (fromIntegral m) (fromProto s :: Cyc RT m Int64))
+instance Protoable (Secret CT) where
+  type ProtoType (Secret CT) = P.LWESecret
+  toProto (Secret idx m (s :: Cyc CT m z)) = 
+    P.LWESecret (fromIntegral idx) (fromIntegral m) $ toProto s
+  fromProto (P.LWESecret idx m s) = 
+    reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+      Secret (fromIntegral idx) (fromIntegral m) (fromProto s :: Cyc CT m Int64))
+
+data Instance t where
+  Instance :: (UntypedConstraints t m zp, Mod zp, ModRep zp ~ Int64) 
+           => Int -> Int -> Int -> Double -> [LWESample t m zp] -> Instance t
+deriving instance Show (Instance t)
+instance NFData (Instance t) where
+  rnf (Instance idx m p v samples) = (rnf idx) `seq` (rnf m) `seq` (rnf p) `seq` (rnf v) `seq` (rnf samples)
+instance Protoable (Instance RT) where
+  type ProtoType (Instance RT) = P.LWEInstance
+  toProto (Instance idx m p v (samples :: [LWESample RT m zp])) = 
+    P.LWEInstance (fromIntegral idx)
+                  (fromIntegral m)
+                  (fromIntegral p)
+                  v
+                  (toProtoSeq samples)
+  fromProto (P.LWEInstance idx m p v inst) =
+    reify (fromIntegral p :: Int64) (\(_::Proxy p) -> 
+      reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+        Instance (fromIntegral idx) 
+                 (fromIntegral m) 
+                 (fromIntegral p) 
+                 v 
+                 (fromProtoSeq inst :: [LWESample RT m (ZqBasic p Int64)])))
+instance Protoable (Instance CT) where
+  type ProtoType (Instance CT) = P.LWEInstance
+  toProto (Instance idx m p v (samples :: [LWESample CT m zp])) = 
+    P.LWEInstance (fromIntegral idx)
+                  (fromIntegral m)
+                  (fromIntegral p)
+                  v
+                  (toProtoSeq samples)
+  fromProto (P.LWEInstance idx m p v inst) =
+    reify (fromIntegral p :: Int64) (\(_::Proxy p) -> 
+      reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+        Instance (fromIntegral idx) 
+                 (fromIntegral m) 
+                 (fromIntegral p) 
+                 v 
+                 (fromProtoSeq inst :: [LWESample CT m (ZqBasic p Int64)])))
+-}
 
 {-
 -- beaconTime, bitOffset, svar, insts

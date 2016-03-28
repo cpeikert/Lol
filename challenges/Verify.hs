@@ -1,120 +1,102 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, NoImplicitPrelude, PackageImports, RebindableSyntax, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts, GADTs #-}
 
-import TGaussian
-import LWE
-import HPFloat
-import Random
-import Utils
---import FiatShamir
+import Challenges.Beacon
+import Challenges.Common
+import Challenges.ProtoReader
+import Challenges.Read
+import Challenges.Verify
 
-import Data.ByteString as BS hiding (init, tail, map, null)
-import Data.ByteString.Lazy (toStrict, fromStrict, null)
-import Data.Serialize
-import Crypto.Lol hiding (encode, null)
-import System.IO as IO
-import Algebra.IntegralDomain (divUp)
+import Control.Monad
+import Control.Monad.Except
+import Control.Monad.Trans
 
-import "crypto-api" Crypto.Random
-import Crypto.Random.DRBG
-import Control.Applicative
-import Data.BooleanList (byteStringToBooleanList) -- boolean-list
-import Data.ByteString.Builder
-import Numeric (readHex)
-import Data.Char
-import Net.Beacon
-import Control.Monad.Random
-
+import Crypto.Lol (CT,RT,fromJust',intLog)
 import Crypto.Lol.Types.Proto
-import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
-import System.Directory (removeFile)
 
-type F = Double
-type T = RT
-type M = F11
+import qualified Data.ByteString.Lazy as BS
+
+import Net.Beacon
+
+import OpenSSL (withOpenSSL)
+import OpenSSL.PEM (readX509)
+
+import System.Directory (doesDirectoryExist, doesFileExist, getDirectoryContents)
+
+import Text.ProtocolBuffers (messageGet)
+import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
+
+-- Tensor type used to verify instances
+type T = CT
 
 main :: IO ()
 main = do
-  -- Generate (numInstances * fsInstSize) LWE instances,
-  -- corresponding to (numInstances * fsInstSize * numSamples) LWE samples.
-  -- We reveal all but numInstances LWE keys.
-  let --numInstances = 1   -- number of secret LWE instances to generate
-      numSamples   = 1  -- number of LWE samples per instance
-      --fsInstSize   = 2   -- number of LWE instances per FS instance (we reveal keys for all but one)
-      v = 1 :: F
+  checkChallDirExists
 
-  -- check LWE instance
-  (sk,inst) :: (Cyc T M Int64, LWEInstance F T M (Zq 23)) <- proxyT (lweInstance v numSamples) (Proxy::Proxy F)
-  if checkInstance sk inst
-  then print "Instance passed."
-  else print "Instance failed."
+  abspath <- absPath
+  let challDir = abspath </> challengeFilesDir
+  challs <- filter (("chall" ==) . (take 5)) <$> (getDirectoryContents challDir)
 
-  -- check instance serialization
-  BS.writeFile "lwe.raw" (encode inst)
-  bsInst <- decode' <$> BS.readFile "lwe.raw"
-  if (bsInst == inst)
-  then print "Serialization passed."
-  else print "Serialization failed."
-  removeFile "lwe.raw"
+  mapM_ (verifyChallenge abspath) challs
 
-  -- check instance protocol buffer
-  BS.writeFile "lwe.proto" $ toStrict $ msgPut inst
-  prInst <- msgGet' <$> BS.readFile "lwe.proto"
-  if (prInst == inst)
-  then print "Protocol buffer passed."
-  else print "Protocol buffer failed."
-  removeFile "lwe.proto"
+verifyChallenge :: FilePath -> String -> IO ()
+verifyChallenge path name = do
+  let challPath = path </> challengeFilesDir </> name
 
-  -- check instance printing/parsing
-  IO.writeFile "lwe.txt" (show inst)
-  txInst <- read <$> IO.readFile "lwe.txt"
-  if(txInst == inst)
-  then print "Text parse passed."
-  else print "Text parse failed."
-  removeFile "lwe.txt"
+  printPassFail ("Verifying challenge " ++ name ++ "...") $ do
+    numInsts <- lift $ length <$> filter (("instance" ==) . (take 8)) <$> (getDirectoryContents challPath)
+    let numBits = intLog 2 numInsts
+    (BP time offset) <- readRevealData challPath
 
-  -- get Beacon
-  time <- localDateToSeconds 2 24 2016 11 0
-  seed <- getBeacon time
-  print $ showHexBS seed
+    rec <- readAndVerifyBeacon path time
 
-  -- get random bits using Beacon as seed to generator
-  let (Right gen) = newGen seed
-      bits = evalRand (genBits 8) (gen :: HashDRBG)
-  print bits
+    let secretIdx = getSecretIdx rec offset numBits
+        secretName = secretFileName secretIdx
+        checkInstIds = [i | i<-[0..(numInsts-1)], i /= secretIdx]
+        secDir = path </> secretFilesDir </> name
+    secExists <- lift $ doesFileExist (secDir </> secretName)
 
+    when secExists $ throwError $ "The secret index for challenge " ++ 
+      name ++ " is " ++ (show secretIdx) ++ ", but this secret is present!"
 
+    mapM_ (verifyInstance path name) checkInstIds
 
+verifyInstance :: FilePath -> String -> Int -> ExceptT String IO ()
+verifyInstance path challName instID = do
+  (InstanceWithSecret idx m p v secret samples) <- readInstance path challName instID
 
+  lift $ putStrLn $ "\tChecking instance " ++ (show instID) ++ "... "
+  when (not $ checkInstance v secret samples) $ throwError $ "Some sample in instance " ++ (show instID) ++ " exceeded the noise bound."
 
+readInstance :: FilePath -> String -> Int -> ExceptT String IO (InstanceWithSecret T)
+readInstance path challName instID = do
+  let instFile = path </> challengeFilesDir </> challName </> (instFileName instID)
+      secFile = path </> secretFilesDir </> challName </> (secretFileName instID)
+  instFileExists <- lift $ doesFileExist instFile
+  when (not instFileExists) $ throwError $ instFile ++ " does not exist."
+  secFileExists <- lift $ doesFileExist secFile
+  when (not secFileExists) $ throwError $ secFile ++ " does not exist."
+  pinst <- lift $ messageGet' <$> BS.readFile instFile
+  psec <- lift $ messageGet' <$> BS.readFile secFile
+  return $ fromProto (psec, pinst)
 
-
-
-
-msgGet' :: (ReflectDescriptor (ProtoType a), Wire (ProtoType a), Protoable a) => ByteString -> a
-msgGet' bs = 
-  case msgGet $ fromStrict bs of
+messageGet' :: (ReflectDescriptor a, Wire a) => BS.ByteString -> a
+messageGet' bs = 
+  case messageGet bs of
     (Left str) -> error $ "when getting protocol buffer. Got string " ++ str
     (Right (a,bs')) -> 
-      if null bs'
+      if BS.null bs'
       then a
       else error $ "when getting protocol buffer. There were leftover bits!"
 
-
-decode' :: (Serialize a) => ByteString -> a
-decode' bs = 
-  case decode bs of
-    (Left str) -> error $ "when decoding bytestring. Got string " ++ str
-    (Right x) -> x
-
-showHexBS :: ByteString -> String
-showHexBS = map toUpper . tail . init . show . toLazyByteString . byteStringHex
-
--- outputs the requested number of bits
--- wastes any unused bits in the last byte sampled
-genBits :: (CryptoRandomGen gen) => Int -> Rand gen [Bool]
-genBits n = liftRand $ \g ->
-  let numBytes = n `divUp` 8
-      mbytes = genBytes numBytes g
-  in case mbytes of
-      (Left err) -> error "An error occured when sampling bits."
-      (Right (bs,g')) -> (byteStringToBooleanList bs, g')
+readAndVerifyBeacon :: FilePath -> Int -> ExceptT String IO Record
+readAndVerifyBeacon path time = do
+  lift $ putStrLn "\tVerifying beacon..."
+  let file = path </> secretFilesDir </> xmlFileName time
+  beaconExists <- lift $ doesFileExist file
+  when (not beaconExists) $ throwError $ "Cannot find " ++ file
+  rec <- lift $ fromJust' "NIST getCurrentRecord" <$> fromXML <$> BS.readFile file
+  res <- lift $ withOpenSSL $ do
+    cert <- readX509 =<< (readFile $ path </> secretFilesDir </> certFileName)
+    verifySig cert rec
+  when (not res) $ throwError $ "Signature verification of " ++ file ++ " failed."
+  return rec

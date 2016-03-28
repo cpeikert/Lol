@@ -60,8 +60,7 @@ stampChallenge name numSamples = do
   -- advance to the next place we can use 'numBits' bits and return it
   (BP time offset) <- (modify $ getBeaconPos numBits) >> get
   let revealFile = path </> revealFileName
-  lift $ P.writeFile revealFile name
-  lift $ P.appendFile revealFile $ "\n" ++ show time
+  lift $ P.writeFile revealFile $ show time
   lift $ P.appendFile revealFile $ "\n" ++ show offset
   -- advance the state by 'numBits'
   modify (advanceBeaconPos numBits)
@@ -69,10 +68,11 @@ stampChallenge name numSamples = do
 -- outputs the challenge name and the number of instances for this challenge
 makeChallenge :: ChallengeParams -> FilePath -> String -> IO ()
 makeChallenge CP{..} path challName = reify (fromIntegral p :: Int64) (\(proxyp::Proxy p) -> 
-  reifyFactI m (\(proxym::proxy m) -> do      
-    putStrLn $ "Generating challenge (m=" ++ (show m) ++ ", p=" ++ (show p) ++ ", v=" ++ (show v) ++ ")..."
-    let idxs = take numInstances [0..]
-    mapM_ (genInstance proxyp proxym challName path v numSamples) idxs))
+  reifyFactI m (\(proxym::proxy m) -> printPassFail 
+    ("Generating challenge (m=" ++ (show m) ++ ", p=" ++ (show p) ++ ", v=" ++ (show v) ++ ")...") $ do
+      let idxs = take numInstances [0..]
+      lift $ mapM_ (genInstance proxyp proxym challName path v numSamples) idxs
+  ))
 
 genInstance :: forall p proxy m . (Fact m, Reifies p Int64) 
   => Proxy p -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
@@ -97,77 +97,3 @@ writeProtoType challPath instName inst = do
   createDirectoryIfMissing True challPath
   let instPath = challPath </> instName
   BS.writeFile instPath $ toStrict $ msgPut inst
-
-
-
-  
-  
-
-  
-{-
-
-  
-  chall <- lift $ evalCryptoRandIO (Proxy::Proxy HashDRBG) $ proxyT (lweChallenge svar samplesPerInstance instancesPerChallenge) (Proxy::Proxy q)
-  chall `deepseq` lift $ putStr $ "Verifying..."
-  let result = checkChallenge (chall :: SecretLWEChallenge v t m zp)
-  if result
-  then do
-    lift $ setSGR [SetColor Foreground Vivid Green]
-    lift $ putStrLn "PASS"
-  else do
-    lift $ setSGR [SetColor Foreground Vivid Red]
-    lift $ putStrLn "FAIL"
-  lift $ setSGR [SetColor Foreground Vivid Black]
-
-  -- get the position for this challenge
-  BP time offset _ _ _ <- get
-  -- update the state for the next challenge
-  modify $ advanceBeaconPos beaconBitsPerChallenge
-
-  lift $ putStrLn $ "Beacon value for this challenge is " ++ (show time) ++ "+" ++ (show offset)
-  let (sks, chall') = removeSecrets chall time offset
-
-  let challName = challengeFileName chall'
-  lift $ writeChallenge challName chall'
-  lift $ writeSecrets topSecretPath challName sks
-  return challName
--}
-
-
-
-{-
--- SHA3
-hashFile :: FilePath -> IO String
-hashFile path = do
-  bs <- readFile $ challengePath ++ "/" ++ path
-  let h = hash hashOutputBits bs
-      lineBreak = (replicate hashPrettyPrintLineSize '-') ++ "\n"
-      header = "SHA3-" ++ (show hashOutputBits) ++ " hash for challenge " ++ path ++ "\n" ++ lineBreak
-      hashStr = intercalate "\n" $ chunksOf hashPrettyPrintLineSize $ 
-                  map toUpper $ tail $ init $ show $ toLazyByteString $ byteStringHex h
-  return $ header ++ hashStr ++ "\n\n"
-
--- takes number of instancesPerChallenge and a "challenge" file" with a list of params
-challMain :: IO ()
-challMain = do
-  initTime <- beaconInit
-  currTime <- liftM (timeStamp . fromJust' "Failed to get last beacon") getLastRecord
-  when (initTime < currTime + 24*60*60) $ do
-    setSGR [SetColor Foreground Vivid Red]
-    putStrLn "WARNING: The reveal date is less than one day from now!"
-    setSGR [SetColor Foreground Vivid Black]
-    names <- flip evalStateT (BP initTime 0) $ sequence challengeList
-
-  -- write list of all challenges generated for easy parsing/verification
-  -- EAC: we don't need this, but it seems convenient for others to have
-  let challListFile = challengePath ++ "/challenges.txt"
-  putStrLn $ "Writing list of challenges to " ++ challListFile
-  Crypto.Lol.writeFile challListFile $ intercalate "\n" names
-
-  -- write file containing hashes of each challenge
-  hashes <- concat <$> mapM hashFile names
-  let hashFilePath = challengePath ++ "/hashes.txt"
-  putStrLn $ "Writing hashes to " ++ hashFilePath
-  Crypto.Lol.writeFile hashFilePath hashes
-
--}

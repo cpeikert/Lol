@@ -21,3 +21,6 @@ sandbox
 test
 challenge-files
 secret-files
+
+blockchaintest*
+test*

@@ -8,11 +8,16 @@ module Challenges.Beacon
 ,advanceBeaconPos
 ,BeaconPos(..)
 ,bitsPerBeacon
-,beaconInterval) where
+,beaconInterval
+,verifySig) where
 
 import Control.DeepSeq
+import Crypto.Hash.SHA512 (hash)
+import Crypto.Lol (fromJust')
 import Data.ByteString (ByteString)
-import Data.ByteString.Lazy (toStrict)
+import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString.Lazy.Char8 as SB (pack)
+import qualified Data.ByteString.Builder as B
 import Data.Serialize
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Clock (UTCTime(..),secondsToDiffTime)
@@ -20,6 +25,13 @@ import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.LocalTime
 import GHC.Generics (Generic)
 import Net.Beacon
+import OpenSSL (withOpenSSL)
+import OpenSSL.EVP.Digest (getDigestByName)
+import OpenSSL.EVP.PKey (toPublicKey)
+import OpenSSL.EVP.Verify (verifyBS, VerifyStatus(..))
+import OpenSSL.PEM (writePublicKey)
+import OpenSSL.RSA
+import OpenSSL.X509 (getPublicKey, getSubjectEmail, X509)
 
 -- becaonTime
 -- bitOffset
@@ -64,7 +76,7 @@ localDateToSeconds month day year hour minute = do
 
 -- takes seconds since epoch (GMT)
 getBeacon :: Int -> IO ByteString
-getBeacon time = toStrict <$> do
+getBeacon time = B.toStrict <$> do
   lastTime <- maybe 
     (error "Could not get last record from the Beacon. \
            \Possible cause: the XML format has changed.")
@@ -77,3 +89,29 @@ getBeacon time = toStrict <$> do
                     \Possible causes: the XML format has changed, \
                     \or the frequency is not a divisor of 60.") 
              outputValue <$> getCurrentRecord time
+
+-- http://hackaday.com/2014/12/19/nist-randomness-beacon/
+verifySig :: X509 -> Record -> IO Bool
+verifySig cert rec = do
+  pk <- getPublicKey cert
+  dgst <- fromJust' "Digest alg" <$> getDigestByName "sha512"
+  -- the signature is stored in little-endian
+  let sig = signatureValue rec
+      revSig = B.toStrict $ B.pack $ reverse $ B.unpack sig
+      msg = B.toStrict $ signedMsg rec
+  vs <- verifyBS dgst revSig pk msg
+  let vs' = case vs of
+              VerifySuccess -> True
+              VerifyFailure -> False
+      expectedOutput = hash $ B.toStrict sig
+      actualOutput = B.toStrict $ outputValue rec
+  return $ vs' && (expectedOutput == actualOutput)
+
+signedMsg :: Record -> B.ByteString
+signedMsg rec = B.concat [
+  SB.pack $ version rec,
+  B.toLazyByteString $ B.word32BE $ fromIntegral $ frequency rec,
+  B.toLazyByteString $ B.word64BE $ fromIntegral $ timeStamp rec,
+  seedValue rec,
+  previousOutputValue rec,
+  B.toLazyByteString $ B.word32BE $ fromIntegral $ statusCode rec]

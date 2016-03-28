@@ -6,7 +6,6 @@ module Challenges.LWE
 ,LWECtx
 , module Challenges.ProtoReader) where
 
-import Challenges.Beacon
 import Challenges.ProtoReader
 
 import Control.Applicative
@@ -17,16 +16,6 @@ import Crypto.Lol hiding (errorRounded)
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Cyclotomic.UCyc as U hiding (errorRounded)
 
-import Data.Map.Strict
-{-
-lweChallenge :: (LWECtx t m (LiftOf zp) zp v q, MonadRandom rnd, Random (LiftOf zp)) 
-             => v -> Int -> Int -> BeaconPos -> TaggedT q rnd (ChallengeSecrets t m (LiftOf zp), LWEChallenge v t m zp)
-lweChallenge svar numSamples numInstances bp = do
-  (secrets, insts) <- unzip <$> replicateM numInstances (lweInstance svar numSamples)
-  let ids = [0..]
-  return $ (ChallengeSecrets $ fromList $ zip ids secrets, 
-            LWEChallenge bp svar $ fromList $ zip ids insts)
--}
 lweInstance :: forall t m q zp v rnd .  
   (LWECtx t m (LiftOf zp) zp v q, MonadRandom rnd, Random (LiftOf zp))
   => v -> Int -> TaggedT q rnd (Cyc t m (LiftOf zp), [LWESample t m zp])
