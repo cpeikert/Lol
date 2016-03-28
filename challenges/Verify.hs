@@ -50,22 +50,24 @@ verifyChallenge path name = do
     rec <- readAndVerifyBeacon path time
 
     let secretIdx = getSecretIdx rec offset numBits
-        secretName = secretFileName secretIdx
-        checkInstIds = [i | i<-[0..(numInsts-1)], i /= secretIdx]
-        secDir = path </> secretFilesDir </> name
+        instIDs = [0..(numInsts-1)]    
+
+    mapM_ (verifyInstance path name secretIdx) instIDs
+
+verifyInstance :: FilePath -> String -> Int -> Int -> ExceptT String IO ()
+verifyInstance path challName secretID instID 
+  | secretID == instID = do
+    let secDir = path </> secretFilesDir </> challName
+        secretName = secretFileName secretID
     secExists <- lift $ doesFileExist (secDir </> secretName)
-
+    lift $ putStrLn $ "\tInstance " ++ (show secretID) ++ " is secret..."
     when secExists $ throwError $ "The secret index for challenge " ++ 
-      name ++ " is " ++ (show secretIdx) ++ ", but this secret is present!"
-
-    mapM_ (verifyInstance path name) checkInstIds
-
-verifyInstance :: FilePath -> String -> Int -> ExceptT String IO ()
-verifyInstance path challName instID = do
-  (InstanceWithSecret idx m p v secret samples) <- readInstance path challName instID
-
-  lift $ putStrLn $ "\tChecking instance " ++ (show instID) ++ "... "
-  when (not $ checkInstance v secret samples) $ throwError $ "Some sample in instance " ++ (show instID) ++ " exceeded the noise bound."
+          challName ++ " is " ++ (show secretID) ++ ", but this secret is present!"
+  | otherwise = do
+    (InstanceWithSecret idx m p v secret samples) <- readInstance path challName instID
+    lift $ putStrLn $ "\tChecking instance " ++ (show instID) ++ "... "
+    when (not $ checkInstance v secret samples) $ 
+      throwError $ "Some sample in instance " ++ (show instID) ++ " exceeded the noise bound."
 
 readInstance :: FilePath -> String -> Int -> ExceptT String IO (InstanceWithSecret T)
 readInstance path challName instID = do
