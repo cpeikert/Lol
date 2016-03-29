@@ -35,7 +35,7 @@ main = do
   getNistCert abspath
 
 revealChallengeMain :: FilePath -> String -> StateT (Map Int Record) IO ()
-revealChallengeMain abspath name = printPassFail ("Revealing challenge " ++ name ++ ": ") $ do
+revealChallengeMain abspath name = printPassFail ("Revealing challenge " ++ name ++ ":\n") $ do
   let challDir = abspath </> challengeFilesDir </> name
   (BP time offset) <- readRevealData challDir 
 

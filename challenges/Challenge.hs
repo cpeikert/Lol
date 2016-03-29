@@ -15,9 +15,11 @@ import Crypto.Lol.Types.Proto
 import Data.ByteString as BS (writeFile)
 import Data.ByteString.Lazy as BS (toStrict)
 import Data.Reflection
+import Data.Time.Clock.POSIX (getPOSIXTime)
 
 import Prelude as P
 
+import System.Console.ANSI
 import System.Directory (createDirectoryIfMissing)
 
 import Text.ProtocolBuffers.Header
@@ -59,6 +61,16 @@ stampChallenge name numSamples = do
   let path = abspath </> challengeFilesDir </> name
   -- advance to the next place we can use 'numBits' bits and return it
   (BP time offset) <- (modify $ getBeaconPos numBits) >> get
+  currTime <- posixToInt <$> liftIO getPOSIXTime
+  if (currTime > time)
+  then do
+    liftIO $ setSGR [SetColor Foreground Vivid Red]
+    liftIO $ putStrLn $ "Reveal time is in the past!"
+    liftIO $ setSGR [SetColor Foreground Vivid Black]
+  else when (currTime + 60*60*24*5 > time) $ do
+    liftIO $ setSGR [SetColor Foreground Vivid Red]
+    liftIO $ putStrLn $ "Reveal time is less than 5 days away!"
+    liftIO $ setSGR [SetColor Foreground Vivid Black]
   let revealFile = path </> revealFileName
   lift $ P.writeFile revealFile $ show time
   lift $ P.appendFile revealFile $ "\n" ++ show offset

@@ -53,7 +53,7 @@ verifyChallenge :: FilePath -> String -> IO (Maybe (BeaconPos, Int))
 verifyChallenge path name = do
   let challPath = path </> challengeFilesDir </> name
 
-  printPassFail ("Verifying challenge " ++ name ++ "...") $ do
+  printPassFail ("Verifying challenge " ++ name ++ ":\n") $ do
     numInsts <- lift $ length <$> filter (("instance" ==) . (take 8)) <$> (getDirectoryContents challPath)
     let numBits = intLog 2 numInsts
     bp@(BP time offset) <- readRevealData challPath
@@ -72,12 +72,12 @@ verifyInstance path challName secretID instID
     let secDir = path </> secretFilesDir </> challName
         secretName = secretFileName secretID
     secExists <- lift $ doesFileExist (secDir </> secretName)
-    lift $ putStrLn $ "\tInstance " ++ (show secretID) ++ " is secret..."
+    lift $ putStrLn $ "\tInstance " ++ (show secretID) ++ " is secret"
     when secExists $ throwError $ "The secret index for challenge " ++ 
           challName ++ " is " ++ (show secretID) ++ ", but this secret is present!"
   | otherwise = do
     (InstanceWithSecret idx m p v secret samples) <- readInstance path challName instID
-    lift $ putStrLn $ "\tChecking instance " ++ (show instID) ++ "... "
+    lift $ putStrLn $ "\tChecking instance " ++ (show instID)
     when (not $ checkInstance v secret samples) $ 
       throwError $ "Some sample in instance " ++ (show instID) ++ " exceeded the noise bound."
 

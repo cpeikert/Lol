@@ -84,7 +84,7 @@ showHexBS = map toUpper . tail . init . show . toLazyByteString . byteStringHex 
 
 printPassFail :: (MonadIO m, Default a) => String -> ExceptT String m a -> m a
 printPassFail str e = do
-  liftIO $ putStrLn str
+  liftIO $ putStr str
   res <- runExceptT e
   val <- case res of
     (Left str) -> liftIO $ do

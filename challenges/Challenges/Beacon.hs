@@ -6,6 +6,7 @@ module Challenges.Beacon
 ,localDateToSeconds
 ,getBeaconPos
 ,advanceBeaconPos
+,posixToInt
 ,BeaconPos(..)
 ,bitsPerBeacon
 ,beaconInterval
@@ -21,7 +22,7 @@ import qualified Data.ByteString.Builder as B
 import Data.Serialize
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Clock (UTCTime(..),secondsToDiffTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, POSIXTime)
 import Data.Time.LocalTime
 import GHC.Generics (Generic)
 import Net.Beacon
@@ -58,15 +59,11 @@ gmtDateToSeconds month day year hour minute | hour >= 0 &&
                                            hour < 24 &&
                                            minute >= 0 &&
                                            minute < 60 = 
-  convert $ utcTimeToPOSIXSeconds $ UTCTime (fromGregorian year month day) (secondsToDiffTime $ fromIntegral $ 3600*hour+60*minute)
-  where convert ptime =
-          -- there has got to be a better way to get the seconds since the epoch as an Int... 
-          let itime = read $ init $ show ptime
-          in if (show ptime) == (show itime ++ "s")
-             then itime
-             else error $ "Unexpected format when showing a POSIXTime: expected " ++ 
-                   (show itime) ++ "s. received: " ++ (show ptime)
+  posixToInt $ utcTimeToPOSIXSeconds $ UTCTime (fromGregorian year month day) (secondsToDiffTime $ fromIntegral $ 3600*hour+60*minute)
 gmtDateToSeconds _ _ _ _ _ = error "invalid date to gmtDateToSeconds"
+
+posixToInt :: POSIXTime -> Int
+posixToInt ptime = fromInteger $ round ptime
 
 localDateToSeconds :: Int -> Int -> Integer -> Int -> Int -> IO Int
 localDateToSeconds month day year hour minute = do
