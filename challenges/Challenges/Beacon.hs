@@ -1,4 +1,3 @@
-{-# LANGUAGE DeriveGeneric #-}
 
 module Challenges.Beacon
 (getBeacon
@@ -6,7 +5,6 @@ module Challenges.Beacon
 ,localDateToSeconds
 ,getBeaconPos
 ,advanceBeaconPos
-,posixToInt
 ,BeaconPos(..)
 ,bitsPerBeacon
 ,beaconInterval
@@ -19,12 +17,11 @@ import Data.ByteString (ByteString)
 import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy.Char8 as SB (pack)
 import qualified Data.ByteString.Builder as B
-import Data.Serialize
+
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Clock (UTCTime(..),secondsToDiffTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, POSIXTime)
 import Data.Time.LocalTime
-import GHC.Generics (Generic)
 import Net.Beacon
 import OpenSSL (withOpenSSL)
 import OpenSSL.EVP.Digest (getDigestByName)
@@ -38,9 +35,8 @@ import OpenSSL.X509 (getPublicKey, getSubjectEmail, X509)
 -- bitOffset
 bitsPerBeacon = 512 :: Int
 beaconInterval = 60 :: Int
-data BeaconPos = BP Int Int deriving (Eq, Generic, Read, Show)
+data BeaconPos = BP Int Int deriving (Eq, Read, Show)
 instance NFData BeaconPos where rnf (BP a b) = (rnf a) `seq` (rnf b)
-instance Serialize BeaconPos -- use Generics
 
 -- returns the first available beacon position for k bits
 getBeaconPos :: Int -> BeaconPos -> BeaconPos
@@ -59,11 +55,8 @@ gmtDateToSeconds month day year hour minute | hour >= 0 &&
                                            hour < 24 &&
                                            minute >= 0 &&
                                            minute < 60 = 
-  posixToInt $ utcTimeToPOSIXSeconds $ UTCTime (fromGregorian year month day) (secondsToDiffTime $ fromIntegral $ 3600*hour+60*minute)
+  round $ utcTimeToPOSIXSeconds $ UTCTime (fromGregorian year month day) (secondsToDiffTime $ fromIntegral $ 3600*hour+60*minute)
 gmtDateToSeconds _ _ _ _ _ = error "invalid date to gmtDateToSeconds"
-
-posixToInt :: POSIXTime -> Int
-posixToInt ptime = fromInteger $ round ptime
 
 localDateToSeconds :: Int -> Int -> Integer -> Int -> Int -> IO Int
 localDateToSeconds month day year hour minute = do

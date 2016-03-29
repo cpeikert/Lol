@@ -21,9 +21,11 @@ import Network.HTTP.Conduit (simpleHttp)
 import Prelude hiding (lookup, writeFile)
 
 import System.Directory (doesFileExist, doesDirectoryExist, removeFile, getDirectoryContents)
+import System.IO hiding (writeFile)
 
 main :: IO ()
 main = do
+  hSetBuffering stdout NoBuffering
   checkChallDirExists
 
   abspath <- absPath
@@ -63,7 +65,7 @@ revealChallengeMain abspath name = printPassFail ("Revealing challenge " ++ name
   secFileExists <- liftIO $ doesFileExist secFile
   when (not secFileExists) $ throwError $ secFile ++ " does not exist."
 
-  liftIO $ putStrLn $ "\tRemoving " ++ secFile
+  liftIO $ putStr $ "\tRemoving " ++ secFile ++ "\n\t"
   liftIO $ removeFile secFile
 
 -- attempt to find the record in the state, otherwise read it from NIST

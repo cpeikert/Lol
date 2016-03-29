@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DeriveGeneric, FlexibleContexts, FlexibleInstances, GADTs,
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances, GADTs,
              ScopedTypeVariables,
              StandaloneDeriving, TypeFamilies, UndecidableInstances #-}
 
@@ -22,10 +22,8 @@ import Data.Foldable as S (toList)
 import Data.Map.Strict as M hiding (map)
 import qualified Data.Map.Strict as M
 import Data.Reflection
-import Data.Serialize
 import Data.Sequence as S (fromList, Seq)
 
-import GHC.Generics (Generic)
 
 -- for untyped, self-contained reading
 type UntypedConstraints t m z = 
@@ -80,13 +78,12 @@ fromProtoSeq :: (Protoable a) => Seq (ProtoType a) -> [a]
 fromProtoSeq = map fromProto . S.toList
 
 -- corresponds to LWESecret proto type
-data LWESecret t m z = LWESecret Int (Cyc t m z) deriving (Generic)
+data LWESecret t m z = LWESecret Int (Cyc t m z)
 deriving instance (Read (Cyc t m z)) => Read (LWESecret t m z)
 deriving instance (Show (Cyc t m z)) => Show (LWESecret t m z)
 deriving instance (Eq (Cyc t m z)) => Eq (LWESecret t m z)
 instance (NFData (Cyc t m z)) => NFData (LWESecret t m z) where
   rnf (LWESecret idx s) = (rnf idx) `seq` (rnf s)
-instance (Serialize (Cyc t m z)) => Serialize (LWESecret t m z) -- use Generics
 instance (Protoable (Cyc t m z), Fact m) => Protoable (LWESecret t m z) where
   type ProtoType (LWESecret t m z) = P.LWESecret
   toProto (LWESecret idx s) = 
@@ -95,13 +92,12 @@ instance (Protoable (Cyc t m z), Fact m) => Protoable (LWESecret t m z) where
     LWESecret (fromIntegral idx) $ fromProto s
 
 -- corresponds to LWEInstance proto type
-data LWEInstance v t m zp = LWEInstance Int v [LWESample t m zp] deriving (Generic)
+data LWEInstance v t m zp = LWEInstance Int v [LWESample t m zp]
 instance (NFData (LWESample t m zp), NFData v) => NFData (LWEInstance v t m zp) where
   rnf (LWEInstance idx v ss) = (rnf idx) `seq` (rnf v) `seq` (rnf ss)
 deriving instance (Read (LWESample t m zp), Read v) => Read (LWEInstance v t m zp)
 deriving instance (Show (LWESample t m zp), Show v) => Show (LWEInstance v t m zp)
 deriving instance (Eq (LWESample t m zp), Eq v) => Eq (LWEInstance v t m zp)
-instance (Serialize (LWESample t m zp), Serialize v) => Serialize (LWEInstance v t m zp) -- use Generics
 instance (Protoable (Cyc t m zp), Mod zp, ModRep zp ~ Int64, Fact m) => Protoable (LWEInstance Double t m zp) where
   type ProtoType (LWEInstance Double t m zp) = P.LWEInstance
   toProto (LWEInstance idx v samples) = 
@@ -113,13 +109,12 @@ instance (Protoable (Cyc t m zp), Mod zp, ModRep zp ~ Int64, Fact m) => Protoabl
   fromProto (P.LWEInstance idx m p v samples) = LWEInstance (fromIntegral idx) v $ fromProtoSeq samples
 
 -- corresponds to LWESample proto type
-data LWESample t m r = LWESample (Cyc t m r) (Cyc t m r) deriving (Generic)
+data LWESample t m r = LWESample (Cyc t m r) (Cyc t m r)
 deriving instance (Read (Cyc t m r)) => Read (LWESample t m r)
 deriving instance (Show (Cyc t m r)) => Show (LWESample t m r)
 deriving instance (Eq (Cyc t m r)) => Eq (LWESample t m r)
 instance (NFData (Cyc t m r)) => NFData (LWESample t m r) where
   rnf (LWESample a b) = (rnf a) `seq` (rnf b)
-instance (Serialize (Cyc t m r)) => Serialize (LWESample t m r) -- use Generics
 instance (Protoable (Cyc t m r)) => Protoable (LWESample t m r) where
   type ProtoType (LWESample t m r) = P.LWESample
   toProto (LWESample a b) = P.LWESample (toProto a) (toProto b)

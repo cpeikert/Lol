@@ -20,7 +20,8 @@ import Data.Time.Clock.POSIX (getPOSIXTime)
 import Prelude as P
 
 import System.Console.ANSI
-import System.Directory (createDirectoryIfMissing)
+import System.Directory (createDirectoryIfMissing, removeDirectoryRecursive, doesDirectoryExist)
+import System.IO
 
 import Text.ProtocolBuffers.Header
 
@@ -34,15 +35,22 @@ data ChallengeParams = CP {m::Int, p::Int, v::Double, numSamples::Int, numInstan
 
 main :: IO ()
 main = do
+  hSetBuffering stdout NoBuffering
+
   -- EAC: Read from command line
-  let numInstances = 4 :: Int
-      numSamples = 8
+  let numInstances = 16 :: Int
+      numSamples = 10
 
   path <- absPath
 
+  challDirExists <- doesDirectoryExist $ path </> challengeFilesDir
+  when challDirExists $ removeDirectoryRecursive $ path </> challengeFilesDir
+  secDirExists <- doesDirectoryExist $ path </> secretFilesDir
+  when secDirExists $ removeDirectoryRecursive $ path </> secretFilesDir
+
   let cps = [
-        CP 32 257 1.0 numSamples numInstances,
-        CP 64 257 1.1 numSamples numInstances
+        CP 256 257 1.0 numSamples numInstances,
+        CP 256 257 1.1 numSamples numInstances
         ]
 
   initTime <- beaconInit
@@ -52,16 +60,16 @@ challengeMain :: FilePath -> ChallengeParams -> StateT BeaconPos IO ()
 challengeMain path cp@CP{..} = do
   let name = challengeName m p v
   lift $ makeChallenge cp path name
-  stampChallenge name numSamples
+  stampChallenge name numInstances
 
 stampChallenge :: String -> Int -> StateT BeaconPos IO ()
-stampChallenge name numSamples = do
-  let numBits = intLog 2 numSamples
+stampChallenge name numInstances = do
+  let numBits = intLog 2 numInstances
   abspath <- lift absPath
   let path = abspath </> challengeFilesDir </> name
   -- advance to the next place we can use 'numBits' bits and return it
   (BP time offset) <- (modify $ getBeaconPos numBits) >> get
-  currTime <- posixToInt <$> liftIO getPOSIXTime
+  currTime <- round <$> liftIO getPOSIXTime
   if (currTime > time)
   then do
     liftIO $ setSGR [SetColor Foreground Vivid Red]
@@ -81,7 +89,7 @@ stampChallenge name numSamples = do
 makeChallenge :: ChallengeParams -> FilePath -> String -> IO ()
 makeChallenge CP{..} path challName = reify (fromIntegral p :: Int64) (\(proxyp::Proxy p) -> 
   reifyFactI m (\(proxym::proxy m) -> printPassFail 
-    ("Generating challenge (m=" ++ (show m) ++ ", p=" ++ (show p) ++ ", v=" ++ (show v) ++ ")...") $ do
+    ("Generating challenge (m=" ++ (show m) ++ ", p=" ++ (show p) ++ ", v=" ++ (show v) ++ ")") $ do
       let idxs = take numInstances [0..]
       lift $ mapM_ (genInstance proxyp proxym challName path v numSamples) idxs
   ))
@@ -89,7 +97,6 @@ makeChallenge CP{..} path challName = reify (fromIntegral p :: Int64) (\(proxyp:
 genInstance :: forall p proxy m . (Fact m, Reifies p Int64) 
   => Proxy p -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
 genInstance _ _ challName path v numSamples idx = do
-  -- EAC: might want to add some more randomness, since this uses IO to get seed
   (secret', samples :: [LWESample T m (ZqBasic p Int64)]) <- 
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ 
       proxyT (lweInstance v numSamples) (Proxy::Proxy Double)
@@ -99,6 +106,7 @@ genInstance _ _ challName path v numSamples idx = do
       instFile = instFileName idx
   writeProtoType (path </> challengeFilesDir </> challName) instFile inst
   writeProtoType (path </> secretFilesDir </> challName) secretFile secret
+  putStr "."
 
 writeProtoType :: 
   (Protoable a,

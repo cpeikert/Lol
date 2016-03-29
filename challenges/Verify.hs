@@ -23,6 +23,7 @@ import OpenSSL (withOpenSSL)
 import OpenSSL.PEM (readX509)
 
 import System.Directory (doesDirectoryExist, doesFileExist, getDirectoryContents)
+import System.IO
 
 import Text.ProtocolBuffers (messageGet)
 import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
@@ -32,6 +33,7 @@ type T = CT
 
 main :: IO ()
 main = do
+  hSetBuffering stdout NoBuffering
   checkChallDirExists
 
   abspath <- absPath

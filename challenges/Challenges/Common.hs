@@ -89,11 +89,11 @@ printPassFail str e = do
   val <- case res of
     (Left str) -> liftIO $ do
       liftIO $ setSGR [SetColor Foreground Vivid Red]
-      liftIO $ putStrLn $ "\tFAIL: " ++ str
+      liftIO $ putStrLn $ "FAIL: " ++ str
       return def
     (Right a) -> do
       liftIO $ setSGR [SetColor Foreground Vivid Green]
-      liftIO $ putStrLn "\tDONE"
+      liftIO $ putStrLn "DONE"
       return a
   liftIO $ setSGR [SetColor Foreground Vivid Black]
   return val
