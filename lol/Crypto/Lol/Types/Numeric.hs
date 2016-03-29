@@ -62,14 +62,6 @@ abs = NumericPrelude.Numeric.abs
 realToField :: (Field b, ToRational a) => a -> b
 realToField = Algebra.ToRational.realToField
 
--- | Yield @log_b(n)@ when it is a non-negative integer (otherwise
--- error).
-intLog :: (IntegralDomain i, Eq i) => i -> i -> Int
-intLog _ 1 = 0
--- correct because ceil (lg (x)) == ceil (log (ceil (x)))
-intLog b n | (n `mod` b) == 0 = 1 + intLog b (n `div` b)
-           | otherwise = error "invalid arguments to intLog"
-
 -- use this if you need:
 {- isZero -}
 -- | Sane synonym for 'Algebra.ZeroTestable.C'.

@@ -6,7 +6,6 @@
 
 module Crypto.Lol.Types.Random (CryptoRand) where
 
-import Crypto.Lol.LatticePrelude (intLog)
 import "crypto-api" Crypto.Random
 import Data.Binary.Get
 import Data.ByteString hiding (pack)
@@ -18,6 +17,14 @@ newtype CryptoRand g = CryptoRand g deriving (CryptoRandomGen)
 intBytes = 
   let bits = intLog 2 $ (1 + (fromIntegral (maxBound :: Int)) - (fromIntegral (minBound :: Int)) :: Integer)
   in if (bits `mod` 8) == 0 then bits `div` 8 else error "invalid Int bits in `intBytes`"
+
+-- | Yield @log_b(n)@ when it is a non-negative integer (otherwise
+-- error).
+intLog :: (Integral i) => i -> i -> Int
+intLog _ 1 = 0
+-- correct because ceil (lg (x)) == ceil (log (ceil (x)))
+intLog b n | (n `mod` b) == 0 = 1 + intLog b (n `div` b)
+           | otherwise = error "invalid arguments to intLog"
 
 bytesToInt :: ByteString -> Int
 bytesToInt bs = case intBytes of
