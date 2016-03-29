@@ -2,8 +2,8 @@
 
 import Challenges.Beacon
 import Challenges.Common
+import Challenges.LWE
 import Challenges.ProtoReader
-import Challenges.Read
 import Challenges.Verify
 
 import Control.Monad
@@ -14,6 +14,7 @@ import Crypto.Lol (CT,RT,fromJust',intLog)
 import Crypto.Lol.Types.Proto
 
 import qualified Data.ByteString.Lazy as BS
+import Data.List
 
 import Net.Beacon
 
@@ -37,6 +38,14 @@ main = do
   challs <- filter (("chall" ==) . (take 5)) <$> (getDirectoryContents challDir)
 
   mapM_ (verifyChallenge abspath) challs
+  --printPassFail "Checking random bits..." $ checkRandomBits bps
+
+checkRandomBits :: [(BeaconPos, Int)] -> Bool
+checkRandomBits bps =
+  let expectedNumBits = sum $ map snd bps
+      toBPList (BP t offset) numBits = map (BP t) $ take numBits $ [offset..]
+      allBPs = nub $ concatMap (uncurry toBPList) bps
+  in expectedNumBits == length allBPs
 
 verifyChallenge :: FilePath -> String -> IO ()
 verifyChallenge path name = do
@@ -45,7 +54,7 @@ verifyChallenge path name = do
   printPassFail ("Verifying challenge " ++ name ++ "...") $ do
     numInsts <- lift $ length <$> filter (("instance" ==) . (take 8)) <$> (getDirectoryContents challPath)
     let numBits = intLog 2 numInsts
-    (BP time offset) <- readRevealData challPath
+    bp@(BP time offset) <- readRevealData challPath
 
     rec <- readAndVerifyBeacon path time
 
