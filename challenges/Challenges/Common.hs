@@ -9,6 +9,7 @@ import Control.Monad.IO.Class
 import Data.ByteString.Lazy (ByteString, toStrict)
 import Data.ByteString.Builder
 import Data.Char (toUpper)
+import Data.Default
 
 import System.Console.ANSI
 import System.Directory
@@ -81,16 +82,18 @@ checkChallDirExists = do
 showHexBS :: ByteString -> String
 showHexBS = map toUpper . tail . init . show . toLazyByteString . byteStringHex . toStrict
 
-printPassFail :: (MonadIO m) => String -> ExceptT String m a -> m ()
+printPassFail :: (MonadIO m, Default a) => String -> ExceptT String m a -> m a
 printPassFail str e = do
   liftIO $ putStrLn str
   res <- runExceptT e
-  case res of
+  val <- case res of
     (Left str) -> liftIO $ do
       liftIO $ setSGR [SetColor Foreground Vivid Red]
       liftIO $ putStrLn $ "\tFAIL: " ++ str
+      return def
     (Right a) -> do
       liftIO $ setSGR [SetColor Foreground Vivid Green]
       liftIO $ putStrLn "\tDONE"
+      return a
   liftIO $ setSGR [SetColor Foreground Vivid Black]
-  return ()
+  return val

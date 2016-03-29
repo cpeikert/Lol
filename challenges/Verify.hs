@@ -15,6 +15,7 @@ import Crypto.Lol.Types.Proto
 
 import qualified Data.ByteString.Lazy as BS
 import Data.List
+import Data.Maybe
 
 import Net.Beacon
 
@@ -37,8 +38,9 @@ main = do
   let challDir = abspath </> challengeFilesDir
   challs <- filter (("chall" ==) . (take 5)) <$> (getDirectoryContents challDir)
 
-  mapM_ (verifyChallenge abspath) challs
-  --printPassFail "Checking random bits..." $ checkRandomBits bps
+  bps <- mapM (verifyChallenge abspath) challs
+  when (all isJust bps) $ printPassFail "Checking random bits..." $ 
+    when (not $ checkRandomBits $ map fromJust bps) $ throwError "Random bits overlap"
 
 checkRandomBits :: [(BeaconPos, Int)] -> Bool
 checkRandomBits bps =
@@ -47,7 +49,7 @@ checkRandomBits bps =
       allBPs = nub $ concatMap (uncurry toBPList) bps
   in expectedNumBits == length allBPs
 
-verifyChallenge :: FilePath -> String -> IO ()
+verifyChallenge :: FilePath -> String -> IO (Maybe (BeaconPos, Int))
 verifyChallenge path name = do
   let challPath = path </> challengeFilesDir </> name
 
@@ -62,6 +64,7 @@ verifyChallenge path name = do
         instIDs = [0..(numInsts-1)]    
 
     mapM_ (verifyInstance path name secretIdx) instIDs
+    return $ Just (bp,numBits)
 
 verifyInstance :: FilePath -> String -> Int -> Int -> ExceptT String IO ()
 verifyInstance path challName secretID instID 
