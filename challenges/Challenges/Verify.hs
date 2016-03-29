@@ -13,8 +13,7 @@ import Control.Monad.IO.Class (MonadIO, liftIO)
 
 import Crypto.Lol
 
-import Data.BooleanList (byteStringToBooleanList)
-import Data.ByteString.Lazy (toStrict)
+import Data.ByteString.Lazy (toStrict,unpack)
 
 import Net.Beacon
 
@@ -28,14 +27,11 @@ readRevealData path = do
   [timeStr, offsetStr] <- liftIO $ lines <$> readFile revealPath
   return $ BP (read timeStr) (read offsetStr)
 
-getSecretIdx :: Record -> Int -> Int -> Int
-getSecretIdx record offset numBits =
+getSecretIdx :: Record -> Int -> Int
+getSecretIdx record byteOffset =
   let output = outputValue record
-      bits = take numBits $ drop offset $ byteStringToBooleanList $ toStrict output
-      parseBitString [] = 0
-      parseBitString (True:xs) = 1+(2*(parseBitString xs))
-      parseBitString (False:xs) = 2*(parseBitString xs)
-  in parseBitString bits
+      byte = (unpack output) !! byteOffset
+  in (fromIntegral byte) `mod` numInstances
 
 checkInstance :: forall v t m zp . (CheckSample v t m zp)
   => v -> Cyc t m (LiftOf zp) -> [LWESample t m zp] -> Bool

@@ -36,19 +36,16 @@ main = do
   getNistCert abspath
 
 revealChallengeMain :: FilePath -> String -> StateT (Map Int Record) IO ()
-revealChallengeMain abspath name = printPassFail ("Revealing challenge " ++ name ++ ":\n") $ do
+revealChallengeMain abspath name = printPassFail ("Revealing challenge " ++ name ++ ":\n") "DONE" $ do
   let challDir = abspath </> challengeFilesDir </> name
   (BP time offset) <- readRevealData challDir 
-
-  numInsts <- liftIO $ length <$> filter ((".bin" ==) . lastK 4) <$> getDirectoryContents challDir
-  let numBits = intLog 2 numInsts
 
   lastRec <- liftIO getLastRecord
   lastBeaconTime <- case lastRec of
     Nothing -> throwError "Failed to get last beacon."
     (Just r) -> return $ timeStamp r
 
-  when ((time `mod` beaconInterval /= 0) || offset < 0 || offset+numBits > bitsPerBeacon) $ 
+  when ((time `mod` beaconInterval /= 0) || offset < 0 || offset >= bytesPerBeacon) $ 
     throwError "Invalid beacon position."
 
   when (time > lastBeaconTime) $
@@ -57,9 +54,9 @@ revealChallengeMain abspath name = printPassFail ("Revealing challenge " ++ name
       (show $ time-lastBeaconTime) ++ " seconds for the assigned beacon."
 
   rec <- retrieveRecord time
-  let secretIdx = getSecretIdx rec offset numBits
+  let secretIdx = getSecretIdx rec offset
       secDir = abspath </> secretFilesDir </> name
-      secFile = secDir </> (secretFileName secretIdx)
+      secFile = secDir </> (secretFileName name secretIdx)
 
   secFileExists <- liftIO $ doesFileExist secFile
   when (not secFileExists) $ throwError $ secFile ++ " does not exist."

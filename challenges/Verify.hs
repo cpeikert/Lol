@@ -1,20 +1,25 @@
-{-# LANGUAGE FlexibleContexts, GADTs #-}
+{-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
 
 import Challenges.Beacon
 import Challenges.Common
 import Challenges.ProtoReader
+import qualified Challenges.Proto.LWEInstance as P
+import qualified Challenges.Proto.LWESample as P
+import qualified Challenges.Proto.LWESecret as P
 import Challenges.Verify
 
 import Control.Monad (when)
 import Control.Monad.Except
 import Control.Monad.Trans (lift)
 
-import Crypto.Lol (CT,RT,intLog)
+import Crypto.Lol (Cyc, CElt, LiftOf, proxy, Proxy(..), reifyFactI, valueFact, Int64, Lift', ToInteger, modulus, Mod(..), Fact, CT, RT, ZqBasic)
+
 import Crypto.Lol.Types.Proto (fromProto)
 
 import qualified Data.ByteString.Lazy as BS
 import Data.List (nub)
 import Data.Maybe (fromJust, isNothing, isJust)
+import Data.Reflection
 
 import Net.Beacon
 
@@ -40,60 +45,59 @@ main = do
   challs <- filter (("chall" ==) . (take 5)) <$> (getDirectoryContents challDir)
 
   bps <- mapM (verifyChallenge abspath) challs
-  when (all isJust bps) $ printPassFail "Checking random bits..." $ 
-    when (not $ checkRandomBits $ map fromJust bps) $ throwError "Random bits overlap"
+  when (all isJust bps) $ printPassFail "Checking for distinct beacon positions..." "DISTINCT" $ 
+    when ((length $ nub bps) /= length bps) $ throwError "Beacon positions overlap"
 
-checkRandomBits :: [(BeaconPos, Int)] -> Bool
-checkRandomBits bps =
-  let expectedNumBits = sum $ map snd bps
-      toBPList (BP t offset) numBits = map (BP t) $ take numBits $ [offset..]
-      allBPs = nub $ concatMap (uncurry toBPList) bps
-  in expectedNumBits == length allBPs
-
-verifyChallenge :: FilePath -> String -> IO (Maybe (BeaconPos, Int))
+verifyChallenge :: FilePath -> String -> IO (Maybe BeaconPos)
 verifyChallenge path name = do
   let challPath = path </> challengeFilesDir </> name
 
-  printPassFail ("Verifying challenge " ++ name ++ ":\n") $ do
-    numInsts <- lift $ length <$> filter (("instance" ==) . (take 8)) <$> (getDirectoryContents challPath)
-    let numBits = intLog 2 numInsts
+  printPassFail ("Verifying challenge " ++ name ++ ":\n") "VERIFIED" $ do
     bp@(BP time offset) <- readRevealData challPath
 
-    rec <- readAndVerifyBeacon path time
+    rec <- readBeacon path time
 
-    let secretIdx = getSecretIdx rec offset numBits
-        instIDs = [0..(numInsts-1)]    
+    let secretIdx = getSecretIdx rec offset
+        instIDs = [0..(numInstances-1)]    
 
     mapM_ (verifyInstance path name secretIdx) instIDs
     lift $ putStr "\t"
-    return $ Just (bp,numBits)
+    return $ Just bp
 
 verifyInstance :: FilePath -> String -> Int -> Int -> ExceptT String IO ()
 verifyInstance path challName secretID instID 
   | secretID == instID = do
     let secDir = path </> secretFilesDir </> challName
-        secretName = secretFileName secretID
+        secretName = secretFileName challName secretID
     secExists <- lift $ doesFileExist (secDir </> secretName)
-    lift $ putStrLn $ "\tInstance " ++ (show secretID) ++ " is secret"
+    lift $ putStrLn $ "\tSecret for instance " ++ (show secretID) ++ " is suppressed."
     when secExists $ throwError $ "The secret index for challenge " ++ 
           challName ++ " is " ++ (show secretID) ++ ", but this secret is present!"
   | otherwise = do
-    (InstanceWithSecret idx m p v secret samples) <- readInstance path challName instID
     lift $ putStrLn $ "\tChecking instance " ++ (show instID)
-    when (not $ checkInstance v secret samples) $ 
-      throwError $ "Some sample in instance " ++ (show instID) ++ " exceeded the noise bound."
+    checkInstanceErr path challName instID
+    
 
-readInstance :: FilePath -> String -> Int -> ExceptT String IO (InstanceWithSecret T)
-readInstance path challName instID = do
-  let instFile = path </> challengeFilesDir </> challName </> (instFileName instID)
-      secFile = path </> secretFilesDir </> challName </> (secretFileName instID)
+checkInstanceErr :: FilePath -> String -> Int -> ExceptT String IO ()
+checkInstanceErr path challName instID = do
+  let instFile = path </> challengeFilesDir </> challName </> (instFileName challName instID)
+      secFile = path </> secretFilesDir </> challName </> (secretFileName challName instID)
   instFileExists <- lift $ doesFileExist instFile
   when (not instFileExists) $ throwError $ instFile ++ " does not exist."
   secFileExists <- lift $ doesFileExist secFile
   when (not secFileExists) $ throwError $ secFile ++ " does not exist."
-  pinst <- lift $ messageGet' <$> BS.readFile instFile
-  psec <- lift $ messageGet' <$> BS.readFile secFile
-  return $ fromProto (psec, pinst)
+  inst@(P.LWEInstance idx m q v _) <- lift $ messageGet' <$> BS.readFile instFile
+  sec@(P.LWESecret idx' m' s) <- lift $ messageGet' <$> BS.readFile secFile
+  when (idx /= idx') $ throwError $ "Instance ID is " ++ (show idx) ++ ", but secret ID is " ++ (show idx')
+  when (m /= m') $ throwError $ "Instance index is " ++ (show m) ++ ", but secret index is " ++ (show m')
+  reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+    reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
+      let (LWEInstance _ _ samples) = fromProto inst :: LWEInstance Double T m (ZqBasic q Int64)
+          (LWESecret _ secret) = fromProto sec
+      when (not $ checkInstance v secret samples) $ 
+        throwError $ "Some sample in instance " ++ 
+          (show instID) ++ " exceeded the noise bound."
+      ))
 
 messageGet' :: (ReflectDescriptor a, Wire a) => BS.ByteString -> a
 messageGet' bs = 
@@ -104,17 +108,11 @@ messageGet' bs =
       then a
       else error $ "when getting protocol buffer. There were leftover bits!"
 
-readAndVerifyBeacon :: FilePath -> Int -> ExceptT String IO Record
-readAndVerifyBeacon path time = do
-  lift $ putStrLn "\tVerifying beacon"
+readBeacon :: FilePath -> Int -> ExceptT String IO Record
+readBeacon path time = do
   let file = path </> secretFilesDir </> xmlFileName time
   beaconExists <- lift $ doesFileExist file
   when (not beaconExists) $ throwError $ "Cannot find " ++ file
   rec' <- lift $ fromXML <$> BS.readFile file
   when (isNothing rec') $ throwError $ "Could not parse " ++ file
-  let rec = fromJust rec'
-  res <- lift $ withOpenSSL $ do
-    cert <- readX509 =<< (readFile $ path </> secretFilesDir </> certFileName)
-    verifySig cert rec
-  when (not res) $ throwError $ "Signature verification of " ++ file ++ " failed."
-  return rec
+  return $ fromJust rec'

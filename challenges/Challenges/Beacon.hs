@@ -3,14 +3,13 @@ module Challenges.Beacon
 (getBeacon
 ,gmtDateToSeconds
 ,localDateToSeconds
-,getBeaconPos
-,advanceBeaconPos
+,getNextBeaconPos
 ,BeaconPos(..)
-,bitsPerBeacon
-,beaconInterval
-,verifySig) where
+,bytesPerBeacon
+,beaconInterval) where
 
 import Control.DeepSeq
+import Control.Monad.State
 import Crypto.Hash.SHA512 (hash)
 import Crypto.Lol (fromJust')
 import Data.ByteString (ByteString)
@@ -23,26 +22,22 @@ import Data.Time.Clock (UTCTime(..),secondsToDiffTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.LocalTime (timeZoneMinutes, getCurrentTimeZone)
 import Net.Beacon
-import OpenSSL.EVP.Digest (getDigestByName)
-import OpenSSL.EVP.Verify (verifyBS, VerifyStatus(..))
-import OpenSSL.X509 (getPublicKey, X509)
 
 -- becaonTime
--- bitOffset
-bitsPerBeacon = 512 :: Int
+-- byteOffset
+bytesPerBeacon = 64 :: Int
 beaconInterval = 60 :: Int
 data BeaconPos = BP Int Int deriving (Eq, Read, Show)
 instance NFData BeaconPos where rnf (BP a b) = (rnf a) `seq` (rnf b)
 
 -- returns the first available beacon position for k bits
-getBeaconPos :: Int -> BeaconPos -> BeaconPos
-getBeaconPos k bp@(BP time offset) = 
-  if (offset+k) > bitsPerBeacon
-  then BP (time+beaconInterval) 0
-  else bp
-
-advanceBeaconPos :: Int -> BeaconPos -> BeaconPos
-advanceBeaconPos k (BP time offset) = BP time $ offset+k
+getNextBeaconPos :: (Monad m) => StateT BeaconPos m BeaconPos
+getNextBeaconPos = do
+  bp@(BP time byteOffset) <- get
+  if byteOffset == bytesPerBeacon
+  then put (BP (time+beaconInterval) 0)
+  else put (BP time (byteOffset+1))
+  return bp
 
 -- returns seconds since epoch at midnight on the day/month/year/hour/minute of input
 -- takes GMT!!
@@ -77,6 +72,7 @@ getBeacon time = B.toStrict <$> do
              outputValue <$> getCurrentRecord time
 
 -- http://hackaday.com/2014/12/19/nist-randomness-beacon/
+{-
 verifySig :: X509 -> Record -> IO Bool
 verifySig cert rec = do
   pk <- getPublicKey cert
@@ -101,3 +97,4 @@ signedMsg rec = B.concat [
   seedValue rec,
   previousOutputValue rec,
   B.toLazyByteString $ B.word32BE $ fromIntegral $ statusCode rec]
+-}

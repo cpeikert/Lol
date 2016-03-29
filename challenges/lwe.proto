@@ -1,0 +1,21 @@
+
+import "lol.proto";
+
+message LWESample {
+  required CycMsg a = 1;
+  required CycMsg b = 2;
+}
+
+message LWEInstance {
+  required uint32 id = 1;
+  required uint64 m = 2;
+  required uint64 q = 3;
+  required double svar = 4;
+  repeated LWESample samples = 5;
+}
+
+message LWESecret {
+  required uint32 id = 1;
+  required uint64 m = 2;
+  required CycMsg secret = 3;
+}

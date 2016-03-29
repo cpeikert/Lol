@@ -31,16 +31,16 @@ type T = CT
 beaconInit :: IO Int
 beaconInit = localDateToSeconds 2 24 2016 11 0
 
-data ChallengeParams = CP {m::Int, p::Int, v::Double, numSamples::Int, numInstances::Int}
+data ChallengeParams = CP {m::Int, q::Int, v::Double, numSamples::Int}
 
 main :: IO ()
 main = do
+  -- for nice printing when running executable
   hSetBuffering stdout NoBuffering
 
-  -- EAC: Read from command line
-  let numInstances = 16 :: Int
-      numSamples = 10
+  let numSamples = 10
 
+  -- temporary, should take command line argument
   path <- absPath
 
   challDirExists <- doesDirectoryExist $ path </> challengeFilesDir
@@ -49,8 +49,8 @@ main = do
   when secDirExists $ removeDirectoryRecursive $ path </> secretFilesDir
 
   let cps = [
-        CP 256 257 1.0 numSamples numInstances,
-        CP 256 257 1.1 numSamples numInstances
+        CP 32 257 1.0 numSamples,
+        CP 32 257 1.1 numSamples
         ]
 
   initTime <- beaconInit
@@ -58,17 +58,15 @@ main = do
 
 challengeMain :: FilePath -> ChallengeParams -> StateT BeaconPos IO ()
 challengeMain path cp@CP{..} = do
-  let name = challengeName m p v
+  let name = challengeName m q v
   lift $ makeChallenge cp path name
-  stampChallenge name numInstances
+  stampChallenge name
 
-stampChallenge :: String -> Int -> StateT BeaconPos IO ()
-stampChallenge name numInstances = do
-  let numBits = intLog 2 numInstances
+stampChallenge :: String -> StateT BeaconPos IO ()
+stampChallenge name = do
   abspath <- lift absPath
   let path = abspath </> challengeFilesDir </> name
-  -- advance to the next place we can use 'numBits' bits and return it
-  (BP time offset) <- (modify $ getBeaconPos numBits) >> get
+  (BP time offset) <- getNextBeaconPos
   currTime <- round <$> liftIO getPOSIXTime
   if (currTime > time)
   then do
@@ -82,28 +80,27 @@ stampChallenge name numInstances = do
   let revealFile = path </> revealFileName
   lift $ P.writeFile revealFile $ show time
   lift $ P.appendFile revealFile $ "\n" ++ show offset
-  -- advance the state by 'numBits'
-  modify (advanceBeaconPos numBits)
 
 -- outputs the challenge name and the number of instances for this challenge
 makeChallenge :: ChallengeParams -> FilePath -> String -> IO ()
-makeChallenge CP{..} path challName = reify (fromIntegral p :: Int64) (\(proxyp::Proxy p) -> 
+makeChallenge CP{..} path challName = reify (fromIntegral q :: Int64) (\(proxyq::Proxy q) -> 
   reifyFactI m (\(proxym::proxy m) -> printPassFail 
-    ("Generating challenge (m=" ++ (show m) ++ ", p=" ++ (show p) ++ ", v=" ++ (show v) ++ ")") $ do
+    ("Generating challenge (m=" ++ (show m) ++ ", q=" ++ (show q) ++ ", v=" ++ (show v) ++ ")")
+    "DONE" $ do
       let idxs = take numInstances [0..]
-      lift $ mapM_ (genInstance proxyp proxym challName path v numSamples) idxs
+      lift $ mapM_ (genInstance proxyq proxym challName path v numSamples) idxs
   ))
 
-genInstance :: forall p proxy m . (Fact m, Reifies p Int64) 
-  => Proxy p -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
+genInstance :: forall q proxy m . (Fact m, Reifies q Int64) 
+  => Proxy q -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
 genInstance _ _ challName path v numSamples idx = do
-  (secret', samples :: [LWESample T m (ZqBasic p Int64)]) <- 
+  (secret', samples :: [LWESample T m (ZqBasic q Int64)]) <- 
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ 
       proxyT (lweInstance v numSamples) (Proxy::Proxy Double)
   let secret = LWESecret idx secret'
       inst = LWEInstance idx v samples
-      secretFile = secretFileName idx
-      instFile = instFileName idx
+      secretFile = secretFileName challName idx
+      instFile = instFileName challName idx
   writeProtoType (path </> challengeFilesDir </> challName) instFile inst
   writeProtoType (path </> secretFilesDir </> challName) secretFile secret
   putStr "."

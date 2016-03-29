@@ -1,79 +1,23 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances, GADTs,
-             ScopedTypeVariables,
+{-# LANGUAGE FlexibleInstances, ScopedTypeVariables,
              StandaloneDeriving, TypeFamilies, UndecidableInstances #-}
 
 module Challenges.ProtoReader
 (-- type LWE data
  LWEInstance(..)
 ,LWESample(..)
-,LWESecret(..)
- -- untyped LWE data for self-contained reading
-,InstanceWithSecret(..)) where
+,LWESecret(..)) where
 
 import Control.DeepSeq
 
 import Crypto.Lol (Cyc, CElt, LiftOf, proxy, Proxy(..), reifyFactI, valueFact, Int64, Lift', ToInteger, modulus, Mod(..), Fact, CT, RT, ZqBasic)
 import Crypto.Lol.Types.Proto
-import qualified Crypto.Lol.Types.Proto.LWEInstance as P
-import qualified Crypto.Lol.Types.Proto.LWESample as P
-import qualified Crypto.Lol.Types.Proto.LWESecret as P
+import qualified Challenges.Proto.LWEInstance as P
+import qualified Challenges.Proto.LWESample as P
+import qualified Challenges.Proto.LWESecret as P
 
 import Data.Foldable as S (toList)
 import Data.Reflection
 import Data.Sequence as S (fromList, Seq)
-
-
--- for untyped, self-contained reading
-type UntypedConstraints t m z = 
-  (NFData (Cyc t m z), Protoable (Cyc t m z), 
-   Fact m, Show (Cyc t m z), CElt t z)
-
-data InstanceWithSecret t where
-  InstanceWithSecret :: (UntypedConstraints t m (LiftOf zp), UntypedConstraints t m zp, Lift' zp, ToInteger (LiftOf zp), Mod zp, ModRep zp ~ Int64)
-    => Int -> Int -> Int -> Double -> Cyc t m (LiftOf zp) -> [LWESample t m zp] -> InstanceWithSecret t
-deriving instance Show (InstanceWithSecret t)
-instance NFData (InstanceWithSecret t) where
-  rnf (InstanceWithSecret idx m p v secret samples) = (rnf idx) `seq` (rnf m) `seq` (rnf p) `seq` (rnf v) `seq` (rnf secret) `seq` (rnf samples)
-instance Protoable (InstanceWithSecret RT) where
-  type ProtoType (InstanceWithSecret RT) = (P.LWESecret, P.LWEInstance)
-  toProto (InstanceWithSecret idx m p v secret samples) = 
-    (toProto $ LWESecret idx secret, toProto $ LWEInstance idx v samples)
-  fromProto (P.LWESecret idx m s, P.LWEInstance idx' m' p v inst) | (idx == idx') && (m == m') = 
-    reify (fromIntegral p :: Int64) (\(_::Proxy p) -> 
-      reifyFactI (fromIntegral m) (\(_::proxy m) -> 
-        InstanceWithSecret (fromIntegral idx) 
-                           (fromIntegral m)
-                           (fromIntegral p)
-                           v 
-                           (fromProto s) 
-                           (fromProtoSeq inst :: [LWESample RT m (ZqBasic p Int64)])))
-instance Protoable (InstanceWithSecret CT) where
-  type ProtoType (InstanceWithSecret CT) = (P.LWESecret, P.LWEInstance)
-  toProto (InstanceWithSecret idx m p v secret samples) = 
-    (toProto $ LWESecret idx secret, toProto $ LWEInstance idx v samples)
-  fromProto (P.LWESecret idx m s, P.LWEInstance idx' m' p v inst) 
-    | (idx == idx') && (m == m') = 
-      reify (fromIntegral p :: Int64) (\(_::Proxy p) -> 
-        reifyFactI (fromIntegral m) (\(_::proxy m) -> 
-          InstanceWithSecret (fromIntegral idx) 
-                             (fromIntegral m)
-                             (fromIntegral p)
-                             v 
-                             (fromProto s) 
-                             (fromProtoSeq inst :: [LWESample CT m (ZqBasic p Int64)])))
-    | idx /= idx' = error $ "ID mismatch when reading serialized instance: instance ID is " ++ 
-      (show idx') ++ ", secret ID is " ++ (show idx)
-    | m /= m' = error $ "Cyclotomic index mismatch when reading serialzed instance: instance index is " ++ 
-      (show m') ++ ", secret index is " ++ (show m)
-
-
--- for typed reading. To read serialized data, you must know the parameters *in advance*.
-
-toProtoSeq :: (Protoable a) => [a] -> Seq (ProtoType a)
-toProtoSeq = S.fromList . map toProto
-
-fromProtoSeq :: (Protoable a) => Seq (ProtoType a) -> [a]
-fromProtoSeq = map fromProto . S.toList
 
 -- corresponds to LWESecret proto type
 data LWESecret t m z = LWESecret Int (Cyc t m z)
@@ -90,21 +34,21 @@ instance (Protoable (Cyc t m z), Fact m) => Protoable (LWESecret t m z) where
     LWESecret (fromIntegral idx) $ fromProto s
 
 -- corresponds to LWEInstance proto type
-data LWEInstance v t m zp = LWEInstance Int v [LWESample t m zp]
-instance (NFData (LWESample t m zp), NFData v) => NFData (LWEInstance v t m zp) where
+data LWEInstance v t m zq = LWEInstance Int v [LWESample t m zq]
+instance (NFData (LWESample t m zq), NFData v) => NFData (LWEInstance v t m zq) where
   rnf (LWEInstance idx v ss) = (rnf idx) `seq` (rnf v) `seq` (rnf ss)
-deriving instance (Read (LWESample t m zp), Read v) => Read (LWEInstance v t m zp)
-deriving instance (Show (LWESample t m zp), Show v) => Show (LWEInstance v t m zp)
-deriving instance (Eq (LWESample t m zp), Eq v) => Eq (LWEInstance v t m zp)
-instance (Protoable (Cyc t m zp), Mod zp, ModRep zp ~ Int64, Fact m) => Protoable (LWEInstance Double t m zp) where
-  type ProtoType (LWEInstance Double t m zp) = P.LWEInstance
+deriving instance (Read (LWESample t m zq), Read v) => Read (LWEInstance v t m zq)
+deriving instance (Show (LWESample t m zq), Show v) => Show (LWEInstance v t m zq)
+deriving instance (Eq (LWESample t m zq), Eq v) => Eq (LWEInstance v t m zq)
+instance (Protoable (Cyc t m zq), Mod zq, ModRep zq ~ Int64, Fact m) => Protoable (LWEInstance Double t m zq) where
+  type ProtoType (LWEInstance Double t m zq) = P.LWEInstance
   toProto (LWEInstance idx v samples) = 
     P.LWEInstance (fromIntegral idx) 
                   (fromIntegral (proxy valueFact (Proxy::Proxy m)))
-                  (fromIntegral (proxy modulus (Proxy::Proxy zp)))
+                  (fromIntegral (proxy modulus (Proxy::Proxy zq)))
                   v
-                  (toProtoSeq samples)
-  fromProto (P.LWEInstance idx m p v samples) = LWEInstance (fromIntegral idx) v $ fromProtoSeq samples
+                  (S.fromList $ map toProto samples)
+  fromProto (P.LWEInstance idx m q v samples) = LWEInstance (fromIntegral idx) v $ map fromProto $ S.toList samples
 
 -- corresponds to LWESample proto type
 data LWESample t m r = LWESample (Cyc t m r) (Cyc t m r)

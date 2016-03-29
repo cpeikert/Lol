@@ -13,43 +13,42 @@ import Data.Default (Default(..))
 import System.Console.ANSI
 import System.Directory (doesDirectoryExist)
 
+import Text.Printf
+
 {- Directory structure:
 
-challengeFilesDir
+challengeFilesDir == secretFilesDir
+-> beacon.cer
+-> [beacon time 0].xml
+-> [beacon time 1].xml
 -> challengeName
    -> instFileName
+      secretFileName
       ...
       instFileName
+      secretFileName
       revealFileName
    challengeName
    -> ...
-secretFilesDir
--> beacon.cer
-   [beacon time 0].xml
-   [beacon time 1].xml
-   ...
-   challengeName
-   -> secretFileName
-      ...
-      secretFileName
-   challengeName
-   -> ...
 -}
+
+numInstances :: Int
+numInstances = 16
 
 challengeFilesDir :: FilePath
 challengeFilesDir = "challenge-files"
 
 secretFilesDir :: FilePath
-secretFilesDir = "secret-files"
+secretFilesDir = challengeFilesDir
 
 challengeName :: Int -> Int -> Double -> FilePath
-challengeName m p v = "chall-m" ++ (show m) ++ "-p" ++ (show p) ++ "-v" ++ (show v)
+challengeName m q v = "chall-m" ++ (show m) ++ "-q" ++ (show q) ++ "-v" ++ (show v)
 
-instFileName :: Int -> FilePath
-instFileName idx = "instance" ++ (show idx) ++ ".bin"
+instFileName :: String -> Int -> FilePath
+instFileName name idx = name ++ "-" ++ (intToHex idx) ++ ".instance"
 
-secretFileName :: Int -> FilePath
-secretFileName idx = "secret" ++ (show idx) ++ ".bin"
+secretFileName :: String -> Int -> FilePath
+secretFileName name idx = name ++ "-" ++ (intToHex idx) ++ ".secret"
 
 revealFileName :: FilePath
 revealFileName = "revealData.txt"
@@ -59,6 +58,10 @@ xmlFileName t = (show t) ++ ".xml"
 
 certFileName :: FilePath
 certFileName = "beacon.cer"
+
+intToHex :: Int -> String
+intToHex x | x < 0 || x > 15 = error "hex value out of range"
+intToHex x = printf "%X" x
 
 (</>) :: FilePath -> FilePath -> FilePath
 a </> b = a ++ "/" ++ b
@@ -81,8 +84,8 @@ checkChallDirExists = do
 showHexBS :: ByteString -> String
 showHexBS = map toUpper . tail . init . show . toLazyByteString . byteStringHex . toStrict
 
-printPassFail :: (MonadIO m, Default a) => String -> ExceptT String m a -> m a
-printPassFail str e = do
+printPassFail :: (MonadIO m, Default a) => String -> String -> ExceptT String m a -> m a
+printPassFail str pass e = do
   liftIO $ putStr str
   res <- runExceptT e
   val <- case res of
@@ -92,7 +95,7 @@ printPassFail str e = do
       return def
     (Right a) -> do
       liftIO $ setSGR [SetColor Foreground Vivid Green]
-      liftIO $ putStrLn "DONE"
+      liftIO $ putStrLn pass
       return a
   liftIO $ setSGR [SetColor Foreground Vivid Black]
   return val

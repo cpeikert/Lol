@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
-module Crypto.Lol.Types.Proto.LWESecret (LWESecret(..)) where
+module Challenges.Proto.LWESecret (LWESecret(..)) where
 import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
