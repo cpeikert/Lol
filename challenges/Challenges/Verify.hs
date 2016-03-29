@@ -1,15 +1,15 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, GADTs, NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
 
 module Challenges.Verify where
 
 import Challenges.Beacon
 import Challenges.Common
-import Challenges.LWE
+import Challenges.ProtoReader
 
 import Control.Applicative
-import Control.Monad
+import Control.Monad (when)
 import Control.Monad.Except
-import Control.Monad.IO.Class
+import Control.Monad.IO.Class (MonadIO, liftIO)
 
 import Crypto.Lol
 
@@ -18,7 +18,7 @@ import Data.ByteString.Lazy (toStrict)
 
 import Net.Beacon
 
-import System.Directory
+import System.Directory (doesFileExist)
 
 readRevealData :: (MonadIO m) => FilePath -> ExceptT String m BeaconPos
 readRevealData path = do

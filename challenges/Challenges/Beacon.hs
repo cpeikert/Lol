@@ -20,16 +20,12 @@ import qualified Data.ByteString.Builder as B
 
 import Data.Time.Calendar (fromGregorian)
 import Data.Time.Clock (UTCTime(..),secondsToDiffTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds, POSIXTime)
-import Data.Time.LocalTime
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import Data.Time.LocalTime (timeZoneMinutes, getCurrentTimeZone)
 import Net.Beacon
-import OpenSSL (withOpenSSL)
 import OpenSSL.EVP.Digest (getDigestByName)
-import OpenSSL.EVP.PKey (toPublicKey)
 import OpenSSL.EVP.Verify (verifyBS, VerifyStatus(..))
-import OpenSSL.PEM (writePublicKey)
-import OpenSSL.RSA
-import OpenSSL.X509 (getPublicKey, getSubjectEmail, X509)
+import OpenSSL.X509 (getPublicKey, X509)
 
 -- becaonTime
 -- bitOffset

@@ -9,8 +9,8 @@ module Challenges.LWE
 import Challenges.ProtoReader
 
 import Control.Applicative
-import Control.Monad
-import Control.Monad.Random hiding (fromList)
+import Control.Monad (replicateM)
+import Control.Monad.Random (MonadRandom, Random, getRandom)
 
 import Crypto.Lol hiding (errorRounded)
 import Crypto.Lol.Cyclotomic.Tensor

@@ -10,9 +10,8 @@ import Control.Monad.State
 
 import Crypto.Lol (intLog)
 
-import Data.ByteString.Lazy (toStrict, writeFile)
+import Data.ByteString.Lazy (writeFile)
 import Data.Map (Map, lookup, empty, insert)
-import Data.Maybe
 
 import Net.Beacon
 
@@ -20,7 +19,7 @@ import Network.HTTP.Conduit (simpleHttp)
 
 import Prelude hiding (lookup, writeFile)
 
-import System.Directory (doesFileExist, doesDirectoryExist, removeFile, getDirectoryContents)
+import System.Directory (doesFileExist, removeFile, getDirectoryContents)
 import System.IO hiding (writeFile)
 
 main :: IO ()

@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, RecordWildCards, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts, RecordWildCards, ScopedTypeVariables #-}
 
 import DRBG (evalCryptoRandIO)
 import Challenges.Beacon

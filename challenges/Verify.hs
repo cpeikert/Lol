@@ -2,27 +2,26 @@
 
 import Challenges.Beacon
 import Challenges.Common
-import Challenges.LWE
 import Challenges.ProtoReader
 import Challenges.Verify
 
-import Control.Monad
+import Control.Monad (when)
 import Control.Monad.Except
-import Control.Monad.Trans
+import Control.Monad.Trans (lift)
 
-import Crypto.Lol (CT,RT,fromJust',intLog)
-import Crypto.Lol.Types.Proto
+import Crypto.Lol (CT,RT,intLog)
+import Crypto.Lol.Types.Proto (fromProto)
 
 import qualified Data.ByteString.Lazy as BS
-import Data.List
-import Data.Maybe
+import Data.List (nub)
+import Data.Maybe (fromJust, isNothing, isJust)
 
 import Net.Beacon
 
 import OpenSSL (withOpenSSL)
 import OpenSSL.PEM (readX509)
 
-import System.Directory (doesDirectoryExist, doesFileExist, getDirectoryContents)
+import System.Directory (doesFileExist, getDirectoryContents)
 import System.IO
 
 import Text.ProtocolBuffers (messageGet)
@@ -66,6 +65,7 @@ verifyChallenge path name = do
         instIDs = [0..(numInsts-1)]    
 
     mapM_ (verifyInstance path name secretIdx) instIDs
+    lift $ putStr "\t"
     return $ Just (bp,numBits)
 
 verifyInstance :: FilePath -> String -> Int -> Int -> ExceptT String IO ()
@@ -106,11 +106,13 @@ messageGet' bs =
 
 readAndVerifyBeacon :: FilePath -> Int -> ExceptT String IO Record
 readAndVerifyBeacon path time = do
-  lift $ putStrLn "\tVerifying beacon..."
+  lift $ putStrLn "\tVerifying beacon"
   let file = path </> secretFilesDir </> xmlFileName time
   beaconExists <- lift $ doesFileExist file
   when (not beaconExists) $ throwError $ "Cannot find " ++ file
-  rec <- lift $ fromJust' "NIST getCurrentRecord" <$> fromXML <$> BS.readFile file
+  rec' <- lift $ fromXML <$> BS.readFile file
+  when (isNothing rec') $ throwError $ "Could not parse " ++ file
+  let rec = fromJust rec'
   res <- lift $ withOpenSSL $ do
     cert <- readX509 =<< (readFile $ path </> secretFilesDir </> certFileName)
     verifySig cert rec

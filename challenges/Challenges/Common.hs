@@ -1,18 +1,17 @@
 
-
 module Challenges.Common where
 
 import Control.Monad (when)
 import Control.Monad.Except
-import Control.Monad.IO.Class
+import Control.Monad.IO.Class (MonadIO, liftIO)
 
 import Data.ByteString.Lazy (ByteString, toStrict)
 import Data.ByteString.Builder
 import Data.Char (toUpper)
-import Data.Default
+import Data.Default (Default(..))
 
 import System.Console.ANSI
-import System.Directory
+import System.Directory (doesDirectoryExist)
 
 {- Directory structure:
 

@@ -19,8 +19,6 @@ import qualified Crypto.Lol.Types.Proto.LWESample as P
 import qualified Crypto.Lol.Types.Proto.LWESecret as P
 
 import Data.Foldable as S (toList)
-import Data.Map.Strict as M hiding (map)
-import qualified Data.Map.Strict as M
 import Data.Reflection
 import Data.Sequence as S (fromList, Seq)
 
