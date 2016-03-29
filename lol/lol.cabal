@@ -110,9 +110,6 @@ library
     Crypto.Lol.Types.Proto.Basis
     Crypto.Lol.Types.Proto.Coeffs
     Crypto.Lol.Types.Proto.CycMsg
-    Crypto.Lol.Types.Proto.LWEInstance
-    Crypto.Lol.Types.Proto.LWESample
-    Crypto.Lol.Types.Proto.LWESecret
     Crypto.Lol.Types.Proto.TensorMsg
     Crypto.Lol.Types.Proto.ZList
     Crypto.Lol.Types.Proto.ZqList

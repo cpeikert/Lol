@@ -75,6 +75,7 @@ executable reveal
     MonadRandom,
     mtl,
     nist-beacon,
+    protocol-buffers,
     reflection,
     time,
     transformers

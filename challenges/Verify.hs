@@ -23,9 +23,6 @@ import Data.Reflection
 
 import Net.Beacon
 
-import OpenSSL (withOpenSSL)
-import OpenSSL.PEM (readX509)
-
 import System.Directory (doesFileExist, getDirectoryContents)
 import System.IO
 
