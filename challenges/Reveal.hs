@@ -8,8 +8,6 @@ import Control.Monad (when)
 import Control.Monad.Except
 import Control.Monad.State
 
-import Crypto.Lol (intLog)
-
 import Data.ByteString.Lazy (writeFile)
 import Data.Map (Map, lookup, empty, insert)
 

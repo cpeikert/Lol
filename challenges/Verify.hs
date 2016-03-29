@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts, NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
 
 import Challenges.Beacon
 import Challenges.Common
@@ -8,12 +8,12 @@ import qualified Challenges.Proto.LWESample as P
 import qualified Challenges.Proto.LWESecret as P
 import Challenges.Verify
 
+import Control.Applicative
 import Control.Monad (when)
 import Control.Monad.Except
 import Control.Monad.Trans (lift)
 
-import Crypto.Lol (Cyc, CElt, LiftOf, proxy, Proxy(..), reifyFactI, valueFact, Int64, Lift', ToInteger, modulus, Mod(..), Fact, CT, RT, ZqBasic)
-
+import Crypto.Lol hiding (lift)
 import Crypto.Lol.Types.Proto (fromProto)
 
 import qualified Data.ByteString.Lazy as BS

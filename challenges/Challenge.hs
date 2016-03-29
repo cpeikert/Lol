@@ -1,15 +1,16 @@
-{-# LANGUAGE FlexibleContexts, RecordWildCards, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts, NoImplicitPrelude, RebindableSyntax, RecordWildCards, ScopedTypeVariables #-}
 
 import DRBG (evalCryptoRandIO)
 import Challenges.Beacon
 import Challenges.Common
 import Challenges.LWE
 
+import Control.Applicative
 import Control.Monad.Trans (lift)
 import Control.Monad.State
 import Crypto.Random.DRBG
 
-import Crypto.Lol (Int64, ZqBasic, Proxy(..), CT, RT, reifyFactI, proxyT, Fact, intLog)
+import Crypto.Lol hiding (lift)
 import Crypto.Lol.Types.Proto
 
 import Data.ByteString as BS (writeFile)
@@ -17,11 +18,11 @@ import Data.ByteString.Lazy as BS (toStrict)
 import Data.Reflection
 import Data.Time.Clock.POSIX (getPOSIXTime)
 
-import Prelude as P
+import qualified Prelude as P
 
 import System.Console.ANSI
 import System.Directory (createDirectoryIfMissing, removeDirectoryRecursive, doesDirectoryExist)
-import System.IO
+import System.IO as IO
 
 import Text.ProtocolBuffers.Header
 
@@ -67,7 +68,7 @@ stampChallenge name = do
   abspath <- lift absPath
   let path = abspath </> challengeFilesDir </> name
   (BP time offset) <- getNextBeaconPos
-  currTime <- round <$> liftIO getPOSIXTime
+  currTime <- P.round <$> liftIO getPOSIXTime
   if (currTime > time)
   then do
     liftIO $ setSGR [SetColor Foreground Vivid Red]
@@ -78,8 +79,8 @@ stampChallenge name = do
     liftIO $ putStrLn $ "Reveal time is less than 5 days away!"
     liftIO $ setSGR [SetColor Foreground Vivid Black]
   let revealFile = path </> revealFileName
-  lift $ P.writeFile revealFile $ show time
-  lift $ P.appendFile revealFile $ "\n" ++ show offset
+  lift $ IO.writeFile revealFile $ show time
+  lift $ IO.appendFile revealFile $ "\n" ++ show offset
 
 -- outputs the challenge name and the number of instances for this challenge
 makeChallenge :: ChallengeParams -> FilePath -> String -> IO ()

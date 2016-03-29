@@ -2,7 +2,7 @@
 
 module DRBG (evalCryptoRandIO) where
 
-import Crypto.Lol.LatticePrelude (intLog, Proxy)
+import Crypto.Lol.LatticePrelude (Proxy)
 import Crypto.Lol.Types.Random
 import "crypto-api" Crypto.Random
 import Control.Monad.Random (Rand, evalRand)
