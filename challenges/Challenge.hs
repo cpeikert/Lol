@@ -45,7 +45,7 @@ main = do
   let numSamples = 10
 
   -- temporary, should take command line argument
-  path <- absPath
+  path <- getPath
 
   -- remove any existing instances/secrets
   challDirExists <- doesDirectoryExist $ path </> challengeFilesDir
@@ -67,12 +67,11 @@ challengeMain :: FilePath -> ChallengeParams -> StateT BeaconPos IO ()
 challengeMain path cp@CP{..} = do
   let name = challengeName m q v
   lift $ makeChallenge cp path name
-  stampChallenge name
+  stampChallenge path name
 
 -- | Writes the beacon timestamp and byte offset data for this challenge.
-stampChallenge :: String -> StateT BeaconPos IO ()
-stampChallenge name = do
-  abspath <- lift absPath
+stampChallenge :: FilePath -> String -> StateT BeaconPos IO ()
+stampChallenge abspath name = do
   let path = abspath </> challengeFilesDir </> name
   (BP time offset) <- get
   advanceBeaconPos

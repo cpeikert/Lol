@@ -37,7 +37,7 @@ main = do
   -- for nice printing when running executable
   hSetBuffering stdout NoBuffering
   
-  abspath <- absPath
+  abspath <- getPath
   let challDir = abspath </> challengeFilesDir
   challDirExists <- doesDirectoryExist challDir
   when (not challDirExists) $ error $ "Could not find " ++ challDir

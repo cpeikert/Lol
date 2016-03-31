@@ -22,9 +22,12 @@ import System.Directory (doesFileExist, doesDirectoryExist, getDirectoryContents
 -- | Get a list of challenge names by getting all directory contents and filtering
 -- on all directories whose first five characters are "chall".
 getChallengeList :: FilePath -> IO [String]
-getChallengeList challDir = 
-  filterM doesDirectoryExist =<< 
+getChallengeList challDir = do
+  putStrLn $ "Reading challenges from \"" ++ challDir ++ "\""
+  names <- filterM (doesDirectoryExist . (challDir </>)) =<< 
     filter (("chall" ==) . (take 5)) <$> getDirectoryContents challDir
+  when (length names == 0) $ error "No challenges found."
+  return names
 
 -- | Parse the beacon time/offset used to reveal a challenge.
 readRevealData :: (MonadIO m) => FilePath -> ExceptT String m BeaconPos

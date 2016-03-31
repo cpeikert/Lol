@@ -10,7 +10,7 @@ module Challenges.Common
 ,xmlFileName
 ,certFileName
 ,(</>)
-,absPath
+,getPath
 ,printPassFail) where
 
 import Control.Monad (when)
@@ -24,6 +24,7 @@ import Data.Default (Default(..))
 
 import System.Console.ANSI
 import System.Directory (doesDirectoryExist)
+import System.Environment (getArgs)
 
 import Text.Printf
 
@@ -43,6 +44,24 @@ challengeFilesDir == secretFilesDir
    challengeName
    -> ...
 -}
+
+-- | Read command line args, guess a path, or print the help message.
+getPath :: IO FilePath
+getPath = do
+  args <- getArgs
+  case args of
+    [] -> do
+      path <- absPath
+      putStrLn $ "No path provided. Guessing path is \"" ++ ("." </> path) ++ "\""
+      return $ "." </> path
+    ["-p",path] -> do
+      dirExists <- doesDirectoryExist path
+      if dirExists
+      then return $ "." </> path
+      else error $ ("." </> path) ++ " does not exist."
+    otherwise -> error $
+      "Valid args: [-p path] where 'path' is relative to './'." ++ 
+      "If no path is provided, the program will guess a path."
 
 -- | The number of instances to generate per challenge.
 numInstances :: Int
