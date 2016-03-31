@@ -23,7 +23,7 @@ import Data.Reflection
 
 import Net.Beacon
 
-import System.Directory (doesFileExist, getDirectoryContents)
+import System.Directory (doesFileExist, getDirectoryContents, doesDirectoryExist)
 import System.IO
 
 import Text.ProtocolBuffers (messageGet)
@@ -34,47 +34,56 @@ type T = CT
 
 main :: IO ()
 main = do
+  -- for nice printing when running executable
   hSetBuffering stdout NoBuffering
-  checkChallDirExists
-
+  
   abspath <- absPath
   let challDir = abspath </> challengeFilesDir
-  challs <- filter (("chall" ==) . (take 5)) <$> (getDirectoryContents challDir)
+  challDirExists <- doesDirectoryExist challDir
+  when (not challDirExists) $ error $ "Could not find " ++ challDir
 
+  challs <- getChallengeList challDir
+
+  -- verifies challenges and accumulates beacon positions for each challenge
   bps <- mapM (verifyChallenge abspath) challs
+  -- verifies that all challenges use distinct random bits
   when (all isJust bps) $ printPassFail "Checking for distinct beacon positions..." "DISTINCT" $ 
     when ((length $ nub bps) /= length bps) $ throwError "Beacon positions overlap"
 
+-- | Verifies all instances that have a secret and return the beacon position for the challenge.
 verifyChallenge :: FilePath -> String -> IO (Maybe BeaconPos)
 verifyChallenge path name = do
   let challPath = path </> challengeFilesDir </> name
 
   printPassFail ("Verifying challenge " ++ name ++ ":\n") "VERIFIED" $ do
     bp@(BP time offset) <- readRevealData challPath
-
+    -- read the beacon record from an xml file
     rec <- readBeacon path time
 
     let secretIdx = getSecretIdx rec offset
         instIDs = [0..(numInstances-1)]    
-
+    -- verify all instances
     mapM_ (verifyInstance path name secretIdx) instIDs
+    -- verifyInstance prints out several progress statements
+    -- so we need to indent to print the status
     lift $ putStr "\t"
     return $ Just bp
 
+-- | Verifies an instance with a particular ID.
 verifyInstance :: FilePath -> String -> Int -> Int -> ExceptT String IO ()
 verifyInstance path challName secretID instID 
   | secretID == instID = do
     let secDir = path </> secretFilesDir </> challName
         secretName = secretFileName challName secretID
     secExists <- lift $ doesFileExist (secDir </> secretName)
-    lift $ putStrLn $ "\tSecret for instance " ++ (show secretID) ++ " is suppressed."
     when secExists $ throwError $ "The secret index for challenge " ++ 
           challName ++ " is " ++ (show secretID) ++ ", but this secret is present!"
+    lift $ putStrLn $ "\tSecret for instance " ++ (show secretID) ++ " is suppressed."
   | otherwise = do
     lift $ putStrLn $ "\tChecking instance " ++ (show instID)
     checkInstanceErr path challName instID
     
-
+-- | Verifies an instance that has a corresponding secret.
 checkInstanceErr :: FilePath -> String -> Int -> ExceptT String IO ()
 checkInstanceErr path challName instID = do
   let instFile = path </> challengeFilesDir </> challName </> (instFileName challName instID)
@@ -96,6 +105,7 @@ checkInstanceErr path challName instID = do
           (show instID) ++ " exceeded the noise bound."
       ))
 
+-- | Reads a serialized protobuffer file to the unparameterized proto type.
 messageGet' :: (ReflectDescriptor a, Wire a) => BS.ByteString -> a
 messageGet' bs = 
   case messageGet bs of
@@ -105,6 +115,7 @@ messageGet' bs =
       then a
       else error $ "when getting protocol buffer. There were leftover bits!"
 
+-- | Read an XML file for the beacon corresponding to the provided time.
 readBeacon :: FilePath -> Int -> ExceptT String IO Record
 readBeacon path time = do
   let file = path </> secretFilesDir </> xmlFileName time

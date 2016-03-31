@@ -29,9 +29,12 @@ import Text.ProtocolBuffers.Header
 -- the Tensor type to use to generate the instances
 type T = CT
 
+-- | The date/time when the randomness used to reveal the first challenge will be available.
+-- Other challenges use different bytes of this beacon output, or of subsequent beacon ouputs.
 beaconInit :: IO Int
 beaconInit = localDateToSeconds 2 24 2016 11 0
 
+-- | Information to generate a challenge.
 data ChallengeParams = CP {m::Int, q::Int, v::Double, numSamples::Int}
 
 main :: IO ()
@@ -44,11 +47,13 @@ main = do
   -- temporary, should take command line argument
   path <- absPath
 
+  -- remove any existing instances/secrets
   challDirExists <- doesDirectoryExist $ path </> challengeFilesDir
   when challDirExists $ removeDirectoryRecursive $ path </> challengeFilesDir
   secDirExists <- doesDirectoryExist $ path </> secretFilesDir
   when secDirExists $ removeDirectoryRecursive $ path </> secretFilesDir
 
+  -- list of challenge params
   let cps = [
         CP 32 257 1.0 numSamples,
         CP 32 257 1.1 numSamples
@@ -57,17 +62,21 @@ main = do
   initTime <- beaconInit
   flip evalStateT (BP initTime 0) $ mapM_ (challengeMain path) cps
 
+-- | Generate a challenge and write the reveal time file.
 challengeMain :: FilePath -> ChallengeParams -> StateT BeaconPos IO ()
 challengeMain path cp@CP{..} = do
   let name = challengeName m q v
   lift $ makeChallenge cp path name
   stampChallenge name
 
+-- | Writes the beacon timestamp and byte offset data for this challenge.
 stampChallenge :: String -> StateT BeaconPos IO ()
 stampChallenge name = do
   abspath <- lift absPath
   let path = abspath </> challengeFilesDir </> name
-  (BP time offset) <- getNextBeaconPos
+  (BP time offset) <- get
+  advanceBeaconPos
+  -- compare the state to the current time
   currTime <- P.round <$> liftIO getPOSIXTime
   if (currTime > time)
   then do
@@ -82,7 +91,7 @@ stampChallenge name = do
   lift $ IO.writeFile revealFile $ show time
   lift $ IO.appendFile revealFile $ "\n" ++ show offset
 
--- outputs the challenge name and the number of instances for this challenge
+-- | Generate an LWE challenge with the given parameters.
 makeChallenge :: ChallengeParams -> FilePath -> String -> IO ()
 makeChallenge CP{..} path challName = reify (fromIntegral q :: Int64) (\(proxyq::Proxy q) -> 
   reifyFactI m (\(proxym::proxy m) -> printPassFail 
@@ -92,6 +101,7 @@ makeChallenge CP{..} path challName = reify (fromIntegral q :: Int64) (\(proxyq:
       lift $ mapM_ (genInstance proxyq proxym challName path v numSamples) idxs
   ))
 
+-- | Generate an LWE instance and serialize the instance and secret.
 genInstance :: forall q proxy m . (Fact m, Reifies q Int64) 
   => Proxy q -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
 genInstance _ _ challName path v numSamples idx = do
@@ -106,12 +116,13 @@ genInstance _ _ challName path v numSamples idx = do
   writeProtoType (path </> secretFilesDir </> challName) secretFile secret
   putStr "."
 
+-- | Writes any 'Protoable' object to path/filename.
 writeProtoType :: 
   (Protoable a,
    ReflectDescriptor (ProtoType a), 
    Wire (ProtoType a))
   => FilePath -> String -> a -> IO ()
-writeProtoType challPath instName inst = do
-  createDirectoryIfMissing True challPath
-  let instPath = challPath </> instName
-  BS.writeFile instPath $ toStrict $ msgPut inst
+writeProtoType path fileName obj = do
+  createDirectoryIfMissing True path
+  let instPath = path </> fileName
+  BS.writeFile instPath $ toStrict $ msgPut obj

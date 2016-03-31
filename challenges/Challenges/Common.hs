@@ -1,5 +1,17 @@
 
-module Challenges.Common where
+module Challenges.Common
+(numInstances
+,challengeFilesDir
+,secretFilesDir
+,challengeName
+,instFileName
+,secretFileName
+,revealFileName
+,xmlFileName
+,certFileName
+,(</>)
+,absPath
+,printPassFail) where
 
 import Control.Monad (when)
 import Control.Monad.Except
@@ -32,30 +44,43 @@ challengeFilesDir == secretFilesDir
    -> ...
 -}
 
+-- | The number of instances to generate per challenge.
 numInstances :: Int
-numInstances = 16
+numInstances = 
+  if numInsts > 256
+  then error "numInstances must be <= 256"
+  else numInsts
+  where numInsts = 16
 
+-- | The root directory for challenges and their instances.
 challengeFilesDir :: FilePath
 challengeFilesDir = "challenge-files"
 
+-- | The root directory for challenge secrets.
 secretFilesDir :: FilePath
 secretFilesDir = challengeFilesDir
 
+-- | The name for each challenge directory.
 challengeName :: Int -> Int -> Double -> FilePath
 challengeName m q v = "chall-m" ++ (show m) ++ "-q" ++ (show q) ++ "-v" ++ (show v)
 
+-- | The name for instance files is some string followed by a hex ID with a .instance extension.
 instFileName :: String -> Int -> FilePath
 instFileName name idx = name ++ "-" ++ (intToHex idx) ++ ".instance"
 
+-- | The name for secret files is some string followed by a hex ID with the .secret extension.
 secretFileName :: String -> Int -> FilePath
 secretFileName name idx = name ++ "-" ++ (intToHex idx) ++ ".secret"
 
+-- | The name for the file that contains the beacon information for each challenge.
 revealFileName :: FilePath
 revealFileName = "revealData.txt"
 
+-- | The name for beacon xml files.
 xmlFileName :: Int -> FilePath
 xmlFileName t = (show t) ++ ".xml"
 
+-- | The name for the NIST X509 certificate.
 certFileName :: FilePath
 certFileName = "beacon.cer"
 
@@ -63,6 +88,10 @@ intToHex :: Int -> String
 intToHex x | x < 0 || x > 15 = error "hex value out of range"
 intToHex x = printf "%X" x
 
+showHexBS :: ByteString -> String
+showHexBS = map toUpper . tail . init . show . toLazyByteString . byteStringHex . toStrict
+
+-- | @"a" </> "b"@ is the string @"a/b"@.
 (</>) :: FilePath -> FilePath -> FilePath
 a </> b = a ++ "/" ++ b
 
@@ -74,16 +103,7 @@ absPath = do
     then "challenges"
     else "."
 
-checkChallDirExists :: IO ()
-checkChallDirExists = do
-  abspath <- absPath
-  let challDir = abspath </> challengeFilesDir
-  challDirExists <- doesDirectoryExist challDir
-  when (not challDirExists) $ error $ "Could not find " ++ challDir
-
-showHexBS :: ByteString -> String
-showHexBS = map toUpper . tail . init . show . toLazyByteString . byteStringHex . toStrict
-
+-- | Pretty printing of error messages.
 printPassFail :: (MonadIO m, Default a) => String -> String -> ExceptT String m a -> m a
 printPassFail str pass e = do
   liftIO $ putStr str

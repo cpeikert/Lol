@@ -17,52 +17,59 @@ import Network.HTTP.Conduit (simpleHttp)
 
 import Prelude hiding (lookup, writeFile)
 
-import System.Directory (doesFileExist, removeFile, getDirectoryContents)
+import System.Directory (doesFileExist, removeFile, getDirectoryContents, doesDirectoryExist)
 import System.IO hiding (writeFile)
 
 main :: IO ()
 main = do
+  -- for nice printing when running executable
   hSetBuffering stdout NoBuffering
-  checkChallDirExists
 
   abspath <- absPath
   let challDir = abspath </> challengeFilesDir
-  challs <- filter (("chall" ==) . (take 5)) <$> (getDirectoryContents challDir)
+  challDirExists <- doesDirectoryExist challDir
+  when (not challDirExists) $ error $ "Could not find " ++ challDir
+
+  challs <- getChallengeList challDir
+
+  -- reveal each challenge, collecting beacon records as we go
   recs <- flip execStateT empty $ mapM_ (revealChallengeMain abspath) challs
+  -- write all beacon records
   mapM_ (writeBeaconXML abspath) recs
-  
+  -- write the NIST certificate
   getNistCert abspath
 
+-- | Lookup the secret index based on the randomness for this challenge,
+-- then remove the corresponding secret.
 revealChallengeMain :: FilePath -> String -> StateT (Map Int Record) IO ()
 revealChallengeMain abspath name = printPassFail ("Revealing challenge " ++ name ++ ":\n") "DONE" $ do
   let challDir = abspath </> challengeFilesDir </> name
-  (BP time offset) <- readRevealData challDir 
+  -- read the time/byteoffset of the randomness for this challenge
+  (BP time offset) <- readRevealData challDir
 
+  -- make sure it is past the reveal time
   lastRec <- liftIO getLastRecord
   lastBeaconTime <- case lastRec of
     Nothing -> throwError "Failed to get last beacon."
     (Just r) -> return $ timeStamp r
-
-  when ((time `mod` beaconInterval /= 0) || offset < 0 || offset >= bytesPerBeacon) $ 
-    throwError "Invalid beacon position."
-
   when (time > lastBeaconTime) $
     throwError $ "Can't reveal challenge " ++ name ++ 
       ": it's time has not yet come. Please wait " ++ 
       (show $ time-lastBeaconTime) ++ " seconds for the assigned beacon."
 
+  -- get the record, and compute the secret index
   rec <- retrieveRecord time
   let secretIdx = getSecretIdx rec offset
       secDir = abspath </> secretFilesDir </> name
       secFile = secDir </> (secretFileName name secretIdx)
 
+  -- delete the secret corresponding to the secret index
   secFileExists <- liftIO $ doesFileExist secFile
   when (not secFileExists) $ throwError $ secFile ++ " does not exist."
-
   liftIO $ putStr $ "\tRemoving " ++ secFile ++ "\n\t"
   liftIO $ removeFile secFile
 
--- attempt to find the record in the state, otherwise read it from NIST
+-- | Attempt to find the record in the state, otherwise download it from NIST.
 retrieveRecord :: Int -> ExceptT String (StateT (Map Int Record) IO) Record
 retrieveRecord t = do
   mrec <- gets (lookup t)
@@ -77,19 +84,13 @@ retrieveRecord t = do
           return r'
         Nothing -> throwError $ "Couldn't get record " ++ (show t) ++ "from NIST servers."
 
--- returns last k characters in a string
-lastK :: Int -> String -> String
-lastK k s =
-  let l = length s
-  in if l > k
-     then drop (l-k) s
-     else s
-
+-- | Writes a beacon record to a file.
 writeBeaconXML :: FilePath -> Record -> IO ()
 writeBeaconXML path rec = do
   let beacon = toXML rec
   writeFile (path </> secretFilesDir </> (xmlFileName $ timeStamp rec)) beacon
 
+-- | Downloads the NIST certificate and saves it.
 getNistCert :: FilePath -> IO ()
 getNistCert path = do
   let certPath = path </> secretFilesDir </> certFileName
