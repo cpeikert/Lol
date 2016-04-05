@@ -56,16 +56,20 @@ checkInstance :: forall v t m zp . (CheckSample v t m zp)
 checkInstance v sk samples = 
   let n = proxy totientFact (Proxy::Proxy m)
       mhat = proxy valueHatFact (Proxy::Proxy m)
-      bound = (fromIntegral $ mhat*n)*v
+      eps = 1/(2^(40 :: Int))
+      --d = (1/pi)*(1/2-(log eps)/(fromIntegral n))
+      d = computeD n eps
+      bound = (fromIntegral $ mhat*n)*v*d
   in all (checkSample bound sk) samples
 
 type CheckSample v t m zp = 
-  (CheckErr v t m zp, Ord v, Field v)
+  (CheckErr v t m zp, Ord v, Field v, Transcendental v, Show v)
 
 -- | Verify that the (scaled, squared) norm of the noise for an LWE sample is below the provided bound.
-checkSample :: (CheckSample v t m zp) 
+checkSample :: forall v t m zp . (CheckSample v t m zp) 
   => v -> Cyc t m (LiftOf zp) -> LWESample t m zp -> Bool
 checkSample bound sk pair@(LWESample a b) = (sampleError sk pair) < bound
+  
 type CheckErr v t m zp = 
   (Fact m, Ring v, Lift' zp, CElt t zp, CElt t (LiftOf zp), ToInteger (LiftOf zp))
 
@@ -77,3 +81,11 @@ sampleError sk (LWESample a b) =
       e = liftCyc Dec e' :: Cyc t m (LiftOf zp)
       norm = gSqNorm e
   in fromIntegral norm
+
+computeD :: (Field v, Ord v, Transcendental v) => Int -> v -> v
+computeD n eps = go (1 / (2*pi))
+  where go d = 
+          let d' = (1/2 + (log $ 2 * pi * d)/2 - (log eps)/(fromIntegral n))/pi
+          in if ((d'-d) < 0.0001)
+             then d'
+             else go d'

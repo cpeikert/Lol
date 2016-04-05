@@ -12,7 +12,7 @@ whichRecord=1400878200
  
 ## Extracts specified record from xml file
 getValue() {
- xmllint --xpath "/record/$1/text()" $2
+ xmllint --xpath "string(//*[local-name()='$1'])" $2
 }
  
 ## Converts little-endian to big-endian

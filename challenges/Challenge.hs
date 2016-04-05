@@ -55,8 +55,7 @@ main = do
 
   -- list of challenge params
   let cps = [
-        CP 32 257 1.0 numSamples,
-        CP 32 257 1.1 numSamples
+        CP 512 7681 (1/(16^(2 :: Int))) numSamples
         ]
 
   initTime <- beaconInit
