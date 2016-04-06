@@ -17,11 +17,11 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Cyclotomic.UCyc as U hiding (errorRounded)
 
 -- | Generate an LWE instance with a random secret, and the given scaled variance.
-lweInstance :: forall t m q zp v rnd .  
-  (LWECtx t m (LiftOf zp) zp v q, MonadRandom rnd, Random (LiftOf zp))
-  => v -> Int -> TaggedT q rnd (Cyc t m (LiftOf zp), [LWESample t m zp])
+lweInstance :: forall t m q z zp v rnd .  
+  (LWECtx t m z zp v q, MonadRandom rnd, Random z)
+  => v -> Int -> TaggedT q rnd (Cyc t m z, [LWESample t m zp])
 lweInstance svar numSamples = do
-  s :: Cyc t m (LiftOf zp) <- getRandom
+  s <- getRandom
   samples <- replicateM numSamples (lweSample svar s)
   return (s, samples)
 
