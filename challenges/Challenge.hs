@@ -3,8 +3,8 @@
 import DRBG (evalCryptoRandIO)
 import Challenges.Beacon
 import Challenges.Common
---import Challenges.ContinuousLWE
-import Challenges.LWE
+import Challenges.ContinuousLWE
+--import Challenges.LWE
 
 import Control.Applicative
 import Control.Monad.Trans (lift)
@@ -106,11 +106,11 @@ makeChallenge CP{..} path challName = reify (fromIntegral q :: Int64) (\(proxyq:
 genInstance :: forall q proxy m . (Fact m, Reifies q Int64) 
   => Proxy q -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
 genInstance _ _ challName path v numSamples idx = do
-  (secret' :: Cyc T m Int64, samples :: [LWESample T m (ZqBasic q Int64)]) <- 
-  --(secret' :: UCyc T m P Int64, samples :: [LWESample T m (RealQ q Double Int64)]) <- 
+  --(secret' :: Cyc T m Int64, samples :: [LWESample T m (ZqBasic q Int64)]) <- 
+  (secret' :: Cyc T m Int64, samples :: [LWESample T m (ZqBasic q Int64) (RealQ q Double Int64)]) <- 
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ 
-      proxyT (lweInstance v numSamples) (Proxy::Proxy Double)
-      --proxyT (lweInstance v numSamples) (Proxy::Proxy (ZqBasic q Int64))
+      --proxyT (lweInstance v numSamples) (Proxy::Proxy Double)
+      lweInstance v numSamples
   let secret = LWESecret idx secret'
       inst = LWEInstance idx v samples
       secretFile = secretFileName challName idx

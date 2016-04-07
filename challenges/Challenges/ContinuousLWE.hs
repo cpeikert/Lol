@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, 
              NoImplicitPrelude, RebindableSyntax, TypeFamilies, ScopedTypeVariables #-}
 
-module Challenges.ContinuousLWE 
+module Challenges.ContinuousLWE
 (lweInstance
 ,ULWECtx
 ,module Challenges.UProtoReader) where
@@ -20,11 +20,11 @@ import Crypto.Lol.Cyclotomic.UCyc
 -- | Generate an LWE instance with a random secret, and the given scaled variance.
 lweInstance :: forall t m z zp v rnd rp .  
   (ULWECtx t m z zp v rp, MonadRandom rnd, Random z)
-  => v -> Int -> TaggedT zp rnd (UCyc t m P z, [LWESample t m rp])
+  => v -> Int -> rnd (Cyc t m z, [LWESample t m zp rp])
 lweInstance svar numSamples = do
   s <- getRandom
   samples <- replicateM numSamples (lweSample svar s)
-  return (uncycPow s, samples)
+  return (s, samples)
 
 -- | An LWE sample for a given secret (corresponding to a linear
 -- ciphertext encrypting 0 in MSD form)
@@ -32,14 +32,13 @@ lweInstance svar numSamples = do
 -- EAC: Would like to enforce the same modulus for Z_q and RR_q: how?
 lweSample :: forall rnd t m z zp v rp . 
   (MonadRandom rnd, ULWECtx t m z zp v rp)
-  => v -> Cyc t m z -> TaggedT zp rnd (LWESample t m rp)
+  => v -> Cyc t m z -> rnd (LWESample t m zp rp)
 lweSample svar s = do
   let sq = reduce s :: Cyc t m zp
   e <- tGaussian svar
-  a <- tagT getRandom
+  a <- getRandom
   let as = fmap fromIntegral $ lift $ uncycDec $ a * sq
-      aq = reduce $ (fmap fromIntegral $ lift $ uncycDec a :: UCyc t m D (LiftOf rp))
-  return $ LWESample aq $ reduce $ as + (e :: UCyc t m D (LiftOf rp))
+  return $ LWESample a $ reduce $ as + (e :: UCyc t m D (LiftOf rp))
 
 type ULWECtx t m z zp v rp = 
   (ToInteger z, Reduce z zp, Ring zp, Random zp, Fact m, CElt t z, CElt t zp, 

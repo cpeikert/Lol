@@ -2,11 +2,11 @@
 
 import Challenges.Beacon
 import Challenges.Common
-import Challenges.ProtoReader
+import Challenges.UProtoReader
 import qualified Challenges.Proto.LWEInstance as P
 import qualified Challenges.Proto.LWESample as P
 import qualified Challenges.Proto.LWESecret as P
-import Challenges.Verify
+import Challenges.ContinuousVerify
 
 import Control.Applicative
 import Control.Monad (when)
@@ -15,6 +15,7 @@ import Control.Monad.Trans (lift)
 
 import Crypto.Lol hiding (lift)
 import Crypto.Lol.Types.Proto (fromProto)
+import Crypto.Lol.Types.RealQ
 
 import qualified Data.ByteString.Lazy as BS
 import Data.List (nub)
@@ -98,7 +99,7 @@ checkInstanceErr path challName instID = do
   when (m /= m') $ throwError $ "Instance index is " ++ (show m) ++ ", but secret index is " ++ (show m')
   reifyFactI (fromIntegral m) (\(_::proxy m) -> 
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
-      let (LWEInstance _ _ samples) = fromProto inst :: LWEInstance Double T m (ZqBasic q Int64)
+      let (LWEInstance _ _ samples) = fromProto inst :: LWEInstance Double T m (ZqBasic q Int64) (RealQ q Double Int64)
           (LWESecret _ secret) = fromProto sec
       when (not $ checkInstance v secret samples) $ 
         throwError $ "Some sample in instance " ++ 

@@ -161,8 +161,7 @@ type family Em r where
 
 -- CJP: Additive, Ring are not necessary when we use zipWithT
 -- EAC: This has performance implications for the CT backend,
---      which used a C function for zipWith (*)
-
+--      which used a (very fast) C function for (*) and (+)
 instance (Additive r, Storable r, Fact m, Dispatch r)
   => Additive.C (CT m r) where
   (CT a@(CT' _)) + (CT b@(CT' _)) = CT $ (untag $ cZipDispatch dadd) a b

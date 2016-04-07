@@ -226,6 +226,6 @@ void tensorGaussianDec (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent*
 
 void tensorNormSqR (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
 
+void tensorNormSqD (hShort_t tupSize, double* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
 
 #endif /* TENSORTYPES_H_ */
-

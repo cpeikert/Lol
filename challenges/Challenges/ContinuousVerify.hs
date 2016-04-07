@@ -1,17 +1,19 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
 
-module Challenges.Verify where
+module Challenges.ContinuousVerify where
 
 import Challenges.Beacon
 import Challenges.Common
-import Challenges.ProtoReader
+import Challenges.UProtoReader
 
 import Control.Applicative
 import Control.Monad (when)
-import Control.Monad.Except
+import Control.Monad.Except hiding (lift)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 
-import Crypto.Lol
+import Crypto.Lol hiding (gSqNorm)
+import Crypto.Lol.Cyclotomic.Tensor
+import Crypto.Lol.Cyclotomic.UCyc
 
 import Data.ByteString.Lazy (toStrict,unpack)
 
@@ -51,8 +53,8 @@ getSecretIdx record byteOffset =
   in (fromIntegral byte) `mod` numInstances
 
 -- | Verify that the (scaled, squared) norm of the noise for each sample in the instance is below @mhat*n*v@.
-checkInstance :: forall v t m zq . (CheckSample v t m zq)
-  => v -> Cyc t m (LiftOf zq) -> [LWESample t m zq] -> Bool
+checkInstance :: forall t m zq rq . (CheckSample (LiftOf rq) t m zq rq)
+  => LiftOf rq -> Cyc t m (LiftOf zq) -> [LWESample t m zq rq] -> Bool
 checkInstance v sk samples = 
   let n = proxy totientFact (Proxy::Proxy m)
       mhat = proxy valueHatFact (Proxy::Proxy m)
@@ -62,25 +64,24 @@ checkInstance v sk samples =
       bound = (fromIntegral $ mhat*n)*v*d
   in all (checkSample bound sk) samples
 
-type CheckSample v t m zq = 
-  (CheckErr v t m zq, Ord v, Field v, Transcendental v, Show v)
+type CheckSample v t m zq rq = 
+  (CheckErr v t m zq rq, Ord v, Field v, Transcendental v, Show v)
 
 -- | Verify that the (scaled, squared) norm of the noise for an LWE sample is below the provided bound.
-checkSample :: forall v t m zq . (CheckSample v t m zq) 
-  => v -> Cyc t m (LiftOf zq) -> LWESample t m zq -> Bool
+checkSample :: forall t m zq rq . (CheckSample (LiftOf rq) t m zq rq) 
+  => LiftOf rq -> Cyc t m (LiftOf zq) -> LWESample t m zq rq -> Bool
 checkSample bound sk pair@(LWESample a b) = (sampleError sk pair) < bound
 
-type CheckErr v t m zq = 
-  (Fact m, Ring v, Lift' zq, CElt t zq, CElt t (LiftOf zq), ToInteger (LiftOf zq))
+type CheckErr v t m zq rq = 
+  (Fact m, Ring v, Lift' zq, CElt t zq, CElt t (LiftOf zq), ToInteger (LiftOf zq), CElt t (LiftOf rq), Lift' rq, TElt t rq)
 
 -- | Given an instance and corresponding secret, outputs the (scaled, squared) norm of the error term.
-sampleError :: forall v t m zq . (CheckErr v t m zq) 
-  => Cyc t m (LiftOf zq) -> LWESample t m zq -> v
+sampleError :: forall t m zq rq . (CheckErr (LiftOf rq) t m zq rq) 
+  => Cyc t m (LiftOf zq) -> LWESample t m zq rq -> LiftOf rq
 sampleError sk (LWESample a b) = 
-  let e' = b-a*reduce sk
-      e = liftCyc Dec e' :: Cyc t m (LiftOf zq)
-      norm = gSqNorm e
-  in fromIntegral norm
+  let as = reduce (fmap fromIntegral $ lift $ uncycDec $ a * reduce sk :: UCyc t m D (LiftOf rq))
+      e = lift $ (b - as :: UCyc t m D rq)
+  in gSqNorm e
 
 computeD :: (Field v, Ord v, Transcendental v) => Int -> v -> v
 computeD n eps = go (1 / (2*pi))

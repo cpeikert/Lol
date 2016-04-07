@@ -156,8 +156,7 @@ class (repr ~ CTypeOf r) => Dispatch' repr r where
   dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
 
 instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ RealQD)
-  => Dispatch' RealQD r where
-
+  => Dispatch' RealQD r
 
 instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ ZqB64D)
   => Dispatch' ZqB64D r where
@@ -243,7 +242,7 @@ instance (Tuple r, CTypeOf r ~ DoubleD) => Dispatch' DoubleD r where
     tensorLDouble (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dlinv pout = 
     tensorLInvDouble (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dnorm = error "cannot call CT normSq on type Double"
+  dnorm pout = tensorNormSqD (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dmulgpow = error "cannot call CT mulGPow on type Double"
   dmulgdec = error "cannot call CT mulGDec on type Double"
   dginvpow = error "cannot call CT divGPow on type Double"
@@ -286,6 +285,7 @@ foreign import ccall unsafe "tensorLC" tensorLC ::       Int16 -> Ptr (Complex D
 foreign import ccall unsafe "tensorLInvC" tensorLInvC :: Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 
 foreign import ccall unsafe "tensorNormSqR" tensorNormSqR ::     Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorNormSqD" tensorNormSqD ::     Int16 -> Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
 
 foreign import ccall unsafe "tensorGPowR" tensorGPowR ::         Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorGPowRq" tensorGPowRq ::       Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO ()
