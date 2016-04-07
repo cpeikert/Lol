@@ -84,7 +84,7 @@ data C
 --
 -- The 'Functor', 'Applicative', 'Foldable' and 'Traversable'
 -- instances all work coefficient-wise (in the specified basis).
-data UCyc t m rep r where
+data UCyc t (m :: Factored) rep r where
   Pow  :: !(t m r) -> UCyc t m P r
   Dec  :: !(t m r) -> UCyc t m D r
   -- Invariant: for a given (t,m,r), exactly one of these two is ever

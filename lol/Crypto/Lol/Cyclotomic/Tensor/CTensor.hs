@@ -483,7 +483,7 @@ ruInv = do
         generate pp (\i -> wPow $ -i*pow)) <$>
       pureT ppsFact
 
-gCoeffsCRT, gInvCoeffsCRT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r, IntegralDomain r)
+gCoeffsCRT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r)
   => TaggedT m Maybe (CT' m r)
 gCoeffsCRT = ctCRT <*> return (mulGPow' $ scalarPow' LP.one)
 -- It's necessary to call 'fromJust' here: otherwise 
@@ -497,6 +497,8 @@ gCoeffsCRT = ctCRT <*> return (mulGPow' $ scalarPow' LP.one)
 -- As an implementation note if I ever do fix this: the division by rad(m) can be
 -- tricky for Double/Complex Doubles, so be careful! This is why we have a custom
 -- Complex wrapper around NP.Complex.
+gInvCoeffsCRT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r, IntegralDomain r)
+  => TaggedT m Maybe (CT' m r)
 gInvCoeffsCRT = ($ fromJust $ divGPow' $ scalarPow' LP.one) <$> ctCRT
 
 -- we can't put this in Extension with the rest of the twace/embed fucntions because it needs access to 

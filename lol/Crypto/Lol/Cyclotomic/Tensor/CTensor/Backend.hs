@@ -26,6 +26,7 @@ import Control.Monad
 
 import Crypto.Lol.LatticePrelude as LP (Complex, Proxy(..), proxy, (++), map, mapM_, PP, Tagged, tag)
 import Crypto.Lol.Reflects
+import Crypto.Lol.Types.RealQ
 import Crypto.Lol.Types.ZqBasic
 
 import Data.Int
@@ -95,6 +96,7 @@ data ZqB64D -- for type safety purposes
 data ComplexD
 data DoubleD
 data Int64D
+data RealQD
 
 type family CTypeOf x where
   CTypeOf (a,b) = CTypeOf a
@@ -102,6 +104,7 @@ type family CTypeOf x where
   CTypeOf Double = DoubleD
   CTypeOf Int64 = Int64D
   CTypeOf (Complex Double) = ComplexD
+  CTypeOf (RealQ (q :: k) Double Int64) = RealQD
 
 -- returns the modulus as a nested list of moduli
 class (Tuple a) => ZqTuple a where
@@ -110,6 +113,10 @@ class (Tuple a) => ZqTuple a where
 
 instance (Reflects q Int64) => ZqTuple (ZqBasic q Int64) where
   type ModPairs (ZqBasic q Int64) = Int64
+  getModuli = tag $ proxy value (Proxy::Proxy q)
+
+instance (Reflects q Int64) => ZqTuple (RealQ q r Int64) where
+  type ModPairs (RealQ q r Int64) = Int64
   getModuli = tag $ proxy value (Proxy::Proxy q)
 
 instance (ZqTuple a, ZqTuple b) => ZqTuple (a, b) where
@@ -148,8 +155,11 @@ class (repr ~ CTypeOf r) => Dispatch' repr r where
   dadd :: Ptr r -> Ptr r -> Int64 -> IO ()
   dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
 
-instance (ZqTuple r, Storable (ModPairs r),
-          CTypeOf r ~ ZqB64D)
+instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ RealQD)
+  => Dispatch' RealQD r where
+
+
+instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ ZqB64D)
   => Dispatch' ZqB64D r where
   dcrt ruptr pout totm pfac numFacts = 
     let qs = proxy getModuli (Proxy::Proxy r)

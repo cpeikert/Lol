@@ -1,18 +1,19 @@
 
-message ZList {
-  repeated sint64 xs = 1;
+message Int64List {
+  optional uint64 q = 1;
+  repeated sint64 xs = 2;
 }
 
-message ZqList {
-  required uint64 q = 1;
-  required ZList xs = 2;
+message DoubleList {
+  optional uint64 q = 1;
+  repeated double xs = 2;
 }
 
 message TensorMsg {
   required uint32 m = 1;
   oneof coeffs {
-    ZList zs = 2;
-    ZqList zqs = 3;
+    Int64List zqs = 2;
+    DoubleList rqs = 3;
   }
 }
 
