@@ -33,7 +33,7 @@ module Crypto.Lol.Cyclotomic.Cyc
 -- * Error sampling
 , tGaussian, errorRounded, errorCoset
 -- * Sub/extension rings
-, embed, twace, coeffsCyc, powBasis, crtSet
+, embed, twace, coeffsCyc, coeffsPow, coeffsDec, powBasis, crtSet
 -- * Rescaling cyclotomic elements
 , R.RescaleCyc(..), R.Basis(..)
 ) where
@@ -369,11 +369,17 @@ twace (Sub (c :: Cyc t l r)) = Sub (twace c :: Cyc t (FGCD l m) r)
 
 -- | Return the given element's coefficient vector with respect to
 -- the (relative) powerful/decoding basis of the cyclotomic
--- extension @O_m' / O_m@.
+-- extension @O_m' / O_m@.  See also 'coeffsPow', 'coeffsDec'.
 coeffsCyc :: (m `Divides` m', CElt t r) => R.Basis -> Cyc t m' r -> [Cyc t m r]
 {-# INLINABLE coeffsCyc #-}
 coeffsCyc R.Pow c' = Pow <$> U.coeffsPow (uncycPow c')
 coeffsCyc R.Dec c' = Dec <$> U.coeffsDec (uncycDec c')
+
+coeffsPow, coeffsDec :: (m `Divides` m', CElt t r) => Cyc t m' r -> [Cyc t m r]
+{-# INLINABLE coeffsPow #-}
+{-# INLINABLE coeffsDec #-}
+coeffsPow = coeffsCyc R.Pow
+coeffsDec = coeffsCyc R.Dec
 
 -- | The relative powerful basis of @O_m' / O_m@.
 powBasis :: (m `Divides` m', CElt t r) => Tagged m [Cyc t m' r]
@@ -424,13 +430,9 @@ liftPow (Scalar c) = Scalar $ lift c
 liftPow (Sub c) = Sub $ liftPow c
 
 -- | Lift using the decoding basis.
-liftDec (Pow u) = Dec $ lift $ toDec u
-liftDec (Dec u) = Dec $ lift u
-liftDec (CRT u) = Dec $ lift $ toDec u
-liftDec (Scalar c) = Dec $ lift $ toDec $ scalarPow c -- workaround scalarDec
-liftDec (Sub c) = liftDec $ embed' c
+liftDec c = Dec $ lift $ uncycDec c
 
--- | Unzip for unrestricted types.
+-- | Unzip for unrestricted types.  See also 'unzipCElt'.
 unzipCyc :: (Tensor t, Fact m) => Cyc t m (a,b) -> (Cyc t m a, Cyc t m b)
 {-# INLINABLE unzipCyc #-}
 unzipCyc (Pow u) = Pow *** Pow $ U.unzipCyc u
