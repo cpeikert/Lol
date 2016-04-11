@@ -40,16 +40,12 @@ instance (BinC a, ToInteger.C i) => Reflects a i where
 
 -}
 
--- CJP: need reflections for Prime and PrimePower types because we use
--- them with ZqBasic
-
 instance (Prim p, ToInteger.C i) => Reflects p i where
   value = fromIntegral <$> valuePrime
 
 instance (PPow pp, ToInteger.C i) => Reflects pp i where
   value = fromIntegral <$> valuePPow
 
--- CJP: need this for Types.ZmStar, where we use ZqBasic m Int
 instance (Fact m, ToInteger.C i) => Reflects m i where
   value = fromIntegral <$> valueFact
 
