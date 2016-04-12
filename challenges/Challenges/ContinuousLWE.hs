@@ -37,8 +37,8 @@ lweSample svar s = do
   let sq = reduce s :: Cyc t m zp
   e <- tGaussian svar
   a <- getRandom
-  let as = fmap fromIntegral $ lift $ uncycDec $ a * sq
-  return $ LWESample a $ reduce $ as + (e :: UCyc t m D (LiftOf rp))
+  let as = fmap fromIntegral $ lift $ uncycDec $ a * sq :: UCyc t m D (LiftOf rp)
+  return $ LWESample a $ (reduce as) + (reduce (e :: UCyc t m D (LiftOf rp)))
 
 type ULWECtx t m z zp v rp = 
   (ToInteger z, Reduce z zp, Ring zp, Random zp, Fact m, CElt t z, CElt t zp, 
