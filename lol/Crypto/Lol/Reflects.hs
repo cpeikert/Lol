@@ -5,7 +5,7 @@
 -- | Generic interface for reflecting types to values.
 
 module Crypto.Lol.Reflects
-( Reflects(..)
+( Reflects(..), Reified
 ) where
 
 import Algebra.ToInteger as ToInteger
@@ -53,5 +53,7 @@ instance (PPow pp, ToInteger.C i) => Reflects pp i where
 instance (Fact m, ToInteger.C i) => Reflects m i where
   value = fromIntegral <$> valueFact
 
-instance {-# OVERLAPS #-} (Reifies rei a) => Reflects (rei :: *) a where
-  value = tag $ reflect (Proxy::Proxy rei)
+data Reified q
+
+instance (Reifies q a) => Reflects (Reified q) a where
+  value = tag $ reflect (Proxy::Proxy q)

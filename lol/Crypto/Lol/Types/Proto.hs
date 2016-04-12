@@ -42,12 +42,12 @@ instance Protoable [Double] where
   toProto = Rqs . (DoubleList Nothing) . fromList
   fromProto (Rqs (DoubleList Nothing xs)) = toList xs
 
-instance (Reflects q Int64) => Protoable [RealQ q Double Int64] where
-  type ProtoType [RealQ q Double Int64] = Coeffs
+instance (Reflects q Double) => Protoable [RealQ q Double] where
+  type ProtoType [RealQ q Double] = Coeffs
   toProto xs = Rqs $ 
-    DoubleList (Just $ fromIntegral (proxy value (Proxy::Proxy q) :: Int64)) $ fromList $ map lift xs
+    DoubleList (Just $ round (proxy value (Proxy::Proxy q) :: Double)) $ fromList $ map lift xs
   fromProto (Rqs (DoubleList (Just q') xs)) = 
-    let q = proxy value (Proxy::Proxy q) :: Int64
+    let q = round (proxy value (Proxy::Proxy q) :: Double)
     in if q == (fromIntegral q')
        then map reduce $ toList xs
        else error $ "Mismatched q value in Protoable instance for RealQ. Expected " ++ (show q) ++ ", got " ++ (show q') ++ "."

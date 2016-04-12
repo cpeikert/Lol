@@ -13,6 +13,7 @@ import Crypto.Random.DRBG
 
 import Crypto.Lol hiding (lift)
 import Crypto.Lol.Cyclotomic.UCyc
+import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.RealQ
 
@@ -107,7 +108,7 @@ genInstance :: forall q proxy m . (Fact m, Reifies q Int64)
   => Proxy q -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
 genInstance _ _ challName path v numSamples idx = do
   --(secret' :: Cyc T m Int64, samples :: [LWESample T m (ZqBasic q Int64)]) <- 
-  (secret' :: Cyc T m Int64, samples :: [LWESample T m (ZqBasic q Int64) (RealQ q Double Int64)]) <- 
+  (secret' :: Cyc T m Int64, samples :: [LWESample T m (ZqBasic (Reified q) Int64) (RealQ (RealMod q) Double)]) <- 
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ 
       --proxyT (lweInstance v numSamples) (Proxy::Proxy Double)
       lweInstance v numSamples

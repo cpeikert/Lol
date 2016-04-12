@@ -137,11 +137,11 @@ crtSetDec' = return $
       h :: Int = proxy valueHatFact m'p
       hinv = recip $ fromIntegral h
   in reify d $ \(_::Proxy d) ->
-       let twCRTs' :: T.Matrix (GF fp d)
+       let twCRTs' :: T.Matrix (GF fp (Reified d))
              = fromMaybe (error "internal error: crtSetDec': twCRTs") $ proxyT T.twCRTs m'p
            zmsToIdx = proxy T.zmsToIndexFact m'p
            elt j i = T.indexM twCRTs' j (zmsToIdx i)
-           trace' = trace :: GF fp d -> fp
+           trace' = trace :: GF fp (Reified d) -> fp
            cosets = proxy (partitionCosets p) (Proxy::Proxy '(m,m'))
        in LP.map (\is -> Arr $ force $ fromFunction (Z :. phi) 
                           (\(Z:.j) -> hinv * trace'

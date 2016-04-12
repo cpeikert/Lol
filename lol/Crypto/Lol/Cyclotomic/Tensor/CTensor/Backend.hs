@@ -104,7 +104,7 @@ type family CTypeOf x where
   CTypeOf Double = DoubleD
   CTypeOf Int64 = Int64D
   CTypeOf (Complex Double) = ComplexD
-  CTypeOf (RealQ (q :: k) Double Int64) = RealQD
+  CTypeOf (RealQ (q :: k) Double) = RealQD
 
 -- returns the modulus as a nested list of moduli
 class (Tuple a) => ZqTuple a where
@@ -115,9 +115,9 @@ instance (Reflects q Int64) => ZqTuple (ZqBasic q Int64) where
   type ModPairs (ZqBasic q Int64) = Int64
   getModuli = tag $ proxy value (Proxy::Proxy q)
 
-instance (Reflects q Int64) => ZqTuple (RealQ q r Int64) where
-  type ModPairs (RealQ q r Int64) = Int64
-  getModuli = tag $ proxy value (Proxy::Proxy q)
+instance (Reflects q r, RealFrac r) => ZqTuple (RealQ q r) where
+  type ModPairs (RealQ q r) = Int64
+  getModuli = tag $ round (proxy value (Proxy::Proxy q) :: r)
 
 instance (ZqTuple a, ZqTuple b) => ZqTuple (a, b) where
   type ModPairs (a,b) = (ModPairs a, ModPairs b)

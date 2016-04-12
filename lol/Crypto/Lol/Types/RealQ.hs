@@ -2,7 +2,7 @@
              MultiParamTypeClasses, NoImplicitPrelude, PolyKinds, 
              RebindableSyntax, ScopedTypeVariables, TypeFamilies, UndecidableInstances #-}
 
-module Crypto.Lol.Types.RealQ (RealQ) where
+module Crypto.Lol.Types.RealQ (RealQ, RealMod) where
 
 import Algebra.Additive as Additive (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
@@ -16,6 +16,7 @@ import Crypto.Lol.Reflects
 
 -- for the Elt instance
 import qualified Data.Array.Repa.Eval as E
+import Data.Reflection
 import Data.Serialize
 -- for the Unbox instances
 import qualified Data.Vector                 as V
@@ -25,53 +26,57 @@ import qualified Data.Vector.Unboxed         as U
 
 import Foreign.Storable
 
-newtype RealQ q r i = RealQ r
+-- invariant: 0 <= x < q
+newtype RealQ q r = RealQ r
   deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable, Read, Serialize)
 
+data RealMod q
+
+instance (Reifies q i, ToInteger i, Ring r) => Reflects (RealMod (q :: *)) r where
+  value = tag $ fromIntegral $ reflect (Proxy::Proxy q)
+
 {-# INLINABLE reduce' #-}
-reduce' :: forall q r i . 
-  (Reflects q i, ToInteger i, IntegralDomain r) 
-  => r -> RealQ q r i
-reduce' = RealQ . (`mod` (fromIntegral (proxy value (Proxy::Proxy q) :: i)))
+reduce' :: forall q r . (Reflects q r, Field r, RealRing r)
+  => r -> RealQ q r
+reduce' x = 
+  let q = proxy value (Proxy::Proxy q)
+      y = floor $ x / q
+  in RealQ $ x-q*y
 
 -- puts value in range [-q/2, q/2)
-decode' :: forall q r i . 
-  (Reflects q i, Ord r, Additive r, ToInteger i, Ring r)
-  => RealQ q r i -> r
-decode' = let qval = fromIntegral (proxy value (Proxy::Proxy q) :: i)
+decode' :: forall q r . 
+  (Reflects q r, Ord r, Additive r, Ring r)
+  => RealQ q r -> r
+decode' = let qval = proxy value (Proxy::Proxy q)
           in \(RealQ x) -> if x + x < qval
                            then x
                            else x - qval
 
-instance (Reflects q i, Additive (RealQ q r i), Additive r, 
-          ToInteger i, IntegralDomain r) 
-  => Reduce r (RealQ q r i) where
+instance (Reflects q r, Field r, RealRing r, Additive (RealQ q r)) 
+  => Reduce r (RealQ q r) where
   reduce = reduce'
 
-type instance LiftOf (RealQ q r i) = r
+type instance LiftOf (RealQ q r) = r
 
-instance (Reflects q i, Reduce r (RealQ q r i), Ord r, ToInteger i, Ring r) 
-  => Lift' (RealQ q r i) where
+instance (Reflects q r, Reduce r (RealQ q r), Ord r, Ring r) 
+  => Lift' (RealQ q r) where
   lift = decode'
+{-
+instance (Reflects q r, Additive (RealQ q r)) 
+  => Mod (RealQ q r) where
+  type ModRep (RealQ q r) = r
 
--- convenience synonym for many instances
-type ReflectsTI q r = (Reflects q r, Ord r, IntegralDomain r)
-
-instance (Reflects q i, Additive (RealQ q r i), ToInteger i) 
-  => Mod (RealQ q r i) where
-  type ModRep (RealQ q r i) = i
-
-  modulus = retag (value :: Tagged q i)
-
+  modulus = retag (value :: Tagged q r)
+-}
 -- instance of Additive
-instance (Reflects q i, Ring r, Ord r, ToInteger i, IntegralDomain r) 
-  => Additive.C (RealQ q r i) where
+instance (Reflects q r, RealRing r, Field r, Ord r) 
+  => Additive.C (RealQ q r) where
 
   {-# INLINABLE zero #-}
   zero = RealQ zero
 
   {-# INLINABLE (+) #-}
-  (+) = let qval = fromIntegral (proxy value (Proxy::Proxy q) :: i)
+  (+) = let qval = proxy value (Proxy::Proxy q)
         in \ (RealQ x) (RealQ y) ->
         let z = x + y
         in RealQ (if z >= qval then z - qval else z)
@@ -82,15 +87,15 @@ instance (Reflects q i, Ring r, Ord r, ToInteger i, IntegralDomain r)
 -- CJP: restored manual Unbox instances, until we have a better way
 -- (NewtypeDeriving or TH)
 
-newtype instance U.MVector s (RealQ q r i) = MV_RealQ (U.MVector s r)
-newtype instance U.Vector (RealQ q r i) = V_RealQ (U.Vector r)
+newtype instance U.MVector s (RealQ q r) = MV_RealQ (U.MVector s r)
+newtype instance U.Vector (RealQ q r) = V_RealQ (U.Vector r)
 
 -- Unbox, when underlying representation is
-instance U.Unbox r => U.Unbox (RealQ q r i)
+instance U.Unbox r => U.Unbox (RealQ q r)
 
 {- purloined and tweaked from code in `vector` package that defines
 types as unboxed -}
-instance U.Unbox r => M.MVector U.MVector (RealQ q r i) where
+instance U.Unbox r => M.MVector U.MVector (RealQ q r) where
   basicLength (MV_RealQ v) = M.basicLength v
   basicUnsafeSlice z n (MV_RealQ v) = MV_RealQ $ M.basicUnsafeSlice z n v
   basicOverlaps (MV_RealQ v1) (MV_RealQ v2) = M.basicOverlaps v1 v2
@@ -105,7 +110,7 @@ instance U.Unbox r => M.MVector U.MVector (RealQ q r i) where
   basicUnsafeMove (MV_RealQ v1) (MV_RealQ v2) = M.basicUnsafeMove v1 v2
   basicUnsafeGrow (MV_RealQ v) n = MV_RealQ <$> M.basicUnsafeGrow v n
 
-instance U.Unbox r => G.Vector U.Vector (RealQ q r i) where
+instance U.Unbox r => G.Vector U.Vector (RealQ q r) where
   basicUnsafeFreeze (MV_RealQ v) = V_RealQ <$> G.basicUnsafeFreeze v
   basicUnsafeThaw (V_RealQ v) = MV_RealQ <$> G.basicUnsafeThaw v
   basicLength (V_RealQ v) = G.basicLength v
