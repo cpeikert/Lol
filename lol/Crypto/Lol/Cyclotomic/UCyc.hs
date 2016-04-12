@@ -330,10 +330,7 @@ gSqNorm (Dec v) = gSqNormDec v
 {-# INLINABLE gSqNorm #-}
 
 -- | Sample from the "tweaked" Gaussian error distribution @t*D@ in
--- the decoding basis, where @D@ has scaled variance @v@.  (Note: This
--- implementation uses Double precision to generate the Gaussian
--- sample, which may not be sufficient for rigorous proof-based
--- security.)
+-- the decoding basis, where @D@ has scaled variance @v@.
 tGaussian :: (Tensor t, Fact m, OrdFloat q, Random q, TElt t q,
               ToRational v, MonadRandom rnd)
              => v -> rnd (UCyc t m D q)
@@ -342,7 +339,10 @@ tGaussian = fmap Dec . tGaussianDec
 
 -- | Generate an LWE error term from the "tweaked" Gaussian with given
 -- scaled variance, deterministically rounded using the decoding
--- basis.
+-- basis. (Note: This
+-- implementation uses Double precision to generate the Gaussian
+-- sample, which may not be sufficient for rigorous proof-based
+-- security.)
 errorRounded :: forall v rnd t m z .
                 (ToInteger z, Tensor t, Fact m, TElt t z,
                  ToRational v, MonadRandom rnd)
@@ -353,7 +353,10 @@ errorRounded svar =
 
 -- | Generate an LWE error term from the "tweaked" Gaussian with
 -- scaled variance @v * p^2@, deterministically rounded to the given
--- coset of @R_p@ using the decoding basis.
+-- coset of @R_p@ using the decoding basis. (Note: This
+-- implementation uses Double precision to generate the Gaussian
+-- sample, which may not be sufficient for rigorous proof-based
+-- security.)
 errorCoset :: forall t m zp z v rnd .
   (Mod zp, z ~ ModRep zp, Lift zp z, Tensor t, Fact m,
    TElt t zp, TElt t z, ToRational v, MonadRandom rnd)
