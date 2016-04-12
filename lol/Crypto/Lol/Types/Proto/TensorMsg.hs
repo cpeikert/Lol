@@ -7,7 +7,7 @@ import qualified Data.Typeable as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 import qualified Crypto.Lol.Types.Proto.Coeffs as Lol.TensorMsg (Coeffs)
-import qualified Crypto.Lol.Types.Proto.Coeffs as Lol.TensorMsg.Coeffs (Coeffs(..), get'zqs, get'rqs)
+import qualified Crypto.Lol.Types.Proto.Coeffs as Lol.TensorMsg.Coeffs (Coeffs(..), get'zs, get'rqs, get'zqs)
 
 data TensorMsg = TensorMsg{m :: !(P'.Word32), coeffs :: P'.Maybe (Lol.TensorMsg.Coeffs)}
                deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data)
@@ -26,8 +26,9 @@ instance P'.Wire TensorMsg where
        _ -> P'.wireSizeErr ft' self'
     where
         calc'Size
-         = (P'.wireSizeReq 1 13 x'1 + P'.wireSizeOpt 1 11 (Lol.TensorMsg.Coeffs.get'zqs Prelude'.=<< x'2) +
-             P'.wireSizeOpt 1 11 (Lol.TensorMsg.Coeffs.get'rqs Prelude'.=<< x'2))
+         = (P'.wireSizeReq 1 13 x'1 + P'.wireSizeOpt 1 11 (Lol.TensorMsg.Coeffs.get'zs Prelude'.=<< x'2) +
+             P'.wireSizeOpt 1 11 (Lol.TensorMsg.Coeffs.get'rqs Prelude'.=<< x'2)
+             + P'.wireSizeOpt 1 11 (Lol.TensorMsg.Coeffs.get'zqs Prelude'.=<< x'2))
   wirePut ft' self'@(TensorMsg x'1 x'2)
    = case ft' of
        10 -> put'Fields
@@ -39,8 +40,9 @@ instance P'.Wire TensorMsg where
         put'Fields
          = do
              P'.wirePutReq 8 13 x'1
-             P'.wirePutOpt 18 11 (Lol.TensorMsg.Coeffs.get'zqs Prelude'.=<< x'2)
+             P'.wirePutOpt 18 11 (Lol.TensorMsg.Coeffs.get'zs Prelude'.=<< x'2)
              P'.wirePutOpt 26 11 (Lol.TensorMsg.Coeffs.get'rqs Prelude'.=<< x'2)
+             P'.wirePutOpt 34 11 (Lol.TensorMsg.Coeffs.get'zqs Prelude'.=<< x'2)
   wireGet ft'
    = case ft' of
        10 -> P'.getBareMessageWith update'Self
@@ -52,11 +54,15 @@ instance P'.Wire TensorMsg where
              8 -> Prelude'.fmap (\ !new'Field -> old'Self{m = new'Field}) (P'.wireGet 13)
              18 -> Prelude'.fmap
                     (\ !new'Field ->
-                      old'Self{coeffs = P'.mergeAppend (coeffs old'Self) (Prelude'.Just (Lol.TensorMsg.Coeffs.Zqs new'Field))})
+                      old'Self{coeffs = P'.mergeAppend (coeffs old'Self) (Prelude'.Just (Lol.TensorMsg.Coeffs.Zs new'Field))})
                     (P'.wireGet 11)
              26 -> Prelude'.fmap
                     (\ !new'Field ->
                       old'Self{coeffs = P'.mergeAppend (coeffs old'Self) (Prelude'.Just (Lol.TensorMsg.Coeffs.Rqs new'Field))})
+                    (P'.wireGet 11)
+             34 -> Prelude'.fmap
+                    (\ !new'Field ->
+                      old'Self{coeffs = P'.mergeAppend (coeffs old'Self) (Prelude'.Just (Lol.TensorMsg.Coeffs.Zqs new'Field))})
                     (P'.wireGet 11)
              _ -> let (field'Number, wire'Type) = P'.splitWireTag wire'Tag in P'.unknown field'Number wire'Type old'Self
 
@@ -69,7 +75,7 @@ instance P'.ReflectDescriptor TensorMsg where
   getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList [8]) (P'.fromDistinctAscList [8])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".Lol.TensorMsg\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"TensorMsg\"}, descFilePath = [\"Lol\",\"TensorMsg.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lol.TensorMsg.m\", haskellPrefix' = [], parentModule' = [MName \"Lol\",MName \"TensorMsg\"], baseName' = FName \"m\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 8}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 13}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [OneofInfo {oneofName = ProtoName {protobufName = FIName \".Lol.TensorMsg.coeffs\", haskellPrefix = [], parentModule = [MName \"Lol\",MName \"TensorMsg\"], baseName = MName \"Coeffs\"}, oneofFName = ProtoFName {protobufName' = FIName \".Lol.TensorMsg.coeffs\", haskellPrefix' = [], parentModule' = [MName \"Lol\",MName \"TensorMsg\"], baseName' = FName \"coeffs\", baseNamePrefix' = \"\"}, oneofFilePath = [\"Lol\",\"TensorMsg\",\"Coeffs.hs\"], oneofFields = fromList [(ProtoName {protobufName = FIName \".Lol.TensorMsg.coeffs.zqs\", haskellPrefix = [], parentModule = [MName \"Lol\",MName \"TensorMsg\",MName \"Coeffs\"], baseName = MName \"Zqs\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lol.TensorMsg.coeffs.zqs\", haskellPrefix' = [], parentModule' = [MName \"Lol\",MName \"TensorMsg\",MName \"Coeffs\"], baseName' = FName \"zqs\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Lol.Int64List\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"Int64List\"}), hsRawDefault = Nothing, hsDefault = Nothing}),(ProtoName {protobufName = FIName \".Lol.TensorMsg.coeffs.rqs\", haskellPrefix = [], parentModule = [MName \"Lol\",MName \"TensorMsg\",MName \"Coeffs\"], baseName = MName \"Rqs\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lol.TensorMsg.coeffs.rqs\", haskellPrefix' = [], parentModule' = [MName \"Lol\",MName \"TensorMsg\",MName \"Coeffs\"], baseName' = FName \"rqs\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 3}, wireTag = WireTag {getWireTag = 26}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Lol.DoubleList\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"DoubleList\"}), hsRawDefault = Nothing, hsDefault = Nothing})], oneofMakeLenses = False}], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".Lol.TensorMsg\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"TensorMsg\"}, descFilePath = [\"Lol\",\"TensorMsg.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lol.TensorMsg.m\", haskellPrefix' = [], parentModule' = [MName \"Lol\",MName \"TensorMsg\"], baseName' = FName \"m\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 8}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 13}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [OneofInfo {oneofName = ProtoName {protobufName = FIName \".Lol.TensorMsg.coeffs\", haskellPrefix = [], parentModule = [MName \"Lol\",MName \"TensorMsg\"], baseName = MName \"Coeffs\"}, oneofFName = ProtoFName {protobufName' = FIName \".Lol.TensorMsg.coeffs\", haskellPrefix' = [], parentModule' = [MName \"Lol\",MName \"TensorMsg\"], baseName' = FName \"coeffs\", baseNamePrefix' = \"\"}, oneofFilePath = [\"Lol\",\"TensorMsg\",\"Coeffs.hs\"], oneofFields = fromList [(ProtoName {protobufName = FIName \".Lol.TensorMsg.coeffs.zs\", haskellPrefix = [], parentModule = [MName \"Lol\",MName \"TensorMsg\",MName \"Coeffs\"], baseName = MName \"Zs\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lol.TensorMsg.coeffs.zs\", haskellPrefix' = [], parentModule' = [MName \"Lol\",MName \"TensorMsg\",MName \"Coeffs\"], baseName' = FName \"zs\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Lol.Int64List\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"Int64List\"}), hsRawDefault = Nothing, hsDefault = Nothing}),(ProtoName {protobufName = FIName \".Lol.TensorMsg.coeffs.rqs\", haskellPrefix = [], parentModule = [MName \"Lol\",MName \"TensorMsg\",MName \"Coeffs\"], baseName = MName \"Rqs\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lol.TensorMsg.coeffs.rqs\", haskellPrefix' = [], parentModule' = [MName \"Lol\",MName \"TensorMsg\",MName \"Coeffs\"], baseName' = FName \"rqs\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 3}, wireTag = WireTag {getWireTag = 26}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Lol.RealQList\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"RealQList\"}), hsRawDefault = Nothing, hsDefault = Nothing}),(ProtoName {protobufName = FIName \".Lol.TensorMsg.coeffs.zqs\", haskellPrefix = [], parentModule = [MName \"Lol\",MName \"TensorMsg\",MName \"Coeffs\"], baseName = MName \"Zqs\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lol.TensorMsg.coeffs.zqs\", haskellPrefix' = [], parentModule' = [MName \"Lol\",MName \"TensorMsg\",MName \"Coeffs\"], baseName' = FName \"zqs\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 4}, wireTag = WireTag {getWireTag = 34}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Lol.ZqList\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"ZqList\"}), hsRawDefault = Nothing, hsDefault = Nothing})], oneofMakeLenses = False}], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
 
 instance P'.TextType TensorMsg where
   tellT = P'.tellSubMessage
@@ -80,8 +86,9 @@ instance P'.TextMsg TensorMsg where
    = do
        P'.tellT "m" (m msg)
        case (coeffs msg) of
-         Prelude'.Just (Lol.TensorMsg.Coeffs.Zqs zqs) -> P'.tellT "zqs" zqs
+         Prelude'.Just (Lol.TensorMsg.Coeffs.Zs zs) -> P'.tellT "zs" zs
          Prelude'.Just (Lol.TensorMsg.Coeffs.Rqs rqs) -> P'.tellT "rqs" rqs
+         Prelude'.Just (Lol.TensorMsg.Coeffs.Zqs zqs) -> P'.tellT "zqs" zqs
          Prelude'.Nothing -> Prelude'.return ()
   textGet
    = do
@@ -93,15 +100,20 @@ instance P'.TextMsg TensorMsg where
             (do
                v <- P'.getT "m"
                Prelude'.return (\ o -> o{m = v}))
-        parse'coeffs = P'.try (P'.choice [parse'zqs, parse'rqs])
+        parse'coeffs = P'.try (P'.choice [parse'zs, parse'rqs, parse'zqs])
           where
-              parse'zqs
+              parse'zs
                = P'.try
                   (do
-                     v <- P'.getT "zqs"
-                     Prelude'.return (\ s -> s{coeffs = Prelude'.Just (Lol.TensorMsg.Coeffs.Zqs v)}))
+                     v <- P'.getT "zs"
+                     Prelude'.return (\ s -> s{coeffs = Prelude'.Just (Lol.TensorMsg.Coeffs.Zs v)}))
               parse'rqs
                = P'.try
                   (do
                      v <- P'.getT "rqs"
                      Prelude'.return (\ s -> s{coeffs = Prelude'.Just (Lol.TensorMsg.Coeffs.Rqs v)}))
+              parse'zqs
+               = P'.try
+                  (do
+                     v <- P'.getT "zqs"
+                     Prelude'.return (\ s -> s{coeffs = Prelude'.Just (Lol.TensorMsg.Coeffs.Zqs v)}))

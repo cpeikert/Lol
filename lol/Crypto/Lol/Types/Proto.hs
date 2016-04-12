@@ -2,12 +2,8 @@
 module Crypto.Lol.Types.Proto where
 
 import Crypto.Lol.LatticePrelude (proxy, Proxy(..), lift, reduce, map)
-import Crypto.Lol.Reflects
-import Crypto.Lol.Types.RealQ
-import Crypto.Lol.Types.ZqBasic
 import Crypto.Lol.Types.Proto.Coeffs
 import Crypto.Lol.Types.Proto.Int64List
-import Crypto.Lol.Types.Proto.DoubleList
 
 import Data.ByteString.Lazy hiding (map)
 import Data.Foldable (toList)
@@ -24,33 +20,8 @@ class Protoable a where
 
 instance Protoable [Int64] where
   type ProtoType [Int64] = Coeffs
-  toProto = Zqs . (Int64List Nothing) . fromList
-  fromProto (Zqs (Int64List Nothing xs)) = toList xs
-
-instance (Reflects q Int64) => Protoable [ZqBasic q Int64] where
-  type ProtoType [ZqBasic q Int64] = Coeffs
-  toProto xs = Zqs $ 
-    Int64List (Just $ fromIntegral (proxy value (Proxy::Proxy q) :: Int64)) $ fromList $ map lift xs
-  fromProto (Zqs (Int64List (Just q') xs)) = 
-    let q = proxy value (Proxy::Proxy q) :: Int64
-    in if q == (fromIntegral q')
-       then map reduce $ toList xs
-       else error $ "Mismatched q value in Protoable instance for ZqBasic. Expected " ++ (show q) ++ ", got " ++ (show q') ++ "."
-
-instance Protoable [Double] where
-  type ProtoType [Double] = Coeffs
-  toProto = Rqs . (DoubleList Nothing) . fromList
-  fromProto (Rqs (DoubleList Nothing xs)) = toList xs
-
-instance (Reflects q Double) => Protoable [RealQ q Double] where
-  type ProtoType [RealQ q Double] = Coeffs
-  toProto xs = Rqs $ 
-    DoubleList (Just $ round (proxy value (Proxy::Proxy q) :: Double)) $ fromList $ map lift xs
-  fromProto (Rqs (DoubleList (Just q') xs)) = 
-    let q = round (proxy value (Proxy::Proxy q) :: Double)
-    in if q == (fromIntegral q')
-       then map reduce $ toList xs
-       else error $ "Mismatched q value in Protoable instance for RealQ. Expected " ++ (show q) ++ ", got " ++ (show q') ++ "."
+  toProto = Zs . Int64List . fromList
+  fromProto (Zs (Int64List xs)) = toList xs
 
 msgPut :: (ReflectDescriptor (ProtoType a), Wire (ProtoType a), Protoable a) => a -> ByteString
 msgPut = messagePut . toProto

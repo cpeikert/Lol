@@ -6,22 +6,28 @@ import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Crypto.Lol.Types.Proto.DoubleList as Lol (DoubleList)
 import qualified Crypto.Lol.Types.Proto.Int64List as Lol (Int64List)
+import qualified Crypto.Lol.Types.Proto.RealQList as Lol (RealQList)
+import qualified Crypto.Lol.Types.Proto.ZqList as Lol (ZqList)
 
-data Coeffs = Zqs{zqs :: (Lol.Int64List)}
-            | Rqs{rqs :: (Lol.DoubleList)}
+data Coeffs = Zs{zs :: (Lol.Int64List)}
+            | Rqs{rqs :: (Lol.RealQList)}
+            | Zqs{zqs :: (Lol.ZqList)}
             deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data)
-get'zqs x
+get'zs x
  = case x of
-     Zqs zqs -> Prelude'.Just zqs
+     Zs zs -> Prelude'.Just zs
      _ -> Prelude'.Nothing
 get'rqs x
  = case x of
      Rqs rqs -> Prelude'.Just rqs
      _ -> Prelude'.Nothing
+get'zqs x
+ = case x of
+     Zqs zqs -> Prelude'.Just zqs
+     _ -> Prelude'.Nothing
 
 instance P'.Default Coeffs where
-  defaultValue = Zqs P'.defaultValue
+  defaultValue = Zs P'.defaultValue
 
 instance P'.Mergeable Coeffs
