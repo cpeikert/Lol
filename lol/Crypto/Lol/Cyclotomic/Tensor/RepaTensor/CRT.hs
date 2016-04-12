@@ -21,8 +21,8 @@ import Data.Coerce
 import Data.Singletons.Prelude
 
 -- | Embeds a scalar into the CRT basis (when it exists).
-scalarCRT' :: forall m r . (Fact m, CRTrans r, Unbox r)
-              => Maybe (r -> Arr m r)
+scalarCRT' :: forall mon m r . (Fact m, CRTrans mon r, Unbox r)
+              => mon (r -> Arr m r)
 {-# INLINABLE scalarCRT' #-}
 scalarCRT'
   = let pps = proxy ppsFact (Proxy::Proxy m)
@@ -30,32 +30,34 @@ scalarCRT'
     in pure $ Arr . force . fromFunction sz . const
 
 -- | Multiply by @g_m@ in the CRT basis (when it exists).
-mulGCRT' :: forall m r . (Fact m, CRTrans r, Unbox r, Elt r)
-            => Maybe (Arr m r -> Arr  m r)
+mulGCRT' :: forall mon m r . (Fact m, CRTrans mon r, Unbox r, Elt r)
+            => mon (Arr m r -> Arr  m r)
 {-# INLINABLE mulGCRT' #-}
 mulGCRT' = (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gCRT
 
 -- | Divide by @g@ in the CRT basis (when it exists).
-divGCRT' :: (Fact m, CRTrans r, IntegralDomain r, ZeroTestable r,
+divGCRT' :: (Fact m, CRTrans Maybe r, IntegralDomain r, ZeroTestable r,
              Unbox r, Elt r) => Maybe (Arr m r -> Arr m r)
+-- CJP: would be better to replace Maybe with a generic monad, if possible
 {-# INLINABLE divGCRT' #-}
 divGCRT' =  (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gInvCRT
 
 -- | The representation of @g@ in the CRT basis (when it exists).
-gCRT :: (Fact m, CRTrans r, Unbox r, Elt r) => Maybe (Arr m r)
+gCRT :: (Fact m, CRTrans mon r, Unbox r, Elt r) => mon (Arr m r)
 {-# INLINABLE gCRT #-}
 gCRT = fCRT <*> pure (fGPow $ scalarPow' LP.one)
 
 -- | The representation of @g^{ -1 }@ in the CRT basis (when it exists).
-gInvCRT:: (Fact m, CRTrans r, IntegralDomain r,
+gInvCRT:: (Fact m, CRTrans Maybe r, IntegralDomain r,
            ZeroTestable r, Unbox r, Elt r)
           => Maybe (Arr m r)
+-- CJP: would be better to replace Maybe with a generic monad, if possible
 {-# INLINABLE gInvCRT #-}
 gInvCRT = fCRT <*> fGInvPow (scalarPow' LP.one)
 
 fCRT, fCRTInv ::
-  forall m r . (Fact m, CRTrans r, Unbox r, Elt r)
-  => Maybe (Arr m r -> Arr m r)
+  forall mon m r . (Fact m, CRTrans mon r, Unbox r, Elt r)
+  => mon (Arr m r -> Arr m r)
 
 {-# INLINABLE fCRT #-}
 {-# INLINABLE fCRTInv #-}
@@ -67,15 +69,15 @@ fCRT = evalM $ fTensor ppCRT
 -- divide by mhat after doing crtInv'
 -- | The inverse chinese remainder transform.
 -- Exists if and only if crt exists for all prime powers.
-fCRTInv = do -- in Maybe
-  (_, mhatInv) :: (CRTInfo r) <- proxyT crtInfoFact (Proxy :: Proxy m)
+fCRTInv = do
+  (_, mhatInv) :: (CRTInfo r) <- proxyT crtInfo (Proxy :: Proxy m)
   let totm = proxy totientFact (Proxy :: Proxy m)
       divMhat = trans totm $ RT.map (*mhatInv)
   evalM $ (divMhat .*) <$> fTensor ppCRTInv'
 
 ppDFT, ppDFTInv', ppCRT, ppCRTInv' ::
-  forall pp r . (PPow pp, CRTrans r, Unbox r, Elt r)
-  => TaggedT pp Maybe (Trans r)
+  forall mon pp r . (PPow pp, CRTrans mon r, Unbox r, Elt r)
+  => TaggedT pp mon (Trans r)
 
 {-# INLINABLE ppDFT #-}
 {-# INLINABLE ppDFTInv' #-}
@@ -139,8 +141,8 @@ butterfly = trans 2 $ \arr ->
 
 -- DFT_p, CRT_p, scaled DFT_p^{ -1 } and CRT_p^{ -1 }
 pDFT, pDFTInv', pCRT, pCRTInv' ::
-  forall p r . (Prim p, CRTrans r, Unbox r, Elt r)
-  => TaggedT p Maybe (Trans r)
+  forall mon p r . (Prim p, CRTrans mon r, Unbox r, Elt r)
+  => TaggedT p mon (Trans r)
 
 {-# INLINABLE pDFT #-}
 {-# INLINABLE pDFTInv' #-}
@@ -150,7 +152,7 @@ pDFT, pDFTInv', pCRT, pCRTInv' ::
 pDFT = let pval = proxy valuePrime (Proxy::Proxy p)
        in if pval == 2
           then return butterfly
-          else do (omegaPPow, _) <- crtInfoPrime
+          else do (omegaPPow, _) <- crtInfo
                   return $ trans pval $ mulMat $ force $
                          fromFunction (Z :. pval :. pval)
                                           (\(Z:.i:.j) -> omegaPPow (i*j))
@@ -158,7 +160,7 @@ pDFT = let pval = proxy valuePrime (Proxy::Proxy p)
 pDFTInv' = let pval = proxy valuePrime (Proxy::Proxy p)
            in if pval == 2
               then return butterfly
-              else do (omegaPPow, _) <- crtInfoPrime
+              else do (omegaPPow, _) <- crtInfo
                       return $ trans pval $ mulMat $ force $
                              fromFunction (Z :. pval :. pval)
                                               (\(Z:.i:.j) -> omegaPPow (-i*j))
@@ -166,7 +168,7 @@ pDFTInv' = let pval = proxy valuePrime (Proxy::Proxy p)
 pCRT = let pval = proxy valuePrime (Proxy::Proxy p)
        in if pval == 2
           then return $ Id 1
-          else do (omegaPPow, _) <- crtInfoPrime
+          else do (omegaPPow, _) <- crtInfo
                   return $ trans (pval-1) $ mulMat $ force $
                          fromFunction (Z :. pval-1 :. pval-1)
                                           (\(Z:.i:.j) -> omegaPPow ((i+1)*j))
@@ -176,7 +178,7 @@ pCRTInv' =
   let pval = proxy valuePrime (Proxy::Proxy p)
   in if pval == 2 then return $ Id 1
      else do
-       (omegaPPow, _) <- crtInfoPrime
+       (omegaPPow, _) <- crtInfo
        return $ trans (pval-1) $  mulMat $ force $
               fromFunction (Z :. pval-1 :. pval-1)
                                (\(Z:.i:.j) -> omegaPPow (negate i*(j+1)) -
@@ -184,8 +186,8 @@ pCRTInv' =
 
 -- twiddle factors for DFT_pp and CRT_pp decompositions
 ppTwid, ppTwidHat ::
-  forall pp r . (PPow pp, CRTrans r, Unbox r, Elt r)
-  => Bool -> TaggedT pp Maybe (Trans r)
+  forall mon pp r . (PPow pp, CRTrans mon r, Unbox r, Elt r)
+  => Bool -> TaggedT pp mon (Trans r)
 
 {-# INLINABLE ppTwid #-}
 {-# INLINABLE ppTwidHat #-}
@@ -194,7 +196,7 @@ ppTwid inv =
   let pp@(p,e) = proxy ppPPow (Proxy :: Proxy pp)
       ppval = valuePP pp
   in do
-    (omegaPPPow, _) <- crtInfoPPow
+    (omegaPPPow, _) <- crtInfo
     return $ trans ppval $ mulDiag $ force $
                            fromFunction (Z :. ppval)
                            (\(Z:.i) -> let (iq,ir) = i `divMod` p
@@ -206,7 +208,7 @@ ppTwidHat inv =
   let pp@(p,e) = proxy ppPPow (Proxy :: Proxy pp)
       pptot = totientPP pp
   in do
-    (omegaPPPow, _) <- crtInfoPPow
+    (omegaPPPow, _) <- crtInfo
     return $ trans pptot $ mulDiag $ force $
                            fromFunction (Z :. pptot)
                            (\(Z:.i) -> let (iq,ir) = i `divMod` (p-1)

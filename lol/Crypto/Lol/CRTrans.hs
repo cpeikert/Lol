@@ -15,7 +15,6 @@ import Crypto.Lol.LatticePrelude
 import Crypto.Lol.Reflects
 
 import Control.Arrow
-import Control.Monad.Identity
 import Data.Singletons
 import Data.Singletons.Prelude
 
@@ -82,14 +81,14 @@ gEmbPrime = do
   return $ \i -> one - f i      -- not checking that i /= 0 (mod p)
 
 -- the complex numbers have roots of unity of any order
-instance (Transcendental a) => CRTrans Identity (Complex a) where
+instance (Monad mon, Transcendental a) => CRTrans mon (Complex a) where
   crtInfo = crtInfoC
 
-crtInfoC :: forall m a . (Reflects m Int, Transcendental a)
-            => Tagged m (CRTInfo (Complex a))
+crtInfoC :: forall mon m a . (Monad mon, Reflects m Int, Transcendental a)
+            => TaggedT m mon (CRTInfo (Complex a))
 crtInfoC = let mval = proxy value (Proxy::Proxy m)
                mhat = valueHat mval
-           in tag (omegaPowC mval, recip $ fromIntegral mhat)
+           in return (omegaPowC mval, recip $ fromIntegral mhat)
 
 omegaPowC :: (Transcendental a) => Int -> Int -> Complex a
 omegaPowC m i = cis (2*pi*fromIntegral i / fromIntegral m)

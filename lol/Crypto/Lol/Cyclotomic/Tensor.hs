@@ -36,7 +36,7 @@ import qualified Data.Vector          as V
 import qualified Data.Vector.Unboxed  as U
 
 -- | Synonym for constraints required for CRT-related functions.
-type CRTElt t r = (ZeroTestable r, IntegralDomain r, CRTrans r, TElt t r)
+type CRTElt t mon r = (ZeroTestable r, IntegralDomain r, CRTrans mon r, TElt t r)
 
 -- | 'Tensor' encapsulates all the core linear transformations needed
 -- for cyclotomic ring arithmetic.
@@ -86,7 +86,7 @@ class (TElt t Double, TElt t (Complex Double))
   -- | Convert a scalar to a tensor in the powerful basis.
   scalarPow :: (Additive r, Fact m, TElt t r) => r -> t m r
 
-  {- CJP: suppressed to do annoyingly complicated algorithm
+  {- CJP: suppressed due to annoyingly complicated algorithm
 
   -- | Convert a scalar to a tensor in the decoding basis.
   scalarDec :: (Additive r, Fact m, TElt t r) => r -> t m r
@@ -110,12 +110,12 @@ class (TElt t Double, TElt t (Complex Double))
   -- use this method directly, but instead call the corresponding
   -- top-level functions: the elements of the tuple correpond to the
   -- functions 'scalarCRT', 'mulGCRT', 'divGCRT', 'crt', 'crtInv'.
-  crtFuncs :: (Fact m, CRTElt t r) =>
-              Maybe (    r -> t m r, -- scalarCRT
-                     t m r -> t m r, -- mulGCRT
-                     t m r -> t m r, -- divGCRT
-                     t m r -> t m r, -- crt
-                     t m r -> t m r) -- crtInv
+  crtFuncs :: (Fact m, CRTElt t mon r) =>
+              mon (    r -> t m r, -- scalarCRT
+                   t m r -> t m r, -- mulGCRT
+                   t m r -> t m r, -- divGCRT
+                   t m r -> t m r, -- crt
+                   t m r -> t m r) -- crtInv
 
   -- | Sample from the "tweaked" Gaussian error distribution @t*D@
   -- in the decoding basis, where @D@ has scaled variance @v@.
@@ -143,9 +143,9 @@ class (TElt t Double, TElt t (Complex Double))
   -- method directly, but instead call the corresponding top-level
   -- functions: the elements of the tuple correpond to the functions
   -- 'twaceCRT', 'embedCRT'.
-  crtExtFuncs :: (m `Divides` m', CRTElt t r) =>
-                 Maybe (t m' r -> t m  r, -- twaceCRT
-                        t m  r -> t m' r) -- embedCRT
+  crtExtFuncs :: (m `Divides` m', CRTElt t mon r) =>
+                 mon (t m' r -> t m  r, -- twaceCRT
+                      t m  r -> t m' r) -- embedCRT
 
   -- | Map a tensor in the powerful\/decoding\/CRT basis, representing
   -- an @O_m'@ element, to a vector of tensors representing @O_m@
@@ -179,8 +179,8 @@ class (TElt t Double, TElt t (Complex Double))
   unzipT :: (Fact m) => t m (a,b) -> (t m a, t m b)
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
-hasCRTFuncs :: forall t m r . (Tensor t, Fact m, CRTElt t r)
-               => TaggedT (t m r) Maybe ()
+hasCRTFuncs :: forall t m mon r . (Tensor t, Fact m, CRTElt t mon r)
+               => TaggedT (t m r) mon ()
 {-# INLINABLE hasCRTFuncs #-}
 hasCRTFuncs = tagT $ do
   (_ :: r -> t m r,_,_,_,_) <- crtFuncs
@@ -188,13 +188,12 @@ hasCRTFuncs = tagT $ do
 
 -- | Yield a tensor for a scalar in the CRT basis.  (This function is
 -- simply an appropriate entry from 'crtFuncs'.)
-scalarCRT :: (Tensor t, Fact m, CRTElt t r) => Maybe (r -> t m r)
+scalarCRT :: (Tensor t, Fact m, CRTElt t mon r) => mon (r -> t m r)
 {-# INLINABLE scalarCRT #-}
 scalarCRT = (\(f,_,_,_,_) -> f) <$> crtFuncs
 
-
 mulGCRT, divGCRT, crt, crtInv ::
-  (Tensor t, Fact m, CRTElt t r) => Maybe (t m r -> t m r)
+  (Tensor t, Fact m, CRTElt t mon r) => mon (t m r -> t m r)
 {-# INLINABLE mulGCRT #-}
 {-# INLINABLE divGCRT #-}
 {-# INLINABLE crt #-}
@@ -217,8 +216,8 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 -- For cyclotomic indices m | m',
 -- @Tw(x) = (mhat\/m\'hat) * Tr(g\'\/g * x)@.
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-twaceCRT :: forall t r m m' . (Tensor t, m `Divides` m', CRTElt t r)
-            => Maybe (t m' r -> t m r)
+twaceCRT :: forall t m m' mon r . (Tensor t, m `Divides` m', CRTElt t mon r)
+            => mon (t m' r -> t m r)
 twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
            (fst <$> crtExtFuncs)
@@ -226,8 +225,8 @@ twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
 -- | Embed a tensor with index @m@ in the CRT basis to a tensor with
 -- index @m'@ in the CRT basis.
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-embedCRT :: forall t r m m' . (Tensor t, m `Divides` m', CRTElt t r)
-            => Maybe (t m r -> t m' r)
+embedCRT :: forall t m m' mon r . (Tensor t, m `Divides` m', CRTElt t mon r)
+            => mon (t m r -> t m' r)
 embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
            (snd <$> crtExtFuncs)
@@ -262,16 +261,16 @@ indexM (MKron m (MC mc r c)) i j =
       in indexM m iq jq * mc ir jr
 
 -- | The "tweaked" CRT^* matrix: @CRT^* . diag(sigma(g_m))@.
-twCRTs :: (Fact m, CRTrans r) => TaggedT m Maybe (Matrix r)
+twCRTs :: (Fact m, CRTrans mon r) => TaggedT m mon (Matrix r)
 twCRTs = fMatrix twCRTsPPow
 
 -- | The "tweaked" CRT^* matrix (for prime powers): @CRT^* * diag(sigma(g_p))@.
-twCRTsPPow :: (PPow pp, CRTrans r) => TaggedT pp Maybe (MatrixC r)
+twCRTsPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (MatrixC r)
 twCRTsPPow = do
   phi    <- pureT totientPPow
   iToZms <- pureT indexToZmsPPow
   jToPow <- pureT indexToPowPPow
-  (wPow, _) <- crtInfoPPow
+  (wPow, _) <- crtInfo
   gEmb <- gEmbPPow
 
   return $ MC (\j i -> let i' = iToZms i

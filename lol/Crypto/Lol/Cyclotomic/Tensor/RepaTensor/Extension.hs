@@ -12,7 +12,6 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 
 import           Crypto.Lol.LatticePrelude              as LP hiding (lift, (!!))
 import           Crypto.Lol.CRTrans
-import           Crypto.Lol.Reflects
 import qualified Crypto.Lol.Cyclotomic.Tensor                      as T
 import           Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 import           Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
@@ -53,14 +52,15 @@ twacePowDec'
 -- basis of the m'th cyclotomic ring to the mth cyclotomic ring when 
 -- @m | m'@.
 twaceCRT' :: forall m m' r .
-             (m `Divides` m', CRTrans r, IntegralDomain r,
+             (m `Divides` m', CRTrans Maybe r, IntegralDomain r,
               ZeroTestable r, Unbox r, Elt r)
              => Maybe (Arr m' r -> Arr m r)
-twaceCRT' = do           -- Maybe monad
+-- CJP: would be better to make Maybe a generic monad; need more general gInvCRT
+twaceCRT' = do
   g' :: Arr m' r <- gCRT
   gInv <- gInvCRT
   embed :: Arr m r -> Arr m' r <- embedCRT'
-  (_, m'hatinv) <- proxyT crtInfoFact (Proxy::Proxy m')
+  (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m')
   let hatRatioInv = m'hatinv * fromIntegral (proxy valueHatFact (Proxy::Proxy m))
       -- tweak = mhat * g' / (m'hat * g)
       tweak = (coerce $ \x -> force . RT.map (* hatRatioInv) . RT.zipWith (*) x) (embed gInv) g' :: Arr m' r
@@ -92,11 +92,11 @@ embedDec'
 
 -- | Embeds an array in the CRT basis of the the mth cyclotomic ring
 -- to an array in the CRT basis of the m'th cyclotomic ring when @m | m'@
-embedCRT' :: forall m m' r . (m `Divides` m', CRTrans r, Unbox r)
-             => Maybe (Arr m r -> Arr m' r)
-embedCRT' = do -- in Maybe
+embedCRT' :: forall mon m m' r . (m `Divides` m', CRTrans mon r, Unbox r)
+             => mon (Arr m r -> Arr m' r)
+embedCRT' = do
   -- first check existence of CRT transform of index m'
-  proxyT crtInfoFact (Proxy::Proxy m') :: Maybe (CRTInfo r)
+  _ <- proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r)
   let idxs = proxy baseIndicesCRT (Proxy::Proxy '(m,m'))
   return $ coerce $ \ !arr -> (force $ backpermute (extent idxs) (idxs !) arr)
 
