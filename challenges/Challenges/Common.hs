@@ -52,8 +52,8 @@ getPath = do
   case args of
     [] -> do
       path <- absPath
-      putStrLn $ "No path provided. Guessing path is \"" ++ ("." </> path) ++ "\""
-      return $ "." </> path
+      putStrLn $ "No path provided. Guessing path is \"" ++ path ++ "\""
+      return path
     ["-p",path] -> do
       dirExists <- doesDirectoryExist path
       if dirExists
@@ -119,7 +119,7 @@ absPath :: IO FilePath
 absPath = do
   inTopLevelLol <- doesDirectoryExist "challenges"
   return $ if inTopLevelLol
-    then "challenges"
+    then "./challenges"
     else "."
 
 -- | Pretty printing of error messages.

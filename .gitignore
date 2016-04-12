@@ -20,7 +20,8 @@ lol/.stack-work
 sandbox
 test
 challenge-files
-secret-files
 
+secret-files
+publish
 blockchaintest*
 test*
