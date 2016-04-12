@@ -1,8 +1,8 @@
 #!/bin/sh
 
 pubdir=publish
-filename=challenge_files
-execname=challenge
+filename=rlwe_challenges
+execname=gen
 privkey=lolchallenge.key # make sure this matches the value in makeSignKey
 
 mkdir -p $pubdir
