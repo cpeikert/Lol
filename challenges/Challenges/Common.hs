@@ -93,7 +93,7 @@ secretFileName name idx = name ++ "-" ++ (intToHex idx) ++ ".secret"
 
 -- | The name for the file that contains the beacon information for each challenge.
 revealFileName :: FilePath
-revealFileName = "revealData.txt"
+revealFileName = "beaconTime.txt"
 
 -- | The name for beacon xml files.
 xmlFileName :: Int -> FilePath

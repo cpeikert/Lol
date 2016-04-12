@@ -14,7 +14,7 @@ echo "Running challenge generator..."
 ./dist/build/$execname/$execname
 
 echo "Tarring challenge files..."
-tar czf $pubdir/$filename.tar.gz $( find -P challenge-files -name "*.instance" -or -name "revealData.txt" )
+tar czf $pubdir/$filename.tar.gz $( find -P challenge-files -name "*.instance" -or -name "beaconTime.txt" )
 
 echo "Hashing tarball..."
 # originstamp supports max of 64 hex characters, so use SHA256
