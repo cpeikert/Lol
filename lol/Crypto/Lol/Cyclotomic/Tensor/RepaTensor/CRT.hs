@@ -11,7 +11,7 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 ) where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Cyclotomic.Tensor
+import Crypto.Lol.Cyclotomic.Tensor                     as T
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
 import Crypto.Lol.LatticePrelude                        as LP
@@ -33,27 +33,31 @@ scalarCRT'
 mulGCRT' :: forall mon m r . (Fact m, CRTrans mon r, Unbox r, Elt r)
             => mon (Arr m r -> Arr  m r)
 {-# INLINABLE mulGCRT' #-}
-mulGCRT' = (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gCRT
+mulGCRT' = do
+  g <- gCRT
+  return $ coerce $ (force . RT.zipWith (*) g) `asTypeOf` asTypeOf
+
+  -- (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gCRT
 
 -- | Divide by @g@ in the CRT basis (when it exists).
-divGCRT' :: (Fact m, CRTrans Maybe r, IntegralDomain r, ZeroTestable r,
-             Unbox r, Elt r) => Maybe (Arr m r -> Arr m r)
--- CJP: would be better to replace Maybe with a generic monad, if possible
+divGCRT' :: (Fact m, CRTrans mon r, Unbox r, Elt r) => mon (Arr m r -> Arr m r)
 {-# INLINABLE divGCRT' #-}
-divGCRT' =  (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gInvCRT
+divGCRT' = do
+  ginv <- gInvCRT
+  return $ coerce $ (force . RT.zipWith (*) ginv) `asTypeOf` asTypeOf
+
+  -- (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gInvCRT
 
 -- | The representation of @g@ in the CRT basis (when it exists).
 gCRT :: (Fact m, CRTrans mon r, Unbox r, Elt r) => mon (Arr m r)
 {-# INLINABLE gCRT #-}
-gCRT = fCRT <*> pure (fGPow $ scalarPow' LP.one)
+gCRT = -- CJP: TODO
 
 -- | The representation of @g^{ -1 }@ in the CRT basis (when it exists).
-gInvCRT:: (Fact m, CRTrans Maybe r, IntegralDomain r,
-           ZeroTestable r, Unbox r, Elt r)
-          => Maybe (Arr m r)
--- CJP: would be better to replace Maybe with a generic monad, if possible
+gInvCRT:: (Fact m, CRTrans mon r, Unbox r, Elt r)
+          => mon (Arr m r)
 {-# INLINABLE gInvCRT #-}
-gInvCRT = fCRT <*> fGInvPow (scalarPow' LP.one)
+gInvCRT = -- CJP: TODO
 
 fCRT, fCRTInv ::
   forall mon m r . (Fact m, CRTrans mon r, Unbox r, Elt r)

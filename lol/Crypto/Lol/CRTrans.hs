@@ -8,7 +8,6 @@
 module Crypto.Lol.CRTrans
 ( CRTrans(..), CRTEmbed(..)
 , CRTInfo
-, gEmbPPow, gEmbPrime
 ) where
 
 import Crypto.Lol.LatticePrelude
@@ -65,20 +64,6 @@ instance (CRTEmbed a, CRTEmbed b) => CRTEmbed (a,b) where
   type CRTExt (a,b) = (CRTExt a, CRTExt b)
   toExt = toExt *** toExt
   fromExt = fromExt *** fromExt
-
--- | A function that returns the 'i'th embedding of @g_{p^e} = g_p@ for
--- @i@ in @Z*_{p^e}@.
-gEmbPPow :: forall pp mon r . (PPow pp, CRTrans mon r)
-            => TaggedT pp mon (Int -> r)
-gEmbPPow = tagT $ case (sing :: SPrimePower pp) of
-  (SPP (STuple2 sp _)) -> withWitnessT gEmbPrime sp
-
--- | A function that returns the @i@th embedding of @g_p@ for @i@ in @Z*_p@,
--- i.e., @1-omega_p^i@.
-gEmbPrime :: (Prim p, CRTrans mon r) => TaggedT p mon (Int -> r)
-gEmbPrime = do
-  (f, _) <- crtInfo
-  return $ \i -> one - f i      -- not checking that i /= 0 (mod p)
 
 -- the complex numbers have roots of unity of any order
 instance (Monad mon, Transcendental a) => CRTrans mon (Complex a) where

@@ -18,7 +18,7 @@
 module Crypto.Lol.Cyclotomic.UCyc
 (
 -- * Data types and constraints
-  UCyc, P, D, C, UCElt, NFElt
+  UCyc, P, D, C, E, UCycCE, UCElt, NFElt
 -- * Changing representation
 , toPow, toDec, toCRT, fmapPow, fmapDec, unzipCyc, unzipUCElt
 -- * Scalars
@@ -64,8 +64,13 @@ import Test.QuickCheck
 data P
 -- | Nullary index type representing the decoding basis.
 data D
--- | Nullary index type representing a CRT basis.
+-- | Nullary index type representing the CRT basis over base ring.
 data C
+-- | Nullary index type representing the CRT basis over extension of
+-- base ring.
+data E
+
+type UCycCE t m r = Either (UCyc t m E r) (UCyc t m C r)
 
 -- | Represents a cyclotomic ring such as @Z[zeta]@,
 -- @Zq[zeta]@, and @Q(zeta)@ in an explicit representation: @t@ is the
@@ -81,11 +86,12 @@ data UCyc t m rep r where
   -- Invariant: for a given (t,m,r), exactly one of these two is ever
   -- used: CRTr if crtFuncs exists, otherwise CRTe
   CRTr :: !(t m r) -> UCyc t m C r
-  CRTe :: !(t m (CRTExt r)) -> UCyc t m C r
+  CRTe :: !(t m (CRTExt r)) -> UCyc t m E r
 
 -- | Constraints needed for many operations involving the 'UCyc' CRT ('C')
 -- representation.
-type UCElt t r = (Tensor t, CRTEmbed r, CRTElt t r, CRTElt t (CRTExt r))
+type UCElt t r = (Tensor t, CRTEmbed r, CRTrans Maybe r, TElt t r,
+                  CRTrans Identity (CRTExt r), TElt t (CRTExt r))
 
 -- | Convenient synonym for 'deepseq'-able element type.
 type NFElt r = (NFData r, NFData (CRTExt r))
@@ -105,10 +111,10 @@ scalarDec = Dec . T.scalarDec
 -}
 
 -- | Embed a scalar from the base ring.
-scalarCRT :: (Fact m, UCElt t r) => r -> UCyc t m C r
+scalarCRT :: (Fact m, UCElt t r) => r -> Either (UCyc t m E r) (UCyc t m C r)
 scalarCRT = fromMaybe
-               (CRTe . fromJust' "UCyc: no CRT over CRTExt" T.scalarCRT . toExt)
-               ((CRTr .) <$> T.scalarCRT)
+            (Left $ CRTe $ runIdentity T.scalarCRT . toExt)
+            ((Right . CRTr .) <$> T.scalarCRT)
 {-# INLINABLE scalarCRT #-}
 
 -- Eq instances
@@ -171,21 +177,23 @@ instance (Additive r, Tensor t, Fact m, TElt t r) => Additive.C (UCyc t m D r) w
   {-# INLINABLE (-) #-}
   {-# INLINABLE negate #-}
 
-instance (Fact m, UCElt t r) => Additive.C (UCyc t m C r) where
+instance (Fact m, UCElt t r)
+         => Additive.C (Either (UCyc t m E r) (UCyc t m C r)) where
+
   zero = scalarCRT zero
 
   -- CJP: precision OK?  Alternatively, switch to pow and back after
   -- adding/subtracting.  Expensive, but necessary given output type.
-  (CRTr v1) + (CRTr v2) = CRTr $ zipWithT (+) v1 v2
-  (CRTe v1) + (CRTe v2) = CRTe $ zipWithT (+) v1 v2
+  (Right (CRTr v1)) + (Right (CRTr v2)) = Right $ CRTr $ zipWithT (+) v1 v2
+  (Left (CRTe v1)) + (Left (CRTe v2)) = Left $ CRTe $ zipWithT (+) v1 v2
   _ + _ = error "UCyc (+) internal error: mixed CRTr/CRTe"
 
-  (CRTr v1) - (CRTr v2) = CRTr $ zipWithT (-) v1 v2
-  (CRTe v1) - (CRTe v2) = CRTe $ zipWithT (-) v1 v2
+  (Right (CRTr v1)) - (Right (CRTr v2)) = Right $ CRTr $ zipWithT (-) v1 v2
+  (Left (CRTe v1)) - (Left (CRTe v2)) = Left $ CRTe $ zipWithT (-) v1 v2
   _ - _ = error "UCyc (-) internal error: mixed CRTr/CRTe"
 
-  negate (CRTr v) = CRTr $ fmapT negate v
-  negate (CRTe v) = CRTe $ fmapT negate v
+  negate (Right (CRTr v)) = Right $ CRTr $ fmapT negate v
+  negate (Left (CRTe v)) = Left $ CRTe $ fmapT negate v
 
   {-# INLINABLE zero #-}
   {-# INLINABLE (+) #-}
@@ -194,14 +202,14 @@ instance (Fact m, UCElt t r) => Additive.C (UCyc t m C r) where
 
 -- Ring instance: only for CRT
 
-instance (Fact m, UCElt t r) => Ring.C (UCyc t m C r) where
+instance (Fact m, UCElt t r)
+         => Ring.C (Either (UCyc t m E r) (UCyc t m C r)) where
+  
   one = scalarCRT one
   fromInteger c = scalarCRT $ fromInteger c
 
-  -- CJP: precision OK?  Alternatively, switch to pow (and back) after
-  -- multiplying.  Expensive, but necessary given output type.
-  (CRTr v1) * (CRTr v2) = CRTr $ zipWithT (*) v1 v2
-  (CRTe v1) * (CRTe v2) = CRTe $ zipWithT (*) v1 v2
+  (Right (CRTr v1)) * (Right (CRTr v2)) = Right $ CRTr $ zipWithT (*) v1 v2
+  (Left (CRTe v1)) * (Left (CRTe v2)) = Left $ CRTe $ zipWithT (*) v1 v2
   _ * _ = error "UCyc internal error: mixed CRTr/CRTe"
 
   {-# INLINABLE one #-}
@@ -217,9 +225,11 @@ instance (Ring r, Tensor t, Fact m, TElt t r) => Module.C r (UCyc t m D r) where
   r *> (Dec v) = Dec $ fmapT (r *) v
   {-# INLINABLE (*>) #-}
 
-instance (Ring r, Fact m, UCElt t r) => Module.C r (UCyc t m C r) where
-  r *> (CRTr v) = CRTr $ fmapT (r *) v
-  r *> (CRTe v) = CRTe $ fmapT (toExt r *) v
+instance (Ring r, Fact m, UCElt t r)
+         => Module.C r (Either (UCc t m E r) (UCyc t m C r)) where
+
+  r *> (Right (CRTr v)) = Right $ CRTr $ fmapT (r *) v
+  r *> (Left (CRTe v)) = Left $ CRTe $ fmapT (toExt r *) v
   {-# INLINABLE (*>) #-}
 
 instance (GFCtx fp d, Fact m, UCElt t fp) => Module.C (GF fp d) (UCyc t m P fp) where
@@ -552,7 +562,7 @@ instance (Tensor t, Fact m) => Traversable (UCyc t m D) where
 
 ---------- Utility instances ----------
 
-instance (Random r, Tensor t, Fact m, CRTElt t r)
+instance (Random r, UCElt t r, Fact m)
          => Random (Either (UCyc t m P r) (UCyc t m C r)) where
 
   -- create in CRTr basis if possible, otherwise in powerful
