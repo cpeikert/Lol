@@ -29,7 +29,8 @@ instance (NFData (LWESample t m zq rq), NFData v) => NFData (LWEInstance v t m z
 deriving instance (Read (LWESample t m zq rq), Read v) => Read (LWEInstance v t m zq rq)
 deriving instance (Show (LWESample t m zq rq), Show v) => Show (LWEInstance v t m zq rq)
 deriving instance (Eq (LWESample t m zq rq), Eq v) => Eq (LWEInstance v t m zq rq)
-instance (Protoable (LWESample t m zq rq), Mod zq, ModRep zq ~ Int64, Fact m) => Protoable (LWEInstance Double t m zq rq) where
+instance (Protoable (LWESample t m zq rq), Mod zq, ModRep zq ~ Int64, Fact m)
+  => Protoable (LWEInstance Double t m zq rq) where
   type ProtoType (LWEInstance Double t m zq rq) = P.LWEInstance
   toProto (LWEInstance idx v samples) = 
     P.LWEInstance (fromIntegral idx) 
@@ -46,7 +47,8 @@ deriving instance (Show (Cyc t m zq), Show (UCyc t m D rq)) => Show (LWESample t
 deriving instance (Eq (Cyc t m zq), Eq (UCyc t m D rq)) => Eq (LWESample t m zq rq)
 instance (NFData (Cyc t m zq), NFData (UCyc t m D rq)) => NFData (LWESample t m zq rq) where
   rnf (LWESample a b) = (rnf a) `seq` (rnf b)
-instance (Protoable (Cyc t m zq), Protoable (UCyc t m D rq)) => Protoable (LWESample t m zq rq) where
+instance (Protoable (Cyc t m zq) , Protoable (UCyc t m D rq)) 
+  => Protoable (LWESample t m zq rq) where
   type ProtoType (LWESample t m zq rq) = P.LWESample
   toProto (LWESample a b) = P.LWESample (toProto a) (toProto b)
   fromProto (P.LWESample a b) = LWESample (fromProto a) (fromProto b)

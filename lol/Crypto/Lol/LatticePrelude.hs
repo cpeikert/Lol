@@ -15,6 +15,7 @@ module Crypto.Lol.LatticePrelude
 -- * Classes and families
   Enumerable(..)
 , Mod(..)
+, Subgroup(..)
 , Reduce(..), LiftOf, Lift, Lift'(..), Rescale(..), Encode(..), msdToLSD
 , CharOf
 -- * Numeric
@@ -77,6 +78,10 @@ class Enumerable a where
 class (ToInteger (ModRep a), Additive a) => Mod a where
   type ModRep a
   modulus :: Tagged a (ModRep a)
+
+-- | Represents that @a@ is a subgroup of @b@.
+class (Additive a, Additive b) => Subgroup a b where
+  fromSubgroup :: a -> b
 
 -- | Represents that @b@ is a quotient group of @a@.
 class (Additive a, Additive b) => Reduce a b where
