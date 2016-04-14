@@ -92,15 +92,15 @@ checkInstanceErr path challName instID = do
   when (not instFileExists) $ throwError $ instFile ++ " does not exist."
   secFileExists <- lift $ doesFileExist secFile
   when (not secFileExists) $ throwError $ secFile ++ " does not exist."
-  inst@(P.LWEInstance idx m q v _) <- lift $ messageGet' <$> BS.readFile instFile
+  inst@(P.LWEInstance idx m q v bound _) <- lift $ messageGet' <$> BS.readFile instFile
   sec@(P.LWESecret idx' m' s) <- lift $ messageGet' <$> BS.readFile secFile
   when (idx /= idx') $ throwError $ "Instance ID is " ++ (show idx) ++ ", but secret ID is " ++ (show idx')
   when (m /= m') $ throwError $ "Instance index is " ++ (show m) ++ ", but secret index is " ++ (show m')
   reifyFactI (fromIntegral m) (\(_::proxy m) -> 
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
-      let (LWEInstance _ _ samples) = fromProto inst :: LWEInstance Double T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)
+      let (LWEInstance _ _ _ samples) = fromProto inst :: LWEInstance Double T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)
           (LWESecret _ secret) = fromProto sec
-      when (not $ checkInstance v secret samples) $ 
+      when (not $ checkInstance v bound secret samples) $ 
         throwError $ "Some sample in instance " ++ 
           (show instID) ++ " exceeded the noise bound."
       ))

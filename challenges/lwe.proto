@@ -1,5 +1,10 @@
 
-import "lol.proto";
+import "../lol/lol.proto";
+
+// hprotoc won't let me write a path to lol.proto above, 
+// and it also won't work with a symlink to lol.proto.
+// instead, you have to acutally copy lol.proto into the same directory as lwe.proto
+// and then run `hprotoc lwe.proto`.
 
 message LWESample {
   required CycMsg a = 1;
@@ -11,7 +16,8 @@ message LWEInstance {
   required uint64 m = 2;
   required uint64 q = 3;
   required double svar = 4;
-  repeated LWESample samples = 5;
+  required double bound = 5;
+  repeated LWESample samples = 6;
 }
 
 message LWESecret {

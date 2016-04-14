@@ -54,14 +54,10 @@ getSecretIdx record byteOffset =
 
 -- | Verify that the (scaled, squared) norm of the noise for each sample in the instance is below @mhat*n*v@.
 checkInstance :: forall t m zq rq . (CheckSample (LiftOf rq) t m zq rq)
-  => LiftOf rq -> Cyc t m (LiftOf zq) -> [LWESample t m zq rq] -> Bool
-checkInstance v sk samples = 
+  => LiftOf rq -> LiftOf rq -> Cyc t m (LiftOf zq) -> [LWESample t m zq rq] -> Bool
+checkInstance v bound sk samples = 
   let n = proxy totientFact (Proxy::Proxy m)
       mhat = proxy valueHatFact (Proxy::Proxy m)
-      eps = 1/(2^(40 :: Int))
-      --d = (1/pi)*(1/2-(log eps)/(fromIntegral n))
-      d = computeD n eps
-      bound = (fromIntegral $ mhat*n)*v*d
   in all (checkSample bound sk) samples
 
 type CheckSample v t m zq rq = 
@@ -82,11 +78,3 @@ sampleError sk (LWESample a b) =
   let as = reduce (fmap fromIntegral $ lift $ uncycDec $ a * reduce sk :: UCyc t m D (LiftOf rq))
       e = lift $ (b - as :: UCyc t m D rq)
   in gSqNorm e
-
-computeD :: (Field v, Ord v, Transcendental v) => Int -> v -> v
-computeD n eps = go (1 / (2*pi))
-  where go d = 
-          let d' = (1/2 + (log $ 2 * pi * d)/2 - (log eps)/(fromIntegral n))/pi
-          in if ((d'-d) < 0.0001)
-             then d'
-             else go d'

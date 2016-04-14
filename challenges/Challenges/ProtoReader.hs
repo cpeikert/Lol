@@ -35,21 +35,24 @@ instance (Protoable (Cyc t m z), Fact m) => Protoable (LWESecret t m z) where
     LWESecret (fromIntegral idx) $ fromProto s
 
 -- | Corresponds to LWEInstance proto type.
-data LWEInstance v t m zq = LWEInstance Int v [LWESample t m zq]
+data LWEInstance v t m zq = LWEInstance Int v v [LWESample t m zq]
 instance (NFData (LWESample t m zq), NFData v) => NFData (LWEInstance v t m zq) where
-  rnf (LWEInstance idx v ss) = (rnf idx) `seq` (rnf v) `seq` (rnf ss)
+  rnf (LWEInstance idx v bound ss) = (rnf idx) `seq` (rnf v) `seq` (rnf bound) `seq` (rnf ss)
 deriving instance (Read (LWESample t m zq), Read v) => Read (LWEInstance v t m zq)
 deriving instance (Show (LWESample t m zq), Show v) => Show (LWEInstance v t m zq)
 deriving instance (Eq (LWESample t m zq), Eq v) => Eq (LWEInstance v t m zq)
-instance (Protoable (Cyc t m zq), Mod zq, ModRep zq ~ Int64, Fact m) => Protoable (LWEInstance Double t m zq) where
+instance (Protoable (Cyc t m zq), Mod zq, ModRep zq ~ Int64, Fact m) 
+  => Protoable (LWEInstance Double t m zq) where
   type ProtoType (LWEInstance Double t m zq) = P.LWEInstance
-  toProto (LWEInstance idx v samples) = 
+  toProto (LWEInstance idx v bound samples) = 
     P.LWEInstance (fromIntegral idx) 
                   (fromIntegral (proxy valueFact (Proxy::Proxy m)))
                   (fromIntegral (proxy modulus (Proxy::Proxy zq)))
                   v
+                  bound
                   (S.fromList $ map toProto samples)
-  fromProto (P.LWEInstance idx m q v samples) = LWEInstance (fromIntegral idx) v $ map fromProto $ S.toList samples
+  fromProto (P.LWEInstance idx m q v bound samples) = 
+    LWEInstance (fromIntegral idx) v bound $ map fromProto $ S.toList samples
 
 -- | Corresponds to LWESample proto type.
 data LWESample t m r = LWESample (Cyc t m r) (Cyc t m r)

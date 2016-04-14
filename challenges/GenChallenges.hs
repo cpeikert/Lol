@@ -18,6 +18,7 @@ import Crypto.Lol.Types.RealQ
 
 import Data.ByteString as BS (writeFile)
 import Data.ByteString.Lazy as BS (toStrict)
+import Data.Function (fix)
 import Data.Reflection
 import Data.Time.Clock.POSIX (getPOSIXTime)
 
@@ -110,7 +111,9 @@ genInstance _ _ challName path v numSamples idx = do
    samples :: [LWESample T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)]) <- 
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ lweInstance v numSamples
   let secret = LWESecret idx secret'
-      inst = LWEInstance idx v samples
+      eps = 1/(2^(40 :: Int))
+      bound = proxy (computeBound v eps) (Proxy::Proxy m)
+      inst = LWEInstance idx v bound samples
       secretFile = secretFileName challName idx
       instFile = instFileName challName idx
   writeProtoType (path </> challengeFilesDir </> challName) instFile inst
@@ -127,3 +130,20 @@ writeProtoType path fileName obj = do
   createDirectoryIfMissing True path
   let instPath = path </> fileName
   BS.writeFile instPath $ toStrict $ msgPut obj
+
+-- EAC: Note that this bound is correct for *continuous* LWE samples,
+-- but an extra factor may be necessary for discretized samples.
+
+-- | Outputs a bound such that the scaled, squared norm of an 
+-- error term generated with (scaled) variance v
+-- will be less than the bound except with probability eps.
+computeBound :: (Field v, Ord v, Transcendental v, Fact m) => v -> v -> Tagged m v
+computeBound v eps = do
+  n <- totientFact
+  mhat <- valueHatFact
+  let d = flip fix (1 / (2*pi)) $ \f d ->
+        let d' = (1/2 + (log $ 2 * pi * d)/2 - (log eps)/(fromIntegral n))/pi
+        in if ((d'-d) < 0.0001)
+           then d'
+           else f d'
+  return $ (fromIntegral $ mhat*n)*v*d

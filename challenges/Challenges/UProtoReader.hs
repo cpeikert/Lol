@@ -23,22 +23,24 @@ import Data.Reflection hiding (D)
 import Data.Sequence as S (fromList, Seq)
 
 -- | Corresponds to LWEInstance proto type.
-data LWEInstance v t m zq rq = LWEInstance Int v [LWESample t m zq rq]
+data LWEInstance v t m zq rq = LWEInstance Int v v [LWESample t m zq rq]
 instance (NFData (LWESample t m zq rq), NFData v) => NFData (LWEInstance v t m zq rq) where
-  rnf (LWEInstance idx v ss) = (rnf idx) `seq` (rnf v) `seq` (rnf ss)
+  rnf (LWEInstance idx v bound ss) = (rnf idx) `seq` (rnf v) `seq` (rnf bound) `seq` (rnf ss)
 deriving instance (Read (LWESample t m zq rq), Read v) => Read (LWEInstance v t m zq rq)
 deriving instance (Show (LWESample t m zq rq), Show v) => Show (LWEInstance v t m zq rq)
 deriving instance (Eq (LWESample t m zq rq), Eq v) => Eq (LWEInstance v t m zq rq)
 instance (Protoable (LWESample t m zq rq), Mod zq, ModRep zq ~ Int64, Fact m)
   => Protoable (LWEInstance Double t m zq rq) where
   type ProtoType (LWEInstance Double t m zq rq) = P.LWEInstance
-  toProto (LWEInstance idx v samples) = 
+  toProto (LWEInstance idx v bound samples) = 
     P.LWEInstance (fromIntegral idx) 
                   (fromIntegral (proxy valueFact (Proxy::Proxy m)))
                   (fromIntegral (proxy modulus (Proxy::Proxy zq)))
                   v
+                  bound
                   (S.fromList $ map toProto samples)
-  fromProto (P.LWEInstance idx m q v samples) = LWEInstance (fromIntegral idx) v $ map fromProto $ S.toList samples
+  fromProto (P.LWEInstance idx m q v bound samples) = 
+    LWEInstance (fromIntegral idx) v bound $ map fromProto $ S.toList samples
 
 -- | Corresponds to LWESample proto type.
 data LWESample t m zq rq = LWESample (Cyc t m zq) (UCyc t m D rq)
