@@ -156,7 +156,19 @@ class (repr ~ CTypeOf r) => Dispatch' repr r where
   dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
 
 instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ RealQD)
-  => Dispatch' RealQD r
+  => Dispatch' RealQD r where
+  dcrt = error "cannot call CT CRT on type RealQ"
+  dcrtinv = error "cannot call CT CRTInv on type RealQ"
+  dl = error "cannot call CT L on type RealQ (though you probably should be able to)"
+  dlinv = error "cannot call CT LInv on type RealQ (though you probably should be able to)"
+  dnorm = error "cannto call CT normSq on type RealQ"
+  dmulgpow = error "cannot call CT mulGPow on type RealQ"
+  dmulgdec = error "cannot call CT mulGDec on type RealQ"
+  dginvpow = error "cannot call CT divGPow on type RealQ"
+  dginvdec = error "cannot call CT divGDec on type RealQ"
+  dadd = error "cannot call CT add on type RealQ (though you probably should be able to)"
+  dmul = error "cannot call CT mul on type RealQ"
+  dgaussdec = error "cannot call CT gaussianDec on type RealQ"
 
 instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ ZqB64D)
   => Dispatch' ZqB64D r where
