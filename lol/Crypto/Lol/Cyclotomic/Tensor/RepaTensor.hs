@@ -246,7 +246,7 @@ instance (GFCtx fp d, Fact m, Additive (RT m fp))
 ---------- Miscellaneous instances ----------
 
 instance (Unbox r, Random (Arr m r)) => Random (RT m r) where
-  random = runRand $ RT <$> (liftRand random)
+  random = runRand $ RT <$> liftRand random
 
   randomR = error "randomR nonsensical for RT"
 
