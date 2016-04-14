@@ -17,7 +17,6 @@ import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT
 import Crypto.Lol.LatticePrelude                         as LP hiding
                                                                 ((!!))
-import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
 
@@ -84,7 +83,6 @@ instance Tensor RT where
   entailIndexT  = tag $ Sub Dict
   entailEqT     = tag $ Sub Dict
   entailZTT     = tag $ Sub Dict
-  --entailRingT   = tag $ Sub Dict
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
   entailShowT   = tag $ Sub Dict
@@ -138,11 +136,6 @@ instance Tensor RT where
   zipWithT f (RT (Arr a1)) (RT (Arr a2)) = RT $ Arr $ force $ RT.zipWith f a1 a2
   zipWithT f v1 v2 = zipWithT f (toRT v1) (toRT v2)
 
-  unzipTElt (RT (Arr arr)) = (RT . Arr . fromUnboxed (extent arr)) ***
-                             (RT . Arr . fromUnboxed (extent arr)) $
-                             U.unzip $ toUnboxed arr
-  unzipTElt v = unzipTElt $ toRT v
-
   unzipT v@(RT _) = unzipT $ toZV v
   unzipT (ZV v) = ZV *** ZV $ unzipIZV v
 
@@ -172,7 +165,6 @@ instance Tensor RT where
   {-# INLINABLE fmapT #-}
   {-# INLINABLE fmapTM #-}
   {-# INLINABLE zipWithT #-}
-  {-# INLINABLE unzipTElt #-}
   {-# INLINABLE unzipT #-}
 
 
