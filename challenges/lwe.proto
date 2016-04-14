@@ -1,5 +1,5 @@
 
-import "../lol/lol.proto";
+import "lol.proto";
 
 // hprotoc won't let me write a path to lol.proto above, 
 // and it also won't work with a symlink to lol.proto.
@@ -12,12 +12,18 @@ message LWESample {
 }
 
 message LWEInstance {
-  required uint32 id = 1;
-  required uint64 m = 2;
-  required uint64 q = 3;
-  required double svar = 4;
-  required double bound = 5;
-  repeated LWESample samples = 6;
+  enum InstType {
+    ContLWE = 0;
+    DiscLWE = 1;
+    LWR = 2;
+  }
+  required InstType instType = 1;
+  required uint32 id = 2;
+  required uint64 m = 3;
+  required uint64 q = 4;
+  required double svar = 5;
+  required double bound = 6;
+  repeated LWESample samples = 7;
 }
 
 message LWESecret {

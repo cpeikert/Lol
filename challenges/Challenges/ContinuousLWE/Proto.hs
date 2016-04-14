@@ -13,9 +13,10 @@ import Control.DeepSeq
 import Crypto.Lol (Cyc, proxy, Proxy(..), valueFact, Int64, modulus, Mod(..), Fact, Factored)
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Types.Proto
-import qualified Challenges.ContinuousLWE.Proto.LWEInstance as P
-import qualified Challenges.ContinuousLWE.Proto.LWESample as P
-import qualified Challenges.ContinuousLWE.Proto.LWESecret as P
+import qualified Challenges.Proto.LWEInstance as P
+import qualified Challenges.Proto.LWESample as P
+import qualified Challenges.Proto.LWESecret as P
+import Challenges.Proto.InstType
 
 import Data.Foldable as S (toList)
 import Data.Reflection hiding (D)
@@ -46,13 +47,14 @@ instance (Protoable (LWESample t m zq rq), Mod zq, ModRep zq ~ Int64, Fact m)
   => Protoable (LWEInstance Double t m zq rq) where
   type ProtoType (LWEInstance Double t m zq rq) = P.LWEInstance
   toProto (LWEInstance idx v bound samples) = 
-    P.LWEInstance (fromIntegral idx) 
+    P.LWEInstance ContLWE
+                  (fromIntegral idx) 
                   (fromIntegral (proxy valueFact (Proxy::Proxy m)))
                   (fromIntegral (proxy modulus (Proxy::Proxy zq)))
                   v
                   bound
                   (S.fromList $ map toProto samples)
-  fromProto (P.LWEInstance idx m q v bound samples) = 
+  fromProto (P.LWEInstance ContLWE idx m q v bound samples) = 
     LWEInstance (fromIntegral idx) v bound $ map fromProto $ S.toList samples
 
 -- | Corresponds to LWESample proto type.

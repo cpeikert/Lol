@@ -3,7 +3,9 @@
 import DRBG (evalCryptoRandIO)
 import Challenges.Beacon
 import Challenges.Common
-import Challenges.ContinuousLWE.Gen
+import qualified Challenges.ContinuousLWE.Gen as C
+import qualified Challenges.DiscretizedLWE.Gen as D
+import Challenges.Proto.InstType
 
 import Control.Applicative
 import Control.Monad.Trans (lift)
@@ -39,7 +41,7 @@ beaconInit :: IO Int
 beaconInit = localDateToSeconds 2 24 2016 11 0
 
 -- | Information to generate a challenge.
-data ChallengeParams = CP {m::Int, q::Int, v::Double, numSamples::Int}
+data ChallengeParams = CP {ctype::InstType, m::Int, q::Int, v::Double, numSamples::Int}
 
 main :: IO ()
 main = do
@@ -59,7 +61,8 @@ main = do
 
   -- list of challenge params
   let cps = [
-        CP 512 7681 (1/(16^(2 :: Int))) numSamples
+        CP ContLWE 512 7681 (1/(16^(2 :: Int))) numSamples,
+        CP DiscLWE 512 7681 (1/(16^(2 :: Int))) numSamples
         ]
 
   initTime <- beaconInit
@@ -100,25 +103,38 @@ makeChallenge CP{..} path challName = reify (fromIntegral q :: Int64) (\(proxyq:
     ("Generating challenge (m=" ++ (show m) ++ ", q=" ++ (show q) ++ ", v=" ++ (show v) ++ ")")
     "DONE" $ do
       let idxs = take numInstances [0..]
-      lift $ mapM_ (genInstance proxyq proxym challName path v numSamples) idxs
+      lift $ mapM_ (genInstance ctype proxyq proxym challName path v numSamples) idxs
   ))
 
 -- | Generate an LWE instance and serialize the instance and secret.
 genInstance :: forall q proxy m . (Fact m, Reifies q Int64) 
-  => Proxy q -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
-genInstance _ _ challName path v numSamples idx = do 
+  => InstType -> Proxy q -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
+genInstance ContLWE _ _ challName path v numSamples idx = do 
   (secret' :: Cyc T m Int64, 
-   samples :: [LWESample T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)]) <- 
-    evalCryptoRandIO (Proxy::Proxy HashDRBG) $ lweInstance v numSamples
-  let secret = LWESecret idx secret'
+   samples :: [C.LWESample T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)]) <-
+    evalCryptoRandIO (Proxy::Proxy HashDRBG) $ C.lweInstance v numSamples
+  let secret = C.LWESecret idx secret'
       eps = 1/(2^(40 :: Int))
       bound = proxy (computeBound v eps) (Proxy::Proxy m)
-      inst = LWEInstance idx v bound samples
+      inst = C.LWEInstance idx v bound samples
       secretFile = secretFileName challName idx
       instFile = instFileName challName idx
   writeProtoType (path </> challengeFilesDir </> challName) instFile inst
   writeProtoType (path </> secretFilesDir </> challName) secretFile secret
   putStr "."
+genInstance DiscLWE _ _ challName path v numSamples idx = do 
+  (secret' :: Cyc T m Int64, 
+   samples :: [D.LWESample T m (ZqBasic (Reified q) Int64)]) <- 
+    evalCryptoRandIO (Proxy::Proxy HashDRBG) $ proxyT (D.lweInstance v numSamples) (Proxy::Proxy Double)
+  let secret = D.LWESecret idx secret'
+      bound = error "Need to figure out a valid bound for discretized samples"
+      inst = D.LWEInstance idx v bound samples
+      secretFile = secretFileName challName idx
+      instFile = instFileName challName idx
+  writeProtoType (path </> challengeFilesDir </> challName) instFile inst
+  writeProtoType (path </> secretFilesDir </> challName) secretFile secret
+  putStr "."
+genInstance LWR _ _ _ _ _ _ _ = error "Generation of LWR not yet supported"
 
 -- | Writes any 'Protoable' object to path/filename.
 writeProtoType :: 

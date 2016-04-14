@@ -2,10 +2,12 @@
 
 import Challenges.Beacon
 import Challenges.Common
-import qualified Challenges.ContinuousLWE.Proto.LWEInstance as P
-import qualified Challenges.ContinuousLWE.Proto.LWESample as P
-import qualified Challenges.ContinuousLWE.Proto.LWESecret as P
-import Challenges.ContinuousLWE.Verify
+import qualified Challenges.Proto.LWEInstance as P
+import qualified Challenges.Proto.LWESample as P
+import qualified Challenges.Proto.LWESecret as P
+import Challenges.Proto.InstType
+import qualified Challenges.ContinuousLWE.Verify as C
+import qualified Challenges.DiscretizedLWE.Verify as D
 
 import Control.Applicative
 import Control.Monad (when)
@@ -21,6 +23,7 @@ import qualified Data.ByteString.Lazy as BS
 import Data.List (nub)
 import Data.Maybe (fromJust, isNothing, isJust)
 import Data.Reflection
+import Data.Word
 
 import Net.Beacon
 
@@ -80,29 +83,43 @@ verifyInstance path challName secretID instID
     when secExists $ throwError $ "The secret index for challenge " ++ 
           challName ++ " is " ++ (show secretID) ++ ", but this secret is present!"
   | otherwise = printPassFail ("\tChecking instance " ++ (show instID) ++ "\t") "VERIFIED" $ do
-    checkInstanceErr path challName instID
+    (inst, sec) <- parseInst path challName instID
+    checkInstErr inst sec
 
 -- | Verifies an instance that has a corresponding secret.
-checkInstanceErr :: FilePath -> String -> Int -> ExceptT String IO ()
-checkInstanceErr path challName instID = do
+parseInst :: FilePath -> String -> Int -> ExceptT String IO (P.LWEInstance, P.LWESecret)
+parseInst path challName instID = do
   let instFile = path </> challengeFilesDir </> challName </> (instFileName challName instID)
       secFile = path </> secretFilesDir </> challName </> (secretFileName challName instID)
   instFileExists <- lift $ doesFileExist instFile
   when (not instFileExists) $ throwError $ instFile ++ " does not exist."
   secFileExists <- lift $ doesFileExist secFile
   when (not secFileExists) $ throwError $ secFile ++ " does not exist."
-  inst@(P.LWEInstance idx m q v bound _) <- lift $ messageGet' <$> BS.readFile instFile
-  sec@(P.LWESecret idx' m' s) <- lift $ messageGet' <$> BS.readFile secFile
+  inst@(P.LWEInstance instType idx m _ _ _ _) <- lift $ messageGet' <$> BS.readFile instFile
+  sec@(P.LWESecret idx' m' _) <- lift $ messageGet' <$> BS.readFile secFile
   when (idx /= idx') $ throwError $ "Instance ID is " ++ (show idx) ++ ", but secret ID is " ++ (show idx')
   when (m /= m') $ throwError $ "Instance index is " ++ (show m) ++ ", but secret index is " ++ (show m')
-  reifyFactI (fromIntegral m) (\(_::proxy m) -> 
-    reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
-      let (LWEInstance _ _ _ samples) = fromProto inst :: LWEInstance Double T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)
-          (LWESecret _ secret) = fromProto sec
-      when (not $ checkInstance v bound secret samples) $ 
-        throwError $ "Some sample in instance " ++ 
-          (show instID) ++ " exceeded the noise bound."
-      ))
+  return (inst,sec)
+
+checkInstErr :: P.LWEInstance -> P.LWESecret -> ExceptT String IO ()
+checkInstErr inst@(P.LWEInstance t _ m q _ _ _) sec 
+  | t == ContLWE = 
+    reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+      reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
+        let (C.LWEInstance _ _ bound samples) = fromProto inst :: C.LWEInstance Double T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)
+            (C.LWESecret _ secret) = fromProto sec
+        when (not $ C.checkInstance bound secret samples) $ 
+          throwError $ "A sample exceeded the noise bound."
+        ))
+  | t == DiscLWE =
+    reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+      reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
+        let (D.LWEInstance _ _ bound samples) = fromProto inst :: D.LWEInstance Double T m (ZqBasic (Reified q) Int64)
+            (D.LWESecret _ secret) = fromProto sec
+        when (not $ D.checkInstance (round bound) secret samples) $ 
+          throwError $ "A sample in instance exceeded the noise bound."
+        ))
+  | t == LWR = error "cannot verify LWR instances yet"
 
 -- | Reads a serialized protobuffer file to the unparameterized proto type.
 messageGet' :: (ReflectDescriptor a, Wire a) => BS.ByteString -> a
