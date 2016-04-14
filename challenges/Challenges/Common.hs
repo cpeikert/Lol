@@ -3,7 +3,6 @@ module Challenges.Common
 (numInstances
 ,challengeFilesDir
 ,secretFilesDir
-,challengeName
 ,instFileName
 ,secretFileName
 ,revealFileName
@@ -85,10 +84,6 @@ challengeFilesDir = "challenge-files"
 -- | The root directory for challenge secrets.
 secretFilesDir :: FilePath
 secretFilesDir = challengeFilesDir
-
--- | The name for each challenge directory.
-challengeName :: Int -> Int -> Double -> FilePath
-challengeName m q v = "chall-m" ++ (show m) ++ "-q" ++ (show q) ++ "-v" ++ (show v)
 
 -- | The name for instance files is some string followed by a hex ID with a .instance extension.
 instFileName :: String -> Int -> FilePath

@@ -1,0 +1,10 @@
+
+import "lwe.proto";
+
+message LWRInstance {
+  required uint32 id = 1;
+  required uint64 m = 2;
+  required uint64 q = 3;
+  required uint64 p = 4; // q' in Haskell, for q > p=q'
+  repeated LWESample samples = 5;
+}

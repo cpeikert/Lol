@@ -20,6 +20,7 @@ lol/.stack-work
 sandbox
 test
 challenge-files
+challenges/lol.proto
 
 secret-files
 publish

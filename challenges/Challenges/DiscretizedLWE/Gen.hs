@@ -16,22 +16,20 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Cyclotomic.UCyc as U hiding (errorRounded)
 
 -- | Generate an LWE instance with a random secret, and the given scaled variance.
-lweInstance :: forall t m q z zp v rnd .  
-  (LWECtx t m z zp v q, MonadRandom rnd, Random z)
-  => v -> Int -> TaggedT q rnd (Cyc t m z, [LWESample t m zp])
+lweInstance :: (LWECtx t m z zq v q, MonadRandom rnd, Random z)
+  => v -> Int -> TaggedT q rnd (Cyc t m z, [LWESample t m zq])
 lweInstance svar numSamples = do
   s <- getRandom
   samples <- replicateM numSamples (lweSample svar s)
   return (s, samples)
 
--- | An LWE sample for a given secret (corresponding to a linear
--- ciphertext encrypting 0 in MSD form)
-lweSample :: (MonadRandom rnd, LWECtx t m z zp v q)
-          => v -> Cyc t m z -> TaggedT q rnd (LWESample t m zp)
+-- | An LWE sample for a given secret.
+lweSample :: (MonadRandom rnd, LWECtx t m z zq v q)
+          => v -> Cyc t m z -> TaggedT q rnd (LWESample t m zq)
 lweSample svar s = do
   let sq = reduce s
   e <- errorRounded svar
-  a <- tagT $ adviseCRT <$> getRandom -- want entire hint to be in CRT form
+  a <- tagT $ adviseCRT <$> getRandom
   return $ LWESample a $ a * sq + reduce (e `asTypeOf` s)
 
 -- | Generate an LWE error term with given scaled variance,
@@ -46,7 +44,7 @@ errorRounded :: forall v rnd t m z q .
 errorRounded svar = tagT $ cycDec <$>
   U.fmapDec (roundMult one) <$> (U.tGaussian svar :: rnd (UCyc t m D q))
 
-type LWECtx t m z zp v q = 
-  (ToInteger z, Reduce z zp, Ring zp, Random zp, Fact m, CElt t z, CElt t zp, 
+type LWECtx t m z zq v q = 
+  (ToInteger z, Reduce z zq, Ring zq, Random zq, Fact m, CElt t z, CElt t zq, 
    ToRational v,
    OrdFloat q, Random q, TElt t q, RealField q)
