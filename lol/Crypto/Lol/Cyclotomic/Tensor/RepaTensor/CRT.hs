@@ -11,7 +11,7 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 ) where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Cyclotomic.Tensor                     as T
+import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
 import Crypto.Lol.LatticePrelude                        as LP
@@ -30,34 +30,32 @@ scalarCRT'
     in pure $ Arr . force . fromFunction sz . const
 
 -- | Multiply by @g_m@ in the CRT basis (when it exists).
-mulGCRT' :: forall mon m r . (Fact m, CRTrans mon r, Unbox r, Elt r)
+mulGCRT' :: (Fact m, CRTrans mon r, Unbox r, Elt r)
             => mon (Arr m r -> Arr  m r)
 {-# INLINABLE mulGCRT' #-}
-mulGCRT' = do
-  g <- gCRT
-  return $ coerce $ (force . RT.zipWith (*) g) `asTypeOf` asTypeOf
-
-  -- (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gCRT
+mulGCRT' = (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gCRT
 
 -- | Divide by @g@ in the CRT basis (when it exists).
 divGCRT' :: (Fact m, CRTrans mon r, Unbox r, Elt r) => mon (Arr m r -> Arr m r)
 {-# INLINABLE divGCRT' #-}
-divGCRT' = do
-  ginv <- gInvCRT
-  return $ coerce $ (force . RT.zipWith (*) ginv) `asTypeOf` asTypeOf
+divGCRT' = (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gInvCRT
 
-  -- (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gInvCRT
+wrapVector :: forall mon m r . (Monad mon, Fact m, Ring r, Unbox r, Elt r)
+              => TaggedT m mon (Matrix r) -> mon (Arr m r)
+wrapVector v = do
+  vmat <- proxyT v (Proxy::Proxy m)
+  let n = proxy totientFact (Proxy::Proxy m)
+  return $ coerce $ force $ RT.fromFunction (Z:.n)
+    (\(Z:.i) -> indexM vmat i 1)
 
--- | The representation of @g@ in the CRT basis (when it exists).
-gCRT :: (Fact m, CRTrans mon r, Unbox r, Elt r) => mon (Arr m r)
+gCRT, gInvCRT :: (Fact m, CRTrans mon r, Unbox r, Elt r) => mon (Arr m r)
 {-# INLINABLE gCRT #-}
-gCRT = -- CJP: TODO
-
--- | The representation of @g^{ -1 }@ in the CRT basis (when it exists).
-gInvCRT:: (Fact m, CRTrans mon r, Unbox r, Elt r)
-          => mon (Arr m r)
 {-# INLINABLE gInvCRT #-}
-gInvCRT = -- CJP: TODO
+
+-- | The coefficient vector of @g@ in the CRT basis (when it exists).
+gCRT = wrapVector gCRTM
+-- | The coefficient vector of @g^{ -1 }@ in the CRT basis (when it exists).
+gInvCRT = wrapVector gInvCRTM
 
 fCRT, fCRTInv ::
   forall mon m r . (Fact m, CRTrans mon r, Unbox r, Elt r)
@@ -66,13 +64,13 @@ fCRT, fCRTInv ::
 {-# INLINABLE fCRT #-}
 {-# INLINABLE fCRTInv #-}
 
--- | The chinese remainder transform.
--- Exists if and only if crt exists for all prime powers.
+-- | The Chinese Remainder Transform.
+-- Exists if and only if CRT exists for all prime powers.
 fCRT = evalM $ fTensor ppCRT
 
 -- divide by mhat after doing crtInv'
--- | The inverse chinese remainder transform.
--- Exists if and only if crt exists for all prime powers.
+-- | The inverse Chinese Remainder Transform.
+-- Exists if and only if CRT exists for all prime powers.
 fCRTInv = do
   (_, mhatInv) :: (CRTInfo r) <- proxyT crtInfo (Proxy :: Proxy m)
   let totm = proxy totientFact (Proxy :: Proxy m)

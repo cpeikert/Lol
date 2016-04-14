@@ -12,7 +12,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
 -- * Special vectors/matrices
-, Matrix, indexM, gCRT, gInvCRT, twCRTs
+, Matrix, indexM, gCRTM, gInvCRTM, twCRTs
 -- * Tensor indexing
 , zmsToIndexFact
 , indexInfo
@@ -77,7 +77,7 @@ class (TElt t Double, TElt t (Complex Double))
   entailRandomT :: Tagged (t m r)
                    ((Random r, Fact m, TElt t r) :- Random (t m r))
   entailShowT :: Tagged (t m r)
-                 ((Show r, Fact m, TElt t r) :- (Show (t m r)))
+                 ((Show r, Fact m, TElt t r) :- Show (t m r))
   entailModuleT :: Tagged (GF fp d, t m fp)
                    ((GFCtx fp d, Fact m, TElt t fp) :- Module (GF fp d) (t m fp))
 
@@ -270,9 +270,9 @@ indexM (MKron m (MC r c mc)) i j =
       (jq,jr) = j `divMod` c
       in indexM m iq jq * mc ir jr
 
-gCRT, gInvCRT :: (Fact m, CRTrans mon r) => TaggedT m mon (Matrix r)
-gCRT = fMatrix gCRTPPow
-gInvCRT = fMatrix gInvCRTPPow
+gCRTM, gInvCRTM :: (Fact m, CRTrans mon r) => TaggedT m mon (Matrix r)
+gCRTM = fMatrix gCRTPPow
+gInvCRTM = fMatrix gInvCRTPPow
 
 -- | The "tweaked" CRT^* matrix: @CRT^* . diag(sigma(g_m))@.
 twCRTs :: (Fact m, CRTrans mon r) => TaggedT m mon (Matrix r)

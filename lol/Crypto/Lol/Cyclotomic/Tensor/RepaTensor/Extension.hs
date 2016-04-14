@@ -51,11 +51,9 @@ twacePowDec'
 -- | The "tweaked trace" function in the CRT
 -- basis of the m'th cyclotomic ring to the mth cyclotomic ring when 
 -- @m | m'@.
-twaceCRT' :: forall m m' r .
-             (m `Divides` m', CRTrans Maybe r, IntegralDomain r,
-              ZeroTestable r, Unbox r, Elt r)
-             => Maybe (Arr m' r -> Arr m r)
--- CJP: would be better to make Maybe a generic monad; need more general gInvCRT
+twaceCRT' :: forall mon m m' r .
+             (m `Divides` m', CRTrans mon r, Unbox r, Elt r)
+             => mon (Arr m' r -> Arr m r)
 twaceCRT' = do
   g' :: Arr m' r <- gCRT
   gInv <- gInvCRT
