@@ -111,13 +111,14 @@ library
 
     -- exposed but hidden
     Crypto.Lol.Types.IZipVector
+    Crypto.Lol.Types.Complex
+
   other-modules:
 
     Crypto.Lol.FactoredDefs
     Crypto.Lol.PosBinDefs
     Crypto.Lol.GaussRandom
     Crypto.Lol.Types.ZmStar
-    Crypto.Lol.Types.Complex
     Crypto.Lol.Types.Numeric
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension

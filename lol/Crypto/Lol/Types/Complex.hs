@@ -3,6 +3,7 @@
              NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables,
              StandaloneDeriving, TemplateHaskell, TypeFamilies,
              UndecidableInstances #-}
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Data type, functions, and instances for complex numbers.
 
@@ -87,3 +88,4 @@ imag (Complex a) = C.imag a
 -- | Embeds a scalar as the real component of a complex number.
 fromReal :: Additive a => a -> Complex a
 fromReal = Complex . C.fromReal
+
