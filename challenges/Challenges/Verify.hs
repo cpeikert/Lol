@@ -34,7 +34,7 @@ readRevealData :: (MonadIO m) => FilePath -> ExceptT String m BeaconPos
 readRevealData path = do
   let revealPath = path </> revealFileName
   revealExists <- liftIO $ doesFileExist revealPath
-  when (not revealExists) $ throwError $ revealPath ++ "does not exist."
+  when (not revealExists) $ throwError $ revealPath ++ " does not exist."
   [timeStr, offsetStr] <- liftIO $ lines <$> readFile revealPath
   let time = read timeStr
       offset = read offsetStr

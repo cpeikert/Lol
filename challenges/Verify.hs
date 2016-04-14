@@ -14,6 +14,7 @@ import Control.Monad.Except
 import Control.Monad.Trans (lift)
 
 import Crypto.Lol hiding (lift)
+import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto (fromProto)
 import Crypto.Lol.Types.RealQ
 
@@ -56,7 +57,7 @@ verifyChallenge :: FilePath -> String -> IO (Maybe BeaconPos)
 verifyChallenge path name = do
   let challPath = path </> challengeFilesDir </> name
 
-  printPassFail ("Verifying challenge " ++ name ++ ":\n") "VERIFIED" $ do
+  printPassFail ("Verifying challenge " ++ name ++ ":\n") "DONE" $ do
     bp@(BP time offset) <- readRevealData challPath
     -- read the beacon record from an xml file
     rec <- readBeacon path time
@@ -64,26 +65,24 @@ verifyChallenge path name = do
     let secretIdx = getSecretIdx rec offset
         instIDs = [0..(numInstances-1)]    
     -- verify all instances
-    mapM_ (verifyInstance path name secretIdx) instIDs
+    lift $ mapM_ (verifyInstance path name secretIdx) instIDs
     -- verifyInstance prints out several progress statements
     -- so we need to indent to print the status
     lift $ putStr "\t"
     return $ Just bp
 
 -- | Verifies an instance with a particular ID.
-verifyInstance :: FilePath -> String -> Int -> Int -> ExceptT String IO ()
+verifyInstance :: FilePath -> String -> Int -> Int -> IO ()
 verifyInstance path challName secretID instID 
-  | secretID == instID = do
+  | secretID == instID = printPassFail ("\tSecret for instance " ++ (show secretID) ++ " is suppressed.\t") "" $ do
     let secDir = path </> secretFilesDir </> challName
         secretName = secretFileName challName secretID
     secExists <- lift $ doesFileExist (secDir </> secretName)
     when secExists $ throwError $ "The secret index for challenge " ++ 
           challName ++ " is " ++ (show secretID) ++ ", but this secret is present!"
-    lift $ putStrLn $ "\tSecret for instance " ++ (show secretID) ++ " is suppressed."
-  | otherwise = do
-    lift $ putStrLn $ "\tChecking instance " ++ (show instID)
+  | otherwise = printPassFail ("\tChecking instance " ++ (show instID) ++ "\t") "VERIFIED" $ do
     checkInstanceErr path challName instID
-    
+
 -- | Verifies an instance that has a corresponding secret.
 checkInstanceErr :: FilePath -> String -> Int -> ExceptT String IO ()
 checkInstanceErr path challName instID = do
@@ -99,7 +98,7 @@ checkInstanceErr path challName instID = do
   when (m /= m') $ throwError $ "Instance index is " ++ (show m) ++ ", but secret index is " ++ (show m')
   reifyFactI (fromIntegral m) (\(_::proxy m) -> 
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
-      let (LWEInstance _ _ samples) = fromProto inst :: LWEInstance Double T m (ZqBasic q Int64) (RealQ q Double Int64)
+      let (LWEInstance _ _ samples) = fromProto inst :: LWEInstance Double T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)
           (LWESecret _ secret) = fromProto sec
       when (not $ checkInstance v secret samples) $ 
         throwError $ "Some sample in instance " ++ 
