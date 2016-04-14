@@ -84,12 +84,6 @@ class (TElt t Double, TElt t (Complex Double))
   -- | Convert a scalar to a tensor in the powerful basis.
   scalarPow :: (Additive r, Fact m, TElt t r) => r -> t m r
 
-  {- CJP: suppressed due to annoyingly complicated algorithm
-
-  -- | Convert a scalar to a tensor in the decoding basis.
-  scalarDec :: (Additive r, Fact m, TElt t r) => r -> t m r
-  -}
-
   -- | 'l' converts from decoding-basis representation to
   -- powerful-basis representation; 'lInv' is its inverse.
   l, lInv :: (Additive r, Fact m, TElt t r) => t m r -> t m r
@@ -159,22 +153,26 @@ class (TElt t Double, TElt t (Complex Double))
                 TElt t fp)
                => Tagged m [t m' fp]
 
-  -- | Potentially optimized version of 'fmap' when the input and
-  -- output element types satisfy 'TElt'.
+  -- | Potentially optimized version of 'fmap' for types that satisfy
+  -- 'TElt'.
   fmapT :: (Fact m, TElt t a, TElt t b) => (a -> b) -> t m a -> t m b
   -- | Potentially optimized monadic 'fmap'.
   fmapTM :: (Monad mon, Fact m, TElt t a, TElt t b)
              => (a -> mon b) -> t m a -> mon (t m b)
 
-  -- | Potentially optimized 'zipWith'.
+  -- | Potentially optimized zipWith for types that satisfy 'TElt'.
   zipWithT :: (Fact m, TElt t a, TElt t b, TElt t c)
               => (a -> b -> c) -> t m a -> t m b -> t m c
 
-  -- | Unzip for types that satisfy 'TElt'.
-  unzipTElt :: (Fact m, TElt t (a,b), TElt t a, TElt t b) 
-               => t m (a,b) -> (t m a, t m b)
+  -- | Potentially optimized unzip for types that satisfy 'TElt'.
+  unzipT :: (Fact m, TElt t (a,b), TElt t a, TElt t b) 
+            => t m (a,b) -> (t m a, t m b)
+
+  {- CJP: suppressed, apparently not needed
+
   -- | Unzip for arbitrary types.
-  unzipT :: (Fact m) => t m (a,b) -> (t m a, t m b)
+  unzipTUnrestricted :: (Fact m) => t m (a,b) -> (t m a, t m b)
+  -}
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
 hasCRTFuncs :: forall t m mon r . (CRTrans mon r, Tensor t, Fact m, TElt t r)
@@ -348,7 +346,7 @@ indexToZms (p,_) i = let (i1,i0) = i `divMod` (p-1)
 zmsToIndex :: [PP] -> Int -> Int
 zmsToIndex [] _ = 0
 zmsToIndex (pp:rest) i = zmsToIndexPP pp (i `mod` valuePP pp)
-                         + (totientPP pp) * zmsToIndex rest i
+                         + totientPP pp * zmsToIndex rest i
 
 -- | Inverse of 'indexToZms'.
 zmsToIndexPP :: PP -> Int -> Int

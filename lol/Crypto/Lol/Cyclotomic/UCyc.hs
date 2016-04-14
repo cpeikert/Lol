@@ -20,9 +20,9 @@ module Crypto.Lol.Cyclotomic.UCyc
 -- * Data types and constraints
   UCyc, P, D, C, E, UCycEC, UCRTElt, NFElt
 -- * Changing representation
-, toPow, toDec, toCRT, fmapPow, fmapDec, unzipCyc, unzipCycElt
+, toPow, toDec, toCRT, fmapPow, fmapDec, unzipPow, unzipDec
 -- * Scalars
-, scalarPow, scalarCRT          -- scalarDec suppressed
+, scalarPow, scalarCRT
 -- * Basic operations
 , mulG, divG, gSqNorm
 -- * Error sampling
@@ -34,8 +34,7 @@ module Crypto.Lol.Cyclotomic.UCyc
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
-                                     scalarCRT, scalarPow, -- scalarDec
-                                     twaceCRT)
+                                            scalarCRT, scalarPow, twaceCRT)
 
 import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.Tensor as T
@@ -102,15 +101,6 @@ type NFElt r = (NFData r, NFData (CRTExt r))
 scalarPow :: (Tensor t, Fact m, Ring r, TElt t r) => r -> UCyc t m P r
 scalarPow = Pow . T.scalarPow
 {-# INLINABLE scalarPow #-}
-
-{- CJP: suppressed
-
--- | Embed a scalar from the base ring.
-scalarDec :: (Tensor t, Fact m, Ring r, TElt t r) => r -> UCyc t m D r
-scalarDec = Dec . T.scalarDec
-{-# INLINABLE scalarDec #-}
-
--}
 
 -- | Embed a scalar from the base ring.
 scalarCRT :: (Fact m, UCRTElt t r) => r -> UCycEC t m r
@@ -280,8 +270,8 @@ instance (Rescale a b, Tensor t, Fact m, TElt t a, TElt t b)
 -- CJP: we don't instantiate RescaleCyc because it requires changing bases
 
 -- CJP: we don't instantiate Gadget etc., because (1) their methods
--- wouldn't be efficient, and (2) their superclasses are not even
--- well-defined (e.g., Ring for P rep).
+-- wouldn't be efficient, and (2) their superclass constraints are not
+-- satisfied anyway (e.g., Ring for P rep).
 
 
 -- | Type-restricted (and potentially more efficient) map for
@@ -298,24 +288,21 @@ fmapDec :: (Tensor t, Fact m, TElt t a, TElt t b)
 fmapDec f (Dec v) = Dec $ fmapT f v
 {-# INLINABLE fmapDec #-}
 
--- | Unzip for unrestricted types.
-unzipCyc :: (Tensor t, Fact m)
-            => UCyc t m rep (a,b) -> (UCyc t m rep a, UCyc t m rep b)
-{-# INLINABLE unzipCyc #-}
-unzipCyc (Pow v) = Pow *** Pow $ unzipT v
-unzipCyc (Dec v) = Dec *** Dec $ unzipT v
-unzipCyc (CRTr v) = CRTr *** CRTr $ unzipT v
-unzipCyc (CRTe v) = CRTe *** CRTe $ unzipT v
+-- | Unzip in the powerful basis.
+unzipPow :: (Tensor t, Fact m, TElt t (a,b), TElt t a, TElt t b)
+            => UCyc t m P (a,b) -> (UCyc t m P a, UCyc t m P b)
+{-# INLINABLE unzipPow #-}
+unzipPow (Pow v) = Pow *** Pow $ unzipT v
 
--- | Type-restricted (and potentially more efficient) unzip.
-unzipCycElt :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
-              => UCyc t m rep (a,b) -> (UCyc t m rep a, UCyc t m rep b)
-{-# INLINABLE unzipCycElt #-}
-unzipCycElt (Pow v) = Pow *** Pow $ unzipTElt v
-unzipCycElt (Dec v) = Dec *** Dec $ unzipTElt v
--- CJP: MUST FIX!!  These might violate internal invariant??
-unzipCycElt (CRTr v) = CRTr *** CRTr $ unzipTElt v
-unzipCycElt (CRTe v) = CRTe *** CRTe $ unzipTElt v
+-- | Unzip in the decoding basis.
+unzipDec :: (Tensor t, Fact m, TElt t (a,b), TElt t a, TElt t b)
+            => UCyc t m D (a,b) -> (UCyc t m D a, UCyc t m D b)
+{-# INLINABLE unzipDec #-}
+unzipDec (Dec v) = Dec *** Dec $ unzipT v
+
+-- THESE DON'T PRESERVE INVARIANT!
+-- unzipCyc (CRTr v) = CRTr *** CRTr $ unzipT v
+-- unzipCyc (CRTe v) = CRTe *** CRTe $ unzipT v
 
 -- | Multiply by the special element @g@.
 mulG :: (Tensor t, Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
