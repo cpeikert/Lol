@@ -1,12 +1,11 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, 
              NoImplicitPrelude, RebindableSyntax, TypeFamilies, ScopedTypeVariables #-}
 
-module Challenges.ContinuousLWE
+module Challenges.ContinuousLWE.Gen 
 (lweInstance
-,ULWECtx
-,module Challenges.UProtoReader) where
+,module Challenges.ContinuousLWE.Proto) where
 
-import Challenges.UProtoReader
+import Challenges.ContinuousLWE.Proto
 
 import Control.Applicative
 import Control.Monad (replicateM)

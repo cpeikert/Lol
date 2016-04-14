@@ -1,12 +1,11 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, 
              NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
 
-module Challenges.LWE 
+module Challenges.DiscretizedLWE.Gen
 (lweInstance
-,LWECtx
-, module Challenges.ProtoReader) where
+,module Challenges.DiscretizedLWE.Proto) where
 
-import Challenges.ProtoReader
+import Challenges.DiscretizedLWE.Proto
 
 import Control.Applicative
 import Control.Monad (replicateM)

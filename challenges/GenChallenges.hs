@@ -3,7 +3,7 @@
 import DRBG (evalCryptoRandIO)
 import Challenges.Beacon
 import Challenges.Common
-import Challenges.ContinuousLWE
+import Challenges.ContinuousLWE.Gen
 
 import Control.Applicative
 import Control.Monad.Trans (lift)

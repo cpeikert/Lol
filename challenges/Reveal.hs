@@ -1,7 +1,6 @@
 
 import Challenges.Beacon
 import Challenges.Common
-import Challenges.Verify
 
 import Control.Applicative ((<$>))
 import Control.Monad (when)

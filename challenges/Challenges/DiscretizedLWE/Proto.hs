@@ -3,7 +3,7 @@
 
 -- | Translates unparameterized ProtoTypes into parameterized Haskell types.
 
-module Challenges.ProtoReader
+module Challenges.DiscretizedLWE.Proto
 (LWEInstance(..)
 ,LWESample(..)
 ,LWESecret(..)) where
@@ -12,27 +12,13 @@ import Control.DeepSeq
 
 import Crypto.Lol (Cyc, proxy, Proxy(..), valueFact, Int64, modulus, Mod(..), Fact)
 import Crypto.Lol.Types.Proto
-import qualified Challenges.Proto.LWEInstance as P
-import qualified Challenges.Proto.LWESample as P
-import qualified Challenges.Proto.LWESecret as P
+import qualified Challenges.DiscretizedLWE.Proto.LWEInstance as P
+import qualified Challenges.DiscretizedLWE.Proto.LWESample as P
+import qualified Challenges.ContinuousLWE.Proto.LWESecret as P
 
 import Data.Foldable as S (toList)
 import Data.Reflection
 import Data.Sequence as S (fromList, Seq)
-
--- | Corresponds to LWESecret proto type.
-data LWESecret t m z = LWESecret Int (Cyc t m z)
-deriving instance (Read (Cyc t m z)) => Read (LWESecret t m z)
-deriving instance (Show (Cyc t m z)) => Show (LWESecret t m z)
-deriving instance (Eq (Cyc t m z)) => Eq (LWESecret t m z)
-instance (NFData (Cyc t m z)) => NFData (LWESecret t m z) where
-  rnf (LWESecret idx s) = (rnf idx) `seq` (rnf s)
-instance (Protoable (Cyc t m z), Fact m) => Protoable (LWESecret t m z) where
-  type ProtoType (LWESecret t m z) = P.LWESecret
-  toProto (LWESecret idx s) = 
-    P.LWESecret (fromIntegral idx) (fromIntegral $ proxy valueFact (Proxy::Proxy m)) $ toProto s
-  fromProto (P.LWESecret idx m s) = 
-    LWESecret (fromIntegral idx) $ fromProto s
 
 -- | Corresponds to LWEInstance proto type.
 data LWEInstance v t m zq = LWEInstance Int v v [LWESample t m zq]

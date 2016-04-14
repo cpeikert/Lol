@@ -1,12 +1,12 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
-module Challenges.Proto.LWEInstance (LWEInstance(..)) where
+module Challenges.ContinuousLWE.Proto.LWEInstance (LWEInstance(..)) where
 import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Challenges.Proto.LWESample as Lwe (LWESample)
+import qualified Challenges.ContinuousLWE.Proto.LWESample as Lwe (LWESample)
 
 data LWEInstance = LWEInstance{id :: !(P'.Word32), m :: !(P'.Word64), q :: !(P'.Word64), svar :: !(P'.Double),
                                bound :: !(P'.Double), samples :: !(P'.Seq Lwe.LWESample)}

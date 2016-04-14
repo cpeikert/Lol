@@ -2,11 +2,10 @@
 
 import Challenges.Beacon
 import Challenges.Common
-import Challenges.UProtoReader
-import qualified Challenges.Proto.LWEInstance as P
-import qualified Challenges.Proto.LWESample as P
-import qualified Challenges.Proto.LWESecret as P
-import Challenges.ContinuousVerify
+import qualified Challenges.ContinuousLWE.Proto.LWEInstance as P
+import qualified Challenges.ContinuousLWE.Proto.LWESample as P
+import qualified Challenges.ContinuousLWE.Proto.LWESecret as P
+import Challenges.ContinuousLWE.Verify
 
 import Control.Applicative
 import Control.Monad (when)

@@ -11,19 +11,26 @@ module Challenges.Common
 ,certFileName
 ,(</>)
 ,getPath
-,printPassFail) where
+,printPassFail
+,getChallengeList
+,readRevealData
+,getSecretIdx) where
+
+import Challenges.Beacon
 
 import Control.Monad (when)
 import Control.Monad.Except
 import Control.Monad.IO.Class (MonadIO, liftIO)
 
-import Data.ByteString.Lazy (ByteString, toStrict)
+import Data.ByteString.Lazy (ByteString, toStrict, unpack)
 import Data.ByteString.Builder
 import Data.Char (toUpper)
 import Data.Default (Default(..))
 
+import Net.Beacon
+
 import System.Console.ANSI
-import System.Directory (doesDirectoryExist)
+import System.Directory (doesFileExist, doesDirectoryExist, getDirectoryContents)
 import System.Environment (getArgs)
 
 import Text.Printf
@@ -138,3 +145,35 @@ printPassFail str pass e = do
       return a
   liftIO $ setSGR [SetColor Foreground Vivid Black]
   return val
+
+
+-- | Get a list of challenge names by getting all directory contents and filtering
+-- on all directories whose first five characters are "chall".
+getChallengeList :: FilePath -> IO [String]
+getChallengeList challDir = do
+  putStrLn $ "Reading challenges from \"" ++ challDir ++ "\""
+  names <- filterM (doesDirectoryExist . (challDir </>)) =<< 
+    filter (("chall" ==) . (take 5)) <$> getDirectoryContents challDir
+  when (length names == 0) $ error "No challenges found."
+  return names
+
+-- | Parse the beacon time/offset used to reveal a challenge.
+readRevealData :: (MonadIO m) => FilePath -> ExceptT String m BeaconPos
+readRevealData path = do
+  let revealPath = path </> revealFileName
+  revealExists <- liftIO $ doesFileExist revealPath
+  when (not revealExists) $ throwError $ revealPath ++ " does not exist."
+  [timeStr, offsetStr] <- liftIO $ lines <$> readFile revealPath
+  let time = read timeStr
+      offset = read offsetStr
+  -- validate the time and offset
+  when ((time `mod` beaconInterval /= 0) || offset < 0 || offset >= bytesPerBeacon) $ 
+    throwError "Invalid beacon position."
+  return $ BP time offset
+
+-- | Given a beacon record and a byte offset, return the secret index for this challenge.
+getSecretIdx :: Record -> Int -> Int
+getSecretIdx record byteOffset =
+  let output = outputValue record
+      byte = (unpack output) !! byteOffset
+  in (fromIntegral byte) `mod` numInstances
