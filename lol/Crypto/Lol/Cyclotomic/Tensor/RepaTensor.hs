@@ -232,8 +232,10 @@ instance (GFCtx fp d, Fact m, Additive (RT m fp))
     => Module.C (GF fp d) (RT m fp) where
 
   r *> v = case v of
-    RT (Arr arr) -> RT $ Arr $ RT.fromList (extent arr) $ unCoeffs $ r *> Coeffs $ RT.toList arr
-    ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $ unCoeffs $ r *> Coeffs $ V.toList $ unIZipVector zv
+    RT (Arr arr) -> RT $ Arr $ RT.fromList (extent arr)
+                    $ unCoeffs $ r *> Coeffs $ RT.toList arr
+    ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList
+             $ unCoeffs $ r *> Coeffs $ V.toList $ unIZipVector zv
 
 ---------- Miscellaneous instances ----------
 
