@@ -2,6 +2,7 @@
              FlexibleContexts, GeneralizedNewtypeDeriving, KindSignatures,
              MultiParamTypeClasses, RoleAnnotations, ScopedTypeVariables,
              TypeFamilies, UndecidableInstances #-}
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Provides applicative-like functions for indexed vectors
 
