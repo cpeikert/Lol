@@ -20,7 +20,8 @@ module Crypto.Lol.Cyclotomic.UCyc
 -- * Data types and constraints
   UCyc, P, D, C, E, UCycEC, UCRTElt, NFElt
 -- * Changing representation
-, toPow, toDec, toCRT, fmapPow, fmapDec, unzipPow, unzipDec
+, toPow, toDec, toCRT, fmapPow, fmapDec
+, unzipPow, unzipDec, unzipCRTC, unzipCRTE
 -- * Scalars
 , scalarPow, scalarCRT
 -- * Basic operations
@@ -240,7 +241,8 @@ instance (Reduce a b, Tensor t, Fact m, TElt t a, TElt t b)
   reduce (Dec v) = Dec $ fmapT reduce v
   {-# INLINABLE reduce #-}
 
--- CJP: no Reduce for C rep because we can't efficiently handle CRTe case
+-- CJP: no Reduce for C because CRT basis may not exist for target
+-- type
 
 type instance LiftOf (UCyc t m P r) = UCyc t m P (LiftOf r)
 type instance LiftOf (UCyc t m D r) = UCyc t m D (LiftOf r)
@@ -255,6 +257,7 @@ instance (Lift' r, Tensor t, Fact m, TElt t r, TElt t (LiftOf r))
   lift (Dec v) = Dec $ fmapT lift v
   {-# INLINABLE lift #-}
 
+-- CJP: no Lift' for C because CRT basis may not exist for target type
 
 instance (Rescale a b, Tensor t, Fact m, TElt t a, TElt t b)
          => Rescale (UCyc t m P a) (UCyc t m P b) where
@@ -266,6 +269,8 @@ instance (Rescale a b, Tensor t, Fact m, TElt t a, TElt t b)
   rescale (Dec v) = Dec $ fmapT rescale v
   {-# INLINABLE rescale #-}
 
+-- CJP: no Rescale for C because CRT basis may not exist for target
+-- type
 
 -- CJP: we don't instantiate RescaleCyc because it requires changing bases
 
@@ -274,14 +279,14 @@ instance (Rescale a b, Tensor t, Fact m, TElt t a, TElt t b)
 -- satisfied anyway (e.g., Ring for P rep).
 
 
--- | Type-restricted (and potentially more efficient) map for
+-- | Type-restricted (and potentially more efficient) 'fmap' for
 -- powerful-basis representation.
 fmapPow :: (Tensor t, Fact m, TElt t a, TElt t b)
            => (a -> b) -> UCyc t m P a -> UCyc t m P b
 fmapPow f (Pow v) = Pow $ fmapT f v
 {-# INLINABLE fmapPow #-}
 
--- | Type-restricted (and potentially more efficient) map for
+-- | Type-restricted (and potentially more efficient) 'fmap' for
 -- decoding-basis representation.
 fmapDec :: (Tensor t, Fact m, TElt t a, TElt t b)
            => (a -> b) -> UCyc t m D a -> UCyc t m D b
@@ -300,9 +305,35 @@ unzipDec :: (Tensor t, Fact m, TElt t (a,b), TElt t a, TElt t b)
 {-# INLINABLE unzipDec #-}
 unzipDec (Dec v) = Dec *** Dec $ unzipT v
 
--- THESE DON'T PRESERVE INVARIANT!
--- unzipCyc (CRTr v) = CRTr *** CRTr $ unzipT v
--- unzipCyc (CRTe v) = CRTe *** CRTe $ unzipT v
+-- | Unzip in the CRT basis over the base ring.  The output components
+-- are 'Either's because each target base ring may not support 'C'.
+unzipCRTC :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
+             => UCyc t m C (a,b)
+             -> (Either (UCyc t m P a) (UCyc t m C a),
+                 Either (UCyc t m P b) (UCyc t m C b))
+unzipCRTC (CRTr v)
+  = let (a,b) = unzipT v
+        (ac,bc) = CRTr *** CRTr $ (a,b)
+        -- safe because we're already in CRT C
+        crtinv = fromJust' "UCyc unzipCRTC" crtInv
+        (ap,bp) = Pow *** Pow $ unzipT $ crtinv v
+    in (fromMaybe (Left ap) (witnessT hasCRTFuncs a A.*> pure (Right ac)),
+        fromMaybe (Left bp) (witnessT hasCRTFuncs b A.*> pure (Right bc)))
+
+-- | Unzip in the CRT basis over the extension of the base ring.  The
+-- output components are 'Either's because each target base might
+-- instead support 'C'.
+unzipCRTE :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
+             => UCyc t m E (a,b)
+             -> (Either (UCyc t m P a) (UCyc t m E a),
+                 Either (UCyc t m P b) (UCyc t m E b))
+unzipCRTE (CRTe v)
+  = let (ae,be) = CRTe *** CRTe $ unzipT v
+        (a',b') = unzipT $ fmapT fromExt $ runIdentity crtInv v
+        (ap,bp) = Pow *** Pow $ (a',b')
+    in (fromMaybe (Right ae) (witnessT hasCRTFuncs a' A.*> pure (Left ap)),
+        fromMaybe (Right be) (witnessT hasCRTFuncs b' A.*> pure (Left bp)))
+
 
 -- | Multiply by the special element @g@.
 mulG :: (Tensor t, Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
@@ -518,8 +549,7 @@ toCRT = let crte = Left . CRTe . runIdentity crt
 
 ---------- Category-theoretic instances ----------
 
--- CJP: no Applicative, Foldable, Traversable for C because types
--- (and math) don't work out for the CRTe case.
+-- CJP: no instances for E because types (and math) don't make sense.
 
 instance (Tensor t, Fact m) => Functor (UCyc t m P) where
   -- Functor instance is implied by Applicative laws
@@ -527,6 +557,11 @@ instance (Tensor t, Fact m) => Functor (UCyc t m P) where
   fmap f x = pure f <*> x
 
 instance (Tensor t, Fact m) => Functor (UCyc t m D) where
+  -- Functor instance is implied by Applicative laws
+  {-# INLINABLE fmap #-}
+  fmap f x = pure f <*> x
+
+instance (Tensor t, Fact m) => Functor (UCyc t m C) where
   -- Functor instance is implied by Applicative laws
   {-# INLINABLE fmap #-}
   fmap f x = pure f <*> x
@@ -545,6 +580,13 @@ instance (Tensor t, Fact m) => Applicative (UCyc t m D) where
   {-# INLINABLE pure #-}
   {-# INLINABLE (<*>) #-}
 
+instance (Tensor t, Fact m) => Applicative (UCyc t m C) where
+  pure = CRTr . pure \\ proxy entailIndexT (Proxy::Proxy (t m r))
+  (CRTr f) <*> (CRTr v) = CRTr $ f <*> v \\ witness entailIndexT v
+
+  {-# INLINABLE pure #-}
+  {-# INLINABLE (<*>) #-}
+
 
 instance (Tensor t, Fact m) => Foldable (UCyc t m P) where
   {-# INLINABLE foldr #-}
@@ -554,6 +596,10 @@ instance (Tensor t, Fact m) => Foldable (UCyc t m D) where
   {-# INLINABLE foldr #-}
   foldr f b (Dec v) = F.foldr f b v \\ witness entailIndexT v
 
+instance (Tensor t, Fact m) => Foldable (UCyc t m C) where
+  {-# INLINABLE foldr #-}
+  foldr f b (CRTr v) = F.foldr f b v \\ witness entailIndexT v
+
 
 instance (Tensor t, Fact m) => Traversable (UCyc t m P) where
   {-# INLINABLE traverse #-}
@@ -562,6 +608,10 @@ instance (Tensor t, Fact m) => Traversable (UCyc t m P) where
 instance (Tensor t, Fact m) => Traversable (UCyc t m D) where
   {-# INLINABLE traverse #-}
   traverse f (Dec v) = Dec <$> traverse f v \\ witness entailIndexT v
+
+instance (Tensor t, Fact m) => Traversable (UCyc t m C) where
+  {-# INLINABLE traverse #-}
+  traverse f (CRTr v) = CRTr <$> traverse f v \\ witness entailIndexT v
 
 
 ---------- Utility instances ----------
@@ -593,9 +643,7 @@ instance (Arbitrary (t m r)) => Arbitrary (UCyc t m D r) where
   arbitrary = Dec <$> arbitrary
   shrink = shrinkNothing
 
-instance (Arbitrary (t m r)) => Arbitrary (UCyc t m C r) where
-  arbitrary = CRTr <$> arbitrary
-  shrink = shrinkNothing
+-- no Arbitrary for C or EC due to invariant
 
 instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
          => NFData (UCyc t m rep r) where
