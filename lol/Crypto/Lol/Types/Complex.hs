@@ -8,7 +8,7 @@
 -- | Data type, functions, and instances for complex numbers.
 
 module Crypto.Lol.Types.Complex (
-  Complex
+  Complex(..)
 , roundComplex
 , cis, real, imag, fromReal
 ) where
