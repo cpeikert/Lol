@@ -24,7 +24,7 @@ module Crypto.Lol.Cyclotomic.Cyc
 -- * Data type and constraints
   Cyc, CElt, U.NFElt
 -- * Constructors/deconstructors
-, cycPow, cycDec, cycCRT, scalarCyc
+, cycPow, cycDec, cycCRTC, cycCRTE, scalarCyc
 , uncycPow, uncycDec, uncycCRT, unzipCyc, unzipCElt
 -- * Core cyclotomic operations
 , mulG, divG, gSqNorm, liftCyc, liftPow, liftDec
@@ -49,7 +49,7 @@ import Crypto.Lol.Cyclotomic.UCyc hiding (coeffsDec, coeffsPow, crtSet,
 
 import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.RescaleCyc as R
-import           Crypto.Lol.Cyclotomic.Tensor     (CRTElt, TElt, Tensor)
+import           Crypto.Lol.Cyclotomic.Tensor     (TElt, Tensor)
 import qualified Crypto.Lol.Cyclotomic.UCyc       as U
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.LatticePrelude        as LP
@@ -72,17 +72,18 @@ import Test.QuickCheck
 -- cyclotomic index; @r@ is the base ring of the coefficients (e.g.,
 -- @Z@, @Zq@).
 data Cyc t m r where
-  Pow :: !(UCyc t m P r) -> Cyc t m r
-  Dec :: !(UCyc t m D r) -> Cyc t m r
-  CRT :: !(UCyc t m C r) -> Cyc t m r
+  Pow  :: !(UCyc t m P r) -> Cyc t m r
+  Dec  :: !(UCyc t m D r) -> Cyc t m r
+  CRTr :: !(UCyc t m C r) -> Cyc t m r
+  CRTe :: !(UCyc t m E r) -> Cyc t m r
   -- super-optimized storage of scalars
   Scalar :: !r -> Cyc t m r
   -- optimized storage of subring elements
   Sub :: (l `Divides` m) => !(Cyc t l r) -> Cyc t m r
   -- CJP: someday try to merge the above two
 
--- | Constraints needed for many operations involving 'Cyc' data.
-type CElt t r = UCElt t r
+-- | Constraints needed for most operations involving 'Cyc' data.
+type CElt t r = (UCRTElt t r, IntegralDomain r, ZeroTestable r)
 
 ---------- Constructors / deconstructors ----------
 
@@ -97,9 +98,15 @@ cycDec = Dec
 {-# INLINABLE cycDec #-}
 
 -- | Wrap a 'UCyc' as a 'Cyc'.
-cycCRT :: UCyc t m C r -> Cyc t m r
-cycCRT = CRT
-{-# INLINABLE cycCRT #-}
+cycCRTC :: UCyc t m C r -> Cyc t m r
+cycCRTC = CRTr
+{-# INLINABLE cycCRTC #-}
+
+-- | Wrap a 'UCyc' as a 'Cyc'.
+cycCRTE :: UCyc t m E r -> Cyc t m r
+cycCRTE = CRTe
+{-# INLINABLE cycCRTE #-}
+
 
 -- | Embed a scalar from the base ring as a cyclotomic element.
 scalarCyc :: r -> Cyc t m r
@@ -116,8 +123,8 @@ uncycDec :: (Fact m, CElt t r) => Cyc t m r -> UCyc t m D r
 {-# INLINABLE uncycDec #-}
 uncycDec c = let (Dec u) = toDec' c in u
 
--- | Unwrap a 'Cyc' as a 'UCyc' in CRT-basis representation.
-uncycCRT :: (Fact m, CElt t r) => Cyc t m r -> UCyc t m C r
+-- | Unwrap a 'Cyc' as a 'UCyc' in a CRT-basis representation.
+uncycCRT :: (Fact m, CElt t r) => Cyc t m r -> UCycEC t m r
 {-# INLINABLE uncycCRT #-}
 uncycCRT c = let (CRT u) = toCRT' c in u
 
@@ -277,8 +284,9 @@ mulG :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
 {-# INLINABLE mulG #-}
 mulG (Pow u) = Pow $ U.mulG u
 mulG (Dec u) = Dec $ U.mulG u
-mulG (CRT u) = CRT $ U.mulG u
-mulG (Scalar r) = CRT $ U.mulG $ scalarCRT r
+mulG (CRTr u) = CRTr $ U.mulG u
+mulG (CRTe u) = CRTe $ U.mulG u
+mulG (Scalar r) = either (CRTe . U.mulG) (CRTr . U.mulG) $ scalarCRT r
 mulG (Sub c) = mulG $ embed' c   -- must go to full ring
 
 -- | Divide by @g@, returning 'Nothing' if not evenly divisible.
@@ -289,8 +297,9 @@ divG :: (Fact m, CElt t r) => Cyc t m r -> Maybe (Cyc t m r)
 {-# INLINABLE divG #-}
 divG (Pow u) = Pow <$> U.divG u
 divG (Dec u) = Dec <$> U.divG u
-divG (CRT u) = CRT <$> U.divG u
-divG (Scalar r) = CRT <$> U.divG (scalarCRT r)
+divG (CRTr u) = CRTr <$> U.divG u
+divG (CRTe u) = CRTe <$> U.divG u
+divG (Scalar r) = either (CRTe . U.divG) (CRTr . U.divG) $ scalarCRT r
 divG (Sub c) = divG $ embed' c  -- must go to full ring
 
 -- | Sample from the "tweaked" Gaussian error distribution @t*D@ in
@@ -309,13 +318,8 @@ tGaussian = (Dec <$>) . U.tGaussian
 -- @\hat{m}^{ -1 } \cdot || \sigma(g_m \cdot e) ||^2@ .
 gSqNorm :: forall t m r . (Fact m, CElt t r) => Cyc t m r -> r
 {-# INLINABLE gSqNorm #-}
-gSqNorm (Pow u) = U.gSqNorm $ toDec u
 gSqNorm (Dec u) = U.gSqNorm u
-gSqNorm (CRT u) = U.gSqNorm $ toDec u
--- CJP: this is suboptimal (gSqNorm of scalar 1 is known)
--- also workaround scalarDec
-gSqNorm (Scalar u) = U.gSqNorm (toDec $ scalarPow u :: UCyc t m D r)
-gSqNorm (Sub c) = U.gSqNorm (U.embedDec $ uncycDec c :: UCyc t m D r)
+gSqNorm c = gSqNorm $ toDec' c
 
 -- | Generate an LWE error term with given scaled variance,
 -- deterministically rounded with respect to the decoding basis.
@@ -349,7 +353,8 @@ embed' :: forall t r l m . (l `Divides` m, CElt t r) => Cyc t l r -> Cyc t m r
 {-# INLINE embed' #-}
 embed' (Pow u) = Pow $ embedPow u
 embed' (Dec u) = Dec $ embedDec u
-embed' (CRT u) = either Pow CRT $ embedCRT u
+embed' (CRTr u) = either Pow CRTr $ embedCRTC u
+embed' (CRTe u) = either Pow CRTe $ embedCRTE u
 embed' (Scalar c) = Scalar c
 embed' (Sub (c :: Cyc t k r)) = embed' c
   \\ transDivides (Proxy::Proxy k) (Proxy::Proxy l) (Proxy::Proxy m)
@@ -362,7 +367,8 @@ twace :: forall t m m' r . (m `Divides` m', CElt t r)
 {-# INLINABLE twace #-}
 twace (Pow u) = Pow $ U.twacePow u
 twace (Dec u) = Dec $ U.twaceDec u
-twace (CRT u) = either Pow CRT $ twaceCRT u
+twace (CRTr u) = either Pow CRTr $ twaceCRTC u
+twace (CRTe u) = either Pow CRTe $ twaceCRTE u
 twace (Scalar u) = Scalar u
 twace (Sub (c :: Cyc t l r)) = Sub (twace c :: Cyc t (FGCD l m) r)
                                \\ gcdDivides (Proxy::Proxy l) (Proxy::Proxy m)
@@ -401,7 +407,8 @@ instance (Reduce a b, Fact m, CElt t a, CElt t b)
   {-# INLINABLE reduce #-}
   reduce (Pow u) = Pow $ reduce u
   reduce (Dec u) = Dec $ reduce u
-  reduce (CRT u) = Pow $ reduce $ toPow u
+  reduce (CRTr u) = Pow $ reduce $ toPow u
+  reduce (CRTe u) = Pow $ reduce $ toPow u
   reduce (Scalar c) = Scalar $ reduce c
   reduce (Sub (c :: Cyc t l a)) = Sub (reduce c :: Cyc t l b)
 
@@ -423,7 +430,8 @@ liftPow, liftDec :: (Lift b a, Fact m, TElt t a, CElt t b)
 -- | Lift using the powerful basis.
 liftPow (Pow u) = Pow $ lift u
 liftPow (Dec u) = Pow $ lift $ toPow u
-liftPow (CRT u) = Pow $ lift $ toPow u
+liftPow (CRTr u) = Pow $ lift $ toPow u
+liftPow (CRTe u) = Pow $ lift $ toPow u
 -- optimized for subrings; these are correct for powerful basis but
 -- not for decoding
 liftPow (Scalar c) = Scalar $ lift c
@@ -432,24 +440,16 @@ liftPow (Sub c) = Sub $ liftPow c
 -- | Lift using the decoding basis.
 liftDec c = Dec $ lift $ uncycDec c
 
--- | Unzip for unrestricted types.  See also 'unzipCElt'.
-unzipCyc :: (Tensor t, Fact m) => Cyc t m (a,b) -> (Cyc t m a, Cyc t m b)
+-- | Unzip over a pair base ring.
+unzipCyc :: (Tensor t, Fact m, CElt t (a,b), CElt t a, CElt t b)
+            => Cyc t m (a,b) -> (Cyc t m a, Cyc t m b)
 {-# INLINABLE unzipCyc #-}
-unzipCyc (Pow u) = Pow *** Pow $ U.unzipCyc u
-unzipCyc (Dec u) = Dec *** Dec $ U.unzipCyc u
-unzipCyc (CRT u) = CRT *** CRT $ U.unzipCyc u
+unzipCyc (Pow u) = Pow *** Pow $ U.unzipPow u
+unzipCyc (Dec u) = Dec *** Dec $ U.unzipDec u
+unzipCyc (CRTr u) = either Pow CRTr *** either Pow CRTr $ U.unzipCRTC u
+unzipCyc (CRTe u) = either Pow CRTe *** either Pow CRTe $ U.unzipCRTE u
 unzipCyc (Scalar c) = Scalar *** Scalar $ c
 unzipCyc (Sub c) = Sub *** Sub $ unzipCyc c
-
--- | Type-restricted (and potentially more efficient) unzip.
-unzipCElt :: (Tensor t, Fact m, CElt t (a,b), CElt t a, CElt t b)
-             => Cyc t m (a,b) -> (Cyc t m a, Cyc t m b)
-{-# INLINABLE unzipCElt #-}
-unzipCElt (Pow u) = Pow *** Pow $ U.unzipUCElt u
-unzipCElt (Dec u) = Dec *** Dec $ U.unzipUCElt u
-unzipCElt (CRT u) = CRT *** CRT $ U.unzipUCElt u
-unzipCElt (Scalar c) = Scalar *** Scalar $ c
-unzipCElt (Sub c) = Sub *** Sub $ unzipCElt c
 
 -- generic RescaleCyc instance
 
@@ -477,7 +477,7 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
   rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
 
   rescaleCyc bas c = let aval = proxy modulus (Proxy::Proxy a)
-                         (a,b) = unzipCElt c
+                         (a,b) = unzipCyc c
                          z = liftCyc bas a
                      in Scalar (recip (reduce aval)) * (b - reduce z)
   {-# INLINABLE rescaleCyc #-}
@@ -485,7 +485,7 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
 
 instance (Gadget gad zq, Fact m, CElt t zq) => Gadget gad (Cyc t m zq) where
   gadget = (scalarCyc <$>) <$> gadget
-  -- specialization fo 'encode', done efficiently
+  -- specialization of 'encode', done efficiently
   encode s = ((* adviseCRT s) <$>) <$> gadget
   {-# INLINABLE gadget #-}
   {-# INLINABLE encode #-}
@@ -518,7 +518,7 @@ instance (Correct gad zq, Fact m, CElt t zq) => Correct gad (Cyc t m zq) where
   -- sequence: Monad [] and Traversable (UCyc t m D)
   -- sequenceA: Applicative (UCyc t m D) and Traversable (TaggedT gad [])
   correct bs = Dec *** (Dec <$>) $
-               second sequence $ U.unzipCyc $ (correct . pasteT) <$>
+               second sequence $ U.unzipDec $ (correct . pasteT) <$>
                sequenceA (uncycDec <$> peelT bs)
   {-# INLINABLE correct #-}
 
@@ -532,28 +532,31 @@ toPow', toDec', toCRT' :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
 -- | Force to powerful-basis representation (for internal use only).
 toPow' c@(Pow _) = c
 toPow' (Dec u) = Pow $ toPow u
-toPow' (CRT u) = Pow $ toPow u
+toPow' (CRTr u) = Pow $ toPow u
+toPow' (CRTe u) = Pow $ toPow u
 toPow' (Scalar c) = Pow $ scalarPow c
 toPow' (Sub c) = toPow' $ embed' c
 
 -- | Force to decoding-basis representation (for internal use only).
 toDec' (Pow u) = Dec $ toDec u
 toDec' c@(Dec _) = c
-toDec' (CRT u) = Dec $ toDec u
-toDec' (Scalar c) = Dec $ toDec $ scalarPow c -- workaround scalarDec
+toDec' (CRTr u) = Dec $ toDec u
+toDec' (CRTe u) = Dec $ toDec u
+toDec' (Scalar c) = Dec $ toDec $ scalarPow c
 toDec' (Sub c) = toDec' $ embed' c
 
--- | Force to CRT representation (for internal use only).
-toCRT' (Pow u) = CRT $ toCRT u
-toCRT' (Dec u) = CRT $ toCRT u
-toCRT' c@(CRT _) = c
-toCRT' (Scalar c) = CRT $ scalarCRT c
--- CJP: below is the fastest algorithm for when both source and target
--- have the same CRTr/CRTe choice.  It is not the fastest when the
--- choices are different (it will do an unnecessary CRT if input is
--- non-CRT), but this is an unusual case.  Note: both toCRT' are
--- necessary in generaly, because embed' may not preserve CRT
--- representation!
+-- | Force to a CRT representation (for internal use only).
+toCRT' (Pow u) = either CRTr CRTe $ toCRT u
+toCRT' (Dec u) = either CRTr CRTe $ toCRT u
+toCRT' c@(CRTr _) = c
+toCRT' c@(CRTe _) = c
+toCRT' (Scalar c) = either CRTe CRTr $ scalarCRT c
+-- CJP: the following is the fastest algorithm for when both source
+-- and target have the same CRTr/CRTe choice.  It is not the fastest
+-- when the choices are different (it will do an unnecessary CRT if
+-- input is non-CRT), but this is an unusual case.  Note: both calls
+-- to toCRT' are necessary in general, because embed' may not preserve
+-- CRT representation!
 toCRT' (Sub c) = toCRT' $ embed' $ toCRT' c
 
 ---------- Utility instances ----------
@@ -562,13 +565,14 @@ instance (Tensor t, Fact m, NFData r, TElt t r,
           NFData (CRTExt r), TElt t (CRTExt r)) => NFData (Cyc t m r) where
   rnf (Pow u) = rnf u
   rnf (Dec u) = rnf u
-  rnf (CRT u) = rnf u
+  rnf (CRTr u) = rnf u
+  rnf (CRTe u) = rnf u
   rnf (Scalar u) = rnf u
   rnf (Sub c) = rnf c
 
-instance (Random r, Tensor t, Fact m, CRTElt t r) => Random (Cyc t m r) where
+instance (Random r, Tensor t, Fact m, UCRTElt t r) => Random (Cyc t m r) where
   random g = let (u,g') = random g
-             in (either Pow CRT u, g')
+             in (either Pow CRTr u, g')
   {-# INLINABLE random #-}
 
   randomR _ = error "randomR non-sensical for Cyc"
@@ -581,5 +585,6 @@ instance (Show r, Show (CRTExt r), Tensor t, Fact m, TElt t r, TElt t (CRTExt r)
   show (Scalar c) = "Cyc Scalar: " ++ show c
   show (Pow u) = "Cyc: " ++ show u
   show (Dec u) = "Cyc: " ++ show u
-  show (CRT u) = "Cyc: " ++ show u
+  show (CRTr u) = "Cyc: " ++ show u
+  show (CRTe u) = "Cyc: " ++ show u
   show (Sub c) = "Cyc Sub: " ++ show c
