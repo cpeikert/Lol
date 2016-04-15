@@ -32,7 +32,8 @@ tensorTests =
    testGroupM "LInv.L == id"     $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_l_inv,
    testGroupM "Scalar"           $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_scalar_crt,
    testGroup  "G commutes with L"  gCommuteTests,
-   testGroupM "Extension Mult"   $ applyBasic (Proxy::Proxy ExtParams) $ hideArgs prop_mul_ext,
+   -- CJP: suppressed because it's not actually a Tensor test
+   -- testGroupM "Extension Mult"   $ applyBasic (Proxy::Proxy ExtParams) $ hideArgs prop_mul_ext,
    testGroupM "GSqNormDec"       $ applyLift (Proxy::Proxy NormParams) $ hideArgs prop_gsqnorm,
    testGroup  "Tw.Em == id"        tremTests,
    testGroup  "Em commutes with L" embedCommuteTests,
@@ -59,7 +60,7 @@ prop_ginv_dec x = test $ (fromMaybe (error "could not divide by G in prop_ginv_d
   divGDec $ mulGDec x) == x \\ witness entailEqT x
 
 -- divG . mulG == id in CRT basis
-prop_ginv_crt :: (Tensor t, TElt t r, Fact m, Eq r, ZeroTestable r, IntegralDomain r, CRTrans r) 
+prop_ginv_crt :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r) 
   => t m r -> Test '(t,m,r)
 prop_ginv_crt x = test $ fromMaybe (error "no CRT in prop_ginv_crt") $ do
   divGCRT' <- divGCRT
@@ -75,7 +76,7 @@ gInvGTests =  [
 prop_g_dec :: (Tensor t, Ring r, Fact m, TElt t r, Eq r) => t m r -> Test '(t,m,r)
 prop_g_dec x = test $ (mulGDec x) == (lInv $ mulGPow $ l x) \\ witness entailEqT x
 
-prop_g_crt :: (Tensor t, TElt t r, Fact m, Eq r, ZeroTestable r, IntegralDomain r, CRTrans r) 
+prop_g_crt :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r) 
   => t m r -> Test '(t,m,r)
 prop_g_crt x = test $ fromMaybe (error "no CRT in prop_g_crt") $ do
   mulGCRT' <- mulGCRT
@@ -88,7 +89,7 @@ gCommuteTests =  [
   testGroupM "CRT basis" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_g_crt]
 
 -- crtInv . crt == id
-prop_crt_inv :: (Tensor t, TElt t r, Fact m, Eq r, ZeroTestable r, IntegralDomain r, CRTrans r) 
+prop_crt_inv :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r) 
   => t m r -> Test '(t,m,r)
 prop_crt_inv x = test $ fromMaybe (error "no CRT in prop_crt_inv") $ do
   crt' <- crt
@@ -100,7 +101,7 @@ prop_l_inv :: (Tensor t, Ring r, Eq r, Fact m, TElt t r) => t m r -> Test '(t,m,
 prop_l_inv x = test $ (lInv $ l x) == x \\ witness entailEqT x
 
 -- scalarCRT = crt . scalarPow
-prop_scalar_crt :: forall t m r . (Tensor t, TElt t r, Fact m, Eq r, ZeroTestable r, IntegralDomain r, CRTrans r)
+prop_scalar_crt :: forall t m r . (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r)
                 => r -> Test '(t,m,r)
 prop_scalar_crt r = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
   scalarCRT' <- scalarCRT
@@ -109,21 +110,25 @@ prop_scalar_crt r = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
   \\ proxy entailEqT (Proxy::Proxy (t m r))
 
 
+{- CJP: this test makes no sense in the Tensor context: it's just
+checking that multiplication in the extension ring of r and in r
+itself are consistent; no Tensor needed.
 
 -- tests that multiplication in the extension ring matches CRT multiplication
-prop_mul_ext :: forall t m r . (Tensor t, Fact m, TElt t r, TElt t (CRTExt r), CRTrans r, CRTEmbed r, Ring r, Eq r)
+prop_mul_ext :: forall t m r . (Tensor t, Fact m, TElt t r, TElt t (CRTExt r), CRTrans Maybe r, CRTEmbed r, Ring r, Eq r)
   => t m r -> t m r -> Test '(t,m,r)
 prop_mul_ext x y = test $
-  let m = proxy valueFact (Proxy::Proxy m)
-  in case (crtInfo m :: Maybe (CRTInfo r)) of
+  case (proxyT crtInfo (Proxy::Proxy m)) of
        Nothing -> error "mul have a CRT to call prop_mul_ext"
        Just _ -> (let z = zipWithT (*) x y
                       z' = fmapT fromExt $ zipWithT (*) (fmapT toExt x) (fmapT toExt y)
                   in z == z') \\ witness entailEqT x 
                               \\ witness entailIndexT x
 
+-}
+
 type NormCtx t m r = (TElt t r, TElt t (LiftOf r), 
-  Fact m, Lift' r, CRTrans r, Eq (LiftOf r),
+  Fact m, Lift' r, CRTrans Maybe r, Eq (LiftOf r),
   ZeroTestable r, Ring (LiftOf r), Ring r, IntegralDomain r)
 
 type NormWrapCtx m r = (NormCtx CT m r, NormCtx RT m r)
@@ -144,7 +149,7 @@ prop_gsqnorm x = test $
 
 type TMM'RCtx t m m' r = 
   (Tensor t, m `Divides` m', TElt t r, Ring r, 
-   CRTrans r, Eq r, ZeroTestable r, IntegralDomain r)
+   CRTrans Maybe r, Eq r, ZeroTestable r, IntegralDomain r)
 
 -- groups related tests
 tremTests = [
@@ -215,14 +220,14 @@ twaceInvarTests = [
   testGroupM "Invar2 CRT basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_twace_invar2_crt
   ]
 
-prop_twEmID :: forall t m r . (Tensor t, TElt t r, CRTrans r, Fact m, m `Divides` m, Eq r, ZeroTestable r, IntegralDomain r) 
+prop_twEmID :: forall t m r . (Tensor t, TElt t r, CRTrans Maybe r, Fact m, m `Divides` m, Eq r, ZeroTestable r, IntegralDomain r) 
   => t m r -> Test '(t,m,r)
 prop_twEmID x = test $ 
   ((twacePowDec x) == x) &&
-   (((fromMaybe (error "twemid_crt") twaceCRT) x) == x) &&
-   ((embedPow x) == x) &&
-   ((embedDec x) == x) &&
-   (((fromMaybe (error "twemid_crt") embedCRT) x) == x) \\ witness entailEqT x
+  (((fromMaybe (error "twemid_crt") twaceCRT) x) == x) &&
+  ((embedPow x) == x) &&
+  ((embedDec x) == x) &&
+  (((fromMaybe (error "twemid_crt") embedCRT) x) == x) \\ witness entailEqT x 
 
 -- twace mhat'/g' = mhat*totm'/totm/g (Pow basis)
 prop_twace_invar1_pow :: forall t m m' r . (TMM'RCtx t m m' r) 
