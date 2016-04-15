@@ -56,7 +56,7 @@ library
 
   -- ghc optimizations
   if flag(opt)
-    ghc-options: -O3 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
+    ghc-options: -O3 -Odph -funbox-strict-fields -fwarn-dodgy-imports
     ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   exposed-modules: 
