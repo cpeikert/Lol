@@ -42,7 +42,9 @@ import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.Tensor as T
 import           Crypto.Lol.LatticePrelude    as LP
 import           Crypto.Lol.Types.FiniteField
+import           Crypto.Lol.Types.RealQ (RealQ)
 import           Crypto.Lol.Types.ZPP
+import           Crypto.Lol.Types.ZqBasic (ZqBasic)
 
 import qualified Algebra.Additive     as Additive (C)
 import qualified Algebra.Module       as Module (C)
@@ -63,9 +65,9 @@ import Text.Read (Read(readPrec))
 import GHC.Generics (Generic)
 
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Basis
-import Crypto.Lol.Types.Proto.CycMsg
-import Crypto.Lol.Types.Proto.TensorMsg (TensorMsg)
+import Crypto.Lol.Types.Proto.R
+import Crypto.Lol.Types.Proto.Rq
+import Crypto.Lol.Types.Proto.RRq
 
 --import qualified Debug.Trace as DT
 
@@ -639,21 +641,17 @@ instance (Serialize (t m r), Serialize (t m (CRTExt r)), Fact m, UCElt t r) => S
   put (CRTr x) = put $ UCRTr x
   put (CRTe x) = put (UCRTe x :: UCRT t m r)
 
-instance (Fact m, Protoable (t m r), ProtoType (t m r) ~ TensorMsg) => Protoable (UCyc t m P r) where
-  type ProtoType (UCyc t m P r) = CycMsg
-  toProto (Pow t) = CycMsg POW $ toProto t
-  fromProto (CycMsg POW t) = Pow $ fromProto t
-  fromProto (CycMsg b _) = error $ "Wrong basis when reading proto for UCyc: Expected Pow, got " ++ (show b)
+instance (Fact m, Protoable (t m Int64), ProtoType (t m Int64) ~ R) => Protoable (UCyc t m P Int64) where
+  type ProtoType (UCyc t m P Int64) = R
+  toProto (Pow t) = toProto t
+  fromProto t@(R _ _) = Pow $ fromProto t
 
-instance (Fact m, Protoable (t m r), ProtoType (t m r) ~ TensorMsg) => Protoable (UCyc t m D r) where
-  type ProtoType (UCyc t m D r) = CycMsg
-  toProto (Dec t) = CycMsg DEC $ toProto t
-  fromProto (CycMsg DEC t) = Dec $ fromProto t
-  fromProto (CycMsg b _) = error $ "Wrong basis when reading proto for UCyc: Expected Dec, got " ++ (show b)
+instance (Fact m, Protoable (t m (ZqBasic q Int64)), ProtoType (t m (ZqBasic q Int64)) ~ Rq) => Protoable (UCyc t m P (ZqBasic q Int64)) where
+  type ProtoType (UCyc t m P (ZqBasic q Int64)) = Rq
+  toProto (Pow t) = toProto t
+  fromProto t@(Rq _ _ _) = Pow $ fromProto t
 
-instance (Fact m, Protoable (t m r), ProtoType (t m r) ~ TensorMsg, UCElt t r) => Protoable (UCyc t m C r) where
-  type ProtoType (UCyc t m C r) = CycMsg
-  toProto (CRTr t) = CycMsg CRT $ toProto t
-  toProto x@(CRTe _) = toProto $ toPow x
-  fromProto (CycMsg CRT t) = CRTr $ fromProto t
-  fromProto (CycMsg b _) = error $ "Wrong basis when reading proto for UCyc: Expected CRT, got " ++ (show b)
+instance (Fact m, Protoable (t m (RealQ q Double)), ProtoType (t m (RealQ q Double)) ~ RRq) => Protoable (UCyc t m P (RealQ q Double)) where
+  type ProtoType (UCyc t m P (RealQ q Double)) = RRq
+  toProto (Pow t) = toProto t
+  fromProto t@(RRq _ _ _) = Pow $ fromProto t

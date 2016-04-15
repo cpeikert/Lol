@@ -55,7 +55,9 @@ import qualified Crypto.Lol.Cyclotomic.UCyc       as U
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.LatticePrelude        as LP
 import           Crypto.Lol.Types.FiniteField
+import           Crypto.Lol.Types.RealQ
 import           Crypto.Lol.Types.ZPP
+import           Crypto.Lol.Types.ZqBasic
 
 import Control.Applicative    hiding ((*>))
 import Control.Arrow
@@ -72,9 +74,9 @@ import Test.QuickCheck
 import Text.Read (Read(readPrec))
 
 import Crypto.Lol.Types.Proto
-import qualified Crypto.Lol.Types.Proto.Basis as B
-import Crypto.Lol.Types.Proto.CycMsg
-import Crypto.Lol.Types.Proto.TensorMsg (TensorMsg)
+import Crypto.Lol.Types.Proto.R
+import Crypto.Lol.Types.Proto.Rq
+import Crypto.Lol.Types.Proto.RRq
 
 -- | Represents a cyclotomic ring such as @Z[zeta]@,
 -- @Zq[zeta]@, and @Q(zeta)@ in an explicit representation: @t@ is the
@@ -621,12 +623,28 @@ cyc'ToCyc (Dec' x) = Dec x
 cyc'ToCyc (CRT' x) = CRT x
 cyc'ToCyc (Sc x) = Scalar x
 
-instance (Fact m, Protoable (t m r), ProtoType (t m r) ~ TensorMsg, CElt t r) => Protoable (Cyc t m r) where
-  type ProtoType (Cyc t m r) = CycMsg
+instance (Fact m, CElt t Int64, ProtoType (UCyc t m P Int64) ~ R, 
+          Protoable (UCyc t m P Int64)) 
+  => Protoable (Cyc t m Int64) where
+  type ProtoType (Cyc t m Int64) = R
   toProto (Pow uc) = toProto uc
-  toProto (Dec uc) = toProto uc
-  toProto (CRT uc) = toProto uc
   toProto x = toProto $ toPow' x
-  fromProto x@(CycMsg B.POW _) = Pow $ fromProto x
-  fromProto x@(CycMsg B.DEC _) = Dec $ fromProto x
-  fromProto x@(CycMsg B.CRT _) = CRT $ fromProto x
+  fromProto x@(R _ _) = Pow $ fromProto x
+
+instance (Fact m, CElt t (ZqBasic q Int64), 
+          ProtoType (UCyc t m P (ZqBasic q Int64)) ~ Rq, 
+          Protoable (UCyc t m P (ZqBasic q Int64))) 
+  => Protoable (Cyc t m (ZqBasic q Int64)) where
+  type ProtoType (Cyc t m (ZqBasic q Int64)) = Rq
+  toProto (Pow uc) = toProto uc
+  toProto x = toProto $ toPow' x
+  fromProto x@(Rq _ _ _) = Pow $ fromProto x
+
+instance (Fact m, CElt t (RealQ q Double), 
+          ProtoType (UCyc t m P (RealQ q Double)) ~ RRq, 
+          Protoable (UCyc t m P (RealQ q Double))) 
+  => Protoable (Cyc t m (RealQ q Double)) where
+  type ProtoType (Cyc t m (RealQ q Double)) = RRq
+  toProto (Pow uc) = toProto uc
+  toProto x = toProto $ toPow' x
+  fromProto x@(RRq _ _ _) = Pow $ fromProto x

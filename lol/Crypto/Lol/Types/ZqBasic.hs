@@ -15,9 +15,6 @@ import Crypto.Lol.Gadget
 import Crypto.Lol.LatticePrelude    as LP
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField hiding (toList,fromList)
-import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Coeffs
-import Crypto.Lol.Types.Proto.ZqList
 import Crypto.Lol.Types.ZPP
 
 import Math.NumberTheory.Primes.Factorisation
@@ -314,17 +311,6 @@ instance (ReflectsTI q z, Random z) => Arbitrary (ZqBasic q z) where
     in fromIntegral <$> choose (0, qval-1)
 
   shrink = shrinkNothing
-
-instance (Reflects q Int64) => Protoable [ZqBasic q Int64] where
-  type ProtoType [ZqBasic q Int64] = Coeffs
-  toProto xs = Zqs $
-    ZqList (fromIntegral (proxy value (Proxy::Proxy q) :: Int64)) $ 
-      fromList $ map unZqB xs
-  fromProto (Zqs (ZqList q' xs)) = 
-    let q = proxy value (Proxy::Proxy q) :: Int64
-    in if q == (fromIntegral q')
-       then map reduce $ toList xs
-       else error $ "Mismatched q value in Protoable instance for ZqBasic. Expected " ++ (show q) ++ ", got " ++ (show q') ++ "."
 
 -- CJP: restored manual Unbox instances, until we have a better way
 -- (NewtypeDeriving or TH)

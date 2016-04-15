@@ -1,33 +1,20 @@
 
-message Int64List {
-  repeated sint64 xs = 1;
-}
-
-message ZqList {
-  required uint64 q = 1;
+// always serialized in Powerful basis
+message R {
+  required uint32 m = 1;
   repeated sint64 xs = 2;
 }
 
-message RealQList {
-  required uint64 q = 1;
-  repeated double xs = 2;
-}
-
-message TensorMsg {
+// always serialized in Powerful basis
+message Rq {
   required uint32 m = 1;
-  oneof coeffs {
-    Int64List zs = 2;
-    RealQList rqs = 3;
-    ZqList zqs = 4;
-  }
+  required uint64 q = 2;
+  repeated sint64 xs = 3;
 }
 
-message CycMsg {
-  enum Basis {
-    POW=0;
-    DEC=1;
-    CRT=2; // to use this option, there must be an integral CRT basis
-  }
-  required Basis basis = 1;
-  required TensorMsg tensor = 2;
+// always serialized in Powerful basis
+message RRq {
+  required uint32 m = 1;
+  required double q = 2;
+  repeated double xs = 3;
 }

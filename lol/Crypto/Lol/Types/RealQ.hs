@@ -13,9 +13,6 @@ import Control.DeepSeq
 import Crypto.Lol.CRTrans
 import Crypto.Lol.LatticePrelude
 import Crypto.Lol.Reflects
-import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Coeffs
-import Crypto.Lol.Types.Proto.RealQList
 import Crypto.Lol.Types.ZqBasic
 
 -- for the Elt instance
@@ -37,7 +34,7 @@ newtype RealQ q r = RealQ {unRealQ :: r}
   deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable, Read, Serialize)
 
 {-# INLINABLE reduce' #-}
-reduce' :: forall q r . (Reflects q r, Field r, RealRing r)
+reduce' :: forall q r . (Reflects q r, RealField r)
   => r -> RealQ q r
 reduce' x = 
   let q = proxy value (Proxy::Proxy q)
@@ -53,7 +50,7 @@ decode' = let qval = proxy value (Proxy::Proxy q)
                            then x
                            else x - qval
 
-instance (Reflects q r, Field r, RealRing r, Additive (RealQ q r)) 
+instance (Reflects q r, RealField r, Additive (RealQ q r)) 
   => Reduce r (RealQ q r) where
   reduce = reduce'
 
@@ -64,7 +61,7 @@ instance (Reflects q r, Reduce r (RealQ q r), Ord r, Ring r)
   lift = decode'
 
 -- instance of Additive
-instance (Reflects q r, RealRing r, Field r, Ord r) 
+instance (Reflects q r, RealField r, Ord r) 
   => Additive.C (RealQ q r) where
 
   {-# INLINABLE zero #-}
@@ -79,20 +76,9 @@ instance (Reflects q r, RealRing r, Field r, Ord r)
   {-# INLINABLE negate #-}
   negate (RealQ x) = reduce' $ negate x
 
-instance (ToInteger i, RealRing r, Field r, Reflects q i, Reflects (RealMod q) r) 
+instance (ToInteger i, RealField r, Reflects q i, Reflects (RealMod q) r) 
   => Subgroup (ZqBasic q i) (RealQ (RealMod q) r) where
   fromSubgroup = reduce' . fromIntegral . lift
-
-instance (Reflects q Double) => Protoable [RealQ q Double] where
-  type ProtoType [RealQ q Double] = Coeffs
-  toProto xs = Rqs $ 
-    RealQList (round (proxy value (Proxy::Proxy q) :: Double)) $ 
-      fromList $ map unRealQ xs
-  fromProto (Rqs (RealQList q' xs)) = 
-    let q = round (proxy value (Proxy::Proxy q) :: Double)
-    in if q == q'
-       then map reduce $ toList xs
-       else error $ "Mismatched q value in Protoable instance for RealQ. Expected " ++ (show q) ++ ", got " ++ (show q') ++ "."
 
 -- CJP: restored manual Unbox instances, until we have a better way
 -- (NewtypeDeriving or TH)
