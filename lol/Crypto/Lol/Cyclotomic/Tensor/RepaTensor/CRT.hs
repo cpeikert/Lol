@@ -46,7 +46,7 @@ wrapVector v = do
   vmat <- proxyT v (Proxy::Proxy m)
   let n = proxy totientFact (Proxy::Proxy m)
   return $ coerce $ force $ RT.fromFunction (Z:.n)
-    (\(Z:.i) -> indexM vmat i 1)
+    (\(Z:.i) -> indexM vmat i 0)
 
 gCRT, gInvCRT :: (Fact m, CRTrans mon r, Unbox r, Elt r) => mon (Arr m r)
 {-# INLINABLE gCRT #-}

@@ -426,7 +426,7 @@ wrapVector :: forall mon m r . (Monad mon, Fact m, Ring r, Storable r)
 wrapVector v = do
   vmat <- proxyT v (Proxy::Proxy m)
   let n = proxy totientFact (Proxy::Proxy m)
-  return $ CT' $ generate n (flip (indexM vmat) 1)
+  return $ CT' $ generate n (flip (indexM vmat) 0)
 
 gCRT, gInvCRT :: (Storable r, CRTrans mon r, Fact m)
                  => mon (CT' m r)
