@@ -149,7 +149,7 @@ mhatInv :: forall m q z . (Reflects m Int, ReflectsTI q z, PID z)
            => TaggedT m Maybe (ZqBasic q z)
 mhatInv = let qval = proxy value (Proxy::Proxy q)
           in peelT $ (fmap reduce' . (`modinv` qval) . fromIntegral) <$>
-                 (value :: Tagged m Int)
+                 valueHat <$> (value :: Tagged m Int)
 
 -- instance of CRTrans
 instance (ReflectsTI q z, PID z, Enumerable (ZqBasic q z))
