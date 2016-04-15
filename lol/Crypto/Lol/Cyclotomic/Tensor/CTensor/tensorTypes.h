@@ -14,7 +14,6 @@
 #include <string.h>
 #include <time.h>
 
-
 #define ASSERT(EXP) { \
 	if (!(EXP)) { \
 		fprintf (stderr, "Assertion in file '%s' line %d : " #EXP "  is false\n", __FILE__, __LINE__); \
@@ -111,6 +110,101 @@ typedef struct
 	double real;
 	double imag;
 } complex_t;
+
+hInt_t q; // the modulus
+
+//http://stackoverflow.com/a/4421719
+class Zq
+{
+public:
+  hInt_t x;
+
+  Zq& operator=(const hInt_t& c)
+  {
+    this->x = c;
+    return *this;
+  }
+  Zq& operator+=(const Zq& b)
+  {
+    this->x = (this->x+b.x) % q;
+    return *this;
+  }
+  Zq& operator-=(const Zq& b)
+  {
+    this->x = (this->x-b.x) % q;
+    return *this;
+  }
+   Zq& operator*=(const Zq& b)
+  {
+    this->x = (this->x*b.x) % q;
+    return *this;
+  }
+};
+
+inline Zq operator+(Zq a, const Zq& b)
+{
+  a += b;
+  return a;
+}
+inline Zq operator-(Zq a, const Zq& b)
+{
+  a -= b;
+  return a;
+}
+inline Zq operator*(Zq a, const Zq& b)
+{
+  a *= b;
+  return a;
+}
+
+class Complex
+{
+public:
+  double real;
+  double imag;
+
+  Complex& operator=(const hInt_t& c)
+  {
+    this->real = c;
+    this->imag = 0;
+    return *this;
+  }
+  Complex& operator+=(const Complex& b)
+  {
+    this->real = this->real+b.real;
+    this->imag = this->imag+b.imag;
+    return *this;
+  }
+  Complex& operator-=(const Complex& b)
+  {
+    this->real = this->real-b.real;
+    this->imag = this->imag-b.imag;
+    return *this;
+  }
+  Complex& operator*=(const Complex& b)
+  {
+    double a = this->real;
+    this->real = (a*b.real)-(this->imag*b.imag);
+    this->imag = (a*b.imag)+(this->imag*b.real);
+    return *this;
+  }
+};
+
+inline Complex operator+(Complex a, const Complex& b)
+{
+  a += b;
+  return a;
+}
+inline Complex operator-(Complex a, const Complex& b)
+{
+  a -= b;
+  return a;
+}
+inline Complex operator*(Complex a, const Complex& b)
+{
+  a *= b;
+  return a;
+}
 
 #define CMPLX_ADD(a,b)  ((complex_t){((a).real + (b).real), ((a).imag + (b).imag)})
 #define CMPLX_ADD3(a,b,c)  ((complex_t){((a).real + (b).real + (c).real), ((a).imag + (b).imag + (c).imag)})
