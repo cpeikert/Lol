@@ -1,6 +1,7 @@
 #include "tensorTypes.h"
 #include<zq.cc>
 
+//see note in zq.cc
 hInt_t Zq::q;
 
 hDim_t ipow(hDim_t base, hShort_t exp)

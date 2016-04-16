@@ -1,6 +1,5 @@
 #include "tensorTypes.h"
 
-
 void gPowR (hInt_t* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p)
 {
   hDim_t tmp1 = rts*(p-1);

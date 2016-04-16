@@ -4,10 +4,10 @@
 /*
 Cabal doesn't seem to like C++ code in .h files, so as a workaround 
 we define C++ code in .cc files, and then include .cc files.
-Zq uses a global modulus (so that the signature for functions on
-on different types aligns), but this can't be in an included .cc file,
-or we get linking errors. As a result, q is defined in tensorTypes.h,
-which only contains vanilla C code.
+Zq has a static modulus which is declared below, but cannot be defined
+in this file, since we include this file directly. Thus the definition
+of `q` must be a file that is *not* included by anything else. We define
+`q` in generalfuncs.cc.
 */
 
 //http://stackoverflow.com/a/4421719
