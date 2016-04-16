@@ -1,6 +1,4 @@
 #include "tensorTypes.h"
-#include "complex.cc"
-#include "zq.cc"
 #include <time.h>
 #include <stdlib.h>
 
@@ -453,8 +451,8 @@ template <typename ring> void ppDFTInv (ring* y, hShort_t tupSize, hDim_t lts, h
   }
 }
 
-void ppcrtRq (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts, 
-              PrimeExponent pe, void* ru, hInt_t* qs)
+template <typename ring> void ppcrt (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, 
+              PrimeExponent pe, ring* ru)
 {
   hDim_t p = pe.prime;
   hDim_t e = pe.exponent;
@@ -468,33 +466,29 @@ void ppcrtRq (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts,
   printf("rus for p=%" PRId32 ", e=%" PRId16 "\t[", pe.prime, pe.exponent);
   hDim_t i;
   for(i = 0; i < ipow(p,e); i++) {
-    printf("%" PRId64 ",", ((hInt_t*)ru)[i*tupSize+tupIdx]);
+    printf("%" PRId64 ",", ru[i*tupSize+tupIdx]);
   }
   printf("]\n");
 #endif
 
-  Zq* temp = 0;
+  ring* temp = 0;
   if(p >= DFTP_GENERIC_SIZE) {
-    temp = (Zq*)malloc(p*sizeof(Zq));
+    temp = (ring*)malloc(p*sizeof(ring));
   }
-  for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
-    Zq* z = ((Zq*)y)+tupIdx;
-    Zq::q = qs[tupIdx]; // global update
-    Zq* ruOffset = ((Zq*)ru)+tupIdx;
-    crtp (z, tupSize, lts*mprime, rts, p, mprime, ruOffset);
-    crtTwiddle (z, tupSize, lts, rts, pe, ruOffset);
-    pe.exponent -= 1;
-    ppDFT (z,  tupSize, lts, rts*(p-1), pe, p, ruOffset, temp);
-    pe.exponent += 1;
-  }
+
+  crtp (y, tupSize, lts*mprime, rts, p, mprime, ru);
+  crtTwiddle (y, tupSize, lts, rts, pe, ru);
+  pe.exponent -= 1;
+  ppDFT (y,  tupSize, lts, rts*(p-1), pe, p, ru, temp);
+  pe.exponent += 1;
 
   if(p >= DFTP_GENERIC_SIZE) {
     free(temp);
   }
 }
 
-void ppcrtinvRq (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts, 
-                 PrimeExponent pe, void* ru, hInt_t* qs)
+template <typename ring> void ppcrtinv (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, 
+                 PrimeExponent pe, ring* ru)
 {
   hDim_t p = pe.prime;
   hDim_t e = pe.exponent;
@@ -507,26 +501,21 @@ void ppcrtinvRq (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts,
   printf("rus for p=%" PRId32 ", e=%" PRId16 "\t[", pe.prime, pe.exponent);
   hDim_t i;
   for(i = 0; i < ipow(p,e); i++) {
-    printf("%" PRId64 ",", ((hInt_t*)ru)[i*tupSize+tupIdx]);
+    printf("%" PRId64 ",", ru[i*tupSize+tupIdx]);
   }
   printf("]\n");
 #endif
 
-  Zq* temp = 0;
+  ring* temp = 0;
   if(p >= DFTP_GENERIC_SIZE) {
-    temp = (Zq*)malloc(p*sizeof(Zq));
+    temp = (ring*)malloc(p*sizeof(ring));
   }
-  for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
-    Zq* z = ((Zq*)y)+tupIdx;
-    Zq::q = qs[tupIdx]; // global update
-    Zq* ruOffset = ((Zq*)ru)+tupIdx;
 
-    pe.exponent -= 1;
-    ppDFTInv (z, tupSize, lts, rts*(p-1), pe, p, ruOffset, temp);
-    pe.exponent += 1;
-    crtTwiddle (z, tupSize, lts, rts, pe, ruOffset);
-    crtpinv (z, tupSize, lts*mprime, rts, p, mprime, ruOffset);
-  }
+  pe.exponent -= 1;
+  ppDFTInv (y, tupSize, lts, rts*(p-1), pe, p, ru, temp);
+  pe.exponent += 1;
+  crtTwiddle (y, tupSize, lts, rts, pe, ru);
+  crtpinv (y, tupSize, lts*mprime, rts, p, mprime, ru);
 
   if(p >= DFTP_GENERIC_SIZE) {
     free(temp);
@@ -562,13 +551,8 @@ extern "C" void tensorCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExpo
   }
   printf("]\n");
 #endif
-
-  void** rus = (void**)malloc(sizeOfPE*sizeof(void*));
-  for(i = 0; i < sizeOfPE; i++) {
-    rus[i] = (void*) (ru[i]);
-  }
-
-  tensorFuserCRT (y, tupSize, ppcrtRq, totm, peArr, sizeOfPE, rus, qs);
+    
+  tensorFuserCRT2 ((Zq*)y, tupSize, ppcrt, totm, peArr, sizeOfPE, (Zq**)ru, qs);
 
   for(i = 0; i < tupSize; i++) {
     hInt_t q = qs[i];
@@ -584,7 +568,6 @@ extern "C" void tensorCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExpo
     }
   }
 
-  free(rus);
 #ifdef STATS
   clock_gettime(CLOCK_REALTIME, &t1);
   clock_gettime(CLOCK_MONOTONIC, &t2);
@@ -628,11 +611,7 @@ extern "C" void tensorCRTInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeE
   printf("]\n");
 #endif
 
-  void** rus = (void**)malloc(sizeOfPE*sizeof(void*));
-  for(i = 0; i < sizeOfPE; i++) {
-    rus[i] = (void*) (ruinv[i]);
-  }
-  tensorFuserCRT (y, tupSize, ppcrtinvRq, totm, peArr, sizeOfPE, rus, qs);
+  tensorFuserCRT2 ((Zq*)y, tupSize, ppcrtinv, totm, peArr, sizeOfPE, (Zq**)ruinv, qs);
 
   for (i = 0; i < tupSize; i++) {
     hInt_t q = qs[i];
@@ -650,113 +629,10 @@ extern "C" void tensorCRTInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeE
     }
   }
 
-  free(rus);
 #ifdef STATS
   clock_gettime(CLOCK_REALTIME, &t1);
   crtInvRqTime = tsAdd(crtInvRqTime, tsSubtract(t1,s1));
 #endif
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-void ppcrtC (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, void* ru, hInt_t* qs)
-{
-  hDim_t p = pe.prime;
-  hDim_t e = pe.exponent;
-#ifdef DEBUG_MODE
-  ASSERT(e != 0);
-#endif
-  hDim_t mprime = ipow(p,e-1);
-
-#ifdef DEBUG_MODE
-  printf("rus for p=%" PRId32 ", e=%" PRId16 "\t[", pe.prime, pe.exponent);
-  hDim_t i;
-  for(i = 0; i < ipow(p,e); i++) {
-    printf("(%f,%f),", ((Complex*)ru)[i].real, ((Complex*)ru)[i].imag);
-  }
-  printf("]\n");
-#endif
-
-  Complex* temp = 0;
-  if(p >= DFTP_GENERIC_SIZE) {
-    temp = (Complex*)malloc(p*sizeof(Complex));
-  }
-
-  for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
-    Complex* z = ((Complex*)y)+tupIdx;
-    Complex* ruOffset = ((Complex*)ru)+tupIdx;
-    crtp (z, tupSize, lts*mprime, rts, p, mprime, ruOffset);
-    crtTwiddle (z, tupSize, lts, rts, pe, ruOffset);
-    pe.exponent -= 1;
-    ppDFT (z, tupSize, lts, rts*(p-1), pe, p, ruOffset, temp);
-    pe.exponent += 1;
-  }
-
-  if(p >= DFTP_GENERIC_SIZE) {
-    free(temp);
-  }
-}
-
-void ppcrtinvC (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, void* ru, hInt_t* qs)
-{
-  hDim_t p = pe.prime;
-  hDim_t e = pe.exponent;
-#ifdef DEBUG_MODE
-  ASSERT(e != 0);
-#endif
-  hDim_t mprime = ipow(p,e-1);
-    
-  Complex* temp = 0;
-  if(p >= DFTP_GENERIC_SIZE) {
-    temp = (Complex*)malloc(p*sizeof(Complex));
-  }
-
-  for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
-    Complex* z = ((Complex*)y)+tupIdx;
-    Complex* ruOffset = ((Complex*)ru)+tupIdx;
-    pe.exponent -= 1;
-    ppDFTInv (z, tupSize, lts, rts*(p-1), pe, p, ruOffset, temp);
-    pe.exponent += 1;
-    crtTwiddle (z, tupSize, lts, rts, pe, ruOffset);
-    crtpinv (z, tupSize, lts*mprime, rts, p, mprime, ruOffset);
-  }
-
-  if(p >= DFTP_GENERIC_SIZE) {
-    free(temp);
-  }
 }
 
 extern "C" void tensorCRTC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Complex** ru)
@@ -778,13 +654,9 @@ extern "C" void tensorCRTC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExpo
   }
   printf("]\n");
 #endif
-  void** rus = (void**)malloc(sizeOfPE*sizeof(void*));
-  hShort_t i;
-  for(i = 0; i < sizeOfPE; i++) {
-    rus[i] = (void*) (ru[i]);
-  }
-  tensorFuserCRT (y, tupSize, ppcrtC, totm, peArr, sizeOfPE, rus, (hInt_t*)0);
-  free(rus);
+
+  tensorFuserCRT2 (y, tupSize, ppcrt, totm, peArr, sizeOfPE, ru, (hInt_t*)0);
+
 #ifdef STATS
   clock_gettime(CLOCK_REALTIME, &t1);
   crtCTime = tsAdd(crtCTime, tsSubtract(t1,s1));
@@ -802,20 +674,14 @@ extern "C" void tensorCRTInvC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeE
 #endif
   hDim_t i;
   
-  void** rus = (void**)malloc(sizeOfPE*sizeof(void*));
-  for(i = 0; i < sizeOfPE; i++) {
-    rus[i] = (void*) (ruinv[i]);
-  }
-  
-  tensorFuserCRT (y, tupSize, ppcrtinvC, totm, peArr, sizeOfPE, rus, (hInt_t*)0);
+  tensorFuserCRT2 (y, tupSize, ppcrtinv, totm, peArr, sizeOfPE, ruinv, (hInt_t*)0);
 
   for (i = 0; i < tupSize; i++) {
     for (hDim_t j = 0; j < totm; j++) {
       CMPLX_IMUL(y[j*tupSize+i], mhatInv[i]);
     }
   }
-  
-  free(rus);
+
 #ifdef STATS
   clock_gettime(CLOCK_REALTIME, &t1);
   crtInvCTime = tsAdd(crtInvCTime, tsSubtract(t1,s1));

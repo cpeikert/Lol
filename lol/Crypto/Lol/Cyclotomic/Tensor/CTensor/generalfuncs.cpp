@@ -1,5 +1,4 @@
 #include "tensorTypes.h"
-#include<zq.cc>
 
 //see note in zq.cc
 hInt_t Zq::q;
@@ -101,7 +100,7 @@ void tensorFuser (void* y, hShort_t tupSize, funcPtr f, hDim_t totm, PrimeExpone
     }
 }
 
-void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t* q)
+void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t* qs)
 {
     hDim_t lts = totm;
     hDim_t rts = 1;
@@ -113,8 +112,30 @@ void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, Prime
         hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
         hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
         lts /= dim;
-        (*f) (y, tupSize, lts, rts, pe, ru[i], q);
-        rts  *= dim;
+        (*f) (y, tupSize, lts, rts, pe, ru[i], qs);
+        rts *= dim;
+    }
+}
+
+template <typename ring> void tensorFuserCRT2 (ring* y, hShort_t tupSize, void (*f) (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, ring* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ring** ru, hInt_t* qs)
+{
+    hDim_t lts = totm;
+    hDim_t rts = 1;
+    hShort_t i;
+
+    for (i = 0; i < sizeOfPE; ++i)
+    {
+        PrimeExponent pe = peArr[i];
+        hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
+        hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
+        lts /= dim;
+        for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+          if(qs) {
+            Zq::q = qs[tupIdx]; // global update
+          }
+          (*f) (y+tupIdx, tupSize, lts, rts, pe, ru[i]+tupIdx);
+        }
+        rts *= dim;
     }
 }
 

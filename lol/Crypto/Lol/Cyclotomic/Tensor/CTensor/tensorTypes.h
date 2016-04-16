@@ -111,7 +111,101 @@ typedef struct
 	double imag;
 } complex_t;
 
-extern hInt_t w;
+//http://stackoverflow.com/a/4421719
+class Zq
+{
+public:
+  hInt_t x;
+
+  static hInt_t q; // declared here, defined in generalfuncs.cpp
+
+  Zq& operator=(const hInt_t& c)
+  {
+    this->x = c;
+    return *this;
+  }
+  Zq& operator+=(const Zq& b)
+  {
+    this->x = (this->x+b.x) % q;
+    return *this;
+  }
+  Zq& operator-=(const Zq& b)
+  {
+    this->x = (this->x-b.x) % q;
+    return *this;
+  }
+   Zq& operator*=(const Zq& b)
+  {
+    this->x = (this->x*b.x) % q;
+    return *this;
+  }
+};
+
+inline Zq operator+(Zq a, const Zq& b)
+{
+  a += b;
+  return a;
+}
+inline Zq operator-(Zq a, const Zq& b)
+{
+  a -= b;
+  return a;
+}
+inline Zq operator*(Zq a, const Zq& b)
+{
+  a *= b;
+  return a;
+}
+
+
+class Complex
+{
+public:
+  double real;
+  double imag;
+
+  Complex& operator=(const hInt_t& c)
+  {
+    this->real = c;
+    this->imag = 0;
+    return *this;
+  }
+  Complex& operator+=(const Complex& b)
+  {
+    this->real = this->real+b.real;
+    this->imag = this->imag+b.imag;
+    return *this;
+  }
+  Complex& operator-=(const Complex& b)
+  {
+    this->real = this->real-b.real;
+    this->imag = this->imag-b.imag;
+    return *this;
+  }
+  Complex& operator*=(const Complex& b)
+  {
+    double a = this->real;
+    this->real = (a*b.real)-(this->imag*b.imag);
+    this->imag = (a*b.imag)+(this->imag*b.real);
+    return *this;
+  }
+};
+
+inline Complex operator+(Complex a, const Complex& b)
+{
+  a += b;
+  return a;
+}
+inline Complex operator-(Complex a, const Complex& b)
+{
+  a -= b;
+  return a;
+}
+inline Complex operator*(Complex a, const Complex& b)
+{
+  a *= b;
+  return a;
+}
 
 #define CMPLX_ADD(a,b)  ((complex_t){((a).real + (b).real), ((a).imag + (b).imag)})
 #define CMPLX_ADD3(a,b,c)  ((complex_t){((a).real + (b).real + (c).real), ((a).imag + (b).imag + (c).imag)})
@@ -153,6 +247,11 @@ typedef void (*normFuncPtr) (void* outputVec, hShort_t tupSize, PrimeExponent pe
 void tensorFuserNorm (void* y, hShort_t tupSize, normFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* output, hInt_t q);
 
 typedef void (*crtFuncPtr) (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, void* ru, hInt_t* q);
-void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t* q);
+void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t* qs);
+
+//#ifdef __cplusplus
+template <typename ring> void tensorFuserCRT2 (ring* y, hShort_t tupSize, void (*f) (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, ring* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ring** ru, hInt_t* qs);
+//#endif
+
 
 #endif /* TENSORTYPES_H_ */
