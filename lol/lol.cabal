@@ -99,13 +99,9 @@ library
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
     Crypto.Lol.Types.Proto
-    Crypto.Lol.Types.Proto.Basis
-    Crypto.Lol.Types.Proto.Coeffs
-    Crypto.Lol.Types.Proto.CycMsg
-    Crypto.Lol.Types.Proto.TensorMsg
-    Crypto.Lol.Types.Proto.Int64List
-    Crypto.Lol.Types.Proto.RealQList
-    Crypto.Lol.Types.Proto.ZqList
+    Crypto.Lol.Types.Proto.R
+    Crypto.Lol.Types.Proto.Rq
+    Crypto.Lol.Types.Proto.RRq
     Crypto.Lol.Types.RealQ
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.ZqBasic

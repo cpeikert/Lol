@@ -20,6 +20,12 @@ import Crypto.Lol.LatticePrelude                         as LP hiding
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
+import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.Proto.R
+import Crypto.Lol.Types.Proto.Rq
+import Crypto.Lol.Types.Proto.RRq
+import Crypto.Lol.Types.RealQ
+import Crypto.Lol.Types.ZqBasic
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Module       as Module (C)
@@ -34,17 +40,14 @@ import Data.Constraint      hiding ((***))
 import Data.Foldable        as F
 import Data.Maybe
 import Data.Serialize
+import Data.Sequence as S (fromList)
 import Data.Traversable     as T
 import Data.Vector          as V hiding (force,(++))
 import Data.Vector.Unboxed  as U hiding (force,(++))
+import Data.Word
+
 import Test.QuickCheck
 import Text.Read (Read(readPrec))
-
-import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Coeffs
-import Crypto.Lol.Types.Proto.TensorMsg
-
-import qualified Data.Sequence as S
 
 -- | An implementation of 'Tensor' backed by repa.
 data RT (m :: Factored) r where
@@ -70,27 +73,68 @@ instance (Serialize r, Unbox r, Fact m) => Serialize (RT m r) where
   put (RT (Arr x)) = put $ AS $ toUnboxed x
   put x = put $ toRT x
 
-instance (Fact m, Protoable [r], ProtoType [r] ~ Coeffs, Unbox r) => Protoable (RT m r) where
-  type ProtoType (RT m r) = TensorMsg
+instance (Fact m) => Protoable (RT m Int64) where
+  type ProtoType (RT m Int64) = R
 
   toProto (RT (Arr xs)) = 
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-    in TensorMsg m $ return $ toProto $ RT.toList xs
+    in R m $ S.fromList $ RT.toList xs
   toProto x@(ZV _) = toProto $ toRT x
 
-  fromProto (TensorMsg m' xs) = 
+  fromProto (R m' xs) = 
     let m = proxy valueFact (Proxy::Proxy m)
         n = proxy totientFact (Proxy::Proxy m)
-    in case xs of
-      Nothing -> error "Neither coeff structure is filled when reading proto stream for RT."
-      (Just cs) ->
-        let xs' = fromProto cs
-            len = F.length xs'
-        in if (m == (fromIntegral m') && len == n)
-           then RT $ Arr $ RT.fromList (Z:.n) xs'
-           else error $ "An error occurred while reading the proto type for RT.\n\
-            \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
-            \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "." 
+        xs' = RT.fromList (Z:.n) $ F.toList xs
+        len = F.length xs
+    in if (m == (fromIntegral m') && len == n)
+       then RT $ Arr xs'
+       else error $ "An error occurred while reading the proto type for RT.\n\
+        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
+        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "." 
+
+instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
+  type ProtoType (RT m (ZqBasic q Int64)) = Rq
+
+  toProto (RT (Arr xs)) = 
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+        q = proxy value (Proxy::Proxy q) :: Int64
+    in Rq m (fromIntegral q) $ S.fromList $ RT.toList $ RT.map lift $ xs
+  toProto x@(ZV _) = toProto $ toRT x
+
+  fromProto (Rq m' q' xs) = 
+    let m = proxy valueFact (Proxy::Proxy m) :: Int
+        q = proxy value (Proxy::Proxy q) :: Int64
+        n = proxy totientFact (Proxy::Proxy m)
+        xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
+        len = F.length xs
+    in if (m == (fromIntegral m') && len == n && (fromIntegral q) == q')
+       then RT $ Arr xs'
+       else error $ "An error occurred while reading the proto type for RT.\n\
+        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
+        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "\n\
+        \Expected q=" ++ (show q) ++ ", got " ++ (show q') ++ "."
+
+instance (Fact m, Reflects q Double) => Protoable (RT m (RealQ q Double)) where
+  type ProtoType (RT m (RealQ q Double)) = RRq
+
+  toProto (RT (Arr xs)) = 
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+        q = proxy value (Proxy::Proxy q) :: Double
+    in RRq m q $ S.fromList $ RT.toList $ RT.map lift $ xs
+  toProto x@(ZV _) = toProto $ toRT x
+
+  fromProto (RRq m' q' xs) = 
+    let m = proxy valueFact (Proxy::Proxy m) :: Int
+        q = proxy value (Proxy::Proxy q) :: Double
+        n = proxy totientFact (Proxy::Proxy m)
+        xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
+        len = F.length xs
+    in if (m == (fromIntegral m') && len == n && q == q')
+       then RT $ Arr xs'
+       else error $ "An error occurred while reading the proto type for RT.\n\
+        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
+        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "\n\
+        \Expected q=" ++ (show (round q :: Int64)) ++ ", got " ++ (show q') ++ "."
 
 instance Eq r => Eq (RT m r) where
   (ZV a) == (ZV b) = a == b

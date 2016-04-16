@@ -21,7 +21,7 @@ import Control.DeepSeq
 import Control.Monad (liftM)
 import Control.Monad.Identity (Identity(..), runIdentity)
 import Control.Monad.Random
-import Control.Monad.Trans (lift)
+import Control.Monad.Trans as T (lift)
 
 import Data.Coerce
 import Data.Constraint  hiding ((***))
@@ -36,6 +36,7 @@ import Data.Vector.Storable          as SV (Vector, (!), replicate, replicateM, 
                                             unsafeWith, zipWith, map, length, unsafeFreeze, thaw)
 import Data.Vector.Storable.Internal (getPtr)
 import Data.Vector.Storable.Mutable  as SM hiding (replicate)
+import Data.Word
 
 import Foreign.Marshal.Utils (with)
 import Foreign.Ptr
@@ -48,20 +49,23 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
 import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
 import Crypto.Lol.GaussRandom
-import Crypto.Lol.LatticePrelude as LP hiding (replicate, unzip, zip, lift)
+import Crypto.Lol.LatticePrelude as LP hiding (replicate, unzip, zip)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
+import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.Proto.R
+import Crypto.Lol.Types.Proto.Rq
+import Crypto.Lol.Types.Proto.RRq
+import Crypto.Lol.Types.RealQ
 import Crypto.Lol.Types.ZqBasic
 
-import System.IO.Unsafe (unsafePerformIO)
-
+import Data.Foldable        as F
 import Data.Serialize
+import Data.Sequence as S (fromList)
 import Data.Vector.Serialize
 
-import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Coeffs
-import Crypto.Lol.Types.Proto.TensorMsg
+import System.IO.Unsafe (unsafePerformIO)
 
 -- EAC A note on Generic and Serialize:
 -- cereal-vector provides Serialize instances for vectors,
@@ -104,27 +108,68 @@ instance (Serialize r, Storable r, Fact m) => Serialize (CT m r) where
   put (CT x) = put x
   put x = put $ toCT x
 
-instance (Fact m, Protoable [r], ProtoType [r] ~ Coeffs, Storable r) => Protoable (CT m r) where
-  type ProtoType (CT m r) = TensorMsg
+instance (Fact m) => Protoable (CT m Int64) where
+  type ProtoType (CT m Int64) = R
 
   toProto (CT (CT' xs)) = 
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-    in TensorMsg m $ return $ toProto $ SV.toList xs
+    in R m $ S.fromList $ SV.toList xs
   toProto x@(ZV _) = toProto $ toCT x
 
-  fromProto (TensorMsg m' xs) = 
+  fromProto (R m' xs) = 
     let m = proxy valueFact (Proxy::Proxy m)
         n = proxy totientFact (Proxy::Proxy m)
-    in case xs of
-      Nothing -> error "Neither coeff structure is filled when reading proto stream for RT."
-      (Just cs) ->
-        let xs' = fromProto cs
-            len = F.length xs'
-        in if (m == (fromIntegral m') && len == n)
-           then CT $ CT' $ SV.fromList xs'
-           else error $ "An error occurred while reading the proto type for RT.\n\
-            \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
-            \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "." 
+        xs' = SV.fromList $ F.toList xs
+        len = F.length xs
+    in if (m == (fromIntegral m') && len == n)
+       then CT $ CT' xs'
+       else error $ "An error occurred while reading the proto type for CT.\n\
+        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
+        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "." 
+
+instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
+  type ProtoType (CT m (ZqBasic q Int64)) = Rq
+
+  toProto (CT (CT' xs)) = 
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+        q = proxy value (Proxy::Proxy q) :: Int64
+    in Rq m (fromIntegral q) $ S.fromList $ SV.toList $ SV.map LP.lift $ xs
+  toProto x@(ZV _) = toProto $ toCT x
+
+  fromProto (Rq m' q' xs) = 
+    let m = proxy valueFact (Proxy::Proxy m) :: Int
+        q = proxy value (Proxy::Proxy q) :: Int64
+        n = proxy totientFact (Proxy::Proxy m)
+        xs' = SV.fromList $ F.toList xs
+        len = F.length xs
+    in if (m == (fromIntegral m') && len == n && (fromIntegral q) == q')
+       then CT $ CT' $ SV.map reduce $ xs'
+       else error $ "An error occurred while reading the proto type for CT.\n\
+        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
+        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "\n\
+        \Expected q=" ++ (show q) ++ ", got " ++ (show q') ++ "."
+
+instance (Fact m, Reflects q Double) => Protoable (CT m (RealQ q Double)) where
+  type ProtoType (CT m (RealQ q Double)) = RRq
+
+  toProto (CT (CT' xs)) = 
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+        q = proxy value (Proxy::Proxy q) :: Double
+    in RRq m q $ S.fromList $ SV.toList $ SV.map LP.lift $ xs
+  toProto x@(ZV _) = toProto $ toCT x
+
+  fromProto (RRq m' q' xs) = 
+    let m = proxy valueFact (Proxy::Proxy m) :: Int
+        q = proxy value (Proxy::Proxy q) :: Double
+        n = proxy totientFact (Proxy::Proxy m)
+        xs' = SV.fromList $ F.toList xs
+        len = F.length xs
+    in if (m == (fromIntegral m') && len == n && q == q')
+       then CT $ CT' $ SV.map reduce xs'
+       else error $ "An error occurred while reading the proto type for CT.\n\
+        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
+        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "\n\
+        \Expected q=" ++ (show (round q :: Int64)) ++ ", got " ++ (show q') ++ "."
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
@@ -239,10 +284,10 @@ instance Tensor CT where
 
   crtFuncs = (,,,,) <$>
     Just (CT . repl) <*>
-    (wrap <$> untag (cZipDispatch dmul) <$> untagT gCoeffsCRT) <*>
-    (wrap <$> untag (cZipDispatch dmul) <$> untagT gInvCoeffsCRT) <*>
-    (wrap <$> untagT ctCRT) <*>
-    (wrap <$> untagT ctCRTInv) 
+    (wrap <$> untag (cZipDispatch dmul) <$> untagT gCoeffsCCT) <*>
+    (wrap <$> untag (cZipDispatch dmul) <$> untagT gInvCoeffsCCT) <*>
+    (wrap <$> untagT ctCCT) <*>
+    (wrap <$> untagT ctCCTInv) 
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
   embedPow = wrap $ runIdentity $ coerceEm embedPow'
@@ -359,19 +404,19 @@ gSqNormDec' :: forall m r .
       => Tagged m (CT' m r -> r)
 gSqNormDec' = return $ (!0) . unCT . unsafePerformIO . withBasicArgs dnorm
 
-ctCRT :: forall m r . (Storable r, CRTrans r, Dispatch r,
+ctCCT :: forall m r . (Storable r, CRTrans r, Dispatch r,
           Fact m)
          => TaggedT m Maybe (CT' m r -> CT' m r)
-ctCRT = do -- in TaggedT m Maybe
+ctCCT = do -- in TaggedT m Maybe
   ru' <- ru
   return $ \x -> unsafePerformIO $ 
     withPtrArray ru' (flip withBasicArgs x . dcrt)
 
--- CTensor CRT^(-1) functions take inverse rus
-ctCRTInv :: (Storable r, CRTrans r, Dispatch r,
+-- CTensor CCT^(-1) functions take inverse rus
+ctCCTInv :: (Storable r, CRTrans r, Dispatch r,
           Fact m)
          => TaggedT m Maybe (CT' m r -> CT' m r)
-ctCRTInv = do -- in Maybe
+ctCCTInv = do -- in Maybe
   mhatInv <- snd <$> crtInfoFact
   ruinv' <- ruInv
   return $ \x -> unsafePerformIO $ 
@@ -414,7 +459,7 @@ cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   totm <- pureT totientFact
   m <- pureT valueFact
   rad <- pureT radicalFact
-  yin <- lift $ realGaussians (var * fromIntegral (m `div` rad)) totm
+  yin <- T.lift $ realGaussians (var * fromIntegral (m `div` rad)) totm
   return $ unsafePerformIO $ 
     withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdec ruptr) (CT' yin))
 
@@ -482,23 +527,23 @@ ruInv = do
         generate pp (\i -> wPow $ -i*pow)) <$>
       pureT ppsFact
 
-gCoeffsCRT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r)
+gCoeffsCCT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r)
   => TaggedT m Maybe (CT' m r)
-gCoeffsCRT = ctCRT <*> return (mulGPow' $ scalarPow' LP.one)
+gCoeffsCCT = ctCCT <*> return (mulGPow' $ scalarPow' LP.one)
 -- It's necessary to call 'fromJust' here: otherwise 
 -- sequencing functions in 'crtFuncs' relies on 'divGPow' having an
 -- implementation in C, which is not true for all types which have a C
 -- implementation of, e.g. 'crt'. In particular, 'Complex Double' has C support
 -- for 'crt', but not for 'divGPow'.
 -- This really breaks the contract of Tensor, so it's probably a bad idea.
---   Someone can get the "crt" and can even pull the function "divGCRT" from Tensor,
+--   Someone can get the "crt" and can even pull the function "divGCCT" from Tensor,
 --   but it will fail when they try to apply it.
 -- As an implementation note if I ever do fix this: the division by rad(m) can be
 -- tricky for Double/Complex Doubles, so be careful! This is why we have a custom
 -- Complex wrapper around NP.Complex.
-gInvCoeffsCRT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r, IntegralDomain r)
+gInvCoeffsCCT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r, IntegralDomain r)
   => TaggedT m Maybe (CT' m r)
-gInvCoeffsCRT = ($ fromJust $ divGPow' $ scalarPow' LP.one) <$> ctCRT
+gInvCoeffsCCT = ($ fromJust $ divGPow' $ scalarPow' LP.one) <$> ctCCT
 
 -- we can't put this in Extension with the rest of the twace/embed fucntions because it needs access to 
 -- the C backend
@@ -506,8 +551,8 @@ twaceCRT' :: forall m m' r .
              (TElt CT r, CRTrans r, m `Divides` m', ZeroTestable r, IntegralDomain r)
              => TaggedT '(m, m') Maybe (Vector r -> Vector r)
 twaceCRT' = tagT $ do -- Maybe monad
-  (CT' g') <- proxyT gCoeffsCRT (Proxy::Proxy m')
-  (CT' gInv) <- proxyT gInvCoeffsCRT (Proxy::Proxy m)
+  (CT' g') <- proxyT gCoeffsCCT (Proxy::Proxy m')
+  (CT' gInv) <- proxyT gInvCoeffsCCT (Proxy::Proxy m)
   embed <- proxyT embedCRT' (Proxy::Proxy '(m,m'))
   indices <- pure $ proxy extIndicesCRT (Proxy::Proxy '(m,m'))
   (_, m'hatinv) <- proxyT crtInfoFact (Proxy::Proxy m')
