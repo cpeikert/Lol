@@ -15,8 +15,10 @@ import System.Random
 newtype CryptoRand g = CryptoRand g deriving (CryptoRandomGen)
 
 intBytes = 
-  let bits = intLog 2 $ (1 + (fromIntegral (maxBound :: Int)) - (fromIntegral (minBound :: Int)) :: Integer)
-  in if (bits `mod` 8) == 0 then bits `div` 8 else error "invalid Int bits in `intBytes`"
+  let bits = intLog 2 (1 + fromIntegral (maxBound :: Int) -
+                             fromIntegral (minBound :: Int) :: Integer)
+  in if (bits `mod` 8) == 0 then bits `div` 8 
+     else error "invalid Int bits in `intBytes`"
 
 bytesToInt :: ByteString -> Int
 bytesToInt bs = case intBytes of
