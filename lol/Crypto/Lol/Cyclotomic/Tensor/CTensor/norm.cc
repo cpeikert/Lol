@@ -41,7 +41,7 @@ void ppNormSqR (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t 
     }
 }
 
-void tensorNormSqR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+extern "C" void tensorNormSqR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     normrCtr++;
     struct timespec s1,t1;
@@ -124,7 +124,7 @@ void ppNormSqD (void* y, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t 
     }
 }
 
-void tensorNormSqD (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+extern "C" void tensorNormSqD (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     normrCtr++;
     struct timespec s1,t1;

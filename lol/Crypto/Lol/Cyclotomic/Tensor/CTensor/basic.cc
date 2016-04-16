@@ -12,7 +12,7 @@ struct timespec addTime = {0,0};
 #endif
 
 //a = zipWith (*) a b
-void mulRq (hShort_t tupSize, hInt_t* a, hInt_t* b, hDim_t totm, hInt_t* qs) {
+extern "C" void mulRq (hShort_t tupSize, hInt_t* a, hInt_t* b, hDim_t totm, hInt_t* qs) {
 #ifdef STATS
     mulCtr++;
     struct timespec s1,t1;
@@ -51,7 +51,7 @@ void mulMq (hShort_t tupSize, hInt_t* a, const hInt_t* b, const hDim_t totm, con
 #endif
 }
 */
-void mulC (hShort_t tupSize, complex_t* a, complex_t* b, hDim_t totm) {
+extern "C" void mulC (hShort_t tupSize, complex_t* a, complex_t* b, hDim_t totm) {
 #ifdef STATS
     mulCtr++;
     struct timespec s1,t1;
@@ -68,7 +68,7 @@ void mulC (hShort_t tupSize, complex_t* a, complex_t* b, hDim_t totm) {
 }
 
 //a = zipWith (+) a b
-void addRq (hShort_t tupSize, hInt_t* a, const hInt_t* b, const hDim_t totm, const hInt_t* qs) {
+extern "C" void addRq (hShort_t tupSize, hInt_t* a, const hInt_t* b, const hDim_t totm, const hInt_t* qs) {
 #ifdef STATS
     addCtr++;
     struct timespec s1,t1;
@@ -126,7 +126,7 @@ void addMq (hInt_t* a, const hInt_t* b, const hDim_t totm, const hByte_t logr, c
 }
 */
 //a = zipWith (+) a b
-void addR (hShort_t tupSize, hInt_t* a, hInt_t* b, hDim_t totm) {
+extern "C" void addR (hShort_t tupSize, hInt_t* a, hInt_t* b, hDim_t totm) {
 #ifdef STATS
     addCtr++;
     struct timespec s1,t1;
@@ -141,7 +141,7 @@ void addR (hShort_t tupSize, hInt_t* a, hInt_t* b, hDim_t totm) {
 #endif
 }
 
-void addC (hShort_t tupSize, complex_t* a, complex_t* b, hDim_t totm) {
+extern "C" void addC (hShort_t tupSize, complex_t* a, complex_t* b, hDim_t totm) {
 #ifdef STATS
     addCtr++;
     struct timespec s1,t1;
@@ -157,7 +157,7 @@ void addC (hShort_t tupSize, complex_t* a, complex_t* b, hDim_t totm) {
 #endif
 }
 
-void addD (hShort_t tupSize, double* a, double* b, hDim_t totm) {
+extern "C" void addD (hShort_t tupSize, double* a, double* b, hDim_t totm) {
 #ifdef STATS
     addCtr++;
     struct timespec s1,t1;

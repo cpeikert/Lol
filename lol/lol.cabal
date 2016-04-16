@@ -58,13 +58,14 @@ library
   Include-dirs: Crypto/Lol/Cyclotomic/Tensor/CTensor
   C-sources: Crypto/Lol/Cyclotomic/Tensor/CTensor/crt.cc,
              Crypto/Lol/Cyclotomic/Tensor/CTensor/basic.cc,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/complex.cc,
              Crypto/Lol/Cyclotomic/Tensor/CTensor/g.cc,
              Crypto/Lol/Cyclotomic/Tensor/CTensor/generalfuncs.cc,
              Crypto/Lol/Cyclotomic/Tensor/CTensor/l.cc,
              Crypto/Lol/Cyclotomic/Tensor/CTensor/norm.cc,
              Crypto/Lol/Cyclotomic/Tensor/CTensor/random.cc,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
-  -- Includes: 
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/zq.cc
+  Includes: Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
   default-language:   Haskell2010
   ghc-options: -fPIC -optc-O3 -fwarn-dodgy-imports
   cc-options: -fPIC -Wall

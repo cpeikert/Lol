@@ -111,100 +111,7 @@ typedef struct
 	double imag;
 } complex_t;
 
-hInt_t q; // the modulus
-
-//http://stackoverflow.com/a/4421719
-class Zq
-{
-public:
-  hInt_t x;
-
-  Zq& operator=(const hInt_t& c)
-  {
-    this->x = c;
-    return *this;
-  }
-  Zq& operator+=(const Zq& b)
-  {
-    this->x = (this->x+b.x) % q;
-    return *this;
-  }
-  Zq& operator-=(const Zq& b)
-  {
-    this->x = (this->x-b.x) % q;
-    return *this;
-  }
-   Zq& operator*=(const Zq& b)
-  {
-    this->x = (this->x*b.x) % q;
-    return *this;
-  }
-};
-
-inline Zq operator+(Zq a, const Zq& b)
-{
-  a += b;
-  return a;
-}
-inline Zq operator-(Zq a, const Zq& b)
-{
-  a -= b;
-  return a;
-}
-inline Zq operator*(Zq a, const Zq& b)
-{
-  a *= b;
-  return a;
-}
-
-class Complex
-{
-public:
-  double real;
-  double imag;
-
-  Complex& operator=(const hInt_t& c)
-  {
-    this->real = c;
-    this->imag = 0;
-    return *this;
-  }
-  Complex& operator+=(const Complex& b)
-  {
-    this->real = this->real+b.real;
-    this->imag = this->imag+b.imag;
-    return *this;
-  }
-  Complex& operator-=(const Complex& b)
-  {
-    this->real = this->real-b.real;
-    this->imag = this->imag-b.imag;
-    return *this;
-  }
-  Complex& operator*=(const Complex& b)
-  {
-    double a = this->real;
-    this->real = (a*b.real)-(this->imag*b.imag);
-    this->imag = (a*b.imag)+(this->imag*b.real);
-    return *this;
-  }
-};
-
-inline Complex operator+(Complex a, const Complex& b)
-{
-  a += b;
-  return a;
-}
-inline Complex operator-(Complex a, const Complex& b)
-{
-  a -= b;
-  return a;
-}
-inline Complex operator*(Complex a, const Complex& b)
-{
-  a *= b;
-  return a;
-}
+extern hInt_t w;
 
 #define CMPLX_ADD(a,b)  ((complex_t){((a).real + (b).real), ((a).imag + (b).imag)})
 #define CMPLX_ADD3(a,b,c)  ((complex_t){((a).real + (b).real + (c).real), ((a).imag + (b).imag + (c).imag)})
@@ -239,16 +146,6 @@ const  char  *tsShow (struct  timespec  binaryTime, bool  inLocal, const  char  
 
 void getStats();
 
-void mulRq (hShort_t tupSize, hInt_t* a, hInt_t* b, hDim_t totm, hInt_t* qs);
-//void mulMq (hInt_t* a, const hInt_t* b, const hDim_t totm, const hByte_t logr, const hInt_t k, const hInt_t q);
-void mulC (hShort_t tupSize, complex_t* a, complex_t* b, hDim_t totm);
-
-void addR (hShort_t tupSize, hInt_t* a, hInt_t* b, hDim_t totm);
-void addRq (hShort_t tupSize, hInt_t* a, const hInt_t* b, const hDim_t totm, const hInt_t* qs);
-//void addMq (hInt_t* a, const hInt_t* b, const hDim_t totm, const hByte_t logr, const hInt_t k, const hInt_t q);
-void addC (hShort_t tupSize, complex_t* a, complex_t* b, hDim_t totm);
-void addD (hShort_t tupSize, double* a, double* b, hDim_t totm);
-
 typedef void (*funcPtr) (void* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts, hInt_t* qs);
 void tensorFuser (void* y, hShort_t tupSize, funcPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
 
@@ -257,69 +154,5 @@ void tensorFuserNorm (void* y, hShort_t tupSize, normFuncPtr f, hDim_t totm, Pri
 
 typedef void (*crtFuncPtr) (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, void* ru, hInt_t* q);
 void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t* q);
-
-void tensorGPowR (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorGPowRq (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
-
-void tensorGPowC (hShort_t tupSize, complex_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorGDecR (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorGDecRq (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
-
-void tensorGInvPowR (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorGInvPowRq (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
-
-void tensorGInvPowC (hShort_t tupSize, complex_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorGInvDecR (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorGInvDecRq (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
-
-void tensorGCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** gcoeffs, hInt_t* qs);
-
-void tensorGInvCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** gcoeffs, hInt_t* qs);
-
-void tensorGCRTC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, complex_t** gcoeffs);
-
-void tensorGInvCRTC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, complex_t** gcoeffs);
-
-
-
-void tensorLRq (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
-
-void tensorLR (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorLDouble (hShort_t tupSize, double* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorLC (hShort_t tupSize, complex_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorLInvRq (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
-
-void tensorLInvR (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorLInvDouble (hShort_t tupSize, double* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorLInvC (hShort_t tupSize, complex_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-
-
-void tensorCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** ru, hInt_t* qs);
-
-void tensorCRTC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, complex_t** ru);
-
-void tensorCRTInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** ru, hInt_t* minv, hInt_t* qs);
-
-void tensorCRTInvC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, complex_t** ru, complex_t* minv);
-
-
-
-void tensorGaussianDec (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, complex_t** ru);
-
-void tensorNormSqR (hShort_t tupSize, hInt_t* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
-
-void tensorNormSqD (hShort_t tupSize, double* x, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE);
 
 #endif /* TENSORTYPES_H_ */

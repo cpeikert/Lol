@@ -278,8 +278,8 @@ void gInvPowC (complex_t* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p)
         hDim_t idx = tensorOffset + i*rts;
         complex_t z = y[idx*tupSize];
 
-        complex_t c1 = ((complex_t){p-1-i, 0});
-        complex_t c2 = ((complex_t){i+1, 0});
+        complex_t c1 = ((complex_t){(double)(p-1-i), 0});
+        complex_t c2 = ((complex_t){(double)(i+1), 0});
         complex_t t1 = CMPLX_MUL(c1, lelts);
         complex_t t2 = CMPLX_MUL(c2, relts);
         y[idx*tupSize] = CMPLX_SUB(t1,t2);
@@ -542,7 +542,7 @@ struct timespec gcrqTime = {0,0};
 struct timespec gccTime = {0,0};
 #endif
 
-void tensorGPowR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorGPowR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
 #ifdef STATS
     gprCtr++;
@@ -557,7 +557,7 @@ void tensorGPowR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr
 #endif
 }
 
-void tensorGPowRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
+extern "C" void tensorGPowRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
 #ifdef STATS
     gprqCtr++;
@@ -584,7 +584,7 @@ void tensorGPowRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peAr
 #endif
 }
 
-void tensorGPowC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorGPowC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
 #ifdef STATS
     gpcCtr++;
@@ -599,7 +599,7 @@ void tensorGPowC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* pe
 #endif
 }
 
-void tensorGDecR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorGDecR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
 #ifdef STATS
     gdrCtr++;
@@ -613,7 +613,7 @@ void tensorGDecR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr
 #endif
 }
 
-void tensorGDecRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
+extern "C" void tensorGDecRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
 #ifdef STATS
     gdrqCtr++;
@@ -639,7 +639,7 @@ void tensorGDecRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peAr
 #endif
 }
 
-void tensorGInvPowR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorGInvPowR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
 #ifdef STATS
     giprCtr++;
@@ -654,7 +654,7 @@ void tensorGInvPowR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* pe
 #endif
 }
 
-void tensorGInvPowRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
+extern "C" void tensorGInvPowRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
 #ifdef STATS
     giprqCtr++;
@@ -680,7 +680,7 @@ void tensorGInvPowRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* p
 #endif
 }
 
-void tensorGInvPowC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorGInvPowC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
 #ifdef STATS
     gipcCtr++;
@@ -695,7 +695,7 @@ void tensorGInvPowC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent*
 #endif
 }
 
-void tensorGInvDecR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorGInvDecR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
 #ifdef STATS
     gidrCtr++;
@@ -709,7 +709,7 @@ void tensorGInvDecR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* pe
 #endif
 }
 
-void tensorGInvDecRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
+extern "C" void tensorGInvDecRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
 #ifdef STATS
     gidrqCtr++;
@@ -736,7 +736,7 @@ void tensorGInvDecRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* p
 #endif
 }
 
-void tensorGCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** gcoeffs, hInt_t* qs)
+extern "C" void tensorGCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** gcoeffs, hInt_t* qs)
 {
 #ifdef STATS
     gcrqCtr++;
@@ -778,7 +778,8 @@ void tensorGCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peAr
     gcrqTime = tsAdd(gcrqTime, tsSubtract(t1,s1));
 #endif
 }
-void tensorGCRTC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, complex_t** gcoeffs)
+
+extern "C" void tensorGCRTC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, complex_t** gcoeffs)
 {
 #ifdef STATS
     gccCtr++;
@@ -811,14 +812,16 @@ void tensorGCRTC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* pe
     gccTime = tsAdd(gccTime, tsSubtract(t1,s1));
 #endif
 }
-void tensorGInvCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** gcoeffs, hInt_t* qs)
+
+extern "C" void tensorGInvCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** gcoeffs, hInt_t* qs)
 {
 #ifdef STATS
     gicrqCtr++;
 #endif
     tensorGCRTRq (tupSize, y, totm, peArr, sizeOfPE, gcoeffs, qs); //output is already shifted
 }
-void tensorGInvCRTC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, complex_t** gcoeffs)
+
+extern "C" void tensorGInvCRTC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, complex_t** gcoeffs)
 {
 #ifdef STATS
     giccCtr++;

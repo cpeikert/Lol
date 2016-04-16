@@ -1,13 +1,11 @@
 #include "tensorTypes.h"
+#include "complex.cc"
+#include "zq.cc"
 #include <time.h>
 #include <stdlib.h>
 
 // there should be a special cases that do NOT require temp space to be allocated for all primes *smaller* than DFTP_GENERIC_SIZE
 #define DFTP_GENERIC_SIZE 11
-
-
-
-
 
 #ifdef STATS
 int crtRqCtr = 0;
@@ -481,7 +479,7 @@ void ppcrtRq (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts,
   }
   for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
     Zq* z = ((Zq*)y)+tupIdx;
-    q = qs[tupIdx]; // global update
+    Zq::q = qs[tupIdx]; // global update
     Zq* ruOffset = ((Zq*)ru)+tupIdx;
     crtp (z, tupSize, lts*mprime, rts, p, mprime, ruOffset);
     crtTwiddle (z, tupSize, lts, rts, pe, ruOffset);
@@ -520,7 +518,7 @@ void ppcrtinvRq (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts,
   }
   for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
     Zq* z = ((Zq*)y)+tupIdx;
-    q = qs[tupIdx]; // global update
+    Zq::q = qs[tupIdx]; // global update
     Zq* ruOffset = ((Zq*)ru)+tupIdx;
 
     pe.exponent -= 1;
@@ -536,7 +534,7 @@ void ppcrtinvRq (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts,
 }
 
 // EAC: Somebody who knows C/C++ should find a better way to handle pointers-to-pointers in a generic way
-void tensorCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** ru, hInt_t* qs)
+extern "C" void tensorCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** ru, hInt_t* qs)
 {
   hDim_t i;
 #ifdef STATS
@@ -601,7 +599,7 @@ void tensorCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr
 }
 
 //takes inverse rus
-void tensorCRTInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, 
+extern "C" void tensorCRTInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, 
                     hInt_t** ruinv, hInt_t* mhatInv, hInt_t* qs)
 {
   hDim_t i;
@@ -630,7 +628,7 @@ void tensorCRTInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* pe
   printf("]\n");
 #endif
 
-void** rus = (void**)malloc(sizeOfPE*sizeof(void*));
+  void** rus = (void**)malloc(sizeOfPE*sizeof(void*));
   for(i = 0; i < sizeOfPE; i++) {
     rus[i] = (void*) (ruinv[i]);
   }
@@ -761,7 +759,7 @@ void ppcrtinvC (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent
   }
 }
 
-void tensorCRTC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Complex** ru)
+extern "C" void tensorCRTC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Complex** ru)
 {
 #ifdef STATS
   struct timespec s1,t1;
@@ -794,7 +792,7 @@ void tensorCRTC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr
 }
 
 //takes inverse rus
-void tensorCRTInvC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, 
+extern "C" void tensorCRTInvC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, 
                     hShort_t sizeOfPE, Complex** ruinv, Complex* mhatInv)
 {
 #ifdef STATS

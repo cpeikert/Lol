@@ -1,7 +1,6 @@
-
+#include "tensorTypes.h"
 #include <math.h>
 #include <stdlib.h>
-#include "tensorTypes.h"
 
 // this function takes *inverse* RUs, so no negation is needed on the indexing
 // I had been negating the ru-idx, but this was causing a *negative* mod, resulting in a hard-to-find bug
@@ -59,7 +58,7 @@ void ppD (void *y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, v
 }
 
 //the contents of y will be destroyed, but should be initialized in Haskell-land to independent Guassians over the reals
-void tensorGaussianDec (hShort_t tupSize, double *y, hDim_t totm, PrimeExponent *peArr, hShort_t sizeOfPE, complex_t** ruinv)
+extern "C" void tensorGaussianDec (hShort_t tupSize, double *y, hDim_t totm, PrimeExponent *peArr, hShort_t sizeOfPE, complex_t** ruinv)
 {
   void** ruinvs = (void**)malloc(sizeOfPE*sizeof(void*));
   hShort_t i;

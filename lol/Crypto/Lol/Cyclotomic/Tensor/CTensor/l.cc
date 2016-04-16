@@ -263,7 +263,7 @@ struct timespec licTime = {0,0};
 #endif
 
 
-void tensorLRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs) {
+extern "C" void tensorLRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs) {
 #ifdef STATS
     lrqCtr++;
     struct timespec s1,t1;
@@ -295,7 +295,7 @@ void tensorLRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, 
 #endif
 }
 
-void tensorLR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+extern "C" void tensorLR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     lrCtr++;
     struct timespec s1,t1;
@@ -320,7 +320,7 @@ void tensorLR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, h
 #endif
 }
 
-void tensorLDouble (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+extern "C" void tensorLDouble (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     ldCtr++;
     struct timespec s1,t1;
@@ -345,7 +345,7 @@ void tensorLDouble (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent* peA
 #endif
 }
 
-void tensorLC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+extern "C" void tensorLC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     lcCtr++;
     struct timespec s1,t1;
@@ -370,7 +370,7 @@ void tensorLC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr
 #endif
 }
 
-void tensorLInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs) {
+extern "C" void tensorLInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs) {
 #ifdef STATS
     lirqCtr++;
     struct timespec s1,t1;
@@ -393,7 +393,7 @@ void tensorLInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peAr
 #endif
 }
 
-void tensorLInvR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+extern "C" void tensorLInvR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     lirCtr++;
     struct timespec s1,t1;
@@ -406,7 +406,7 @@ void tensorLInvR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr
 #endif
 }
 
-void tensorLInvDouble (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+extern "C" void tensorLInvDouble (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     lidCtr++;
     struct timespec s1,t1;
@@ -419,7 +419,7 @@ void tensorLInvDouble (hShort_t tupSize, double* y, hDim_t totm, PrimeExponent* 
 #endif
 }
 
-void tensorLInvC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
+extern "C" void tensorLInvC (hShort_t tupSize, complex_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE) {
 #ifdef STATS
     licCtr++;
     struct timespec s1,t1;
