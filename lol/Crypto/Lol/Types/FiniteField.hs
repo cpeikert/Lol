@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             GeneralizedNewtypeDeriving, MultiParamTypeClasses,
+             GeneralizedNewtypeDeriving, InstanceSigs, MultiParamTypeClasses,
              NoImplicitPrelude, PolyKinds, RebindableSyntax,
              RoleAnnotations, ScopedTypeVariables, TypeFamilies,
              UndecidableInstances #-}
@@ -69,20 +69,25 @@ instance (GFCtx fp d) => Field.C (GF fp d) where
           in \(GF f) -> let (_,(a,_)) = extendedGCD f g
                            in GF a
 
-instance (GFCtx fp d) => CRTrans (GF fp d) where
+instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
 
-  crtInfo m = (,) <$> omegaPow <*> scalarInv
+  crtInfo :: forall m . (Reflects m Int) => TaggedT m Maybe (CRTInfo (GF fp d))
+  crtInfo = tagT $ (,) <$> omegaPow <*> scalarInv
     where
+      omegaPow :: Maybe (Int -> GF fp d)
       omegaPow =
         let size' = proxy size (Proxy :: Proxy (GF fp d))
-            (q,r) = (size'-1) `quotRem` m
+            mval = proxy value (Proxy :: Proxy m)
+            (q,r) = (size'-1) `quotRem` mval
             gen = head $ filter isPrimitive values
             omega = gen^q
-            omegaPows = V.iterateN m (*omega) one
+            omegaPows = V.iterateN mval (*omega) one
         in if r == 0
-           then Just $ (omegaPows V.!) . (`mod` m)
+           then Just $ (omegaPows V.!) . (`mod` mval)
            else Nothing
-      scalarInv = Just $ recip $ fromIntegral $ valueHat m
+      scalarInv :: Maybe (GF fp d)
+      scalarInv = Just $ recip $ fromIntegral $ valueHat $ 
+                  (proxy value (Proxy::Proxy m) :: Int)
 
 newtype TensorCoeffs a = Coeffs {unCoeffs :: [a]} deriving (Additive.C)
 instance (Additive fp, Ring (GF fp d), Reflects d Int)

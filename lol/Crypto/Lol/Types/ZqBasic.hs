@@ -122,10 +122,12 @@ instance (Reflects p z, ReflectsTI q z,
 -- Therefore, outputs for different values of @m@ are consistent,
 -- i.e., @omega_{m'}^(m'/m) = omega_m@.
 
-principalRootUnity :: forall q z . (ReflectsTI q z, Enumerable (ZqBasic q z))
-                      => Int -> Maybe (Int -> ZqBasic q z)
+principalRootUnity ::
+    forall m q z . (Reflects m Int, ReflectsTI q z, Enumerable (ZqBasic q z))
+               => TaggedT m Maybe (Int -> ZqBasic q z)
 principalRootUnity =        -- use Integers for all intermediate calcs
     let qval = fromIntegral $ (proxy value (Proxy::Proxy q) :: z)
+        mval = proxy value (Proxy::Proxy m)
         -- order of Zq^* (assuming q prime)
         order = qval-1
         -- the primes dividing the order of Zq^*
@@ -134,27 +136,26 @@ principalRootUnity =        -- use Integers for all intermediate calcs
         exps = div order <$> pfactors
         -- whether an element is a generator of Zq^*
         isGen x = (x^order == one) && all (\e -> x^e /= one) exps
-        -- for simplicity, require q to be prime
-    in if isPrime qval
-       then \m -> let (mq,mr) = order `divMod` fromIntegral m
-                  in if mr == 0
-                     then let omega = head (filter isGen values) ^ mq
-                              omegaPows = V.iterateN m (*omega) one
-                          in Just $ (omegaPows V.!) . (`mod` m)
-                     else Nothing
-       else const Nothing       -- fail if q composite
+    in tagT $ if isPrime qval -- for simplicity, require q to be prime
+              then let (mq,mr) = order `divMod` fromIntegral mval
+                   in if mr == 0
+                      then let omega = head (filter isGen values) ^ mq
+                               omegaPows = V.iterateN mval (*omega) one
+                           in Just $ (omegaPows V.!) . (`mod` mval)
+                      else Nothing
+              else Nothing       -- fail if q composite
 
+mhatInv :: forall m q z . (Reflects m Int, ReflectsTI q z, PID z)
+           => TaggedT m Maybe (ZqBasic q z)
+mhatInv = let qval = proxy value (Proxy::Proxy q)
+          in peelT $ (fmap reduce' . (`modinv` qval) . fromIntegral) <$>
+                 valueHat <$> (value :: Tagged m Int)
 
 -- instance of CRTrans
 instance (ReflectsTI q z, PID z, Enumerable (ZqBasic q z))
-         => CRTrans (ZqBasic q z) where
+         => CRTrans Maybe (ZqBasic q z) where
 
-  crtInfo =
-    --DT.trace ("ZqBasic.crtInfo: q = " ++
-    --          show (proxy value (Proxy::Proxy q) :: z)) $
-    let qval :: z = proxy value (Proxy::Proxy q)
-    in \m -> (,) <$> principalRootUnity m <*>
-                     (reduce' <$> fromIntegral (valueHat m) `modinv` qval)
+  crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
 -- instance of CRTEmbed
 instance (ReflectsTI q z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
@@ -182,7 +183,7 @@ instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
 instance (ReflectsTI q z, Ring z) => Ring.C (ZqBasic q z) where
   {-# INLINABLE (*) #-}
   (ZqB x) * (ZqB y) = reduce' $ x * y
-    
+
   {-# INLINABLE fromInteger #-}
   fromInteger =
     let qval = toInteger (proxy value (Proxy::Proxy q) :: z)
@@ -244,7 +245,7 @@ instance (ReflectsTI q z, Ring z, ZeroTestable z, Reflects b z)
               in tag . decomp radices . lift
 
 -- | Yield the error vector for a noisy multiple of the gadget (all
--- over the integers). 
+-- over the integers).
 correctZ :: forall z . (RealIntegral z)
             => z                   -- ^ modulus @q@
             -> z                   -- ^ base @b@
@@ -254,7 +255,7 @@ correctZ q b =
   let gadZ = gadgetZ b q
       k = length gadZ
       gadlast = last gadZ
-  in \v -> 
+  in \v ->
     if length v /= k
     then error $ "correctZ: wrong length: was " ++ show (length v) ++", expected " ++ show k
     else let (w, x) = barBtRnd (q `div` b) v

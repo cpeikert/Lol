@@ -254,7 +254,7 @@ fromJust' :: String -> Maybe a -> a
 fromJust' str = fromMaybe (error str)
 
 -- | Apply any applicative to a Tagged value.
-pureT :: Applicative f => TaggedT t Identity a -> TaggedT t f a
+pureT :: Applicative f => Tagged t a -> TaggedT t f a
 pureT = mapTaggedT (pure . runIdentity)
 
 -- | Expose the monad of a tagged value.
