@@ -6,28 +6,57 @@ import "lol.proto";
 // instead, you have to acutally copy lol.proto into the same directory as lwe.proto
 // and then run `hprotoc lwe.proto`.
 
-message LWESample {
-  required CycMsg a = 1;
-  required CycMsg b = 2;
+message ContLWESample {
+  required Rq a = 1;
+  required RRq b = 2;
 }
 
-message LWEInstance {
-  enum InstType {
-    ContLWE = 0;
-    DiscLWE = 1;
-    LWR = 2;
-  }
-  required InstType instType = 1;
-  required uint32 id = 2;
-  required uint64 m = 3;
-  required uint64 q = 4;
-  required double svar = 5;
-  required double bound = 6;
-  repeated LWESample samples = 7;
+message DiscLWESample {
+  required Rq a = 1;
+  required Rq b = 2;
+}
+
+message LWRSample {
+  required Rq a = 1;
+  required Rq b = 2;
+}
+
+message ContLWEInstance {
+  required uint32 id = 1;
+  required uint64 m = 2;
+  required uint64 q = 3;
+  required double svar = 4;
+  required double bound = 5;
+  repeated ContLWESample samples = 6;
+}
+
+message DiscLWEInstance {
+  required uint32 id = 1;
+  required uint64 m = 2;
+  required uint64 q = 3;
+  required double svar = 4;
+  required uint64 bound = 5;
+  repeated DiscLWESample samples = 6;
+}
+
+message LWRInstance {
+  required uint32 id = 1;
+  required uint64 m = 2;
+  required uint64 q = 3;
+  required uint64 p = 4; // q' in Haskell, for q > p=q'
+  repeated LWRSample samples = 5;
 }
 
 message LWESecret {
   required uint32 id = 1;
   required uint64 m = 2;
-  required CycMsg secret = 3;
+  required R secret = 3;
+}
+
+message Instance {
+  oneof instType {
+    ContLWEInstance clweinst = 1;
+    DiscLWEInstance dlweinst = 2;
+    LWRInstance lwrinst = 3;
+  }
 }

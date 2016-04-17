@@ -141,7 +141,6 @@ printPassFail str pass e = do
   liftIO $ setSGR [SetColor Foreground Vivid Black]
   return val
 
-
 -- | Get a list of challenge names by getting all directory contents and filtering
 -- on all directories whose first five characters are "chall".
 getChallengeList :: FilePath -> IO [String]

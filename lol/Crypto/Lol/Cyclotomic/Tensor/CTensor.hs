@@ -1,10 +1,10 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, GADTs,
-             FlexibleContexts, FlexibleInstances, TypeOperators, PolyKinds,
-             GeneralizedNewtypeDeriving, InstanceSigs, RoleAnnotations,
-             MultiParamTypeClasses, NoImplicitPrelude, StandaloneDeriving,
-             ScopedTypeVariables, TupleSections, TypeFamilies, RankNTypes,
-             TypeSynonymInstances, UndecidableInstances,
-             RebindableSyntax #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
+             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving,
+             InstanceSigs, MultiParamTypeClasses, NoImplicitPrelude,
+             PolyKinds, RankNTypes, RebindableSyntax, RoleAnnotations,
+             ScopedTypeVariables, StandaloneDeriving, TupleSections,
+             TypeFamilies, TypeOperators, TypeSynonymInstances,
+             UndecidableInstances #-}
 
 -- | Wrapper for a C implementation of the 'Tensor' interface.
 
@@ -15,33 +15,32 @@ import Algebra.Additive     as Additive (C)
 import Algebra.Module       as Module (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
-import Control.Applicative hiding ((*>))
-import Control.Arrow ((***))
+import Control.Applicative    hiding ((*>))
+import Control.Arrow          ((***))
 import Control.DeepSeq
-import Control.Monad (liftM)
-import Control.Monad.Identity (Identity(..), runIdentity)
+import Control.Monad.Identity (Identity (..), runIdentity)
 import Control.Monad.Random
 import Control.Monad.Trans as T (lift)
 
 import Data.Coerce
-import Data.Constraint  hiding ((***))
-import Data.Foldable as F
+import Data.Constraint              hiding ((***))
+import Data.Foldable                as F
 import Data.Int
 import Data.Maybe
-import Data.Traversable as T
-import Data.Vector.Generic           as V (zip, unzip, fromList, toList)
-import Data.Vector.Storable          as SV (Vector, (!), replicate, replicateM, thaw, convert, foldl',
-                                            unsafeSlice, mapM, fromList, toList,
-                                            generate, foldl1',
-                                            unsafeWith, zipWith, map, length, unsafeFreeze, thaw)
-import Data.Vector.Storable.Internal (getPtr)
-import Data.Vector.Storable.Mutable  as SM hiding (replicate)
+import Data.Traversable             as T
+import Data.Vector.Generic          as V (fromList, toList, unzip)
+import Data.Vector.Storable         as SV (Vector, convert, foldl',
+                                           foldl1', fromList, generate,
+                                           length, map, mapM, replicate,
+                                           replicateM, thaw, thaw, toList,
+                                           unsafeFreeze, unsafeSlice,
+                                           unsafeWith, zipWith, (!))
+import Data.Vector.Storable.Mutable as SM hiding (replicate)
 import Data.Word
 
 import Foreign.Marshal.Utils (with)
 import Foreign.Ptr
-import Foreign.Storable        (Storable (..))
-import Test.QuickCheck         hiding (generate)
+import Test.QuickCheck       hiding (generate)
 import Text.Read (Read(readPrec))
 
 import Crypto.Lol.CRTrans
@@ -76,7 +75,7 @@ import System.IO.Unsafe (unsafePerformIO)
 -- Perhaps easiest thing to do is to define a custom Serialize instance.
 
 -- | Newtype wrapper around a Vector.
-newtype CT' (m :: Factored) r = CT' { unCT :: Vector r } 
+newtype CT' (m :: Factored) r = CT' { unCT :: Vector r }
                               deriving (Show, Eq, NFData, Read, Serialize)
 
 -- the first argument, though phantom, affects representation
@@ -86,7 +85,7 @@ type role CT' representational nominal
 -- element types
 
 -- | An implementation of 'Tensor' backed by C code.
-data CT (m :: Factored) r where 
+data CT (m :: Factored) r where
   CT :: Storable r => CT' m r -> CT m r
   ZV :: IZipVector m r -> CT m r
 
@@ -226,7 +225,7 @@ instance (Fact m, Ring r, Storable r, Dispatch r)
 
 instance (ZeroTestable r, Storable r, Fact m)
          => ZeroTestable.C (CT m r) where
-  --{-# INLINABLE isZero #-} 
+  --{-# INLINABLE isZero #-}
   isZero (CT (CT' a)) = SV.foldl' (\ b x -> b && isZero x) True a
   isZero (ZV v) = isZero v
 
@@ -283,11 +282,11 @@ instance Tensor CT where
   divGDec = wrapM $ Just . untag (basicDispatch dginvdec)
 
   crtFuncs = (,,,,) <$>
-    Just (CT . repl) <*>
-    (wrap <$> untag (cZipDispatch dmul) <$> untagT gCoeffsCCT) <*>
-    (wrap <$> untag (cZipDispatch dmul) <$> untagT gInvCoeffsCCT) <*>
-    (wrap <$> untagT ctCCT) <*>
-    (wrap <$> untagT ctCCTInv) 
+    return (CT . repl) <*>
+    (wrap <$> untag (cZipDispatch dmul) <$> gCRT) <*>
+    (wrap <$> untag (cZipDispatch dmul) <$> gInvCRT) <*>
+    (wrap <$> untagT ctCRT) <*>
+    (wrap <$> untagT ctCRTInv)
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
   embedPow = wrap $ runIdentity $ coerceEm embedPow'
@@ -318,11 +317,8 @@ instance Tensor CT where
   zipWithT f (CT (CT' v1)) (CT (CT' v2)) = CT $ CT' $ SV.zipWith f v1 v2
   zipWithT f v1 v2 = zipWithT f (toCT v1) (toCT v2)
 
-  unzipTElt (CT (CT' v)) = (CT . CT') *** (CT . CT') $ unzip v
-  unzipTElt v = unzipTElt $ toCT v
-
-  unzipT v@(CT _) = unzipT $ toZV v
-  unzipT (ZV v) = ZV *** ZV $ unzipIZV v
+  unzipT (CT (CT' v)) = (CT . CT') *** (CT . CT') $ unzip v
+  unzipT v = unzipT $ toCT v
 
   {-# INLINABLE entailIndexT #-}
   {-# INLINABLE entailEqT #-}
@@ -350,7 +346,6 @@ instance Tensor CT where
   {-# INLINABLE fmapT #-}
   {-# INLINABLE fmapTM #-}
   {-# INLINABLE zipWithT #-}
-  {-# INLINABLE unzipTElt #-}
   {-# INLINABLE unzipT #-}
 
 
@@ -362,13 +357,13 @@ coerceEm = (coerce <$>) . untagT
 
 -- | Useful coersion for defining @coeffs@ in the @Tensor@
 -- interface. Using 'coerce' alone is insufficient for type inference.
-coerceCoeffs :: (Fact m, Fact m') 
+coerceCoeffs :: (Fact m, Fact m')
   => Tagged '(m,m') (Vector r -> [Vector r]) -> CT' m' r -> [CT' m r]
 coerceCoeffs = coerce
 
 -- | Useful coersion for defining @powBasisPow@ and @crtSetDec@ in the @Tensor@
 -- interface. Using 'coerce' alone is insufficient for type inference.
-coerceBasis :: 
+coerceBasis ::
   (Fact m, Fact m')
   => Tagged '(m,m') [Vector r] -> Tagged m [CT' m' r]
 coerceBasis = coerce
@@ -376,11 +371,12 @@ coerceBasis = coerce
 mulGPow' :: (TElt CT r, Fact m, Additive r) => CT' m r -> CT' m r
 mulGPow' = untag $ basicDispatch dmulgpow
 
-divGPow' :: forall m r . (TElt CT r, Fact m, IntegralDomain r, ZeroTestable r) => CT' m r -> Maybe (CT' m r)
+divGPow' :: (TElt CT r, Fact m, IntegralDomain r, ZeroTestable r)
+            => CT' m r -> Maybe (CT' m r)
 divGPow' = untag $ checkDiv $ basicDispatch dginvpow
 
-withBasicArgs :: forall m r . (Fact m, Storable r) 
-  => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()) 
+withBasicArgs :: forall m r . (Fact m, Storable r)
+  => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
      -> CT' m r -> IO (CT' m r)
 withBasicArgs f =
   let factors = proxy (marshalFactors <$> ppsFact) (Proxy::Proxy m)
@@ -393,43 +389,37 @@ withBasicArgs f =
         f pout totm pfac numFacts))
     CT' <$> unsafeFreeze yout
 
-basicDispatch :: forall m r .
-     (Storable r, Fact m, Additive r)
-      => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
-         -> Tagged m (CT' m r -> CT' m r)
+basicDispatch :: (Storable r, Fact m, Additive r)
+                 => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
+                     -> Tagged m (CT' m r -> CT' m r)
 basicDispatch f = return $ unsafePerformIO . withBasicArgs f
 
-gSqNormDec' :: forall m r .
-     (Storable r, Fact m, Additive r, Dispatch r)
-      => Tagged m (CT' m r -> r)
+gSqNormDec' :: (Storable r, Fact m, Additive r, Dispatch r)
+               => Tagged m (CT' m r -> r)
 gSqNormDec' = return $ (!0) . unCT . unsafePerformIO . withBasicArgs dnorm
 
-ctCCT :: forall m r . (Storable r, CRTrans r, Dispatch r,
-          Fact m)
-         => TaggedT m Maybe (CT' m r -> CT' m r)
-ctCCT = do -- in TaggedT m Maybe
+ctCRT :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
+         => TaggedT m mon (CT' m r -> CT' m r)
+ctCRT = do
   ru' <- ru
-  return $ \x -> unsafePerformIO $ 
+  return $ \x -> unsafePerformIO $
     withPtrArray ru' (flip withBasicArgs x . dcrt)
 
--- CTensor CCT^(-1) functions take inverse rus
-ctCCTInv :: (Storable r, CRTrans r, Dispatch r,
-          Fact m)
-         => TaggedT m Maybe (CT' m r -> CT' m r)
-ctCCTInv = do -- in Maybe
-  mhatInv <- snd <$> crtInfoFact
+-- CTensor CRT^(-1) functions take inverse rus
+ctCRTInv :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
+         => TaggedT m mon (CT' m r -> CT' m r)
+ctCRTInv = do
+  mhatInv <- snd <$> crtInfo
   ruinv' <- ruInv
-  return $ \x -> unsafePerformIO $ 
+  return $ \x -> unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinv ruptr))
 
-checkDiv :: forall m r . 
-  (IntegralDomain r, Storable r, ZeroTestable r, 
-   Fact m)
+checkDiv :: (Storable r, IntegralDomain r, ZeroTestable r, Fact m)
     => Tagged m (CT' m r -> CT' m r) -> Tagged m (CT' m r -> Maybe (CT' m r))
 checkDiv f = do
   f' <- f
   oddRad' <- fromIntegral <$> oddRadicalFact
-  return $ \x -> 
+  return $ \x ->
     let (CT' y) = f' x
     in CT' <$> SV.mapM (`divIfDivis` oddRad') y
 
@@ -460,7 +450,7 @@ cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   m <- pureT valueFact
   rad <- pureT radicalFact
   yin <- T.lift $ realGaussians (var * fromIntegral (m `div` rad)) totm
-  return $ unsafePerformIO $ 
+  return $ unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdec ruptr) (CT' yin))
 
 instance (Arbitrary r, Fact m, Storable r) => Arbitrary (CT' m r) where
@@ -490,25 +480,22 @@ repl :: forall m r . (Fact m, Storable r) => r -> CT' m r
 repl = let n = proxy totientFact (Proxy::Proxy m)
        in coerce . SV.replicate n
 
-replM :: forall m r mon . (Fact m, Storable r, Monad mon) 
+replM :: forall m r mon . (Fact m, Storable r, Monad mon)
          => mon r -> mon (CT' m r)
 replM = let n = proxy totientFact (Proxy::Proxy m)
         in fmap coerce . SV.replicateM n
 
---{-# INLINE scalarPow' #-}
 scalarPow' :: forall m r . (Fact m, Additive r, Storable r) => r -> CT' m r
 -- constant-term coefficient is first entry wrt powerful basis
-scalarPow' = 
+scalarPow' =
   let n = proxy totientFact (Proxy::Proxy m)
   in \r -> CT' $ generate n (\i -> if i == 0 then r else zero)
 
-ru, ruInv :: forall r m . 
-   (CRTrans r, Fact m, Storable r)
-   => TaggedT m Maybe [Vector r]
---{-# INLINE ru #-}
+ru, ruInv :: (CRTrans mon r, Fact m, Storable r)
+   => TaggedT m mon [Vector r]
 ru = do
   mval <- pureT valueFact
-  wPow <- fst <$> crtInfoFact
+  wPow <- fst <$> crtInfo
   LP.map
     (\(p,e) -> do
         let pp = p^e
@@ -516,10 +503,9 @@ ru = do
         generate pp (wPow . (*pow))) <$>
       pureT ppsFact
 
---{-# INLINE ruInv #-}
 ruInv = do
   mval <- pureT valueFact
-  wPow <- fst <$> crtInfoFact
+  wPow <- fst <$> crtInfo
   LP.map
     (\(p,e) -> do
         let pp = p^e
@@ -527,35 +513,29 @@ ruInv = do
         generate pp (\i -> wPow $ -i*pow)) <$>
       pureT ppsFact
 
-gCoeffsCCT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r)
-  => TaggedT m Maybe (CT' m r)
-gCoeffsCCT = ctCCT <*> return (mulGPow' $ scalarPow' LP.one)
--- It's necessary to call 'fromJust' here: otherwise 
--- sequencing functions in 'crtFuncs' relies on 'divGPow' having an
--- implementation in C, which is not true for all types which have a C
--- implementation of, e.g. 'crt'. In particular, 'Complex Double' has C support
--- for 'crt', but not for 'divGPow'.
--- This really breaks the contract of Tensor, so it's probably a bad idea.
---   Someone can get the "crt" and can even pull the function "divGCCT" from Tensor,
---   but it will fail when they try to apply it.
--- As an implementation note if I ever do fix this: the division by rad(m) can be
--- tricky for Double/Complex Doubles, so be careful! This is why we have a custom
--- Complex wrapper around NP.Complex.
-gInvCoeffsCCT :: (TElt CT r, CRTrans r, Fact m, ZeroTestable r, IntegralDomain r)
-  => TaggedT m Maybe (CT' m r)
-gInvCoeffsCCT = ($ fromJust $ divGPow' $ scalarPow' LP.one) <$> ctCCT
+wrapVector :: forall mon m r . (Monad mon, Fact m, Ring r, Storable r)
+  => TaggedT m mon (Matrix r) -> mon (CT' m r)
+wrapVector v = do
+  vmat <- proxyT v (Proxy::Proxy m)
+  let n = proxy totientFact (Proxy::Proxy m)
+  return $ CT' $ generate n (flip (indexM vmat) 0)
 
--- we can't put this in Extension with the rest of the twace/embed fucntions because it needs access to 
--- the C backend
-twaceCRT' :: forall m m' r .
-             (TElt CT r, CRTrans r, m `Divides` m', ZeroTestable r, IntegralDomain r)
-             => TaggedT '(m, m') Maybe (Vector r -> Vector r)
-twaceCRT' = tagT $ do -- Maybe monad
-  (CT' g') <- proxyT gCoeffsCCT (Proxy::Proxy m')
-  (CT' gInv) <- proxyT gInvCoeffsCCT (Proxy::Proxy m)
+gCRT, gInvCRT :: (Storable r, CRTrans mon r, Fact m)
+                 => mon (CT' m r)
+gCRT = wrapVector gCRTM
+gInvCRT = wrapVector gInvCRTM
+
+-- we can't put this in Extension with the rest of the twace/embed
+-- functions because it needs access to the C backend
+twaceCRT' :: forall mon m m' r .
+             (TElt CT r, CRTrans mon r, m `Divides` m')
+             => TaggedT '(m, m') mon (Vector r -> Vector r)
+twaceCRT' = tagT $ do
+  (CT' g') :: CT' m' r <- gCRT
+  (CT' gInv) :: CT' m r <- gInvCRT
   embed <- proxyT embedCRT' (Proxy::Proxy '(m,m'))
   indices <- pure $ proxy extIndicesCRT (Proxy::Proxy '(m,m'))
-  (_, m'hatinv) <- proxyT crtInfoFact (Proxy::Proxy m')
+  (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m')
   let phi = proxy totientFact (Proxy::Proxy m)
       phi' = proxy totientFact (Proxy::Proxy m')
       mhat = fromIntegral $ proxy valueHatFact (Proxy::Proxy m)

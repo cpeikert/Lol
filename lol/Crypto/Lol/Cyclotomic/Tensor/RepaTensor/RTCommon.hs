@@ -37,9 +37,6 @@ import Data.Singletons.Prelude      hiding ((:.))
 import qualified Data.Vector.Unboxed as U
 import Test.QuickCheck
 
--- just for specialization
-import Crypto.Lol.Types.ZqBasic
-
 -- always unboxed (manifest); intermediate calculations can use
 -- delayed arrays
 

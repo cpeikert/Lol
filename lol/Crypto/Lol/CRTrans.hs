@@ -1,5 +1,6 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, RebindableSyntax,
-             ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses,
+             PolyKinds, RebindableSyntax, ScopedTypeVariables,
+             TypeFamilies #-}
 
 -- | Classes and helper methods for the Chinese remainder transform
 -- and ring extensions.
@@ -7,11 +8,10 @@
 module Crypto.Lol.CRTrans
 ( CRTrans(..), CRTEmbed(..)
 , CRTInfo
-, crtInfoFact, crtInfoPPow, crtInfoPrime
-, gEmbPPow, gEmbPrime
 ) where
 
 import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Reflects
 
 import Control.Arrow
 import Data.Singletons
@@ -32,17 +32,15 @@ type CRTInfo r = (Int -> r, r)
 
 -- | The values of 'crtInfo' for different indices @m@ should be
 -- consistent, in the sense that if @omega@, @omega'@ are respectively
--- the values returned for @m@, @m'@ where @m'@ divides @m@, then it
--- should be the case that @omega^(m/m')=omega'@.
+-- the roots of unity used for @m@, @m'@ where @m'@ divides @m@, then
+-- it should be the case that @omega^(m/m')=omega'@.
 
-class Ring r => CRTrans r where
+class (Monad mon, Ring r) => CRTrans mon r where
 
   -- | 'CRTInfo' for a given index @m@. The method itself may be
   -- slow, but the function it returns should be fast, e.g., via
-  -- internal memoization.  The default implementation returns
-  -- 'Nothing'.
-  crtInfo :: Int -> Maybe (CRTInfo r)
-  crtInfo = const Nothing
+  -- internal memoization.
+  crtInfo :: Reflects m Int => TaggedT m mon (CRTInfo r)
 
 -- | A ring with a ring embedding into some ring @CRTExt r@ that has
 -- an invertible CRT transformation for /every/ positive index @m@.
@@ -55,11 +53,11 @@ class (Ring r, Ring (CRTExt r)) => CRTEmbed r where
   fromExt :: CRTExt r -> r
 
 -- CRTrans instance for product rings
-instance (CRTrans a, CRTrans b) => CRTrans (a,b) where
-  crtInfo i = do
-    (apow, aiInv) <- crtInfo i
-    (bpow, biInv) <- crtInfo i
-    return (apow &&& bpow, (aiInv, biInv))
+instance (CRTrans mon a, CRTrans mon b) => CRTrans mon (a,b) where
+  crtInfo = do
+    (fa, inva) <- crtInfo
+    (fb, invb) <- crtInfo
+    return (fa &&& fb, (inva, invb))
 
 -- CRTEmbed instance for product rings
 instance (CRTEmbed a, CRTEmbed b) => CRTEmbed (a,b) where
@@ -67,37 +65,18 @@ instance (CRTEmbed a, CRTEmbed b) => CRTEmbed (a,b) where
   toExt = toExt *** toExt
   fromExt = fromExt *** fromExt
 
+-- the complex numbers have roots of unity of any order
+instance (Monad mon, Transcendental a) => CRTrans mon (Complex a) where
+  crtInfo = crtInfoC
+
+crtInfoC :: forall mon m a . (Monad mon, Reflects m Int, Transcendental a)
+            => TaggedT m mon (CRTInfo (Complex a))
+crtInfoC = let mval = proxy value (Proxy::Proxy m)
+               mhat = valueHat mval
+           in return (omegaPowC mval, recip $ fromIntegral mhat)
+
 omegaPowC :: (Transcendental a) => Int -> Int -> Complex a
 omegaPowC m i = cis (2*pi*fromIntegral i / fromIntegral m)
-
--- | 'crtInfo' wrapper for 'Fact' types.
-crtInfoFact :: (Fact m, CRTrans r) => TaggedT m Maybe (CRTInfo r)
-crtInfoFact = (tagT . crtInfo) =<< pureT valueFact
-
--- | 'crtInfo' wrapper for 'PPow' types.
-crtInfoPPow :: (PPow pp, CRTrans r) => TaggedT pp Maybe (CRTInfo r)
-crtInfoPPow = (tagT . crtInfo) =<< pureT valuePPow
-
--- | 'crtInfo' wrapper for 'Prime' types.
-crtInfoPrime :: (Prim p, CRTrans r) => TaggedT p Maybe (CRTInfo r)
-crtInfoPrime = (tagT . crtInfo) =<< pureT valuePrime
-
--- | A function that returns the 'i'th embedding of @g_{p^e} = g_p@ for
--- @i@ in @Z*_{p^e}@.
-gEmbPPow :: forall pp r . (PPow pp, CRTrans r) => TaggedT pp Maybe (Int -> r)
-gEmbPPow = tagT $ case (sing :: SPrimePower pp) of
-  (SPP (STuple2 sp _)) -> withWitnessT gEmbPrime sp
-
--- | A function that returns the @i@th embedding of @g_p@ for @i@ in @Z*_p@,
--- i.e., @1-omega_p^i@.
-gEmbPrime :: (Prim p, CRTrans r) => TaggedT p Maybe (Int -> r)
-gEmbPrime = do
-  (f, _) <- crtInfoPrime
-  return $ \i -> one - f i      -- not checking that i /= 0 (mod p)
-
--- the complex numbers have roots of unity of any order
-instance (Transcendental a) => CRTrans (Complex a) where
-  crtInfo m = Just (omegaPowC m, recip $ fromIntegral $ valueHat m)
 
 -- trivial CRTEmbed instance for complex numbers
 instance (Transcendental a) => CRTEmbed (Complex a) where
@@ -105,17 +84,17 @@ instance (Transcendental a) => CRTEmbed (Complex a) where
   toExt = id
   fromExt = id
 
--- Default CRTrans instances for real and integer types, which do
+-- CRTrans instances for real and integer types, which do
 -- not have roots of unity (except in trivial cases). These are needed
--- to use FastCyc with these integer types.
-instance CRTrans Double
-instance CRTrans Int
-instance CRTrans Int64
-instance CRTrans Integer
+-- to use Cyc with these integral types.
+instance CRTrans Maybe Double where crtInfo = tagT Nothing
+instance CRTrans Maybe Int where crtInfo = tagT Nothing
+instance CRTrans Maybe Int64 where crtInfo = tagT Nothing
+instance CRTrans Maybe Integer where crtInfo = tagT Nothing
 -- can also do for Int8, Int16, Int32 etc.
 
 -- CRTEmbed instances for real and integer types, embedding into
--- Complex.  These are needed to use FastCyc with these integer types.
+-- Complex.  These are needed to use Cyc with these integer types.
 instance CRTEmbed Double where
   type CRTExt Double = Complex Double
   toExt = fromReal . realToField

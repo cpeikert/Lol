@@ -1,13 +1,20 @@
-{-# LANGUAGE FlexibleContexts, NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts, GADTs, NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
 
 import Challenges.Beacon
 import Challenges.Common
-import qualified Challenges.Proto.LWEInstance as P
-import qualified Challenges.Proto.LWESample as P
-import qualified Challenges.Proto.LWESecret as P
-import Challenges.Proto.InstType
+
+import Challenges.ContinuousLWE.Proto
 import qualified Challenges.ContinuousLWE.Verify as C
+import Challenges.DiscretizedLWE.Proto
 import qualified Challenges.DiscretizedLWE.Verify as D
+import Challenges.LWR.Proto
+import qualified Challenges.LWR.Verify as R
+import qualified Challenges.Proto.ContLWEInstance as P
+import qualified Challenges.Proto.DiscLWEInstance as P
+import qualified Challenges.Proto.Instance as P
+import qualified Challenges.Proto.InstType as P
+import qualified Challenges.Proto.LWESecret as P
+import qualified Challenges.Proto.LWRInstance as P
 
 import Control.Applicative
 import Control.Monad (when)
@@ -16,7 +23,7 @@ import Control.Monad.Trans (lift)
 
 import Crypto.Lol hiding (lift)
 import Crypto.Lol.Reflects
-import Crypto.Lol.Types.Proto (fromProto)
+import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.RealQ
 
 import qualified Data.ByteString.Lazy as BS
@@ -35,12 +42,14 @@ import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 
 -- Tensor type used to verify instances
 type T = CT
+type Zq q = ZqBasic (Reified q) Int64
+type RRq q = RealQ (RealMod (Reified q)) Double
 
 main :: IO ()
 main = do
   -- for nice printing when running executable
   hSetBuffering stdout NoBuffering
-  
+
   abspath <- getPath
   let challDir = abspath </> challengeFilesDir
   challDirExists <- doesDirectoryExist challDir
@@ -83,53 +92,83 @@ verifyInstance path challName secretID instID
     when secExists $ throwError $ "The secret index for challenge " ++ 
           challName ++ " is " ++ (show secretID) ++ ", but this secret is present!"
   | otherwise = printPassFail ("\tChecking instance " ++ (show instID) ++ "\t") "VERIFIED" $ do
-    (inst, sec) <- parseInst path challName instID
-    checkInstErr inst sec
+    inst <- readInstKeyPair path challName instID
+    checkInstErr inst
 
--- | Verifies an instance that has a corresponding secret.
-parseInst :: FilePath -> String -> Int -> ExceptT String IO (P.LWEInstance, P.LWESecret)
-parseInst path challName instID = do
-  let instFile = path </> challengeFilesDir </> challName </> (instFileName challName instID)
-      secFile = path </> secretFilesDir </> challName </> (secretFileName challName instID)
-  instFileExists <- lift $ doesFileExist instFile
-  when (not instFileExists) $ throwError $ instFile ++ " does not exist."
+data Instance where
+  CLWE :: (Protoable (ContLWEInstance v t m zq rq), 
+           ProtoType (ContLWEInstance v t m zq rq) ~ P.ContLWEInstance,
+           C.CheckInst t m z zq rq, v ~ LiftOf rq) 
+    => LWESecret t m z -> ContLWEInstance v t m zq rq -> Instance
+  DLWE :: (Protoable (DiscLWEInstance v t m zq), 
+           ProtoType (DiscLWEInstance v t m zq) ~ P.DiscLWEInstance,
+           D.CheckInst t m z zq) 
+    => LWESecret t m z -> DiscLWEInstance v t m zq -> Instance
+  LWR :: (Protoable (LWRInstance t m zq zq'), 
+          ProtoType (LWRInstance t m zq zq') ~ P.LWRInstance, 
+          R.CheckInst t m z zq zq')
+    => LWESecret t m z -> LWRInstance t m zq zq' -> Instance
+
+readInstKeyPair :: FilePath -> String -> Int -> ExceptT String IO Instance
+readInstKeyPair path challName instID = do
+  let secFile = path </> secretFilesDir </> challName </> (secretFileName challName instID)
+      instFile = path </> challengeFilesDir </> challName </> (instFileName challName instID)
   secFileExists <- lift $ doesFileExist secFile
   when (not secFileExists) $ throwError $ secFile ++ " does not exist."
-  inst@(P.LWEInstance instType idx m _ _ _ _) <- lift $ messageGet' <$> BS.readFile instFile
-  sec@(P.LWESecret idx' m' _) <- lift $ messageGet' <$> BS.readFile secFile
-  when (idx /= idx') $ throwError $ "Instance ID is " ++ (show idx) ++ ", but secret ID is " ++ (show idx')
-  when (m /= m') $ throwError $ "Instance index is " ++ (show m) ++ ", but secret index is " ++ (show m')
-  return (inst,sec)
+  sec <- messageGet' =<< (lift $ BS.readFile secFile)
+  instFileExists <- lift $ doesFileExist instFile
+  when (not instFileExists) $ throwError $ instFile ++ " does not exist."
+  inst <- messageGet' =<< (lift $ BS.readFile instFile)
+  parseInstKeyPair sec inst
 
-checkInstErr :: P.LWEInstance -> P.LWESecret -> ExceptT String IO ()
-checkInstErr inst@(P.LWEInstance t _ m q _ _ _) sec 
-  | t == ContLWE = 
-    reifyFactI (fromIntegral m) (\(_::proxy m) -> 
-      reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
-        let (C.LWEInstance _ _ bound samples) = fromProto inst :: C.LWEInstance Double T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)
-            (C.LWESecret _ secret) = fromProto sec
-        when (not $ C.checkInstance bound secret samples) $ 
-          throwError $ "A sample exceeded the noise bound."
-        ))
-  | t == DiscLWE =
-    reifyFactI (fromIntegral m) (\(_::proxy m) -> 
-      reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
-        let (D.LWEInstance _ _ bound samples) = fromProto inst :: D.LWEInstance Double T m (ZqBasic (Reified q) Int64)
-            (D.LWESecret _ secret) = fromProto sec
-        when (not $ D.checkInstance (round bound) secret samples) $ 
-          throwError $ "A sample in instance exceeded the noise bound."
-        ))
-  | t == LWR = error "cannot verify LWR instances yet"
+parseInstKeyPair :: (Monad m) => P.LWESecret -> P.Instance -> ExceptT String m Instance
+parseInstKeyPair sk@(P.LWESecret idx' m' _) (P.Instance (Just (P.Clweinst inst@(P.ContLWEInstance idx m q _ _ _)))) = do
+  checkParam "ContLWE" "index" m m'
+  checkParam "ContLWE" "ID" idx idx'
+  reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+    reify (fromIntegral q :: Int64) (\(_::Proxy q) -> return $ CLWE
+      (fromProto sk :: LWESecret T m Int64)
+      (fromProto inst :: ContLWEInstance Double T m (Zq q) (RRq q))))
+parseInstKeyPair sk@(P.LWESecret idx' m' _) (P.Instance (Just (P.Dlweinst inst@(P.DiscLWEInstance idx m q _ _ _)))) = do
+  checkParam "DiscLWE" "index" m m'
+  checkParam "DiscLWE" "ID" idx idx'
+  reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+    reify (fromIntegral q :: Int64) (\(_::Proxy q) -> return $ DLWE
+      (fromProto sk :: LWESecret T m Int64)
+      (fromProto inst :: DiscLWEInstance Double T m (Zq q))))
+parseInstKeyPair sk@(P.LWESecret idx' m' _) (P.Instance (Just (P.Lwrinst inst@(P.LWRInstance idx m q q' _)))) = do
+  checkParam "LWR" "index" m m'
+  checkParam "LWR" "ID" idx idx'
+  reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+    reify (fromIntegral q :: Int64) (\(_::Proxy q) -> 
+      reify (fromIntegral q' :: Int64) (\(_::Proxy q') -> return $ LWR
+        (fromProto sk :: LWESecret T m Int64)
+        (fromProto inst :: LWRInstance T m (Zq q) (Zq q')))))
+
+checkParam :: (Monad m, Show a, Eq a) => String -> String -> a -> a -> ExceptT String m ()
+checkParam instType paramType instparam secparam = do
+  when (instparam /= secparam) $ throwError $ "Parse error while reading " ++ 
+    instType ++ " instance: instance " ++ paramType ++ " is " ++ 
+    (show instparam) ++ " but secret index is " ++ (show secparam)
 
 -- | Reads a serialized protobuffer file to the unparameterized proto type.
-messageGet' :: (ReflectDescriptor a, Wire a) => BS.ByteString -> a
+messageGet' :: (ReflectDescriptor a, Wire a, Monad m) => BS.ByteString -> ExceptT String m a
 messageGet' bs = 
   case messageGet bs of
-    (Left str) -> error $ "when getting protocol buffer. Got string " ++ str
+    (Left str) -> throwError $ "Error when reading from protocol buffer. Got string " ++ str
     (Right (a,bs')) -> 
       if BS.null bs'
-      then a
-      else error $ "when getting protocol buffer. There were leftover bits!"
+      then return a
+      else throwError $ "Error when reading from protocol buffer. There were leftover bits!"
+
+-- | Verifies an instance that has a corresponding secret.
+checkInstErr :: Instance -> ExceptT String IO ()
+checkInstErr (CLWE s inst) = when (not $ C.checkInstance s inst) $
+  throwError $ "A CLWE sample exceeded the noise bound."
+checkInstErr (DLWE s inst) = when (not $ D.checkInstance s inst) $
+  throwError $ "A DLWE sample exceeded the noise bound."
+checkInstErr (LWR s inst) = when (not $ R.checkInstance s inst) $
+  throwError $ "An LWR sample exceeded the noise bound."
 
 -- | Read an XML file for the beacon corresponding to the provided time.
 readBeacon :: FilePath -> Int -> ExceptT String IO Record
