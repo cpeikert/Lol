@@ -4,6 +4,7 @@
              NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
              ScopedTypeVariables, StandaloneDeriving, TemplateHaskell,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- | A substitute for the Prelude that is more suitable for Lol.  This
 -- module exports most of the Numeric Prelude and other frequently
