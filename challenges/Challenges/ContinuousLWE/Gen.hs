@@ -18,7 +18,7 @@ import Crypto.Lol.Cyclotomic.UCyc
 
 -- | Generate an LWE instance with a random secret, and the given scaled variance.
 lweInstance ::(ULWECtx t m z zq v rq, MonadRandom rnd, Random z)
-  => v -> Int -> rnd (Cyc t m z, [LWESample t m zq rq])
+  => v -> Int -> rnd (Cyc t m z, [ContLWESample t m zq rq])
 lweInstance svar numSamples = do
   s <- getRandom
   samples <- replicateM numSamples (lweSample svar s)
@@ -27,13 +27,13 @@ lweInstance svar numSamples = do
 -- | An LWE sample for a given secret.
 lweSample :: forall rnd t m z zq v rq . 
   (MonadRandom rnd, ULWECtx t m z zq v rq)
-  => v -> Cyc t m z -> rnd (LWESample t m zq rq)
+  => v -> Cyc t m z -> rnd (ContLWESample t m zq rq)
 lweSample svar s = do
   let sq = reduce s :: Cyc t m zq
   e :: UCyc t m D (LiftOf rq) <- tGaussian svar
   a <- adviseCRT <$> getRandom
-  let as = fmap fromSubgroup $ uncycDec $ a * sq :: UCyc t m D rq
-  return $ LWESample a $ as + (reduce e)
+  let as = fmap fromSubgroup $ uncycPow $ a * sq :: UCyc t m P rq
+  return $ ContLWESample a $ as + (reduce $ toPow e)
 
 type ULWECtx t m  z zq v rq = 
   (Reduce z zq, Ring zq, Random zq, Fact m, CElt t z,

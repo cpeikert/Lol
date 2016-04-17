@@ -3,9 +3,9 @@
 import DRBG (evalCryptoRandIO)
 import Challenges.Beacon
 import Challenges.Common
-import qualified Challenges.ContinuousLWE.Gen as C
-import qualified Challenges.DiscretizedLWE.Gen as D
-import qualified Challenges.LWR.Gen as R
+import Challenges.ContinuousLWE.Gen as C
+import Challenges.DiscretizedLWE.Gen as D
+import Challenges.LWR.Gen as R
 
 import Control.Applicative
 import Control.Monad.Trans (lift)
@@ -136,12 +136,12 @@ genContLWEInstance :: forall q proxy m . (Fact m, Reifies q Int64)
   => Proxy q -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
 genContLWEInstance _ _ challName path v numSamples idx = do 
   (secret' :: Cyc T m Int64, 
-   samples :: [C.LWESample T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)]) <-
+   samples :: [ContLWESample T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)]) <-
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ C.lweInstance v numSamples
-  let secret = C.LWESecret idx secret'
+  let secret = LWESecret idx secret'
       eps = 1/(2^(40 :: Int))
       bound = proxy (computeBound v eps) (Proxy::Proxy m)
-      inst = C.LWEInstance idx v bound samples
+      inst = ContLWEInstance idx v bound samples
       secretFile = secretFileName challName idx
       instFile = instFileName challName idx
   writeProtoType (path </> challengeFilesDir </> challName) instFile inst
@@ -153,13 +153,13 @@ genDiscLWEInstance :: forall q proxy m . (Fact m, Reifies q Int64)
   => Proxy q -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
 genDiscLWEInstance _ _ challName path v numSamples idx = do 
   (secret' :: Cyc T m Int64, 
-   samples :: [D.LWESample T m (ZqBasic (Reified q) Int64)]) <- 
+   samples :: [DiscLWESample T m (ZqBasic (Reified q) Int64)]) <- 
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ proxyT (D.lweInstance v numSamples) (Proxy::Proxy Double)
-  let secret = D.LWESecret idx secret'
+  let secret = LWESecret idx secret'
       eps = 1/(2^(40 :: Int))
-      bound = proxy (computeBound v eps) (Proxy::Proxy m)
+      bound = floor $ proxy (computeBound v eps) (Proxy::Proxy m)
       --bound = error "Need to figure out a valid bound for discretized samples"
-      inst = D.LWEInstance idx v bound samples
+      inst = DiscLWEInstance idx v bound samples
       secretFile = secretFileName challName idx
       instFile = instFileName challName idx
   writeProtoType (path </> challengeFilesDir </> challName) instFile inst
@@ -173,8 +173,8 @@ genLWRInstance _ _ _ challName path numSamples idx = do
   (secret' :: Cyc T m Int64, 
    samples :: [R.LWRSample T m (ZqBasic (Reified q) Int64) (ZqBasic (Reified q') Int64)]) <- 
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ proxyT (R.lwrInstance numSamples) (Proxy::Proxy Double)
-  let secret = R.LWESecret idx secret'
-      inst = R.LWRInstance idx samples
+  let secret = LWESecret idx secret'
+      inst = LWRInstance idx samples
       secretFile = secretFileName challName idx
       instFile = instFileName challName idx
   writeProtoType (path </> challengeFilesDir </> challName) instFile inst
