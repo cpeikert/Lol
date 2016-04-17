@@ -14,7 +14,6 @@ apps/configure
 apps/.stack-work
 
 lol/configure
-lol/makefile
 lol/.stack-work
 
 sandbox
