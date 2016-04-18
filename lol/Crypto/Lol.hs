@@ -6,7 +6,7 @@ module Crypto.Lol
 , module Crypto.Lol.Gadget
 , module Crypto.Lol.LatticePrelude
 
-, module Crypto.Lol.Types.RealQ
+, module Crypto.Lol.Types.RRq
 , module Crypto.Lol.Types.ZqBasic
 , module Crypto.Lol.Cyclotomic.Tensor.CTensor
 , module Crypto.Lol.Cyclotomic.Tensor.RepaTensor
@@ -16,7 +16,7 @@ import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Gadget
 import Crypto.Lol.LatticePrelude
 
-import Crypto.Lol.Types.RealQ
+import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
 import Crypto.Lol.Cyclotomic.Tensor.CTensor
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor

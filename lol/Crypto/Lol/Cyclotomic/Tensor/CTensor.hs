@@ -2,9 +2,8 @@
              FlexibleInstances, GADTs, GeneralizedNewtypeDeriving,
              InstanceSigs, MultiParamTypeClasses, NoImplicitPrelude,
              PolyKinds, RankNTypes, RebindableSyntax, RoleAnnotations,
-             ScopedTypeVariables, StandaloneDeriving, TupleSections,
-             TypeFamilies, TypeOperators, TypeSynonymInstances,
-             UndecidableInstances #-}
+             ScopedTypeVariables, TupleSections, TypeFamilies,
+             TypeOperators, TypeSynonymInstances, UndecidableInstances #-}
 
 -- | Wrapper for a C implementation of the 'Tensor' interface.
 
@@ -20,11 +19,10 @@ import Control.Arrow          ((***))
 import Control.DeepSeq
 import Control.Monad.Identity (Identity (..), runIdentity)
 import Control.Monad.Random
-import Control.Monad.Trans as T (lift)
+import Control.Monad.Trans    as T (lift)
 
 import Data.Coerce
 import Data.Constraint              hiding ((***))
-import Data.Foldable                as F
 import Data.Int
 import Data.Maybe
 import Data.Traversable             as T
@@ -41,27 +39,29 @@ import Data.Word
 import Foreign.Marshal.Utils (with)
 import Foreign.Ptr
 import Test.QuickCheck       hiding (generate)
-import Text.Read (Read(readPrec))
+import Text.Read             (Read (readPrec))
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
 import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
 import Crypto.Lol.GaussRandom
-import Crypto.Lol.LatticePrelude as LP hiding (replicate, unzip, zip)
+import Crypto.Lol.LatticePrelude                      as LP hiding
+                                                             (replicate,
+                                                             unzip, zip)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Proto.R
 import Crypto.Lol.Types.Proto.Rq
-import Crypto.Lol.Types.Proto.RRq
-import Crypto.Lol.Types.RealQ
+import Crypto.Lol.Types.Proto.Kq
+import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
 
-import Data.Foldable        as F
+import Data.Foldable         as F
+import Data.Sequence         as S (fromList)
 import Data.Serialize
-import Data.Sequence as S (fromList)
 import Data.Vector.Serialize
 
 import System.IO.Unsafe (unsafePerformIO)
@@ -110,12 +110,12 @@ instance (Serialize r, Storable r, Fact m) => Serialize (CT m r) where
 instance (Fact m) => Protoable (CT m Int64) where
   type ProtoType (CT m Int64) = R
 
-  toProto (CT (CT' xs)) = 
+  toProto (CT (CT' xs)) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
     in R m $ S.fromList $ SV.toList xs
   toProto x@(ZV _) = toProto $ toCT x
 
-  fromProto (R m' xs) = 
+  fromProto (R m' xs) =
     let m = proxy valueFact (Proxy::Proxy m)
         n = proxy totientFact (Proxy::Proxy m)
         xs' = SV.fromList $ F.toList xs
@@ -123,19 +123,19 @@ instance (Fact m) => Protoable (CT m Int64) where
     in if (m == (fromIntegral m') && len == n)
        then CT $ CT' xs'
        else error $ "An error occurred while reading the proto type for CT.\n\
-        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
-        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "." 
+        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+        \Expected n=" ++ show n ++ ", got " ++ show len ++ "."
 
 instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
   type ProtoType (CT m (ZqBasic q Int64)) = Rq
 
-  toProto (CT (CT' xs)) = 
+  toProto (CT (CT' xs)) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = proxy value (Proxy::Proxy q) :: Int64
     in Rq m (fromIntegral q) $ S.fromList $ SV.toList $ SV.map LP.lift $ xs
   toProto x@(ZV _) = toProto $ toCT x
 
-  fromProto (Rq m' q' xs) = 
+  fromProto (Rq m' q' xs) =
     let m = proxy valueFact (Proxy::Proxy m) :: Int
         q = proxy value (Proxy::Proxy q) :: Int64
         n = proxy totientFact (Proxy::Proxy m)
@@ -144,20 +144,20 @@ instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
     in if (m == (fromIntegral m') && len == n && (fromIntegral q) == q')
        then CT $ CT' $ SV.map reduce $ xs'
        else error $ "An error occurred while reading the proto type for CT.\n\
-        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
-        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "\n\
-        \Expected q=" ++ (show q) ++ ", got " ++ (show q') ++ "."
+        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+        \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+        \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
 
-instance (Fact m, Reflects q Double) => Protoable (CT m (RealQ q Double)) where
-  type ProtoType (CT m (RealQ q Double)) = RRq
+instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
+  type ProtoType (CT m (RRq q Double)) = Kq
 
-  toProto (CT (CT' xs)) = 
+  toProto (CT (CT' xs)) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = proxy value (Proxy::Proxy q) :: Double
-    in RRq m q $ S.fromList $ SV.toList $ SV.map LP.lift $ xs
+    in Kq m q $ S.fromList $ SV.toList $ SV.map LP.lift $ xs
   toProto x@(ZV _) = toProto $ toCT x
 
-  fromProto (RRq m' q' xs) = 
+  fromProto (Kq m' q' xs) =
     let m = proxy valueFact (Proxy::Proxy m) :: Int
         q = proxy value (Proxy::Proxy q) :: Double
         n = proxy totientFact (Proxy::Proxy m)
@@ -166,9 +166,9 @@ instance (Fact m, Reflects q Double) => Protoable (CT m (RealQ q Double)) where
     in if (m == (fromIntegral m') && len == n && q == q')
        then CT $ CT' $ SV.map reduce xs'
        else error $ "An error occurred while reading the proto type for CT.\n\
-        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
-        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "\n\
-        \Expected q=" ++ (show (round q :: Int64)) ++ ", got " ++ (show q') ++ "."
+        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+        \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+        \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
