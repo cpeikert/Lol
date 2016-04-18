@@ -6,7 +6,7 @@ name:                lol-challenges
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
 version:             0.0.0.1
-synopsis:            LWE challenges using Lol.
+synopsis:            Ring-LWE/LWR challenges using Lol.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
 license:             GPL-2
