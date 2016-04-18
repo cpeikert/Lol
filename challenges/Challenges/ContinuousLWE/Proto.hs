@@ -16,7 +16,7 @@ import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Proto.R
 import Crypto.Lol.Types.Proto.Rq
-import Crypto.Lol.Types.Proto.RRq
+import Crypto.Lol.Types.Proto.Kq
 import qualified Challenges.Proto.ContLWEInstance as P
 import qualified Challenges.Proto.ContLWESample as P
 import qualified Challenges.Proto.LWESecret as P
@@ -70,7 +70,7 @@ instance (NFData (Cyc t m zq), NFData (UCyc t m D rq)) => NFData (ContLWESample 
 instance (Protoable (Cyc t m zq), 
           ProtoType (Cyc t m zq) ~ Rq,
           Protoable (UCyc t m D rq),
-          ProtoType (UCyc t m D rq) ~ RRq) 
+          ProtoType (UCyc t m D rq) ~ Kq) 
   => Protoable (ContLWESample t m zq rq) where
   type ProtoType (ContLWESample t m zq rq) = P.ContLWESample
   toProto (ContLWESample a b) = P.ContLWESample (toProto a) (toProto b)
