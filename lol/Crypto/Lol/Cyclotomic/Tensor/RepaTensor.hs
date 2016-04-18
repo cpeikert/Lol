@@ -22,8 +22,8 @@ import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Proto.R
 import Crypto.Lol.Types.Proto.Rq
-import Crypto.Lol.Types.Proto.RRq
-import Crypto.Lol.Types.RealQ
+import Crypto.Lol.Types.Proto.Kq
+import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
 
 import Algebra.Additive     as Additive (C)
@@ -88,8 +88,8 @@ instance (Fact m) => Protoable (RT m Int64) where
     in if (m == (fromIntegral m') && len == n)
        then RT $ Arr xs'
        else error $ "An error occurred while reading the proto type for RT.\n\
-        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
-        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "." 
+        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+        \Expected n=" ++ show n ++ ", got " ++ show len ++ "." 
 
 instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
   type ProtoType (RT m (ZqBasic q Int64)) = Rq
@@ -109,20 +109,20 @@ instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
     in if (m == (fromIntegral m') && len == n && (fromIntegral q) == q')
        then RT $ Arr xs'
        else error $ "An error occurred while reading the proto type for RT.\n\
-        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
-        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "\n\
-        \Expected q=" ++ (show q) ++ ", got " ++ (show q') ++ "."
+        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+        \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+        \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
 
-instance (Fact m, Reflects q Double) => Protoable (RT m (RealQ q Double)) where
-  type ProtoType (RT m (RealQ q Double)) = RRq
+instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
+  type ProtoType (RT m (RRq q Double)) = Kq
 
   toProto (RT (Arr xs)) = 
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = proxy value (Proxy::Proxy q) :: Double
-    in RRq m q $ S.fromList $ RT.toList $ RT.map lift $ xs
+    in Kq m q $ S.fromList $ RT.toList $ RT.map lift $ xs
   toProto x@(ZV _) = toProto $ toRT x
 
-  fromProto (RRq m' q' xs) = 
+  fromProto (Kq m' q' xs) = 
     let m = proxy valueFact (Proxy::Proxy m) :: Int
         q = proxy value (Proxy::Proxy q) :: Double
         n = proxy totientFact (Proxy::Proxy m)
@@ -131,9 +131,9 @@ instance (Fact m, Reflects q Double) => Protoable (RT m (RealQ q Double)) where
     in if (m == (fromIntegral m') && len == n && q == q')
        then RT $ Arr xs'
        else error $ "An error occurred while reading the proto type for RT.\n\
-        \Expected m=" ++ (show m) ++ ", got " ++ (show m') ++ "\n\
-        \Expected n=" ++ (show n) ++ ", got " ++ (show len) ++ "\n\
-        \Expected q=" ++ (show (round q :: Int64)) ++ ", got " ++ (show q') ++ "."
+        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+        \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+        \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
 
 instance Eq r => Eq (RT m r) where
   (ZV a) == (ZV b) = a == b

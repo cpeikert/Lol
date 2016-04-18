@@ -4,9 +4,10 @@
 -- | Translates unparameterized ProtoTypes into parameterized Haskell types.
 
 module Challenges.ContinuousLWE.Proto
-(ContLWEInstance(..)
-,ContLWESample(..)
-,LWESecret(..)) where
+( ContLWEInstance(..)
+, ContLWESample(..)
+, LWESecret(..)
+) where
 
 import Control.DeepSeq
 
@@ -15,7 +16,7 @@ import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Proto.R
 import Crypto.Lol.Types.Proto.Rq
-import Crypto.Lol.Types.Proto.RRq
+import Crypto.Lol.Types.Proto.Kq
 import qualified Challenges.Proto.ContLWEInstance as P
 import qualified Challenges.Proto.ContLWESample as P
 import qualified Challenges.Proto.LWESecret as P
@@ -30,7 +31,7 @@ deriving instance (Read (Cyc t m z)) => Read (LWESecret t m z)
 deriving instance (Show (Cyc t m z)) => Show (LWESecret t m z)
 deriving instance (Eq (Cyc t m z)) => Eq (LWESecret t m z)
 instance (NFData (Cyc t m z)) => NFData (LWESecret t m z) where
-  rnf (LWESecret idx s) = (rnf idx) `seq` (rnf s)
+  rnf (LWESecret idx s) = rnf idx `seq` rnf s
 instance (Protoable (Cyc t m z), ProtoType (Cyc t m z) ~ R, Fact m) => Protoable (LWESecret t m z) where
   type ProtoType (LWESecret t m z) = P.LWESecret
   toProto (LWESecret idx s) = 
@@ -60,16 +61,16 @@ instance (Protoable (ContLWESample t m zq rq), Mod zq, ModRep zq ~ Int64, Fact m
     ContLWEInstance (fromIntegral idx) v bound $ map fromProto $ S.toList samples
 
 -- | Corresponds to ContLWESample proto type.
-data ContLWESample t m zq rq = ContLWESample (Cyc t m zq) (UCyc t m P rq)
-deriving instance (Read (Cyc t m zq), Read (UCyc t m P rq)) => Read (ContLWESample t m zq rq)
-deriving instance (Show (Cyc t m zq), Show (UCyc t m P rq)) => Show (ContLWESample t m zq rq)
-deriving instance (Eq (Cyc t m zq), Eq (UCyc t m P rq)) => Eq (ContLWESample t m zq rq)
-instance (NFData (Cyc t m zq), NFData (UCyc t m P rq)) => NFData (ContLWESample t m zq rq) where
+data ContLWESample t m zq rq = ContLWESample (Cyc t m zq) (UCyc t m D rq)
+deriving instance (Read (Cyc t m zq), Read (UCyc t m D rq)) => Read (ContLWESample t m zq rq)
+deriving instance (Show (Cyc t m zq), Show (UCyc t m D rq)) => Show (ContLWESample t m zq rq)
+deriving instance (Eq (Cyc t m zq), Eq (UCyc t m D rq)) => Eq (ContLWESample t m zq rq)
+instance (NFData (Cyc t m zq), NFData (UCyc t m D rq)) => NFData (ContLWESample t m zq rq) where
   rnf (ContLWESample a b) = (rnf a) `seq` (rnf b)
 instance (Protoable (Cyc t m zq), 
           ProtoType (Cyc t m zq) ~ Rq,
-          Protoable (UCyc t m P rq),
-          ProtoType (UCyc t m P rq) ~ RRq) 
+          Protoable (UCyc t m D rq),
+          ProtoType (UCyc t m D rq) ~ Kq) 
   => Protoable (ContLWESample t m zq rq) where
   type ProtoType (ContLWESample t m zq rq) = P.ContLWESample
   toProto (ContLWESample a b) = P.ContLWESample (toProto a) (toProto b)

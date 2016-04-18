@@ -1,9 +1,8 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving, 
-             InstanceSigs, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
-             ScopedTypeVariables, StandaloneDeriving, TypeFamilies, TypeOperators,
-             UndecidableInstances #-}
+             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving,
+             InstanceSigs, MultiParamTypeClasses, NoImplicitPrelude,
+             PolyKinds, RankNTypes, RebindableSyntax, ScopedTypeVariables,
+             TypeFamilies, TypeOperators, UndecidableInstances #-}
 
 -- | A low-level implementation of cyclotomic rings that allows (and
 -- requires) the programmer to control the underlying representation
@@ -36,15 +35,15 @@ module Crypto.Lol.Cyclotomic.UCyc
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
-                                            scalarCRT, scalarPow, twaceCRT)
+                                     scalarCRT, scalarPow, twaceCRT)
 
 import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.Tensor as T
 import           Crypto.Lol.LatticePrelude    as LP
 import           Crypto.Lol.Types.FiniteField
-import           Crypto.Lol.Types.RealQ (RealQ)
+import           Crypto.Lol.Types.RRq
 import           Crypto.Lol.Types.ZPP
-import           Crypto.Lol.Types.ZqBasic (ZqBasic)
+import           Crypto.Lol.Types.ZqBasic     (ZqBasic)
 
 import qualified Algebra.Additive     as Additive (C)
 import qualified Algebra.Module       as Module (C)
@@ -61,12 +60,12 @@ import Data.Maybe
 import Data.Serialize
 import Data.Traversable
 import Test.QuickCheck
-import Text.Read (Read(readPrec))
+import Text.Read              (Read (readPrec))
 
 import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.Proto.Kq
 import Crypto.Lol.Types.Proto.R
 import Crypto.Lol.Types.Proto.Rq
-import Crypto.Lol.Types.Proto.RRq
 
 --import qualified Debug.Trace as DT
 
@@ -207,7 +206,7 @@ instance (Fact m, UCRTElt t r) => Additive.C (UCycEC t m r) where
 -- Ring instance: only for CRT
 
 instance (Fact m, UCRTElt t r) => Ring.C (UCycEC t m r) where
-  
+
   one = scalarCRT one
   fromInteger c = scalarCRT $ fromInteger c
 
@@ -649,7 +648,7 @@ instance (Arbitrary (t m r)) => Arbitrary (UCyc t m D r) where
   arbitrary = Dec <$> arbitrary
   shrink = shrinkNothing
 
--- no Arbitrary for C or EC due to invariant
+-- no Arbitrary for C or E due to invariant
 
 instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
          => NFData (UCyc t m rep r) where
@@ -687,17 +686,22 @@ instance (Serialize (t m r), Fact m) => Serialize (UCyc t m C r) where
   get = (CRTr . unUCRTr) <$> get
   put (CRTr x) = put $ UCRTr x
 
-instance (Fact m, Protoable (t m Int64), ProtoType (t m Int64) ~ R) => Protoable (UCyc t m P Int64) where
-  type ProtoType (UCyc t m P Int64) = R
-  toProto (Pow t) = toProto t
-  fromProto t@(R _ _) = Pow $ fromProto t
+instance (Fact m, Protoable (t m Int64), ProtoType (t m Int64) ~ R)
+         => Protoable (UCyc t m D Int64) where
+  type ProtoType (UCyc t m D Int64) = R
+  toProto (Dec t) = toProto t
+  fromProto t = Dec $ fromProto t
 
-instance (Fact m, Protoable (t m (ZqBasic q Int64)), ProtoType (t m (ZqBasic q Int64)) ~ Rq) => Protoable (UCyc t m P (ZqBasic q Int64)) where
-  type ProtoType (UCyc t m P (ZqBasic q Int64)) = Rq
-  toProto (Pow t) = toProto t
-  fromProto t@(Rq _ _ _) = Pow $ fromProto t
+instance (Fact m, Protoable (t m (ZqBasic q Int64)),
+          ProtoType (t m (ZqBasic q Int64)) ~ Rq)
+         => Protoable (UCyc t m D (ZqBasic q Int64)) where
+  type ProtoType (UCyc t m D (ZqBasic q Int64)) = Rq
+  toProto (Dec t) = toProto t
+  fromProto t = Dec $ fromProto t
 
-instance (Fact m, Protoable (t m (RealQ q Double)), ProtoType (t m (RealQ q Double)) ~ RRq) => Protoable (UCyc t m P (RealQ q Double)) where
-  type ProtoType (UCyc t m P (RealQ q Double)) = RRq
-  toProto (Pow t) = toProto t
-  fromProto t@(RRq _ _ _) = Pow $ fromProto t
+instance (Fact m, Protoable (t m (RRq q Double)),
+          ProtoType (t m (RRq q Double)) ~ Kq)
+         => Protoable (UCyc t m D (RRq q Double)) where
+  type ProtoType (UCyc t m D (RRq q Double)) = Kq
+  toProto (Dec t) = toProto t
+  fromProto t = Dec $ fromProto t
