@@ -138,6 +138,9 @@ template <typename ring> void tensorFuserCRT2 (ring* y, hShort_t tupSize, void (
         rts *= dim;
     }
 }
+template void tensorFuserCRT2 (Zq* y, hShort_t tupSize, void (*f) (Zq* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, Zq* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Zq** ru, hInt_t* qs);
+template void tensorFuserCRT2 (Complex* y, hShort_t tupSize, void (*f) (Complex* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, Complex* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Complex** ru, hInt_t* qs);
+
 
 struct  timespec  tsSubtract (struct  timespec  time1, struct  timespec  time2)
 {    /* Local variables. */

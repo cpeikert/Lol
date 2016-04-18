@@ -522,7 +522,6 @@ template <typename ring> void ppcrtinv (ring* y, hShort_t tupSize, hDim_t lts, h
   }
 }
 
-// EAC: Somebody who knows C/C++ should find a better way to handle pointers-to-pointers in a generic way
 extern "C" void tensorCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** ru, hInt_t* qs)
 {
   hDim_t i;

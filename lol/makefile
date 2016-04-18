@@ -23,7 +23,7 @@ $(OBJPATH)/%.o: $(CSRCPATH)/%.cpp
 
 # the .a file and the .so file must have different names, or cabal configure gets confused and reports
 # that it can't find libctensor.
-makelib: mkdst $(OBJPATH)/basic.o $(OBJPATH)/crt.o $(OBJPATH)/g.o $(OBJPATH)/generalfuncs.o $(OBJPATH)/l.o $(OBJPATH)/norm.o $(OBJPATH)/random.o
+makelib: mkdst $(OBJPATH)/crt.o $(OBJPATH)/g.o $(OBJPATH)/generalfuncs.o $(OBJPATH)/l.o $(OBJPATH)/mul.o $(OBJPATH)/norm.o $(OBJPATH)/random.o
 	$(CXX) -shared $(CXXFLAGS) -o $(LIBPATH)/$(LIBNAME)_dyn.so $(OBJPATH)/*.o
 	$(AR) rcvs $(LIBPATH)/$(LIBNAME).a $(OBJPATH)/*.o
 
@@ -31,5 +31,8 @@ clean:
 	rm -f ./$(OBJPATH)/*.o
 	rm -f ./$(LIBPATH)/*.a
 	rm -f ./$(LIBPATH)/*.so
+	# make sure that cabal re-links with the new lib
+	rm -f ./dist/build/test-lol/test-lol
+	rm -f ./dist/build/bench-lol/bench-lol
 
 .PHONY: all clean
