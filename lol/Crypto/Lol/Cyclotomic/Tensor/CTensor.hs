@@ -2,8 +2,9 @@
              FlexibleInstances, GADTs, GeneralizedNewtypeDeriving,
              InstanceSigs, MultiParamTypeClasses, NoImplicitPrelude,
              PolyKinds, RankNTypes, RebindableSyntax, RoleAnnotations,
-             ScopedTypeVariables, TupleSections, TypeFamilies,
-             TypeOperators, TypeSynonymInstances, UndecidableInstances #-}
+             ScopedTypeVariables, StandaloneDeriving, TupleSections,
+             TypeFamilies, TypeOperators, TypeSynonymInstances,
+             UndecidableInstances #-}
 
 -- | Wrapper for a C implementation of the 'Tensor' interface.
 
@@ -34,12 +35,10 @@ import Data.Vector.Storable         as SV (Vector, convert, foldl',
                                            unsafeFreeze, unsafeSlice,
                                            unsafeWith, zipWith, (!))
 import Data.Vector.Storable.Mutable as SM hiding (replicate)
-import Data.Word
 
 import Foreign.Marshal.Utils (with)
 import Foreign.Ptr
-import Foreign.Storable        (Storable (..))
-import Test.QuickCheck         hiding (generate)
+import Test.QuickCheck       hiding (generate)
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
@@ -53,19 +52,19 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.Proto.Kq
 import Crypto.Lol.Types.Proto.R
 import Crypto.Lol.Types.Proto.Rq
-import Crypto.Lol.Types.Proto.Kq
 import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
 
-import Data.Foldable         as F
-import Data.Sequence         as S (fromList)
+import Data.Foldable as F
+import Data.Sequence as S (fromList)
 
 import System.IO.Unsafe (unsafePerformIO)
 
 -- | Newtype wrapper around a Vector.
-newtype CT' (m :: Factored) r = CT' { unCT :: Vector r } 
+newtype CT' (m :: Factored) r = CT' { unCT :: Vector r }
                               deriving (Show, Eq, NFData)
 
 -- the first argument, though phantom, affects representation
@@ -263,8 +262,8 @@ instance Tensor CT where
 
   crtFuncs = (,,,,) <$>
     return (CT . repl) <*>
-    (wrap <$> untag (cZipDispatch dmul) <$> gCRT) <*>
-    (wrap <$> untag (cZipDispatch dmul) <$> gInvCRT) <*>
+    (wrap . untag (cZipDispatch dmul) <$> gCRT) <*>
+    (wrap . untag (cZipDispatch dmul) <$> gInvCRT) <*>
     (wrap <$> untagT ctCRT) <*>
     (wrap <$> untagT ctCRTInv)
 
