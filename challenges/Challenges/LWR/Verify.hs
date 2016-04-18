@@ -17,7 +17,7 @@ checkInstance (LWESecret _ s) (LWRInstance _ samples) = all (checkSample s) samp
 
 -- | Verifies that [a*s]_q'=b in an LWR sample.
 checkSample :: (CheckInst t m z zq zq') => Cyc t m z -> LWRSample t m zq zq' -> Bool
-checkSample s (LWRSample a b) = b == rescaleCyc Dec $ a * reduce s
+checkSample s (LWRSample a b) = b == (rescaleCyc Dec $ a * reduce s)
 
 type CheckInst t m z zq zq' = 
   (Fact m, CElt t zq, CElt t zq', CElt t z, Eq zq', Reduce z zq, RescaleCyc (Cyc t) zq zq')

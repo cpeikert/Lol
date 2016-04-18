@@ -8,7 +8,7 @@ import "lol.proto";
 
 message ContLWESample {
   required Rq a = 1;
-  required RRq b = 2;
+  required Kq b = 2;
 }
 
 message DiscLWESample {

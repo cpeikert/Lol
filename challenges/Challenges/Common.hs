@@ -111,7 +111,7 @@ showHexBS = map toUpper . tail . init . show . toLazyByteString . byteStringHex 
 
 -- | @"a" </> "b"@ is the string @"a/b"@.
 (</>) :: FilePath -> FilePath -> FilePath
-a </> b = a ++ [pathSeparator] ++ b
+a </> b = a ++ "/" ++ b
 
 -- for testing purposes
 absPath :: IO FilePath
