@@ -24,7 +24,7 @@ import Control.Monad.Trans (lift)
 import Crypto.Lol hiding (lift)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.RealQ
+import qualified Crypto.Lol.Types.RRq as RRq
 
 import qualified Data.ByteString.Lazy as BS
 import Data.List (nub)
@@ -43,7 +43,7 @@ import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 -- Tensor type used to verify instances
 type T = CT
 type Zq q = ZqBasic (Reified q) Int64
-type RRq q = RealQ (RealMod (Reified q)) Double
+type RRq q = RRq.RRq (RealMod (Reified q)) Double
 
 main :: IO ()
 main = do
