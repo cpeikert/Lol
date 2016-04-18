@@ -27,7 +27,6 @@ import Data.Sequence as S (fromList, Seq)
 data LWRInstance t m zq zq' = LWRInstance Int [LWRSample t m zq zq']
 instance (NFData (LWRSample t m zq zq')) => NFData (LWRInstance t m zq zq') where
   rnf (LWRInstance idx ss) = (rnf idx) `seq` (rnf ss)
-deriving instance (Read (LWRSample t m zq zq')) => Read (LWRInstance t m zq zq')
 deriving instance (Show (LWRSample t m zq zq')) => Show (LWRInstance t m zq zq')
 deriving instance (Eq (LWRSample t m zq zq')) => Eq (LWRInstance t m zq zq')
 instance (Protoable (LWRSample t m zq zq'), Mod zq, Mod zq', 
@@ -46,7 +45,6 @@ instance (Protoable (LWRSample t m zq zq'), Mod zq, Mod zq',
 
 -- | Corresponds to LWRSample proto type.
 data LWRSample t m zq zq' = LWRSample (Cyc t m zq) (Cyc t m zq')
-deriving instance (Read (Cyc t m zq), Read (Cyc t m zq')) => Read (LWRSample t m zq zq')
 deriving instance (Show (Cyc t m zq), Show (Cyc t m zq')) => Show (LWRSample t m zq zq')
 deriving instance (Eq (Cyc t m zq), Eq (Cyc t m zq')) => Eq (LWRSample t m zq zq')
 instance (NFData (Cyc t m zq), NFData (Cyc t m zq')) => NFData (LWRSample t m zq zq') where

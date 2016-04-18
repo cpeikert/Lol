@@ -27,7 +27,6 @@ import Data.Sequence as S (fromList, Seq)
 
 -- | Corresponds to LWESecret proto type.
 data LWESecret t m z = LWESecret Int (Cyc t m z)
-deriving instance (Read (Cyc t m z)) => Read (LWESecret t m z)
 deriving instance (Show (Cyc t m z)) => Show (LWESecret t m z)
 deriving instance (Eq (Cyc t m z)) => Eq (LWESecret t m z)
 instance (NFData (Cyc t m z)) => NFData (LWESecret t m z) where
@@ -43,7 +42,6 @@ instance (Protoable (Cyc t m z), ProtoType (Cyc t m z) ~ R, Fact m) => Protoable
 data ContLWEInstance v t m zq rq = ContLWEInstance Int v v [ContLWESample t m zq rq]
 instance (NFData (ContLWESample t m zq rq), NFData v) => NFData (ContLWEInstance v t m zq rq) where
   rnf (ContLWEInstance idx v bound ss) = (rnf idx) `seq` (rnf v) `seq` (rnf bound) `seq` (rnf ss)
-deriving instance (Read (ContLWESample t m zq rq), Read v) => Read (ContLWEInstance v t m zq rq)
 deriving instance (Show (ContLWESample t m zq rq), Show v) => Show (ContLWEInstance v t m zq rq)
 deriving instance (Eq (ContLWESample t m zq rq), Eq v) => Eq (ContLWEInstance v t m zq rq)
 instance (Protoable (ContLWESample t m zq rq), Mod zq, ModRep zq ~ Int64, Fact m)
@@ -62,7 +60,6 @@ instance (Protoable (ContLWESample t m zq rq), Mod zq, ModRep zq ~ Int64, Fact m
 
 -- | Corresponds to ContLWESample proto type.
 data ContLWESample t m zq rq = ContLWESample (Cyc t m zq) (UCyc t m D rq)
-deriving instance (Read (Cyc t m zq), Read (UCyc t m D rq)) => Read (ContLWESample t m zq rq)
 deriving instance (Show (Cyc t m zq), Show (UCyc t m D rq)) => Show (ContLWESample t m zq rq)
 deriving instance (Eq (Cyc t m zq), Eq (UCyc t m D rq)) => Eq (ContLWESample t m zq rq)
 instance (NFData (Cyc t m zq), NFData (UCyc t m D rq)) => NFData (ContLWESample t m zq rq) where

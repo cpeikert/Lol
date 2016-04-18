@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving,
-             InstanceSigs, MultiParamTypeClasses, NoImplicitPrelude,
-             PolyKinds, RankNTypes, RebindableSyntax, ScopedTypeVariables,
+             FlexibleInstances, GADTs, InstanceSigs,
+             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
+             RankNTypes, RebindableSyntax, ScopedTypeVariables,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
 -- | A low-level implementation of cyclotomic rings that allows (and
@@ -41,9 +41,7 @@ import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.Tensor as T
 import           Crypto.Lol.LatticePrelude    as LP
 import           Crypto.Lol.Types.FiniteField
-import           Crypto.Lol.Types.RRq
 import           Crypto.Lol.Types.ZPP
-import           Crypto.Lol.Types.ZqBasic     (ZqBasic)
 
 import qualified Algebra.Additive     as Additive (C)
 import qualified Algebra.Module       as Module (C)
@@ -57,15 +55,10 @@ import Control.Monad.Identity
 import Control.Monad.Random
 import Data.Foldable          as F
 import Data.Maybe
-import Data.Serialize
 import Data.Traversable
 import Test.QuickCheck
-import Text.Read              (Read (readPrec))
 
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Kq
-import Crypto.Lol.Types.Proto.R
-import Crypto.Lol.Types.Proto.Rq
 
 --import qualified Debug.Trace as DT
 
@@ -657,51 +650,7 @@ instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
   rnf (CRTr x)   = rnf x \\ witness entailNFDataT x
   rnf (CRTe x)   = rnf x \\ witness entailNFDataT x
 
--- newtype wrappers for safety
-newtype UPow t m r = UPow {unUPow :: t m r} deriving (Read, Serialize, Show)
-newtype UDec t m r = UDec {unUDec :: t m r} deriving (Read, Serialize, Show)
-newtype UCRTr t m r = UCRTr {unUCRTr :: t m r} deriving (Read, Serialize, Show)
-
-instance (Read (t m r)) => Read (UCyc t m P r) where
-  readPrec = (Pow . unUPow) <$> readPrec
-instance (Read (t m r)) => Read (UCyc t m D r) where
-  readPrec = (Dec . unUDec) <$> readPrec
-instance (Read (t m r)) => Read (UCyc t m C r) where
-  readPrec = (CRTr . unUCRTr) <$> readPrec
-
-instance (Show (t m r)) => Show (UCyc t m P r) where
-  showsPrec n (Pow x) = showsPrec n $ UPow x
-instance (Show (t m r)) => Show (UCyc t m D r) where
-  showsPrec n  (Dec x) = showsPrec n $ UDec x
-instance (Show (t m r)) => Show (UCyc t m C r) where
-  showsPrec n  (CRTr x) = showsPrec n $ UCRTr x
-
-instance (Serialize (t m r), Fact m) => Serialize (UCyc t m P r) where
-  get = (Pow . unUPow) <$> get
-  put (Pow x) = put $ UPow x
-instance (Serialize (t m r), Fact m) => Serialize (UCyc t m D r) where
-  get = (Dec . unUDec) <$> get
-  put (Dec x) = put $ UDec x
-instance (Serialize (t m r), Fact m) => Serialize (UCyc t m C r) where
-  get = (CRTr . unUCRTr) <$> get
-  put (CRTr x) = put $ UCRTr x
-
-instance (Fact m, Protoable (t m Int64), ProtoType (t m Int64) ~ R)
-         => Protoable (UCyc t m D Int64) where
-  type ProtoType (UCyc t m D Int64) = R
-  toProto (Dec t) = toProto t
-  fromProto t = Dec $ fromProto t
-
-instance (Fact m, Protoable (t m (ZqBasic q Int64)),
-          ProtoType (t m (ZqBasic q Int64)) ~ Rq)
-         => Protoable (UCyc t m D (ZqBasic q Int64)) where
-  type ProtoType (UCyc t m D (ZqBasic q Int64)) = Rq
-  toProto (Dec t) = toProto t
-  fromProto t = Dec $ fromProto t
-
-instance (Fact m, Protoable (t m (RRq q Double)),
-          ProtoType (t m (RRq q Double)) ~ Kq)
-         => Protoable (UCyc t m D (RRq q Double)) where
-  type ProtoType (UCyc t m D (RRq q Double)) = Kq
+instance (Fact m, Protoable (t m r)) => Protoable (UCyc t m D r) where
+  type ProtoType (UCyc t m D r) = ProtoType (t m r)
   toProto (Dec t) = toProto t
   fromProto t = Dec $ fromProto t

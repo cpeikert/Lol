@@ -24,10 +24,7 @@ import Control.Applicative
 import Control.Arrow
 import Control.DeepSeq        (NFData)
 import Data.Coerce
-import Data.Foldable (toList)
 import Data.Maybe
-import Data.Serialize
-import Data.Sequence (fromList)
 import NumericPrelude.Numeric as NP (round)
 import System.Random
 import Test.QuickCheck
@@ -51,8 +48,8 @@ import qualified Algebra.ZeroTestable   as ZeroTestable (C)
 
 -- | The ring @Z_q@ of integers modulo 'q', using underlying integer
 -- type 'z'.
-newtype ZqBasic q z = ZqB {unZqB :: z}
-                    deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable, Read, Serialize)
+newtype ZqBasic q z = ZqB z
+    deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable)
 
 -- the q argument, though phantom, matters for safety
 type role ZqBasic nominal representational
@@ -71,9 +68,7 @@ reduce' = ZqB . (`mod` proxy value (Proxy::Proxy q))
 -- puts value in range [-q/2, q/2)
 decode' :: forall q z . (ReflectsTI q z) => ZqBasic q z -> z
 decode' = let qval = proxy value (Proxy::Proxy q)
-          in \(ZqB x) -> if 2 * x < qval
-                         then x
-                         else x - qval
+          in \(ZqB x) -> if 2 * x < qval then x else x - qval
 
 instance (ReflectsTI q z, Enum z) => Enumerable (ZqBasic q z) where
   values = let qval :: z = proxy value (Proxy::Proxy q)

@@ -2,12 +2,11 @@
 -- | Utility functions for working with the <http://www.nist.gov/itl/csd/ct/nist_beacon.cfm NIST Randomness Beacon>.
 
 module Challenges.Beacon
-(gmtDateToSeconds
-,localDateToSeconds
-,advanceBeaconPos
-,bytesPerBeacon
-,beaconInterval
-,BeaconPos(..)) where
+( gmtDateToSeconds, localDateToSeconds
+, advanceBeaconPos
+, bytesPerBeacon
+, beaconInterval
+, BeaconPos(..)) where
 
 import Control.DeepSeq
 import Control.Monad.State
@@ -31,7 +30,7 @@ bytesPerBeacon = 64 :: Int
 beaconInterval = 60 :: Int
 
 -- | Represents a byte offset in a beacon output at a particular time.
-data BeaconPos = BP Int Int deriving (Eq, Read, Show)
+data BeaconPos = BP Int Int deriving (Eq, Show)
 instance NFData BeaconPos where rnf (BP a b) = (rnf a) `seq` (rnf b)
 
 -- | Advances the beacon position by one byte, overflowing to the next beacon in necessary.

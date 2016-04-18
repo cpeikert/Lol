@@ -27,7 +27,6 @@ import Data.Word
 data DiscLWEInstance v t m zq = DiscLWEInstance Int v Word64 [DiscLWESample t m zq]
 instance (NFData (DiscLWESample t m zq), NFData v) => NFData (DiscLWEInstance v t m zq) where
   rnf (DiscLWEInstance idx v bound ss) = (rnf idx) `seq` (rnf v) `seq` (rnf bound) `seq` (rnf ss)
-deriving instance (Read (DiscLWESample t m zq), Read v) => Read (DiscLWEInstance v t m zq)
 deriving instance (Show (DiscLWESample t m zq), Show v) => Show (DiscLWEInstance v t m zq)
 deriving instance (Eq (DiscLWESample t m zq), Eq v) => Eq (DiscLWEInstance v t m zq)
 instance (Protoable (DiscLWESample t m zq), Mod zq, ModRep zq ~ Int64, Fact m) 
@@ -46,7 +45,6 @@ instance (Protoable (DiscLWESample t m zq), Mod zq, ModRep zq ~ Int64, Fact m)
 
 -- | Corresponds to DiscLWESample proto type.
 data DiscLWESample t m r = DiscLWESample (Cyc t m r) (Cyc t m r)
-deriving instance (Read (Cyc t m r)) => Read (DiscLWESample t m r)
 deriving instance (Show (Cyc t m r)) => Show (DiscLWESample t m r)
 deriving instance (Eq (Cyc t m r)) => Eq (DiscLWESample t m r)
 instance (NFData (Cyc t m r)) => NFData (DiscLWESample t m r) where
