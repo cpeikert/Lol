@@ -639,28 +639,28 @@ cyc'ToCyc (Dec' x) = Dec x
 cyc'ToCyc (CRT' x) = CRT (Right x)
 cyc'ToCyc (Sc x) = Scalar x
 
-instance (Fact m, CElt t Int64, ProtoType (UCyc t m P Int64) ~ R,
-          Protoable (UCyc t m P Int64))
-  => Protoable (Cyc t m Int64) where
-  type ProtoType (Cyc t m Int64) = R
-  toProto (Pow uc) = toProto uc
-  toProto x = toProto $ toPow' x
-  fromProto x = Pow $ fromProto x
+instance (Fact m, CElt t Int64, Protoable (UCyc t m D Int64))
+         => Protoable (Cyc t m Int64) where
 
-instance (Fact m, CElt t (ZqBasic q Int64),
-          ProtoType (UCyc t m P (ZqBasic q Int64)) ~ Rq,
-          Protoable (UCyc t m P (ZqBasic q Int64)))
-  => Protoable (Cyc t m (ZqBasic q Int64)) where
-  type ProtoType (Cyc t m (ZqBasic q Int64)) = Rq
-  toProto (Pow uc) = toProto uc
-  toProto x = toProto $ toPow' x
-  fromProto x = Pow $ fromProto x
+  type ProtoType (Cyc t m Int64) = ProtoType (UCyc t m D Int64)
+  toProto (Dec uc) = toProto uc
+  toProto x = toProto $ toDec' x
+  fromProto x = Dec $ fromProto x
 
-instance (Fact m, CElt t (RRq q Double),
-          ProtoType (UCyc t m P (RRq q Double)) ~ Kq,
-          Protoable (UCyc t m P (RRq q Double)))
-  => Protoable (Cyc t m (RRq q Double)) where
-  type ProtoType (Cyc t m (RRq q Double)) = Kq
-  toProto (Pow uc) = toProto uc
-  toProto x = toProto $ toPow' x
-  fromProto x = Pow $ fromProto x
+instance (Fact m, CElt t (ZqBasic q Int64), Protoable (UCyc t m D (ZqBasic q Int64)))
+         => Protoable (Cyc t m (ZqBasic q Int64)) where
+
+  type ProtoType (Cyc t m (ZqBasic q Int64)) =
+    ProtoType (UCyc t m D (ZqBasic q Int64))
+  toProto (Dec uc) = toProto uc
+  toProto x = toProto $ toDec' x
+  fromProto x = Dec $ fromProto x
+
+instance (Fact m, CElt t (RRq q Double), Protoable (UCyc t m D (RRq q Double)))
+         => Protoable (Cyc t m (RRq q Double)) where
+
+  type ProtoType (Cyc t m (RRq q Double)) =
+    ProtoType (UCyc t m D (RRq q Double))
+  toProto (Dec uc) = toProto uc
+  toProto x = toProto $ toDec' x
+  fromProto x = Dec $ fromProto x

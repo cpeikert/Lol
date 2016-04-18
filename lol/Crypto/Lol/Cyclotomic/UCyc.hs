@@ -648,7 +648,7 @@ instance (Arbitrary (t m r)) => Arbitrary (UCyc t m D r) where
   arbitrary = Dec <$> arbitrary
   shrink = shrinkNothing
 
--- no Arbitrary for C or EC due to invariant
+-- no Arbitrary for C or E due to invariant
 
 instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
          => NFData (UCyc t m rep r) where
@@ -686,17 +686,22 @@ instance (Serialize (t m r), Fact m) => Serialize (UCyc t m C r) where
   get = (CRTr . unUCRTr) <$> get
   put (CRTr x) = put $ UCRTr x
 
-instance (Fact m, Protoable (t m Int64), ProtoType (t m Int64) ~ R) => Protoable (UCyc t m P Int64) where
-  type ProtoType (UCyc t m P Int64) = R
-  toProto (Pow t) = toProto t
-  fromProto t = Pow $ fromProto t
+instance (Fact m, Protoable (t m Int64), ProtoType (t m Int64) ~ R)
+         => Protoable (UCyc t m D Int64) where
+  type ProtoType (UCyc t m D Int64) = R
+  toProto (Dec t) = toProto t
+  fromProto t = Dec $ fromProto t
 
-instance (Fact m, Protoable (t m (ZqBasic q Int64)), ProtoType (t m (ZqBasic q Int64)) ~ Rq) => Protoable (UCyc t m P (ZqBasic q Int64)) where
-  type ProtoType (UCyc t m P (ZqBasic q Int64)) = Rq
-  toProto (Pow t) = toProto t
-  fromProto t = Pow $ fromProto t
+instance (Fact m, Protoable (t m (ZqBasic q Int64)),
+          ProtoType (t m (ZqBasic q Int64)) ~ Rq)
+         => Protoable (UCyc t m D (ZqBasic q Int64)) where
+  type ProtoType (UCyc t m D (ZqBasic q Int64)) = Rq
+  toProto (Dec t) = toProto t
+  fromProto t = Dec $ fromProto t
 
-instance (Fact m, Protoable (t m (RRq q Double)), ProtoType (t m (RRq q Double)) ~ Kq) => Protoable (UCyc t m P (RRq q Double)) where
-  type ProtoType (UCyc t m P (RRq q Double)) = Kq
-  toProto (Pow t) = toProto t
-  fromProto t = Pow $ fromProto t
+instance (Fact m, Protoable (t m (RRq q Double)),
+          ProtoType (t m (RRq q Double)) ~ Kq)
+         => Protoable (UCyc t m D (RRq q Double)) where
+  type ProtoType (UCyc t m D (RRq q Double)) = Kq
+  toProto (Dec t) = toProto t
+  fromProto t = Dec $ fromProto t

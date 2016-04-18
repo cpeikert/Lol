@@ -1,18 +1,18 @@
 
-// always serialized in Powerful basis
+// For each of the following, the "xs" array is with respect to the
+// decoding basis.
+
 message R {
   required uint32 m = 1;
   repeated sint64 xs = 2;
 }
 
-// always serialized in Powerful basis
 message Rq {
   required uint32 m = 1;
   required uint64 q = 2;
   repeated sint64 xs = 3;
 }
 
-// always serialized in Powerful basis
 message Kq {
   required uint32 m = 1;
   required double q = 2;
