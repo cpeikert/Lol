@@ -28,6 +28,7 @@ import System.Console.ANSI
 import System.Directory    (doesDirectoryExist, doesFileExist,
                             getDirectoryContents)
 import System.Environment  (getArgs)
+import System.FilePath ((</>))
 
 import Text.Printf
 
@@ -108,10 +109,6 @@ intToHex x = printf "%X" x
 
 showHexBS :: ByteString -> String
 showHexBS = map toUpper . tail . init . show . toLazyByteString . byteStringHex . toStrict
-
--- | @"a" </> "b"@ is the string @"a/b"@.
-(</>) :: FilePath -> FilePath -> FilePath
-a </> b = a ++ [pathSeparator] ++ b
 
 -- for testing purposes
 absPath :: IO FilePath

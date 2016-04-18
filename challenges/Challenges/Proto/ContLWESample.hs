@@ -6,10 +6,10 @@ import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Crypto.Lol.Types.Proto.RRq as Lol (RRq)
+import qualified Crypto.Lol.Types.Proto.Kq as Lol (Kq)
 import qualified Crypto.Lol.Types.Proto.Rq as Lol (Rq)
 
-data ContLWESample = ContLWESample{a :: !(Lol.Rq), b :: !(Lol.RRq)}
+data ContLWESample = ContLWESample{a :: !(Lol.Rq), b :: !(Lol.Kq)}
                    deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data)
 
 instance P'.Mergeable ContLWESample where
@@ -59,7 +59,7 @@ instance P'.ReflectDescriptor ContLWESample where
   getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList [10, 18]) (P'.fromDistinctAscList [10, 18])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".Lwe.ContLWESample\", haskellPrefix = [], parentModule = [MName \"Lwe\"], baseName = MName \"ContLWESample\"}, descFilePath = [\"Lwe\",\"ContLWESample.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lwe.ContLWESample.a\", haskellPrefix' = [], parentModule' = [MName \"Lwe\",MName \"ContLWESample\"], baseName' = FName \"a\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Lol.Rq\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"Rq\"}), hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lwe.ContLWESample.b\", haskellPrefix' = [], parentModule' = [MName \"Lwe\",MName \"ContLWESample\"], baseName' = FName \"b\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Lol.RRq\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"RRq\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".Lwe.ContLWESample\", haskellPrefix = [], parentModule = [MName \"Lwe\"], baseName = MName \"ContLWESample\"}, descFilePath = [\"Lwe\",\"ContLWESample.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lwe.ContLWESample.a\", haskellPrefix' = [], parentModule' = [MName \"Lwe\",MName \"ContLWESample\"], baseName' = FName \"a\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Lol.Rq\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"Rq\"}), hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Lwe.ContLWESample.b\", haskellPrefix' = [], parentModule' = [MName \"Lwe\",MName \"ContLWESample\"], baseName' = FName \"b\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Lol.Kq\", haskellPrefix = [], parentModule = [MName \"Lol\"], baseName = MName \"Kq\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
 
 instance P'.TextType ContLWESample where
   tellT = P'.tellSubMessage

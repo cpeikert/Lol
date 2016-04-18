@@ -33,6 +33,6 @@ type CheckInst t m z zq rq =
 sampleError :: (CheckInst t m z zq rq) 
   => Cyc t m z -> ContLWESample t m zq rq -> LiftOf rq
 sampleError sk (ContLWESample a b) = 
-  let as = fmap fromSubgroup $ uncycPow $ a * reduce sk
+  let as = fmap fromSubgroup $ uncycDec $ a * reduce sk
       e = lift $ b - as
-  in gSqNorm $ toDec e
+  in gSqNorm e

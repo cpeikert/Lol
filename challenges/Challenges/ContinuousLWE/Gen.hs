@@ -32,8 +32,8 @@ lweSample svar s = do
   let sq = reduce s :: Cyc t m zq
   e :: UCyc t m D (LiftOf rq) <- tGaussian svar
   a <- adviseCRT <$> getRandom
-  let as = fmap fromSubgroup $ uncycPow $ a * sq :: UCyc t m P rq
-  return $ ContLWESample a $ as + (reduce $ toPow e)
+  let as = fmap fromSubgroup $ uncycDec $ a * sq :: UCyc t m D rq
+  return $ ContLWESample a $ as + (reduce e)
 
 type ULWECtx t m  z zq v rq = 
   (Reduce z zq, Ring zq, Random zq, Fact m, CElt t z,
