@@ -5,6 +5,8 @@ pubdir=publish
 
 mkdir -p $pubdir
 
+echo "CJP says: I don't think this script should be responsible for building/installing the binaries; instead, stack/cabal should do it.  This script should just run the right binaries."
+
 echo "Building challenge verifier..."
 cabal build $execname
 
@@ -27,6 +29,6 @@ do
   rc=$?
   if [ $rc -ne 0 ]
   then echo "${RED}FAILED${NC}"
-  else echo "${GREEN}VERIFIED${NC}"
+  else echo "${GREEN}PASSED${NC}"
   fi;
 done
