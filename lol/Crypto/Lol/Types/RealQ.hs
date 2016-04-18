@@ -1,10 +1,16 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances, GeneralizedNewtypeDeriving,
-             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds, 
-             RebindableSyntax, ScopedTypeVariables, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances,
+             GeneralizedNewtypeDeriving, MultiParamTypeClasses,
+             NoImplicitPrelude, PolyKinds, RebindableSyntax,
+             ScopedTypeVariables, TypeFamilies, UndecidableInstances #-}
 
-module Crypto.Lol.Types.RealQ (RealQ) where
+-- | An implementation of the additive quotient group @RR/qZ@, where @RR@
+-- denotes the real numbers.
 
-import Algebra.Additive as Additive (C)
+module Crypto.Lol.Types.RealQ
+( RealQ
+) where
+
+import Algebra.Additive     as Additive (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
 import Control.Applicative
@@ -17,10 +23,11 @@ import Crypto.Lol.Types.ZqBasic
 
 -- for the Elt instance
 import qualified Data.Array.Repa.Eval as E
-import Data.Foldable (toList)
-import Data.Reflection
-import Data.Serialize
-import Data.Sequence as S (fromList)
+import           Data.Foldable        (toList)
+import           Data.Reflection
+import           Data.Sequence        as S (fromList)
+import           Data.Serialize
+
 -- for the Unbox instances
 import qualified Data.Vector                 as V
 import qualified Data.Vector.Generic         as G
@@ -34,35 +41,32 @@ newtype RealQ q r = RealQ {unRealQ :: r}
   deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable, Read, Serialize)
 
 {-# INLINABLE reduce' #-}
-reduce' :: forall q r . (Reflects q r, RealField r)
-  => r -> RealQ q r
-reduce' x = 
+reduce' :: forall q r . (Reflects q r, RealField r) => r -> RealQ q r
+reduce' x =
   let q = proxy value (Proxy::Proxy q)
       y = floor $ x / q
   in RealQ $ x-q*y
 
 -- puts value in range [-q/2, q/2)
-decode' :: forall q r . 
-  (Reflects q r, Ord r, Additive r, Ring r)
-  => RealQ q r -> r
+decode' :: forall q r . (Reflects q r, Ord r, Additive r, Ring r)
+           => RealQ q r -> r
 decode' = let qval = proxy value (Proxy::Proxy q)
           in \(RealQ x) -> if x + x < qval
                            then x
                            else x - qval
 
-instance (Reflects q r, RealField r, Additive (RealQ q r)) 
+instance (Reflects q r, RealField r, Additive (RealQ q r))
   => Reduce r (RealQ q r) where
   reduce = reduce'
 
 type instance LiftOf (RealQ q r) = r
 
-instance (Reflects q r, Reduce r (RealQ q r), Ord r, Ring r) 
+instance (Reflects q r, Reduce r (RealQ q r), Ord r, Ring r)
   => Lift' (RealQ q r) where
   lift = decode'
 
 -- instance of Additive
-instance (Reflects q r, RealField r, Ord r) 
-  => Additive.C (RealQ q r) where
+instance (Reflects q r, RealField r, Ord r) => Additive.C (RealQ q r) where
 
   {-# INLINABLE zero #-}
   zero = RealQ zero
@@ -76,7 +80,7 @@ instance (Reflects q r, RealField r, Ord r)
   {-# INLINABLE negate #-}
   negate (RealQ x) = reduce' $ negate x
 
-instance (ToInteger i, RealField r, Reflects q i, Reflects (RealMod q) r) 
+instance (ToInteger i, RealField r, Reflects q i, Reflects (RealMod q) r)
   => Subgroup (ZqBasic q i) (RealQ (RealMod q) r) where
   fromSubgroup = reduce' . fromIntegral . lift
 
