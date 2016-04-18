@@ -44,6 +44,7 @@ executable gen
     data-default,
     directory,
     DRBG,
+    filepath,
     lol,
     MonadRandom,
     mtl,
@@ -70,6 +71,7 @@ executable reveal
     deepseq,
     data-default,
     directory,
+    filepath,
     http-conduit,
     lol,
     MonadRandom,
@@ -96,6 +98,7 @@ executable verify
     deepseq,
     data-default,
     directory,
+    filepath
     lol,
     MonadRandom,
     mtl,
