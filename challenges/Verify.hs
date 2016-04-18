@@ -24,7 +24,6 @@ import Control.Monad.Trans (lift)
 import Crypto.Lol hiding (lift)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.RealQ
 
 import qualified Data.ByteString.Lazy as BS
 import Data.List (nub)
@@ -43,7 +42,7 @@ import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 -- Tensor type used to verify instances
 type T = CT
 type Zq q = ZqBasic (Reified q) Int64
-type RRq q = RealQ (RealMod (Reified q)) Double
+type RRq' q = RRq (RealMod (Reified q)) Double
 
 main :: IO ()
 main = do
@@ -128,7 +127,7 @@ parseInstKeyPair sk@(P.LWESecret idx' m' _) (P.Instance (Just (P.Clweinst inst@(
   reifyFactI (fromIntegral m) (\(_::proxy m) -> 
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> return $ CLWE
       (fromProto sk :: LWESecret T m Int64)
-      (fromProto inst :: ContLWEInstance Double T m (Zq q) (RRq q))))
+      (fromProto inst :: ContLWEInstance Double T m (Zq q) (RRq' q))))
 parseInstKeyPair sk@(P.LWESecret idx' m' _) (P.Instance (Just (P.Dlweinst inst@(P.DiscLWEInstance idx m q _ _ _)))) = do
   checkParam "DiscLWE" "index" m m'
   checkParam "DiscLWE" "ID" idx idx'

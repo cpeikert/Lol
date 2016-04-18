@@ -4,7 +4,7 @@
              RebindableSyntax, RoleAnnotations, ScopedTypeVariables,
              StandaloneDeriving, TypeFamilies, UndecidableInstances #-}
 
--- | An implementation of modular arithmetic, i.e., the ring Zq.
+-- | An implementation of the quotient ring Zq = Z/qZ.
 
 module Crypto.Lol.Types.ZqBasic
 ( ZqBasic -- export the type, but not the constructor (for safety)

@@ -1,8 +1,8 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, DeriveGeneric, FlexibleContexts,
-             FlexibleInstances, GADTs, MultiParamTypeClasses, 
-             NoImplicitPrelude, PolyKinds, 
-             RankNTypes, ScopedTypeVariables, StandaloneDeriving,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+             FlexibleInstances, GADTs, MultiParamTypeClasses,
+             NoImplicitPrelude, PolyKinds, RankNTypes,
+             ScopedTypeVariables, StandaloneDeriving, TypeFamilies,
+             TypeOperators, UndecidableInstances #-}
 
 -- | An implementation of cyclotomic rings that hides the
 -- internal representations of ring elements (e.g., the choice of
@@ -56,14 +56,14 @@ import qualified Crypto.Lol.Cyclotomic.UCyc       as U
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.LatticePrelude        as LP
 import           Crypto.Lol.Types.FiniteField
-import           Crypto.Lol.Types.RealQ
+import           Crypto.Lol.Types.RRq
 import           Crypto.Lol.Types.ZPP
 import           Crypto.Lol.Types.ZqBasic
 
 import Control.Applicative    hiding ((*>))
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity   -- needed for coerce
+import Control.Monad.Identity
 import Control.Monad.Random
 import Data.Coerce
 import Data.Serialize
@@ -72,12 +72,12 @@ import Data.Traversable
 import GHC.Generics (Generic)
 
 import Test.QuickCheck
-import Text.Read (Read(readPrec))
+import Text.Read       (Read (readPrec))
 
 import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.Proto.Kq
 import Crypto.Lol.Types.Proto.R
 import Crypto.Lol.Types.Proto.Rq
-import Crypto.Lol.Types.Proto.RRq
 
 -- | Represents a cyclotomic ring such as @Z[zeta]@,
 -- @Zq[zeta]@, and @Q(zeta)@ in an explicit representation: @t@ is the
@@ -342,7 +342,7 @@ gSqNorm (Dec u) = U.gSqNorm u
 gSqNorm c = gSqNorm $ toDec' c
 
 -- | Generate an LWE error term with given scaled variance,
--- deterministically rounded with respect to the decoding basis. 
+-- deterministically rounded with respect to the decoding basis.
 -- (Note: This
 -- implementation uses Double precision to generate the Gaussian
 -- sample, which may not be sufficient for rigorous proof-based
@@ -606,19 +606,26 @@ data Cyc' t m r =
   | CRT' (UCyc t m C r)
   | Sc r
   deriving (Generic)
-deriving instance (Read (UCyc t m C r), Read (UCyc t m D r), Read (UCyc t m P r), Read r) 
+
+deriving instance (Read (UCyc t m C r), Read (UCyc t m D r), Read (UCyc t m P r), Read r)
   => Read (Cyc' t m r)
-deriving instance (Show (UCyc t m C r), Show (UCyc t m D r), Show (UCyc t m P r), Show r) 
+
+deriving instance (Show (UCyc t m C r), Show (UCyc t m D r), Show (UCyc t m P r), Show r)
   => Show (Cyc' t m r)
-instance (Serialize (UCyc t m C r), Serialize (UCyc t m D r), Serialize (UCyc t m P r), Serialize r) 
+
+instance (Serialize (UCyc t m C r), Serialize (UCyc t m D r), Serialize (UCyc t m P r), Serialize r)
   => Serialize (Cyc' t m r) -- using Generics
+
 instance (Read (Cyc' t m r)) => Read (Cyc t m r) where
   readPrec = cyc'ToCyc <$> readPrec
+
 instance (Fact m, CElt t r, Show (Cyc' t m r)) => Show (Cyc t m r) where
   showsPrec n = showsPrec n . cycToCyc'
+
 instance (Serialize (Cyc' t m r), Fact m, CElt t r) => Serialize (Cyc t m r) where
   get = cyc'ToCyc <$> get
   put = put . cycToCyc'
+
 cycToCyc' :: (Fact m, CElt t r) => Cyc t m r -> Cyc' t m r
 cycToCyc' (Pow x) = Pow' x
 cycToCyc' (Dec x) = Dec' x
@@ -626,33 +633,34 @@ cycToCyc' (CRT (Right x)) = CRT' x
 cycToCyc' (CRT (Left x)) = Pow' $ toPow x
 cycToCyc' (Scalar x) = Sc x
 cycToCyc' (Sub x) = cycToCyc' $ embed' x
+
 cyc'ToCyc (Pow' x) = Pow x
 cyc'ToCyc (Dec' x) = Dec x
 cyc'ToCyc (CRT' x) = CRT (Right x)
 cyc'ToCyc (Sc x) = Scalar x
 
-instance (Fact m, CElt t Int64, ProtoType (UCyc t m P Int64) ~ R, 
-          Protoable (UCyc t m P Int64)) 
-  => Protoable (Cyc t m Int64) where
-  type ProtoType (Cyc t m Int64) = R
-  toProto (Pow uc) = toProto uc
-  toProto x = toProto $ toPow' x
-  fromProto x@(R _ _) = Pow $ fromProto x
+instance (Fact m, CElt t Int64, Protoable (UCyc t m D Int64))
+         => Protoable (Cyc t m Int64) where
 
-instance (Fact m, CElt t (ZqBasic q Int64), 
-          ProtoType (UCyc t m P (ZqBasic q Int64)) ~ Rq, 
-          Protoable (UCyc t m P (ZqBasic q Int64))) 
-  => Protoable (Cyc t m (ZqBasic q Int64)) where
-  type ProtoType (Cyc t m (ZqBasic q Int64)) = Rq
-  toProto (Pow uc) = toProto uc
-  toProto x = toProto $ toPow' x
-  fromProto x@(Rq _ _ _) = Pow $ fromProto x
+  type ProtoType (Cyc t m Int64) = ProtoType (UCyc t m D Int64)
+  toProto (Dec uc) = toProto uc
+  toProto x = toProto $ toDec' x
+  fromProto x = Dec $ fromProto x
 
-instance (Fact m, CElt t (RealQ q Double), 
-          ProtoType (UCyc t m P (RealQ q Double)) ~ RRq, 
-          Protoable (UCyc t m P (RealQ q Double))) 
-  => Protoable (Cyc t m (RealQ q Double)) where
-  type ProtoType (Cyc t m (RealQ q Double)) = RRq
-  toProto (Pow uc) = toProto uc
-  toProto x = toProto $ toPow' x
-  fromProto x@(RRq _ _ _) = Pow $ fromProto x
+instance (Fact m, CElt t (ZqBasic q Int64), Protoable (UCyc t m D (ZqBasic q Int64)))
+         => Protoable (Cyc t m (ZqBasic q Int64)) where
+
+  type ProtoType (Cyc t m (ZqBasic q Int64)) =
+    ProtoType (UCyc t m D (ZqBasic q Int64))
+  toProto (Dec uc) = toProto uc
+  toProto x = toProto $ toDec' x
+  fromProto x = Dec $ fromProto x
+
+instance (Fact m, CElt t (RRq q Double), Protoable (UCyc t m D (RRq q Double)))
+         => Protoable (Cyc t m (RRq q Double)) where
+
+  type ProtoType (Cyc t m (RRq q Double)) =
+    ProtoType (UCyc t m D (RRq q Double))
+  toProto (Dec uc) = toProto uc
+  toProto x = toProto $ toDec' x
+  fromProto x = Dec $ fromProto x

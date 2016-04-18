@@ -16,7 +16,7 @@ import Crypto.Lol hiding (lift)
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.RealQ
+import Crypto.Lol.Types.RRq
 
 import Data.ByteString as BS (writeFile)
 import Data.ByteString.Lazy as BS (toStrict)
@@ -136,7 +136,7 @@ genContLWEInstance :: forall q proxy m . (Fact m, Reifies q Int64)
   => Proxy q -> proxy m -> String -> FilePath -> Double -> Int -> Int -> IO ()
 genContLWEInstance _ _ challName path v numSamples idx = do 
   (secret' :: Cyc T m Int64, 
-   samples :: [ContLWESample T m (ZqBasic (Reified q) Int64) (RealQ (RealMod (Reified q)) Double)]) <-
+   samples :: [ContLWESample T m (ZqBasic (Reified q) Int64) (RRq (RealMod (Reified q)) Double)]) <-
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ C.lweInstance v numSamples
   let secret = LWESecret idx secret'
       eps = 1/(2^(40 :: Int))
@@ -193,7 +193,7 @@ writeProtoType path fileName obj = do
   BS.writeFile instPath $ toStrict $ msgPut obj
 
 -- EAC: Note that this bound is correct for *continuous* LWE samples,
--- but an extra factor may be necessary for discretized samples.
+-- but an extra additive term may be necessary for discretized samples.
 
 -- | Outputs a bound such that the scaled, squared norm of an 
 -- error term generated with (scaled) variance v

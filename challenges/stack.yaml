@@ -1,0 +1,42 @@
+# For more information, see: https://github.com/commercialhaskell/stack/blob/master/doc/yaml_configuration.md
+
+# Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
+resolver: lts-5.2
+
+# Local packages, usually specified by relative directory name
+packages:
+- '.'
+
+# Packages to be pulled from upstream that are not in the resolver
+
+extra-deps:
+- arithmoi-0.4.1.3
+- lol-0.2.0.0
+- numeric-prelude-0.4.2
+- nist-beacon-0.2.0.0
+- storable-record-0.0.3
+- tagged-transformer-0.8
+- non-negative-0.1.1
+
+# need to be held back to older versions to satisfy tagged-transformer
+# deps:
+- semigroupoids-4.3
+- distributive-0.4.4
+
+# Override default flag values for local packages and extra-deps
+flags: {}
+
+# Control whether we use the GHC we find on the path
+system-ghc: false
+
+# Require a specific version of stack, using version ranges
+# require-stack-version: -any # Default
+# require-stack-version: >= 0.1.4.0
+
+# Override the architecture used by stack, especially useful on Windows
+# arch: i386
+# arch: x86_64
+
+# Extra directories used by stack for building
+# extra-include-dirs: [/path/to/dir]
+# extra-lib-dirs: [/path/to/dir]

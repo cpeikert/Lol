@@ -25,7 +25,7 @@ import Control.Monad
 
 import Crypto.Lol.LatticePrelude as LP (Complex, Proxy(..), proxy, (++), map, mapM_, PP, Tagged, tag)
 import Crypto.Lol.Reflects
-import Crypto.Lol.Types.RealQ
+import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
 
 import Data.Int
@@ -95,7 +95,7 @@ data ZqB64D -- for type safety purposes
 data ComplexD
 data DoubleD
 data Int64D
-data RealQD
+data RRqD
 
 type family CTypeOf x where
   CTypeOf (a,b) = CTypeOf a
@@ -103,7 +103,7 @@ type family CTypeOf x where
   CTypeOf Double = DoubleD
   CTypeOf Int64 = Int64D
   CTypeOf (Complex Double) = ComplexD
-  CTypeOf (RealQ (q :: k) Double) = RealQD
+  CTypeOf (RRq (q :: k) Double) = RRqD
 
 -- returns the modulus as a nested list of moduli
 class (Tuple a) => ZqTuple a where
@@ -114,8 +114,8 @@ instance (Reflects q Int64) => ZqTuple (ZqBasic q Int64) where
   type ModPairs (ZqBasic q Int64) = Int64
   getModuli = tag $ proxy value (Proxy::Proxy q)
 
-instance (Reflects q r, RealFrac r) => ZqTuple (RealQ q r) where
-  type ModPairs (RealQ q r) = Int64
+instance (Reflects q r, RealFrac r) => ZqTuple (RRq q r) where
+  type ModPairs (RRq q r) = Int64
   getModuli = tag $ round (proxy value (Proxy::Proxy q) :: r)
 
 instance (ZqTuple a, ZqTuple b) => ZqTuple (a, b) where
@@ -152,19 +152,19 @@ class (repr ~ CTypeOf r) => Dispatch' repr r where
   dginvdec  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
   dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
 
-instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ RealQD)
-  => Dispatch' RealQD r where
-  dcrt = error "cannot call CT CRT on type RealQ"
-  dcrtinv = error "cannot call CT CRTInv on type RealQ"
-  dl = error "cannot call CT L on type RealQ (though you probably should be able to)"
-  dlinv = error "cannot call CT LInv on type RealQ (though you probably should be able to)"
-  dnorm = error "cannto call CT normSq on type RealQ"
-  dmulgpow = error "cannot call CT mulGPow on type RealQ"
-  dmulgdec = error "cannot call CT mulGDec on type RealQ"
-  dginvpow = error "cannot call CT divGPow on type RealQ"
-  dginvdec = error "cannot call CT divGDec on type RealQ"
-  dmul = error "cannot call CT mul on type RealQ"
-  dgaussdec = error "cannot call CT gaussianDec on type RealQ"
+instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ RRqD)
+  => Dispatch' RRqD r where
+  dcrt = error "cannot call CT CRT on type RRq"
+  dcrtinv = error "cannot call CT CRTInv on type RRq"
+  dl = error "cannot call CT L on type RRq (though you probably should be able to)"
+  dlinv = error "cannot call CT LInv on type RRq (though you probably should be able to)"
+  dnorm = error "cannto call CT normSq on type RRq"
+  dmulgpow = error "cannot call CT mulGPow on type RRq"
+  dmulgdec = error "cannot call CT mulGDec on type RRq"
+  dginvpow = error "cannot call CT divGPow on type RRq"
+  dginvdec = error "cannot call CT divGDec on type RRq"
+  dmul = error "cannot call CT mul on type RRq"
+  dgaussdec = error "cannot call CT gaussianDec on type RRq"
 
 instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ ZqB64D)
   => Dispatch' ZqB64D r where
