@@ -1,9 +1,8 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving,
-             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
-             RebindableSyntax, RoleAnnotations, ScopedTypeVariables,
-             StandaloneDeriving, TypeFamilies, TypeOperators,
-             UndecidableInstances #-}
+             FlexibleInstances, GADTs, MultiParamTypeClasses,
+             NoImplicitPrelude, PolyKinds, RebindableSyntax,
+             RoleAnnotations, ScopedTypeVariables, StandaloneDeriving,
+             TypeFamilies, TypeOperators, UndecidableInstances #-}
 
 -- | A pure, repa-based implementation of the Tensor interface.
 
@@ -15,8 +14,9 @@ import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT hiding ((++))
-import Crypto.Lol.LatticePrelude                         as LP hiding ((!!))
+import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT hiding
+                                                                ((++))
+import Crypto.Lol.LatticePrelude                         as LP
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
@@ -66,7 +66,7 @@ instance (Fact m) => Protoable (RT m Int64) where
         n = proxy totientFact (Proxy::Proxy m)
         xs' = RT.fromList (Z:.n) $ F.toList xs
         len = F.length xs
-    in if (m == (fromIntegral m') && len == n)
+    in if (m == fromIntegral m' && len == n)
        then RT $ Arr xs'
        else error $ "An error occurred while reading the proto type for RT.\n\
         \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
@@ -87,7 +87,7 @@ instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
         n = proxy totientFact (Proxy::Proxy m)
         xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
         len = F.length xs
-    in if (m == (fromIntegral m') && len == n && (fromIntegral q) == q')
+    in if (m == fromIntegral m' && len == n && (fromIntegral q) == q')
        then RT $ Arr xs'
        else error $ "An error occurred while reading the proto type for RT.\n\
         \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
@@ -109,7 +109,7 @@ instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
         n = proxy totientFact (Proxy::Proxy m)
         xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
         len = F.length xs
-    in if (m == (fromIntegral m') && len == n && q == q')
+    in if (m == fromIntegral m' && len == n && q == q')
        then RT $ Arr xs'
        else error $ "An error occurred while reading the proto type for RT.\n\
         \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
