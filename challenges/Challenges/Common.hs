@@ -14,10 +14,7 @@ module Challenges.Common
 import Challenges.Beacon
 
 import Control.Monad.Except
-import Data.ByteString.Builder
-import Data.ByteString.Lazy    (ByteString, toStrict, unpack)
-import Data.Char               (toUpper)
-import Data.Default            (Default (..))
+import Data.Default         (Default (..))
 
 import Net.Beacon
 
