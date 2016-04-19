@@ -69,9 +69,9 @@ instance (GFCtx fp d) => Field.C (GF fp d) where
           in \(GF f) -> let (_,(a,_)) = extendedGCD f g
                            in GF a
 
-instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
+instance (GFCtx fp d) => CRTrans Maybe Int (GF fp d) where
 
-  crtInfo :: forall m . (Reflects m Int) => TaggedT m Maybe (CRTInfo (GF fp d))
+  crtInfo :: forall m . (Reflects m Int) => TaggedT m Maybe (CRTInfo Int (GF fp d))
   crtInfo = tagT $ (,) <$> omegaPow <*> scalarInv
     where
       omegaPow :: Maybe (Int -> GF fp d)

@@ -306,7 +306,7 @@ gSqNormDec' :: (Storable r, Fact m, Additive r, Dispatch r)
                => Tagged m (CT' m r -> r)
 gSqNormDec' = return $ (!0) . unCT . unsafePerformIO . withBasicArgs dnorm
 
-ctCRT :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
+ctCRT :: (Storable r, CRTrans mon Int r, Dispatch r, Fact m)
          => TaggedT m mon (CT' m r -> CT' m r)
 ctCRT = do
   ru' <- ru
@@ -314,11 +314,11 @@ ctCRT = do
     withPtrArray ru' (flip withBasicArgs x . dcrt)
 
 -- CTensor CRT^(-1) functions take inverse rus
-ctCRTInv :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
+ctCRTInv :: forall mon m r. (Storable r, CRTrans mon Int r, Dispatch r, Fact m)
          => TaggedT m mon (CT' m r -> CT' m r)
 ctCRTInv = do
-  mhatInv <- snd <$> crtInfo
-  ruinv' <- ruInv
+  (_, mhatInv) <- crtInfo :: TaggedT m mon (CRTInfo Int r)
+  ruinv'       <- ruInv
   return $ \x -> unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinv ruptr))
 
@@ -399,7 +399,7 @@ scalarPow' =
   let n = proxy totientFact (Proxy::Proxy m)
   in \r -> CT' $ generate n (\i -> if i == 0 then r else zero)
 
-ru, ruInv :: (CRTrans mon r, Fact m, Storable r)
+ru, ruInv :: (CRTrans mon Int r, Fact m, Storable r)
    => TaggedT m mon [Vector r]
 ru = do
   mval <- pureT valueFact
@@ -428,7 +428,7 @@ wrapVector v = do
   let n = proxy totientFact (Proxy::Proxy m)
   return $ CT' $ generate n (flip (indexM vmat) 0)
 
-gCRT, gInvCRT :: (Storable r, CRTrans mon r, Fact m)
+gCRT, gInvCRT :: (Storable r, CRTrans mon Int r, Fact m)
                  => mon (CT' m r)
 gCRT = wrapVector gCRTM
 gInvCRT = wrapVector gInvCRTM
@@ -436,14 +436,14 @@ gInvCRT = wrapVector gInvCRTM
 -- we can't put this in Extension with the rest of the twace/embed
 -- fucntions because it needs access to the C backend
 twaceCRT' :: forall mon m m' r .
-             (TElt CT r, CRTrans mon r, m `Divides` m')
+             (TElt CT r, CRTrans mon Int r, m `Divides` m')
              => TaggedT '(m, m') mon (Vector r -> Vector r)
 twaceCRT' = tagT $ do
   (CT' g') :: CT' m' r <- gCRT
   (CT' gInv) :: CT' m r <- gInvCRT
   embed <- proxyT embedCRT' (Proxy::Proxy '(m,m'))
   indices <- pure $ proxy extIndicesCRT (Proxy::Proxy '(m,m'))
-  (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m')
+  (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo Int r)
   let phi = proxy totientFact (Proxy::Proxy m)
       phi' = proxy totientFact (Proxy::Proxy m')
       mhat = fromIntegral $ proxy valueHatFact (Proxy::Proxy m)

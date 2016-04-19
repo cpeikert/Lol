@@ -60,10 +60,10 @@ embedDec' = (\indices arr -> generate (U.length indices)
 
 -- | Embeds an vector in the CRT basis of the the mth cyclotomic ring
 -- to an vector in the CRT basis of the m'th cyclotomic ring when @m | m'@
-embedCRT' :: forall mon m m' v r . (CRTrans mon r, Vector v r, m `Divides` m')
+embedCRT' :: forall mon m m' v r . (CRTrans mon Int r, Vector v r, m `Divides` m')
           => TaggedT '(m, m') mon (v r -> v r)
 embedCRT' = 
-  (lift (proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r))) >>
+  (lift (proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo Int r))) >>
   (pureT $ backpermute' <$> baseIndicesCRT)
 
 -- | maps a vector in the powerful/decoding basis, representing an

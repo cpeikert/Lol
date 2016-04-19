@@ -92,8 +92,8 @@ data UCyc t m rep r where
 
 -- | Constraints needed for CRT-related operations on 'UCyc' data.
 type UCRTElt t r = (Tensor t, CRTEmbed r,
-                    CRTrans Maybe r, TElt t r,
-                    CRTrans Identity (CRTExt r), TElt t (CRTExt r))
+                    CRTrans Maybe    Int r,          TElt t r,
+                    CRTrans Identity Int (CRTExt r), TElt t (CRTExt r))
 
 -- | Convenient synonym for 'deepseq'-able element type.
 type NFElt r = (NFData r, NFData (CRTExt r))

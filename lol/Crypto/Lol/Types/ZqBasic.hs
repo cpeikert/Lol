@@ -153,7 +153,7 @@ mhatInv = let qval = proxy value (Proxy::Proxy q)
 
 -- instance of CRTrans
 instance (ReflectsTI q z, PID z, Enumerable (ZqBasic q z))
-         => CRTrans Maybe (ZqBasic q z) where
+         => CRTrans Maybe Int (ZqBasic q z) where
 
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 

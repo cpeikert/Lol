@@ -102,7 +102,7 @@ class (TElt t Double, TElt t (Complex Double))
   -- use this method directly, but instead call the corresponding
   -- top-level functions: the elements of the tuple correpond to the
   -- functions 'scalarCRT', 'mulGCRT', 'divGCRT', 'crt', 'crtInv'.
-  crtFuncs :: (CRTrans mon r, Fact m, TElt t r) =>
+  crtFuncs :: (CRTrans mon Int r, Fact m, TElt t r) =>
               mon (    r -> t m r, -- scalarCRT
                    t m r -> t m r, -- mulGCRT
                    t m r -> t m r, -- divGCRT
@@ -135,7 +135,7 @@ class (TElt t Double, TElt t (Complex Double))
   -- method directly, but instead call the corresponding top-level
   -- functions: the elements of the tuple correpond to the functions
   -- 'twaceCRT', 'embedCRT'.
-  crtExtFuncs :: (CRTrans mon r, m `Divides` m', TElt t r) =>
+  crtExtFuncs :: (CRTrans mon Int r, m `Divides` m', TElt t r) =>
                  mon (t m' r -> t m  r, -- twaceCRT
                       t m  r -> t m' r) -- embedCRT
 
@@ -175,7 +175,7 @@ class (TElt t Double, TElt t (Complex Double))
   -}
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
-hasCRTFuncs :: forall t m mon r . (CRTrans mon r, Tensor t, Fact m, TElt t r)
+hasCRTFuncs :: forall t m mon i r . (CRTrans mon Int r, Tensor t, Fact m, TElt t r)
                => TaggedT (t m r) mon ()
 {-# INLINABLE hasCRTFuncs #-}
 hasCRTFuncs = tagT $ do
@@ -184,12 +184,12 @@ hasCRTFuncs = tagT $ do
 
 -- | Yield a tensor for a scalar in the CRT basis.  (This function is
 -- simply an appropriate entry from 'crtFuncs'.)
-scalarCRT :: (CRTrans mon r, Tensor t, Fact m, TElt t r) => mon (r -> t m r)
+scalarCRT :: (CRTrans mon Int r, Tensor t, Fact m, TElt t r) => mon (r -> t m r)
 {-# INLINABLE scalarCRT #-}
 scalarCRT = (\(f,_,_,_,_) -> f) <$> crtFuncs
 
 mulGCRT, divGCRT, crt, crtInv ::
-  (CRTrans mon r, Tensor t, Fact m, TElt t r) => mon (t m r -> t m r)
+  (CRTrans mon Int r, Tensor t, Fact m, TElt t r) => mon (t m r -> t m r)
 {-# INLINABLE mulGCRT #-}
 {-# INLINABLE divGCRT #-}
 {-# INLINABLE crt #-}
@@ -212,7 +212,7 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 -- For cyclotomic indices m | m',
 -- @Tw(x) = (mhat\/m\'hat) * Tr(g\'\/g * x)@.
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-twaceCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t, m `Divides` m', TElt t r)
+twaceCRT :: forall t m m' mon i r . (CRTrans mon Int r, Tensor t, m `Divides` m', TElt t r)
             => mon (t m' r -> t m r)
 twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
@@ -221,7 +221,7 @@ twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
 -- | Embed a tensor with index @m@ in the CRT basis to a tensor with
 -- index @m'@ in the CRT basis.
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-embedCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t, m `Divides` m', TElt t r)
+embedCRT :: forall t m m' mon i r . (CRTrans mon Int r, Tensor t, m `Divides` m', TElt t r)
             => mon (t m r -> t m' r)
 embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
@@ -268,16 +268,16 @@ indexM (MKron m (MC r c mc)) i j =
       (jq,jr) = j `divMod` c
       in indexM m iq jq * mc ir jr
 
-gCRTM, gInvCRTM :: (Fact m, CRTrans mon r) => TaggedT m mon (Matrix r)
+gCRTM, gInvCRTM :: (Fact m, CRTrans mon Int r) => TaggedT m mon (Matrix r)
 gCRTM = fMatrix gCRTPPow
 gInvCRTM = fMatrix gInvCRTPPow
 
 -- | The "tweaked" CRT^* matrix: @CRT^* . diag(sigma(g_m))@.
-twCRTs :: (Fact m, CRTrans mon r) => TaggedT m mon (Matrix r)
+twCRTs :: (Fact m, CRTrans mon Int r) => TaggedT m mon (Matrix r)
 twCRTs = fMatrix twCRTsPPow
 
 -- | The "tweaked" CRT^* matrix (for prime powers): @CRT^* * diag(sigma(g_p))@.
-twCRTsPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (MatrixC r)
+twCRTsPPow :: (PPow pp, CRTrans mon Int r) => TaggedT pp mon (MatrixC r)
 twCRTsPPow = do
   phi    <- pureT totientPPow
   iToZms <- pureT indexToZmsPPow
@@ -287,11 +287,11 @@ twCRTsPPow = do
 
   return $ MC phi phi (\j i -> wPow (jToPow j * negate (iToZms i)) * gCRT i 0)
 
-gCRTPPow, gInvCRTPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (MatrixC r)
+gCRTPPow, gInvCRTPPow :: (PPow pp, CRTrans mon Int r) => TaggedT pp mon (MatrixC r)
 gCRTPPow = ppMatrix gCRTPrime
 gInvCRTPPow = ppMatrix gInvCRTPrime
 
-gCRTPrime, gInvCRTPrime :: (Prim p, CRTrans mon r) => TaggedT p mon (MatrixC r)
+gCRTPrime, gInvCRTPrime :: (Prim p, CRTrans mon Int r) => TaggedT p mon (MatrixC r)
 
 -- | A @(p-1)@-by-1 matrix of the CRT coefficients of @g_p@, for @p^e@th
 -- cyclotomic.
