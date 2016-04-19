@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <vector>
 
 #define ASSERT(EXP) { \
 	if (!(EXP)) { \
@@ -113,7 +114,6 @@ typedef struct
 
 hInt_t reciprocal (hInt_t a, hInt_t b);
 
-//http://stackoverflow.com/a/4421719
 class Zq
 {
 public:
@@ -177,6 +177,124 @@ inline Zq operator/(Zq a, const Zq& b)
   return a;
 }
 
+//http://stackoverflow.com/a/4421719
+class ZqProd
+{
+public:
+  hInt_t* xs;
+  hByte_t doFree;
+  hByte_t initd = false;
+
+  static hInt_t* qs; // declared here, defined in generalfuncs.cpp
+  static hShort_t tupSize;
+
+  ZqProd(void) {
+    this->xs = (hInt_t*)malloc(tupSize*sizeof(hInt_t));
+  }
+
+  ZqProd(hInt_t* ys) {
+    this->xs = (hInt_t*)malloc(tupSize*sizeof(hInt_t));
+    for(hShort_t i = 0; i < tupSize; i++) {
+      this->xs[i] = ys[i];
+    }
+  }
+
+  ZqProd(hInt_t c) {
+    this->xs = (hInt_t*)malloc(tupSize*sizeof(hInt_t));
+    for(hShort_t i = 0; i < tupSize; i++) {
+      this->xs[i] = c % qs[i];
+    }
+  }
+
+  ZqProd(const ZqProd& a) {
+    this->xs = (hInt_t*)malloc(tupSize*sizeof(hInt_t));
+    for(hShort_t i = 0; i < tupSize; i++) {
+      this->xs[i] = a.xs[i];
+    }
+  }
+  
+  ~ZqProd() {
+    free(xs);
+  }
+
+  ZqProd& operator=(const ZqProd& b) {
+    for(hShort_t i = 0; i < tupSize; i++) {
+      this->xs[i] = b.xs[i];
+    }
+    return *this;
+  }
+  ZqProd& operator+=(const ZqProd& b)
+  {
+    for(hShort_t i = 0; i < tupSize; i++) {
+      this->xs[i] += b.xs[i];
+      this->xs[i] %= qs[i];
+    }
+    return *this;
+  }
+  ZqProd& operator-=(const ZqProd& b)
+  {
+    for(hShort_t i = 0; i < tupSize; i++) {
+      this->xs[i] -= b.xs[i];
+      this->xs[i] %= qs[i];
+    }
+    return *this;
+  }
+  ZqProd& operator*=(const ZqProd& b)
+  {
+    for(hShort_t i = 0; i < tupSize; i++) {
+      this->xs[i] *= b.xs[i];
+      this->xs[i] %= qs[i];
+    }
+    return *this;
+  }
+  ZqProd& operator/=(const ZqProd& b)
+  {
+    ZqProd binv;
+    for(hShort_t i = 0; i < tupSize; i++) {
+      binv.xs[i] = reciprocal(qs[i],b.xs[i]);
+    }
+    *this *= binv;
+    return *this;
+  }
+  void canonicalize() {
+    for(hShort_t i = 0; i < tupSize; i++) {
+      if(xs[i] < 0) {
+        xs[i] += qs[i];
+      }
+    }
+  }
+};
+inline char operator==(ZqProd a, const ZqProd& b)
+{
+  for(hShort_t i = 0; i < ZqProd::tupSize; i++) {
+    if(a.xs[i] != b.xs[i]) {
+      return false;
+    }
+  }
+  return true;
+}
+inline ZqProd operator+(ZqProd a, const ZqProd& b)
+{
+  a += b;
+  return a;
+}
+inline ZqProd operator-(ZqProd a, const ZqProd& b)
+{
+  a -= b;
+  return a;
+}
+inline ZqProd operator*(ZqProd a, const ZqProd& b)
+{
+  a *= b;
+  return a;
+}
+inline ZqProd operator/(ZqProd a, const ZqProd& b)
+{
+  a /= b;
+  return a;
+}
+
+extern ZqProd* toZqProd(hShort_t tupSize, hDim_t totm, hInt_t* y, hInt_t* qs);
 
 class Complex
 {
@@ -184,6 +302,11 @@ public:
   double real;
   double imag;
 
+  Complex() {}
+  Complex(hInt_t c) {
+    this->real = c;
+    this->imag = 0;
+  }
   Complex& operator=(const hInt_t& c)
   {
     this->real = c;
@@ -275,7 +398,11 @@ void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, Prime
 //#ifdef __cplusplus
 template <typename ring> void tensorFuser2 (ring* y, hShort_t tupSize, void (*f) (ring* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
 template <typename ring> void tensorFuserCRT2 (ring* y, hShort_t tupSize, void (*f) (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, ring* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ring** ru, hInt_t* qs);
+template <typename ring> void tensorFuserCRT3 (ring* y, void (*f) (ring* y, hDim_t lts, hDim_t rts, PrimeExponent pe, ring* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ring** ru);
+
 //#endif
+
+
 
 
 #endif /* TENSORTYPES_H_ */
