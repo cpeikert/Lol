@@ -6,18 +6,18 @@
 // decoding basis.
 
 message R {
-  required uint32 m = 1;
+  required uint32 m  = 1;
   repeated sint64 xs = 2;
 }
 
 message Rq {
-  required uint32 m = 1;
-  required uint64 q = 2;
+  required uint32 m  = 1;
+  required uint64 q  = 2;
   repeated sint64 xs = 3;
 }
 
 message Kq {
-  required uint32 m = 1;
-  required double q = 2;
+  required uint32 m  = 1;
+  required double q  = 2;
   repeated double xs = 3;
 }
