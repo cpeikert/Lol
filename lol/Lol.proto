@@ -1,3 +1,6 @@
+// run this:
+
+// hprotoc -a .=Crypto.Lol.Types.Proto -p Crypto.Lol.Types.Proto Lol.proto
 
 // For each of the following, the "xs" array is with respect to the
 // decoding basis.

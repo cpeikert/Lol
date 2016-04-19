@@ -1,9 +1,7 @@
 
 import "lol.proto";
 
-// hprotoc won't allow a path to lol.proto above, and it also won't
-// work with a symlink to lol.proto.  Instead, copy lol.proto into the
-// same directory as lwe.proto and then run `hprotoc lwe.proto`.
+// hprotoc -I . -I ../lol -a .=Challenges.Proto -a ../lol=Crypto.Lol.Types.Proto -p Challenges.Proto RLWE.proto
 
 message RLWESampleCont {
   required Rq a                   = 1;
@@ -54,8 +52,8 @@ message RLWESecret {
 
 message Instance {
   oneof instType {
-    RLWEInstanceCont lweInstCont  = 1;
-    RLWEInstanceDisc lweInstDisc  = 2;
-    RLWRInstance lwrInst          = 3;
+    RLWEInstanceCont rlweInstCont  = 1;
+    RLWEInstanceDisc rlweInstDisc  = 2;
+    RLWRInstance rlwrInst          = 3;
   }
 }
