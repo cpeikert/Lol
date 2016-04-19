@@ -13,10 +13,7 @@ module Challenges.Common
 
 import Challenges.Beacon
 
-import Control.Monad          (when)
 import Control.Monad.Except
-import Control.Monad.IO.Class (MonadIO, liftIO)
-
 import Data.ByteString.Builder
 import Data.ByteString.Lazy    (ByteString, toStrict, unpack)
 import Data.Char               (toUpper)
@@ -28,7 +25,7 @@ import System.Console.ANSI
 import System.Directory    (doesDirectoryExist, doesFileExist,
                             getDirectoryContents)
 import System.Environment  (getArgs)
-import System.FilePath ((</>))
+import System.FilePath     ((</>))
 
 import Text.Printf
 
@@ -163,5 +160,5 @@ readRevealData path = do
 getSecretIdx :: Record -> Int -> Int
 getSecretIdx record byteOffset =
   let output = outputValue record
-      byte = (unpack output) !! byteOffset
+      byte = unpack output !! byteOffset
   in fromIntegral byte `mod` numInstances

@@ -1,5 +1,7 @@
 {-# LANGUAGE FlexibleContexts, NoImplicitPrelude, RebindableSyntax, RecordWildCards, ScopedTypeVariables #-}
 
+module Gen where
+
 import DRBG (evalCryptoRandIO)
 import Challenges.Beacon
 import Challenges.Common
