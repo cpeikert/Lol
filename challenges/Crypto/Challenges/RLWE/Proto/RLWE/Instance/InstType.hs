@@ -7,28 +7,28 @@ import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Crypto.Challenges.RLWE.Proto.RLWE.RLWEInstanceCont as RLWE (RLWEInstanceCont)
-import qualified Crypto.Challenges.RLWE.Proto.RLWE.RLWEInstanceDisc as RLWE (RLWEInstanceDisc)
-import qualified Crypto.Challenges.RLWE.Proto.RLWE.RLWRInstance as RLWE (RLWRInstance)
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont as RLWE (InstanceCont)
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc as RLWE (InstanceDisc)
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.InstanceRound as RLWE (InstanceRound)
 
-data InstType = RlweInstCont{rlweInstCont :: (RLWE.RLWEInstanceCont)}
-              | RlweInstDisc{rlweInstDisc :: (RLWE.RLWEInstanceDisc)}
-              | RlwrInst{rlwrInst :: (RLWE.RLWRInstance)}
+data InstType = InstCont{instCont :: (RLWE.InstanceCont)}
+              | InstDisc{instDisc :: (RLWE.InstanceDisc)}
+              | InstRound{instRound :: (RLWE.InstanceRound)}
               deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
-get'rlweInstCont x
+get'instCont x
  = case x of
-     RlweInstCont rlweInstCont -> Prelude'.Just rlweInstCont
+     InstCont instCont -> Prelude'.Just instCont
      _ -> Prelude'.Nothing
-get'rlweInstDisc x
+get'instDisc x
  = case x of
-     RlweInstDisc rlweInstDisc -> Prelude'.Just rlweInstDisc
+     InstDisc instDisc -> Prelude'.Just instDisc
      _ -> Prelude'.Nothing
-get'rlwrInst x
+get'instRound x
  = case x of
-     RlwrInst rlwrInst -> Prelude'.Just rlwrInst
+     InstRound instRound -> Prelude'.Just instRound
      _ -> Prelude'.Nothing
 
 instance P'.Default InstType where
-  defaultValue = RlweInstCont P'.defaultValue
+  defaultValue = InstCont P'.defaultValue
 
 instance P'.Mergeable InstType

@@ -3,57 +3,57 @@ import "Lol.proto";
 
 // hprotoc -I . -I ../lol -a .=Crypto.Challenges.RLWE.Proto -a ../lol/=Crypto.Lol.Types.Proto -p Crypto.Challenges.RLWE.Proto RLWE.proto
 
-message RLWESampleCont {
-  required Rq a                   = 1;
-  required Kq b                   = 2;
+message SampleCont {
+  required Rq a                = 1;
+  required Kq b                = 2;
 }
 
-message RLWESampleDisc {
-  required Rq a                   = 1;
-  required Rq b                   = 2;
+message SampleDisc {
+  required Rq a                = 1;
+  required Rq b                = 2;
 }
 
-message RLWRSample {
-  required Rq a                   = 1;
-  required Rq b                   = 2;    // for some modulus p < q
+message SampleRound {
+  required Rq a                = 1;
+  required Rq b                = 2;    // for some modulus p < q
 }
 
-message RLWEInstanceCont {
-  required uint32 id              = 1;
-  required uint64 m               = 2;
-  required uint64 q               = 3;
-  required double svar            = 4;
-  required double bound           = 5;
-  repeated RLWESampleCont samples = 6;
+message InstanceCont {
+  required uint32 id           = 1;
+  required uint64 m            = 2;
+  required uint64 q            = 3;
+  required double svar         = 4;
+  required double bound        = 5;
+  repeated SampleCont samples  = 6;
 }
 
-message RLWEInstanceDisc {
-  required uint32 id              = 1;
-  required uint64 m               = 2;
-  required uint64 q               = 3;
-  required double svar            = 4;
-  required uint64 bound           = 5;
-  repeated RLWESampleDisc samples = 6;
+message InstanceDisc {
+  required uint32 id           = 1;
+  required uint64 m            = 2;
+  required uint64 q            = 3;
+  required double svar         = 4;
+  required uint64 bound        = 5;
+  repeated SampleDisc samples  = 6;
 }
 
-message RLWRInstance {
-  required uint32 id              = 1;
-  required uint64 m               = 2;
-  required uint64 q               = 3;
-  required uint64 p               = 4;     // RLWR modulus p < q
-  repeated RLWRSample samples     = 5;
+message InstanceRound {
+  required uint32 id           = 1;
+  required uint64 m            = 2;
+  required uint64 q            = 3;
+  required uint64 p            = 4;     // RLWR modulus p < q
+  repeated SampleRound samples = 5;
 }
 
-message RLWESecret {
-  required uint32 id              = 1;
-  required uint64 m               = 2;
-  required R secret               = 3;
+message Secret {
+  required uint32 id           = 1;
+  required uint64 m            = 2;
+  required R secret            = 3;
 }
 
 message Instance {
   oneof instType {
-    RLWEInstanceCont rlweInstCont  = 1;
-    RLWEInstanceDisc rlweInstDisc  = 2;
-    RLWRInstance rlwrInst          = 3;
+    InstanceCont instCont      = 1;
+    InstanceDisc instDisc      = 2;
+    InstanceRound instRound    = 3;
   }
 }

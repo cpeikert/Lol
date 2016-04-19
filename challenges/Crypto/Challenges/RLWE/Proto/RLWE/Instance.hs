@@ -9,7 +9,7 @@ import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 import qualified Crypto.Challenges.RLWE.Proto.RLWE.Instance.InstType as RLWE.Instance (InstType)
 import qualified Crypto.Challenges.RLWE.Proto.RLWE.Instance.InstType as RLWE.Instance.InstType
-       (InstType(..), get'rlweInstCont, get'rlweInstDisc, get'rlwrInst)
+       (InstType(..), get'instCont, get'instDisc, get'instRound)
 
 data Instance = Instance{instType :: P'.Maybe (RLWE.Instance.InstType)}
               deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
@@ -28,9 +28,9 @@ instance P'.Wire Instance where
        _ -> P'.wireSizeErr ft' self'
     where
         calc'Size
-         = (P'.wireSizeOpt 1 11 (RLWE.Instance.InstType.get'rlweInstCont Prelude'.=<< x'1) +
-             P'.wireSizeOpt 1 11 (RLWE.Instance.InstType.get'rlweInstDisc Prelude'.=<< x'1)
-             + P'.wireSizeOpt 1 11 (RLWE.Instance.InstType.get'rlwrInst Prelude'.=<< x'1))
+         = (P'.wireSizeOpt 1 11 (RLWE.Instance.InstType.get'instCont Prelude'.=<< x'1) +
+             P'.wireSizeOpt 1 11 (RLWE.Instance.InstType.get'instDisc Prelude'.=<< x'1)
+             + P'.wireSizeOpt 1 11 (RLWE.Instance.InstType.get'instRound Prelude'.=<< x'1))
   wirePut ft' self'@(Instance x'1)
    = case ft' of
        10 -> put'Fields
@@ -41,9 +41,9 @@ instance P'.Wire Instance where
     where
         put'Fields
          = do
-             P'.wirePutOpt 10 11 (RLWE.Instance.InstType.get'rlweInstCont Prelude'.=<< x'1)
-             P'.wirePutOpt 18 11 (RLWE.Instance.InstType.get'rlweInstDisc Prelude'.=<< x'1)
-             P'.wirePutOpt 26 11 (RLWE.Instance.InstType.get'rlwrInst Prelude'.=<< x'1)
+             P'.wirePutOpt 10 11 (RLWE.Instance.InstType.get'instCont Prelude'.=<< x'1)
+             P'.wirePutOpt 18 11 (RLWE.Instance.InstType.get'instDisc Prelude'.=<< x'1)
+             P'.wirePutOpt 26 11 (RLWE.Instance.InstType.get'instRound Prelude'.=<< x'1)
   wireGet ft'
    = case ft' of
        10 -> P'.getBareMessageWith update'Self
@@ -55,17 +55,17 @@ instance P'.Wire Instance where
              10 -> Prelude'.fmap
                     (\ !new'Field ->
                       old'Self{instType =
-                                P'.mergeAppend (instType old'Self) (Prelude'.Just (RLWE.Instance.InstType.RlweInstCont new'Field))})
+                                P'.mergeAppend (instType old'Self) (Prelude'.Just (RLWE.Instance.InstType.InstCont new'Field))})
                     (P'.wireGet 11)
              18 -> Prelude'.fmap
                     (\ !new'Field ->
                       old'Self{instType =
-                                P'.mergeAppend (instType old'Self) (Prelude'.Just (RLWE.Instance.InstType.RlweInstDisc new'Field))})
+                                P'.mergeAppend (instType old'Self) (Prelude'.Just (RLWE.Instance.InstType.InstDisc new'Field))})
                     (P'.wireGet 11)
              26 -> Prelude'.fmap
                     (\ !new'Field ->
                       old'Self{instType =
-                                P'.mergeAppend (instType old'Self) (Prelude'.Just (RLWE.Instance.InstType.RlwrInst new'Field))})
+                                P'.mergeAppend (instType old'Self) (Prelude'.Just (RLWE.Instance.InstType.InstRound new'Field))})
                     (P'.wireGet 11)
              _ -> let (field'Number, wire'Type) = P'.splitWireTag wire'Tag in P'.unknown field'Number wire'Type old'Self
 
@@ -78,7 +78,7 @@ instance P'.ReflectDescriptor Instance where
   getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList []) (P'.fromDistinctAscList [])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".RLWE.Instance\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\"], baseName = MName \"Instance\"}, descFilePath = [\"Crypto\",\"Challenges\",\"RLWE\",\"Proto\",\"RLWE\",\"Instance.hs\"], isGroup = False, fields = fromList [], descOneofs = fromList [OneofInfo {oneofName = ProtoName {protobufName = FIName \".RLWE.Instance.instType\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\",MName \"Instance\"], baseName = MName \"InstType\"}, oneofFName = ProtoFName {protobufName' = FIName \".RLWE.Instance.instType\", haskellPrefix' = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule' = [MName \"RLWE\",MName \"Instance\"], baseName' = FName \"instType\", baseNamePrefix' = \"\"}, oneofFilePath = [\"Crypto\",\"Challenges\",\"RLWE\",\"Proto\",\"RLWE\",\"Instance\",\"InstType.hs\"], oneofFields = fromList [(ProtoName {protobufName = FIName \".RLWE.Instance.instType.rlweInstCont\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName = MName \"RlweInstCont\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".RLWE.Instance.instType.rlweInstCont\", haskellPrefix' = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule' = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName' = FName \"rlweInstCont\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".RLWE.RLWEInstanceCont\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\"], baseName = MName \"RLWEInstanceCont\"}), hsRawDefault = Nothing, hsDefault = Nothing}),(ProtoName {protobufName = FIName \".RLWE.Instance.instType.rlweInstDisc\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName = MName \"RlweInstDisc\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".RLWE.Instance.instType.rlweInstDisc\", haskellPrefix' = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule' = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName' = FName \"rlweInstDisc\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".RLWE.RLWEInstanceDisc\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\"], baseName = MName \"RLWEInstanceDisc\"}), hsRawDefault = Nothing, hsDefault = Nothing}),(ProtoName {protobufName = FIName \".RLWE.Instance.instType.rlwrInst\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName = MName \"RlwrInst\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".RLWE.Instance.instType.rlwrInst\", haskellPrefix' = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule' = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName' = FName \"rlwrInst\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 3}, wireTag = WireTag {getWireTag = 26}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".RLWE.RLWRInstance\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\"], baseName = MName \"RLWRInstance\"}), hsRawDefault = Nothing, hsDefault = Nothing})], oneofMakeLenses = False}], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".RLWE.Instance\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\"], baseName = MName \"Instance\"}, descFilePath = [\"Crypto\",\"Challenges\",\"RLWE\",\"Proto\",\"RLWE\",\"Instance.hs\"], isGroup = False, fields = fromList [], descOneofs = fromList [OneofInfo {oneofName = ProtoName {protobufName = FIName \".RLWE.Instance.instType\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\",MName \"Instance\"], baseName = MName \"InstType\"}, oneofFName = ProtoFName {protobufName' = FIName \".RLWE.Instance.instType\", haskellPrefix' = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule' = [MName \"RLWE\",MName \"Instance\"], baseName' = FName \"instType\", baseNamePrefix' = \"\"}, oneofFilePath = [\"Crypto\",\"Challenges\",\"RLWE\",\"Proto\",\"RLWE\",\"Instance\",\"InstType.hs\"], oneofFields = fromList [(ProtoName {protobufName = FIName \".RLWE.Instance.instType.instCont\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName = MName \"InstCont\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".RLWE.Instance.instType.instCont\", haskellPrefix' = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule' = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName' = FName \"instCont\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".RLWE.InstanceCont\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\"], baseName = MName \"InstanceCont\"}), hsRawDefault = Nothing, hsDefault = Nothing}),(ProtoName {protobufName = FIName \".RLWE.Instance.instType.instDisc\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName = MName \"InstDisc\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".RLWE.Instance.instType.instDisc\", haskellPrefix' = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule' = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName' = FName \"instDisc\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".RLWE.InstanceDisc\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\"], baseName = MName \"InstanceDisc\"}), hsRawDefault = Nothing, hsDefault = Nothing}),(ProtoName {protobufName = FIName \".RLWE.Instance.instType.instRound\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName = MName \"InstRound\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".RLWE.Instance.instType.instRound\", haskellPrefix' = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule' = [MName \"RLWE\",MName \"Instance\",MName \"InstType\"], baseName' = FName \"instRound\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 3}, wireTag = WireTag {getWireTag = 26}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".RLWE.InstanceRound\", haskellPrefix = [MName \"Crypto\",MName \"Challenges\",MName \"RLWE\",MName \"Proto\"], parentModule = [MName \"RLWE\"], baseName = MName \"InstanceRound\"}), hsRawDefault = Nothing, hsDefault = Nothing})], oneofMakeLenses = False}], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
 
 instance P'.TextType Instance where
   tellT = P'.tellSubMessage
@@ -88,29 +88,29 @@ instance P'.TextMsg Instance where
   textPut msg
    = do
        case (instType msg) of
-         Prelude'.Just (RLWE.Instance.InstType.RlweInstCont rlweInstCont) -> P'.tellT "rlweInstCont" rlweInstCont
-         Prelude'.Just (RLWE.Instance.InstType.RlweInstDisc rlweInstDisc) -> P'.tellT "rlweInstDisc" rlweInstDisc
-         Prelude'.Just (RLWE.Instance.InstType.RlwrInst rlwrInst) -> P'.tellT "rlwrInst" rlwrInst
+         Prelude'.Just (RLWE.Instance.InstType.InstCont instCont) -> P'.tellT "instCont" instCont
+         Prelude'.Just (RLWE.Instance.InstType.InstDisc instDisc) -> P'.tellT "instDisc" instDisc
+         Prelude'.Just (RLWE.Instance.InstType.InstRound instRound) -> P'.tellT "instRound" instRound
          Prelude'.Nothing -> Prelude'.return ()
   textGet
    = do
        mods <- P'.sepEndBy (P'.choice [parse'instType]) P'.spaces
        Prelude'.return (Prelude'.foldl (\ v f -> f v) P'.defaultValue mods)
     where
-        parse'instType = P'.try (P'.choice [parse'rlweInstCont, parse'rlweInstDisc, parse'rlwrInst])
+        parse'instType = P'.try (P'.choice [parse'instCont, parse'instDisc, parse'instRound])
           where
-              parse'rlweInstCont
+              parse'instCont
                = P'.try
                   (do
-                     v <- P'.getT "rlweInstCont"
-                     Prelude'.return (\ s -> s{instType = Prelude'.Just (RLWE.Instance.InstType.RlweInstCont v)}))
-              parse'rlweInstDisc
+                     v <- P'.getT "instCont"
+                     Prelude'.return (\ s -> s{instType = Prelude'.Just (RLWE.Instance.InstType.InstCont v)}))
+              parse'instDisc
                = P'.try
                   (do
-                     v <- P'.getT "rlweInstDisc"
-                     Prelude'.return (\ s -> s{instType = Prelude'.Just (RLWE.Instance.InstType.RlweInstDisc v)}))
-              parse'rlwrInst
+                     v <- P'.getT "instDisc"
+                     Prelude'.return (\ s -> s{instType = Prelude'.Just (RLWE.Instance.InstType.InstDisc v)}))
+              parse'instRound
                = P'.try
                   (do
-                     v <- P'.getT "rlwrInst"
-                     Prelude'.return (\ s -> s{instType = Prelude'.Just (RLWE.Instance.InstType.RlwrInst v)}))
+                     v <- P'.getT "instRound"
+                     Prelude'.return (\ s -> s{instType = Prelude'.Just (RLWE.Instance.InstType.InstRound v)}))
