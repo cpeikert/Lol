@@ -1,8 +1,8 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveGeneric, FlexibleContexts,
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, GADTs, MultiParamTypeClasses,
              NoImplicitPrelude, PolyKinds, RankNTypes,
-             ScopedTypeVariables, StandaloneDeriving, TypeFamilies,
-             TypeOperators, UndecidableInstances #-}
+             ScopedTypeVariables, TypeFamilies, TypeOperators,
+             UndecidableInstances #-}
 
 -- | An implementation of cyclotomic rings that hides the
 -- internal representations of ring elements (e.g., the choice of
@@ -62,7 +62,7 @@ import           Crypto.Lol.Types.ZPP
 import Control.Applicative    hiding ((*>))
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity   -- for coerce
+import Control.Monad.Identity
 import Control.Monad.Random
 import Data.Coerce
 import Data.Traversable
