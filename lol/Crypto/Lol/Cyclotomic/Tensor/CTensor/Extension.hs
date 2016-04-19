@@ -17,7 +17,6 @@ import Crypto.Lol.LatticePrelude as LP hiding (null, lift)
 import Crypto.Lol.Cyclotomic.Tensor as T
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZmStar
-import Crypto.Lol.Reflects
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Trans (lift)

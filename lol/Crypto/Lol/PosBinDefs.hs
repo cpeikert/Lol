@@ -2,6 +2,7 @@
              KindSignatures, NoImplicitPrelude, PolyKinds,
              RebindableSyntax, ScopedTypeVariables, TemplateHaskell,
              TypeFamilies, UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-duplicate-exports #-} -- Sing
 
 -- | This sub-module exists only because we can't define and use
 -- template Haskell splices in the same module.
@@ -133,15 +134,20 @@ intDec pfx f n = tySynD (mkName $ pfx ++ show n) [] (f n)
 primes :: [Int]
 primes = 2 : 3 : 5 : primes'
   where
+    isPrime []     _ = True
     isPrime (p:ps) n = p*p > n || n `rem` p /= 0 && isPrime ps n
-    primes' = 7 : filter (isPrime primes') (scanl (+) 11 $ cycle [2,4,2,4,6,2,6,4])
+
+    primes'          = 7 : filter (isPrime primes') (scanl (+) 11 $ cycle [2,4,2,4,6,2,6,4])
 
 -- | Search for the argument in 'primes'.  This is not particularly
 -- fast, but works well enough for moderate-sized numbers that would
 -- appear as (divisors of) cyclotomic indices of interest.
 prime :: Int -> Bool
 prime = go primes
-    where go (p:ps) n = case compare p n of
-                          LT -> go ps n
-                          EQ -> True
-                          GT -> False
+  where
+    go []     _ = False
+    go (p:ps) n = case compare p n of
+                    LT -> go ps n
+                    EQ -> True
+                    GT -> False
+

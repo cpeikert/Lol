@@ -12,7 +12,6 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
 import Crypto.Lol.LatticePrelude                        as LP
 
@@ -140,6 +139,7 @@ butterfly = trans 2 $ \arr ->
                                                 arr ! (sh:.1)
                                            1 -> arr ! (sh:.0) -
                                                 arr ! (sh:.1)
+                                           _ -> error "butterfly: impossible"
 
 -- DFT_p, CRT_p, scaled DFT_p^{ -1 } and CRT_p^{ -1 }
 pDFT, pDFTInv', pCRT, pCRTInv' ::

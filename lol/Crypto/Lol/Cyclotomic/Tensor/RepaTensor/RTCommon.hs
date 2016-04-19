@@ -3,6 +3,7 @@
              KindSignatures, MultiParamTypeClasses, NoImplicitPrelude,
              RankNTypes, RebindableSyntax, RoleAnnotations,
              ScopedTypeVariables, TypeOperators #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- | A simple DSL for tensoring Repa arrays and other common functionality
 -- on Repa arrays
@@ -83,7 +84,7 @@ instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (Arr m r) where
 
 instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (Arr m r) where
   -- not using 'zero' to avoid Additive r constraint
-  isZero (Arr a) 
+  isZero (Arr a)
       = isZero $ foldAllS (\ x y -> if isZero x then y else x) (a R.! (Z:.0)) a
   {-# INLINABLE isZero #-}
 
@@ -231,7 +232,7 @@ mulMat !m !v
     in if mcols == vrows then fromFunction (sh :. mrows) f
        else error "mulMatVec: mcols != vdim"
 {-# INLINABLE mulMat #-}
-            
+
 -- | multiplication by a diagonal matrix along innermost dim
 mulDiag :: (Source r1 r, Source r2 r, Ring r, Unbox r, Elt r)
            => Array r1 DIM1 r -> Array r2 DIM2 r -> Array D DIM2 r

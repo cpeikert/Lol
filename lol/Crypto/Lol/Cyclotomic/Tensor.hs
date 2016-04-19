@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             NoImplicitPrelude, PolyKinds, RankNTypes, ScopedTypeVariables, 
-             TupleSections, TypeFamilies, TypeOperators, 
+             NoImplicitPrelude, PolyKinds, RankNTypes, ScopedTypeVariables,
+             TupleSections, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
 
 -- | Interface for cyclotomic tensors, and helper functions for tensor
@@ -65,7 +65,7 @@ class (TElt t Double, TElt t (Complex Double))
   -- | Properties that hold for any index. Use with '\\'.
   entailIndexT :: Tagged (t m r)
                   (Fact m :- (Applicative (t m), Traversable (t m)))
-  
+
   -- | Properties that hold for any (legal) fully-applied tensor. Use
   -- with '\\'.
   entailEqT :: Tagged (t m r)
@@ -165,7 +165,7 @@ class (TElt t Double, TElt t (Complex Double))
               => (a -> b -> c) -> t m a -> t m b -> t m c
 
   -- | Potentially optimized unzip for types that satisfy 'TElt'.
-  unzipT :: (Fact m, TElt t (a,b), TElt t a, TElt t b) 
+  unzipT :: (Fact m, TElt t (a,b), TElt t a, TElt t b)
             => t m (a,b) -> (t m a, t m b)
 
   {- CJP: suppressed, apparently not needed
@@ -175,7 +175,7 @@ class (TElt t Double, TElt t (Complex Double))
   -}
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
-hasCRTFuncs :: forall t m mon i r . (CRTrans mon Int r, Tensor t, Fact m, TElt t r)
+hasCRTFuncs :: forall t m mon r . (CRTrans mon Int r, Tensor t, Fact m, TElt t r)
                => TaggedT (t m r) mon ()
 {-# INLINABLE hasCRTFuncs #-}
 hasCRTFuncs = tagT $ do
@@ -212,7 +212,7 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 -- For cyclotomic indices m | m',
 -- @Tw(x) = (mhat\/m\'hat) * Tr(g\'\/g * x)@.
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-twaceCRT :: forall t m m' mon i r . (CRTrans mon Int r, Tensor t, m `Divides` m', TElt t r)
+twaceCRT :: forall t m m' mon r . (CRTrans mon Int r, Tensor t, m `Divides` m', TElt t r)
             => mon (t m' r -> t m r)
 twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
@@ -221,7 +221,7 @@ twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
 -- | Embed a tensor with index @m@ in the CRT basis to a tensor with
 -- index @m'@ in the CRT basis.
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-embedCRT :: forall t m m' mon i r . (CRTrans mon Int r, Tensor t, m `Divides` m', TElt t r)
+embedCRT :: forall t m m' mon r . (CRTrans mon Int r, Tensor t, m `Divides` m', TElt t r)
             => mon (t m r -> t m' r)
 embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
@@ -253,7 +253,7 @@ ppMatrix mat = tagT $ case (sing :: SPrimePower pp) of
 
 -- deeply embedded DSL for Kronecker products of matrices
 
-data MatrixC r = 
+data MatrixC r =
   MC Int Int                        -- dims
   (Int -> Int -> r)                 -- yields element i,j
 
@@ -262,11 +262,15 @@ data Matrix r = MNil | MKron (Matrix r) (MatrixC r) -- snoc list
 
 -- | Extract the @(i,j)@ element of a 'Matrix'.
 indexM :: Ring r => Matrix r -> Int -> Int -> r
-indexM MNil 0 0 = LP.one
+indexM MNil                  0 0 = LP.one
 indexM (MKron m (MC r c mc)) i j =
-  let (iq,ir) = i `divMod` r
+  let
+      (iq,ir) = i `divMod` r
       (jq,jr) = j `divMod` c
-      in indexM m iq jq * mc ir jr
+  in
+  indexM m iq jq * mc ir jr
+indexM _ _ _ =
+  error "indexM: unexpected input"
 
 gCRTM, gInvCRTM :: (Fact m, CRTrans mon Int r) => TaggedT m mon (Matrix r)
 gCRTM = fMatrix gCRTPPow
@@ -317,9 +321,12 @@ gInvCRTPrime = do
 digitRev :: PP -> Int -> Int
 digitRev (_,0) 0 = 0
 -- CJP: use accumulator to avoid multiple exponentiations?
-digitRev (p,e) j 
-  | e >= 1 = let (q,r) = j `divMod` p
-             in r * (p^(e-1)) + digitRev (p,e-1) q
+digitRev (p,e) j
+  | e >= 1
+  = let (q,r) = j `divMod` p
+    in r * (p^(e-1)) + digitRev (p,e-1) q
+digitRev _ _ =
+  error "digitRev: unexpected input"
 
 indexToPowPPow, indexToZmsPPow :: PPow pp => Tagged pp (Int -> Int)
 indexToPowPPow = indexToPow <$> ppPPow
@@ -340,7 +347,7 @@ indexToPow (p,e) j = let (jq,jr) = j `divMod` (p-1)
 -- element i in @Z_{p^e}^*@.
 indexToZms :: PP -> Int -> Int
 indexToZms (p,_) i = let (i1,i0) = i `divMod` (p-1)
-                       in p*i1 + i0 + 1 
+                       in p*i1 + i0 + 1
 
 -- | Convert a Z_m^* index to a linear tensor index.
 zmsToIndex :: [PP] -> Int -> Int
@@ -369,6 +376,8 @@ toIndexPair ((phi,phi'):rest) i' =
       (i'rq,i'rr) = i'r `divMod` phi
       (i'q1,i'q0) = toIndexPair rest i'q
   in (i'rq + i'q1*(phi' `div` phi), i'rr + i'q0*phi)
+toIndexPair _ _ =
+  error "toIndexPair: unexpected input"
 
 fromIndexPair [] (0,0) = 0
 fromIndexPair ((phi,phi'):rest) (i1,i0) =
@@ -376,6 +385,8 @@ fromIndexPair ((phi,phi'):rest) (i1,i0) =
       (i1q,i1r) = i1 `divMod` (phi' `div` phi)
       i = fromIndexPair rest (i1q,i0q)
   in (i0r + i1r*phi) + i*phi'
+fromIndexPair _ _ =
+  error "fromIndexPair: unexpected input"
 
 -- | A collection of useful information for working with tensor
 -- extensions.  The first component is a list of triples @(p,e,e')@
@@ -468,6 +479,8 @@ baseIndexDec ((p,e,e'):rest) i'
        (i,b) <- curr
        (j,b') <- baseIndexDec rest i'q
        return (i + phi*j, b /= b')
+baseIndexDec _ _ =
+  error "baseIndexDec: unexpected input"
 
 -- the first list of pps must "divide" the other.  result is a list of
 -- all (prime, min e, max e).
@@ -476,6 +489,9 @@ mergePPs [] pps = LP.map (\(p,e) -> (p,0,e)) pps
 mergePPs allpps@((p,e):pps) ((p',e'):pps')
   | p == p' && e <= e' = (p,  e, e') : mergePPs pps pps'
   | p > p'  = (p', 0, e') : mergePPs allpps pps'
+mergePPs _ _ =
+  error "mergePPs: unexpected input"
 
 totients :: [(Int, Int, Int)] -> [(Int,Int)]
 totients = LP.map (\(p,e,e') -> (totientPP (p,e), totientPP (p,e')))
+

@@ -179,7 +179,8 @@ instance Fact m => Applicative (RT m) where
 
   -- RT can never hold an a -> b
   (ZV f) <*> (ZV a) = ZV (f <*> a)
-  f@(ZV _) <*> v@(RT _) = f <*> toZV v
+  f      <*> v@RT{} = f <*> toZV v
+  _      <*> _      = error "RT can never hold an (a -> b)"
 
 instance Fact m => Foldable (RT m) where
   -- Foldable instance is implied by Traversable

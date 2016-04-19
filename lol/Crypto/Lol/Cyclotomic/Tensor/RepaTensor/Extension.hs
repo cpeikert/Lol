@@ -2,6 +2,7 @@
              FlexibleInstances, MultiParamTypeClasses, NoImplicitPrelude,
              PolyKinds, ScopedTypeVariables, TemplateHaskell, TypeFamilies,
              TypeOperators #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- | RT-specific functions for embedding/twacing in various bases
 

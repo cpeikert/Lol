@@ -1,5 +1,6 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, 
              PolyKinds, ScopedTypeVariables, TypeFamilies, UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
 (Dispatch
@@ -22,17 +23,13 @@ module Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
 ) where
 
 import Control.Applicative
-import Control.Monad
 
 import Crypto.Lol.LatticePrelude as LP (Complex, Proxy(..), proxy, (++), map, mapM_, PP, Tagged, tag)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.ZqBasic
 
 import Data.Int
-import Data.Vector.Storable          as SV (Vector, (!), replicate, replicateM, thaw, convert, foldl',
-                                            unsafeToForeignPtr0, unsafeSlice, mapM, fromList,
-                                            generate, foldl1',
-                                            unsafeWith, zipWith, map, length, unsafeFreeze, thaw)
+import Data.Vector.Storable          as SV ( Vector, unsafeToForeignPtr0, fromList )
 import Data.Vector.Storable.Internal (getPtr)
 
 import           Foreign.ForeignPtr (touchForeignPtr)

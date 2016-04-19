@@ -51,7 +51,7 @@ import qualified Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative    as A
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity
+import Control.Monad.Identity hiding ( ap )
 import Control.Monad.Random
 import Data.Foldable          as F
 import Data.Maybe

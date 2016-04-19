@@ -271,6 +271,7 @@ correctZ q b =
       barBtRnd q' (v1:vs@(v2:_)) = let quo = fst $ divModCent (b*v1-v2) q
                                    in (quo:) *** (quo*q' +) $
                                       barBtRnd (q' `div` b) vs
+      barBtRnd _ _ = error "barBtRnd: unexpected input"
 
       -- | Yield @(q \bar{D}) \cdot w@, given precomputed first entry
       qbarD :: [z] -> z -> [z]
@@ -282,6 +283,7 @@ correctZ q b =
       subLast :: [z] -> [z] -> ([z], z)
       subLast [v0] [v'0] = let y = v0-v'0 in ([y], y)
       subLast (v0:vs) (v'0:v's) = first ((v0-v'0):) $ subLast vs v's
+      subLast _ _ = error "subLast: unexpected input"
 
 instance (ReflectsTI q z, Ring z, Reflects b z)
     => Correct (BaseBGad b) (ZqBasic q z) where

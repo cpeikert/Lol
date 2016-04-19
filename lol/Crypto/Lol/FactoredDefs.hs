@@ -2,6 +2,7 @@
              InstanceSigs, KindSignatures, PolyKinds, ScopedTypeVariables,
              TemplateHaskell, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 -- | This sub-module exists only because we can't define and use
 -- template Haskell splices in the same module.
@@ -414,13 +415,15 @@ fDec n = tySynD (mkName $ 'F' : show n) [] $ fType n
 -- divisors, with multiplicities.  First argument is infinite list of
 -- primes left to consider.
 factorize' :: [Int] -> Int -> [Int]
-factorize' _ 1 = []
-factorize' ds@(d:ds') n 
-  | n > 1 = if d * d > n then [n]
-            else let (q,r) = n `divMod` d
-                 in if r == 0 then d : factorize' ds q
-                    else factorize' ds' n
-  | otherwise = error "can only factorize positive integers"
+factorize' _          1         = []
+factorize' ds@(d:ds') n | n > 1 =
+  if d * d > n
+    then [n]
+    else let (q,r) = n `divMod` d
+         in if r == 0 then d : factorize' ds  q
+                      else     factorize' ds' n
+factorize' _ _
+  = error "can only factorize positive integers"
 
 -- | Factorize a positive integer into a list of (prime,exponent)
 -- pairs, in strictly increasing order by prime.

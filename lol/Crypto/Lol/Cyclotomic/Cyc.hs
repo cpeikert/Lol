@@ -2,6 +2,7 @@
              FlexibleInstances, GADTs, MultiParamTypeClasses,
              NoImplicitPrelude, PolyKinds, RankNTypes, ScopedTypeVariables,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports #-} -- Control.Monad.Identity
 
 -- | An implementation of cyclotomic rings that hides the
 -- internal representations of ring elements (e.g., the choice of
@@ -60,7 +61,7 @@ import           Crypto.Lol.Types.ZPP
 import Control.Applicative    hiding ((*>))
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity   -- needed for coerce
+import Control.Monad.Identity -- needed for coerce
 import Control.Monad.Random
 import Data.Coerce
 import Data.Traversable
