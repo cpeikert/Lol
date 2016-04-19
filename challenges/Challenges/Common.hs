@@ -104,9 +104,6 @@ intToHex :: Int -> String
 intToHex x | x < 0 || x > 15 = error "hex value out of range"
 intToHex x = printf "%X" x
 
-showHexBS :: ByteString -> String
-showHexBS = map toUpper . tail . init . show . toLazyByteString . byteStringHex . toStrict
-
 -- for testing purposes
 absPath :: IO FilePath
 absPath = do
