@@ -2,11 +2,11 @@
              NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables,
              TypeFamilies #-}
 
-module Challenges.ContinuousLWE.Gen
+module Crypto.Challenges.ContinuousLWE.Gen
 ( rlweInstance
-, module Challenges.ContinuousLWE.Proto) where
+, module Crypto.Challenges.ContinuousLWE.Proto) where
 
-import Challenges.ContinuousLWE.Proto
+import Crypto.Challenges.ContinuousLWE.Proto
 
 import Control.Applicative
 import Control.Monad        (replicateM)
@@ -23,7 +23,7 @@ rlweInstance ::(ULWECtx t m z zq v rq, MonadRandom rnd, Random z)
   => v -> Int -> rnd (Cyc t m z, [RLWESampleCont t m zq rq])
 rlweInstance svar numSamples = do
   s <- getRandom
-  samples <- replicateM numSamples (lweSample svar s)
+  samples <- replicateM numSamples (rlweSample svar s)
   return (s, samples)
 
 -- | An RLWE sample for a given secret.
@@ -35,7 +35,7 @@ rlweSample svar s = do
   e :: UCyc t m D (LiftOf rq) <- tGaussian svar
   a <- adviseCRT <$> getRandom
   let as = fmap fromSubgroup $ uncycDec $ a * sq :: UCyc t m D rq
-  return $ RLWESampleCont a $ as + reduce e
+  return (a, as + reduce e)
 
 type ULWECtx t m  z zq v rq =
   (Reduce z zq, Ring zq, Random zq, Fact m, CElt t z,

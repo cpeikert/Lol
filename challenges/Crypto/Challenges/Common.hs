@@ -1,4 +1,4 @@
-module Challenges.Common
+module Crypto.Challenges.Common
 ( numInstances
 , challengeFilesDir, secretFilesDir
 , instFileName, secretFileName, revealFileName
@@ -11,10 +11,12 @@ module Challenges.Common
 , getSecretIdx
 ) where
 
-import Challenges.Beacon
+import Crypto.Challenges.Beacon
 
 import Control.Monad.Except
+import Data.ByteString.Lazy (unpack)
 import Data.Default         (Default (..))
+import Data.Word
 
 import Net.Beacon
 
@@ -78,11 +80,11 @@ secretFilesDir :: FilePath
 secretFilesDir = challengeFilesDir
 
 -- | The name for instance files is some string followed by a hex ID with a .instance extension.
-instFileName :: String -> Int -> FilePath
+instFileName :: String -> Word32 -> FilePath
 instFileName name idx = name ++ "-" ++ intToHex idx ++ ".instance"
 
 -- | The name for secret files is some string followed by a hex ID with the .secret extension.
-secretFileName :: String -> Int -> FilePath
+secretFileName :: String -> Word32 -> FilePath
 secretFileName name idx = name ++ "-" ++ intToHex idx ++ ".secret"
 
 -- | The name for the file that contains the beacon information for each challenge.
@@ -97,7 +99,7 @@ xmlFileName t = show t ++ ".xml"
 certFileName :: FilePath
 certFileName = "beacon.cer"
 
-intToHex :: Int -> String
+intToHex :: Word32 -> String
 intToHex x | x < 0 || x > 15 = error "hex value out of range"
 intToHex x = printf "%X" x
 
@@ -151,8 +153,8 @@ readRevealData path = do
   return $ BP time offset
 
 -- | Given a beacon record and a byte offset, return the secret index for this challenge.
-getSecretIdx :: Record -> Int -> Int
+getSecretIdx :: Record -> Int -> Word32
 getSecretIdx record byteOffset =
   let output = outputValue record
       byte = unpack output !! byteOffset
-  in fromIntegral byte `mod` numInstances
+  in fromIntegral $ fromIntegral byte `mod` numInstances

@@ -1,13 +1,13 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
-module Challenges.Proto.RLWE.RLWRInstance (RLWRInstance(..)) where
+module Crypto.Challenges.Proto.RLWE.RLWRInstance (RLWRInstance(..)) where
 import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Challenges.Proto.RLWE.RLWRSample as RLWE (RLWRSample)
+import qualified Crypto.Challenges.Proto.RLWE.RLWRSample as RLWE (RLWRSample)
 
 data RLWRInstance = RLWRInstance{id :: !(P'.Word32), m :: !(P'.Word64), q :: !(P'.Word64), p :: !(P'.Word64),
                                  samples :: !(P'.Seq RLWE.RLWRSample)}

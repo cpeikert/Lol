@@ -1,13 +1,13 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
-module Challenges.Proto.RLWE.RLWESecret (RLWESecret(..)) where
+module Crypto.Challenges.Proto.RLWE.RLWESecret (RLWESecret(..)) where
 import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Challenges.Proto.Lol.R as Lol (R)
+import qualified Crypto.Lol.Types.Proto.R as Lol (R)
 
 data RLWESecret = RLWESecret{id :: !(P'.Word32), m :: !(P'.Word64), secret :: !(Lol.R)}
                 deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)

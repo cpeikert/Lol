@@ -1,14 +1,14 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
-module Challenges.Proto.RLWE.RLWESampleCont (RLWESampleCont(..)) where
+module Crypto.Challenges.Proto.RLWE.RLWESampleCont (RLWESampleCont(..)) where
 import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Challenges.Proto.Lol.Kq as Lol (Kq)
-import qualified Challenges.Proto.Lol.Rq as Lol (Rq)
+import qualified Crypto.Lol.Types.Proto.Kq as Lol (Kq)
+import qualified Crypto.Lol.Types.Proto.Rq as Lol (Rq)
 
 data RLWESampleCont = RLWESampleCont{a :: !(Lol.Rq), b :: !(Lol.Kq)}
                     deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)

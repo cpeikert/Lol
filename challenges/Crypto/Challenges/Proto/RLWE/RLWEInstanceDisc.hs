@@ -1,13 +1,13 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
-module Challenges.Proto.RLWE.RLWEInstanceDisc (RLWEInstanceDisc(..)) where
+module Crypto.Challenges.Proto.RLWE.RLWEInstanceDisc (RLWEInstanceDisc(..)) where
 import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Challenges.Proto.RLWE.RLWESampleDisc as RLWE (RLWESampleDisc)
+import qualified Crypto.Challenges.Proto.RLWE.RLWESampleDisc as RLWE (RLWESampleDisc)
 
 data RLWEInstanceDisc = RLWEInstanceDisc{id :: !(P'.Word32), m :: !(P'.Word64), q :: !(P'.Word64), svar :: !(P'.Double),
                                          bound :: !(P'.Word64), samples :: !(P'.Seq RLWE.RLWESampleDisc)}
