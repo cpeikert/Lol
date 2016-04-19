@@ -1,5 +1,6 @@
-
--- | Utility functions for working with the <http://www.nist.gov/itl/csd/ct/nist_beacon.cfm NIST Randomness Beacon>.
+-- | Utility functions for working with the
+-- <http://www.nist.gov/itl/csd/ct/nist_beacon.cfm NIST Randomness
+-- Beacon>.
 
 module Challenges.Beacon
 ( gmtDateToSeconds, localDateToSeconds
@@ -10,28 +11,23 @@ module Challenges.Beacon
 
 import Control.DeepSeq
 import Control.Monad.State
-import Crypto.Hash.SHA512 (hash)
-import Crypto.Lol (fromJust')
-import Data.ByteString (ByteString)
-import qualified Data.ByteString.Lazy as B
-import qualified Data.ByteString.Lazy.Char8 as SB (pack)
-import qualified Data.ByteString.Builder as B
 
-import Data.Time.Calendar (fromGregorian)
-import Data.Time.Clock (UTCTime(..),secondsToDiffTime)
+import Data.Time.Calendar    (fromGregorian)
+import Data.Time.Clock       (UTCTime (..), secondsToDiffTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
-import Data.Time.LocalTime (timeZoneMinutes, getCurrentTimeZone)
-import Net.Beacon
+import Data.Time.LocalTime   (getCurrentTimeZone, timeZoneMinutes)
 
--- | The number of bytes per beacon, equivalent to @512 / 8@.
+-- | The number of bytes (@512 / 8 = 64@) per beacon.
+bytesPerBeacon :: Int
 bytesPerBeacon = 64 :: Int
 
--- | The number of seconds between beacon outputs.
+-- | The number of seconds (@60@) between beacon outputs.
+beaconInterval :: Int
 beaconInterval = 60 :: Int
 
 -- | Represents a byte offset in a beacon output at a particular time.
 data BeaconPos = BP Int Int deriving (Eq, Show)
-instance NFData BeaconPos where rnf (BP a b) = (rnf a) `seq` (rnf b)
+instance NFData BeaconPos where rnf (BP a b) = rnf a `seq` rnf b
 
 -- | Advances the beacon position by one byte, overflowing to the next beacon in necessary.
 advanceBeaconPos :: (Monad m) => StateT BeaconPos m ()
@@ -46,7 +42,7 @@ gmtDateToSeconds :: Int -> Int -> Integer -> Int -> Int -> Int
 gmtDateToSeconds month day year hour minute | hour >= 0 &&
                                            hour < 24 &&
                                            minute >= 0 &&
-                                           minute < 60 = 
+                                           minute < 60 =
   round $ utcTimeToPOSIXSeconds $ UTCTime (fromGregorian year month day) (secondsToDiffTime $ fromIntegral $ 3600*hour+60*minute)
 gmtDateToSeconds _ _ _ _ _ = error "invalid date to gmtDateToSeconds"
 
