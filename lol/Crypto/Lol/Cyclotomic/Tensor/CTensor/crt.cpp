@@ -522,7 +522,7 @@ template <typename ring> void ppcrtinv (ring* y, hShort_t tupSize, hDim_t lts, h
   }
 }
 
-extern "C" void tensorCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t** ru, hInt_t* qs)
+extern "C" void tensorCRTRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Zq** ru, hInt_t* qs)
 {
   hDim_t i;
 #ifdef STATS
@@ -551,16 +551,16 @@ extern "C" void tensorCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExpo
   printf("]\n");
 #endif
     
-  tensorFuserCRT2 ((Zq*)y, tupSize, ppcrt, totm, peArr, sizeOfPE, (Zq**)ru, qs);
+  tensorFuserCRT2 (y, tupSize, ppcrt, totm, peArr, sizeOfPE, ru, qs);
 
   for(i = 0; i < tupSize; i++) {
     hInt_t q = qs[i];
     for(hDim_t j = 0; j < totm; j++) {
-      if(y[j*tupSize+i]<0) {
-        y[j*tupSize+i]+=q;
+      if(y[j*tupSize+i].x<0) {
+        y[j*tupSize+i].x+=q;
       }
 #ifdef DEBUG_MODE
-      if(y[j*tupSize+i]<0) {
+      if(y[j*tupSize+i].x<0) {
         printf("TENSOR CRT^T INV\n");
       }
 #endif
@@ -581,8 +581,8 @@ extern "C" void tensorCRTRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExpo
 }
 
 //takes inverse rus
-extern "C" void tensorCRTInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, 
-                    hInt_t** ruinv, hInt_t* mhatInv, hInt_t* qs)
+extern "C" void tensorCRTInvRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, 
+                    Zq** ruinv, Zq* mhatInv, hInt_t* qs)
 {
   hDim_t i;
 #ifdef STATS
@@ -610,18 +610,18 @@ extern "C" void tensorCRTInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeE
   printf("]\n");
 #endif
 
-  tensorFuserCRT2 ((Zq*)y, tupSize, ppcrtinv, totm, peArr, sizeOfPE, (Zq**)ruinv, qs);
+  tensorFuserCRT2 (y, tupSize, ppcrtinv, totm, peArr, sizeOfPE, ruinv, qs);
 
   for (i = 0; i < tupSize; i++) {
     hInt_t q = qs[i];
     for (hDim_t j = 0; j < totm; j++) {
-      y[j*tupSize+i] = (y[j*tupSize+i]*mhatInv[i])%q;
-      if(y[j*tupSize+i] < 0) {
-        y[j*tupSize+i] +=q;
+      //careful here! I'm not setting the global q, so I can't rely on Zq multiplication
+      y[j*tupSize+i].x = (y[j*tupSize+i].x*mhatInv[i].x)%q;
+      if(y[j*tupSize+i].x < 0) {
+        y[j*tupSize+i].x +=q;
       }
 #ifdef DEBUG_MODE
-      if(y[j*tupSize+i]<0)
-      {
+      if(y[j*tupSize+i].x<0) {
         printf("TENSOR CRT INV\n");
       }
 #endif

@@ -2,6 +2,7 @@
 
 //see note in zq.cc
 hInt_t Zq::q;
+//uint8_t Zq::tupSize;
 
 hDim_t ipow(hDim_t base, hShort_t exp)
 {
@@ -96,7 +97,7 @@ void tensorFuser (void* y, hShort_t tupSize, funcPtr f, hDim_t totm, PrimeExpone
         hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
         lts /= dim;
         (*f) (y, tupSize, pe, lts, rts, qs);
-        rts  *= dim;
+        rts *= dim;
     }
 }
 
@@ -117,14 +118,42 @@ void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, Prime
     }
 }
 
+
+
+//for square transforms
+template <typename ring> void tensorFuser2 (ring* y, hShort_t tupSize, void (*f) (ring* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
+{
+    hDim_t lts = totm;
+    hDim_t rts = 1;
+    hShort_t i;
+
+    for (i = 0; i < sizeOfPE; ++i) {
+        PrimeExponent pe = peArr[i];
+        hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
+        hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
+        lts /= dim;
+        for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+          if(qs) {
+            Zq::q = qs[tupIdx]; // global update
+          }
+          (*f) (y+tupIdx, tupSize, pe, lts, rts);
+        }
+        rts *= dim;
+    }
+}
+
+template void tensorFuser2 (Zq* y, hShort_t tupSize, void (*f) (Zq* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
+template void tensorFuser2 (hInt_t* y, hShort_t tupSize, void (*f) (hInt_t* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
+template void tensorFuser2 (Complex* y, hShort_t tupSize, void (*f) (Complex* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
+
+
 template <typename ring> void tensorFuserCRT2 (ring* y, hShort_t tupSize, void (*f) (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, ring* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ring** ru, hInt_t* qs)
 {
     hDim_t lts = totm;
     hDim_t rts = 1;
     hShort_t i;
 
-    for (i = 0; i < sizeOfPE; ++i)
-    {
+    for (i = 0; i < sizeOfPE; ++i) {
         PrimeExponent pe = peArr[i];
         hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
         hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe

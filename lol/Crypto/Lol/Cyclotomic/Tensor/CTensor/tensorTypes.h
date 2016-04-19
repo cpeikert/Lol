@@ -111,6 +111,8 @@ typedef struct
 	double imag;
 } complex_t;
 
+hInt_t reciprocal (hInt_t a, hInt_t b);
+
 //http://stackoverflow.com/a/4421719
 class Zq
 {
@@ -121,26 +123,39 @@ public:
 
   Zq& operator=(const hInt_t& c)
   {
-    this->x = c;
+    this->x = c % q;
     return *this;
   }
   Zq& operator+=(const Zq& b)
   {
-    this->x = (this->x+b.x) % q;
+    this->x += b.x;
+    this->x %= q;
     return *this;
   }
   Zq& operator-=(const Zq& b)
   {
-    this->x = (this->x-b.x) % q;
+    this->x -= b.x;
+    this->x %= q;
     return *this;
   }
-   Zq& operator*=(const Zq& b)
+  Zq& operator*=(const Zq& b)
   {
-    this->x = (this->x*b.x) % q;
+    this->x *= b.x;
+    this->x %= q;
+    return *this;
+  }
+  Zq& operator/=(const Zq& b)
+  {
+    Zq binv;
+    binv = reciprocal(q,b.x);
+    *this *= binv;
     return *this;
   }
 };
-
+inline char operator==(Zq a, const Zq& b)
+{
+  return (a.x == b.x);
+}
 inline Zq operator+(Zq a, const Zq& b)
 {
   a += b;
@@ -154,6 +169,11 @@ inline Zq operator-(Zq a, const Zq& b)
 inline Zq operator*(Zq a, const Zq& b)
 {
   a *= b;
+  return a;
+}
+inline Zq operator/(Zq a, const Zq& b)
+{
+  a /= b;
   return a;
 }
 
@@ -190,7 +210,10 @@ public:
     return *this;
   }
 };
-
+/*inline char operator==(Complex a, const Complex& b)
+{
+  return (a.real == b.real) && (a.imag == b.imag);
+}*/
 inline Complex operator+(Complex a, const Complex& b)
 {
   a += b;
@@ -232,7 +255,7 @@ hDim_t ipow(hDim_t base, hShort_t exp);
 complex_t cmplxpow(complex_t base, hShort_t exp);
 hInt_t qpow(hInt_t base, hShort_t exp, hInt_t q);
 
-hInt_t reciprocal (hInt_t a, hInt_t b);
+
 
 struct  timespec  tsSubtract (struct  timespec  time1, struct  timespec  time2);
 struct  timespec  tsAdd (struct  timespec  time1, struct  timespec  time2);
@@ -250,6 +273,7 @@ typedef void (*crtFuncPtr) (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts, P
 void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t* qs);
 
 //#ifdef __cplusplus
+template <typename ring> void tensorFuser2 (ring* y, hShort_t tupSize, void (*f) (ring* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
 template <typename ring> void tensorFuserCRT2 (ring* y, hShort_t tupSize, void (*f) (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, ring* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ring** ru, hInt_t* qs);
 //#endif
 

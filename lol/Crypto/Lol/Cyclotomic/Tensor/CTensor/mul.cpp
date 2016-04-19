@@ -30,10 +30,10 @@ template <typename ring> void zipWithStar (ring* a, ring* b, hShort_t tupSize, h
 }
 
 //a = zipWith (*) a b
-extern "C" void mulRq (hShort_t tupSize, hInt_t* a, hInt_t* b, hDim_t totm, hInt_t* qs) {
-  zipWithStar((Zq*)a, (Zq*)b, tupSize, totm, qs);
+extern "C" void mulRq (hShort_t tupSize, Zq* a, Zq* b, hDim_t totm, hInt_t* qs) {
+  zipWithStar(a, b, tupSize, totm, qs);
 }
 
-extern "C" void mulC (hShort_t tupSize, complex_t* a, complex_t* b, hDim_t totm) {
-  zipWithStar((Complex*)a, (Complex*)b, tupSize, totm, (hInt_t*)0);
+extern "C" void mulC (hShort_t tupSize, Complex* a, Complex* b, hDim_t totm) {
+  zipWithStar(a, b, tupSize, totm, (hInt_t*)0);
 }
