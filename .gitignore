@@ -10,11 +10,9 @@ sandbox-reset
 rebuild-proto
 *.prof
 
-apps/configure
-apps/.stack-work
-
-lol/configure
-lol/.stack-work
+**/configure
+**/.stack-work
+**/dist
 
 sandbox
 test
