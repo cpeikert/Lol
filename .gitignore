@@ -17,7 +17,6 @@ rebuild-proto
 sandbox
 test
 challenge-files
-challenges/lol.proto
 
 secret-files
 publish
