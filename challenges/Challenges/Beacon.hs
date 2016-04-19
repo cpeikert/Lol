@@ -4,12 +4,7 @@
 -- <http://www.nist.gov/itl/csd/ct/nist_beacon.cfm NIST Randomness
 -- Beacon>.
 
-module Challenges.Beacon
-( gmtDateToSeconds, localDateToSeconds
-, advanceBeaconPos
-, bytesPerBeacon
-, beaconInterval
-, BeaconPos(..)) where
+module Challenges.Beacon where
 
 import Control.DeepSeq
 import Control.Monad.State
