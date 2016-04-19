@@ -1,15 +1,15 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
-module Challenges.Proto.RLWE.Instance.InstType where
+module Crypto.Challenges.RLWE.Proto.RLWE.Instance.InstType where
 import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Challenges.Proto.RLWE.RLWEInstanceCont as RLWE (RLWEInstanceCont)
-import qualified Challenges.Proto.RLWE.RLWEInstanceDisc as RLWE (RLWEInstanceDisc)
-import qualified Challenges.Proto.RLWE.RLWRInstance as RLWE (RLWRInstance)
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.RLWEInstanceCont as RLWE (RLWEInstanceCont)
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.RLWEInstanceDisc as RLWE (RLWEInstanceDisc)
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.RLWRInstance as RLWE (RLWRInstance)
 
 data InstType = RlweInstCont{rlweInstCont :: (RLWE.RLWEInstanceCont)}
               | RlweInstDisc{rlweInstDisc :: (RLWE.RLWEInstanceDisc)}

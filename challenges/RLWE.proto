@@ -1,7 +1,7 @@
 
-import "lol.proto";
+import "Lol.proto";
 
-// hprotoc -I . -I ../lol -a .=Challenges.Proto -a ../lol=Crypto.Lol.Types.Proto -p Challenges.Proto RLWE.proto
+// hprotoc -I . -I ../lol -a .=Crypto.Challenges.RLWE.Proto -a ../lol/=Crypto.Lol.Types.Proto -p Crypto.Challenges.RLWE.Proto RLWE.proto
 
 message RLWESampleCont {
   required Rq a                   = 1;
