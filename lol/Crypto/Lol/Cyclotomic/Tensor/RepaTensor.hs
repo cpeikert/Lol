@@ -66,7 +66,7 @@ instance (Fact m) => Protoable (RT m Int64) where
         n = proxy totientFact (Proxy::Proxy m)
         xs' = RT.fromList (Z:.n) $ F.toList xs
         len = F.length xs
-    in if (m == fromIntegral m' && len == n)
+    in if m == fromIntegral m' && len == n
        then RT $ Arr xs'
        else error $ "An error occurred while reading the proto type for RT.\n\
         \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
@@ -78,7 +78,7 @@ instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
   toProto (RT (Arr xs)) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = proxy value (Proxy::Proxy q) :: Int64
-    in Rq m (fromIntegral q) $ S.fromList $ RT.toList $ RT.map lift $ xs
+    in Rq m (fromIntegral q) $ S.fromList $ RT.toList $ RT.map lift xs
   toProto x@(ZV _) = toProto $ toRT x
 
   fromProto (Rq m' q' xs) =
@@ -87,7 +87,7 @@ instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
         n = proxy totientFact (Proxy::Proxy m)
         xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
         len = F.length xs
-    in if (m == fromIntegral m' && len == n && (fromIntegral q) == q')
+    in if m == fromIntegral m' && len == n && fromIntegral q == q'
        then RT $ Arr xs'
        else error $ "An error occurred while reading the proto type for RT.\n\
         \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
@@ -100,7 +100,7 @@ instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
   toProto (RT (Arr xs)) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = proxy value (Proxy::Proxy q) :: Double
-    in Kq m q $ S.fromList $ RT.toList $ RT.map lift $ xs
+    in Kq m q $ S.fromList $ RT.toList $ RT.map lift xs
   toProto x@(ZV _) = toProto $ toRT x
 
   fromProto (Kq m' q' xs) =
@@ -109,7 +109,7 @@ instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
         n = proxy totientFact (Proxy::Proxy m)
         xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
         len = F.length xs
-    in if (m == fromIntegral m' && len == n && q == q')
+    in if m == fromIntegral m' && len == n && q == q'
        then RT $ Arr xs'
        else error $ "An error occurred while reading the proto type for RT.\n\
         \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
