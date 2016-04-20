@@ -9,11 +9,11 @@ import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 import qualified Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont as RLWE (InstanceCont)
 import qualified Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc as RLWE (InstanceDisc)
-import qualified Crypto.Challenges.RLWE.Proto.RLWE.InstanceRound as RLWE (InstanceRound)
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR as RLWE (InstanceRLWR)
 
 data InstType = InstCont{instCont :: (RLWE.InstanceCont)}
               | InstDisc{instDisc :: (RLWE.InstanceDisc)}
-              | InstRound{instRound :: (RLWE.InstanceRound)}
+              | InstRLWR{instRLWR :: (RLWE.InstanceRLWR)}
               deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
 get'instCont x
  = case x of
@@ -23,9 +23,9 @@ get'instDisc x
  = case x of
      InstDisc instDisc -> Prelude'.Just instDisc
      _ -> Prelude'.Nothing
-get'instRound x
+get'instRLWR x
  = case x of
-     InstRound instRound -> Prelude'.Just instRound
+     InstRLWR instRLWR -> Prelude'.Just instRLWR
      _ -> Prelude'.Nothing
 
 instance P'.Default InstType where
