@@ -44,7 +44,7 @@ library
     Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
     Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
     Crypto.Challenges.RLWE.Proto.RLWE.Secret
-    
+
   build-depends: MonadRandom,
                  base,
                  deepseq,
@@ -63,11 +63,16 @@ executable rlwe-challenges
   other-modules:
     Crypto.Challenges.RLWE.Beacon
     Crypto.Challenges.RLWE.Common   
+    Crypto.Challenges.RLWE.Generate
+    Crypto.Challenges.RLWE.Reveal
+    Crypto.Challenges.RLWE.Verify
 
   build-depends: DRBG,
                  ansi-terminal,
+                 base,
                  directory,
                  filepath,
+                 http-conduit,
                  lol,
                  nist-beacon,
                  time
