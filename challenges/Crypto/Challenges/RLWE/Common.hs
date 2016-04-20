@@ -1,4 +1,4 @@
-module Crypto.Challenges.Common
+module Crypto.Challenges.RLWE.Common
 ( numInstances
 , challengeFilesDir, secretFilesDir
 , instFileName, secretFileName, revealFileName
@@ -11,7 +11,7 @@ module Crypto.Challenges.Common
 , getSecretIdx
 ) where
 
-import Crypto.Challenges.Beacon
+import Crypto.Challenges.RLWE.Beacon
 
 import Control.Monad.Except
 import Data.ByteString.Lazy (unpack)
