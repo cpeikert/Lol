@@ -1,11 +1,11 @@
 
-import Challenges.Beacon
-import Challenges.Common
-
 import Control.Applicative ((<$>))
 import Control.Monad (when)
 import Control.Monad.Except
 import Control.Monad.State
+
+import Crypto.Challenges.Beacon
+import Crypto.Challenges.Common
 
 import Data.ByteString.Lazy (writeFile)
 import Data.Map (Map, lookup, empty, insert)
