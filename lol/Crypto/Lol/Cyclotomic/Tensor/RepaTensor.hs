@@ -21,9 +21,9 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Kq
-import Crypto.Lol.Types.Proto.R
-import Crypto.Lol.Types.Proto.Rq
+import Crypto.Lol.Types.Proto.Lol.Kq
+import Crypto.Lol.Types.Proto.Lol.R
+import Crypto.Lol.Types.Proto.Lol.Rq
 import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
 
@@ -34,6 +34,7 @@ import Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative  hiding ((*>))
 import Control.Arrow        hiding (arr)
 import Control.DeepSeq      (NFData (rnf))
+import Control.Monad.Except (throwError)
 import Control.Monad.Random
 import Data.Coerce
 import Data.Constraint      hiding ((***))
@@ -67,10 +68,11 @@ instance (Fact m) => Protoable (RT m Int64) where
         xs' = RT.fromList (Z:.n) $ F.toList xs
         len = F.length xs
     in if m == fromIntegral m' && len == n
-       then RT $ Arr xs'
-       else error $ "An error occurred while reading the proto type for RT.\n\
-        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-        \Expected n=" ++ show n ++ ", got " ++ show len ++ "."
+       then return $ RT $ Arr xs'
+       else throwError $
+            "An error occurred while reading the proto type for RT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "."
 
 instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
   type ProtoType (RT m (ZqBasic q Int64)) = Rq
@@ -88,11 +90,12 @@ instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
         xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
         len = F.length xs
     in if m == fromIntegral m' && len == n && fromIntegral q == q'
-       then RT $ Arr xs'
-       else error $ "An error occurred while reading the proto type for RT.\n\
-        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-        \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-        \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
+       then return $ RT $ Arr xs'
+       else throwError $
+            "An error occurred while reading the proto type for RT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
 
 instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
   type ProtoType (RT m (RRq q Double)) = Kq
@@ -110,11 +113,12 @@ instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
         xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
         len = F.length xs
     in if m == fromIntegral m' && len == n && q == q'
-       then RT $ Arr xs'
-       else error $ "An error occurred while reading the proto type for RT.\n\
-        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-        \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-        \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
+       then return $ RT $ Arr xs'
+       else throwError $
+            "An error occurred while reading the proto type for RT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
 
 instance Eq r => Eq (RT m r) where
   (ZV a) == (ZV b) = a == b

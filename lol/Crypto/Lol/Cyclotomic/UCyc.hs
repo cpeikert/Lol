@@ -653,4 +653,4 @@ instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
 instance (Fact m, Protoable (t m r)) => Protoable (UCyc t m D r) where
   type ProtoType (UCyc t m D r) = ProtoType (t m r)
   toProto (Dec t) = toProto t
-  fromProto t = Dec $ fromProto t
+  fromProto t = Dec <$> fromProto t

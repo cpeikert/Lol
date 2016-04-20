@@ -107,9 +107,9 @@ library
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
     Crypto.Lol.Types.Proto
-    Crypto.Lol.Types.Proto.R
-    Crypto.Lol.Types.Proto.Rq
-    Crypto.Lol.Types.Proto.Kq
+    Crypto.Lol.Types.Proto.Lol.R
+    Crypto.Lol.Types.Proto.Lol.Rq
+    Crypto.Lol.Types.Proto.Lol.Kq
     Crypto.Lol.Types.RRq
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.ZqBasic

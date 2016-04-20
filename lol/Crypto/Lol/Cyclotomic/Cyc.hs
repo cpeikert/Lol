@@ -596,4 +596,4 @@ instance (Fact m, CElt t r, Protoable (UCyc t m D r))
   type ProtoType (Cyc t m r) = ProtoType (UCyc t m D r)
   toProto (Dec uc) = toProto uc
   toProto x = toProto $ toDec' x
-  fromProto x = Dec $ fromProto x
+  fromProto x = Dec <$> fromProto x

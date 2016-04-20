@@ -18,6 +18,7 @@ import Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative    hiding ((*>))
 import Control.Arrow          ((***))
 import Control.DeepSeq
+import Control.Monad.Except
 import Control.Monad.Identity (Identity (..), runIdentity)
 import Control.Monad.Random
 import Control.Monad.Trans    as T (lift)
@@ -52,9 +53,9 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Kq
-import Crypto.Lol.Types.Proto.R
-import Crypto.Lol.Types.Proto.Rq
+import Crypto.Lol.Types.Proto.Lol.Kq
+import Crypto.Lol.Types.Proto.Lol.R
+import Crypto.Lol.Types.Proto.Lol.Rq
 import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
 
@@ -100,10 +101,11 @@ instance (Fact m) => Protoable (CT m Int64) where
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
     in if (m == (fromIntegral m') && len == n)
-       then CT $ CT' xs'
-       else error $ "An error occurred while reading the proto type for CT.\n\
-        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-        \Expected n=" ++ show n ++ ", got " ++ show len ++ "."
+       then return $ CT $ CT' xs'
+       else throwError $
+            "An error occurred while reading the proto type for CT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "."
 
 instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
   type ProtoType (CT m (ZqBasic q Int64)) = Rq
@@ -121,11 +123,12 @@ instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
     in if (m == (fromIntegral m') && len == n && (fromIntegral q) == q')
-       then CT $ CT' $ SV.map reduce $ xs'
-       else error $ "An error occurred while reading the proto type for CT.\n\
-        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-        \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-        \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
+       then return $ CT $ CT' $ SV.map reduce $ xs'
+       else throwError $
+            "An error occurred while reading the proto type for CT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
 
 instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
   type ProtoType (CT m (RRq q Double)) = Kq
@@ -143,11 +146,12 @@ instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
     in if (m == (fromIntegral m') && len == n && q == q')
-       then CT $ CT' $ SV.map reduce xs'
-       else error $ "An error occurred while reading the proto type for CT.\n\
-        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-        \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-        \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
+       then return $ CT $ CT' $ SV.map reduce xs'
+       else throwError $
+            "An error occurred while reading the proto type for CT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
@@ -188,7 +192,7 @@ type family Em r where
 instance (Additive r, Storable r, Fact m, Dispatch r)
   => Additive.C (CT m r) where
   (CT a@(CT' _)) + (CT b@(CT' _)) = CT $ (untag $ cZipDispatch dadd) a b
-  a + b = (toCT a) + (toCT b)
+  a + b = toCT a + toCT b
   negate (CT (CT' a)) = CT $ CT' $ SV.map negate a -- EAC: This probably should be converted to C code
   negate a = negate $ toCT a
 
