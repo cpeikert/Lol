@@ -10,6 +10,7 @@ sandbox-reset
 rebuild-proto
 *.prof
 
+**/TAGS
 **/configure
 **/.stack-work
 **/dist
