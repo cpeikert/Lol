@@ -4,57 +4,78 @@ import "Lol.proto";
 // hprotoc -I . -I ../lol -a ../lol/Lol.proto=Crypto.Lol.Types.Proto -p Crypto.Challenges.RLWE.Proto RLWE.proto
 
 message SampleCont {
-  required Rq a                = 1;
-  required Kq b                = 2;
+  required Rq a                    = 1;
+  required Kq b                    = 2;
 }
 
 message SampleDisc {
-  required Rq a               = 1;
-  required Rq b               = 2;
+  required Rq a                    = 1;
+  required Rq b                    = 2;
 }
 
 message SampleRLWR {
-  required Rq a               = 1;
-  required Rq b               = 2;    // for some modulus p < q
+  required Rq a                    = 1;
+  required Rq b                    = 2;  // for some modulus p < q
 }
 
+// should we include ChallengeType in the Instances?
+
 message InstanceCont {
-  required uint32 id          = 1;
-  required uint64 m           = 2;
-  required uint64 q           = 3;
-  required double svar        = 4;
-  required double bound       = 5;
-  repeated SampleCont samples = 6;
+  required uint32 index            = 1;  // index within a challenge
+  required uint64 m                = 2;
+  required uint64 q                = 3;
+  required double svar             = 4;
+  required double bound            = 5;
+  repeated SampleCont samples      = 6;
 }
 
 message InstanceDisc {
-  required uint32 id          = 1;
-  required uint64 m           = 2;
-  required uint64 q           = 3;
-  required double svar        = 4;
-  required uint64 bound       = 5;
-  repeated SampleDisc samples = 6;
+  required uint32 index            = 1;  // index within a challenge
+  required uint64 m                = 2;
+  required uint64 q                = 3;
+  required double svar             = 4;
+  required uint64 bound            = 5;
+  repeated SampleDisc samples      = 6;
 }
 
 message InstanceRLWR {
-  required uint32 id          = 1;
-  required uint64 m           = 2;
-  required uint64 q           = 3;
-  required uint64 p           = 4;     // RLWR modulus p < q
-  repeated SampleRLWR samples = 5;
+  required uint32 index            = 1;  // index within a challenge
+  required uint64 m                = 2;
+  required uint64 q                = 3;
+  required uint64 p                = 4;  // RLWR modulus p < q
+  repeated SampleRLWR samples      = 5;
 }
 
 message Secret {
-  required uint32 id          = 1;
-  required uint64 m           = 2;
-  required uint64 q           = 3;
-  required Rq s               = 4;
+  required uint32 index            = 1;
+  required uint64 m                = 2;
+  required uint64 q                = 3;
+  required Rq s                    = 4;
 }
+
+// do we need this anymore, now that Challenge message tells us what
+// to expect in the directory?
 
 message Instance {
   oneof instType {
-    InstanceCont instCont     = 1;
-    InstanceDisc instDisc     = 2;
-    InstanceRLWR instRLWR     = 3;
+    InstanceCont instCont          = 1;
+    InstanceDisc instDisc          = 2;
+    InstanceRLWR instRLWR          = 3;
   }
+}
+
+enum ChallengeType {
+  Cont                           = 0;
+  Disc                           = 1;
+  RLWE                           = 2;
+}
+
+// are the following int types appropriate?
+
+message Challenge {
+  required uint32 challengeID      = 1;  // unique identifier of challenge
+  required uint32 numInstances     = 2;  // number of instances in challenge
+  required uint32 beaconTime       = 3;  // NIST beacon time used for reveal
+  required uint32 beaconOffset     = 4;  // byte of beacon value used
+  required ChallengeType challType = 5;
 }
