@@ -30,7 +30,7 @@ library
 
   exposed-modules: 
     Crypto.Challenges.RLWE.Continuous
-    --Crypto.Challenges.RLWE.Discrete
+    Crypto.Challenges.RLWE.Discrete
     --Crypto.Challenges.RLWE.LWR
 
     Crypto.Challenges.RLWE.Beacon
