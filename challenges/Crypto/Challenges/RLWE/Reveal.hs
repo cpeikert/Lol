@@ -1,14 +1,15 @@
+module Crypto.Challenges.RLWE.Reveal where
 
-import Control.Applicative ((<$>))
-import Control.Monad (when)
+import Control.Applicative  ((<$>))
+import Control.Monad        (when)
 import Control.Monad.Except
 import Control.Monad.State
 
-import Crypto.Challenges.Beacon
-import Crypto.Challenges.Common
+import Crypto.Challenges.RLWE.Beacon
+import Crypto.Challenges.RLWE.Common
 
 import Data.ByteString.Lazy (writeFile)
-import Data.Map (Map, lookup, empty, insert)
+import Data.Map             (Map, empty, insert, lookup)
 
 import Net.Beacon
 
@@ -16,8 +17,9 @@ import Network.HTTP.Conduit (simpleHttp)
 
 import Prelude hiding (lookup, writeFile)
 
-import System.Directory (doesFileExist, removeFile, getDirectoryContents, doesDirectoryExist)
-import System.IO hiding (writeFile)
+import System.Directory (doesDirectoryExist, doesFileExist,
+                         getDirectoryContents, removeFile)
+import System.IO        hiding (writeFile)
 
 main :: IO ()
 main = do
@@ -29,7 +31,7 @@ main = do
   challDirExists <- doesDirectoryExist challDir
   when (not challDirExists) $ error $ "Could not find " ++ challDir
 
-  challs <- getChallengeList challDir
+  challs <- challengeList challDir
 
   -- reveal each challenge, collecting beacon records as we go
   recs <- flip execStateT empty $ mapM_ (revealChallengeMain abspath) challs
@@ -52,13 +54,13 @@ revealChallengeMain abspath name = printPassFail ("Revealing challenge " ++ name
     Nothing -> throwError "Failed to get last beacon."
     (Just r) -> return $ timeStamp r
   when (time > lastBeaconTime) $
-    throwError $ "Can't reveal challenge " ++ name ++ 
-      ": it's time has not yet come. Please wait " ++ 
+    throwError $ "Can't reveal challenge " ++ name ++
+      ": it's time has not yet come. Please wait " ++
       (show $ time-lastBeaconTime) ++ " seconds for the assigned beacon."
 
   -- get the record, and compute the secret index
   rec <- retrieveRecord time
-  let secretIdx = getSecretIdx rec offset
+  let secretIdx = secretIdx rec offset
       secDir = abspath </> secretFilesDir </> name
       secFile = secDir </> (secretFileName name secretIdx)
 
@@ -96,4 +98,4 @@ getNistCert path = do
   putStrLn $ "Writing NIST certificate to " ++ certPath
   bs <- simpleHttp "https://beacon.nist.gov/certificate/beacon.cer"
   writeFile certPath bs
-  
+

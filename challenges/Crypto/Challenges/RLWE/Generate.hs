@@ -1,39 +1,41 @@
-{-# LANGUAGE FlexibleContexts, NoImplicitPrelude, RebindableSyntax, RecordWildCards, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts, NoImplicitPrelude, RebindableSyntax,
+             RecordWildCards, ScopedTypeVariables #-}
 
-module Crypto.Challenges.RLWR.Generate where
+module Crypto.Challenges.RLWE.Generate where
 
 import Crypto.Challenges.RLWE.Beacon
 import Crypto.Challenges.RLWE.Common
 import Crypto.Challenges.RLWE.Continuous as C
-import Crypto.Challenges.RLWE.Discrete as D
-import Crypto.Challenges.RLWE.RLWR as R
+import Crypto.Challenges.RLWE.Discrete   as D
+import Crypto.Challenges.RLWE.RLWR       as R
 
 import Control.Applicative
-import Control.Monad.Trans (lift)
 import Control.Monad.State
+import Control.Monad.Trans (lift)
 import Crypto.Random.DRBG
 
-import Crypto.Lol hiding (lift)
+import Crypto.Lol                 hiding (lift)
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.RRq
 
-import Data.ByteString as BS (writeFile)
-import Data.ByteString.Lazy as BS (toStrict)
-import Data.Function (fix)
+import Data.ByteString       as BS (writeFile)
+import Data.ByteString.Lazy  as BS (toStrict)
+import Data.Function         (fix)
+import Data.Maybe
 import Data.Reflection
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Data.Maybe
 import Data.Word
 
-import DRBG (evalCryptoRandIO)
+-- import DRBG (evalCryptoRandIO)
 
 import qualified Prelude as P
 
 import System.Console.ANSI
-import System.Directory (createDirectoryIfMissing, removeDirectoryRecursive, doesDirectoryExist)
-import System.IO as IO
+import System.Directory    (createDirectoryIfMissing, doesDirectoryExist,
+                            removeDirectoryRecursive)
+import System.IO           as IO
 
 import Text.ProtocolBuffers.Header
 
@@ -46,10 +48,12 @@ beaconInit :: IO Int
 beaconInit = localDateToSeconds 2 24 2016 11 0
 
 -- | Information to generate a challenge.
-data ChallengeParams = 
-    DiscLWE {m::Int, q::Int, v::Double, numSamples::Int}
-  | ContLWE {m::Int, q::Int, v::Double, numSamples::Int}
-  | LWR     {m::Int, q::Int, q'::Int,   numSamples::Int}
+data ChallengeParams =
+    Disc {m::Int, q::Int, v::Double, numSamples::Int}
+  | Cont {m::Int, q::Int, v::Double, numSamples::Int}
+  | RLWR {m::Int, q::Int, q'::Int,   numSamples::Int}
+
+{-
 
 main :: IO ()
 main = do
@@ -69,19 +73,23 @@ main = do
 
   -- list of challenge params
   let cps = [
-        ContLWE 512 7681 (1/(16^(2 :: Int))) numSamples,
-        DiscLWE 512 7681 (1/(16^(2 :: Int))) numSamples,
-        LWR 512 8192 2048 numSamples
+        Cont 512 7681 (1/(16^(2 :: Int))) numSamples,
+        Disc 512 7681 (1/(16^(2 :: Int))) numSamples,
+        RLWR 512 8192 2048 numSamples
         ]
 
   initTime <- beaconInit
   flip evalStateT (BP initTime 0) $ mapM_ (challengeMain path) cps
 
+-}
+
 -- | The name for each challenge directory.
 challengeName :: ChallengeParams -> FilePath
-challengeName (DiscLWE m q v _) = "chall-dlwe-m" ++ (show m) ++ "-q" ++ (show q) ++ "-v" ++ (show v)
-challengeName (ContLWE m q v _) = "chall-clwe-m" ++ (show m) ++ "-q" ++ (show q) ++ "-v" ++ (show v)
-challengeName (LWR m q q' _) = "chall-lwr-m" ++ (show m) ++ "-q" ++ (show q) ++ "-q'" ++ (show q')
+challengeName (Disc m q v _) = "chall-dlwe-m" ++ (show m) ++ "-q" ++ (show q) ++ "-v" ++ (show v)
+challengeName (Cont m q v _) = "chall-clwe-m" ++ (show m) ++ "-q" ++ (show q) ++ "-v" ++ (show v)
+challengeName (RLWR m q q' _) = "chall-lwr-m" ++ (show m) ++ "-q" ++ (show q) ++ "-q'" ++ (show q')
+
+{-
 
 -- | Generate a challenge and write the reveal time file.
 challengeMain :: FilePath -> ChallengeParams -> StateT BeaconPos IO ()
@@ -89,6 +97,8 @@ challengeMain path cp = do
   let name = challengeName cp
   lift $ makeChallenge cp path name
   stampChallenge path name
+
+-}
 
 -- | Writes the beacon timestamp and byte offset data for this challenge.
 stampChallenge :: FilePath -> String -> StateT BeaconPos IO ()
@@ -111,36 +121,44 @@ stampChallenge abspath name = do
   lift $ IO.writeFile revealFile $ show time
   lift $ IO.appendFile revealFile $ "\n" ++ show offset
 
+{-
+
 -- | Generate an LWE challenge with the given parameters.
 makeChallenge :: ChallengeParams -> FilePath -> String -> IO ()
-makeChallenge ContLWE{..} path challName = reify (fromIntegral q :: Int64) (\(proxyq::Proxy q) -> 
-  reifyFactI m (\(proxym::proxy m) -> printPassFail 
-    ("Generating continuous LWE challenge (m=" ++ (show m) ++ 
+makeChallenge Cont{..} path challName = reify (fromIntegral q :: Int64) (\(proxyq::Proxy q) ->
+  reifyFactI m (\(proxym::proxy m) -> printPassFail
+    ("Generating continuous LWE challenge (m=" ++ (show m) ++
      ", q=" ++ (show q) ++ ", v=" ++ (show v) ++ ")") "DONE" $ do
       let idxs = take numInstances [0..]
-      lift $ mapM_ (genContLWEInstance proxyq proxym challName path v numSamples) idxs
+      lift $ mapM_ (genContInstance proxyq proxym challName path v numSamples) idxs
   ))
-makeChallenge DiscLWE{..} path challName = reify (fromIntegral q :: Int64) (\(proxyq::Proxy q) -> 
-  reifyFactI m (\(proxym::proxy m) -> printPassFail 
-    ("Generating discretized LWE challenge (m=" ++ (show m) ++ 
+makeChallenge Disc{..} path challName = reify (fromIntegral q :: Int64) (\(proxyq::Proxy q) ->
+  reifyFactI m (\(proxym::proxy m) -> printPassFail
+    ("Generating discretized LWE challenge (m=" ++ (show m) ++
      ", q=" ++ (show q) ++ ", v=" ++ (show v) ++ ")") "DONE" $ do
       let idxs = take numInstances [0..]
-      lift $ mapM_ (genDiscLWEInstance proxyq proxym challName path v numSamples) idxs
+      lift $ mapM_ (genDiscInstance proxyq proxym challName path v numSamples) idxs
   ))
-makeChallenge LWR{..} path challName = reify (fromIntegral q :: Int64) (\(proxyq::Proxy q) -> 
+makeChallenge RLWR{..} path challName = reify (fromIntegral q :: Int64) (\(proxyq::Proxy q) ->
  reify (fromIntegral q' :: Int64) (\(proxyq'::Proxy q') ->
-  reifyFactI m (\(proxym::proxy m) -> printPassFail 
-    ("Generating LWR challenge (m=" ++ (show m) ++ 
+  reifyFactI m (\(proxym::proxy m) -> printPassFail
+    ("Generating RLWR challenge (m=" ++ (show m) ++
      ", q=" ++ (show q) ++ ", q'=" ++ (show q') ++ ")") "DONE" $ do
       let idxs = take numInstances [0..]
-      lift $ mapM_ (genLWRInstance proxyq proxyq' proxym challName path numSamples) idxs
+      lift $ mapM_ (genRLWRInstance proxyq proxyq' proxym challName path numSamples) idxs
   )))
 
+-}
+
+{- CJP: These need major refactoring to separate the generation and IO
+functionality, including but not limited to the use of separate
+evalCryptoRandIO calls
+
 -- | Generate a continuous LWE instance and serialize the instance and secret.
-genContLWEInstance :: forall q proxy m . (Fact m, Reifies q Int64) 
+genContInstance :: forall q proxy m . (Fact m, Reifies q Int64)
   => Proxy q -> proxy m -> String -> FilePath -> Double -> Int -> Word32 -> IO ()
-genContLWEInstance _ _ challName path v numSamples idx = do 
-  (secret' :: Cyc T m Int64, 
+genContInstance _ _ challName path v numSamples idx = do
+  (secret' :: Cyc T m Int64,
    samples :: [RLWESampleCont T m (ZqBasic (Reified q) Int64) (RRq (RealMod (Reified q)) Double)]) <-
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ C.rlweInstance v numSamples
   let secret = RLWESecret idx secret'
@@ -154,11 +172,11 @@ genContLWEInstance _ _ challName path v numSamples idx = do
   putStr "."
 
 -- | Generate a discretized LWE instance and serialize the instance and secret.
-genDiscLWEInstance :: forall q proxy m . (Fact m, Reifies q Int64) 
+genDiscInstance :: forall q proxy m . (Fact m, Reifies q Int64)
   => Proxy q -> proxy m -> String -> FilePath -> Double -> Int -> Word32 -> IO ()
-genDiscLWEInstance _ _ challName path v numSamples idx = do 
-  (secret' :: Cyc T m Int64, 
-   samples :: [RLWESampleDisc T m (ZqBasic (Reified q) Int64)]) <- 
+genDiscInstance _ _ challName path v numSamples idx = do
+  (secret' :: Cyc T m Int64,
+   samples :: [RLWESampleDisc T m (ZqBasic (Reified q) Int64)]) <-
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ proxyT (D.rlweInstance v numSamples) (Proxy::Proxy Double)
   let secret = RLWESecret idx secret'
       eps = 1/(2^(40 :: Int))
@@ -171,12 +189,12 @@ genDiscLWEInstance _ _ challName path v numSamples idx = do
   writeProtoType (path </> secretFilesDir </> challName) secretFile secret
   putStr "."
 
--- | Generate an LWR instance and serialize the instance and secret.
-genLWRInstance :: forall q q' proxy m . (Fact m, Reifies q Int64, Reifies q' Int64) 
+-- | Generate an RLWR instance and serialize the instance and secret.
+genRLWRInstance :: forall q q' proxy m . (Fact m, Reifies q Int64, Reifies q' Int64)
   => Proxy q -> Proxy q' -> proxy m -> String -> FilePath -> Int -> Word32 -> IO ()
-genLWRInstance _ _ _ challName path numSamples idx = do 
-  (secret' :: Cyc T m Int64, 
-   samples :: [R.RLWRSample T m (ZqBasic (Reified q) Int64) (ZqBasic (Reified q') Int64)]) <- 
+genRLWRInstance _ _ _ challName path numSamples idx = do
+  (secret' :: Cyc T m Int64,
+   samples :: [R.RLWRSample T m (ZqBasic (Reified q) Int64) (ZqBasic (Reified q') Int64)]) <-
     evalCryptoRandIO (Proxy::Proxy HashDRBG) $ proxyT (R.rlwrInstance numSamples) (Proxy::Proxy Double)
   let secret = RLWESecret idx secret'
       inst = RLWRInstance idx samples
@@ -186,10 +204,12 @@ genLWRInstance _ _ _ challName path numSamples idx = do
   writeProtoType (path </> secretFilesDir </> challName) secretFile secret
   putStr "."
 
+-}
+
 -- | Writes any 'Protoable' object to path/filename.
-writeProtoType :: 
+writeProtoType ::
   (Protoable a,
-   ReflectDescriptor (ProtoType a), 
+   ReflectDescriptor (ProtoType a),
    Wire (ProtoType a))
   => FilePath -> String -> a -> IO ()
 writeProtoType path fileName obj = do
@@ -200,7 +220,7 @@ writeProtoType path fileName obj = do
 -- EAC: Note that this bound is correct for *continuous* LWE samples,
 -- but an extra additive term may be necessary for discretized samples.
 
--- | Outputs a bound such that the scaled, squared norm of an 
+-- | Outputs a bound such that the scaled, squared norm of an
 -- error term generated with (scaled) variance v
 -- will be less than the bound except with probability eps.
 computeBound :: (Field v, Ord v, Transcendental v, Fact m) => v -> v -> Tagged m v

@@ -1,24 +1,25 @@
 {-# LANGUAGE FlexibleContexts, GADTs, NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
 
+module Crypto.Challenges.RLWE.Verify where
+
 import Control.Applicative
 import Control.Monad (when)
 import Control.Monad.Except
 import Control.Monad.Trans (lift)
 
-import Crypto.Challenges.Beacon
-import Crypto.Challenges.Common
-import Crypto.Challenges.ContinuousLWE.Proto
-import qualified Crypto.Challenges.ContinuousLWE.Verify as C
-import Crypto.Challenges.DiscretizedLWE.Proto
-import qualified Crypto.Challenges.DiscretizedLWE.Verify as D
-import Crypto.Challenges.LWR.Proto
-import qualified Crypto.Challenges.LWR.Verify as R
-import qualified Crypto.Challenges.Proto.RLWE.RLWEInstanceCont as P
-import qualified Crypto.Challenges.Proto.RLWE.RLWEInstanceDisc as P
-import qualified Crypto.Challenges.Proto.RLWE.Instance as P
-import qualified Crypto.Challenges.Proto.RLWE.Instance.InstType as P
-import qualified Crypto.Challenges.Proto.RLWE.RLWESecret as P
-import qualified Crypto.Challenges.Proto.RLWE.RLWRInstance as P
+import Crypto.Challenges.RLWE.Beacon
+import Crypto.Challenges.RLWE.Common
+import qualified Crypto.Challenges.RLWE.Continuous as C
+import qualified Crypto.Challenges.RLWE.Discrete as D
+import qualified Crypto.Challenges.RLWE.RLWR as R
+
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont as P
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc as P
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR as P
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.Instance as P
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.Instance.InstType as P
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.Secret as P
+
 import Crypto.Lol hiding (lift)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
@@ -52,7 +53,7 @@ main = do
   challDirExists <- doesDirectoryExist challDir
   unless challDirExists $ error $ "Could not find " ++ challDir
 
-  challs <- getChallengeList challDir
+  challs <- challengeList challDir
 
   -- verifies challenges and accumulates beacon positions for each challenge
   bps <- mapM (verifyChallenge abspath) challs
@@ -70,7 +71,7 @@ verifyChallenge path name = do
     -- read the beacon record from an xml file
     rec <- readBeacon path time
 
-    let secretIdx = getSecretIdx rec offset
+    let secretIdx = secretIdx rec offset
         instIDs = [0..(fromIntegral $ numInstances-1)]    
     -- verify all instances
     lift $ mapM_ (verifyInstance path name secretIdx) instIDs
