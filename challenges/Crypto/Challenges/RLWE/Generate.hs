@@ -1,12 +1,12 @@
 {-# LANGUAGE FlexibleContexts, NoImplicitPrelude, RebindableSyntax, RecordWildCards, ScopedTypeVariables #-}
 
-module Gen where
+module Crypto.Challenges.RLWR.Generate where
 
-import Crypto.Challenges.Beacon
-import Crypto.Challenges.Common
-import Crypto.Challenges.ContinuousLWE.Gen as C
-import Crypto.Challenges.DiscretizedLWE.Gen as D
-import Crypto.Challenges.LWR.Gen as R
+import Crypto.Challenges.RLWE.Beacon
+import Crypto.Challenges.RLWE.Common
+import Crypto.Challenges.RLWE.Continuous as C
+import Crypto.Challenges.RLWE.Discrete as D
+import Crypto.Challenges.RLWE.RLWR as R
 
 import Control.Applicative
 import Control.Monad.Trans (lift)
