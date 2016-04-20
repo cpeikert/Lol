@@ -31,14 +31,15 @@ library
   exposed-modules: 
     Crypto.Challenges.RLWE.Continuous
     Crypto.Challenges.RLWE.Discrete
-    --Crypto.Challenges.RLWE.LWR
+    Crypto.Challenges.RLWE.RLWR
 
-    Crypto.Challenges.RLWE.Beacon
-    Crypto.Challenges.RLWE.Common   
+    --Crypto.Challenges.RLWE.Beacon
+    --Crypto.Challenges.RLWE.Common   
 
   other-modules:        
     Crypto.Challenges.RLWE.Proto.RLWE
     Crypto.Challenges.RLWE.Proto.RLWE.Instance
+    Crypto.Challenges.RLWE.Proto.RLWE.Instance.InstType
     Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
     Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
     Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
@@ -46,118 +47,99 @@ library
     Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
     Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
     Crypto.Challenges.RLWE.Proto.RLWE.Secret
+    
+  build-depends: MonadRandom,
+                 base,
+                 bytestring,
+                 deepseq,
+                 lol >= 0.3.0.0,
+                 mtl,
+                 protocol-buffers,
+                 protocol-buffers-descriptor,
+                 time
 
-  build-depends:
-    arithmoi >= 0.4.1.3 && <0.5,
-    base==4.8.*,
-    binary,
-    bytestring,
-    cereal,
-    cereal-vector,
-    constraints,
-    containers >= 0.5.6.2 && < 0.6,
-    crypto-api,
-    data-default >= 0.3.0 && < 0.6,
-    deepseq >= 1.4.1.1 && <1.5,
-    MonadRandom >= 0.2 && < 0.5,
-    mtl >= 2.2.1 && < 2.3,
-    numeric-prelude >= 0.4.2 && < 0.5,
-    QuickCheck >= 2.8 && < 2.9,
-    protocol-buffers,
-    random >= 1.1 && < 1.2,
-    reflection >= 1.5.1 && < 2.2,
-    repa==3.4.*,
-    singletons >= 1.1.2.1 && < 2.1,
-    storable-record >= 0.0.3 && < 0.1,
-    th-desugar >= 1.5.4 && < 1.6,
-    tagged-transformer >= 0.7 && < 0.9,
-    template-haskell  >=  2.2.0.0,
-    transformers >= 0.4.2.0 && < 0.5,
-    vector==0.11.*,
-    vector-th-unbox >= 0.2.1.0 && < 0.3
+-- executable generate
+--   default-language:   Haskell2010
+--   hs-source-dirs:     .
+--   main-is: Crypto/Challenges/RLWE/Generate.hs
 
-executable gen
-  default-language:   Haskell2010
-  hs-source-dirs:     .
-  main-is: Gen.hs
+--   ghc-options: -threaded -rtsopts -O3 -auto-all -caf-all
 
-  ghc-options: -threaded -rtsopts -O3 -auto-all -caf-all
+--   build-depends:
+--     ansi-terminal,
+--     base,
+--     binary,
+--     bytestring,
+--     containers,
+--     crypto-api,
+--     cryptohash,
+--     deepseq,
+--     data-default,
+--     directory,
+--     DRBG,
+--     filepath,
+--     lol,
+--     rlwe-challenges,
+--     MonadRandom,
+--     mtl,
+--     nist-beacon,
+--     protocol-buffers,
+--     random,
+--     reflection,
+--     time,
+--     transformers
 
-  build-depends:
-    ansi-terminal,
-    base,
-    binary,
-    bytestring,
-    containers,
-    crypto-api,
-    cryptohash,
-    deepseq,
-    data-default,
-    directory,
-    DRBG,
-    filepath,
-    lol >= 0.3.0.0,
-    rlwe-challenges,
-    MonadRandom,
-    mtl,
-    nist-beacon,
-    protocol-buffers,
-    random,
-    reflection,
-    time,
-    transformers
+-- executable reveal
+--   default-language:   Haskell2010
+--   hs-source-dirs:     .
+--   main-is: Crypto/Challenges/RLWE/Reveal.hs
 
-executable reveal
-  default-language:   Haskell2010
-  hs-source-dirs:     .
-  main-is: Reveal.hs
+--   ghc-options: -threaded -rtsopts -O3 -auto-all -caf-all
 
-  ghc-options: -threaded -rtsopts -O3 -auto-all -caf-all
+--   build-depends:
+--     ansi-terminal,
+--     base,
+--     bytestring,
+--     containers,
+--     cryptohash,
+--     deepseq,
+--     data-default,
+--     directory,
+--     filepath,
+--     http-conduit,
+--     lol >= 0.3.0.0,
+--     rlwe-challenges,
+--     MonadRandom,
+--     mtl,
+--     nist-beacon,
+--     protocol-buffers,
+--     reflection,
+--     time,
+--     transformers
 
-  build-depends:
-    ansi-terminal,
-    base,
-    bytestring,
-    containers,
-    cryptohash,
-    deepseq,
-    data-default,
-    directory,
-    filepath,
-    http-conduit,
-    lol >= 0.3.0.0,
-    rlwe-challenges,
-    MonadRandom,
-    mtl,
-    nist-beacon,
-    protocol-buffers,
-    reflection,
-    time,
-    transformers
+-- executable verify
+--   default-language:   Haskell2010
+--   hs-source-dirs:     .
+--   main-is: Crypto/Challenges/RLWE/Verify.hs
 
-executable verify
-  default-language:   Haskell2010
-  hs-source-dirs:     .
-  main-is: Verify.hs
+--   ghc-options: -threaded -rtsopts -O3 -auto-all -caf-all
 
-  ghc-options: -threaded -rtsopts -O3 -auto-all -caf-all
-
-  build-depends:
-    ansi-terminal,
-    base,
-    bytestring,
-    containers,
-    cryptohash,
-    deepseq,
-    data-default,
-    directory,
-    filepath,
-    lol >= 0.3.0.0,
-    rlwe-challenges,
-    MonadRandom,
-    mtl,
-    nist-beacon,
-    protocol-buffers,
-    reflection,
-    time,
-    transformers
+--   build-depends:
+--     ansi-terminal,
+--     base,
+--     bytestring,
+--     containers,
+--     cryptohash,
+--     deepseq,
+--     data-default,
+--     directory,
+--     filepath,
+--     lol >= 0.3.0.0,
+--     rlwe-challenges,
+--     MonadRandom,
+--     mtl,
+--     nist-beacon,
+--     protocol-buffers,
+--     reflection,
+--     time,
+--     transformers
