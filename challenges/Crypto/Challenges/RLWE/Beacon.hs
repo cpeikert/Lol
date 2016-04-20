@@ -4,7 +4,7 @@
 -- <http://www.nist.gov/itl/csd/ct/nist_beacon.cfm NIST Randomness
 -- Beacon>.
 
-module Crypto.Challenges.Beacon where
+module Crypto.Challenges.RLWE.Beacon where
 
 import Control.DeepSeq
 import Control.Monad.State

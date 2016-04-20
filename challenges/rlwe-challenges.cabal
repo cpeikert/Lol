@@ -29,31 +29,23 @@ library
   default-language:   Haskell2010
 
   exposed-modules: 
-    Crypto.Challenges.ContinuousLWE.Gen
-    Crypto.Challenges.ContinuousLWE.Verify
-    Crypto.Challenges.DiscretizedLWE.Gen
-    Crypto.Challenges.DiscretizedLWE.Verify
-    Crypto.Challenges.LWR.Gen
-    Crypto.Challenges.LWR.Verify
+    Crypto.Challenges.RLWE.Continuous
+    --Crypto.Challenges.RLWE.Discrete
+    --Crypto.Challenges.RLWE.LWR
 
-    Crypto.Challenges.Proto.RLWE.Instance
-    Crypto.Challenges.Proto.RLWE.Instance.InstType
-    Crypto.Challenges.Proto.RLWE.RLWEInstanceCont
-    Crypto.Challenges.Proto.RLWE.RLWEInstanceDisc    
-    Crypto.Challenges.Proto.RLWE.RLWESecret
-    Crypto.Challenges.Proto.RLWE.RLWRInstance
-
-    Crypto.Challenges.Beacon
-    Crypto.Challenges.Common   
+    Crypto.Challenges.RLWE.Beacon
+    Crypto.Challenges.RLWE.Common   
 
   other-modules:        
-    Crypto.Challenges.ContinuousLWE.Proto
-    Crypto.Challenges.DiscretizedLWE.Proto
-    Crypto.Challenges.LWR.Proto
-    Crypto.Challenges.Proto.RLWE.RLWESampleCont
-    Crypto.Challenges.Proto.RLWE.RLWESampleDisc
-    Crypto.Challenges.Proto.RLWE.RLWRSample
-    Crypto.Challenges.Proto.RLWE.RLWE
+    Crypto.Challenges.RLWE.Proto.RLWE
+    Crypto.Challenges.RLWE.Proto.RLWE.Instance
+    Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
+    Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
+    Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
+    Crypto.Challenges.RLWE.Proto.RLWE.SampleCont
+    Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
+    Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
+    Crypto.Challenges.RLWE.Proto.RLWE.Secret
 
   build-depends:
     arithmoi >= 0.4.1.3 && <0.5,
