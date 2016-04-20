@@ -12,8 +12,6 @@ ZqProd* toZqProd(hShort_t tupSize, hDim_t totm, hInt_t* y, hInt_t* qs)
   ZqProd* z = (ZqProd*)malloc(totm*sizeof(ZqProd));
   for(hDim_t i = 0; i < totm; i++) {
     z[i].xs = y+i*tupSize;
-    z[i].initd = true;
-    z[i].doFree = false;
   }
   return z;
 }
