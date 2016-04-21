@@ -1,4 +1,4 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, PackageImports #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 -- | Defines a newtype wrapper 'CryptoRand' for crypto-api's
 -- 'CryptoRandomGen', and a corresponding 'RandomGen' wrapper
@@ -12,7 +12,7 @@ import Control.Arrow
 import Control.Monad.CryptoRandom
 import Control.Monad.IO.Class
 import Control.Monad.Random       (RandT, evalRandT)
-import "crypto-api" Crypto.Random
+import Crypto.Random
 import System.Random
 
 newtype CryptoRand g = CryptoRand g deriving (CryptoRandomGen)
