@@ -19,7 +19,6 @@ import qualified Crypto.Lol.Applications.SymmSHE as SHE
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Types.Random
 
-import DRBG
 import Types
 
 import Data.Promotion.Prelude.List

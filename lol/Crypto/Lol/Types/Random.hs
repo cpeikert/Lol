@@ -4,13 +4,22 @@
 --   'CryptoRandomGen' generators can only be used to get 'ByteString's; the 'RandomGen' instance allows them
 --   to be used to generate any 'Random' type. Typical usage is with Control.Monad.Random's 'RandT' monad.
 
-module Crypto.Lol.Types.Random (CryptoRand) where
+module Crypto.Lol.Types.Random (CryptoRand, evalCryptoRandIO) where
 
+import Control.Monad.Random      (Rand, evalRand)
 import "crypto-api" Crypto.Random
 import Data.Binary.Get
 import Data.ByteString hiding (pack)
 import Data.ByteString.Lazy (pack)
+import Data.Proxy
 import System.Random
+
+-- This function keeps all of the code in the IO monad, which helps write clean code below
+-- No sequencing occurs between separate calls to this function.
+evalCryptoRandIO :: (CryptoRandomGen gen) => Proxy gen -> Rand (CryptoRand gen) a -> IO a
+evalCryptoRandIO _ x = do
+  gen <- newGenIO -- uses system entropy
+  return $ evalRand x gen
 
 newtype CryptoRand g = CryptoRand g deriving (CryptoRandomGen)
 
