@@ -32,8 +32,6 @@ tensorTests =
    testGroupM "LInv.L == id"     $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_l_inv,
    testGroupM "Scalar"           $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_scalar_crt,
    testGroup  "G commutes with L"  gCommuteTests,
-   -- CJP: suppressed because it's not actually a Tensor test
-   -- testGroupM "Extension Mult"   $ applyBasic (Proxy::Proxy ExtParams) $ hideArgs prop_mul_ext,
    testGroupM "GSqNormDec"       $ applyLift (Proxy::Proxy NormParams) $ hideArgs prop_gsqnorm,
    testGroup  "Tw.Em == id"        tremTests,
    testGroup  "Em commutes with L" embedCommuteTests,
@@ -108,24 +106,6 @@ prop_scalar_crt r = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
   crt' <- crt
   return $ (scalarCRT' r :: t m r) == (crt' $ scalarPow r)
   \\ proxy entailEqT (Proxy::Proxy (t m r))
-
-
-{- CJP: this test makes no sense in the Tensor context: it's just
-checking that multiplication in the extension ring of r and in r
-itself are consistent; no Tensor needed.
-
--- tests that multiplication in the extension ring matches CRT multiplication
-prop_mul_ext :: forall t m r . (Tensor t, Fact m, TElt t r, TElt t (CRTExt r), CRTrans Maybe r, CRTEmbed r, Ring r, Eq r)
-  => t m r -> t m r -> Test '(t,m,r)
-prop_mul_ext x y = test $
-  case (proxyT crtInfo (Proxy::Proxy m)) of
-       Nothing -> error "mul have a CRT to call prop_mul_ext"
-       Just _ -> (let z = zipWithT (*) x y
-                      z' = fmapT fromExt $ zipWithT (*) (fmapT toExt x) (fmapT toExt y)
-                  in z == z') \\ witness entailEqT x 
-                              \\ witness entailIndexT x
-
--}
 
 type NormCtx t m r = (TElt t r, TElt t (LiftOf r), 
   Fact m, Lift' r, CRTrans Maybe r, Eq (LiftOf r),
