@@ -19,38 +19,38 @@ message SampleRLWR {
 }
 
 message InstanceCont {
-  required uint32 challengeID      = 1;  // challenge this instance belongs to
-  required uint32 index            = 2;  // index within a challenge
-  required uint64 m                = 3;
-  required sint64 q                = 4;
+  required int32 challengeID       = 1;  // challenge this instance belongs to
+  required int32 index             = 2;  // index within a challenge
+  required int32 m                 = 3;
+  required int64 q                 = 4;
   required double svar             = 5;
   required double bound            = 6;
   repeated SampleCont samples      = 7;
 }
 
 message InstanceDisc {
-  required uint32 challengeID      = 1;
-  required uint32 index            = 2;
-  required uint64 m                = 3;
-  required sint64 q                = 4;
+  required int32 challengeID       = 1;
+  required int32 index             = 2;
+  required int32 m                 = 3;
+  required int64 q                 = 4;
   required double svar             = 5;
-  required uint64 bound            = 6;
+  required int64 bound             = 6;
   repeated SampleDisc samples      = 7;
 }
 
 message InstanceRLWR {
-  required uint32 challengeID      = 1;
-  required uint32 index            = 2;
-  required uint64 m                = 3;
-  required sint64 q                = 4;
-  required sint64 p                = 5;  // RLWR modulus p < q
+  required int32 challengeID       = 1;
+  required int32 index             = 2;
+  required int32 m                 = 3;
+  required int64 q                 = 4;
+  required int64 p                 = 5;  // RLWR modulus p < q
   repeated SampleRLWR samples      = 6;
 }
 
 message Secret {
-  required uint32 index            = 1;
-  required uint64 m                = 2;
-  required sint64 q                = 3;
+  required int32 index             = 1;
+  required int32 m                 = 2;
+  required int64 q                 = 3;
   required Rq s                    = 4;
 }
 
@@ -63,9 +63,9 @@ enum ChallengeType {
 // are the following int types appropriate?
 
 message Challenge {
-  required uint32 challengeID      = 1;  // unique identifier of challenge
-  required uint32 numInstances     = 2;  // number of instances in challenge
-  required uint64 beaconTime       = 3;  // NIST beacon time used for reveal
-  required uint32 beaconOffset     = 4;  // byte of beacon value used
+  required int32 challengeID       = 1;  // unique identifier of challenge
+  required int32 numInstances      = 2;  // number of instances in challenge
+  required int64 beaconTime        = 3;  // NIST beacon time used for reveal
+  required int32 beaconOffset      = 4;  // byte of beacon value used
   required ChallengeType challType = 5;
 }
