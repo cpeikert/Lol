@@ -60,8 +60,6 @@ enum ChallengeType {
   RLWR                             = 2;
 }
 
-// are the following int types appropriate?
-
 message Challenge {
   required int32 challengeID       = 1;  // unique identifier of challenge
   required int32 numInstances      = 2;  // number of instances in challenge
