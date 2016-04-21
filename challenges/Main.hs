@@ -5,8 +5,6 @@ module Main where
 import Control.Applicative
 import Options
 
-data Action = Generate | Reveal | Verify
-
 data MainOpts =
   MainOpts
   { optChallDir :: FilePath -- ^ location of challenges
