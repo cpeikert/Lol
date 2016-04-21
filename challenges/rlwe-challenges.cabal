@@ -74,5 +74,6 @@ executable rlwe-challenges
                  filepath,
                  http-conduit,
                  lol,
+                 options,
                  nist-beacon,
                  time
