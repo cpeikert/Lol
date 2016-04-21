@@ -143,6 +143,7 @@ library
     crypto-api,
     data-default >= 0.3.0 && < 0.6,
     deepseq >= 1.4.1.1 && <1.5,
+    monadcryptorandom,
     MonadRandom >= 0.2 && < 0.5,
     mtl >= 2.2.1 && < 2.3,
     numeric-prelude >= 0.4.2 && < 0.5,
