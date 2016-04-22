@@ -54,7 +54,9 @@ main = runSubcommand
     ]
 
 generate :: MainOpts -> GenOpts -> [String] -> IO ()
-generate mopts gopts _ = print $ optInitBeaconEpoch gopts
+generate mopts gopts _ =
+  let beaconInit = localDateToSeconds 2 24 2016 11 0
+  in print $ optInitBeaconEpoch gopts
 
 reveal :: MainOpts -> NullOpts -> [String] -> IO ()
 reveal = error "TODO"

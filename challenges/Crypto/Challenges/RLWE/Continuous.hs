@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, MultiParamTypeClasses,
-             NoImplicitPrelude, ScopedTypeVariables #-}
+             NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
 
 module Crypto.Challenges.RLWE.Continuous where
 
@@ -9,6 +9,8 @@ import Crypto.Lol.Cyclotomic.UCyc
 
 import Control.Monad
 import Control.Monad.Random
+
+import Data.Function (fix)
 
 -- | A continuous RLWE sample @(a,b) \in R_q \times K/qR@.
 type Sample t m zq rrq = (Cyc t m zq, UCyc t m D rrq)
@@ -54,3 +56,16 @@ validSample bound s (a,b) = err < bound
   where err = let as = fmapDec fromSubgroup $ uncycDec $ a * s
               in gSqNorm $ lift $ b - as
 
+-- | Outputs a bound such that the scaled, squared norm of an
+-- error term generated with (scaled) variance v
+-- will be less than the bound except with probability eps.
+computeBound :: (Field v, Ord v, Transcendental v, Fact m) => v -> v -> Tagged m v
+computeBound v eps = do
+  n <- totientFact
+  mhat <- valueHatFact
+  let d = flip fix (1 / (2*pi)) $ \f d ->
+        let d' = (1/2 + (log $ 2 * pi * d)/2 - (log eps)/(fromIntegral n))/pi
+        in if ((d'-d) < 0.0001)
+           then d'
+           else f d'
+  return $ (fromIntegral $ mhat*n)*v*d

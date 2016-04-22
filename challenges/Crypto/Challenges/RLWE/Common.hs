@@ -1,13 +1,12 @@
 module Crypto.Challenges.RLWE.Common
-( numInstances
-, challengeFilesDir, secretFilesDir
-, instFileName, secretFileName, revealFileName
+( challengeFilesDir, secretFilesDir
+, challFilePath, instFilePath, secretFilePath
 , xmlFileName, certFileName
 , (</>)
 , getPath
 , printPassFail
 , challengeList
-, readRevealData
+--, readRevealData
 , secretIdx
 ) where
 
@@ -16,7 +15,7 @@ import Crypto.Challenges.RLWE.Beacon
 import Control.Monad.Except
 import Data.ByteString.Lazy (unpack)
 import Data.Default         (Default (..))
-import Data.Word
+import Data.Int
 
 import Net.Beacon
 
@@ -45,33 +44,28 @@ challengeFilesDir == secretFilesDir
    -> ...
 -}
 
--- | The number of instances to generate per challenge (parameter
--- set).
-numInstances :: Int
-numInstances = 16               --  must be <= 256
-
 -- | The root directory for challenges and their instances.
-challengeFilesDir :: FilePath
-challengeFilesDir = "challenge-files"
+challengeFilesDir :: FilePath -> FilePath
+challengeFilesDir path = path </> "challenge-files"
 
 -- | The root directory for challenge secrets.
-secretFilesDir :: FilePath
+secretFilesDir :: FilePath -> FilePath
 secretFilesDir = challengeFilesDir
+
+-- | The name for a challenge file is some string
+-- with a .challenge extension.
+challFilePath :: FilePath -> String -> FilePath
+challFilePath path name = (challengeFilesDir path) </> name ++ ".challenge"
 
 -- | The name for an instance file is some string followed by a hex ID
 -- with a .instance extension.
-instFileName :: String -> Word32 -> FilePath
-instFileName name idx = name ++ "-" ++ intToHex idx ++ ".instance"
+instFilePath :: FilePath -> String -> Int32 -> FilePath
+instFilePath path name idx = (challengeFilesDir path) </> name ++ "-" ++ intToHex idx ++ ".instance"
 
 -- | The name for a secret file is some string followed by a hex ID
 -- with the .secret extension.
-secretFileName :: String -> Word32 -> FilePath
-secretFileName name idx = name ++ "-" ++ intToHex idx ++ ".secret"
-
--- | The filename that contains the beacon information for each
--- challenge.
-revealFileName :: FilePath
-revealFileName = "beaconTime.txt"
+secretFilePath :: FilePath -> String -> Int32 -> FilePath
+secretFilePath path name idx = (challengeFilesDir path) </> name ++ "-" ++ intToHex idx ++ ".secret"
 
 -- | The name of a beacon XML file.
 xmlFileName :: Int -> FilePath
@@ -99,7 +93,7 @@ getPath = do
       "Valid args: [-p path] where 'path' is relative to './'." ++
       "If no path is provided, the program will guess a path."
 
-intToHex :: Word32 -> String
+intToHex :: Int32 -> String
 intToHex x | x < 0 || x > 15 = error "hex value out of range"
 intToHex x = printf "%X" x
 
@@ -138,10 +132,11 @@ challengeList challDir = do
     filter (("chall" ==) . take 5) <$> getDirectoryContents challDir
   when (null names) $ error "No challenges found."
   return names
-
+{-
 -- | Parse the beacon time/offset used to reveal a challenge.
 readRevealData :: (MonadIO m) => FilePath -> ExceptT String m BeaconPos
-readRevealData path = do
+readRevealData path =
+  do
   let revealPath = path </> revealFileName
   revealExists <- liftIO $ doesFileExist revealPath
   unless revealExists $ throwError $ revealPath ++ " does not exist."
@@ -151,12 +146,12 @@ readRevealData path = do
   -- validate the time and offset
   when ((time `mod` beaconInterval /= 0) || offset < 0 || offset >= bytesPerBeacon) $
     throwError "Invalid beacon position."
-  return $ BP time offset
+  return $ BP time offset-}
 
 -- | Yield the secret index (for a challenge), given a beacon record
 -- and a byte offset.
-secretIdx :: Record -> Int -> Word32
-secretIdx record byteOffset =
+secretIdx :: Int -> Record -> Int -> Int32
+secretIdx numInstances record byteOffset =
   let output = outputValue record
       byte = unpack output !! byteOffset
   in fromIntegral $ fromIntegral byte `mod` numInstances

@@ -47,3 +47,9 @@ validSample :: (RLWECtx t m zq)
   => LiftOf zq -> Cyc t m zq -> Sample t m zq -> Bool
 validSample bound s (a,b) = gSqNorm (liftDec $ b - a * s) < bound
 
+-- | Outputs a bound such that the scaled, squared norm of an
+-- error term generated with (scaled) variance v
+-- will be less than the bound except with probability eps.
+-- EAC: This bound might be looser than the continuous version
+computeBound :: (Field v, Ord v, Transcendental v, Fact m) => v -> v -> Tagged m Int64
+computeBound v eps = error "TODO: Discrete.computeBound"

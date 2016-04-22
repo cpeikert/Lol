@@ -23,17 +23,16 @@ beaconInterval :: Int
 beaconInterval = 60
 
 -- | Represents a byte offset in a beacon output at a particular time.
-data BeaconPos = BP Int Int deriving (Eq, Show)
-instance NFData BeaconPos where rnf (BP a b) = rnf a `seq` rnf b
+data BeaconAddr = BP Int Int deriving (Eq, Show)
+instance NFData BeaconAddr where rnf (BP a b) = rnf a `seq` rnf b
 
 -- | Advances the beacon position by one byte, overflowing to the next
 -- beacon in necessary.
-advanceBeaconPos :: (MonadState BeaconPos m) => m ()
-advanceBeaconPos = do
-  (BP time byteOffset) <- get
+nextBeaconAddr :: BeaconAddr -> BeaconAddr
+nextBeaconAddr (BP time byteOffset) =
   if byteOffset == bytesPerBeacon
-  then put (BP (time+beaconInterval) 0)
-  else put (BP time (byteOffset+1))
+  then BP (time+beaconInterval) 0
+  else BP time (byteOffset+1)
 
 -- | The number of seconds elapsed from a given GMT time since the
 -- (GMT) epoch.
