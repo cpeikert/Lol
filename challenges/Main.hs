@@ -30,11 +30,16 @@ instance Options GenOpts where
     "Number N of instances per challenge, N = 2^k <= 256" <*>
     simpleOption "init-beacon"
     -- CJP: sneaky! not referentially transparent, but handy as a default
-    (round (unsafePerformIO $ daysFromNow 3))
+    (unsafePerformIO $ daysFromNow 3)
     "Initial beacon epoch for reveal phase (default is 3 days from now)"
 
-daysFromNow :: Int -> IO POSIXTime
-daysFromNow n = (posixDayLength * fromIntegral n + ) <$> getPOSIXTime
+-- | Epoch that's @n@ days from now, rounded to a multiple of 60 for
+-- NIST beacon purposes.
+daysFromNow :: Int -> IO Int64
+daysFromNow n = do
+  t <- round <$> getPOSIXTime
+  let d = 86400 * fromIntegral n + t
+  return $ d - d `div` 60
 
 data NullOpts = NullOpts
 
