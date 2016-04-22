@@ -1,17 +1,16 @@
-{-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE BangPatterns, DeriveDataTypeable, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
 module Crypto.Challenges.RLWE.Proto.RLWE.Challenge (Challenge(..)) where
 import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
-import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 import qualified Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType as RLWE (ChallengeType)
 
 data Challenge = Challenge{challengeID :: !(P'.Int32), numInstances :: !(P'.Int32), beaconTime :: !(P'.Int64),
                            beaconOffset :: !(P'.Int32), challType :: !(RLWE.ChallengeType)}
-               deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
+               deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data)
 
 instance P'.Mergeable Challenge where
   mergeAppend (Challenge x'1 x'2 x'3 x'4 x'5) (Challenge y'1 y'2 y'3 y'4 y'5)

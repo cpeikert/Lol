@@ -1,16 +1,15 @@
-{-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE BangPatterns, DeriveDataTypeable, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
 module Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc (SampleDisc(..)) where
 import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
-import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 import qualified Crypto.Lol.Types.Proto.Lol.Rq as Lol (Rq)
 
 data SampleDisc = SampleDisc{a :: !(Lol.Rq), b :: !(Lol.Rq)}
-                deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
+                deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data)
 
 instance P'.Mergeable SampleDisc where
   mergeAppend (SampleDisc x'1 x'2) (SampleDisc y'1 y'2) = SampleDisc (P'.mergeAppend x'1 y'1) (P'.mergeAppend x'2 y'2)

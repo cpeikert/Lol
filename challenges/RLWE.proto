@@ -20,7 +20,7 @@ message SampleRLWR {
 
 message InstanceCont {
   required int32 challengeID       = 1;  // challenge this instance belongs to
-  required int32 index             = 2;  // index within a challenge
+  required int32 instID            = 2;  // index within a challenge
   required int32 m                 = 3;
   required int64 q                 = 4;
   required double svar             = 5;
@@ -30,7 +30,7 @@ message InstanceCont {
 
 message InstanceDisc {
   required int32 challengeID       = 1;
-  required int32 index             = 2;
+  required int32 instID            = 2;
   required int32 m                 = 3;
   required int64 q                 = 4;
   required double svar             = 5;
@@ -40,7 +40,7 @@ message InstanceDisc {
 
 message InstanceRLWR {
   required int32 challengeID       = 1;
-  required int32 index             = 2;
+  required int32 instID             = 2;
   required int32 m                 = 3;
   required int64 q                 = 4;
   required int64 p                 = 5;  // RLWR modulus p < q
@@ -48,7 +48,7 @@ message InstanceRLWR {
 }
 
 message Secret {
-  required int32 index             = 1;
+  required int32 instID            = 1;
   required int32 m                 = 2;
   required int64 q                 = 3;
   required Rq s                    = 4;
