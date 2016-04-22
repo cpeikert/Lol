@@ -35,8 +35,8 @@ library
 
   other-modules:        
     Crypto.Challenges.RLWE.Proto.RLWE
-    Crypto.Challenges.RLWE.Proto.RLWE.Instance
-    Crypto.Challenges.RLWE.Proto.RLWE.Instance.InstType
+    Crypto.Challenges.RLWE.Proto.RLWE.Challenge
+    Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType
     Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
     Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
     Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
