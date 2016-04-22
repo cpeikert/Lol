@@ -117,17 +117,16 @@ toProtoChallenge cp challengeID (BA time offset) =
       beaconOffset = fromIntegral offset
       numInstances = numInsts cp
   in case cp of
-    Cont{..} -> let challType = P.Cont in Challenge{..}
-    Disc{..} -> let challType = P.Disc in Challenge{..}
-    RLWR{..} -> let challType = P.RLWR in Challenge{..}
+    Cont{..} -> Challenge{challType = P.Cont,..}
+    Disc{..} -> Challenge{challType = P.Disc,..}
+    RLWR{..} -> Challenge{challType = P.RLWR,..}
 
 -- | Constructs an unstructured 'InstanceCont' suitable for serialization.
 toProtoInstanceCont :: forall t m zq rrq .
   (Fact m,
    Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq,
    Protoable (UCyc t m D rrq), ProtoType (UCyc t m D rrq) ~ Kq)
-  => Int32 -> Int32 -> ChallengeParams
-     -> [C.Sample t m zq rrq] -> InstanceCont
+  => Int32 -> Int32 -> ChallengeParams -> [C.Sample t m zq rrq] -> InstanceCont
 toProtoInstanceCont challengeID instID Cont{..} samples' =
   let bound = proxy (C.computeBound svar eps) (Proxy::Proxy m)
       samples = (uncurry SampleCont) <$> (toProto samples')

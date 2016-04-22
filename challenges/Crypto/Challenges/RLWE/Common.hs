@@ -9,6 +9,7 @@ module Crypto.Challenges.RLWE.Common
 , parseBeaconAddr
 , readProtoType
 , secretIdx
+, checkFileExists
 ) where
 
 import Crypto.Challenges.RLWE.Beacon
@@ -116,12 +117,16 @@ challengeList path = do
   when (null names) $ error "No challenges found."
   return names
 
--- | Read a serialized protobuffer from a file.
-readProtoType :: (ReflectDescriptor a, Wire a, MonadIO m) => FilePath -> ExceptT String m a
-readProtoType file = do
+checkFileExists :: (MonadIO m) => FilePath -> ExceptT String m ()
+checkFileExists file = do
   fileExists <- liftIO $ doesFileExist file
   unless fileExists $ throwError $
     "Error reading " ++ file ++ ": file does not exist."
+
+-- | Read a serialized protobuffer from a file.
+readProtoType :: (ReflectDescriptor a, Wire a, MonadIO m) => FilePath -> ExceptT String m a
+readProtoType file = do
+  checkFileExists file
   bs <- liftIO $ BS.readFile file
   case messageGet bs of
     (Left str) -> throwError $ "Error when reading from protocol buffer. Got string " ++ str

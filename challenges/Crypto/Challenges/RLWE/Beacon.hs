@@ -9,21 +9,22 @@ module Crypto.Challenges.RLWE.Beacon where
 import Control.DeepSeq
 import Control.Monad.State
 
+import Data.Int
 import Data.Time.Calendar    (fromGregorian)
 import Data.Time.Clock       (UTCTime (..), secondsToDiffTime)
 import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.LocalTime   (getCurrentTimeZone, timeZoneMinutes)
 
 -- | The number of bytes (@512 / 8 = 64@) per beacon.
-bytesPerBeacon :: Int
+bytesPerBeacon :: Int32
 bytesPerBeacon = 64
 
 -- | The number of seconds (@60@) between beacon outputs.
-beaconInterval :: Int
+beaconInterval :: Int64
 beaconInterval = 60
 
 -- | Represents a byte offset in a beacon output at a particular time.
-data BeaconAddr = BA Int Int deriving (Eq, Show)
+data BeaconAddr = BA Int64 Int32 deriving (Eq, Show)
 instance NFData BeaconAddr where rnf (BA a b) = rnf a `seq` rnf b
 
 -- | Advances the beacon position by one byte, overflowing to the next
