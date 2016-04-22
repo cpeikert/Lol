@@ -1,16 +1,17 @@
-{-# LANGUAGE BangPatterns, DeriveDataTypeable, FlexibleInstances, MultiParamTypeClasses #-}
+{-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
 module Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont (InstanceCont(..)) where
 import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
+import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 import qualified Crypto.Challenges.RLWE.Proto.RLWE.SampleCont as RLWE (SampleCont)
 
 data InstanceCont = InstanceCont{challengeID :: !(P'.Int32), instID :: !(P'.Int32), m :: !(P'.Int32), q :: !(P'.Int64),
                                  svar :: !(P'.Double), bound :: !(P'.Double), samples :: !(P'.Seq RLWE.SampleCont)}
-                  deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data)
+                  deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
 
 instance P'.Mergeable InstanceCont where
   mergeAppend (InstanceCont x'1 x'2 x'3 x'4 x'5 x'6 x'7) (InstanceCont y'1 y'2 y'3 y'4 y'5 y'6 y'7)

@@ -172,14 +172,15 @@ writeChallengeU path challName (CU c insts) = do
 -- and the name of the challenge.
 writeInstanceU :: FilePath -> String -> InstanceU -> IO ()
 writeInstanceU path challName iu = do
-  let idx = S.instID s
+  let s = secret iu
+      idx = S.instID s
       instFN = instFilePath path challName idx
       secretFN = secretFilePath path challName idx
   case iu of
     (IC _ inst) -> writeProtoType instFN inst
     (ID _ inst) -> writeProtoType instFN inst
     (IR _ inst) -> writeProtoType instFN inst
-  writeProtoType secretFN (secret iu)
+  writeProtoType secretFN s
 
 -- | Writes any auto-gen'd proto object to path/filename.
 writeProtoType :: (ReflectDescriptor a, Wire a) => FilePath -> a -> IO ()

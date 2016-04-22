@@ -54,26 +54,6 @@ data RT (m :: Factored) r where
 
 deriving instance Show r => Show (RT m r)
 
-instance (Fact m) => Protoable (RT m Int64) where
-  type ProtoType (RT m Int64) = R
-
-  toProto (RT (Arr xs)) =
-    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-    in R m $ S.fromList $ RT.toList xs
-  toProto x@(ZV _) = toProto $ toRT x
-
-  fromProto (R m' xs) =
-    let m = proxy valueFact (Proxy::Proxy m)
-        n = proxy totientFact (Proxy::Proxy m)
-        xs' = RT.fromList (Z:.n) $ F.toList xs
-        len = F.length xs
-    in if m == fromIntegral m' && len == n
-       then return $ RT $ Arr xs'
-       else throwError $
-            "An error occurred while reading the proto type for RT.\n\
-            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-            \Expected n=" ++ show n ++ ", got " ++ show len ++ "."
-
 instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
   type ProtoType (RT m (ZqBasic q Int64)) = Rq
 

@@ -87,26 +87,6 @@ instance Eq r => Eq (CT m r) where
   x@(CT _) == y = x == toCT y
   y == x@(CT _) = x == toCT y
 
-instance (Fact m) => Protoable (CT m Int64) where
-  type ProtoType (CT m Int64) = R
-
-  toProto (CT (CT' xs)) =
-    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-    in R m $ S.fromList $ SV.toList xs
-  toProto x@(ZV _) = toProto $ toCT x
-
-  fromProto (R m' xs) =
-    let m = proxy valueFact (Proxy::Proxy m)
-        n = proxy totientFact (Proxy::Proxy m)
-        xs' = SV.fromList $ F.toList xs
-        len = F.length xs
-    in if (m == (fromIntegral m') && len == n)
-       then return $ CT $ CT' xs'
-       else throwError $
-            "An error occurred while reading the proto type for CT.\n\
-            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-            \Expected n=" ++ show n ++ ", got " ++ show len ++ "."
-
 instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
   type ProtoType (CT m (ZqBasic q Int64)) = Rq
 
