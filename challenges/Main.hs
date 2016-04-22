@@ -2,8 +2,10 @@
 
 module Main where
 
-import Control.Applicative
+import Data.Int
+import Data.Time.Clock.POSIX
 import Options
+import System.IO.Unsafe
 
 data MainOpts =
   MainOpts
@@ -16,25 +18,28 @@ instance Options MainOpts where
 
 data GenOpts =
   GenOpts
-  { optParamsFile   :: FilePath, -- ^ file containing parameters for generation
-    optNumInstances :: Int -- ^ number of instances per challenge
+  { optParamsFile      :: FilePath, -- ^ file with parameters for generation
+    optNumInstances    :: Int, -- ^ number of instances per challenge
+    optInitBeaconEpoch :: Int64 -- ^ initial beacon epoch for reveal phase
   }
 
 instance Options GenOpts where
   defineOptions = GenOpts <$>
     simpleOption "params" "params.txt" "File containing RLWE/R parameters" <*>
     simpleOption "num-instances" 16
-    "Number N of instances per challenge, N = 2^k <= 256"
+    "Number N of instances per challenge, N = 2^k <= 256" <*>
+    simpleOption "init-beacon"
+    -- CJP: sneaky! not referentially transparent, but handy as a default
+    (round (unsafePerformIO $ daysFromNow 3))
+    "Initial beacon epoch for reveal phase (default is 3 days from now)"
 
-data RevOpts =
-  RevOpts
-  { -- ??
-  }
+daysFromNow :: Int -> IO POSIXTime
+daysFromNow n = (posixDayLength * fromIntegral n + ) <$> getPOSIXTime
 
-data VerOpts =
-  VerOpts
-  { -- ??
-  }
+data NullOpts = NullOpts
+
+instance Options NullOpts where
+  defineOptions = pure NullOpts
 
 main :: IO ()
 main = runSubcommand
@@ -44,8 +49,13 @@ main = runSubcommand
     ]
 
 generate :: MainOpts -> GenOpts -> [String] -> IO ()
-reveal :: MainOpts -> RevOpts -> [String] -> IO ()
-verify :: MainOpts -> VerOpts -> [String] -> IO ()
+generate mopts gopts _ = print $ optInitBeaconEpoch gopts
+
+reveal :: MainOpts -> NullOpts -> [String] -> IO ()
+reveal = error "TODO"
+
+verify :: MainOpts -> NullOpts -> [String] -> IO ()
+verify = error "TODO"
 
 -- hello :: MainOptions -> HelloOpts -> [String] -> IO ()
 -- hello mainOpts opts args = unless (optQuiet mainOpts) $ do
