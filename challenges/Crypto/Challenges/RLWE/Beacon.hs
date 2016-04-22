@@ -23,19 +23,18 @@ beaconInterval :: Int
 beaconInterval = 60
 
 -- | Represents a byte offset in a beacon output at a particular time.
-data BeaconAddr = BP Int Int deriving (Eq, Show)
-instance NFData BeaconAddr where rnf (BP a b) = rnf a `seq` rnf b
+data BeaconAddr = BA Int Int deriving (Eq, Show)
+instance NFData BeaconAddr where rnf (BA a b) = rnf a `seq` rnf b
 
 -- | Advances the beacon position by one byte, overflowing to the next
--- beacon in necessary.
+-- beacon if necessary.
 nextBeaconAddr :: BeaconAddr -> BeaconAddr
-nextBeaconAddr (BP time byteOffset) =
+nextBeaconAddr (BA time byteOffset) =
   if byteOffset == bytesPerBeacon
-  then BP (time+beaconInterval) 0
-  else BP time (byteOffset+1)
+  then BA (time+beaconInterval) 0
+  else BA time (byteOffset+1)
 
--- | The number of seconds elapsed from a given GMT time since the
--- (GMT) epoch.
+-- | The number of seconds elapsed from a given GMT time since the (GMT) epoch.
 gmtDateToSeconds :: Int -> Int -> Integer -> Int -> Int -> Int
 gmtDateToSeconds month day year hour minute |
   hour >= 0 && hour < 24 && minute >= 0 && minute < 60 =

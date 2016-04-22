@@ -2,7 +2,7 @@
              RebindableSyntax, RecordWildCards, ScopedTypeVariables,
              TypeFamilies #-}
 
-module Crypto.Challenges.RLWE.Generate where
+module Crypto.Challenges.RLWE.Generate (generateMain) where
 
 import Crypto.Challenges.RLWE.Beacon
 import Crypto.Challenges.RLWE.Common
@@ -62,8 +62,8 @@ type T = CT
 
 -- | Generate and serialize challenges given the path to the root of the tree
 -- and an initial beacon address.
-challengeMain :: FilePath -> BeaconAddr -> [ChallengeParams] -> IO ()
-challengeMain path beaconStart cps = do
+generateMain :: FilePath -> BeaconAddr -> [ChallengeParams] -> IO ()
+generateMain path beaconStart cps = do
   let challIDs = [0..]
       beaconAddrs = iterate nextBeaconAddr beaconStart
       challNames = map challengeName cps
@@ -110,9 +110,9 @@ genInstanceU cp@RLWR{..} challID instID = reify q (\(_::Proxy q) ->
         inst = toProtoInstanceRLWR challID instID cp samples
     return $ IR s' inst)))
 
--- | Constructs an unstructured @Challenge@ suitable for serialization.
+-- | Constructs an unstructured 'Challenge' suitable for serialization.
 toProtoChallenge :: ChallengeParams -> Int32 -> BeaconAddr -> Challenge
-toProtoChallenge cp challengeID (BP time offset) =
+toProtoChallenge cp challengeID (BA time offset) =
   let beaconTime = fromIntegral time
       beaconOffset = fromIntegral offset
       numInstances = numInsts cp
@@ -121,7 +121,7 @@ toProtoChallenge cp challengeID (BP time offset) =
     Disc{..} -> let challType = P.Disc in Challenge{..}
     RLWR{..} -> let challType = P.RLWR in Challenge{..}
 
--- | Constructs an unstructured @InstanceCont@ suitable for serialization.
+-- | Constructs an unstructured 'InstanceCont' suitable for serialization.
 toProtoInstanceCont :: forall t m zq rrq .
   (Fact m,
    Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq,
@@ -133,7 +133,7 @@ toProtoInstanceCont challengeID instID Cont{..} samples' =
       samples = (uncurry SampleCont) <$> (toProto samples')
   in InstanceCont{..}
 
--- | Constructs an unstructured @InstanceDisc@ suitable for serialization.
+-- | Constructs an unstructured 'InstanceDisc' suitable for serialization.
 toProtoInstanceDisc :: forall t m zq rrq .
   (Fact m, Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq)
   => Int32 -> Int32 -> ChallengeParams -> [D.Sample t m zq] -> InstanceDisc
@@ -142,7 +142,7 @@ toProtoInstanceDisc challengeID instID Disc{..} samples' =
       samples = (uncurry SampleDisc) <$> (toProto samples')
   in InstanceDisc{..}
 
--- | Constructs an unstructured @InstanceRLWR@ suitable for serialization.
+-- | Constructs an unstructured 'InstanceRLWR' suitable for serialization.
 toProtoInstanceRLWR ::
   (Fact m,
    Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq,
@@ -153,12 +153,12 @@ toProtoInstanceRLWR challengeID instID RLWR{..} samples' =
   let samples = (uncurry SampleRLWR) <$> (toProto samples')
   in InstanceRLWR{..}
 
--- | Constructs an unstructured @Secret@ suitable for serialization.
+-- | Constructs an unstructured 'Secret' suitable for serialization.
 toProtoSecret :: (Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq)
   => Int32 -> Int32 -> Int64 -> Cyc t m zq -> Secret
 toProtoSecret instID m q s' = Secret{s = toProto s', ..}
 
--- | Writes a @ChallengeU@ to a file given a path to the root of the tree
+-- | Writes a 'ChallengeU' to a file given a path to the root of the tree
 -- and the name of the challenge.
 writeChallengeU :: FilePath -> String -> ChallengeU -> IO ()
 writeChallengeU path challName (CU c insts) = do
@@ -168,7 +168,7 @@ writeChallengeU path challName (CU c insts) = do
   writeProtoType challFN c
   mapM_ (writeInstanceU path challName) insts
 
--- | Writes an @InstanceU@ to a file given a path to the root of the tree
+-- | Writes an 'InstanceU' to a file given a path to the root of the tree
 -- and the name of the challenge.
 writeInstanceU :: FilePath -> String -> InstanceU -> IO ()
 writeInstanceU path challName iu = do

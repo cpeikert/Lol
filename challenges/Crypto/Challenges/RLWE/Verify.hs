@@ -58,7 +58,7 @@ main = do
   -- verifies challenges and accumulates beacon positions for each challenge
   bps <- mapM (verifyChallenge abspath) challs
   -- verifies that all challenges use distinct random bits
-  when (all isJust bps) $ printPassFail "Checking for distinct beacon positions..." "DISTINCT" $ 
+  when (all isJust bps) $ printPassFail "Checking for distinct beacon positions..." "DISTINCT" $
     when ((length $ nub bps) /= length bps) $ throwError "Beacon positions overlap"
 
 -- | Verifies all instances that have a secret and return the beacon position for the challenge.
@@ -72,7 +72,7 @@ verifyChallenge path name = do
     rec <- readBeacon path time
 
     let secretIdx = secretIdx rec offset
-        instIDs = [0..(fromIntegral $ numInstances-1)]    
+        instIDs = [0..(fromIntegral $ numInstances-1)]
     -- verify all instances
     lift $ mapM_ (verifyInstance path name secretIdx) instIDs
     -- verifyInstance prints out several progress statements
@@ -82,28 +82,28 @@ verifyChallenge path name = do
 
 -- | Verifies an instance with a particular ID.
 verifyInstance :: FilePath -> String -> Word32 -> Word32 -> IO ()
-verifyInstance path challName secretID instID 
+verifyInstance path challName secretID instID
   | secretID == instID = printPassFail ("\tSecret for instance " ++ (show secretID) ++ " is suppressed.\t") "" $ do
     let secDir = path </> secretFilesDir </> challName
         secretName = secretFileName challName secretID
     secExists <- lift $ doesFileExist (secDir </> secretName)
-    when secExists $ throwError $ "The secret index for challenge " ++ 
+    when secExists $ throwError $ "The secret index for challenge " ++
           challName ++ " is " ++ (show secretID) ++ ", but this secret is present!"
   | otherwise = printPassFail ("\tChecking instance " ++ (show instID) ++ "\t") "VERIFIED" $ do
     inst <- readInstKeyPair path challName instID
     checkInstErr inst
 
 data Instance where
-  CLWE :: (Protoable (RLWEInstanceCont v t m zq rq), 
+  CLWE :: (Protoable (RLWEInstanceCont v t m zq rq),
            ProtoType (RLWEInstanceCont v t m zq rq) ~ P.RLWEInstanceCont,
-           C.CheckInst t m z zq rq, v ~ LiftOf rq) 
+           C.CheckInst t m z zq rq, v ~ LiftOf rq)
     => RLWESecret t m z -> RLWEInstanceCont v t m zq rq -> Instance
-  DLWE :: (Protoable (RLWEInstanceDisc v t m zq), 
+  DLWE :: (Protoable (RLWEInstanceDisc v t m zq),
            ProtoType (RLWEInstanceDisc v t m zq) ~ P.RLWEInstanceDisc,
-           D.CheckInst t m z zq) 
+           D.CheckInst t m z zq)
     => RLWESecret t m z -> RLWEInstanceDisc v t m zq -> Instance
-  LWR :: (Protoable (RLWRInstance t m zq zq'), 
-          ProtoType (RLWRInstance t m zq zq') ~ P.RLWRInstance, 
+  LWR :: (Protoable (RLWRInstance t m zq zq'),
+          ProtoType (RLWRInstance t m zq zq') ~ P.RLWRInstance,
           R.CheckInst t m z zq zq')
     => RLWESecret t m z -> RLWRInstance t m zq zq' -> Instance
 
@@ -123,41 +123,33 @@ parseInstKeyPair :: (Monad m) => P.RLWESecret -> P.Instance -> ExceptT String m 
 parseInstKeyPair sk@(P.RLWESecret idx' m' _) (P.Instance (Just (P.RlweInstCont inst@(P.RLWEInstanceCont idx m q _ _ _)))) = do
   checkParam "ContLWE" "index" m m'
   checkParam "ContLWE" "ID" idx idx'
-  reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+  reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> return $ CLWE
       (fromProto sk :: RLWESecret T m Int64)
       (fromProto inst :: RLWEInstanceCont Double T m (Zq q) (RRq' q))))
 parseInstKeyPair sk@(P.RLWESecret idx' m' _) (P.Instance (Just (P.RlweInstDisc inst@(P.RLWEInstanceDisc idx m q _ _ _)))) = do
   checkParam "DiscLWE" "index" m m'
   checkParam "DiscLWE" "ID" idx idx'
-  reifyFactI (fromIntegral m) (\(_::proxy m) -> 
+  reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> return $ DLWE
       (fromProto sk :: RLWESecret T m Int64)
       (fromProto inst :: RLWEInstanceDisc Double T m (Zq q))))
 parseInstKeyPair sk@(P.RLWESecret idx' m' _) (P.Instance (Just (P.RlwrInst inst@(P.RLWRInstance idx m q q' _)))) = do
   checkParam "LWR" "index" m m'
   checkParam "LWR" "ID" idx idx'
-  reifyFactI (fromIntegral m) (\(_::proxy m) -> 
-    reify (fromIntegral q :: Int64) (\(_::Proxy q) -> 
+  reifyFactI (fromIntegral m) (\(_::proxy m) ->
+    reify (fromIntegral q :: Int64) (\(_::Proxy q) ->
       reify (fromIntegral q' :: Int64) (\(_::Proxy q') -> return $ LWR
         (fromProto sk :: RLWESecret T m Int64)
         (fromProto inst :: RLWRInstance T m (Zq q) (Zq q')))))
 
 checkParam :: (Monad m, Show a, Eq a) => String -> String -> a -> a -> ExceptT String m ()
-checkParam instType paramType instparam secparam = 
-  unless (instparam == secparam) $ throwError $ "Parse error while reading " ++ 
-    instType ++ " instance: instance " ++ paramType ++ " is " ++ 
+checkParam instType paramType instparam secparam =
+  unless (instparam == secparam) $ throwError $ "Parse error while reading " ++
+    instType ++ " instance: instance " ++ paramType ++ " is " ++
     (show instparam) ++ " but secret index is " ++ (show secparam)
 
--- | Reads a serialized protobuffer file to the unparameterized proto type.
-messageGet' :: (ReflectDescriptor a, Wire a, Monad m) => BS.ByteString -> ExceptT String m a
-messageGet' bs = 
-  case messageGet bs of
-    (Left str) -> throwError $ "Error when reading from protocol buffer. Got string " ++ str
-    (Right (a,bs')) -> 
-      if BS.null bs'
-      then return a
-      else throwError $ "Error when reading from protocol buffer. There were leftover bits!"
+
 
 -- | Verifies an instance that has a corresponding secret.
 checkInstErr :: Instance -> ExceptT String IO ()

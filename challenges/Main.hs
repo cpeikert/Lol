@@ -7,6 +7,10 @@ import Data.Time.Clock.POSIX
 import Options
 import System.IO.Unsafe
 
+import Crypto.Challenges.RLWE.Beacon
+import Crypto.Challenges.RLWE.Generate
+import Crypto.Challenges.RLWE.Reveal
+
 data MainOpts =
   MainOpts
   { optChallDir :: FilePath -- ^ location of challenges
@@ -67,3 +71,36 @@ verify = error "TODO"
 -- hello :: MainOptions -> HelloOpts -> [String] -> IO ()
 -- hello mainOpts opts args = unless (optQuiet mainOpts) $ do
 --     putStrLn (optHello opts)
+
+
+{-
+
+-- EAC: default path
+
+-
+-- | Read command line args, guess a path, or print the help message.
+getPath :: IO FilePath
+getPath = do
+  args <- getArgs
+  case args of
+    [] -> do
+      path <- absPath
+      putStrLn $ "No path provided. Guessing path is \"" ++ path ++ "\""
+      return path
+    ["-p",path] -> do
+      dirExists <- doesDirectoryExist path
+      if dirExists
+      then return $ "." </> path
+      else error $ ("." </> path) ++ " does not exist."
+    _ -> error $
+      "Valid args: [-p path] where 'path' is relative to './'." ++
+      "If no path is provided, the program will guess a path."
+
+-- for testing purposes
+absPath :: IO FilePath
+absPath = do
+  inTopLevelLol <- doesDirectoryExist "challenges"
+  return $ if inTopLevelLol
+    then "./challenges"
+    else "."
+    -}
