@@ -4,26 +4,26 @@
 
 module Crypto.Challenges.RLWE.Generate (generateMain) where
 
-import Crypto.Challenges.RLWE.Beacon
-import Crypto.Challenges.RLWE.Common
-import Crypto.Challenges.RLWE.Continuous                         as C
-import Crypto.Challenges.RLWE.Discrete                           as D
-import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
+import           Crypto.Challenges.RLWE.Beacon
+import           Crypto.Challenges.RLWE.Common
+import           Crypto.Challenges.RLWE.Continuous               as C
+import           Crypto.Challenges.RLWE.Discrete                 as D
+import           Crypto.Challenges.RLWE.Proto.RLWE.Challenge
 import qualified Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType as P
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
-import Crypto.Challenges.RLWE.Proto.RLWE.SampleCont
-import Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
-import Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
-import Crypto.Challenges.RLWE.Proto.RLWE.Secret                  as S
-import Crypto.Challenges.RLWE.RLWR                               as R
+import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
+import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
+import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
+import           Crypto.Challenges.RLWE.Proto.RLWE.SampleCont
+import           Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
+import           Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
+import           Crypto.Challenges.RLWE.Proto.RLWE.Secret        as S
+import           Crypto.Challenges.RLWE.RLWR                     as R
 
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
 
-import Crypto.Lol                 hiding (lift)
+import Crypto.Lol                    hiding (lift)
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
@@ -32,9 +32,9 @@ import Crypto.Lol.Types.Proto.Lol.Rq
 import Crypto.Lol.Types.Random
 import Crypto.Random.DRBG
 
-import Data.ByteString       as BS (writeFile)
-import Data.ByteString.Lazy  as BS (toStrict)
-import Data.Reflection hiding (D)
+import Data.ByteString      as BS (writeFile)
+import Data.ByteString.Lazy as BS (toStrict)
+import Data.Reflection      hiding (D)
 
 import System.Directory (createDirectoryIfMissing)
 
@@ -60,6 +60,11 @@ type Zq q = ZqBasic (Reified q) Int64
 type RRq' q = RRq (RealMod (Reified q)) Double
 type T = CT
 
+-- CJP: have a function that required both MonadRandom and MonadIO,
+-- which generates and immediately writes a challenge, also printing a
+-- status to terminal.  It should just call genChallengeU and
+-- writeChallengeU
+
 -- | Generate and serialize challenges given the path to the root of the tree
 -- and an initial beacon address.
 generateMain :: FilePath -> BeaconAddr -> [ChallengeParams] -> IO ()
@@ -74,11 +79,11 @@ generateMain path beaconStart cps = do
 -- | The name for each challenge directory.
 challengeName :: ChallengeParams -> FilePath
 challengeName Cont{..} =
-  "chall-clwe-m" ++ (show m) ++ "-q" ++ (show q) ++ "-v" ++ (show svar)
+  "chall-rlwec-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
 challengeName Disc{..} =
-  "chall-dlwe-m" ++ (show m) ++ "-q" ++ (show q) ++ "-v" ++ (show svar)
+  "chall-rlwed-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
 challengeName RLWR{..} =
-  "chall-lwr-m" ++ (show m) ++ "-q" ++ (show q) ++ "-p" ++ (show p)
+  "chall-rlwr-m" ++ show m ++ "-q" ++ show q ++ "-p" ++ show p
 
 -- | Generate a challenge with the given parameters.
 genChallengeU :: (MonadRandom rnd)
@@ -94,28 +99,26 @@ genInstanceU :: (MonadRandom rnd)
 genInstanceU cp@Cont{..} challID instID = reify q (\(_::Proxy q) ->
   reifyFactI (fromIntegral m) (\(_::proxy m) -> do
     (s, samples :: [C.Sample T m (Zq q) (RRq' q)]) <- C.instanceN svar numSamples
-    let s' = toProtoSecret instID m q s
+    let s' = toProtoSecret challID instID m q s
         inst = toProtoInstanceCont challID instID cp samples
     return $ IC s' inst))
 genInstanceU cp@Disc{..} challID instID = reify q (\(_::Proxy q) ->
   reifyFactI (fromIntegral m) (\(_::proxy m) -> do
     (s, samples :: [D.Sample T m (Zq q)]) <- D.instanceN svar numSamples
-    let s' = toProtoSecret instID m q s
+    let s' = toProtoSecret challID instID m q s
         inst = toProtoInstanceDisc challID instID cp samples
     return $ ID s' inst))
 genInstanceU cp@RLWR{..} challID instID = reify q (\(_::Proxy q) ->
   reify p (\(_::Proxy p) -> reifyFactI (fromIntegral m) (\(_::proxy m) -> do
     (s, samples :: [R.Sample T m (Zq q) (Zq p)]) <- R.instanceN numSamples
-    let s' = toProtoSecret instID m q s
+    let s' = toProtoSecret challID instID m q s
         inst = toProtoInstanceRLWR challID instID cp samples
     return $ IR s' inst)))
 
 -- | Constructs an unstructured 'Challenge' suitable for serialization.
 toProtoChallenge :: ChallengeParams -> Int32 -> BeaconAddr -> Challenge
-toProtoChallenge cp challengeID (BA time offset) =
-  let beaconTime = fromIntegral time
-      beaconOffset = fromIntegral offset
-      numInstances = numInsts cp
+toProtoChallenge cp challengeID (BA beaconTime beaconOffset) =
+  let numInstances = numInsts cp
   in case cp of
     Cont{..} -> let challType = P.Cont in Challenge{..}
     Disc{..} -> let challType = P.Disc in Challenge{..}
@@ -126,8 +129,7 @@ toProtoInstanceCont :: forall t m zq rrq .
   (Fact m,
    Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq,
    Protoable (UCyc t m D rrq), ProtoType (UCyc t m D rrq) ~ Kq)
-  => Int32 -> Int32 -> ChallengeParams
-     -> [C.Sample t m zq rrq] -> InstanceCont
+  => Int32 -> Int32 -> ChallengeParams -> [C.Sample t m zq rrq] -> InstanceCont
 toProtoInstanceCont challengeID instID Cont{..} samples' =
   let bound = proxy (C.computeBound svar eps) (Proxy::Proxy m)
       samples = (uncurry SampleCont) <$> (toProto samples')
@@ -155,8 +157,8 @@ toProtoInstanceRLWR challengeID instID RLWR{..} samples' =
 
 -- | Constructs an unstructured 'Secret' suitable for serialization.
 toProtoSecret :: (Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq)
-  => Int32 -> Int32 -> Int64 -> Cyc t m zq -> Secret
-toProtoSecret instID m q s' = Secret{s = toProto s', ..}
+  => Int32 -> Int32 -> Int32 -> Int64 -> Cyc t m zq -> Secret
+toProtoSecret challengeID instID m q s' = Secret{s = toProto s', ..}
 
 -- | Writes a 'ChallengeU' to a file given a path to the root of the tree
 -- and the name of the challenge.
