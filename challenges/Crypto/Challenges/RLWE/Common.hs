@@ -15,23 +15,22 @@ import Crypto.Challenges.RLWE.Beacon
 import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
 
 import Control.Monad.Except
-import Control.Monad.IO.Class
+
+import           Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy as BS
-import Data.ByteString.Lazy (unpack)
-import Data.Default         (Default (..))
-import Data.Int
+import           Data.Default         (Default (..))
+import           Data.Int
 
 import Net.Beacon
 
 import System.Console.ANSI
 import System.Directory    (doesDirectoryExist, doesFileExist,
                             getDirectoryContents)
-import System.Environment  (getArgs)
 import System.FilePath     ((</>))
 
 import Text.Printf
-import Text.ProtocolBuffers (messageGet)
-import Text.ProtocolBuffers.Header (Wire, ReflectDescriptor)
+import Text.ProtocolBuffers        (messageGet)
+import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 
 {- Directory structure:
 
