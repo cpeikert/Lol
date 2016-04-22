@@ -48,10 +48,11 @@ message InstanceRLWR {
 }
 
 message Secret {
-  required int32 instID            = 1;
-  required int32 m                 = 2;
-  required int64 q                 = 3;
-  required Rq s                    = 4;
+  required int32 challengeID       = 1;
+  required int32 instID            = 2;
+  required int32 m                 = 3;
+  required int64 q                 = 4;
+  required Rq s                    = 5;
 }
 
 enum ChallengeType {
