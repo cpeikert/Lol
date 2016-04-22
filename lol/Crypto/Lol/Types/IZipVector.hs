@@ -16,9 +16,9 @@ import Algebra.ZeroTestable as ZeroTestable
 import Control.DeepSeq
 import Data.Data
 import Data.Functor.Trans.Tagged
-import Data.Serialize
-import Data.Vector               as V
-import Data.Vector.Serialize
+
+import Data.Vector as V
+
 
 -- | Indexed Zip Vector: a wrapper around a (boxed) 'Vector' that has
 -- zip-py 'Applicative' behavior, analogous to

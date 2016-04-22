@@ -12,7 +12,6 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
 import Crypto.Lol.LatticePrelude                        as LP
 

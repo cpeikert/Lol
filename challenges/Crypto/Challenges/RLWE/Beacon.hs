@@ -7,7 +7,6 @@
 module Crypto.Challenges.RLWE.Beacon where
 
 import Control.DeepSeq
-import Control.Monad.State
 
 import Data.Int
 import Data.Time.Calendar    (fromGregorian)
