@@ -27,7 +27,7 @@ source-repository head
 
 library
   default-language: Haskell2010
-  ghc-options: -O3 -auto-all -caf-all -wall -fno-warn-partial-type-signatures
+  ghc-options: -O3 -auto-all -caf-all -Wall -fno-warn-partial-type-signatures
 
   exposed-modules:
     Crypto.Challenges.RLWE.Continuous
