@@ -54,7 +54,6 @@ import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Proto.Lol.Kq
-import Crypto.Lol.Types.Proto.Lol.R
 import Crypto.Lol.Types.Proto.Lol.Rq
 import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic

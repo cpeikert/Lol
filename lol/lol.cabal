@@ -1,5 +1,5 @@
 name:                lol
--- The package version.  See the Haskell package versioning policy (PVP) 
+-- The package version.  See the Haskell package versioning policy (PVP)
 -- for standards guiding when and how versions should be incremented.
 -- http://www.haskell.org/haskellwiki/Package_versioning_policy
 -- PVP summary:      +-+------- breaking API changes
@@ -32,9 +32,9 @@ extra-source-files:  README, CHANGES.md,
                      utils/Harness/Cyc.hs,
                      Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
 cabal-version:       >= 1.10
-description:         
+description:
     Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
-    For a detailed description of interfaces and functionality, see 
+    For a detailed description of interfaces and functionality, see
     <https://eprint.iacr.org/2015/1134 Λ ○ λ: A Functional Library for Lattice Cryptography>.
     For example cryptographic applications, see <https://hackage.haskell.org/package/lol-apps lol-apps>.
 source-repository head
@@ -71,10 +71,10 @@ library
   default-language:   Haskell2010
 
   if flag(useICC)
-    ghc-options: -pgml icc -optc-O3 
+    ghc-options: -pgml icc -optc-O3
     cc-options: -std=gnu99 -Wall -DSTATS -DCINTRIN
   else
-    ghc-options: -pgml gcc -fPIC -optc-O3 
+    ghc-options: -pgml gcc -fPIC -optc-O3
     cc-options: -std=gnu99 -fPIC -Wall
 
   if flag(llvm)
@@ -85,7 +85,7 @@ library
   if flag(opt)
     ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
-  exposed-modules: 
+  exposed-modules:
     Crypto.Lol
     Crypto.Lol.PosBin
     Crypto.Lol.Factored
@@ -102,12 +102,11 @@ library
     Crypto.Lol.Cyclotomic.Tensor
     Crypto.Lol.Cyclotomic.Tensor.CTensor
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor
-    
+
     Crypto.Lol.Types.Random
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
     Crypto.Lol.Types.Proto
-    Crypto.Lol.Types.Proto.Lol.R
     Crypto.Lol.Types.Proto.Lol.Rq
     Crypto.Lol.Types.Proto.Lol.Kq
     Crypto.Lol.Types.RRq
@@ -115,7 +114,7 @@ library
     Crypto.Lol.Types.ZqBasic
 
   other-modules:
-        
+
     Crypto.Lol.FactoredDefs
     Crypto.Lol.PosBinDefs
     Crypto.Lol.GaussRandom
@@ -210,4 +209,4 @@ Benchmark bench-lol
     singletons,
     transformers,
     vector,
-    repa                        
+    repa
