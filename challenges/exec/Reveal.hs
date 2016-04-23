@@ -1,10 +1,10 @@
-module Crypto.Challenges.RLWE.Reveal (revealMain) where
+module Reveal (revealMain) where
 
 import Control.Monad.Except
 import Control.Monad.State
 
-import Crypto.Challenges.RLWE.Beacon
-import Crypto.Challenges.RLWE.Common
+import Beacon
+import Common
 import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
 
 import Data.ByteString.Lazy (writeFile)

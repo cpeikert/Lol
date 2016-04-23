@@ -27,7 +27,7 @@ source-repository head
 
 library
   default-language: Haskell2010
-  ghc-options: -O3 -auto-all -caf-all -Wall -fno-warn-partial-type-signatures
+  ghc-options: -O3 -auto-all -caf-all -Wall
 
   exposed-modules:
     Crypto.Challenges.RLWE.Continuous
@@ -52,17 +52,19 @@ library
 
 executable main
   default-language: Haskell2010
-  hs-source-dirs: .
+  hs-source-dirs: exec
   main-is: Main.hs
 
-  ghc-options: -threaded -rtsopts -O3 -auto-all -caf-all
+  ghc-options: -threaded -rtsopts -O3 -auto-all -caf-all -fno-warn-partial-type-signatures
 
   other-modules:
-    Crypto.Challenges.RLWE.Beacon
-    Crypto.Challenges.RLWE.Common
-    Crypto.Challenges.RLWE.Generate
-    Crypto.Challenges.RLWE.Reveal
-    Crypto.Challenges.RLWE.Verify
+    Beacon
+    Common
+    Generate
+    Reveal
+    Verify
+
+
 
   build-depends: ansi-terminal,
                  base,
@@ -75,6 +77,7 @@ executable main
                  filepath,
                  http-conduit,
                  lol,
+                 MonadRandom,
                  mtl,
                  options,
                  nist-beacon,

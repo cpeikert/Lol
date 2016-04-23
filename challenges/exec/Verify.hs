@@ -1,15 +1,15 @@
 {-# LANGUAGE FlexibleContexts, GADTs, NoImplicitPrelude, PartialTypeSignatures,
              RebindableSyntax, ScopedTypeVariables #-}
 
-module Crypto.Challenges.RLWE.Verify where
+module Verify where
 
 import Control.Applicative
 import Control.Monad (when)
 import Control.Monad.Except
 import Control.Monad.Trans (lift)
 
-import Crypto.Challenges.RLWE.Beacon
-import Crypto.Challenges.RLWE.Common
+import Beacon
+import Common
 import qualified Crypto.Challenges.RLWE.Continuous as C
 import qualified Crypto.Challenges.RLWE.Discrete as D
 import qualified Crypto.Challenges.RLWE.RLWR as R

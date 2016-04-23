@@ -1,6 +1,6 @@
 {-# LANGUAGE RecordWildCards #-}
 
-module Crypto.Challenges.RLWE.Common
+module Common
 ( challengeFilesDir, secretFilesDir
 , challFilePath, instFilePath, secretFilePath
 , xmlFilePath, certFilePath
@@ -14,7 +14,7 @@ module Crypto.Challenges.RLWE.Common
 , Zq, RRq, ChallengeU(..), InstanceU(..)
 ) where
 
-import Crypto.Challenges.RLWE.Beacon
+import Beacon
 import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
 import Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
 import Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
@@ -160,7 +160,7 @@ readProtoType file = do
   case messageGet bs of
     (Left str) -> throwError $
       "Error when reading from protocol buffer. Got string " ++ str
-    (Right (a,bs')) ->
+    (Right (a,bs')) -> do
       throwErrorIfNot (BS.null bs')
         "Error when reading from protocol buffer. There were leftover bits!"
       return a

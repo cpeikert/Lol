@@ -2,10 +2,10 @@
              RebindableSyntax, RecordWildCards, ScopedTypeVariables,
              TypeFamilies #-}
 
-module Crypto.Challenges.RLWE.Generate (generateMain, ChallengeParams(..)) where
+module Generate (generateMain, ChallengeParams(..)) where
 
-import           Crypto.Challenges.RLWE.Beacon
-import           Crypto.Challenges.RLWE.Common
+import           Beacon
+import           Common
 import           Crypto.Challenges.RLWE.Continuous               as C
 import           Crypto.Challenges.RLWE.Discrete                 as D
 import           Crypto.Challenges.RLWE.Proto.RLWE.Challenge

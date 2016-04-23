@@ -7,10 +7,10 @@ import Data.Time.Clock.POSIX
 import Options
 import System.IO.Unsafe
 
-import Crypto.Challenges.RLWE.Beacon
-import Crypto.Challenges.RLWE.Generate
-import Crypto.Challenges.RLWE.Reveal
-import Crypto.Challenges.RLWE.Verify
+import Beacon
+import Generate
+import Reveal
+import Verify
 
 data MainOpts =
   MainOpts
