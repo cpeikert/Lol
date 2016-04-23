@@ -10,10 +10,18 @@ module Crypto.Challenges.RLWE.Common
 , readProtoType
 , secretIdx
 , checkFileExists
+, throwErrorIf, throwErrorIfNot, maybeThrowError
+, Zq, RRq, ChallengeU(..), InstanceU(..)
 ) where
 
 import Crypto.Challenges.RLWE.Beacon
 import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
+import Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
+import Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
+import Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
+import Crypto.Challenges.RLWE.Proto.RLWE.Secret
+import qualified Crypto.Lol as Lol
+import Crypto.Lol.Reflects
 
 import Control.Monad.Except
 
@@ -21,6 +29,7 @@ import           Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy as BS
 import           Data.Default         (Default (..))
 import           Data.Int
+import           Data.Maybe
 
 import Net.Beacon
 
@@ -50,6 +59,16 @@ challengeFilesDir == secretFilesDir
    -> ...
 -}
 
+data ChallengeU = CU Challenge [InstanceU]
+
+data InstanceU = IC {secret::Secret, instc::InstanceCont}
+               | ID {secret::Secret, instd::InstanceDisc}
+               | IR {secret::Secret, instr::InstanceRLWR}
+
+-- Types used to generate and verify instances
+type Zq q = Lol.ZqBasic (Reified q) Int64
+type RRq q = Lol.RRq (RealMod (Reified q)) Double
+
 -- | The root directory for challenges and their instances.
 challengeFilesDir :: FilePath -> FilePath
 challengeFilesDir path = path </> "challenge-files"
@@ -74,7 +93,7 @@ secretFilePath :: FilePath -> String -> Int32 -> FilePath
 secretFilePath path name idx = (secretFilesDir path) </> name ++ "-" ++ intToHex idx ++ ".secret"
 
 -- | The name of a beacon XML file.
-xmlFilePath :: FilePath -> Int -> FilePath
+xmlFilePath :: FilePath -> Int64 -> FilePath
 xmlFilePath path t = (secretFilesDir path) </> show t ++ ".xml"
 
 -- | The filename for the NIST X509 certificate.
@@ -84,6 +103,17 @@ certFilePath path = (secretFilesDir path) </> "beacon.cer"
 intToHex :: Int32 -> String
 intToHex x | x < 0 || x > 15 = error "hex value out of range"
 intToHex x = printf "%X" x
+
+throwErrorIf :: (Monad m) => Bool -> String -> ExceptT String m ()
+throwErrorIf b = when b . throwError
+
+throwErrorIfNot :: (Monad m) => Bool -> String -> ExceptT String m ()
+throwErrorIfNot b = unless b . throwError
+
+maybeThrowError :: (Monad m) => Maybe a -> String -> ExceptT String m a
+maybeThrowError m str = do
+  throwErrorIf (isNothing m) $ str
+  return $ fromJust m
 
 -- | Pretty printing of error messages.
 printPassFail :: (MonadIO m, Default a)
@@ -119,7 +149,7 @@ challengeList path = do
 checkFileExists :: (MonadIO m) => FilePath -> ExceptT String m ()
 checkFileExists file = do
   fileExists <- liftIO $ doesFileExist file
-  unless fileExists $ throwError $
+  throwErrorIfNot fileExists $
     "Error reading " ++ file ++ ": file does not exist."
 
 -- | Read a serialized protobuffer from a file.
@@ -128,11 +158,12 @@ readProtoType file = do
   checkFileExists file
   bs <- liftIO $ BS.readFile file
   case messageGet bs of
-    (Left str) -> throwError $ "Error when reading from protocol buffer. Got string " ++ str
+    (Left str) -> throwError $
+      "Error when reading from protocol buffer. Got string " ++ str
     (Right (a,bs')) ->
-      if BS.null bs'
-      then return a
-      else throwError $ "Error when reading from protocol buffer. There were leftover bits!"
+      throwErrorIfNot (BS.null bs')
+        "Error when reading from protocol buffer. There were leftover bits!"
+      return a
 
 -- | Parse the beacon time/offset used to reveal a challenge.
 parseBeaconAddr :: (Monad m) => Challenge -> ExceptT String m BeaconAddr
@@ -140,16 +171,16 @@ parseBeaconAddr Challenge{..} = do
   let time = fromIntegral beaconTime
       offset = fromIntegral beaconOffset
   -- validate the time and offset
-  when ((time `mod` beaconInterval /= 0) ||
-        offset < 0 ||
-        offset >= bytesPerBeacon) $
-    throwError "Invalid beacon address."
+  throwErrorIf ((time `mod` beaconInterval /= 0) ||
+                offset < 0 ||
+                offset >= bytesPerBeacon) $
+    "Invalid beacon address."
   return $ BA time offset
 
 -- | Yield the secret index (for a challenge), given a beacon record
 -- and a byte offset.
-secretIdx :: Int -> Record -> Int -> Int32
+secretIdx :: Int32 -> Record -> Int32 -> Int32
 secretIdx numInstances record byteOffset =
   let output = outputValue record
-      byte = unpack output !! byteOffset
-  in fromIntegral $ fromIntegral byte `mod` numInstances
+      byte = unpack output !! (fromIntegral byteOffset)
+  in fromIntegral $ fromIntegral byte `mod` (fromIntegral numInstances)

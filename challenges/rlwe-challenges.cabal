@@ -33,8 +33,6 @@ library
     Crypto.Challenges.RLWE.Continuous
     Crypto.Challenges.RLWE.Discrete
     Crypto.Challenges.RLWE.RLWR
-
-  other-modules:
     Crypto.Challenges.RLWE.Proto.RLWE
     Crypto.Challenges.RLWE.Proto.RLWE.Challenge
     Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType
@@ -46,15 +44,13 @@ library
     Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
     Crypto.Challenges.RLWE.Proto.RLWE.Secret
 
-  build-depends: MonadRandom,
-                 base,
-                 deepseq,
+  build-depends: base,
                  lol,
-                 mtl,
+                 MonadRandom,
                  protocol-buffers,
                  protocol-buffers-descriptor
 
-executable rlwe-challenges
+executable main
   default-language: Haskell2010
   hs-source-dirs: .
   main-is: Main.hs
@@ -68,13 +64,22 @@ executable rlwe-challenges
     Crypto.Challenges.RLWE.Reveal
     Crypto.Challenges.RLWE.Verify
 
-  build-depends: DRBG,
-                 ansi-terminal,
+  build-depends: ansi-terminal,
                  base,
+                 bytestring,
+                 containers,
+                 data-default,
+                 deepseq,
                  directory,
+                 DRBG,
                  filepath,
                  http-conduit,
                  lol,
+                 mtl,
                  options,
                  nist-beacon,
-                 time
+                 protocol-buffers,
+                 reflection,
+                 rlwe-challenges,
+                 time,
+                 transformers

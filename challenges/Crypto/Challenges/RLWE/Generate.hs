@@ -2,7 +2,7 @@
              RebindableSyntax, RecordWildCards, ScopedTypeVariables,
              TypeFamilies #-}
 
-module Crypto.Challenges.RLWE.Generate (generateMain) where
+module Crypto.Challenges.RLWE.Generate (generateMain, ChallengeParams(..)) where
 
 import           Crypto.Challenges.RLWE.Beacon
 import           Crypto.Challenges.RLWE.Common
@@ -21,19 +21,18 @@ import           Crypto.Challenges.RLWE.RLWR                     as R
 
 import Control.Applicative
 import Control.Monad
+import Control.Monad.IO.Class
 import Control.Monad.Random
 
-import Crypto.Lol                    hiding (lift)
+import Crypto.Lol                    hiding (lift, RRq)
 import Crypto.Lol.Cyclotomic.UCyc
-import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Proto.Lol.Kq
 import Crypto.Lol.Types.Proto.Lol.Rq
 import Crypto.Lol.Types.Random
 import Crypto.Random.DRBG
 
-import Data.ByteString      as BS (writeFile)
-import Data.ByteString.Lazy as BS (toStrict)
+import Data.ByteString.Lazy as BS (writeFile)
 import Data.Reflection      hiding (D)
 
 import System.Directory (createDirectoryIfMissing)
@@ -43,27 +42,14 @@ import Text.ProtocolBuffers.Header
 
 -- | Information to generate a challenge.
 data ChallengeParams =
-    Disc {numSamples::Int, numInsts::Int32, m::Int32, q::Int64,
+    Cont {numSamples::Int, numInsts::Int32, m::Int32, q::Int64,
           svar::Double, eps::Double}
-  | Cont {numSamples::Int, numInsts::Int32, m::Int32, q::Int64,
+  | Disc {numSamples::Int, numInsts::Int32, m::Int32, q::Int64,
           svar::Double, eps::Double}
   | RLWR {numSamples::Int, numInsts::Int32, m::Int32, q::Int64, p::Int64}
 
-data ChallengeU = CU Challenge [InstanceU]
-
-data InstanceU = IC {secret::Secret, instc::InstanceCont}
-               | ID {secret::Secret, instd::InstanceDisc}
-               | IR {secret::Secret, instr::InstanceRLWR}
-
--- Types used to generate instances
-type Zq q = ZqBasic (Reified q) Int64
-type RRq' q = RRq (RealMod (Reified q)) Double
+-- Tensor type used to generate instances
 type T = CT
-
--- CJP: have a function that required both MonadRandom and MonadIO,
--- which generates and immediately writes a challenge, also printing a
--- status to terminal.  It should just call genChallengeU and
--- writeChallengeU
 
 -- | Generate and serialize challenges given the path to the root of the tree
 -- and an initial beacon address.
@@ -72,9 +58,16 @@ generateMain path beaconStart cps = do
   let challIDs = [0..]
       beaconAddrs = iterate nextBeaconAddr beaconStart
       challNames = map challengeName cps
-  challs <- evalCryptoRandIO (sequence $
-    zipWith3 genChallengeU cps challIDs beaconAddrs :: _ (CryptoRand HashDRBG) _ _)
-  zipWithM_ (writeChallengeU path) challNames challs
+  evalCryptoRandIO (sequence_ $
+    zipWith3 (genAndWriteChallenge path) cps challIDs beaconAddrs :: _ (CryptoRand HashDRBG) _ _)
+
+genAndWriteChallenge :: (MonadRandom m, MonadIO m)
+  => FilePath -> ChallengeParams -> Int32 -> BeaconAddr -> m ()
+genAndWriteChallenge path cp challID ba = do
+  chall <- genChallengeU cp challID ba
+  let name = challengeName cp
+  liftIO $ putStrLn $ "Generating challenge " ++ name
+  liftIO $ writeChallengeU path name chall
 
 -- | The name for each challenge directory.
 challengeName :: ChallengeParams -> FilePath
@@ -88,8 +81,8 @@ challengeName RLWR{..} =
 -- | Generate a challenge with the given parameters.
 genChallengeU :: (MonadRandom rnd)
   => ChallengeParams -> Int32 -> BeaconAddr -> rnd ChallengeU
-genChallengeU cp challID bp = do
-  let chall = toProtoChallenge cp challID bp
+genChallengeU cp challID ba = do
+  let chall = toProtoChallenge cp challID ba
   insts <- mapM (genInstanceU cp challID) [0..]
   return $ CU chall $ take (fromIntegral $ numInsts cp) insts
 
@@ -98,7 +91,7 @@ genInstanceU :: (MonadRandom rnd)
   => ChallengeParams -> Int32 -> Int32 -> rnd InstanceU
 genInstanceU cp@Cont{..} challID instID = reify q (\(_::Proxy q) ->
   reifyFactI (fromIntegral m) (\(_::proxy m) -> do
-    (s, samples :: [C.Sample T m (Zq q) (RRq' q)]) <- C.instanceN svar numSamples
+    (s, samples :: [C.Sample T m (Zq q) (RRq q)]) <- C.instanceN svar numSamples
     let s' = toProtoSecret challID instID m q s
         inst = toProtoInstanceCont challID instID cp samples
     return $ IC s' inst))
@@ -186,4 +179,6 @@ writeInstanceU path challName iu = do
 
 -- | Writes any auto-gen'd proto object to path/filename.
 writeProtoType :: (ReflectDescriptor a, Wire a) => FilePath -> a -> IO ()
-writeProtoType fileName obj = BS.writeFile fileName $ toStrict $ messagePut obj
+writeProtoType fileName obj = do
+  putStr "."
+  BS.writeFile fileName $ messagePut obj

@@ -8,15 +8,15 @@ import Crypto.Challenges.RLWE.Common
 import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
 
 import Data.ByteString.Lazy (writeFile)
+import Data.Int
 import Data.Map (Map, empty, insert, lookup)
 
 import Net.Beacon
-
 import Network.HTTP.Conduit (simpleHttp)
 
 import Prelude hiding (lookup, writeFile)
 
-import System.Directory (doesFileExist, removeFile)
+import System.Directory (removeFile)
 import System.IO hiding (writeFile)
 
 -- | Deletes the secret for each challenge in the tree, given the path
@@ -38,9 +38,6 @@ revealMain path = do
   -- write the NIST certificate
   getNistCert path
 
--- EAC: Should we validate the challenge more?
--- We can check #instances, challID of secret, etc.
-
 -- | A map from beacon times to beacon records.
 type RecordState = Map Int Record
 
@@ -56,13 +53,12 @@ revealChallenge path name =
     let numInsts = fromIntegral $ numInstances challProto
 
     -- get the record, and compute the secret index
-    rec <- retrieveRecord time
+    rec <- retrieveRecord (fromIntegral time)
     let secIdx = secretIdx numInsts rec offset
         secFile = secretFilePath path name secIdx
 
     -- delete the secret corresponding to the secret index
-    secFileExists <- liftIO $ doesFileExist secFile
-    unless secFileExists $ throwError $ secFile ++ " does not exist."
+    checkFileExists secFile
     liftIO $ putStr $ "\tRemoving " ++ secFile ++ "\n\t"
     liftIO $ removeFile secFile
 
@@ -76,26 +72,20 @@ retrieveRecord t = do
       liftIO $ putStrLn $ "\tDownloading record " ++ (show t)
       -- make sure the beacon is available
       lastRec <- liftIO getLastRecord
-      lastBeaconTime <- case lastRec of
-        Nothing -> throwError "Failed to get last beacon."
-        (Just r) -> return $ timeStamp r
-      when (t > lastBeaconTime) $
-        throwError $
-          "Can't reveal challenge: it's time has not yet come. Please wait " ++
-          (show $ t-lastBeaconTime) ++ " seconds for the assigned beacon."
-      r <- liftIO $ getCurrentRecord t
-      case r of
-        (Just r') -> do
-          modify (insert t r')
-          return r'
-        Nothing -> throwError $
-          "Couldn't get record " ++ (show t) ++ "from NIST servers."
+      lastBeaconTime <- timeStamp <$> maybeThrowError lastRec "Failed to get last beacon."
+      throwErrorIf (t > lastBeaconTime) $
+        "Can't reveal challenge: it's time has not yet come. Please wait " ++
+        (show $ t-lastBeaconTime) ++ " seconds for the assigned beacon."
+      trec <- liftIO $ getCurrentRecord t
+      rec <- maybeThrowError trec $ "Couldn't get record " ++ (show t) ++ "from NIST servers."
+      modify (insert t rec)
+      return rec
 
 -- | Writes a beacon record to a file.
 writeBeaconXML :: FilePath -> Record -> IO ()
 writeBeaconXML path rec = do
   let beacon = toXML rec
-      filePath = xmlFilePath path $ timeStamp rec
+      filePath = xmlFilePath path $ fromIntegral $ timeStamp rec
   writeFile filePath beacon
 
 -- | Downloads the NIST certificate and saves it.
@@ -105,4 +95,3 @@ getNistCert path = do
   putStrLn $ "Writing NIST certificate to " ++ certPath
   bs <- simpleHttp "https://beacon.nist.gov/certificate/beacon.cer"
   writeFile certPath bs
-

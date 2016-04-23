@@ -52,4 +52,4 @@ validSample bound s (a,b) = gSqNorm (liftDec $ b - a * s) < bound
 -- will be less than the bound except with probability eps.
 -- EAC: This bound might be looser than the continuous version
 computeBound :: (Field v, Ord v, Transcendental v, Fact m) => v -> v -> Tagged m Int64
-computeBound v eps = error "TODO: Discrete.computeBound"
+computeBound = error "TODO: Discrete.computeBound"

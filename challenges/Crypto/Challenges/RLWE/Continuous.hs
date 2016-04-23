@@ -63,9 +63,9 @@ computeBound :: (Field v, Ord v, Transcendental v, Fact m) => v -> v -> Tagged m
 computeBound v eps = do
   n <- totientFact
   mhat <- valueHatFact
-  let d = flip fix (1 / (2*pi)) $ \f d ->
-        let d' = (1/2 + (log $ 2 * pi * d)/2 - (log eps)/(fromIntegral n))/pi
-        in if ((d'-d) < 0.0001)
-           then d'
-           else f d'
+  let d = flip fix (1 / (2*pi)) $ \f x ->
+        let x' = (1/2 + (log $ 2 * pi * x)/2 - (log eps)/(fromIntegral n))/pi
+        in if ((x'-x) < 0.0001)
+           then x'
+           else f x'
   return $ (fromIntegral $ mhat*n)*v*d
