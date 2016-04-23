@@ -45,8 +45,8 @@ gmtDateToSeconds _ _ _ _ _ = error "invalid date to gmtDateToSeconds"
 
 -- | The number of seconds elapsed from a given local time since the
 -- (GMT) epoch.
-localDateToSeconds :: Int -> Int -> Integer -> Int -> Int -> IO Int
+localDateToSeconds :: Int -> Int -> Integer -> Int -> Int -> IO Int64
 localDateToSeconds month day year hour minute = do
   let gmt = gmtDateToSeconds month day year hour minute
   minuteOffset <- timeZoneMinutes <$> getCurrentTimeZone
-  return $ gmt - (minuteOffset*60)
+  return $ fromIntegral $ gmt - (minuteOffset*60)

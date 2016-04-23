@@ -40,7 +40,6 @@ import Data.Reflection hiding (D)
 import Net.Beacon
 
 import System.Directory (doesFileExist, getDirectoryContents, doesDirectoryExist)
-import System.IO
 
 import Text.ProtocolBuffers (messageGet)
 import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
@@ -52,9 +51,6 @@ type T = CT
 -- root of the tree.
 verifyMain :: FilePath -> IO ()
 verifyMain path = do
-  -- for nice printing when running executable
-  hSetBuffering stdout NoBuffering
-
   -- get a list of challenges to reveal
   challs <- challengeList path
 

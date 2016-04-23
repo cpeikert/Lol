@@ -64,8 +64,6 @@ executable main
     Reveal
     Verify
 
-
-
   build-depends: ansi-terminal,
                  base,
                  bytestring,

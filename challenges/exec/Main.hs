@@ -5,6 +5,7 @@ module Main where
 import Data.Int
 import Data.Time.Clock.POSIX
 import Options
+import System.IO
 import System.IO.Unsafe
 
 import Beacon
@@ -52,11 +53,21 @@ instance Options NullOpts where
   defineOptions = pure NullOpts
 
 main :: IO ()
-main = runSubcommand
+main = do
+  -- for nice printing when running executable
+  hSetBuffering stdout NoBuffering
+
+  beaconInit <- localDateToSeconds 2 24 2016 11 0
+  generateMain "." (BA beaconInit 0) [
+    Cont 10 16 128 257 1.0 (1/(2^40)),
+    RLWR 10 16 128 256 32,
+    Cont 10 16 128 257 0.5 (1/(2^40)),
+    RLWR 10 16 128 256 128]
+  {-runSubcommand
     [ subcommand "generate" generate
     , subcommand "reveal" reveal
     , subcommand "verify" verify
-    ]
+    ]-}
 
 generate :: MainOpts -> GenOpts -> [String] -> IO ()
 generate mopts gopts _ =

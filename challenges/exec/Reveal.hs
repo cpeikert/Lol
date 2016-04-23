@@ -17,15 +17,11 @@ import Network.HTTP.Conduit (simpleHttp)
 import Prelude hiding (lookup, writeFile)
 
 import System.Directory (removeFile)
-import System.IO hiding (writeFile)
 
 -- | Deletes the secret for each challenge in the tree, given the path
 -- to the root of the tree.
 revealMain :: FilePath -> IO ()
 revealMain path = do
-  -- for nice printing when running executable
-  hSetBuffering stdout NoBuffering
-
   -- get a list of challenges to reveal
   challs <- challengeList path
 

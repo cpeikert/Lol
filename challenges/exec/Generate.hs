@@ -55,8 +55,9 @@ type T = CT
 -- and an initial beacon address.
 generateMain :: FilePath -> BeaconAddr -> [ChallengeParams] -> IO ()
 generateMain path beaconStart cps = do
-  let challIDs = [0..]
-      beaconAddrs = iterate nextBeaconAddr beaconStart
+  let len = length cps
+      challIDs = take len [0..]
+      beaconAddrs = take len $ iterate nextBeaconAddr beaconStart
       challNames = map challengeName cps
   evalCryptoRandIO (sequence_ $
     zipWith3 (genAndWriteChallenge path) cps challIDs beaconAddrs :: _ (CryptoRand HashDRBG) _ _)
@@ -64,10 +65,11 @@ generateMain path beaconStart cps = do
 genAndWriteChallenge :: (MonadRandom m, MonadIO m)
   => FilePath -> ChallengeParams -> Int32 -> BeaconAddr -> m ()
 genAndWriteChallenge path cp challID ba = do
-  chall <- genChallengeU cp challID ba
   let name = challengeName cp
-  liftIO $ putStrLn $ "Generating challenge " ++ name
+  liftIO $ putStr $ "Generating challenge " ++ name
+  chall <- genChallengeU cp challID ba
   liftIO $ writeChallengeU path name chall
+  liftIO $ putStrLn ""
 
 -- | The name for each challenge directory.
 challengeName :: ChallengeParams -> FilePath
@@ -83,8 +85,9 @@ genChallengeU :: (MonadRandom rnd)
   => ChallengeParams -> Int32 -> BeaconAddr -> rnd ChallengeU
 genChallengeU cp challID ba = do
   let chall = toProtoChallenge cp challID ba
-  insts <- mapM (genInstanceU cp challID) [0..]
-  return $ CU chall $ take (fromIntegral $ numInsts cp) insts
+      instIDs = take (fromIntegral $ numInsts cp) [0..]
+  insts <- mapM (genInstanceU cp challID) instIDs
+  return $ CU chall insts
 
 -- | Generate an RLWE instance with the given parameters.
 genInstanceU :: (MonadRandom rnd)
@@ -179,6 +182,4 @@ writeInstanceU path challName iu = do
 
 -- | Writes any auto-gen'd proto object to path/filename.
 writeProtoType :: (ReflectDescriptor a, Wire a) => FilePath -> a -> IO ()
-writeProtoType fileName obj = do
-  putStr "."
-  BS.writeFile fileName $ messagePut obj
+writeProtoType fileName obj = BS.writeFile fileName $ messagePut obj
