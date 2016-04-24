@@ -56,16 +56,20 @@ validSample bound s (a,b) = err < bound
   where err = let as = fmapDec fromSubgroup $ uncycDec $ a * s
               in gSqNorm $ lift $ b - as
 
--- | Outputs a bound such that the scaled, squared norm of an
--- error term generated with (scaled) variance v
--- will be less than the bound except with probability eps.
-computeBound :: (Field v, Ord v, Transcendental v, Fact m) => v -> v -> Tagged m v
-computeBound v eps = do
+-- | A bound such that the 'gSqNorm' of a continuous error generated
+-- by 'tGaussian' with scaled variance @v@ (over the @m@th cyclotomic
+-- field) is less than the bound except with probability approximately
+-- @eps@.
+errorBound :: (Ord v, Transcendental v, Fact m)
+              => v              -- ^ the scaled variance
+              -> v              -- ^ @eps@
+              -> Tagged m v
+errorBound v eps = do
   n <- totientFact
   mhat <- valueHatFact
   let d = flip fix (1 / (2*pi)) $ \f x ->
-        let x' = (1/2 + (log $ 2 * pi * x)/2 - (log eps)/(fromIntegral n))/pi
-        in if ((x'-x) < 0.0001)
+        let x' = (1/2 + log (2 * pi * x)/2 - log eps/fromIntegral n)/pi
+        in if x'-x < 0.0001
            then x'
            else f x'
-  return $ (fromIntegral $ mhat*n)*v*d
+  return $ fromIntegral (mhat*n)*v*d

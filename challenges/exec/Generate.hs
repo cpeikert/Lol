@@ -24,7 +24,7 @@ import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Random
 
-import Crypto.Lol                    hiding (lift, RRq)
+import Crypto.Lol                    hiding (RRq, lift)
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Proto.Lol.Kq
@@ -127,7 +127,7 @@ toProtoInstanceCont :: forall t m zq rrq .
    Protoable (UCyc t m D rrq), ProtoType (UCyc t m D rrq) ~ Kq)
   => Int32 -> Int32 -> ChallengeParams -> [C.Sample t m zq rrq] -> InstanceCont
 toProtoInstanceCont challengeID instID Cont{..} samples' =
-  let bound = proxy (C.computeBound svar eps) (Proxy::Proxy m)
+  let bound = proxy (C.errorBound svar eps) (Proxy::Proxy m)
       samples = (uncurry SampleCont) <$> (toProto samples')
   in InstanceCont{..}
 
@@ -136,7 +136,7 @@ toProtoInstanceDisc :: forall t m zq rrq .
   (Fact m, Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq)
   => Int32 -> Int32 -> ChallengeParams -> [D.Sample t m zq] -> InstanceDisc
 toProtoInstanceDisc challengeID instID Disc{..} samples' =
-  let bound = proxy (D.computeBound svar eps) (Proxy::Proxy m)
+  let bound = proxy (D.errorBound svar eps) (Proxy::Proxy m)
       samples = (uncurry SampleDisc) <$> (toProto samples')
   in InstanceDisc{..}
 
