@@ -54,32 +54,34 @@ verifyMain path = do
 -- | Reads a challenge and verifies all instances that have a secret.
 -- Returns the beacon address for the challenge.
 verifyChallenge :: FilePath -> String -> IO (Maybe BeaconAddr)
-verifyChallenge path challName = printPassFail ("Verifying challenge " ++ challName ++ ":\n") "DONE" $ do
-  (beacon, insts) <- readChallenge path challName
-  mapM_ verifyInstanceU insts
-  return $ Just beacon
+verifyChallenge path challName =
+  printPassFail ("Verifying challenge " ++ challName ++ ":\n") "DONE" $ do
+    (beacon, insts) <- readChallenge path challName
+    mapM_ verifyInstanceU insts
+    return $ Just beacon
 
 -- | Read a challenge from a file. Outputs the beacon address for this
 -- challenge and a list of instances to be verified.
-readChallenge :: (MonadIO m)
-  => FilePath -> String -> ExceptT String m (BeaconAddr, [InstanceU])
+readChallenge :: (MonadIO m, MonadError String m)
+  => FilePath -> String -> m (BeaconAddr, [InstanceU])
 readChallenge path challName = do
   let challFile = challFilePath path challName
   c <- readProtoType challFile
   isAvail <- isBeaconAvailable $ beaconTime c
 
-  if isAvail
-  then do
-    liftIO $ putStrLn
+  liftIO $
+    if isAvail
+    then do
+    putStrLn
       "Current time is past the beacon time: expecting suppressed input."
-    readSuppressedChallenge path challName c
-  else do
-    liftIO $ putStrLn
-      "The beacon is not yet available. Verifying all instances..."
-    readFullChallenge path challName c
+      readSuppressedChallenge path challName c
+    else do
+      putStrLn
+        "The beacon is not yet available: verifying all instances..."
+      readFullChallenge path challName c
 
-readSuppressedChallenge :: (MonadIO m)
-  => FilePath -> String -> Challenge -> ExceptT String m (BeaconAddr, [InstanceU])
+readSuppressedChallenge :: (MonadIO m, MonadError String m)
+  => FilePath -> String -> Challenge -> m (BeaconAddr, [InstanceU])
 readSuppressedChallenge path challName (Challenge ccid numInsts time offset challType) = do
   let numInsts' = fromIntegral numInsts
   beacon <- readBeacon path time
@@ -88,14 +90,14 @@ readSuppressedChallenge path challName (Challenge ccid numInsts time offset chal
   delSecretExists <- liftIO $ doesFileExist delSecretFile
   throwErrorIf delSecretExists $
     "Secret " ++ show deletedID ++
-    " should not exist, but it does! You may need to run the 'reveal' phase."
+    " should not exist, but it does! You may need to run the 'suppress' command."
   insts <- mapM (readInstanceU challType path challName ccid) $
     filter (/= deletedID) $ take numInsts' [0..]
   checkParamsEq challName "numInstances" (numInsts'-1) (length insts)
   return (BA time offset, insts)
 
-readFullChallenge :: (MonadIO m)
-  => FilePath -> String -> Challenge -> ExceptT String m (BeaconAddr, [InstanceU])
+readFullChallenge :: (MonadIO m, MonadError String m)
+  => FilePath -> String -> Challenge -> m (BeaconAddr, [InstanceU])
 readFullChallenge path challName (Challenge ccid numInsts time offset challType) = do
   let numInsts' = fromIntegral numInsts
   insts <- mapM (readInstanceU challType path challName ccid) $ take numInsts' [0..]
@@ -103,9 +105,9 @@ readFullChallenge path challName (Challenge ccid numInsts time offset challType)
   return (BA time offset, insts)
 
 -- | Read an 'InstanceU' from a file.
-readInstanceU :: (MonadIO m)
+readInstanceU :: (MonadIO m, MonadError e m)
                  => ChallengeType -> FilePath -> String
-                 -> ChallengeID -> InstanceID -> ExceptT String m InstanceU
+                 -> ChallengeID -> InstanceID -> m InstanceU
 readInstanceU challType path challName cid1 iid1 = do
   let secFile = secretFilePath path challName iid1
   sec@(Secret cid2 iid2 m q s) <- readProtoType secFile
@@ -131,15 +133,15 @@ readInstanceU challType path challName cid1 iid1 = do
       validateParams cid' iid' m' q'
       return $ IR sec inst
 
-checkParamsEq :: (Monad m, Show a, Eq a)
-  => String -> String -> a -> a -> ExceptT String m ()
+checkParamsEq :: (Monad m, MonadError e m, Show a, Eq a)
+  => String -> String -> a -> a -> m ()
 checkParamsEq data' param expected actual =
   throwErrorIfNot (expected == actual) $ "Error while reading " ++
     data' ++ ": " ++ param ++ " mismatch. Expected " ++
     show expected ++ " but got " ++ show actual
 
 -- | Verify an 'InstanceU'.
-verifyInstanceU :: (Monad m) => InstanceU -> ExceptT String m ()
+verifyInstanceU :: (Monad m, MonadError e m) => InstanceU -> m ()
 
 verifyInstanceU (IC (Secret _ _ _ _ s) (InstanceCont _ _ m q _ bound samples)) =
   reifyFactI (fromIntegral m) (\(_::proxy m) ->
@@ -169,7 +171,8 @@ verifyInstanceU (IR (Secret _ _ _ _ s) (InstanceRLWR _ _ m q p samples)) =
           "An RLWR sample was invalid.")))
 
 -- | Read an XML file for the beacon corresponding to the provided time.
-readBeacon :: (MonadIO m) => FilePath -> BeaconEpoch -> ExceptT String m Record
+readBeacon :: (MonadIO m, MonadError e m)
+              => FilePath -> BeaconEpoch -> m Record
 readBeacon path time = do
   let file = xmlFilePath path time
   checkFileExists file
