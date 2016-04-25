@@ -7,10 +7,9 @@ import Crypto.Lol                   hiding (gSqNorm, tGaussian)
 import Crypto.Lol.Cyclotomic.Tensor (TElt)
 import Crypto.Lol.Cyclotomic.UCyc
 
+import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
-
-import Data.Function (fix)
 
 -- | A continuous RLWE sample @(a,b) \in R_q \times K/qR@.
 type Sample t m zq rrq = (Cyc t m zq, UCyc t m D rrq)
@@ -65,11 +64,9 @@ errorBound :: (Ord v, Transcendental v, Fact m)
               -> v              -- ^ @eps@
               -> Tagged m v
 errorBound v eps = do
-  n <- totientFact
-  mhat <- valueHatFact
-  let d = flip fix (1 / (2*pi)) $ \f x ->
-        let x' = (1/2 + log (2 * pi * x)/2 - log eps/fromIntegral n)/pi
-        in if x'-x < 0.0001
-           then x'
-           else f x'
-  return $ fromIntegral (mhat*n)*v*d
+  n <- fromIntegral <$> totientFact
+  mhat <- fromIntegral <$> valueHatFact
+  let stabilize x =
+        let x' = (1/2 + log (2 * pi * x)/2 - log eps/n)/pi
+        in if x'-x < 0.0001 then x' else stabilize x'
+  return $ mhat * n * v * stabilize (1/(2*pi))
