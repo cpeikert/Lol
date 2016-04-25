@@ -6,9 +6,9 @@ module Verify where
 
 import           Beacon
 import           Common
-import qualified Crypto.Challenges.RLWE.Continuous as C
-import qualified Crypto.Challenges.RLWE.Discrete   as D
-import qualified Crypto.Challenges.RLWE.RLWR       as R
+import qualified Crypto.Lol.RLWE.Continuous as C
+import qualified Crypto.Lol.RLWE.Discrete   as D
+import qualified Crypto.Lol.RLWE.RLWR       as R
 
 import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
 import Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType
@@ -59,7 +59,7 @@ verifyChallenge path challName = printPassFail ("Verifying challenge " ++ challN
   mapM_ verifyInstanceU insts
   return $ Just beacon
 
--- | Read and validate a challenge from a file. Outputs the beacon address for this
+-- | Read a challenge from a file. Outputs the beacon address for this
 -- challenge and a list of instances to be verified.
 readChallenge :: (MonadIO m) => FilePath -> String -> ExceptT String m (BeaconAddr, [InstanceU])
 readChallenge path challName = do
@@ -78,7 +78,7 @@ readChallenge path challName = do
   checkParamsEq challName "numInstances" (numInsts'-1) (length insts)
   return (BA time offset, insts)
 
--- | Read and validate an 'InstanceU' from a file.
+-- | Read an 'InstanceU' from a file.
 readInstanceU :: (MonadIO m)
                  => ChallengeType -> FilePath -> String
                  -> ChallengeID -> InstanceID -> ExceptT String m InstanceU
@@ -114,7 +114,7 @@ checkParamsEq data' param expected actual =
     data' ++ ": " ++ param ++ " mismatch. Expected " ++
     show expected ++ " but got " ++ show actual
 
--- | Verify an instance from unstructure data.
+-- | Verify an 'InstanceU'.
 verifyInstanceU :: (Monad m) => InstanceU -> ExceptT String m ()
 
 verifyInstanceU (IC (Secret _ _ _ _ s) (InstanceCont _ _ m q _ bound samples)) =
@@ -123,7 +123,7 @@ verifyInstanceU (IC (Secret _ _ _ _ s) (InstanceCont _ _ m q _ bound samples)) =
       s' :: Cyc T m (Zq q) <- fromProto s
       samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
         fmap (\(SampleCont a b) -> (a,b)) samples
-      throwErrorIfNot (C.validInstance bound s' samples')
+      throwErrorIfNot (validInstanceCont bound s' samples')
         "A continuous RLWE sample exceeded the error bound."))
 
 verifyInstDisc (ID (Secret _ _ _ _ s) (InstanceDisc _ _ m q _ bound samples)) =
@@ -131,7 +131,7 @@ verifyInstDisc (ID (Secret _ _ _ _ s) (InstanceDisc _ _ m q _ bound samples)) =
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
       s' :: Cyc T m (Zq q) <- fromProto s
       samples' <- fromProto $ fmap (\(SampleDisc a b) -> (a,b)) samples
-      throwErrorIfNot (D.validInstance bound s' samples')
+      throwErrorIfNot (validInstanceDisc bound s' samples')
         "A discrete RLWE sample exceeded the error bound."))
 
 verifyInstRLWR (IR (Secret _ _ _ _ s) (InstanceRLWR _ _ m q p samples)) =
@@ -141,7 +141,7 @@ verifyInstRLWR (IR (Secret _ _ _ _ s) (InstanceRLWR _ _ m q p samples)) =
         s' :: Cyc T m (Zq q) <- fromProto s
         samples' :: [R.Sample _ _ _ (Zq p)] <- fromProto $
           fmap (\(SampleRLWR a b) -> (a,b)) samples
-        throwErrorIfNot (R.validInstance s' samples')
+        throwErrorIfNot (validInstanceRLWR s' samples')
           "An RLWR sample was invalid.")))
 
 -- | Read an XML file for the beacon corresponding to the provided time.
@@ -151,3 +151,28 @@ readBeacon path time = do
   checkFileExists file
   rec' <- liftIO $ fromXML <$> BS.readFile file
   maybeThrowError rec' $ "Could not parse " ++ file
+
+
+
+-- | Test if the 'gSqNorm' of the error for each RLWE sample in the
+-- instance (given the secret) is less than the given bound.
+validInstanceCont ::
+  (C.RLWECtx t m zq rrq, Ord (LiftOf rrq), Ring (LiftOf rrq))
+  => LiftOf rrq -> Cyc t m zq -> [C.Sample t m zq rrq] -> Bool
+validInstanceCont bound s = all ((bound > ) . (C.errorGSqNorm s))
+
+-- | Test if the 'gSqNorm' of the error for each RLWE sample in the
+-- instance (given the secret) is less than the given bound.
+validInstanceDisc :: (D.RLWECtx t m zq)
+                     => LiftOf zq -> Cyc t m zq -> [D.Sample t m zq] -> Bool
+validInstanceDisc bound s = all ((bound > ) . (D.errorGSqNorm s))
+
+-- | Test if the given RLWR instance is valid for the given secret.
+validInstanceRLWR :: (R.RLWRCtx t m zq zp, Eq zp)
+  => Cyc t m zq -> [R.Sample t m zq zp] -> Bool
+validInstanceRLWR s = let s' = adviseCRT s in all (validSampleRLWR s')
+
+-- | Test if the given RLWR sample is valid for the given secret.
+validSampleRLWR :: (R.RLWRCtx t m zq zp, Eq zp)
+  => Cyc t m zq -> R.Sample t m zq zp -> Bool
+validSampleRLWR s (a,b) = b == R.roundedProd s a

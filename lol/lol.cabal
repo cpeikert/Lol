@@ -99,6 +99,10 @@ library
     Crypto.Lol.Cyclotomic.RescaleCyc
     Crypto.Lol.Cyclotomic.Linear
 
+    Crypto.Lol.RLWE.Continuous
+    Crypto.Lol.RLWE.Discrete
+    Crypto.Lol.RLWE.RLWR
+
     Crypto.Lol.Cyclotomic.Tensor
     Crypto.Lol.Cyclotomic.Tensor.CTensor
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor

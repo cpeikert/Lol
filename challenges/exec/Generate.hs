@@ -6,8 +6,10 @@ module Generate (generateMain, ChallengeParams(..)) where
 
 import           Beacon
 import           Common
-import           Crypto.Challenges.RLWE.Continuous               as C
-import           Crypto.Challenges.RLWE.Discrete                 as D
+import           Crypto.Lol.RLWE.Continuous               as C
+import           Crypto.Lol.RLWE.Discrete                 as D
+import           Crypto.Lol.RLWE.RLWR                     as R
+
 import           Crypto.Challenges.RLWE.Proto.RLWE.Challenge
 import qualified Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType as T
 import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
@@ -17,7 +19,6 @@ import           Crypto.Challenges.RLWE.Proto.RLWE.SampleCont
 import           Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
 import           Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
 import           Crypto.Challenges.RLWE.Proto.RLWE.Secret        as S
-import           Crypto.Challenges.RLWE.RLWR                     as R
 
 import Control.Applicative
 import Control.Monad
@@ -95,21 +96,21 @@ genInstanceU :: (MonadRandom rnd)
 
 genInstanceU cp@Cont{..} challID instID = reify q (\(_::Proxy q) ->
   reifyFactI (fromIntegral m) (\(_::proxy m) -> do
-    (s, samples :: [C.Sample T m (Zq q) (RRq q)]) <- C.instanceN svar numSamples
+    (s, samples :: [C.Sample T m (Zq q) (RRq q)]) <- instanceCont svar numSamples
     let s' = toProtoSecret challID instID m q s
         inst = toProtoInstanceCont challID instID cp samples
     return $ IC s' inst))
 
 genInstanceU cp@Disc{..} challID instID = reify q (\(_::Proxy q) ->
   reifyFactI (fromIntegral m) (\(_::proxy m) -> do
-    (s, samples :: [D.Sample T m (Zq q)]) <- D.instanceN svar numSamples
+    (s, samples :: [D.Sample T m (Zq q)]) <- instanceDisc svar numSamples
     let s' = toProtoSecret challID instID m q s
         inst = toProtoInstanceDisc challID instID cp samples
     return $ ID s' inst))
 
 genInstanceU cp@RLWR{..} challID instID = reify q (\(_::Proxy q) ->
   reify p (\(_::Proxy p) -> reifyFactI (fromIntegral m) (\(_::proxy m) -> do
-    (s, samples :: [R.Sample T m (Zq q) (Zq p)]) <- R.instanceN numSamples
+    (s, samples :: [R.Sample T m (Zq q) (Zq p)]) <- instanceRLWR numSamples
     let s' = toProtoSecret challID instID m q s
         inst = toProtoInstanceRLWR challID instID cp samples
     return $ IR s' inst)))
@@ -186,3 +187,37 @@ writeInstanceU path challName iu = do
 -- | Writes any auto-gen'd proto object to path/filename.
 writeProtoType :: (ReflectDescriptor a, Wire a) => FilePath -> a -> IO ()
 writeProtoType fileName obj = BS.writeFile fileName $ messagePut obj
+
+
+
+-- | Generate a continuous RLWE instance along with its (uniformly
+-- random) secret, using the given scaled variance and number of
+-- desired samples.
+instanceCont :: (C.RLWECtx t m zq rrq, Random zq, Random (LiftOf rrq),
+              OrdFloat (LiftOf rrq), MonadRandom rnd, ToRational v)
+  => v -> Int -> rnd (Cyc t m zq, [C.Sample t m zq rrq])
+instanceCont svar num = do
+  s <- getRandom
+  samples <- replicateM num $ C.sample svar s
+  return (s, samples)
+
+-- | Generate a discrete RLWE instance along with its (uniformly
+-- random) secret, using the given scaled variance and number of
+-- desired samples.
+instanceDisc :: (D.RLWECtx t m zq, Random zq, MonadRandom rnd, ToRational v)
+  => v -> Int -> rnd (Cyc t m zq, [D.Sample t m zq])
+instanceDisc svar num = do
+  s <- getRandom
+  samples <- replicateM num $ D.sample svar s
+  return (s, samples)
+
+-- | Generate a discrete RLWR instance along with its (uniformly
+-- random) secret, using the given scaled variance and number of
+-- desired samples.
+instanceRLWR :: (R.RLWRCtx t m zq zp, Random zq, MonadRandom rnd)
+  => Int -> rnd (Cyc t m zq, [R.Sample t m zq zp])
+instanceRLWR num = do
+  s <- getRandom
+  samples <- replicateM num $ R.sample s
+  return (s, samples)
+
