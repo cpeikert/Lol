@@ -1,4 +1,4 @@
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts, RecordWildCards #-}
 
 module Common
 ( ChallengeID, InstanceID, Zq, RRq, ChallengeU(..), InstanceU(..)
@@ -87,19 +87,19 @@ certFilePath path = challengeFilesDir path </> "beacon.cer"
 instIDString :: InstanceID -> String
 instIDString = printf "%2X"
 
-throwErrorIf :: (Monad m) => Bool -> String -> ExceptT String m ()
+throwErrorIf :: (MonadError String m) => Bool -> String -> m ()
 throwErrorIf b = when b . throwError
 
-throwErrorIfNot :: (Monad m) => Bool -> String -> ExceptT String m ()
+throwErrorIfNot :: (MonadError String m) => Bool -> String -> m ()
 throwErrorIfNot b = unless b . throwError
 
-maybeThrowError :: (Monad m) => Maybe a -> String -> ExceptT String m a
+maybeThrowError :: (MonadError String m) => Maybe a -> String -> m a
 maybeThrowError m str = do
   throwErrorIf (isNothing m) str
   return $ fromJust m
 
 -- | Pretty printing of error messages.
-printPassFail :: (MonadIO m, Default a)
+printPassFail :: (MonadIO m, MonadError String m, Default a)
                  => String -> String -> ExceptT String m a -> m a
 printPassFail str pass e = do
   liftIO $ putStr str
@@ -118,8 +118,8 @@ printPassFail str pass e = do
 
 -- | Yield a list of challenge names by getting all directory contents
 -- and filtering on all directories whose names start with "chall".
-challengeList :: FilePath -> IO [String]
-challengeList path = do
+challengeList :: (MonadIO m) => FilePath -> m [String]
+challengeList path = liftIO $ do
   let challDir = challengeFilesDir path
   challDirExists <- doesDirectoryExist challDir
   unless challDirExists $ error $ "Could not find " ++ challDir
@@ -129,15 +129,15 @@ challengeList path = do
   when (null names) $ error "No challenges found."
   return names
 
-checkFileExists :: (MonadIO m) => FilePath -> ExceptT String m ()
+checkFileExists :: (MonadIO m, MonadError String m) => FilePath -> m ()
 checkFileExists file = do
   fileExists <- liftIO $ doesFileExist file
   throwErrorIfNot fileExists $
     "Error reading " ++ file ++ ": file does not exist."
 
 -- | Read a serialized protobuffer from a file.
-readProtoType :: (ReflectDescriptor a, Wire a, MonadIO m)
-                 => FilePath -> ExceptT String m a
+readProtoType :: (ReflectDescriptor a, Wire a, MonadIO m, MonadError String m)
+                 => FilePath -> m a
 readProtoType file = do
   checkFileExists file
   bs <- liftIO $ BS.readFile file
@@ -150,7 +150,7 @@ readProtoType file = do
       return a
 
 -- | Parse the beacon time/offset used to reveal a challenge.
-parseBeaconAddr :: (Monad m) => Challenge -> ExceptT String m BeaconAddr
+parseBeaconAddr :: (MonadError String m) => Challenge -> m BeaconAddr
 parseBeaconAddr Challenge{..} = do
   let time = beaconTime
       offset = beaconOffset

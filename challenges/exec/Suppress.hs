@@ -1,3 +1,5 @@
+{-# LANGUAGE FlexibleContexts #-}
+
 module Suppress (suppressMain) where
 
 import Control.Monad.Except
@@ -8,7 +10,7 @@ import Common
 import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
 
 import Data.ByteString.Lazy (writeFile)
-import Data.Int
+
 import Data.Map             (Map, empty, insert, lookup)
 
 import Net.Beacon
@@ -20,7 +22,7 @@ import System.Directory (removeFile)
 
 -- | Deletes the secret indicated by NIST beacon for each challenge in
 -- the tree, given the path to the root of the tree.
-suppressMain :: FilePath -> IO ()
+suppressMain :: (MonadIO m, MonadError String m) => FilePath -> m ()
 suppressMain path = do
   -- get list of challenges
   challs <- challengeList path
@@ -35,11 +37,12 @@ suppressMain path = do
   getNistCert path
 
 -- | A map from beacon times to beacon records.
-type RecordState = Map Int64 Record
+type RecordState = Map BeaconEpoch Record
 
 -- | Lookup the secret index based on the randomness for this challenge,
 -- then remove the corresponding secret.
-suppressChallenge :: FilePath -> String -> StateT RecordState IO ()
+suppressChallenge :: (MonadIO m, MonadError String m)
+                     => FilePath -> String -> StateT RecordState m ()
 suppressChallenge path name =
   printPassFail ("Deleting secret for challenge " ++ name ++ ":\n") "DONE" $ do
     -- read the beacon address of the randomness for this challenge
@@ -59,7 +62,8 @@ suppressChallenge path name =
     liftIO $ removeFile secFile
 
 -- | Attempt to find the record in the state, otherwise download it from NIST.
-retrieveRecord :: Int64 -> ExceptT String (StateT RecordState IO) Record
+retrieveRecord :: (MonadIO m, MonadError String m, MonadState RecordState m)
+                  => BeaconEpoch -> m Record
 retrieveRecord t = do
   mrec <- gets (lookup t)
   case mrec of
@@ -77,15 +81,15 @@ retrieveRecord t = do
       return rec
 
 -- | Writes a beacon record to a file.
-writeBeaconXML :: FilePath -> Record -> IO ()
+writeBeaconXML :: (MonadIO m) => FilePath -> Record -> m ()
 writeBeaconXML path rec = do
   let beacon = toXML rec
       filePath = xmlFilePath path $ fromIntegral $ timeStamp rec
-  writeFile filePath beacon
+  liftIO $ writeFile filePath beacon
 
 -- | Downloads the NIST certificate and saves it.
-getNistCert :: FilePath -> IO ()
-getNistCert path = do
+getNistCert :: (MonadIO m) => FilePath -> m ()
+getNistCert path = liftIO $ do
   let certPath = certFilePath path
   putStrLn $ "Writing NIST certificate to " ++ certPath
   bs <- simpleHttp "https://beacon.nist.gov/certificate/beacon.cer"
