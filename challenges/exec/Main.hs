@@ -44,7 +44,7 @@ daysFromNow :: Int -> IO BeaconEpoch
 daysFromNow n = do
   t <- round <$> getPOSIXTime
   let d = 86400 * fromIntegral n + t
-  return $ d - d `div` 60
+  return $ lastBeaconBefore d
 
 data NullOpts = NullOpts
 

@@ -7,11 +7,12 @@
 module Beacon where
 
 import Control.DeepSeq
+import Control.Monad.IO.Class
 
 import Data.Int
 import Data.Time.Calendar    (fromGregorian)
 import Data.Time.Clock       (UTCTime (..), secondsToDiffTime)
-import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
+import Data.Time.Clock.POSIX (getPOSIXTime, utcTimeToPOSIXSeconds)
 import Data.Time.LocalTime   (getCurrentTimeZone, timeZoneMinutes)
 
 type BeaconEpoch = Int64
@@ -53,3 +54,13 @@ localDateToSeconds month day year hour minute = do
   let gmt = gmtDateToSeconds month day year hour minute
   minuteOffset <- timeZoneMinutes <$> getCurrentTimeZone
   return $ fromIntegral $ gmt - (minuteOffset*60)
+
+-- | The last beacon time before time @t@.
+lastBeaconBefore :: Int64 -> Int64
+lastBeaconBefore t = t - (t `mod` beaconInterval)
+
+-- | Check if the beacon at time @t@ is available.
+isBeaconAvailable :: (MonadIO m) => Int64 -> m Bool
+isBeaconAvailable t = do
+  currentTime <- floor <$> liftIO getPOSIXTime
+  return $ t <= (fromIntegral currentTime)

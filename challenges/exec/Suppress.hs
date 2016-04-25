@@ -35,7 +35,7 @@ suppressMain path = do
   getNistCert path
 
 -- | A map from beacon times to beacon records.
-type RecordState = Map Int Record
+type RecordState = Map Int64 Record
 
 -- | Lookup the secret index based on the randomness for this challenge,
 -- then remove the corresponding secret.
@@ -49,7 +49,7 @@ suppressChallenge path name =
     let numInsts = fromIntegral $ numInstances challProto
 
     -- get the record, and compute the secret index
-    rec <- retrieveRecord (fromIntegral time)
+    rec <- retrieveRecord time
     let secID = suppressedSecretID numInsts rec offset
         secFile = secretFilePath path name secID
 
@@ -59,7 +59,7 @@ suppressChallenge path name =
     liftIO $ removeFile secFile
 
 -- | Attempt to find the record in the state, otherwise download it from NIST.
-retrieveRecord :: Int -> ExceptT String (StateT RecordState IO) Record
+retrieveRecord :: Int64 -> ExceptT String (StateT RecordState IO) Record
 retrieveRecord t = do
   mrec <- gets (lookup t)
   case mrec of
@@ -67,12 +67,11 @@ retrieveRecord t = do
     Nothing -> do
       liftIO $ putStrLn $ "\tDownloading record " ++ show t
       -- make sure the beacon is available
-      lastRec <- liftIO getLastRecord
-      lastBeaconTime <- timeStamp <$> maybeThrowError lastRec "Failed to get last beacon."
-      throwErrorIf (t > lastBeaconTime) $
-        "Can't suppress challenge: it's time has not yet come. Please wait " ++
-        show (t-lastBeaconTime) ++ " seconds for the assigned beacon."
-      trec <- liftIO $ getCurrentRecord t
+      isAvail <- isBeaconAvailable t
+      throwErrorIfNot isAvail $
+        "Can't suppress challenge: the beacon at time " ++
+        (show t) ++ " is not yet available."
+      trec <- liftIO $ getCurrentRecord $ fromIntegral t
       rec <- maybeThrowError trec $ "Couldn't get record " ++ show t ++ "from NIST beacon."
       modify (insert t rec)
       return rec

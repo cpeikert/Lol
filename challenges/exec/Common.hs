@@ -7,6 +7,7 @@ module Common
 , challengeList
 , suppressedSecretID
 , parseBeaconAddr
+, isBeaconAvailable
 , readProtoType
 , checkFileExists
 , printPassFail

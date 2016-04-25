@@ -61,10 +61,26 @@ verifyChallenge path challName = printPassFail ("Verifying challenge " ++ challN
 
 -- | Read a challenge from a file. Outputs the beacon address for this
 -- challenge and a list of instances to be verified.
-readChallenge :: (MonadIO m) => FilePath -> String -> ExceptT String m (BeaconAddr, [InstanceU])
+readChallenge :: (MonadIO m)
+  => FilePath -> String -> ExceptT String m (BeaconAddr, [InstanceU])
 readChallenge path challName = do
   let challFile = challFilePath path challName
-  (Challenge ccid numInsts time offset challType) <- readProtoType challFile
+  c <- readProtoType challFile
+  isAvail <- isBeaconAvailable $ beaconTime c
+
+  if isAvail
+  then do
+    liftIO $ putStrLn
+      "Current time is past the beacon time: expecting suppressed input."
+    readSuppressedChallenge path challName c
+  else do
+    liftIO $ putStrLn
+      "The beacon is not yet available. Verifying all instances..."
+    readFullChallenge path challName c
+
+readSuppressedChallenge :: (MonadIO m)
+  => FilePath -> String -> Challenge -> ExceptT String m (BeaconAddr, [InstanceU])
+readSuppressedChallenge path challName (Challenge ccid numInsts time offset challType) = do
   let numInsts' = fromIntegral numInsts
   beacon <- readBeacon path time
   let deletedID = suppressedSecretID numInsts beacon offset
@@ -76,6 +92,14 @@ readChallenge path challName = do
   insts <- mapM (readInstanceU challType path challName ccid) $
     filter (/= deletedID) $ take numInsts' [0..]
   checkParamsEq challName "numInstances" (numInsts'-1) (length insts)
+  return (BA time offset, insts)
+
+readFullChallenge :: (MonadIO m)
+  => FilePath -> String -> Challenge -> ExceptT String m (BeaconAddr, [InstanceU])
+readFullChallenge path challName (Challenge ccid numInsts time offset challType) = do
+  let numInsts' = fromIntegral numInsts
+  insts <- mapM (readInstanceU challType path challName ccid) $ take numInsts' [0..]
+  checkParamsEq challName "numInstances" numInsts' (length insts)
   return (BA time offset, insts)
 
 -- | Read an 'InstanceU' from a file.
@@ -151,8 +175,6 @@ readBeacon path time = do
   checkFileExists file
   rec' <- liftIO $ fromXML <$> BS.readFile file
   maybeThrowError rec' $ "Could not parse " ++ file
-
-
 
 -- | Test if the 'gSqNorm' of the error for each RLWE sample in the
 -- instance (given the secret) is less than the given bound.
