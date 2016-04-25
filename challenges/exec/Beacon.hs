@@ -59,7 +59,7 @@ localDateToSeconds month day year hour minute = do
 lastBeaconBefore :: BeaconEpoch -> BeaconEpoch
 lastBeaconBefore t = t - (t `mod` beaconInterval)
 
--- | Check if the beacon at time @t@ is available.
+-- | Check if the beacon for epoch @t@ is available.
 isBeaconAvailable :: (MonadIO m) => BeaconEpoch -> m Bool
 isBeaconAvailable t = liftIO $ do
   currentTime <- floor <$> getPOSIXTime
