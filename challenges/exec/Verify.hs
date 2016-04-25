@@ -1,18 +1,19 @@
-{-# LANGUAGE FlexibleContexts, GADTs, NoImplicitPrelude, PartialTypeSignatures,
-             RebindableSyntax, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts, GADTs, NoImplicitPrelude,
+             PartialTypeSignatures, RebindableSyntax, ScopedTypeVariables
+             #-}
 
 module Verify where
 
 import Control.Applicative
-import Control.Monad (when)
+import Control.Monad        (when)
 import Control.Monad.Except
-import Control.Monad.Trans (lift)
+import Control.Monad.Trans  (lift)
 
-import Beacon
-import Common
+import           Beacon
+import           Common
 import qualified Crypto.Challenges.RLWE.Continuous as C
-import qualified Crypto.Challenges.RLWE.Discrete as D
-import qualified Crypto.Challenges.RLWE.RLWR as R
+import qualified Crypto.Challenges.RLWE.Discrete   as D
+import qualified Crypto.Challenges.RLWE.RLWR       as R
 
 import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
 import Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType
@@ -24,7 +25,7 @@ import Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
 import Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
 import Crypto.Challenges.RLWE.Proto.RLWE.Secret
 
-import Crypto.Lol hiding (lift, RRq)
+import Crypto.Lol                    hiding (RRq, lift)
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
@@ -32,16 +33,17 @@ import Crypto.Lol.Types.Proto.Lol.Kq
 import Crypto.Lol.Types.Proto.Lol.Rq
 
 import qualified Data.ByteString.Lazy as BS
-import Data.Int
-import Data.List (nub)
-import Data.Maybe (fromJust, isNothing, isJust)
-import Data.Reflection hiding (D)
+import           Data.Int
+import           Data.List            (nub)
+import           Data.Maybe           (fromJust, isJust, isNothing)
+import           Data.Reflection      hiding (D)
 
 import Net.Beacon
 
-import System.Directory (doesFileExist, getDirectoryContents, doesDirectoryExist)
+import System.Directory (doesDirectoryExist, doesFileExist,
+                         getDirectoryContents)
 
-import Text.ProtocolBuffers (messageGet)
+import Text.ProtocolBuffers        (messageGet)
 import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 
 -- Tensor type used to verify instances
@@ -131,7 +133,7 @@ verifyInstanceU (IC (Secret cid' iid' m' q' s) (InstanceCont cid iid m q svar bo
       s' :: Cyc T m (Zq q) <- fromProto s
       samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
         fmap (\(SampleCont a b) -> (a,b)) samples
-      throwErrorIfNot (C.validInstance bound s' samples') $
+      throwErrorIfNot (C.validInstance bound s' samples')
         "A LWEC sample exceeded the noise bound."))
 verifyInstDisc (ID (Secret cid' iid' m' q' s) (InstanceDisc cid iid m q svar bound samples)) =
   reifyFactI (fromIntegral m) (\(_::proxy m) ->
@@ -151,7 +153,7 @@ verifyInstRLWR (IR (Secret cid' iid' m' q' s) (InstanceRLWR cid iid m q p sample
           "A RLWR sample was invalid.")))
 
 -- | Read an XML file for the beacon corresponding to the provided time.
-readBeacon :: (MonadIO m) => FilePath -> Int64 -> ExceptT String m Record
+readBeacon :: (MonadIO m) => FilePath -> BeaconEpoch -> ExceptT String m Record
 readBeacon path time = do
   let file = xmlFilePath path time
   checkFileExists file

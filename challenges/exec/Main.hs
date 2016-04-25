@@ -2,7 +2,6 @@
 
 module Main where
 
-import Data.Int
 import Data.Time.Clock.POSIX
 import Options
 import System.IO
@@ -26,7 +25,7 @@ data GenOpts =
   GenOpts
   { optParamsFile      :: FilePath, -- ^ file with parameters for generation
     optNumInstances    :: Int, -- ^ number of instances per challenge
-    optInitBeaconEpoch :: Int64 -- ^ initial beacon epoch for reveal phase
+    optInitBeaconEpoch :: BeaconEpoch -- ^ initial beacon epoch for reveal phase
   }
 
 instance Options GenOpts where
@@ -41,7 +40,7 @@ instance Options GenOpts where
 
 -- | Epoch that's @n@ days from now, rounded to a multiple of 60 for
 -- NIST beacon purposes.
-daysFromNow :: Int -> IO Int64
+daysFromNow :: Int -> IO BeaconEpoch
 daysFromNow n = do
   t <- round <$> getPOSIXTime
   let d = 86400 * fromIntegral n + t
@@ -79,40 +78,3 @@ reveal = error "TODO"
 
 verify :: MainOpts -> NullOpts -> [String] -> IO ()
 verify = error "TODO"
-
--- hello :: MainOptions -> HelloOpts -> [String] -> IO ()
--- hello mainOpts opts args = unless (optQuiet mainOpts) $ do
---     putStrLn (optHello opts)
-
-
-{-
-
--- EAC: default path
-
--
--- | Read command line args, guess a path, or print the help message.
-getPath :: IO FilePath
-getPath = do
-  args <- getArgs
-  case args of
-    [] -> do
-      path <- absPath
-      putStrLn $ "No path provided. Guessing path is \"" ++ path ++ "\""
-      return path
-    ["-p",path] -> do
-      dirExists <- doesDirectoryExist path
-      if dirExists
-      then return $ "." </> path
-      else error $ ("." </> path) ++ " does not exist."
-    _ -> error $
-      "Valid args: [-p path] where 'path' is relative to './'." ++
-      "If no path is provided, the program will guess a path."
-
--- for testing purposes
-absPath :: IO FilePath
-absPath = do
-  inTopLevelLol <- doesDirectoryExist "challenges"
-  return $ if inTopLevelLol
-    then "./challenges"
-    else "."
-    -}

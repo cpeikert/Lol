@@ -14,14 +14,14 @@ module Common
 , Zq, RRq, ChallengeU(..), InstanceU(..)
 ) where
 
-import Beacon
-import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
-import Crypto.Challenges.RLWE.Proto.RLWE.Secret
-import qualified Crypto.Lol as Lol
-import Crypto.Lol.Reflects
+import           Beacon
+import           Crypto.Challenges.RLWE.Proto.RLWE.Challenge
+import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
+import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
+import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
+import           Crypto.Challenges.RLWE.Proto.RLWE.Secret
+import qualified Crypto.Lol                                     as Lol
+import           Crypto.Lol.Reflects
 
 import Control.Monad.Except
 
@@ -80,25 +80,25 @@ secretFilesDir = challengeFilesDir
 -- | The name for a challenge file is some string
 -- with a .challenge extension.
 challFilePath :: FilePath -> String -> FilePath
-challFilePath path name = (challengeFilesDir path) </> name ++ ".challenge"
+challFilePath path name = challengeFilesDir path </> name ++ ".challenge"
 
 -- | The name for an instance file is some string followed by a hex ID
 -- with a .instance extension.
 instFilePath :: FilePath -> String -> Int32 -> FilePath
-instFilePath path name idx = (challengeFilesDir path) </> name ++ "-" ++ intToHex idx ++ ".instance"
+instFilePath path name idx = challengeFilesDir path </> name ++ "-" ++ intToHex idx ++ ".instance"
 
 -- | The name for a secret file is some string followed by a hex ID
 -- with the .secret extension.
 secretFilePath :: FilePath -> String -> Int32 -> FilePath
-secretFilePath path name idx = (secretFilesDir path) </> name ++ "-" ++ intToHex idx ++ ".secret"
+secretFilePath path name idx = secretFilesDir path </> name ++ "-" ++ intToHex idx ++ ".secret"
 
 -- | The name of a beacon XML file.
-xmlFilePath :: FilePath -> Int64 -> FilePath
-xmlFilePath path t = (secretFilesDir path) </> show t ++ ".xml"
+xmlFilePath :: FilePath -> BeaconEpoch -> FilePath
+xmlFilePath path t = secretFilesDir path </> show t ++ ".xml"
 
 -- | The filename for the NIST X509 certificate.
 certFilePath :: FilePath -> FilePath
-certFilePath path = (secretFilesDir path) </> "beacon.cer"
+certFilePath path = secretFilesDir path </> "beacon.cer"
 
 intToHex :: Int32 -> String
 intToHex x | x < 0 || x > 15 = error "hex value out of range"
@@ -112,7 +112,7 @@ throwErrorIfNot b = unless b . throwError
 
 maybeThrowError :: (Monad m) => Maybe a -> String -> ExceptT String m a
 maybeThrowError m str = do
-  throwErrorIf (isNothing m) $ str
+  throwErrorIf (isNothing m) str
   return $ fromJust m
 
 -- | Pretty printing of error messages.
@@ -173,7 +173,7 @@ parseBeaconAddr Challenge{..} = do
   -- validate the time and offset
   throwErrorIf ((time `mod` beaconInterval /= 0) ||
                 offset < 0 ||
-                offset >= bytesPerBeacon) $
+                offset >= bytesPerBeacon)
     "Invalid beacon address."
   return $ BA time offset
 
@@ -182,5 +182,5 @@ parseBeaconAddr Challenge{..} = do
 secretIdx :: Int32 -> Record -> Int32 -> Int32
 secretIdx numInstances record byteOffset =
   let output = outputValue record
-      byte = unpack output !! (fromIntegral byteOffset)
-  in fromIntegral $ fromIntegral byte `mod` (fromIntegral numInstances)
+      byte = unpack output !! fromIntegral byteOffset
+  in fromIntegral $ fromIntegral byte `mod` fromIntegral numInstances
