@@ -9,7 +9,7 @@ import           Common
 import           Crypto.Challenges.RLWE.Continuous               as C
 import           Crypto.Challenges.RLWE.Discrete                 as D
 import           Crypto.Challenges.RLWE.Proto.RLWE.Challenge
-import qualified Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType as P
+import qualified Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType as T
 import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
 import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
 import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
@@ -42,11 +42,11 @@ import Text.ProtocolBuffers.Header
 
 -- | Information to generate a challenge.
 data ChallengeParams =
-    Cont {numSamples::Int, numInsts::Int32, m::Int32, q::Int64,
+    Cont {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64,
           svar::Double, eps::Double}
-  | Disc {numSamples::Int, numInsts::Int32, m::Int32, q::Int64,
+  | Disc {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64,
           svar::Double, eps::Double}
-  | RLWR {numSamples::Int, numInsts::Int32, m::Int32, q::Int64, p::Int64}
+  | RLWR {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64, p::Int64}
 
 -- Tensor type used to generate instances
 type T = CT
@@ -58,12 +58,12 @@ generateMain path beaconStart cps = do
   let len = length cps
       challIDs = take len [0..]
       beaconAddrs = take len $ iterate nextBeaconAddr beaconStart
-      challNames = map challengeName cps
   evalCryptoRandIO (sequence_ $
-    zipWith3 (genAndWriteChallenge path) cps challIDs beaconAddrs :: _ (CryptoRand HashDRBG) _ _)
+    zipWith3 (genAndWriteChallenge path) cps challIDs beaconAddrs
+    :: RandT (CryptoRand HashDRBG) IO ())
 
 genAndWriteChallenge :: (MonadRandom m, MonadIO m)
-  => FilePath -> ChallengeParams -> Int32 -> BeaconAddr -> m ()
+  => FilePath -> ChallengeParams -> ChallengeID -> BeaconAddr -> m ()
 genAndWriteChallenge path cp challID ba = do
   let name = challengeName cp
   liftIO $ putStr $ "Generating challenge " ++ name
@@ -82,7 +82,7 @@ challengeName RLWR{..} =
 
 -- | Generate a challenge with the given parameters.
 genChallengeU :: (MonadRandom rnd)
-  => ChallengeParams -> Int32 -> BeaconAddr -> rnd ChallengeU
+  => ChallengeParams -> ChallengeID -> BeaconAddr -> rnd ChallengeU
 genChallengeU cp challID ba = do
   let chall = toProtoChallenge cp challID ba
       instIDs = take (fromIntegral $ numInsts cp) [0..]
@@ -91,19 +91,22 @@ genChallengeU cp challID ba = do
 
 -- | Generate an RLWE instance with the given parameters.
 genInstanceU :: (MonadRandom rnd)
-  => ChallengeParams -> Int32 -> Int32 -> rnd InstanceU
+  => ChallengeParams -> ChallengeID -> InstanceID -> rnd InstanceU
+
 genInstanceU cp@Cont{..} challID instID = reify q (\(_::Proxy q) ->
   reifyFactI (fromIntegral m) (\(_::proxy m) -> do
     (s, samples :: [C.Sample T m (Zq q) (RRq q)]) <- C.instanceN svar numSamples
     let s' = toProtoSecret challID instID m q s
         inst = toProtoInstanceCont challID instID cp samples
     return $ IC s' inst))
+
 genInstanceU cp@Disc{..} challID instID = reify q (\(_::Proxy q) ->
   reifyFactI (fromIntegral m) (\(_::proxy m) -> do
     (s, samples :: [D.Sample T m (Zq q)]) <- D.instanceN svar numSamples
     let s' = toProtoSecret challID instID m q s
         inst = toProtoInstanceDisc challID instID cp samples
     return $ ID s' inst))
+
 genInstanceU cp@RLWR{..} challID instID = reify q (\(_::Proxy q) ->
   reify p (\(_::Proxy p) -> reifyFactI (fromIntegral m) (\(_::proxy m) -> do
     (s, samples :: [R.Sample T m (Zq q) (Zq p)]) <- R.instanceN numSamples
@@ -111,49 +114,49 @@ genInstanceU cp@RLWR{..} challID instID = reify q (\(_::Proxy q) ->
         inst = toProtoInstanceRLWR challID instID cp samples
     return $ IR s' inst)))
 
--- | Constructs an unstructured 'Challenge' suitable for serialization.
-toProtoChallenge :: ChallengeParams -> Int32 -> BeaconAddr -> Challenge
+-- | Constructs a 'Challenge' suitable for serialization.
+toProtoChallenge :: ChallengeParams -> ChallengeID -> BeaconAddr -> Challenge
 toProtoChallenge cp challengeID (BA beaconTime beaconOffset) =
   let numInstances = numInsts cp
   in case cp of
-    Cont{..} -> Challenge{challType = P.Cont,..}
-    Disc{..} -> Challenge{challType = P.Disc,..}
-    RLWR{..} -> Challenge{challType = P.RLWR,..}
+    Cont{..} -> Challenge{challType = T.Cont,..}
+    Disc{..} -> Challenge{challType = T.Disc,..}
+    RLWR{..} -> Challenge{challType = T.RLWR,..}
 
--- | Constructs an unstructured 'InstanceCont' suitable for serialization.
+-- | Constructs an 'InstanceCont' suitable for serialization.
 toProtoInstanceCont :: forall t m zq rrq .
   (Fact m,
    Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq,
    Protoable (UCyc t m D rrq), ProtoType (UCyc t m D rrq) ~ Kq)
-  => Int32 -> Int32 -> ChallengeParams -> [C.Sample t m zq rrq] -> InstanceCont
+  => ChallengeID -> InstanceID -> ChallengeParams -> [C.Sample t m zq rrq] -> InstanceCont
 toProtoInstanceCont challengeID instID Cont{..} samples' =
   let bound = proxy (C.errorBound svar eps) (Proxy::Proxy m)
       samples = (uncurry SampleCont) <$> (toProto samples')
   in InstanceCont{..}
 
--- | Constructs an unstructured 'InstanceDisc' suitable for serialization.
-toProtoInstanceDisc :: forall t m zq rrq .
+-- | Constructs an 'InstanceDisc' suitable for serialization.
+toProtoInstanceDisc :: forall t m zq .
   (Fact m, Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq)
-  => Int32 -> Int32 -> ChallengeParams -> [D.Sample t m zq] -> InstanceDisc
+  => ChallengeID -> InstanceID -> ChallengeParams -> [D.Sample t m zq] -> InstanceDisc
 toProtoInstanceDisc challengeID instID Disc{..} samples' =
   let bound = proxy (D.errorBound svar eps) (Proxy::Proxy m)
-      samples = (uncurry SampleDisc) <$> (toProto samples')
+      samples = uncurry SampleDisc <$> toProto samples'
   in InstanceDisc{..}
 
--- | Constructs an unstructured 'InstanceRLWR' suitable for serialization.
+-- | Constructs an 'InstanceRLWR' suitable for serialization.
 toProtoInstanceRLWR ::
   (Fact m,
    Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq,
    Protoable (Cyc t m zq'), ProtoType (Cyc t m zq') ~ Rq)
-  => Int32 -> Int32 -> ChallengeParams
+  => ChallengeID -> InstanceID -> ChallengeParams
      -> [R.Sample t m zq zq'] -> InstanceRLWR
 toProtoInstanceRLWR challengeID instID RLWR{..} samples' =
   let samples = (uncurry SampleRLWR) <$> (toProto samples')
   in InstanceRLWR{..}
 
--- | Constructs an unstructured 'Secret' suitable for serialization.
+-- | Constructs an 'Secret' suitable for serialization.
 toProtoSecret :: (Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq)
-  => Int32 -> Int32 -> Int32 -> Int64 -> Cyc t m zq -> Secret
+  => ChallengeID -> InstanceID -> Int32 -> Int64 -> Cyc t m zq -> Secret
 toProtoSecret challengeID instID m q s' = Secret{s = toProto s', ..}
 
 -- | Writes a 'ChallengeU' to a file given a path to the root of the tree

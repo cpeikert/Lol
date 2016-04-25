@@ -9,7 +9,7 @@ import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
 
 import Data.ByteString.Lazy (writeFile)
 import Data.Int
-import Data.Map (Map, empty, insert, lookup)
+import Data.Map             (Map, empty, insert, lookup)
 
 import Net.Beacon
 import Network.HTTP.Conduit (simpleHttp)
@@ -50,8 +50,8 @@ revealChallenge path name =
 
     -- get the record, and compute the secret index
     rec <- retrieveRecord (fromIntegral time)
-    let secIdx = secretIdx numInsts rec offset
-        secFile = secretFilePath path name secIdx
+    let secID = suppressedSecretID numInsts rec offset
+        secFile = secretFilePath path name secID
 
     -- delete the secret corresponding to the secret index
     checkFileExists secFile
@@ -65,15 +65,15 @@ retrieveRecord t = do
   case mrec of
     (Just r) -> return r
     Nothing -> do
-      liftIO $ putStrLn $ "\tDownloading record " ++ (show t)
+      liftIO $ putStrLn $ "\tDownloading record " ++ show t
       -- make sure the beacon is available
       lastRec <- liftIO getLastRecord
       lastBeaconTime <- timeStamp <$> maybeThrowError lastRec "Failed to get last beacon."
       throwErrorIf (t > lastBeaconTime) $
         "Can't reveal challenge: it's time has not yet come. Please wait " ++
-        (show $ t-lastBeaconTime) ++ " seconds for the assigned beacon."
+        show (t-lastBeaconTime) ++ " seconds for the assigned beacon."
       trec <- liftIO $ getCurrentRecord t
-      rec <- maybeThrowError trec $ "Couldn't get record " ++ (show t) ++ "from NIST servers."
+      rec <- maybeThrowError trec $ "Couldn't get record " ++ show t ++ "from NIST servers."
       modify (insert t rec)
       return rec
 
