@@ -2,7 +2,6 @@
 
 module Main where
 
-import Data.Int
 import Data.Time.Clock.POSIX
 import Options
 import System.IO
@@ -10,7 +9,7 @@ import System.IO.Unsafe
 
 import Beacon
 import Generate
-import Reveal
+import Suppress
 import Verify
 
 data MainOpts =
@@ -26,7 +25,7 @@ data GenOpts =
   GenOpts
   { optParamsFile      :: FilePath, -- ^ file with parameters for generation
     optNumInstances    :: Int, -- ^ number of instances per challenge
-    optInitBeaconEpoch :: Int64 -- ^ initial beacon epoch for reveal phase
+    optInitBeaconEpoch :: BeaconEpoch -- ^ initial beacon epoch for suppress phase
   }
 
 instance Options GenOpts where
@@ -37,11 +36,11 @@ instance Options GenOpts where
     simpleOption "init-beacon"
     -- CJP: sneaky! not referentially transparent, but handy as a default
     (unsafePerformIO $ daysFromNow 3)
-    "Initial beacon epoch for reveal phase (default is 3 days from now)"
+    "Initial beacon epoch for suppress phase (default is 3 days from now)"
 
 -- | Epoch that's @n@ days from now, rounded to a multiple of 60 for
 -- NIST beacon purposes.
-daysFromNow :: Int -> IO Int64
+daysFromNow :: Int -> IO BeaconEpoch
 daysFromNow n = do
   t <- round <$> getPOSIXTime
   let d = 86400 * fromIntegral n + t
@@ -57,62 +56,28 @@ main = do
   -- for nice printing when running executable
   hSetBuffering stdout NoBuffering
 
+{-
+  runSubcommand
+    [ subcommand "generate" generate
+    , subcommand "suppress" suppress
+    , subcommand "verify" verify
+    ]
+-}
+
   beaconInit <- localDateToSeconds 2 24 2016 11 0
   generateMain "." (BA beaconInit 0) [
     Cont 10 16 128 257 1.0 (1/(2^40)),
     RLWR 10 16 128 256 32,
     Cont 10 16 128 257 0.5 (1/(2^40)),
     RLWR 10 16 128 256 128]
-  {-runSubcommand
-    [ subcommand "generate" generate
-    , subcommand "reveal" reveal
-    , subcommand "verify" verify
-    ]-}
 
 generate :: MainOpts -> GenOpts -> [String] -> IO ()
 generate mopts gopts _ =
   let beaconInit = localDateToSeconds 2 24 2016 11 0
   in print $ optInitBeaconEpoch gopts
 
-reveal :: MainOpts -> NullOpts -> [String] -> IO ()
-reveal = error "TODO"
+suppress :: MainOpts -> NullOpts -> [String] -> IO ()
+suppress = error "TODO"
 
 verify :: MainOpts -> NullOpts -> [String] -> IO ()
 verify = error "TODO"
-
--- hello :: MainOptions -> HelloOpts -> [String] -> IO ()
--- hello mainOpts opts args = unless (optQuiet mainOpts) $ do
---     putStrLn (optHello opts)
-
-
-{-
-
--- EAC: default path
-
--
--- | Read command line args, guess a path, or print the help message.
-getPath :: IO FilePath
-getPath = do
-  args <- getArgs
-  case args of
-    [] -> do
-      path <- absPath
-      putStrLn $ "No path provided. Guessing path is \"" ++ path ++ "\""
-      return path
-    ["-p",path] -> do
-      dirExists <- doesDirectoryExist path
-      if dirExists
-      then return $ "." </> path
-      else error $ ("." </> path) ++ " does not exist."
-    _ -> error $
-      "Valid args: [-p path] where 'path' is relative to './'." ++
-      "If no path is provided, the program will guess a path."
-
--- for testing purposes
-absPath :: IO FilePath
-absPath = do
-  inTopLevelLol <- doesDirectoryExist "challenges"
-  return $ if inTopLevelLol
-    then "./challenges"
-    else "."
-    -}

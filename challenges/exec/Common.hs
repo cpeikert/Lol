@@ -1,27 +1,26 @@
 {-# LANGUAGE RecordWildCards #-}
 
 module Common
-( challengeFilesDir, secretFilesDir
-, challFilePath, instFilePath, secretFilePath
+( ChallengeID, InstanceID, Zq, RRq, ChallengeU(..), InstanceU(..)
+, challengeFilesDir, challFilePath, instFilePath, secretFilePath
 , xmlFilePath, certFilePath
-, printPassFail
 , challengeList
+, suppressedSecretID
 , parseBeaconAddr
 , readProtoType
-, secretIdx
 , checkFileExists
+, printPassFail
 , throwErrorIf, throwErrorIfNot, maybeThrowError
-, Zq, RRq, ChallengeU(..), InstanceU(..)
 ) where
 
-import Beacon
-import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
-import Crypto.Challenges.RLWE.Proto.RLWE.Secret
-import qualified Crypto.Lol as Lol
-import Crypto.Lol.Reflects
+import           Beacon
+import           Crypto.Challenges.RLWE.Proto.RLWE.Challenge
+import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
+import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
+import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
+import           Crypto.Challenges.RLWE.Proto.RLWE.Secret
+import qualified Crypto.Lol                                     as Lol
+import           Crypto.Lol.Reflects
 
 import Control.Monad.Except
 
@@ -42,22 +41,8 @@ import Text.Printf
 import Text.ProtocolBuffers        (messageGet)
 import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 
-{- Directory structure:
-
-challengeFilesDir == secretFilesDir
--> beacon.cer
--> [beacon time 0].xml
--> [beacon time 1].xml
--> challengeName
-   -> instFileName
-      secretFileName
-      ...
-      instFileName
-      secretFileName
-      revealFileName
-   challengeName
-   -> ...
--}
+type ChallengeID = Int32
+type InstanceID = Int32
 
 data ChallengeU = CU Challenge [InstanceU]
 
@@ -71,38 +56,35 @@ type RRq q = Lol.RRq (RealMod (Reified q)) Double
 
 -- | The root directory for challenges and their instances.
 challengeFilesDir :: FilePath -> FilePath
-challengeFilesDir path = path </> "challenge-files"
-
--- | The root directory for challenge secrets.
-secretFilesDir :: FilePath -> FilePath
-secretFilesDir = challengeFilesDir
+challengeFilesDir path = path </> "rlwe-challenges"
 
 -- | The name for a challenge file is some string
 -- with a .challenge extension.
 challFilePath :: FilePath -> String -> FilePath
-challFilePath path name = (challengeFilesDir path) </> name ++ ".challenge"
+challFilePath path name = challengeFilesDir path </> name ++ ".challenge"
 
 -- | The name for an instance file is some string followed by a hex ID
 -- with a .instance extension.
-instFilePath :: FilePath -> String -> Int32 -> FilePath
-instFilePath path name idx = (challengeFilesDir path) </> name ++ "-" ++ intToHex idx ++ ".instance"
+instFilePath :: FilePath -> String -> InstanceID -> FilePath
+instFilePath path name instID = challengeFilesDir path </> name ++ "-" ++
+  instIDString instID ++ ".instance"
 
 -- | The name for a secret file is some string followed by a hex ID
 -- with the .secret extension.
-secretFilePath :: FilePath -> String -> Int32 -> FilePath
-secretFilePath path name idx = (secretFilesDir path) </> name ++ "-" ++ intToHex idx ++ ".secret"
+secretFilePath :: FilePath -> String -> InstanceID -> FilePath
+secretFilePath path name instID = challengeFilesDir path </> name ++ "-" ++
+  instIDString instID ++ ".secret"
 
 -- | The name of a beacon XML file.
-xmlFilePath :: FilePath -> Int64 -> FilePath
-xmlFilePath path t = (secretFilesDir path) </> show t ++ ".xml"
+xmlFilePath :: FilePath -> BeaconEpoch -> FilePath
+xmlFilePath path t = challengeFilesDir path </> show t ++ ".xml"
 
 -- | The filename for the NIST X509 certificate.
 certFilePath :: FilePath -> FilePath
-certFilePath path = (secretFilesDir path) </> "beacon.cer"
+certFilePath path = challengeFilesDir path </> "beacon.cer"
 
-intToHex :: Int32 -> String
-intToHex x | x < 0 || x > 15 = error "hex value out of range"
-intToHex x = printf "%X" x
+instIDString :: InstanceID -> String
+instIDString = printf "%2X"
 
 throwErrorIf :: (Monad m) => Bool -> String -> ExceptT String m ()
 throwErrorIf b = when b . throwError
@@ -112,7 +94,7 @@ throwErrorIfNot b = unless b . throwError
 
 maybeThrowError :: (Monad m) => Maybe a -> String -> ExceptT String m a
 maybeThrowError m str = do
-  throwErrorIf (isNothing m) $ str
+  throwErrorIf (isNothing m) str
   return $ fromJust m
 
 -- | Pretty printing of error messages.
@@ -122,13 +104,13 @@ printPassFail str pass e = do
   liftIO $ putStr str
   res <- runExceptT e
   val <- case res of
-    (Left str) -> liftIO $ do
-      liftIO $ setSGR [SetColor Foreground Vivid Red]
-      liftIO $ putStrLn $ "FAIL: " ++ str
+    (Left st) -> liftIO $ do
+      setSGR [SetColor Foreground Vivid Red]
+      putStrLn $ "FAIL: " ++ st
       return def
-    (Right a) -> do
-      liftIO $ setSGR [SetColor Foreground Vivid Green]
-      liftIO $ putStrLn pass
+    (Right a) -> liftIO $ do
+      setSGR [SetColor Foreground Vivid Green]
+      putStrLn pass
       return a
   liftIO $ setSGR [SetColor Foreground Vivid Black]
   return val
@@ -140,7 +122,7 @@ challengeList path = do
   let challDir = challengeFilesDir path
   challDirExists <- doesDirectoryExist challDir
   unless challDirExists $ error $ "Could not find " ++ challDir
-  putStrLn $ "Reading challenges from \"" ++ challDir ++ "\""
+  -- putStrLn $ "Reading challenges from \"" ++ challDir ++ "\""
   names <- filterM (doesDirectoryExist . (challDir </>)) =<<
     filter (("chall" ==) . take 5) <$> getDirectoryContents challDir
   when (null names) $ error "No challenges found."
@@ -153,7 +135,8 @@ checkFileExists file = do
     "Error reading " ++ file ++ ": file does not exist."
 
 -- | Read a serialized protobuffer from a file.
-readProtoType :: (ReflectDescriptor a, Wire a, MonadIO m) => FilePath -> ExceptT String m a
+readProtoType :: (ReflectDescriptor a, Wire a, MonadIO m)
+                 => FilePath -> ExceptT String m a
 readProtoType file = do
   checkFileExists file
   bs <- liftIO $ BS.readFile file
@@ -168,19 +151,19 @@ readProtoType file = do
 -- | Parse the beacon time/offset used to reveal a challenge.
 parseBeaconAddr :: (Monad m) => Challenge -> ExceptT String m BeaconAddr
 parseBeaconAddr Challenge{..} = do
-  let time = fromIntegral beaconTime
-      offset = fromIntegral beaconOffset
+  let time = beaconTime
+      offset = beaconOffset
   -- validate the time and offset
   throwErrorIf ((time `mod` beaconInterval /= 0) ||
                 offset < 0 ||
-                offset >= bytesPerBeacon) $
+                offset >= bytesPerBeacon)
     "Invalid beacon address."
   return $ BA time offset
 
--- | Yield the secret index (for a challenge), given a beacon record
--- and a byte offset.
-secretIdx :: Int32 -> Record -> Int32 -> Int32
-secretIdx numInstances record byteOffset =
+-- | Yield the ID of the suppressed secret for a challenge, given a
+-- beacon record and a byte offset.
+suppressedSecretID :: InstanceID -> Record -> Int32 -> InstanceID
+suppressedSecretID numInstances record byteOffset =
   let output = outputValue record
-      byte = unpack output !! (fromIntegral byteOffset)
-  in fromIntegral $ fromIntegral byte `mod` (fromIntegral numInstances)
+      byte = unpack output !! fromIntegral byteOffset
+  in fromIntegral byte `mod` numInstances
