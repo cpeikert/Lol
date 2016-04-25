@@ -36,6 +36,7 @@ import Crypto.Random.DRBG
 import Data.ByteString.Lazy as BS (writeFile)
 import Data.Reflection      hiding (D)
 
+import System.Console.ANSI
 import System.Directory (createDirectoryIfMissing)
 
 import Text.ProtocolBuffers        (messagePut)
@@ -65,9 +66,14 @@ generateMain path beaconStart cps = do
 
 genAndWriteChallenge :: (MonadRandom m, MonadIO m)
   => FilePath -> ChallengeParams -> ChallengeID -> BeaconAddr -> m ()
-genAndWriteChallenge path cp challID ba = do
+genAndWriteChallenge path cp challID ba@(BA t _) = do
   let name = challengeName cp
   liftIO $ putStrLn $ "Generating challenge " ++ name
+  isAvail <- isBeaconAvailable t
+  when isAvail $ do
+    liftIO $ setSGR [SetColor Foreground Vivid Red]
+    liftIO $ putStrLn $ "Beacon is already available!"
+    liftIO $ setSGR [SetColor Foreground Vivid Black]
   chall <- genChallengeU cp challID ba
   liftIO $ writeChallengeU path name chall
 
