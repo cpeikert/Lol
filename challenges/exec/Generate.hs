@@ -66,10 +66,9 @@ genAndWriteChallenge :: (MonadRandom m, MonadIO m)
   => FilePath -> ChallengeParams -> Int32 -> BeaconAddr -> m ()
 genAndWriteChallenge path cp challID ba = do
   let name = challengeName cp
-  liftIO $ putStr $ "Generating challenge " ++ name
+  liftIO $ putStrLn $ "Generating challenge " ++ name
   chall <- genChallengeU cp challID ba
   liftIO $ writeChallengeU path name chall
-  liftIO $ putStrLn ""
 
 -- | The name for each challenge directory.
 challengeName :: ChallengeParams -> FilePath
