@@ -55,12 +55,12 @@ localDateToSeconds month day year hour minute = do
   minuteOffset <- timeZoneMinutes <$> getCurrentTimeZone
   return $ fromIntegral $ gmt - (minuteOffset*60)
 
--- | The last beacon time before time @t@.
-lastBeaconBefore :: Int64 -> Int64
+-- | The last beacon epoch before epoch @t@.
+lastBeaconBefore :: BeaconEpoch -> BeaconEpoch
 lastBeaconBefore t = t - (t `mod` beaconInterval)
 
 -- | Check if the beacon at time @t@ is available.
-isBeaconAvailable :: (MonadIO m) => Int64 -> m Bool
-isBeaconAvailable t = do
-  currentTime <- floor <$> liftIO getPOSIXTime
-  return $ t <= (fromIntegral currentTime)
+isBeaconAvailable :: (MonadIO m) => BeaconEpoch -> m Bool
+isBeaconAvailable t = liftIO $ do
+  currentTime <- floor <$> getPOSIXTime
+  return $ t <= currentTime
