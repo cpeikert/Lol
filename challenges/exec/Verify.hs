@@ -150,7 +150,7 @@ verifyInstanceU (IC (Secret _ _ _ _ s) (InstanceCont _ _ m q _ bound samples)) =
       throwErrorIfNot (validInstanceCont bound s' samples')
         "A continuous RLWE sample exceeded the error bound."))
 
-verifyInstDisc (ID (Secret _ _ _ _ s) (InstanceDisc _ _ m q _ bound samples)) =
+verifyInstanceU (ID (Secret _ _ _ _ s) (InstanceDisc _ _ m q _ bound samples)) =
   reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
       s' :: Cyc T m (Zq q) <- fromProto s
@@ -158,7 +158,7 @@ verifyInstDisc (ID (Secret _ _ _ _ s) (InstanceDisc _ _ m q _ bound samples)) =
       throwErrorIfNot (validInstanceDisc bound s' samples')
         "A discrete RLWE sample exceeded the error bound."))
 
-verifyInstRLWR (IR (Secret _ _ _ _ s) (InstanceRLWR _ _ m q p samples)) =
+verifyInstanceU (IR (Secret _ _ _ _ s) (InstanceRLWR _ _ m q p samples)) =
   reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) ->
       reify (fromIntegral p :: Int64) (\(_::Proxy p) -> do
