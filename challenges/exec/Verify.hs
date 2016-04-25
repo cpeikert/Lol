@@ -4,11 +4,6 @@
 
 module Verify where
 
-import Control.Applicative
-import Control.Monad        (when)
-import Control.Monad.Except
-import Control.Monad.Trans  (lift)
-
 import           Beacon
 import           Common
 import qualified Crypto.Challenges.RLWE.Continuous as C
@@ -25,26 +20,19 @@ import Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
 import Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
 import Crypto.Challenges.RLWE.Proto.RLWE.Secret
 
-import Crypto.Lol                    hiding (RRq, lift)
-import Crypto.Lol.Cyclotomic.UCyc
-import Crypto.Lol.Reflects
+import Crypto.Lol             hiding (RRq, lift)
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Lol.Kq
-import Crypto.Lol.Types.Proto.Lol.Rq
 
+import           Control.Applicative
+import           Control.Monad.Except
 import qualified Data.ByteString.Lazy as BS
-import           Data.Int
 import           Data.List            (nub)
-import           Data.Maybe           (fromJust, isJust, isNothing)
+import           Data.Maybe
 import           Data.Reflection      hiding (D)
 
 import Net.Beacon
 
-import System.Directory (doesDirectoryExist, doesFileExist,
-                         getDirectoryContents)
-
-import Text.ProtocolBuffers        (messageGet)
-import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
+import System.Directory (doesFileExist)
 
 -- Tensor type used to verify instances
 type T = CT
@@ -59,9 +47,9 @@ verifyMain path = do
   -- verifies challenges and accumulates beacon positions for each challenge
   beaconAddrs <- mapM (verifyChallenge path) challs
 
-  -- verifies that all challenges use distinct random bits
-  when (all isJust beaconAddrs) $ printPassFail "Checking for distinct beacon positions..." "DISTINCT" $
-    throwErrorIf (length (nub beaconAddrs) /= length beaconAddrs) "Beacon positions overlap"
+  -- verifies that all challenges use distinct beacon addresses
+  when (all isJust beaconAddrs) $ printPassFail "Checking for distinct beacon addresses..." "DISTINCT" $
+    throwErrorIf (length (nub beaconAddrs) /= length beaconAddrs) "Beacon addresses overlap"
 
 -- | Reads a challenge and verifies all instances that have a secret.
 -- Returns the beacon address for the challenge.
