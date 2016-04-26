@@ -75,9 +75,9 @@ readChallenge path challName = do
 
   let (msg, readChall) =
         if isAvail
-        then ("(expecting one missing secret)... ",
+        then (" (expecting one missing secret)... ",
               readSuppChallenge)
-        else ("(expecting all secrets)... ",
+        else (" (expecting all secrets)... ",
               readFullChallenge)
 
   liftIO $ putStr msg
