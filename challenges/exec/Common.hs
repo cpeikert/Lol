@@ -110,7 +110,7 @@ printPassFail str pass e = do
     (Right _) -> liftIO $ do
       setSGR [SetColor Foreground Vivid Green]
       putStrLn pass
-  liftIO $ setSGR [SetColor Foreground Vivid Black]
+  liftIO $ setSGR [Reset]
 
 -- | Yield a list of challenge names by getting all directory contents
 -- and filtering on all directories whose names start with "chall".
