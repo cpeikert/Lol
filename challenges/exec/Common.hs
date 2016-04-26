@@ -39,8 +39,8 @@ data InstanceU = IC {secret :: !Secret, instc :: !InstanceCont}
                | IR {secret :: !Secret, instr :: !InstanceRLWR}
 
 -- Types used to generate and verify instances
-type Zq q = Lol.ZqBasic (Reified q) Int64
-type RRq q = Lol.RRq (RealMod (Reified q)) Double
+type Zq q = Lol.ZqBasic q Int64
+type RRq q = Lol.RRq q Double
 
 -- | Yield a list of challenge names by getting all directory contents
 -- and filtering on all directories whose names start with "chall".

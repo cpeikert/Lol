@@ -70,8 +70,8 @@ instance (Reflects q r, RealField r, Ord r) => Additive.C (RRq q r) where
   {-# INLINABLE negate #-}
   negate (RRq x) = reduce' $ negate x
 
-instance (ToInteger i, RealField r, Reflects q i, Reflects (RealMod q) r)
-  => Subgroup (ZqBasic q i) (RRq (RealMod q) r) where
+instance (ToInteger i, RealField r, Reflects q i, Reflects q r)
+  => Subgroup (ZqBasic q i) (RRq q r) where
   fromSubgroup = reduce' . fromIntegral . lift
 
 -- CJP: restored manual Unbox instances, until we have a better way
