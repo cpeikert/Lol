@@ -65,8 +65,8 @@ genAndWriteChallenge path cp challID ba@(BA t _) = do
   isAvail <- isBeaconAvailable t
   when isAvail $ do
     liftIO $ setSGR [SetColor Foreground Vivid Red]
-    liftIO $ putStrLn $ "Beacon is already available!"
-    liftIO $ setSGR [SetColor Foreground Vivid Black]
+    liftIO $ putStrLn "Beacon is already available!"
+    liftIO $ setSGR [Reset]
   chall <- genChallengeU cp challID ba
   liftIO $ writeChallengeU path name chall
 
