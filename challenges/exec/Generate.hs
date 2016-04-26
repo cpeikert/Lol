@@ -1,24 +1,25 @@
-{-# LANGUAGE FlexibleContexts, NoImplicitPrelude, PartialTypeSignatures,
-             RebindableSyntax, RecordWildCards, ScopedTypeVariables,
-             TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, NoImplicitPrelude,
+             PartialTypeSignatures, RebindableSyntax, RecordWildCards,
+             ScopedTypeVariables, TypeFamilies #-}
 
-module Generate (generateMain, ChallengeParams(..)) where
+module Generate (generateMain) where
 
-import           Beacon
-import           Common
-import           Crypto.Lol.RLWE.Continuous               as C
-import           Crypto.Lol.RLWE.Discrete                 as D
-import           Crypto.Lol.RLWE.RLWR                     as R
+import Beacon
+import Common
+import Crypto.Lol.RLWE.Continuous as C
+import Crypto.Lol.RLWE.Discrete   as D
+import Crypto.Lol.RLWE.RLWR       as R
+import Params
 
-import           Crypto.Challenges.RLWE.Proto.RLWE.Challenge
-import qualified Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType as T
-import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
-import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
-import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
-import           Crypto.Challenges.RLWE.Proto.RLWE.SampleCont
-import           Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
-import           Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
-import           Crypto.Challenges.RLWE.Proto.RLWE.Secret        as S
+import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
+import Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType
+import Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
+import Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
+import Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
+import Crypto.Challenges.RLWE.Proto.RLWE.SampleCont
+import Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
+import Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
+import Crypto.Challenges.RLWE.Proto.RLWE.Secret        as S
 
 import Control.Applicative
 import Control.Monad
@@ -37,19 +38,10 @@ import Data.ByteString.Lazy as BS (writeFile)
 import Data.Reflection      hiding (D)
 
 import System.Console.ANSI
-import System.Directory (createDirectoryIfMissing)
+import System.Directory    (createDirectoryIfMissing)
 
 import Text.ProtocolBuffers        (messagePut)
 import Text.ProtocolBuffers.Header
-
--- | Information to generate a challenge.
-data ChallengeParams =
-    Cont {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64,
-          svar::Double, eps::Double}
-  | Disc {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64,
-          svar::Double, eps::Double}
-  | RLWR {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64, p::Int64}
-  deriving (Show)
 
 -- Tensor type used to generate instances
 type T = CT
@@ -80,11 +72,11 @@ genAndWriteChallenge path cp challID ba@(BA t _) = do
 
 -- | The name for each challenge directory.
 challengeName :: ChallengeParams -> FilePath
-challengeName Cont{..} =
+challengeName C{..} =
   "chall-rlwec-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
-challengeName Disc{..} =
+challengeName D{..} =
   "chall-rlwed-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
-challengeName RLWR{..} =
+challengeName R{..} =
   "chall-rlwr-m" ++ show m ++ "-q" ++ show q ++ "-p" ++ show p
 
 -- | Generate a challenge with the given parameters.
@@ -100,21 +92,21 @@ genChallengeU cp challID ba = do
 genInstanceU :: (MonadRandom rnd)
   => ChallengeParams -> ChallengeID -> InstanceID -> rnd InstanceU
 
-genInstanceU cp@Cont{..} challID instID = reify q (\(_::Proxy q) ->
+genInstanceU cp@C{..} challID instID = reify q (\(_::Proxy q) ->
   reifyFactI (fromIntegral m) (\(_::proxy m) -> do
     (s, samples :: [C.Sample T m (Zq q) (RRq q)]) <- instanceCont svar numSamples
     let s' = toProtoSecret challID instID m q s
         inst = toProtoInstanceCont challID instID cp samples
     return $ IC s' inst))
 
-genInstanceU cp@Disc{..} challID instID = reify q (\(_::Proxy q) ->
+genInstanceU cp@D{..} challID instID = reify q (\(_::Proxy q) ->
   reifyFactI (fromIntegral m) (\(_::proxy m) -> do
     (s, samples :: [D.Sample T m (Zq q)]) <- instanceDisc svar numSamples
     let s' = toProtoSecret challID instID m q s
         inst = toProtoInstanceDisc challID instID cp samples
     return $ ID s' inst))
 
-genInstanceU cp@RLWR{..} challID instID = reify q (\(_::Proxy q) ->
+genInstanceU cp@R{..} challID instID = reify q (\(_::Proxy q) ->
   reify p (\(_::Proxy p) -> reifyFactI (fromIntegral m) (\(_::proxy m) -> do
     (s, samples :: [R.Sample T m (Zq q) (Zq p)]) <- instanceRLWR numSamples
     let s' = toProtoSecret challID instID m q s
@@ -126,9 +118,9 @@ toProtoChallenge :: ChallengeParams -> ChallengeID -> BeaconAddr -> Challenge
 toProtoChallenge cp challengeID (BA beaconEpoch beaconOffset) =
   let numInstances = numInsts cp
   in case cp of
-    Cont{..} -> Challenge{challType = T.Cont,..}
-    Disc{..} -> Challenge{challType = T.Disc,..}
-    RLWR{..} -> Challenge{challType = T.RLWR,..}
+    C{..} -> Challenge{challType = Cont,..}
+    D{..} -> Challenge{challType = Disc,..}
+    R{..} -> Challenge{challType = RLWR,..}
 
 -- CJP: it would be nice to get rid of the incomplete pattern matches
 -- for these next few functions, though I see why it's tricky.
@@ -139,7 +131,7 @@ toProtoInstanceCont :: forall t m zq rrq .
    Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq,
    Protoable (UCyc t m D rrq), ProtoType (UCyc t m D rrq) ~ Kq)
   => ChallengeID -> InstanceID -> ChallengeParams -> [C.Sample t m zq rrq] -> InstanceCont
-toProtoInstanceCont challengeID instanceID Cont{..} samples' =
+toProtoInstanceCont challengeID instanceID C{..} samples' =
   let bound = proxy (C.errorBound svar eps) (Proxy::Proxy m)
       samples = (uncurry SampleCont) <$> (toProto samples')
   in InstanceCont{..}
@@ -148,7 +140,7 @@ toProtoInstanceCont challengeID instanceID Cont{..} samples' =
 toProtoInstanceDisc :: forall t m zq .
   (Fact m, Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq)
   => ChallengeID -> InstanceID -> ChallengeParams -> [D.Sample t m zq] -> InstanceDisc
-toProtoInstanceDisc challengeID instanceID Disc{..} samples' =
+toProtoInstanceDisc challengeID instanceID D{..} samples' =
   let bound = proxy (D.errorBound svar eps) (Proxy::Proxy m)
       samples = uncurry SampleDisc <$> toProto samples'
   in InstanceDisc{..}
@@ -160,7 +152,7 @@ toProtoInstanceRLWR ::
    Protoable (Cyc t m zq'), ProtoType (Cyc t m zq') ~ Rq)
   => ChallengeID -> InstanceID -> ChallengeParams
      -> [R.Sample t m zq zq'] -> InstanceRLWR
-toProtoInstanceRLWR challengeID instanceID RLWR{..} samples' =
+toProtoInstanceRLWR challengeID instanceID R{..} samples' =
   let samples = (uncurry SampleRLWR) <$> (toProto samples')
   in InstanceRLWR{..}
 

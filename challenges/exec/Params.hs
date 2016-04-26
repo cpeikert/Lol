@@ -2,15 +2,30 @@
 
 module Params where
 
+import Common (InstanceID)
+
 import Control.Monad.Except
+import Data.Int
 import Text.Parsec
 import Text.Parsec.Token
-import Generate
+
+-- | Information to generate a challenge.
+data ChallengeParams =
+    C {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64,
+       svar::Double, eps::Double}
+  | D {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64,
+       svar::Double, eps::Double}
+  | R {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64, p::Int64}
+  deriving (Show)
 
 contLineID, discLineID, rlwrLineID :: String
 contLineID = "Cont"
 discLineID = "Disc"
 rlwrLineID = "RLWR"
+
+-- default probability eps to use
+epsDef :: Double
+epsDef = 2.0^(-50)
 
 lang :: (Stream s m Char) => GenLanguageDef s u m
 lang = LanguageDef
@@ -57,8 +72,8 @@ rlwecParams = do
   m <- parseIntegral
   q <- parseIntegral
   svar <- parseDouble
-  eps <- parseDouble
-  return Cont{..}
+  let eps = epsDef
+  return C{..}
 
 rlwedParams = do
   try $ string discLineID
@@ -68,8 +83,8 @@ rlwedParams = do
   m <- parseIntegral
   q <- parseIntegral
   svar <- parseDouble
-  eps <- parseDouble
-  return Disc{..}
+  let eps = epsDef
+  return D{..}
 
 rlwrParams = do
   try $ string rlwrLineID
@@ -81,7 +96,7 @@ rlwrParams = do
   p <- parseIntegral
   when (p > q) $ throwError $
     "Expected p <= q; parsed q=" ++ show q ++ " and p=" ++ show p
-  return RLWR{..}
+  return R{..}
 
 parseChallParams :: String -> [ChallengeParams]
 parseChallParams input = do
