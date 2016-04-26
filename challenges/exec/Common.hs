@@ -84,7 +84,7 @@ certFilePath :: FilePath -> FilePath
 certFilePath path = challengeFilesDir path </> "beacon.cer"
 
 instIDString :: InstanceID -> String
-instIDString = printf "%2X"
+instIDString = printf "%02X"
 
 throwErrorIf :: (MonadError String m) => Bool -> String -> m ()
 throwErrorIf b = when b . throwError
