@@ -165,7 +165,7 @@ toProtoSecret challengeID instanceID m q s' = Secret{s = toProto s', ..}
 -- and the name of the challenge.
 writeChallengeU :: FilePath -> String -> ChallengeU -> IO ()
 writeChallengeU path challName (CU c insts) = do
-  let challDir = challengeFilesDir path
+  let challDir = challengeFilesDir path challName
       challFN = challFilePath path challName
   createDirectoryIfMissing True challDir
   writeProtoType challFN c

@@ -55,33 +55,33 @@ type Zq q = Lol.ZqBasic (Reified q) Int64
 type RRq q = Lol.RRq (RealMod (Reified q)) Double
 
 -- | The root directory for challenges and their instances.
-challengeFilesDir :: FilePath -> FilePath
-challengeFilesDir path = path </> "rlwe-challenges"
+challengeFilesDir :: FilePath -> String -> FilePath
+challengeFilesDir path name = path </> name
 
 -- | The name for a challenge file is some string
 -- with a .challenge extension.
 challFilePath :: FilePath -> String -> FilePath
-challFilePath path name = challengeFilesDir path </> name ++ ".challenge"
+challFilePath path name = challengeFilesDir path name </> name ++ ".challenge"
 
 -- | The name for an instance file is some string followed by a hex ID
 -- with a .instance extension.
 instFilePath :: FilePath -> String -> InstanceID -> FilePath
-instFilePath path name instID = challengeFilesDir path </> name ++ "-" ++
+instFilePath path name instID = challengeFilesDir path name </> name ++ "-" ++
   instIDString instID ++ ".instance"
 
 -- | The name for a secret file is some string followed by a hex ID
 -- with the .secret extension.
 secretFilePath :: FilePath -> String -> InstanceID -> FilePath
-secretFilePath path name instID = challengeFilesDir path </> name ++ "-" ++
+secretFilePath path name instID = challengeFilesDir path name </> name ++ "-" ++
   instIDString instID ++ ".secret"
 
 -- | The name of a beacon XML file.
 xmlFilePath :: FilePath -> BeaconEpoch -> FilePath
-xmlFilePath path t = challengeFilesDir path </> show t ++ ".xml"
+xmlFilePath path t = path </> "epoch-" ++ show t ++ ".xml"
 
 -- | The filename for the NIST X509 certificate.
 certFilePath :: FilePath -> FilePath
-certFilePath path = challengeFilesDir path </> "beacon.cer"
+certFilePath path = path </> "beacon.cer"
 
 instIDString :: InstanceID -> String
 instIDString = printf "%02X"
@@ -116,12 +116,11 @@ printPassFail str pass e = do
 -- and filtering on all directories whose names start with "chall".
 challengeList :: (MonadIO m) => FilePath -> m [String]
 challengeList path = liftIO $ do
-  let challDir = challengeFilesDir path
-  challDirExists <- doesDirectoryExist challDir
-  unless challDirExists $ error $ "Could not find " ++ challDir
+  challDirExists <- doesDirectoryExist path
+  unless challDirExists $ error $ "Could not find " ++ path
   -- putStrLn $ "Reading challenges from \"" ++ challDir ++ "\""
-  names <- filterM (doesDirectoryExist . (challDir </>)) =<<
-    filter (("chall" ==) . take 5) <$> getDirectoryContents challDir
+  names <- filterM (doesDirectoryExist . (path </>)) =<<
+    filter (("chall" ==) . take 5) <$> getDirectoryContents path
   when (null names) $ error "No challenges found."
   return names
 
