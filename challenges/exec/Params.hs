@@ -7,6 +7,7 @@ import Text.Parsec
 import Text.Parsec.Token
 import Generate
 
+contLineID, discLineID, rlwrLineID :: String
 contLineID = "Cont"
 discLineID = "Disc"
 rlwrLineID = "RLWR"
@@ -89,4 +90,4 @@ parseChallParams input = do
     Left e -> error $ "Invalid parameters:" ++ e
     Right r -> case r of
       Left e -> error $ "Error parsing input:" ++ show e
-      Right r -> r
+      Right v -> v

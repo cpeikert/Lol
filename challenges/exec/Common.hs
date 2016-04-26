@@ -103,11 +103,11 @@ printPassFail :: (MonadIO m, MonadError String m)
 printPassFail str pass e = do
   liftIO $ putStr str
   res <- runExceptT e
-  val <- case res of
+  case res of
     (Left st) -> liftIO $ do
       setSGR [SetColor Foreground Vivid Red]
       putStrLn $ "FAIL: " ++ st
-    (Right a) -> liftIO $ do
+    (Right _) -> liftIO $ do
       setSGR [SetColor Foreground Vivid Green]
       putStrLn pass
   liftIO $ setSGR [SetColor Foreground Vivid Black]

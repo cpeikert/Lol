@@ -46,7 +46,7 @@ verifyMain path = do
 
   (beaconAddrs, challenges) <- unzip <$> mapM (readChallenge path) challNames
 
-  zipWithM verifyChallenge challNames challenges
+  _ <- zipWithM verifyChallenge challNames challenges
 
   -- verify that all beacon addresses are distinct
   printPassFail "Checking for distinct beacon addresses..." "DISTINCT" $
@@ -108,7 +108,7 @@ readInstanceU :: (MonadIO m, MonadError String m)
                  -> ChallengeID -> InstanceID -> m InstanceU
 readInstanceU challType path challName cid1 iid1 = do
   let secFile = secretFilePath path challName iid1
-  sec@(Secret cid2 iid2 m q s) <- readProtoType secFile
+  sec@(Secret cid2 iid2 m q _) <- readProtoType secFile
   checkParamsEq secFile "challID" cid1 cid2
   checkParamsEq secFile "instID" iid1 iid2
   let instFile = instFilePath path challName iid1
