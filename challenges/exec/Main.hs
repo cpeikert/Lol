@@ -24,7 +24,7 @@ data MainOpts =
 
 instance Options MainOpts where
   defineOptions = MainOpts <$>
-    simpleOption "challenge-dir" "challenges/" "Path to challenges"
+    simpleOption "challenge-dir" "rlwe-challenges/" "Path to challenges"
 
 data GenOpts =
   GenOpts
@@ -69,7 +69,7 @@ main = do
 generate :: MainOpts -> GenOpts -> [String] -> IO ()
 generate MainOpts{..} GenOpts{..} _ = do
   let initBeacon = BA optInitBeaconEpoch 0
-  paramContents <- readFile $ optChallDir </> optParamsFile
+  paramContents <- readFile optParamsFile
   let params = parseChallParams paramContents
   generateMain optChallDir initBeacon params
 
