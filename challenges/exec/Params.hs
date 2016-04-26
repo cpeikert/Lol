@@ -1,12 +1,11 @@
 {-# LANGUAGE FlexibleContexts, RecordWildCards #-}
+
 module Params where
 
 import Control.Monad.Except
 import Text.Parsec
 import Text.Parsec.Token
---import Text.ParserCombinators.Parsec
 import Generate
-
 
 contLineID = "Cont"
 discLineID = "Disc"
@@ -36,7 +35,7 @@ parseIntegral :: (Integral i, Monad m, Stream s m Char) => ParsecT s u m i
 parseIntegral = (fromIntegral <$> natural langParser) <* parseWhiteSpace
 
 parseDouble :: (Monad m, Stream s m Char) => ParsecT s u m Double
-parseDouble = (float langParser) <* parseWhiteSpace
+parseDouble = float langParser <* parseWhiteSpace
 
 paramsFile :: (MonadError String m, Stream s m Char) => ParsecT s u m [ChallengeParams]
 paramsFile = many line
@@ -47,7 +46,8 @@ line = rlwecParams <|> rlwedParams <|> rlwrParams <?> "Expected one of '" ++
   show discLineID ++ "', or '" ++
   show rlwrLineID ++ "'."
 
-rlwecParams,rlwedParams,rlwrParams :: (MonadError String m, Stream s m Char) => ParsecT s u m ChallengeParams
+rlwecParams, rlwedParams, rlwrParams ::
+  (MonadError String m, Stream s m Char) => ParsecT s u m ChallengeParams
 rlwecParams = do
   try $ string contLineID
   whiteSpace langParser
@@ -79,7 +79,7 @@ rlwrParams = do
   q <- parseIntegral
   p <- parseIntegral
   when (p > q) $ throwError $
-    "Expected p < q, parsed q=" ++ (show q) ++ " and p=" ++ (show p)
+    "Expected p <= q; parsed q=" ++ show q ++ " and p=" ++ show p
   return RLWR{..}
 
 parseChallParams :: String -> [ChallengeParams]
@@ -88,5 +88,5 @@ parseChallParams input = do
   case output of
     Left e -> error $ "Invalid parameters:" ++ e
     Right r -> case r of
-      Left e -> error $ "Error parsing input:" ++ (show e)
+      Left e -> error $ "Error parsing input:" ++ show e
       Right r -> r
