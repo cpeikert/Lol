@@ -66,8 +66,6 @@ executable rlwe-challenges
                  base,
                  bytestring,
                  containers,
-                 data-default,
-                 deepseq,
                  directory,
                  DRBG,
                  filepath,

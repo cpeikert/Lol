@@ -4,10 +4,9 @@
 
 module Main where
 
-import Control.Monad.Except
 import Data.Time.Clock.POSIX
 import Options
-import System.FilePath
+
 import System.IO
 import System.IO.Unsafe
 
@@ -74,19 +73,7 @@ generate MainOpts{..} GenOpts{..} _ = do
   generateMain optChallDir initBeacon params
 
 suppress :: MainOpts -> NullOpts -> [String] -> IO ()
-suppress MainOpts{..} _ _ = do
-  res <- runExceptT $ suppressMain optChallDir
-  either putStrLn return res
+suppress MainOpts{..} _ _ = suppressMain optChallDir
 
 verify :: MainOpts -> NullOpts -> [String] -> IO ()
-verify MainOpts{..} _ _ = do
-  res <- runExceptT $ verifyMain optChallDir
-  either putStrLn return res
-
-{-
-generateMain optChallDir  [
-    Cont 10 16 128 257 1.0 (1/(2^40)),
-    RLWR 10 16 128 256 32,
-    Cont 10 16 128 257 0.5 (1/(2^40)),
-    RLWR 10 16 128 256 128]
-    -}
+verify MainOpts{..} _ _ = verifyMain optChallDir

@@ -1,18 +1,6 @@
 {-# LANGUAGE FlexibleContexts, RecordWildCards #-}
 
-module Common
-( ChallengeID, InstanceID, Zq, RRq, ChallengeU(..), InstanceU(..)
-, challengeFilesDir, challFilePath, instFilePath, secretFilePath
-, xmlFilePath, certFilePath
-, challengeList
-, suppressedSecretID
-, parseBeaconAddr
-, isBeaconAvailable
-, readProtoType
-, checkFileExists
-, printPassFail
-, throwErrorIf, throwErrorUnless, maybeThrowError
-) where
+module Common where
 
 import           Beacon
 import           Crypto.Challenges.RLWE.Proto.RLWE.Challenge
@@ -44,11 +32,11 @@ import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 type ChallengeID = Int32
 type InstanceID = Int32
 
-data ChallengeU = CU Challenge [InstanceU]
+data ChallengeU = CU !Challenge ![InstanceU]
 
-data InstanceU = IC {secret::Secret, instc::InstanceCont}
-               | ID {secret::Secret, instd::InstanceDisc}
-               | IR {secret::Secret, instr::InstanceRLWR}
+data InstanceU = IC {secret :: !Secret, instc :: !InstanceCont}
+               | ID {secret :: !Secret, instd :: !InstanceDisc}
+               | IR {secret :: !Secret, instr :: !InstanceRLWR}
 
 -- Types used to generate and verify instances
 type Zq q = Lol.ZqBasic (Reified q) Int64
@@ -155,16 +143,19 @@ maybeThrowError m str = do
   return $ fromJust m
 
 -- | Pretty printing of error messages.
-printPassFail :: (MonadIO m, MonadError String m)
-                 => String -> String -> ExceptT String m a -> m ()
+printPassFail :: (MonadIO m)
+                 => String -> String -> ExceptT String m a -> m (Maybe a)
 printPassFail str pass e = do
   liftIO $ putStr str
   res <- runExceptT e
   case res of
-    (Left st) -> liftIO $ do
-      setSGR [SetColor Foreground Vivid Red]
-      putStrLn $ "FAIL: " ++ st
-    (Right _) -> liftIO $ do
-      setSGR [SetColor Foreground Vivid Green]
-      putStrLn pass
-  liftIO $ setSGR [Reset]
+    (Left st) -> do printANSI Red st
+                    return Nothing
+    (Right a) -> do printANSI Green pass
+                    return $ Just a
+
+printANSI :: (MonadIO m) => Color -> String -> m ()
+printANSI sgr str = liftIO $ do
+  setSGR [SetColor Foreground Vivid sgr]
+  putStrLn str
+  setSGR [Reset]

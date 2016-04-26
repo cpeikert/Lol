@@ -39,32 +39,30 @@ type T = CT
 
 -- | Verifies all instances in the challenge tree, given the path to the
 -- root of the tree.
-verifyMain :: (MonadIO m, MonadError String m) => FilePath -> m ()
+verifyMain :: FilePath -> IO ()
 verifyMain path = do
   -- get a list of challenges to reveal
   challNames <- challengeList path
 
-  beaconAddrs <- mapM (readAndVerifyChallenge path) challNames
+  beaconAddrs <- sequence <$> mapM (readAndVerifyChallenge path) challNames
 
   -- verify that all beacon addresses are distinct
-  printPassFail "Checking for distinct beacon addresses..." "DISTINCT" $
-    throwErrorIf (length (nub beaconAddrs) /= length beaconAddrs) "NOT DISTINCT"
+  case beaconAddrs of
+    (Just addrs) -> do
+      _ <- printPassFail "Checking for distinct beacon addresses..." "DISTINCT"
+        $ throwErrorIf (length (nub addrs) /= length addrs) "NOT DISTINCT"
+      return ()
+    Nothing -> return ()
 
 -- | Reads a challenge and verifies all instances.
 -- Returns the beacon address for the challenge.
-readAndVerifyChallenge :: (MonadIO m, MonadError String m)
-  => FilePath -> String -> m BeaconAddr
-readAndVerifyChallenge path challName = do
-  (ba, insts) <- readChallenge path challName
-  verifyChallenge challName insts
-  return ba
-
--- | Verifies all instances that have a secret.
-verifyChallenge :: (MonadIO m, MonadError String m)
-                   => String -> [InstanceU] -> m ()
-verifyChallenge challName insts =
-  printPassFail ("Verifying challenge " ++ challName ++ "...") "VERIFIED" $
-  mapM_ verifyInstanceU insts
+readAndVerifyChallenge :: (MonadIO m)
+  => FilePath -> String -> m (Maybe BeaconAddr)
+readAndVerifyChallenge path challName =
+  printPassFail ("Verifying challenge " ++ challName ++ "...") "VERIFIED" $ do
+    (ba, insts) <- readChallenge path challName
+    mapM_ verifyInstanceU insts
+    return ba
 
 -- | Read a challenge from a file, outputting the beacon address and a
 -- list of instances to be verified.

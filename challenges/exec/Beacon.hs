@@ -6,7 +6,6 @@
 
 module Beacon where
 
-import Control.DeepSeq
 import Control.Monad.IO.Class
 
 import Data.Int
@@ -27,8 +26,7 @@ beaconInterval :: BeaconEpoch
 beaconInterval = 60
 
 -- | Represents a byte offset in a beacon output at a particular time.
-data BeaconAddr = BA BeaconEpoch BeaconOffset deriving (Eq, Show)
-instance NFData BeaconAddr where rnf (BA a b) = rnf a `seq` rnf b
+data BeaconAddr = BA !BeaconEpoch !BeaconOffset deriving (Eq, Show)
 
 -- | Advances the beacon position by one byte, overflowing to the next
 -- beacon if necessary.

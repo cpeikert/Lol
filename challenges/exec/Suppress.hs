@@ -22,7 +22,7 @@ import System.Directory (removeFile)
 
 -- | Deletes the secret indicated by NIST beacon for each challenge in
 -- the tree, given the path to the root of the tree.
-suppressMain :: (MonadIO m, MonadError String m) => FilePath -> m ()
+suppressMain :: FilePath -> IO ()
 suppressMain path = do
   -- get list of challenges
   challs <- challengeList path
@@ -41,9 +41,9 @@ type RecordState = Map BeaconEpoch Record
 
 -- | Lookup the secret index based on the randomness for this challenge,
 -- then remove the corresponding secret.
-suppressChallenge :: (MonadIO m, MonadError String m, MonadState RecordState m)
+suppressChallenge :: (MonadIO m, MonadState RecordState m)
                      => FilePath -> String -> m ()
-suppressChallenge path name =
+suppressChallenge path name = do
   printPassFail ("Deleting secret for challenge " ++ name ++ ":\n") "DONE" $ do
     -- read the beacon address of the randomness for this challenge
     let challFN = challFilePath path name
@@ -60,6 +60,7 @@ suppressChallenge path name =
     checkFileExists secFile
     liftIO $ putStr $ "\tRemoving " ++ secFile ++ "\n\t"
     liftIO $ removeFile secFile
+  return ()
 
 -- | Attempt to find the record in the state, otherwise download it from NIST.
 retrieveRecord :: (MonadIO m, MonadError String m, MonadState RecordState m)
