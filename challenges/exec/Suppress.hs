@@ -73,10 +73,11 @@ retrieveRecord t = do
       -- make sure the beacon is available
       isAvail <- isBeaconAvailable t
       throwErrorIfNot isAvail $
-        "Can't suppress challenge: the beacon at time " ++
-        (show t) ++ " is not yet available."
+        "Can't suppress challenge: the beacon at time " ++ show t ++ 
+        " is not yet available."
       trec <- liftIO $ getCurrentRecord $ fromIntegral t
-      rec <- maybeThrowError trec $ "Couldn't get record " ++ show t ++ "from NIST beacon."
+      rec <- maybeThrowError trec $ "Couldn't get record " ++ show t ++ 
+          " from NIST beacon."
       modify (insert t rec)
       return rec
 
