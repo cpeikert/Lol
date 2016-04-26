@@ -66,7 +66,7 @@ main = do
 
 generate :: MainOpts -> GenOpts -> [String] -> IO ()
 generate MainOpts{..} GenOpts{..} _ = do
-  let initBeacon = (BA optInitBeaconEpoch 0)
+  let initBeacon = BA optInitBeaconEpoch 0
   paramContents <- readFile $ optChallDir </> optParamsFile
   let params = parseChallParams paramContents
   generateMain optChallDir initBeacon params
