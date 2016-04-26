@@ -82,7 +82,7 @@ readChallenge path challName = do
 readSuppChallenge, readFullChallenge :: (MonadIO m, MonadError String m)
   => FilePath -> String -> Challenge -> m (BeaconAddr, [InstanceU])
 
-readSuppChallenge path challName (Challenge{..}) = do
+readSuppChallenge path challName Challenge{..} = do
   let numInsts' = fromIntegral numInstances
   beacon <- readBeacon path beaconEpoch
   let deletedID = suppressedSecretID numInstances beacon beaconOffset
@@ -96,7 +96,7 @@ readSuppChallenge path challName (Challenge{..}) = do
   checkParamsEq challName "numInstances" (numInsts'-1) (length insts)
   return (BA beaconEpoch beaconOffset, insts)
 
-readFullChallenge path challName (Challenge{..}) = do
+readFullChallenge path challName Challenge{..} = do
   let numInsts' = fromIntegral numInstances
   insts <- mapM (readInstanceU challType path challName challengeID) $ take numInsts' [0..]
   checkParamsEq challName "numInstances" numInsts' (length insts)
@@ -141,7 +141,7 @@ checkParamsEq data' param expected actual =
 -- | Verify an 'InstanceU'.
 verifyInstanceU :: (MonadError String m) => InstanceU -> m ()
 
-verifyInstanceU (IC (Secret _ _ _ _ s) (InstanceCont{..})) =
+verifyInstanceU (IC (Secret _ _ _ _ s) InstanceCont{..}) =
   reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
       s' :: Cyc T m (Zq q) <- fromProto s
@@ -150,7 +150,7 @@ verifyInstanceU (IC (Secret _ _ _ _ s) (InstanceCont{..})) =
       throwErrorIfNot (validInstanceCont bound s' samples')
         "A continuous RLWE sample exceeded the error bound."))
 
-verifyInstanceU (ID (Secret _ _ _ _ s) (InstanceDisc{..})) =
+verifyInstanceU (ID (Secret _ _ _ _ s) InstanceDisc{..}) =
   reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
       s' :: Cyc T m (Zq q) <- fromProto s
@@ -158,7 +158,7 @@ verifyInstanceU (ID (Secret _ _ _ _ s) (InstanceDisc{..})) =
       throwErrorIfNot (validInstanceDisc bound s' samples')
         "A discrete RLWE sample exceeded the error bound."))
 
-verifyInstanceU (IR (Secret _ _ _ _ s) (InstanceRLWR{..})) =
+verifyInstanceU (IR (Secret _ _ _ _ s) InstanceRLWR{..}) =
   reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) ->
       reify (fromIntegral p :: Int64) (\(_::Proxy p) -> do
@@ -182,13 +182,13 @@ readBeacon path time = do
 validInstanceCont ::
   (C.RLWECtx t m zq rrq, Ord (LiftOf rrq), Ring (LiftOf rrq))
   => LiftOf rrq -> Cyc t m zq -> [C.Sample t m zq rrq] -> Bool
-validInstanceCont bound s = all ((bound > ) . (C.errorGSqNorm s))
+validInstanceCont bound s = all ((bound > ) . C.errorGSqNorm s)
 
 -- | Test if the 'gSqNorm' of the error for each RLWE sample in the
 -- instance (given the secret) is less than the given bound.
 validInstanceDisc :: (D.RLWECtx t m zq)
                      => LiftOf zq -> Cyc t m zq -> [D.Sample t m zq] -> Bool
-validInstanceDisc bound s = all ((bound > ) . (D.errorGSqNorm s))
+validInstanceDisc bound s = all ((bound > ) . D.errorGSqNorm s)
 
 -- | Test if the given RLWR instance is valid for the given secret.
 validInstanceRLWR :: (R.RLWRCtx t m zq zp, Eq zp)
