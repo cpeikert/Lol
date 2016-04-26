@@ -25,7 +25,7 @@ rlwrLineID = "RLWR"
 
 -- default probability eps to use
 epsDef :: Double
-epsDef = 2.0^(-50)
+epsDef = 2 ** (-50)
 
 lang :: (Stream s m Char) => GenLanguageDef s u m
 lang = LanguageDef
