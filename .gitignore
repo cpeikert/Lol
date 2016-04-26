@@ -14,6 +14,7 @@ rebuild-proto
 **/configure
 **/.stack-work
 **/dist
+**/rlwe-challenges
 
 sandbox
 test

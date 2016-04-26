@@ -30,9 +30,6 @@ library
   ghc-options: -O3 -auto-all -caf-all -Wall
 
   exposed-modules:
-    Crypto.Challenges.RLWE.Continuous
-    Crypto.Challenges.RLWE.Discrete
-    Crypto.Challenges.RLWE.RLWR
     Crypto.Challenges.RLWE.Proto.RLWE
     Crypto.Challenges.RLWE.Proto.RLWE.Challenge
     Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType
@@ -61,7 +58,8 @@ executable main
     Beacon
     Common
     Generate
-    Reveal
+    Params
+    Suppress
     Verify
 
   build-depends: ansi-terminal,
@@ -79,6 +77,7 @@ executable main
                  mtl,
                  options,
                  nist-beacon,
+                 parsec,
                  protocol-buffers,
                  reflection,
                  rlwe-challenges,

@@ -1,3 +1,5 @@
+{-# LANGUAGE RecordWildCards #-}
+
 -- | Main module for the rlwe-challenges executable.
 
 module Main where
@@ -9,6 +11,7 @@ import System.IO.Unsafe
 
 import Beacon
 import Generate
+import Params
 import Suppress
 import Verify
 
@@ -55,26 +58,28 @@ main :: IO ()
 main = do
   -- for nice printing when running executable
   hSetBuffering stdout NoBuffering
-
-{-
   runSubcommand
     [ subcommand "generate" generate
     , subcommand "suppress" suppress
     , subcommand "verify" verify
     ]
--}
 
-  beaconInit <- localDateToSeconds 2 24 2016 11 0
-  generateMain "." (BA beaconInit 0) [
+generate :: MainOpts -> GenOpts -> [String] -> IO ()
+generate MainOpts{..} GenOpts{..} _ = do
+  let initBeacon = (BA optInitBeaconEpoch 0)
+  paramContents <- readFile $ optChallDir </> optParamsFile
+  let params = parseChallParams paramContents
+  generateMain optChallDir initBeacon params
+
+{-
+generateMain optChallDir  [
     Cont 10 16 128 257 1.0 (1/(2^40)),
     RLWR 10 16 128 256 32,
     Cont 10 16 128 257 0.5 (1/(2^40)),
     RLWR 10 16 128 256 128]
+    -}
 
-generate :: MainOpts -> GenOpts -> [String] -> IO ()
-generate mopts gopts _ =
-  let beaconInit = localDateToSeconds 2 24 2016 11 0
-  in print $ optInitBeaconEpoch gopts
+
 
 suppress :: MainOpts -> NullOpts -> [String] -> IO ()
 suppress = error "TODO"

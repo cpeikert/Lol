@@ -49,6 +49,7 @@ data ChallengeParams =
   | Disc {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64,
           svar::Double, eps::Double}
   | RLWR {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64, p::Int64}
+  deriving (Show)
 
 -- Tensor type used to generate instances
 type T = CT
