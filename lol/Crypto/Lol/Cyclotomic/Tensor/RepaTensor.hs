@@ -79,6 +79,7 @@ wrapM f (ZV v) = RT <$> f (zvToArr v)
 instance Tensor RT where
 
   type TElt RT r = (Unbox r, Elt r)
+  type TRep RT r = r
 
   entailIndexT  = tag $ Sub Dict
   entailEqT     = tag $ Sub Dict

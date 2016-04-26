@@ -62,6 +62,9 @@ class (TElt t Double, TElt t (Complex Double))
   -- | Constraints needed by @t@ to hold type @r@.
   type TElt t r :: Constraint
 
+  -- | Representation of values of type @r@ in @t@
+  type TRep t r
+
   -- | Properties that hold for any index. Use with '\\'.
   entailIndexT :: Tagged (t m r)
                   (Fact m :- (Applicative (t m), Traversable (t m)))
@@ -82,32 +85,38 @@ class (TElt t Double, TElt t (Complex Double))
                    ((GFCtx fp d, Fact m, TElt t fp) :- Module (GF fp d) (t m fp))
 
   -- | Convert a scalar to a tensor in the powerful basis.
-  scalarPow :: (Additive r, Fact m, TElt t r) => r -> t m r
+  scalarPow :: (Additive (TRep t r), Fact m, TElt t r) => r -> t m r
 
   -- | 'l' converts from decoding-basis representation to
   -- powerful-basis representation; 'lInv' is its inverse.
-  l, lInv :: (Additive r, Fact m, TElt t r) => t m r -> t m r
+  l, lInv :: (Additive (TRep t r), Fact m, TElt t r)
+          => t m r
+          -> t m r
 
   -- | Multiply by @g@ in the powerful/decoding basis
-  mulGPow, mulGDec :: (Ring r, Fact m, TElt t r) => t m r -> t m r
+  mulGPow, mulGDec :: (Ring (TRep t r), Fact m, TElt t r)
+                   => t m r
+                   -> t m r
 
   -- | Divide by @g@ in the powerful/decoding basis.  The 'Maybe'
   -- output indicates that the operation may fail, which happens
   -- exactly when the input is not divisible by @g@.
-  divGPow, divGDec :: (ZeroTestable r, IntegralDomain r, Fact m, TElt t r)
-                      => t m r -> Maybe (t m r)
+  divGPow, divGDec :: (ZeroTestable (TRep t r), IntegralDomain (TRep t r), Fact m, TElt t r)
+                   => t m r
+                   -> Maybe (t m r)
 
   -- | A tuple of all the operations relating to the CRT basis, in a
   -- single 'Maybe' value for safety.  Clients should typically not
   -- use this method directly, but instead call the corresponding
   -- top-level functions: the elements of the tuple correpond to the
   -- functions 'scalarCRT', 'mulGCRT', 'divGCRT', 'crt', 'crtInv'.
-  crtFuncs :: (CRTrans mon Int r, Fact m, TElt t r) =>
-              mon (    r -> t m r, -- scalarCRT
-                   t m r -> t m r, -- mulGCRT
-                   t m r -> t m r, -- divGCRT
-                   t m r -> t m r, -- crt
-                   t m r -> t m r) -- crtInv
+  crtFuncs :: (CRTrans mon (TRep t Int) (TRep t r), Fact m, TElt t r)
+            => mon (     r -> t m r   -- scalarCRT
+                   , t m r -> t m r   -- mulGCRT
+                   , t m r -> t m r   -- divGCRT
+                   , t m r -> t m r   -- crt
+                   , t m r -> t m r   -- crtInv
+                   )
 
   -- | Sample from the "tweaked" Gaussian error distribution @t*D@
   -- in the decoding basis, where @D@ has scaled variance @v@.
@@ -119,33 +128,35 @@ class (TElt t Double, TElt t (Complex Double))
   -- decoding basis of @R@, yield the (scaled) squared norm of @g_m
   -- \cdot e@ under the canonical embedding, namely,
   --  @\hat{m}^{ -1 } \cdot || \sigma(g_m \cdot e) ||^2@ .
-  gSqNormDec :: (Ring r, Fact m, TElt t r) => t m r -> r
+  gSqNormDec :: (Ring (TRep t r), Fact m, TElt t r) => t m r -> r
 
   -- | The @twace@ linear transformation, which is the same in both the
   -- powerful and decoding bases.
-  twacePowDec :: (Ring r, m `Divides` m', TElt t r) => t m' r -> t m r
+  twacePowDec :: (Ring (TRep t r), m `Divides` m', TElt t r) => t m' r -> t m r
 
   -- | The @embed@ linear transformations, for the powerful and
   -- decoding bases.
-  embedPow, embedDec :: (Additive r, m `Divides` m', TElt t r)
-                        => t m r -> t m' r
+  embedPow, embedDec :: (Additive (TRep t r), m `Divides` m', TElt t r)
+                     => t m  r
+                     -> t m' r
 
   -- | A tuple of all the extension-related operations involving the
   -- CRT bases, for safety.  Clients should typically not use this
   -- method directly, but instead call the corresponding top-level
   -- functions: the elements of the tuple correpond to the functions
   -- 'twaceCRT', 'embedCRT'.
-  crtExtFuncs :: (CRTrans mon Int r, m `Divides` m', TElt t r) =>
-                 mon (t m' r -> t m  r, -- twaceCRT
-                      t m  r -> t m' r) -- embedCRT
+  crtExtFuncs :: (CRTrans mon (TRep t Int) (TRep t r), m `Divides` m', TElt t r)
+              => mon ( t m' r -> t m  r   -- twaceCRT
+                     , t m  r -> t m' r   -- embedCRT
+                     )
 
   -- | Map a tensor in the powerful\/decoding\/CRT basis, representing
   -- an @O_m'@ element, to a vector of tensors representing @O_m@
   -- elements in the same kind of basis.
-  coeffs :: (Ring r, m `Divides` m', TElt t r) => t m' r -> [t m r]
+  coeffs :: (Ring (TRep t r), m `Divides` m', TElt t r) => t m' r -> [t m r]
 
   -- | The powerful extension basis w.r.t. the powerful basis.
-  powBasisPow :: (Ring r, TElt t r, m `Divides` m') => Tagged m [t m' r]
+  powBasisPow :: (Ring (TRep t r), TElt t r, m `Divides` m') => Tagged m [t m' r]
 
   -- | A list of tensors representing the mod-@p@ CRT set of the
   -- extension.
@@ -175,8 +186,9 @@ class (TElt t Double, TElt t (Complex Double))
   -}
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
-hasCRTFuncs :: forall t m mon r . (CRTrans mon Int r, Tensor t, Fact m, TElt t r)
-               => TaggedT (t m r) mon ()
+hasCRTFuncs
+    :: forall t m mon r . (CRTrans mon (TRep t Int) (TRep t r), Tensor t, Fact m, TElt t r)
+    => TaggedT (t m r) mon ()
 {-# INLINABLE hasCRTFuncs #-}
 hasCRTFuncs = tagT $ do
   (_ :: r -> t m r,_,_,_,_) <- crtFuncs
@@ -184,12 +196,15 @@ hasCRTFuncs = tagT $ do
 
 -- | Yield a tensor for a scalar in the CRT basis.  (This function is
 -- simply an appropriate entry from 'crtFuncs'.)
-scalarCRT :: (CRTrans mon Int r, Tensor t, Fact m, TElt t r) => mon (r -> t m r)
+scalarCRT
+    :: (CRTrans mon (TRep t Int) (TRep t r), Tensor t, Fact m, TElt t r)
+    => mon (r -> t m r)
 {-# INLINABLE scalarCRT #-}
 scalarCRT = (\(f,_,_,_,_) -> f) <$> crtFuncs
 
-mulGCRT, divGCRT, crt, crtInv ::
-  (CRTrans mon Int r, Tensor t, Fact m, TElt t r) => mon (t m r -> t m r)
+mulGCRT, divGCRT, crt, crtInv
+    :: (CRTrans mon (TRep t Int) (TRep t r), Tensor t, Fact m, TElt t r)
+    => mon (t m r -> t m r)
 {-# INLINABLE mulGCRT #-}
 {-# INLINABLE divGCRT #-}
 {-# INLINABLE crt #-}
@@ -212,8 +227,9 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 -- For cyclotomic indices m | m',
 -- @Tw(x) = (mhat\/m\'hat) * Tr(g\'\/g * x)@.
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-twaceCRT :: forall t m m' mon r . (CRTrans mon Int r, Tensor t, m `Divides` m', TElt t r)
-            => mon (t m' r -> t m r)
+twaceCRT
+    :: forall t m m' mon r . (CRTrans mon (TRep t Int) (TRep t r), Tensor t, m `Divides` m', TElt t r)
+    => mon (t m' r -> t m r)
 twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
            (fst <$> crtExtFuncs)
@@ -221,8 +237,9 @@ twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
 -- | Embed a tensor with index @m@ in the CRT basis to a tensor with
 -- index @m'@ in the CRT basis.
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-embedCRT :: forall t m m' mon r . (CRTrans mon Int r, Tensor t, m `Divides` m', TElt t r)
-            => mon (t m r -> t m' r)
+embedCRT
+    :: forall t m m' mon r . (CRTrans mon (TRep t Int) (TRep t r), Tensor t, m `Divides` m', TElt t r)
+    => mon (t m r -> t m' r)
 embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
            (snd <$> crtExtFuncs)

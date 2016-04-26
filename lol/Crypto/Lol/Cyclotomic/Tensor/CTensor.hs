@@ -167,6 +167,7 @@ instance Fact m => Traversable (CT m) where
 instance Tensor CT where
 
   type TElt CT r = (Storable r, Dispatch r)
+  type TRep CT r = r
 
   entailIndexT = tag $ Sub Dict
   entailEqT = tag $ Sub Dict
