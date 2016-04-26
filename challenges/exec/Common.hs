@@ -54,64 +54,6 @@ data InstanceU = IC {secret::Secret, instc::InstanceCont}
 type Zq q = Lol.ZqBasic (Reified q) Int64
 type RRq q = Lol.RRq (RealMod (Reified q)) Double
 
--- | The root directory for challenges and their instances.
-challengeFilesDir :: FilePath -> String -> FilePath
-challengeFilesDir path name = path </> name
-
--- | The name for a challenge file is some string
--- with a .challenge extension.
-challFilePath :: FilePath -> String -> FilePath
-challFilePath path name = challengeFilesDir path name </> name ++ ".challenge"
-
--- | The name for an instance file is some string followed by a hex ID
--- with a .instance extension.
-instFilePath :: FilePath -> String -> InstanceID -> FilePath
-instFilePath path name instID = challengeFilesDir path name </> name ++ "-" ++
-  instIDString instID ++ ".instance"
-
--- | The name for a secret file is some string followed by a hex ID
--- with the .secret extension.
-secretFilePath :: FilePath -> String -> InstanceID -> FilePath
-secretFilePath path name instID = challengeFilesDir path name </> name ++ "-" ++
-  instIDString instID ++ ".secret"
-
--- | The name of a beacon XML file.
-xmlFilePath :: FilePath -> BeaconEpoch -> FilePath
-xmlFilePath path t = path </> "epoch-" ++ show t ++ ".xml"
-
--- | The filename for the NIST X509 certificate.
-certFilePath :: FilePath -> FilePath
-certFilePath path = path </> "beacon.cer"
-
-instIDString :: InstanceID -> String
-instIDString = printf "%02X"
-
-throwErrorIf :: (MonadError String m) => Bool -> String -> m ()
-throwErrorIf b = when b . throwError
-
-throwErrorIfNot :: (MonadError String m) => Bool -> String -> m ()
-throwErrorIfNot b = unless b . throwError
-
-maybeThrowError :: (MonadError String m) => Maybe a -> String -> m a
-maybeThrowError m str = do
-  throwErrorIf (isNothing m) str
-  return $ fromJust m
-
--- | Pretty printing of error messages.
-printPassFail :: (MonadIO m, MonadError String m)
-                 => String -> String -> ExceptT String m a -> m ()
-printPassFail str pass e = do
-  liftIO $ putStr str
-  res <- runExceptT e
-  case res of
-    (Left st) -> liftIO $ do
-      setSGR [SetColor Foreground Vivid Red]
-      putStrLn $ "FAIL: " ++ st
-    (Right _) -> liftIO $ do
-      setSGR [SetColor Foreground Vivid Green]
-      putStrLn pass
-  liftIO $ setSGR [Reset]
-
 -- | Yield a list of challenge names by getting all directory contents
 -- and filtering on all directories whose names start with "chall".
 challengeList :: (MonadIO m) => FilePath -> m [String]
@@ -161,3 +103,68 @@ suppressedSecretID numInstances record byteOffset =
   let output = outputValue record
       byte = unpack output !! fromIntegral byteOffset
   in fromIntegral byte `mod` numInstances
+
+-- * Directory Structure
+
+-- | The root directory for challenges and their instances.
+challengeFilesDir :: FilePath -> String -> FilePath
+challengeFilesDir path name = path </> name
+
+-- | The name for a challenge file is some string
+-- with a .challenge extension.
+challFilePath :: FilePath -> String -> FilePath
+challFilePath path name = challengeFilesDir path name </> name ++ ".challenge"
+
+-- | The name for an instance file is some string followed by a hex ID
+-- with a .instance extension.
+instFilePath :: FilePath -> String -> InstanceID -> FilePath
+instFilePath path name instID = challengeFilesDir path name </> name ++ "-" ++
+  instIDString instID ++ ".instance"
+
+-- | The name for a secret file is some string followed by a hex ID
+-- with the .secret extension.
+secretFilePath :: FilePath -> String -> InstanceID -> FilePath
+secretFilePath path name instID = challengeFilesDir path name </> name ++ "-" ++
+  instIDString instID ++ ".secret"
+
+-- | The name of a beacon XML file.
+xmlFilePath :: FilePath -> BeaconEpoch -> FilePath
+xmlFilePath path t = path </> "epoch-" ++ show t ++ ".xml"
+
+-- | The filename for the NIST X509 certificate.
+certFilePath :: FilePath -> FilePath
+certFilePath path = path </> "beacon.cer"
+
+instIDString :: InstanceID -> String
+instIDString = printf "%02X"
+
+-- * Functions for easy exceptions.
+
+-- | Throw an error if the condition is 'True'.
+throwErrorIf :: (MonadError String m) => Bool -> String -> m ()
+throwErrorIf b = when b . throwError
+
+-- | Throw an error if the condition is 'False'.
+throwErrorIfNot :: (MonadError String m) => Bool -> String -> m ()
+throwErrorIfNot b = unless b . throwError
+
+-- | Throw an error if the input is 'Nothing'.
+maybeThrowError :: (MonadError String m) => Maybe a -> String -> m a
+maybeThrowError m str = do
+  throwErrorIf (isNothing m) str
+  return $ fromJust m
+
+-- | Pretty printing of error messages.
+printPassFail :: (MonadIO m, MonadError String m)
+                 => String -> String -> ExceptT String m a -> m ()
+printPassFail str pass e = do
+  liftIO $ putStr str
+  res <- runExceptT e
+  case res of
+    (Left st) -> liftIO $ do
+      setSGR [SetColor Foreground Vivid Red]
+      putStrLn $ "FAIL: " ++ st
+    (Right _) -> liftIO $ do
+      setSGR [SetColor Foreground Vivid Green]
+      putStrLn pass
+  liftIO $ setSGR [Reset]
