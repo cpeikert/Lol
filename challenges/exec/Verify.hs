@@ -44,16 +44,22 @@ verifyMain path = do
   -- get a list of challenges to reveal
   challNames <- challengeList path
 
-  (beaconAddrs, challenges) <- unzip <$> mapM (readChallenge path) challNames
-
-  zipWithM_ verifyChallenge challNames challenges
+  beaconAddrs <- mapM (readAndVerifyChallenge path) challNames
 
   -- verify that all beacon addresses are distinct
   printPassFail "Checking for distinct beacon addresses..." "DISTINCT" $
     throwErrorIf (length (nub beaconAddrs) /= length beaconAddrs) "NOT DISTINCT"
 
--- | Reads a challenge and verifies all instances that have a secret.
+-- | Reads a challenge and verifies all instances.
 -- Returns the beacon address for the challenge.
+readAndVerifyChallenge :: (MonadIO m, MonadError String m)
+  => FilePath -> String -> m BeaconAddr
+readAndVerifyChallenge path challName = do
+  (ba, insts) <- readChallenge path challName
+  verifyChallenge challName insts
+  return ba
+
+-- | Verifies all instances that have a secret.
 verifyChallenge :: (MonadIO m, MonadError String m)
                    => String -> [InstanceU] -> m ()
 verifyChallenge challName insts =
