@@ -140,7 +140,7 @@ readInstanceU challType path challName cid1 iid1 = do
 checkParamsEq :: (Monad m, MonadError String m, Show a, Eq a)
   => String -> String -> a -> a -> m ()
 checkParamsEq data' param expected actual =
-  throwErrorIfNot (expected == actual) $ "Error while reading " ++
+  throwErrorUnless (expected == actual) $ "Error while reading " ++
     data' ++ ": " ++ param ++ " mismatch. Expected " ++
     show expected ++ " but got " ++ show actual
 
@@ -153,7 +153,7 @@ verifyInstanceU (IC (Secret _ _ _ _ s) InstanceCont{..}) =
       s' :: Cyc T m (Zq q) <- fromProto s
       samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
         fmap (\(SampleCont a b) -> (a,b)) samples
-      throwErrorIfNot (validInstanceCont bound s' samples')
+      throwErrorUnless (validInstanceCont bound s' samples')
         "A continuous RLWE sample exceeded the error bound."))
 
 verifyInstanceU (ID (Secret _ _ _ _ s) InstanceDisc{..}) =
@@ -161,7 +161,7 @@ verifyInstanceU (ID (Secret _ _ _ _ s) InstanceDisc{..}) =
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
       s' :: Cyc T m (Zq q) <- fromProto s
       samples' <- fromProto $ fmap (\(SampleDisc a b) -> (a,b)) samples
-      throwErrorIfNot (validInstanceDisc bound s' samples')
+      throwErrorUnless (validInstanceDisc bound s' samples')
         "A discrete RLWE sample exceeded the error bound."))
 
 verifyInstanceU (IR (Secret _ _ _ _ s) InstanceRLWR{..}) =
@@ -171,7 +171,7 @@ verifyInstanceU (IR (Secret _ _ _ _ s) InstanceRLWR{..}) =
         s' :: Cyc T m (Zq q) <- fromProto s
         samples' :: [R.Sample _ _ _ (Zq p)] <- fromProto $
           fmap (\(SampleRLWR a b) -> (a,b)) samples
-        throwErrorIfNot (validInstanceRLWR s' samples')
+        throwErrorUnless (validInstanceRLWR s' samples')
           "An RLWR sample was invalid.")))
 
 -- | Read an XML file for the beacon corresponding to the provided time.

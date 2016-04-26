@@ -72,7 +72,7 @@ retrieveRecord t = do
       liftIO $ putStrLn $ "\tDownloading record " ++ show t
       -- make sure the beacon is available
       isAvail <- isBeaconAvailable t
-      throwErrorIfNot isAvail $
+      throwErrorUnless isAvail $
         "Can't suppress challenge: the beacon at time " ++ show t ++
         " is not yet available."
       trec <- liftIO $ getCurrentRecord $ fromIntegral t

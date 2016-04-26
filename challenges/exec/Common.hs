@@ -11,7 +11,7 @@ module Common
 , readProtoType
 , checkFileExists
 , printPassFail
-, throwErrorIf, throwErrorIfNot, maybeThrowError
+, throwErrorIf, throwErrorUnless, maybeThrowError
 ) where
 
 import           Beacon
@@ -69,7 +69,7 @@ challengeList path = liftIO $ do
 checkFileExists :: (MonadIO m, MonadError String m) => FilePath -> m ()
 checkFileExists file = do
   fileExists <- liftIO $ doesFileExist file
-  throwErrorIfNot fileExists $
+  throwErrorUnless fileExists $
     "Error reading " ++ file ++ ": file does not exist."
 
 -- | Read a serialized protobuffer from a file.
@@ -82,7 +82,7 @@ readProtoType file = do
     (Left str) -> throwError $
       "Error when reading from protocol buffer. Got string " ++ str
     (Right (a,bs')) -> do
-      throwErrorIfNot (BS.null bs')
+      throwErrorUnless (BS.null bs')
         "Error when reading from protocol buffer. There were leftover bits!"
       return a
 
@@ -145,8 +145,8 @@ throwErrorIf :: (MonadError String m) => Bool -> String -> m ()
 throwErrorIf b = when b . throwError
 
 -- | Throw an error if the condition is 'False'.
-throwErrorIfNot :: (MonadError String m) => Bool -> String -> m ()
-throwErrorIfNot b = unless b . throwError
+throwErrorUnless :: (MonadError String m) => Bool -> String -> m ()
+throwErrorUnless b = unless b . throwError
 
 -- | Throw an error if the input is 'Nothing'.
 maybeThrowError :: (MonadError String m) => Maybe a -> String -> m a
