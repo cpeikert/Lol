@@ -59,7 +59,7 @@ verifyMain path = do
 readAndVerifyChallenge :: (MonadIO m)
   => FilePath -> String -> m (Maybe BeaconAddr)
 readAndVerifyChallenge path challName =
-  printPassFail ("Verifying challenge " ++ challName ++ "...") "VERIFIED" $ do
+  printPassFail ("Verifying " ++ challName ++ "...") "VERIFIED" $ do
     (ba, insts) <- readChallenge path challName
     mapM_ verifyInstanceU insts
     return ba
@@ -75,9 +75,9 @@ readChallenge path challName = do
 
   let (msg, readChall) =
         if isAvail
-        then ("Past the beacon time: expecting one missing secret.",
+        then ("(expecting one missing secret).",
               readSuppChallenge)
-        else ("Before the beacon time: verifying all instances.",
+        else ("(expecting all secrets).",
               readFullChallenge)
 
   liftIO $ putStrLn msg
