@@ -6,12 +6,10 @@
 
 module Beacon where
 
-import Control.Monad.IO.Class
-
 import Data.Int
 import Data.Time.Calendar    (fromGregorian)
 import Data.Time.Clock       (UTCTime (..), secondsToDiffTime)
-import Data.Time.Clock.POSIX (getPOSIXTime, utcTimeToPOSIXSeconds)
+import Data.Time.Clock.POSIX (utcTimeToPOSIXSeconds)
 import Data.Time.LocalTime   (getCurrentTimeZone, timeZoneMinutes)
 
 type BeaconEpoch = Int64
@@ -27,6 +25,10 @@ beaconInterval = 60
 
 -- | Represents a byte offset in a beacon output at a particular time.
 data BeaconAddr = BA !BeaconEpoch !BeaconOffset deriving (Eq, Show)
+
+validBeaconAddr :: BeaconAddr -> Bool
+validBeaconAddr (BA epoch offset) =
+  (epoch `mod` beaconInterval == 0) && offset >= 0 && offset < bytesPerBeacon
 
 -- | Advances the beacon position by one byte, overflowing to the next
 -- beacon if necessary.
@@ -53,12 +55,6 @@ localDateToSeconds month day year hour minute = do
   minuteOffset <- timeZoneMinutes <$> getCurrentTimeZone
   return $ fromIntegral $ gmt - (minuteOffset*60)
 
--- | The last beacon epoch before epoch @t@.
-lastBeaconBefore :: BeaconEpoch -> BeaconEpoch
-lastBeaconBefore t = t - (t `mod` beaconInterval)
-
--- | Check if the beacon for epoch @t@ is available.
-isBeaconAvailable :: (MonadIO m) => BeaconEpoch -> m Bool
-isBeaconAvailable t = liftIO $ do
-  currentTime <- floor <$> getPOSIXTime
-  return $ t <= currentTime
+-- | Yield the largest beacon epoch that does not exceed the input.
+beaconFloor :: BeaconEpoch -> BeaconEpoch
+beaconFloor e = e - e `mod` beaconInterval

@@ -71,14 +71,9 @@ retrieveRecord t = do
     (Just r) -> return r
     Nothing -> do
       liftIO $ putStrLn $ "\tDownloading record " ++ show t
-      -- make sure the beacon is available
-      isAvail <- isBeaconAvailable t
-      throwErrorUnless isAvail $
-        "Can't suppress challenge: the beacon at time " ++ show t ++
-        " is not yet available."
       trec <- liftIO $ getCurrentRecord $ fromIntegral t
       rec <- maybeThrowError trec $ "Couldn't get record " ++ show t ++
-          " from NIST beacon."
+          " from NIST beacon (maybe too early?)."
       modify (insert t rec)
       return rec
 
@@ -86,7 +81,7 @@ retrieveRecord t = do
 writeBeaconXML :: (MonadIO m) => FilePath -> Record -> m ()
 writeBeaconXML path rec = do
   let beacon = toXML rec
-      filePath = xmlFilePath path $ fromIntegral $ timeStamp rec
+      filePath = beaconFilePath path $ fromIntegral $ timeStamp rec
   liftIO $ writeFile filePath beacon
 
 -- | Downloads the NIST certificate and saves it.

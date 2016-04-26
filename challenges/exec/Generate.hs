@@ -62,8 +62,12 @@ genAndWriteChallenge :: (MonadRandom m, MonadIO m)
 genAndWriteChallenge path cp challID ba@(BA t _) = do
   let name = challengeName cp
   liftIO $ putStrLn $ "Generating challenge " ++ name
-  isAvail <- isBeaconAvailable t
-  when isAvail $ printANSI Red "Beacon is already available!"
+  -- CJP: not printing warning because it's annoying to implement
+  -- correctly: dont want to trust local time, don't want to rely on
+  -- network when generating
+
+  -- isAvail <- isBeaconAvailable t
+  -- when isAvail $ printANSI Red "Beacon is already available!"
   chall <- genChallengeU cp challID ba
   liftIO $ writeChallengeU path name chall
 

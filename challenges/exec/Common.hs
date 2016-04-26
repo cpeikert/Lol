@@ -78,9 +78,7 @@ readProtoType file = do
 parseBeaconAddr :: (MonadError String m) => Challenge -> m BeaconAddr
 parseBeaconAddr Challenge{..} = do
   -- validate the time and offset
-  throwErrorIf ((beaconEpoch `mod` beaconInterval /= 0) ||
-                beaconOffset < 0 ||
-                beaconOffset >= bytesPerBeacon)
+  throwErrorUnless (validBeaconAddr $ BA beaconEpoch beaconOffset)
     "Invalid beacon address."
   return $ BA beaconEpoch beaconOffset
 
@@ -116,8 +114,8 @@ secretFilePath path name instID = challengeFilesDir path name </> name ++ "-" ++
   instIDString instID ++ ".secret"
 
 -- | The name of a beacon XML file.
-xmlFilePath :: FilePath -> BeaconEpoch -> FilePath
-xmlFilePath path t = path </> "epoch-" ++ show t ++ ".xml"
+beaconFilePath :: FilePath -> BeaconEpoch -> FilePath
+beaconFilePath path t = path </> "epoch-" ++ show t ++ ".xml"
 
 -- | The filename for the NIST X509 certificate.
 certFilePath :: FilePath -> FilePath

@@ -49,7 +49,7 @@ verifyMain path = do
   -- verify that all beacon addresses are distinct
   case beaconAddrs of
     (Just addrs) -> do
-      _ <- printPassFail "Checking for distinct beacon addresses..." "DISTINCT"
+      _ <- printPassFail "Checking for distinct beacon addresses... " "DISTINCT"
         $ throwErrorIf (length (nub addrs) /= length addrs) "NOT DISTINCT"
       return ()
     Nothing -> return ()
@@ -59,7 +59,7 @@ verifyMain path = do
 readAndVerifyChallenge :: (MonadIO m)
   => FilePath -> String -> m (Maybe BeaconAddr)
 readAndVerifyChallenge path challName =
-  printPassFail ("Verifying " ++ challName ++ "...") "VERIFIED" $ do
+  printPassFail ("Verifying " ++ challName) "VERIFIED" $ do
     (ba, insts) <- readChallenge path challName
     mapM_ verifyInstanceU insts
     return ba
@@ -71,17 +71,21 @@ readChallenge :: (MonadIO m, MonadError String m)
 readChallenge path challName = do
   let challFile = challFilePath path challName
   c <- readProtoType challFile
-  isAvail <- isBeaconAvailable $ beaconEpoch c
+  isAvail <- beaconAvailable path $ beaconEpoch c
 
   let (msg, readChall) =
         if isAvail
-        then ("(expecting one missing secret).",
+        then ("(expecting one missing secret)... ",
               readSuppChallenge)
-        else ("(expecting all secrets).",
+        else ("(expecting all secrets)... ",
               readFullChallenge)
 
-  liftIO $ putStrLn msg
+  liftIO $ putStr msg
   readChall path challName c
+
+-- | Whether we have an XML file for the beacon at the given epoch.
+beaconAvailable :: (MonadIO m) => FilePath -> BeaconEpoch -> m Bool
+beaconAvailable path = liftIO . doesFileExist . beaconFilePath path
 
 readSuppChallenge, readFullChallenge :: (MonadIO m, MonadError String m)
   => FilePath -> String -> Challenge -> m (BeaconAddr, [InstanceU])
@@ -176,7 +180,7 @@ verifyInstanceU (IR (Secret _ _ _ _ s) InstanceRLWR{..}) =
 readBeacon :: (MonadIO m, MonadError String m)
               => FilePath -> BeaconEpoch -> m Record
 readBeacon path time = do
-  let file = xmlFilePath path time
+  let file = beaconFilePath path time
   checkFileExists file
   rec' <- liftIO $ fromXML <$> BS.readFile file
   maybeThrowError rec' $ "Could not parse " ++ file

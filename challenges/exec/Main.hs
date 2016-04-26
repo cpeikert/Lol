@@ -48,8 +48,7 @@ instance Options GenOpts where
 daysFromNow :: Int -> IO BeaconEpoch
 daysFromNow n = do
   t <- round <$> getPOSIXTime
-  let d = 86400 * fromIntegral n + t
-  return $ lastBeaconBefore d
+  return $ 86400 * fromIntegral n + t
 
 data NullOpts = NullOpts
 
@@ -68,7 +67,7 @@ main = do
 
 generate :: MainOpts -> GenOpts -> [String] -> IO ()
 generate MainOpts{..} GenOpts{..} _ = do
-  let initBeacon = BA optInitBeaconEpoch 0
+  let initBeacon = BA (beaconFloor optInitBeaconEpoch) 0
   paramContents <- readFile optParamsFile
   let params = parseChallParams paramContents optNumInstances
   generateMain optChallDir initBeacon params
