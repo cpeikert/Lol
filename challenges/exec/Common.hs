@@ -27,7 +27,6 @@ import Control.Monad.Except
 
 import           Data.ByteString.Lazy (unpack)
 import qualified Data.ByteString.Lazy as BS
-import           Data.Default         (Default (..))
 import           Data.Int
 import           Data.Maybe
 
@@ -99,8 +98,8 @@ maybeThrowError m str = do
   return $ fromJust m
 
 -- | Pretty printing of error messages.
-printPassFail :: (MonadIO m, MonadError String m, Default a)
-                 => String -> String -> ExceptT String m a -> m a
+printPassFail :: (MonadIO m, MonadError String m)
+                 => String -> String -> ExceptT String m a -> m ()
 printPassFail str pass e = do
   liftIO $ putStr str
   res <- runExceptT e
@@ -108,13 +107,10 @@ printPassFail str pass e = do
     (Left st) -> liftIO $ do
       setSGR [SetColor Foreground Vivid Red]
       putStrLn $ "FAIL: " ++ st
-      return def
     (Right a) -> liftIO $ do
       setSGR [SetColor Foreground Vivid Green]
       putStrLn pass
-      return a
   liftIO $ setSGR [SetColor Foreground Vivid Black]
-  return val
 
 -- | Yield a list of challenge names by getting all directory contents
 -- and filtering on all directories whose names start with "chall".
@@ -152,14 +148,12 @@ readProtoType file = do
 -- | Parse the beacon time/offset used to reveal a challenge.
 parseBeaconAddr :: (MonadError String m) => Challenge -> m BeaconAddr
 parseBeaconAddr Challenge{..} = do
-  let time = beaconTime
-      offset = beaconOffset
   -- validate the time and offset
-  throwErrorIf ((time `mod` beaconInterval /= 0) ||
-                offset < 0 ||
-                offset >= bytesPerBeacon)
+  throwErrorIf ((beaconEpoch `mod` beaconInterval /= 0) ||
+                beaconOffset < 0 ||
+                beaconOffset >= bytesPerBeacon)
     "Invalid beacon address."
-  return $ BA time offset
+  return $ BA beaconEpoch beaconOffset
 
 -- | Yield the ID of the suppressed secret for a challenge, given a
 -- beacon record and a byte offset.

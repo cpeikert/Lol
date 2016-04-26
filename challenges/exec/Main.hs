@@ -6,6 +6,7 @@ module Main where
 
 import Data.Time.Clock.POSIX
 import Options
+import System.FilePath
 import System.IO
 import System.IO.Unsafe
 

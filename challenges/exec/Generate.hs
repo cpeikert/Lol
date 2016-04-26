@@ -123,12 +123,15 @@ genInstanceU cp@RLWR{..} challID instID = reify q (\(_::Proxy q) ->
 
 -- | Constructs a 'Challenge' suitable for serialization.
 toProtoChallenge :: ChallengeParams -> ChallengeID -> BeaconAddr -> Challenge
-toProtoChallenge cp challengeID (BA beaconTime beaconOffset) =
+toProtoChallenge cp challengeID (BA beaconEpoch beaconOffset) =
   let numInstances = numInsts cp
   in case cp of
     Cont{..} -> Challenge{challType = T.Cont,..}
     Disc{..} -> Challenge{challType = T.Disc,..}
     RLWR{..} -> Challenge{challType = T.RLWR,..}
+
+-- CJP: it would be nice to get rid of the incomplete pattern matches
+-- for these next few functions, though I see why it's tricky.
 
 -- | Constructs an 'InstanceCont' suitable for serialization.
 toProtoInstanceCont :: forall t m zq rrq .
@@ -136,7 +139,7 @@ toProtoInstanceCont :: forall t m zq rrq .
    Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq,
    Protoable (UCyc t m D rrq), ProtoType (UCyc t m D rrq) ~ Kq)
   => ChallengeID -> InstanceID -> ChallengeParams -> [C.Sample t m zq rrq] -> InstanceCont
-toProtoInstanceCont challengeID instID Cont{..} samples' =
+toProtoInstanceCont challengeID instanceID Cont{..} samples' =
   let bound = proxy (C.errorBound svar eps) (Proxy::Proxy m)
       samples = (uncurry SampleCont) <$> (toProto samples')
   in InstanceCont{..}
@@ -145,7 +148,7 @@ toProtoInstanceCont challengeID instID Cont{..} samples' =
 toProtoInstanceDisc :: forall t m zq .
   (Fact m, Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq)
   => ChallengeID -> InstanceID -> ChallengeParams -> [D.Sample t m zq] -> InstanceDisc
-toProtoInstanceDisc challengeID instID Disc{..} samples' =
+toProtoInstanceDisc challengeID instanceID Disc{..} samples' =
   let bound = proxy (D.errorBound svar eps) (Proxy::Proxy m)
       samples = uncurry SampleDisc <$> toProto samples'
   in InstanceDisc{..}
@@ -157,14 +160,14 @@ toProtoInstanceRLWR ::
    Protoable (Cyc t m zq'), ProtoType (Cyc t m zq') ~ Rq)
   => ChallengeID -> InstanceID -> ChallengeParams
      -> [R.Sample t m zq zq'] -> InstanceRLWR
-toProtoInstanceRLWR challengeID instID RLWR{..} samples' =
+toProtoInstanceRLWR challengeID instanceID RLWR{..} samples' =
   let samples = (uncurry SampleRLWR) <$> (toProto samples')
   in InstanceRLWR{..}
 
 -- | Constructs an 'Secret' suitable for serialization.
 toProtoSecret :: (Protoable (Cyc t m zq), ProtoType (Cyc t m zq) ~ Rq)
   => ChallengeID -> InstanceID -> Int32 -> Int64 -> Cyc t m zq -> Secret
-toProtoSecret challengeID instID m q s' = Secret{s = toProto s', ..}
+toProtoSecret challengeID instanceID m q s' = Secret{s = toProto s', ..}
 
 -- | Writes a 'ChallengeU' to a file given a path to the root of the tree
 -- and the name of the challenge.
@@ -181,7 +184,7 @@ writeChallengeU path challName (CU c insts) = do
 writeInstanceU :: FilePath -> String -> InstanceU -> IO ()
 writeInstanceU path challName iu = do
   let s = secret iu
-      idx = S.instID s
+      idx = S.instanceID s
       instFN = instFilePath path challName idx
       secretFN = secretFilePath path challName idx
   case iu of

@@ -41,8 +41,8 @@ type RecordState = Map BeaconEpoch Record
 
 -- | Lookup the secret index based on the randomness for this challenge,
 -- then remove the corresponding secret.
-suppressChallenge :: (MonadIO m, MonadError String m)
-                     => FilePath -> String -> StateT RecordState m ()
+suppressChallenge :: (MonadIO m, MonadError String m, MonadState RecordState m)
+                     => FilePath -> String -> m ()
 suppressChallenge path name =
   printPassFail ("Deleting secret for challenge " ++ name ++ ":\n") "DONE" $ do
     -- read the beacon address of the randomness for this challenge

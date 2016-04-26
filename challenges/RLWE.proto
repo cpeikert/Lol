@@ -20,7 +20,7 @@ message SampleRLWR {
 
 message InstanceCont {
   required int32 challengeID       = 1;  // challenge this instance belongs to
-  required int32 instID            = 2;  // index within a challenge
+  required int32 instanceID        = 2;  // instance within the challenge
   required int32 m                 = 3;
   required int64 q                 = 4;
   required double svar             = 5;
@@ -30,7 +30,7 @@ message InstanceCont {
 
 message InstanceDisc {
   required int32 challengeID       = 1;
-  required int32 instID            = 2;
+  required int32 instanceID        = 2;
   required int32 m                 = 3;
   required int64 q                 = 4;
   required double svar             = 5;
@@ -40,7 +40,7 @@ message InstanceDisc {
 
 message InstanceRLWR {
   required int32 challengeID       = 1;
-  required int32 instID            = 2;
+  required int32 instanceID        = 2;
   required int32 m                 = 3;
   required int64 q                 = 4;
   required int64 p                 = 5;  // RLWR modulus p < q
@@ -49,7 +49,7 @@ message InstanceRLWR {
 
 message Secret {
   required int32 challengeID       = 1;
-  required int32 instID            = 2;
+  required int32 instanceID        = 2;
   required int32 m                 = 3;
   required int64 q                 = 4;
   required Rq s                    = 5;
@@ -64,7 +64,7 @@ enum ChallengeType {
 message Challenge {
   required int32 challengeID       = 1;  // unique identifier of challenge
   required int32 numInstances      = 2;  // number of instances in challenge
-  required int64 beaconTime        = 3;  // NIST beacon time used for reveal
+  required int64 beaconEpoch       = 3;  // beacon epoch for suppressing secret
   required int32 beaconOffset      = 4;  // byte of beacon value used
   required ChallengeType challType = 5;
 }
