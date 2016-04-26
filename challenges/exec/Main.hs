@@ -11,6 +11,7 @@ import System.IO
 import System.IO.Unsafe
 
 import Beacon
+import Common   (InstanceID)
 import Generate
 import Params
 import Suppress
@@ -28,7 +29,7 @@ instance Options MainOpts where
 data GenOpts =
   GenOpts
   { optParamsFile      :: FilePath, -- ^ file with parameters for generation
-    optNumInstances    :: Int, -- ^ number of instances per challenge
+    optNumInstances    :: InstanceID, -- ^ number of instances per challenge
     optInitBeaconEpoch :: BeaconEpoch -- ^ initial beacon epoch for suppress phase
   }
 
@@ -69,7 +70,7 @@ generate :: MainOpts -> GenOpts -> [String] -> IO ()
 generate MainOpts{..} GenOpts{..} _ = do
   let initBeacon = BA optInitBeaconEpoch 0
   paramContents <- readFile optParamsFile
-  let params = parseChallParams paramContents
+  let params = parseChallParams paramContents optNumInstances
   generateMain optChallDir initBeacon params
 
 suppress :: MainOpts -> NullOpts -> [String] -> IO ()

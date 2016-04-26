@@ -27,7 +27,7 @@ rlwrLineID = "RLWR"
 epsDef :: Double
 epsDef = 2 ** (-50)
 
-lang :: (Stream s m Char) => GenLanguageDef s u m
+lang :: (Stream s m Char) => GenLanguageDef s InstanceID m
 lang = LanguageDef
   {commentStart = "/*",
    commentEnd = "*/",
@@ -41,34 +41,34 @@ lang = LanguageDef
    reservedOpNames = [],
    caseSensitive = True}
 
-langParser :: (Stream s m Char) => GenTokenParser s u m
+langParser :: (Stream s m Char) => GenTokenParser s InstanceID m
 langParser = makeTokenParser lang
 
-parseWhiteSpace :: (Stream s m Char) => ParsecT s u m ()
+parseWhiteSpace :: (Stream s m Char) => ParsecT s InstanceID m ()
 parseWhiteSpace = whiteSpace langParser
 
-parseIntegral :: (Integral i, Monad m, Stream s m Char) => ParsecT s u m i
+parseIntegral :: (Integral i, Monad m, Stream s m Char) => ParsecT s InstanceID m i
 parseIntegral = (fromIntegral <$> natural langParser) <* parseWhiteSpace
 
-parseDouble :: (Monad m, Stream s m Char) => ParsecT s u m Double
+parseDouble :: (Monad m, Stream s m Char) => ParsecT s InstanceID m Double
 parseDouble = float langParser <* parseWhiteSpace
 
-paramsFile :: (MonadError String m, Stream s m Char) => ParsecT s u m [ChallengeParams]
+paramsFile :: (MonadError String m, Stream s m Char) => ParsecT s InstanceID m [ChallengeParams]
 paramsFile = many line
 
-line :: (MonadError String m, Stream s m Char) => ParsecT s u m ChallengeParams
+line :: (MonadError String m, Stream s m Char) => ParsecT s InstanceID m ChallengeParams
 line = rlwecParams <|> rlwedParams <|> rlwrParams <?> "Expected one of '" ++
   show contLineID ++ "', '" ++
   show discLineID ++ "', or '" ++
   show rlwrLineID ++ "'."
 
 rlwecParams, rlwedParams, rlwrParams ::
-  (MonadError String m, Stream s m Char) => ParsecT s u m ChallengeParams
+  (MonadError String m, Stream s m Char) => ParsecT s InstanceID m ChallengeParams
 rlwecParams = do
-  try $ string contLineID
+  _ <- try $ string contLineID
   whiteSpace langParser
   numSamples <- parseIntegral
-  numInsts <- parseIntegral
+  numInsts <- getState
   m <- parseIntegral
   q <- parseIntegral
   svar <- parseDouble
@@ -76,10 +76,10 @@ rlwecParams = do
   return C{..}
 
 rlwedParams = do
-  try $ string discLineID
+  _ <- try $ string discLineID
   whiteSpace langParser
   numSamples <- parseIntegral
-  numInsts <- parseIntegral
+  numInsts <- getState
   m <- parseIntegral
   q <- parseIntegral
   svar <- parseDouble
@@ -87,10 +87,10 @@ rlwedParams = do
   return D{..}
 
 rlwrParams = do
-  try $ string rlwrLineID
+  _ <- try $ string rlwrLineID
   whiteSpace langParser
   numSamples <- parseIntegral
-  numInsts <- parseIntegral
+  numInsts <- getState
   m <- parseIntegral
   q <- parseIntegral
   p <- parseIntegral
@@ -98,9 +98,9 @@ rlwrParams = do
     "Expected p <= q; parsed q=" ++ show q ++ " and p=" ++ show p
   return R{..}
 
-parseChallParams :: String -> [ChallengeParams]
-parseChallParams input = do
-  let output = runExcept $ runParserT paramsFile () "" input
+parseChallParams :: String -> InstanceID -> [ChallengeParams]
+parseChallParams input numInsts = do
+  let output = runExcept $ runParserT paramsFile numInsts "" input
   case output of
     Left e -> error $ "Invalid parameters:" ++ e
     Right r -> case r of
