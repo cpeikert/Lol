@@ -141,8 +141,8 @@ instance (GFCtx fp d, Fact m, Additive (CT m fp))
     => Module.C (GF fp d) (CT m fp) where
 
   r *> v = case v of
-    CT (CT' arr) -> CT $ CT' $ SV.fromList $ unCoeffs $ r *> Coeffs $ SV.toList arr
-    ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $ unCoeffs $ r *> Coeffs $ V.toList $ unIZipVector zv
+    CT (CT' arr) -> CT $ CT' $ SV.fromList $ unCoeffs $ r LP.*> Coeffs $ SV.toList arr
+    ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $ unCoeffs $ r LP.*> Coeffs $ V.toList $ unIZipVector zv
 
 ---------- Category-theoretic instances ----------
 
@@ -222,6 +222,8 @@ instance Tensor CT where
 
   fmapTM f (CT (CT' v)) = (CT . CT') <$> SV.mapM f v
   fmapTM f v@(ZV _) = fmapTM f $ toCT v
+
+  r *> v = fmapT (r * ) v
 
   zipWithT f (CT (CT' v1)) (CT (CT' v2)) = CT $ CT' $ SV.zipWith f v1 v2
   zipWithT f v1 v2 = zipWithT f (toCT v1) (toCT v2)

@@ -199,7 +199,7 @@ class (TElt t Double, TElt t (Complex Double))
          -> (t m a, t m b)
 
   -- | Scale by a scalar. Potentially optimised version of @fmapT (c *)@
-  (*>) :: (Fact m, TElt t a)
+  (*>) :: (Fact m, Ring (TRep t a), TElt t a)
        => a
        -> t m a
        -> t m a
