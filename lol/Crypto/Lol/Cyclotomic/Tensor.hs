@@ -1,7 +1,14 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             NoImplicitPrelude, PolyKinds, RankNTypes, ScopedTypeVariables,
-             TupleSections, TypeFamilies, TypeOperators,
-             UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds      #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE NoImplicitPrelude    #-}
+{-# LANGUAGE PolyKinds            #-}
+{-# LANGUAGE RankNTypes           #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TupleSections        #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 -- | Interface for cyclotomic tensors, and helper functions for tensor
 -- indexing.
@@ -85,7 +92,7 @@ class (TElt t Double, TElt t (Complex Double))
                    ((GFCtx fp d, Fact m, TElt t fp) :- Module (GF fp d) (t m fp))
 
   -- | Convert a scalar to a tensor in the powerful basis.
-  scalarPow :: (Additive (TRep t r), Fact m, TElt t r) => r -> t m r
+  scalarPow :: (Additive (TRep t r), Fact m, TElt t r) => TRep t r -> t m r
 
   -- | 'l' converts from decoding-basis representation to
   -- powerful-basis representation; 'lInv' is its inverse.
@@ -153,31 +160,43 @@ class (TElt t Double, TElt t (Complex Double))
   -- | Map a tensor in the powerful\/decoding\/CRT basis, representing
   -- an @O_m'@ element, to a vector of tensors representing @O_m@
   -- elements in the same kind of basis.
-  coeffs :: (Ring (TRep t r), m `Divides` m', TElt t r) => t m' r -> [t m r]
+  coeffs :: (Ring (TRep t r), m `Divides` m', TElt t r)
+         => t m' r
+         -> [t m r]
 
   -- | The powerful extension basis w.r.t. the powerful basis.
-  powBasisPow :: (Ring (TRep t r), TElt t r, m `Divides` m') => Tagged m [t m' r]
+  powBasisPow :: (Ring (TRep t r), TElt t r, m `Divides` m')
+              => Tagged m [t m' r]
 
   -- | A list of tensors representing the mod-@p@ CRT set of the
   -- extension.
-  crtSetDec :: (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m',
-                TElt t fp)
-               => Tagged m [t m' fp]
+  crtSetDec :: (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m', TElt t fp)
+            => Tagged m [t m' fp]
 
   -- | Potentially optimized version of 'fmap' for types that satisfy
   -- 'TElt'.
-  fmapT :: (Fact m, TElt t a, TElt t b) => (a -> b) -> t m a -> t m b
+  fmapT :: (Fact m, TElt t a, TElt t b)
+        => (TRep t a -> TRep t b)
+        -> t m a
+        -> t m b
+
   -- | Potentially optimized monadic 'fmap'.
   fmapTM :: (Monad mon, Fact m, TElt t a, TElt t b)
-             => (a -> mon b) -> t m a -> mon (t m b)
+         => (TRep t a -> mon (TRep t b))
+         -> t m a
+         -> mon (t m b)
 
   -- | Potentially optimized zipWith for types that satisfy 'TElt'.
   zipWithT :: (Fact m, TElt t a, TElt t b, TElt t c)
-              => (a -> b -> c) -> t m a -> t m b -> t m c
+           => (TRep t a -> TRep t b -> TRep t c)
+           -> t m a
+           -> t m b
+           -> t m c
 
   -- | Potentially optimized unzip for types that satisfy 'TElt'.
   unzipT :: (Fact m, TElt t (a,b), TElt t a, TElt t b)
-            => t m (a,b) -> (t m a, t m b)
+         => t m (a,b)
+         -> (t m a, t m b)
 
   {- CJP: suppressed, apparently not needed
 
