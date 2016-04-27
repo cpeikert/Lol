@@ -61,7 +61,7 @@ instance (CRTrans mon i a, CRTrans mon i b) => CRTrans mon i (a,b) where
 -- CRTEmbed instance for product rings
 instance (CRTEmbed a, CRTEmbed b) => CRTEmbed (a,b) where
   type CRTExt (a,b) = (CRTExt a, CRTExt b)
-  toExt = toExt *** toExt
+  toExt   = toExt *** toExt
   fromExt = fromExt *** fromExt
 
 -- the complex numbers have roots of unity of any order
@@ -80,15 +80,15 @@ omegaPowC m i = cis (2*pi*fromIntegral i / fromIntegral m)
 -- trivial CRTEmbed instance for complex numbers
 instance (Transcendental a) => CRTEmbed (Complex a) where
   type CRTExt (Complex a) = Complex a
-  toExt = id
+  toExt   = id
   fromExt = id
 
 -- CRTrans instances for real and integer types, which do
 -- not have roots of unity (except in trivial cases). These are needed
 -- to use Cyc with these integral types.
-instance CRTrans Maybe Int Double where crtInfo = tagT Nothing
-instance CRTrans Maybe Int Int where crtInfo = tagT Nothing
-instance CRTrans Maybe Int Int64 where crtInfo = tagT Nothing
+instance CRTrans Maybe Int Double  where crtInfo = tagT Nothing
+instance CRTrans Maybe Int Int     where crtInfo = tagT Nothing
+instance CRTrans Maybe Int Int64   where crtInfo = tagT Nothing
 instance CRTrans Maybe Int Integer where crtInfo = tagT Nothing
 -- can also do for Int8, Int16, Int32 etc.
 
@@ -96,21 +96,22 @@ instance CRTrans Maybe Int Integer where crtInfo = tagT Nothing
 -- Complex.  These are needed to use Cyc with these integer types.
 instance CRTEmbed Double where
   type CRTExt Double = Complex Double
-  toExt = fromReal . realToField
+  toExt   = fromReal . realToField
   fromExt = realToField . real
 
 instance CRTEmbed Int where
   type CRTExt Int = Complex Double
-  toExt = fromIntegral
+  toExt   = fromIntegral
   fromExt = fst . roundComplex
 
 instance CRTEmbed Int64 where
   type CRTExt Int64 = Complex Double
-  toExt = fromIntegral
+  toExt   = fromIntegral
   fromExt = fst . roundComplex
 
 instance CRTEmbed Integer where
   -- CJP: sufficient precision?  Not in general.
   type CRTExt Integer = Complex Double
-  toExt = fromIntegral
+  toExt   = fromIntegral
   fromExt = fst . roundComplex
+
