@@ -30,18 +30,18 @@ module Crypto.Lol.Cyclotomic.Tensor
 where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.LatticePrelude as LP hiding (lift, (*>))
+import Crypto.Lol.LatticePrelude                                    as LP hiding ( lift, (*>) )
 import Crypto.Lol.Types.FiniteField
 
-import           Control.Applicative
+import           Control.Applicative                                as A
 import           Control.DeepSeq
 import           Control.Monad.Random
 import           Data.Constraint
-import           Data.Singletons.Prelude hiding ((:-))
+import           Data.Singletons.Prelude                            hiding ( (:-) )
 import           Data.Traversable
-import           Data.Tuple           (swap)
-import qualified Data.Vector          as V
-import qualified Data.Vector.Unboxed  as U
+import           Data.Tuple                                         ( swap )
+import qualified Data.Vector                                        as V
+import qualified Data.Vector.Unboxed                                as U
 
 -- | 'Tensor' encapsulates all the core linear transformations needed
 -- for cyclotomic ring arithmetic.
@@ -92,7 +92,7 @@ class (TElt t Double, TElt t (Complex Double))
                    ((GFCtx fp d, Fact m, TElt t fp) :- Module (GF fp d) (t m fp))
 
   -- | Convert a scalar to a tensor in the powerful basis.
-  scalarPow :: (Additive (TRep t r), Fact m, TElt t r) => TRep t r -> t m r
+  scalarPow :: (Additive (TRep t r), Fact m, TElt t r) => r -> t m r
 
   -- | 'l' converts from decoding-basis representation to
   -- powerful-basis representation; 'lInv' is its inverse.
@@ -198,6 +198,12 @@ class (TElt t Double, TElt t (Complex Double))
          => t m (a,b)
          -> (t m a, t m b)
 
+  -- | Scale by a scalar. Potentially optimised version of @fmapT (c *)@
+  (*>) :: (Fact m, TElt t a)
+       => a
+       -> t m a
+       -> t m a
+
   {- CJP: suppressed, apparently not needed
 
   -- | Unzip for arbitrary types.
@@ -249,8 +255,8 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 twaceCRT
     :: forall t m m' mon r . (CRTrans mon (TRep t Int) (TRep t r), Tensor t, m `Divides` m', TElt t r)
     => mon (t m' r -> t m r)
-twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
-           proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
+twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) A.*>
+           proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) A.*>
            (fst <$> crtExtFuncs)
 
 -- | Embed a tensor with index @m@ in the CRT basis to a tensor with
@@ -259,8 +265,8 @@ twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
 embedCRT
     :: forall t m m' mon r . (CRTrans mon (TRep t Int) (TRep t r), Tensor t, m `Divides` m', TElt t r)
     => mon (t m r -> t m' r)
-embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
-           proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
+embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) A.*>
+           proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) A.*>
            (snd <$> crtExtFuncs)
 
 fMatrix :: forall m r mon . (Fact m, Monad mon, Ring r)

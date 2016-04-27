@@ -114,7 +114,7 @@ type UCRTElt t r =
 type NFElt r = (NFData r, NFData (CRTExt r))
 
 -- | Embed a scalar from the base ring.
-scalarPow :: (Tensor t, Fact m, Ring (TRep t r), TElt t r) => TRep t r -> UCyc t m P r
+scalarPow :: (Tensor t, Fact m, Additive (TRep t r), TElt t r) => r -> UCyc t m P r
 scalarPow = Pow . T.scalarPow
 {-# INLINABLE scalarPow #-}
 
@@ -165,7 +165,7 @@ instance (ZeroTestable r, Tensor t, Fact m, TElt t r)
 
 -- Additive instances
 
-instance (Tensor t, Additive (TRep t r), Fact m, TElt t r)
+instance (Tensor t, Additive r, Additive (TRep t r), Fact m, TElt t r)
     => Additive.C (UCyc t m P r) where
   zero                = Pow $ T.scalarPow zero
   (Pow v1) + (Pow v2) = Pow $ zipWithT (+) v1 v2
@@ -176,7 +176,7 @@ instance (Tensor t, Additive (TRep t r), Fact m, TElt t r)
   {-# INLINABLE (-) #-}
   {-# INLINABLE negate #-}
 
-instance (Tensor t, Additive (TRep t r), Fact m, TElt t r)
+instance (Tensor t, Additive r, Additive (TRep t r), Fact m, TElt t r)
     => Additive.C (UCyc t m D r) where
   zero                = Dec $ T.scalarPow zero -- scalarPow works because it's zero
   (Dec v1) + (Dec v2) = Dec $ zipWithT (+) v1 v2
@@ -227,20 +227,20 @@ instance (Fact m, UCRTElt t r) => Ring.C (UCycEC t m r) where
   {-# INLINABLE fromInteger #-}
   {-# INLINABLE (*) #-}
 
-instance (Tensor t, Ring (TRep t r), Fact m, TElt t r, r' ~ TRep t r)
-    => Module.C r' (UCyc t m P r) where
-  r *> (Pow v) = Pow $ fmapT (r *) v
+instance (Tensor t, Ring r, Ring (TRep t r), Fact m, TElt t r)
+    => Module.C r (UCyc t m P r) where
+  r *> Pow v = Pow $ r T.*> v
   {-# INLINABLE (*>) #-}
 
-instance (Tensor t, Ring (TRep t r), Fact m, TElt t r, r' ~ TRep t r)
-    => Module.C r' (UCyc t m D r) where
-  r *> (Dec v) = Dec $ fmapT (r *) v
+instance (Tensor t, Ring r, Ring (TRep t r), Fact m, TElt t r)
+    => Module.C r (UCyc t m D r) where
+  r *> (Dec v) = Dec $ r T.*> v
   {-# INLINABLE (*>) #-}
 
-instance (Ring (TRep t r), Fact m, UCRTElt t r, r' ~ TRep t r)
-    => Module.C r' (UCycEC t m r) where
-  r *> (Right (CRTr v)) = Right $ CRTr $ fmapT (r *)       v
-  r *> (Left  (CRTe v)) = Left  $ CRTe $ fmapT (toExt r *) v
+instance (Ring (TRep t r), Fact m, UCRTElt t r)
+    => Module.C r (UCycEC t m r) where
+  r *> (Right (CRTr v)) = Right $ CRTr $ r       T.*> v
+  r *> (Left  (CRTe v)) = Left  $ CRTe $ toExt r T.*> v
   {-# INLINABLE (*>) #-}
 
 instance (Tensor t, GFCtx fp d, Additive (TRep t fp), Fact m, TElt t fp)
@@ -250,12 +250,12 @@ instance (Tensor t, GFCtx fp d, Additive (TRep t fp), Fact m, TElt t fp)
   r *> (Pow v) = Pow $ r LP.*> v \\ witness entailModuleT (r,v)
 
 
-instance (Tensor t, Reduce (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
+instance (Tensor t, Reduce a b, Reduce (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
     => Reduce (UCyc t m P a) (UCyc t m P b) where
   reduce (Pow v) = Pow $ fmapT reduce v
   {-# INLINABLE reduce #-}
 
-instance (Tensor t, Reduce (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
+instance (Tensor t, Reduce a b, Reduce (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
     => Reduce (UCyc t m D a) (UCyc t m D b) where
   reduce (Dec v) = Dec $ fmapT reduce v
   {-# INLINABLE reduce #-}
@@ -266,24 +266,24 @@ instance (Tensor t, Reduce (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
 type instance LiftOf (UCyc t m P r) = UCyc t m P (LiftOf r)
 type instance LiftOf (UCyc t m D r) = UCyc t m D (LiftOf r)
 
-instance (Tensor t, Lift' (TRep t r), Fact m, TElt t r, TElt t (LiftOf r), TRep t (LiftOf r) ~ LiftOf (TRep t r))
+instance (Tensor t, Lift' r, Lift' (TRep t r), Fact m, TElt t r, TElt t (LiftOf r), TRep t (LiftOf r) ~ LiftOf (TRep t r))
          => Lift' (UCyc t m P r) where
   lift (Pow v) = Pow $ fmapT lift v
   {-# INLINABLE lift #-}
 
-instance (Tensor t, Lift' (TRep t r), Fact m, TElt t r, TElt t (LiftOf r), TRep t (LiftOf r) ~ LiftOf (TRep t r))
+instance (Tensor t, Lift' r, Lift' (TRep t r), Fact m, TElt t r, TElt t (LiftOf r), TRep t (LiftOf r) ~ LiftOf (TRep t r))
          => Lift' (UCyc t m D r) where
   lift (Dec v) = Dec $ fmapT lift v
   {-# INLINABLE lift #-}
 
 -- CJP: no Lift' for C because CRT basis may not exist for target type
 
-instance (Tensor t, Rescale (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
+instance (Tensor t, Rescale a b, Rescale (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
          => Rescale (UCyc t m P a) (UCyc t m P b) where
   rescale (Pow v) = Pow $ fmapT rescale v
   {-# INLINABLE rescale #-}
 
-instance (Tensor t, Rescale (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
+instance (Tensor t, Rescale a b, Rescale (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
          => Rescale (UCyc t m D a) (UCyc t m D b) where
   rescale (Dec v) = Dec $ fmapT rescale v
   {-# INLINABLE rescale #-}
