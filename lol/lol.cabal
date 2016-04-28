@@ -1,11 +1,11 @@
 name:                lol
--- The package version.  See the Haskell package versioning policy (PVP) 
+-- The package version.  See the Haskell package versioning policy (PVP)
 -- for standards guiding when and how versions should be incremented.
 -- http://www.haskell.org/haskellwiki/Package_versioning_policy
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.2.0.0
+version:             0.3.0.0
 synopsis:            A library for lattice cryptography.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -34,9 +34,9 @@ extra-source-files:  README, CHANGES.md,
                      Crypto/Lol/Cyclotomic/Tensor/CTensor/*.cpp,
                      makefile
 cabal-version:       >= 1.10
-description:         
+description:
     Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
-    For a detailed description of interfaces and functionality, see 
+    For a detailed description of interfaces and functionality, see
     <https://eprint.iacr.org/2015/1134 Λ ○ λ: A Functional Library for Lattice Cryptography>.
     For example cryptographic applications, see <https://hackage.haskell.org/package/lol-apps lol-apps>.
 source-repository head
@@ -68,7 +68,7 @@ library
   if flag(opt)
     ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
-  exposed-modules: 
+  exposed-modules:
     Crypto.Lol
     Crypto.Lol.PosBin
     Crypto.Lol.Factored
@@ -82,23 +82,26 @@ library
     Crypto.Lol.Cyclotomic.RescaleCyc
     Crypto.Lol.Cyclotomic.Linear
 
+    Crypto.Lol.RLWE.Continuous
+    Crypto.Lol.RLWE.Discrete
+    Crypto.Lol.RLWE.RLWR
+
     Crypto.Lol.Cyclotomic.Tensor
     Crypto.Lol.Cyclotomic.Tensor.CTensor
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor
-    
+
     Crypto.Lol.Types.Random
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
     Crypto.Lol.Types.Proto
-    Crypto.Lol.Types.Proto.R
-    Crypto.Lol.Types.Proto.Rq
-    Crypto.Lol.Types.Proto.Kq
+    Crypto.Lol.Types.Proto.Lol.Rq
+    Crypto.Lol.Types.Proto.Lol.Kq
     Crypto.Lol.Types.RRq
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.ZqBasic
 
   other-modules:
-        
+
     Crypto.Lol.FactoredDefs
     Crypto.Lol.PosBinDefs
     Crypto.Lol.GaussRandom
@@ -126,6 +129,7 @@ library
     crypto-api,
     data-default >= 0.3.0 && < 0.6,
     deepseq >= 1.4.1.1 && <1.5,
+    monadcryptorandom,
     MonadRandom >= 0.2 && < 0.5,
     mtl >= 2.2.1 && < 2.3,
     numeric-prelude >= 0.4.2 && < 0.5,
@@ -192,4 +196,4 @@ Benchmark bench-lol
     singletons,
     transformers,
     vector,
-    repa                        
+    repa

@@ -1,44 +1,38 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, 
-             PolyKinds, ScopedTypeVariables, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances,
+             MultiParamTypeClasses, PolyKinds, ScopedTypeVariables,
+             TypeFamilies, UndecidableInstances #-}
 
 module Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
-(Dispatch
-,dcrt
-,dcrtinv
-,dgaussdec
-,dl
-,dlinv
-,dnorm
-,dmulgpow
-,dmulgdec
-,dginvpow
-,dginvdec
-,dmul
-,marshalFactors
-,CPP
-,withArray
-,withPtrArray
+( Dispatch
+, dcrt, dcrtinv
+, dgaussdec
+, dl, dlinv
+, dnorm
+, dmulgpow, dmulgdec
+, dginvpow, dginvdec
+, dadd, dmul
+, marshalFactors
+, CPP
+, withArray, withPtrArray
 ) where
 
 import Control.Applicative
-import Control.Monad
 
-import Crypto.Lol.LatticePrelude as LP (Complex, Proxy(..), proxy, (++), map, mapM_, PP, Tagged, tag)
+import Crypto.Lol.LatticePrelude as LP (Complex, PP, Proxy (..), Tagged,
+                                        map, mapM_, proxy, tag, (++))
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
 
 import Data.Int
-import Data.Vector.Storable          as SV (Vector, (!), replicate, replicateM, thaw, convert, foldl',
-                                            unsafeToForeignPtr0, unsafeSlice, mapM, fromList,
-                                            generate, foldl1',
-                                            unsafeWith, zipWith, map, length, unsafeFreeze, thaw)
+import Data.Vector.Storable          as SV (Vector, fromList,
+                                            unsafeToForeignPtr0)
 import Data.Vector.Storable.Internal (getPtr)
 
-import           Foreign.ForeignPtr (touchForeignPtr)
-import           Foreign.Marshal.Array (withArray)
-import           Foreign.Marshal.Utils (with)
-import           Foreign.Ptr (plusPtr, castPtr, Ptr)
+import           Foreign.ForeignPtr      (touchForeignPtr)
+import           Foreign.Marshal.Array   (withArray)
+import           Foreign.Marshal.Utils   (with)
+import           Foreign.Ptr             (Ptr, castPtr, plusPtr)
 import           Foreign.Storable        (Storable (..))
 import qualified Foreign.Storable.Record as Store
 
@@ -73,8 +67,8 @@ instance Show CPP where
     show (CPP p e) = "(" LP.++ show p LP.++ "," LP.++ show e LP.++ ")"
 
 instance (Storable a, Storable b,
-          CTypeOf a ~ CTypeOf b) 
-  -- enforces right associativity and that each type of 
+          CTypeOf a ~ CTypeOf b)
+  -- enforces right associativity and that each type of
   -- the tuple has the same C repr, so using an array repr is safe
   => Storable (a,b) where
   sizeOf _ = (sizeOf (undefined :: a)) + (sizeOf (undefined :: b))
@@ -120,7 +114,7 @@ instance (Reflects q r, RealFrac r) => ZqTuple (RRq q r) where
 
 instance (ZqTuple a, ZqTuple b) => ZqTuple (a, b) where
   type ModPairs (a,b) = (ModPairs a, ModPairs b)
-  getModuli = 
+  getModuli =
     let as = proxy getModuli (Proxy::Proxy a)
         bs = proxy getModuli (Proxy :: Proxy b)
     in tag (as,bs)
@@ -168,7 +162,7 @@ instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ RRqD)
 
 instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ ZqB64D)
   => Dispatch' ZqB64D r where
-  dcrt ruptr pout totm pfac numFacts = 
+  dcrt ruptr pout totm pfac numFacts =
     let qs = proxy getModuli (Proxy::Proxy r)
         numPairs = proxy numComponents (Proxy::Proxy r)
     in with qs $ \qsptr ->
@@ -178,12 +172,12 @@ instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ ZqB64D)
         numPairs = proxy numComponents (Proxy::Proxy r)
     in with qs $ \qsptr ->
         tensorCRTInvRq numPairs (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv) (castPtr qsptr)
-  dl pout totm pfac numFacts = 
+  dl pout totm pfac numFacts =
     let qs = proxy getModuli (Proxy::Proxy r)
         numPairs = proxy numComponents (Proxy::Proxy r)
     in with qs $ \qsptr ->
         tensorLRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
-  dlinv pout totm pfac numFacts = 
+  dlinv pout totm pfac numFacts =
     let qs = proxy getModuli (Proxy::Proxy r)
         numPairs = proxy numComponents (Proxy::Proxy r)
     in with qs $ \qsptr ->
@@ -209,7 +203,7 @@ instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ ZqB64D)
         numPairs = proxy numComponents (Proxy::Proxy r)
     in with qs $ \qsptr ->
         tensorGInvDecRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
-  dmul aout bout totm = 
+  dmul aout bout totm =
     let qs = proxy getModuli (Proxy::Proxy r)
         numPairs = proxy numComponents (Proxy::Proxy r)
     in with qs $ \qsptr ->
@@ -217,31 +211,31 @@ instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ ZqB64D)
   dgaussdec = error "cannot call CT gaussianDec on type ZqBasic"
 
 instance (Tuple r, CTypeOf r ~ ComplexD) => Dispatch' ComplexD r where
-  dcrt ruptr pout totm pfac numFacts = 
+  dcrt ruptr pout totm pfac numFacts =
     tensorCRTC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr)
-  dcrtinv ruptr minv pout totm pfac numFacts = 
+  dcrtinv ruptr minv pout totm pfac numFacts =
     tensorCRTInvC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv)
-  dl pout = 
+  dl pout =
     tensorLC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dlinv pout = 
+  dlinv pout =
     tensorLInvC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dnorm = error "cannot call CT normSq on type Complex Double"
-  dmulgpow pout = 
+  dmulgpow pout =
     tensorGPowC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dmulgdec = error "cannot call CT mulGDec on type Complex Double"
-  dginvpow pout = 
+  dginvpow pout =
     tensorGInvPowC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dginvdec = error "cannot call CT divGDec on type Complex Double"
-  dmul aout bout = 
+  dmul aout bout =
     mulC (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout)
   dgaussdec = error "cannot call CT gaussianDec on type Comple Double"
 
 instance (Tuple r, CTypeOf r ~ DoubleD) => Dispatch' DoubleD r where
   dcrt = error "cannot call CT Crt on type Double"
   dcrtinv = error "cannot call CT CrtInv on type Double"
-  dl pout = 
+  dl pout =
     tensorLDouble (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dlinv pout = 
+  dlinv pout =
     tensorLInvDouble (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dnorm pout = tensorNormSqD (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dmulgpow = error "cannot call CT mulGPow on type Double"
@@ -249,25 +243,25 @@ instance (Tuple r, CTypeOf r ~ DoubleD) => Dispatch' DoubleD r where
   dginvpow = error "cannot call CT divGPow on type Double"
   dginvdec = error "cannot call CT divGDec on type Double"
   dmul = error "cannot call CT (*) on type Double"
-  dgaussdec ruptr pout totm pfac numFacts = 
+  dgaussdec ruptr pout totm pfac numFacts =
     tensorGaussianDec (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr)
 
 instance (Tuple r, CTypeOf r ~ Int64D) => Dispatch' Int64D r where
   dcrt = error "cannot call CT Crt on type Int64"
   dcrtinv = error "cannot call CT CrtInv on type Int64"
-  dl pout = 
+  dl pout =
     tensorLR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dlinv pout = 
+  dlinv pout =
     tensorLInvR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dnorm pout = 
+  dnorm pout =
     tensorNormSqR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dmulgpow pout = 
+  dmulgpow pout =
     tensorGPowR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dmulgdec pout = 
+  dmulgdec pout =
     tensorGDecR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dginvpow pout = 
+  dginvpow pout =
     tensorGInvPowR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dginvdec pout = 
+  dginvdec pout =
     tensorGInvDecR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dmul = error "cannot call CT (*) on type Int64"
   dgaussdec = error "cannot call CT gaussianDec on type Int64"

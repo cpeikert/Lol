@@ -211,40 +211,44 @@ type a * b = FMul a b
 -- | Kind-restricted synonym for 'SingI'.
 type Prim (p :: Prime) = SingI p
 
--- | Reify a 'Prime' with a singleton.
-reifyPrime :: Int -> (forall p . SPrime p -> a) -> a
-reifyPrime x _ | not $ prime x = error "reifyPrime only works for prime x"
-reifyPrime x k = reifyBin x (k . SP)
-
--- | Reify a 'Prime' with a 'Prim' constraint.
-reifyPrimeI :: Int -> (forall p proxy. (Prim p) => proxy p -> a) -> a
-reifyPrimeI n k = reifyPrime n $ (\(p::SPrime p) -> withSingI p $ k (Proxy::Proxy p))
-
 -- | Kind-restricted synonym for 'SingI'.
 type PPow (pp :: PrimePower) = SingI pp
-
--- | Reify a 'PrimePower' with a singleton.
-reifyPPow :: (Int,Int) -> (forall pp . SPrimePower pp -> a) -> a
-reifyPPow (p,e) k = reifyPrime p (\sp -> reifyPos e (k . SPP . STuple2 sp))
-
--- | Reify a 'PrimePower' with a 'PPow' constraint.
-reifyPPowI :: (Int,Int) -> (forall pp proxy. (PPow pp) => proxy pp -> a) -> a
-reifyPPowI pp k = reifyPPow pp $ (\(p::SPrimePower p) -> withSingI p $ k (Proxy::Proxy p))
 
 -- | Kind-restricted synonym for 'SingI'.
 type Fact (m :: Factored) = SingI m
 
--- | Reify a 'Factored' with a singleton.
-reifyFact :: Int -> (forall m . SFactored m -> a) -> a
-reifyFact m = let pps = factorize m in reifyPps pps
-  where reifyPps :: [(Int,Int)] -> (forall m . SFactored m -> a) -> a
-        reifyPps [] k = k (SF SNil)
-        reifyPps (pp:pps) k = 
-          reifyPPow pp (\spp -> reifyPps pps (\(SF sm') -> k $ SF $ SCons spp sm'))
+-- | Reify a 'Prime' as a singleton.
+reifyPrime :: Int -> (forall p . SPrime p -> a) -> a
+reifyPrime x _ | not $ prime x = error $ "reifyPrime: non-prime x = " ++ show x
+reifyPrime x k = reifyBin x (k . SP)
 
--- | Reify a 'Factored' with a 'Fact' constraint.
-reifyFactI :: Int -> (forall m proxy. (Fact m) => proxy m -> a) -> a
-reifyFactI pps k = reifyFact pps $ (\(m::SFactored m) -> withSingI m $ k (Proxy::Proxy m))
+-- | Reify a 'Prime' for a 'Prim' constraint.
+reifyPrimeI :: Int -> (forall p proxy. Prim p => proxy p -> a) -> a
+reifyPrimeI n k =
+  reifyPrime n (\(p::SPrime p) -> withSingI p $ k (Proxy::Proxy p))
+
+-- | Reify a 'PrimePower' as a singleton.
+reifyPPow :: (Int,Int) -> (forall pp . SPrimePower pp -> a) -> a
+reifyPPow (p,e) k = reifyPrime p (\sp -> reifyPos e (k . SPP . STuple2 sp))
+
+-- | Reify a 'PrimePower' for a 'PPow' constraint.
+reifyPPowI :: (Int,Int) -> (forall pp proxy. PPow pp => proxy pp -> a) -> a
+reifyPPowI pp k =
+  reifyPPow pp $ (\(p::SPrimePower p) -> withSingI p $ k (Proxy::Proxy p))
+
+-- | Reify a 'Factored' as a singleton.
+reifyFact :: Int -> (forall m . SFactored m -> a) -> a
+reifyFact m k = let pps = factorize m in reifyPPs pps $ k . SF
+  where reifyPPs :: [(Int,Int)]
+                    -> (forall (pps :: [PrimePower]) . Sing pps -> a) -> a
+        reifyPPs [] c = c SNil
+        reifyPPs (pp:pps) c = 
+          reifyPPow pp (\spp -> reifyPPs pps (\sm' -> c $ SCons spp sm'))
+
+-- | Reify a 'Factored' for a 'Fact' constraint.
+reifyFactI :: Int -> (forall m proxy. Fact m => proxy m -> a) -> a
+reifyFactI pps k =
+  reifyFact pps $ (\(m::SFactored m) -> withSingI m $ k (Proxy::Proxy m))
 
 -- | Constraint synonym for divisibility of 'Factored' types.
 type Divides m m' = (Fact m, Fact m', FDivides m m' ~ 'True)
@@ -443,16 +447,16 @@ fDec :: Int -> DecQ
 fDec n = tySynD (mkName $ 'F' : show n) [] $ fType n
 
 -- | Factorize a positive integer into an ordered list of its prime
--- divisors, with multiplicities.  First argument is infinite list of
--- primes left to consider.
+-- divisors, with possible duplicates.  First argument is infinite
+-- list of primes left to consider.
 factorize' :: [Int] -> Int -> [Int]
 factorize' _ 1 = []
-factorize' ds@(d:ds') n 
+factorize' ds@(d:ds') n
   | n > 1 = if d * d > n then [n]
             else let (q,r) = n `divMod` d
                  in if r == 0 then d : factorize' ds q
                     else factorize' ds' n
-  | otherwise = error "can only factorize positive integers"
+factorize' _ n = error $ "can't factorize non-positive n = " ++ show n
 
 -- | Factorize a positive integer into a list of (prime,exponent)
 -- pairs, in strictly increasing order by prime.

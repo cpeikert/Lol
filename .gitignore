@@ -10,16 +10,15 @@ sandbox-reset
 rebuild-proto
 *.prof
 
-apps/configure
-apps/.stack-work
-
-lol/configure
-lol/.stack-work
+**/TAGS
+**/configure
+**/.stack-work
+**/dist
+**/rlwe-challenges
 
 sandbox
 test
 challenge-files
-challenges/lol.proto
 
 secret-files
 publish

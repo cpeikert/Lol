@@ -16,9 +16,9 @@ import Algebra.ZeroTestable as ZeroTestable
 import Control.DeepSeq
 import Data.Data
 import Data.Functor.Trans.Tagged
-import Data.Serialize
-import Data.Vector               as V
-import Data.Vector.Serialize
+
+import Data.Vector as V
+
 
 -- | Indexed Zip Vector: a wrapper around a (boxed) 'Vector' that has
 -- zip-py 'Applicative' behavior, analogous to
@@ -30,8 +30,7 @@ newtype IZipVector (m :: Factored) a =
                unIZipVector :: Vector a}
   -- not deriving Read, Monoid, Alternative, Monad[Plus], IsList
   -- because of different semantics and/or length restriction
-  deriving (Show, Eq, NFData, Functor, Read, Serialize,
-            Foldable, Traversable, ZeroTestable.C)
+  deriving (Show, Eq, NFData, Functor, Foldable, Traversable, ZeroTestable.C)
 
 -- the first argument, though phantom, affects representation
 type role IZipVector representational representational

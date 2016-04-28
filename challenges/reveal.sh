@@ -5,6 +5,8 @@ pubdir=publish
 
 mkdir -p $pubdir
 
+echo "CJP says: I don't think this script should be responsible for building/installing the binaries; instead, stack/cabal should do it.  This script should just run the right binaries."
+
 echo "Building challenge revealer..."
 cabal build $execname
 

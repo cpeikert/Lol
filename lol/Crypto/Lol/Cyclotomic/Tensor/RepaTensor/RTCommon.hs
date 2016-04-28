@@ -42,7 +42,7 @@ import Test.QuickCheck
 
 -- | Indexed newtype for 1-dimensional Unbox repa arrays
 newtype Arr (m :: Factored) r = Arr (Array U DIM1 r)
-                              deriving (Eq, Show, NFData, Read)
+                              deriving (Eq, Show, NFData)
 
 -- the first argument, though phantom, affects representation
 -- CJP: why must the second arg be nominal?

@@ -1,0 +1,83 @@
+name:                rlwe-challenges
+-- The package version.  See the Haskell package versioning policy (PVP)
+-- for standards guiding when and how versions should be incremented.
+-- http://www.haskell.org/haskellwiki/Package_versioning_policy
+-- PVP summary:      +-+------- breaking API changes
+--                   | | +----- non-breaking API additions
+--                   | | | +--- code changes with no API change
+version:             0.0.0.1
+synopsis:            Ring-LWE/LWR challenges using Lol.
+homepage:            https://github.com/cpeikert/Lol
+Bug-Reports:         https://github.com/cpeikert/Lol/issues
+license:             GPL-2
+license-file:        LICENSE
+author:              Eric Crockett <ecrockett0@gmail.com>, Chris Peikert <cpeikert@alum.mit.edu>
+maintainer:          Eric Crockett <ecrockett0@gmail.com>
+copyright:           Eric Crockett, Chris Peikert
+category:            Crypto
+stability:           experimental
+build-type:          Simple
+extra-source-files:  README, CHANGES.md
+cabal-version:       >= 1.10
+description:         TODO.
+
+source-repository head
+  type: git
+  location: https://github.com/cpeikert/Lol
+
+library
+  default-language: Haskell2010
+  ghc-options: -O3 -auto-all -caf-all -Wall
+
+  exposed-modules:
+    Crypto.Challenges.RLWE.Proto.RLWE
+    Crypto.Challenges.RLWE.Proto.RLWE.Challenge
+    Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType
+    Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
+    Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
+    Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
+    Crypto.Challenges.RLWE.Proto.RLWE.SampleCont
+    Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
+    Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
+    Crypto.Challenges.RLWE.Proto.RLWE.Secret
+
+  build-depends: base,
+                 lol,
+                 MonadRandom,
+                 protocol-buffers,
+                 protocol-buffers-descriptor
+
+executable rlwe-challenges
+  default-language: Haskell2010
+  hs-source-dirs: exec
+  main-is: Main.hs
+
+  ghc-options: -threaded -rtsopts -O3 -auto-all -caf-all -fno-warn-partial-type-signatures
+
+  other-modules:
+    Beacon
+    Common
+    Generate
+    Params
+    Suppress
+    Verify
+
+  build-depends: ansi-terminal,
+                 base,
+                 bytestring,
+                 containers,
+                 directory,
+                 DRBG,
+                 filepath,
+                 http-conduit,
+                 lol,
+                 MonadRandom,
+                 mtl,
+                 options,
+                 nist-beacon,
+                 parsec,
+                 protocol-buffers,
+                 reflection,
+                 rlwe-challenges,
+                 time,
+                 transformers

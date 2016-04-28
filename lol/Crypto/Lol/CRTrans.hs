@@ -14,8 +14,6 @@ import Crypto.Lol.LatticePrelude
 import Crypto.Lol.Reflects
 
 import Control.Arrow
-import Data.Singletons
-import Data.Singletons.Prelude
 
 -- | Information that characterizes the (invertible) Chinese remainder
 -- transformation over a ring @r@, namely:

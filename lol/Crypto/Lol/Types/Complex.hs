@@ -1,8 +1,7 @@
 {-# LANGUAGE DataKinds, DeriveGeneric, FlexibleContexts, FlexibleInstances,
              GeneralizedNewtypeDeriving, MultiParamTypeClasses,
              NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables,
-             StandaloneDeriving, TemplateHaskell, TypeFamilies,
-             UndecidableInstances #-}
+             StandaloneDeriving, TemplateHaskell, TypeFamilies #-}
 
 -- | Data type, functions, and instances for complex numbers.
 
@@ -23,26 +22,16 @@ import Crypto.Lol.Types.Numeric as LP
 
 import Control.DeepSeq
 import Data.Array.Repa.Eval         as R
-import Data.Serialize
 import Data.Vector.Storable         (Storable)
 import Data.Vector.Unboxed          (Unbox)
 import Data.Vector.Unboxed.Deriving
-import GHC.Generics
 import System.Random
 import Test.QuickCheck
 
 -- | Newtype wrapper (with slightly different instances) for
 -- <https://hackage.haskell.org/package/numeric-prelude-0.4.2/docs/Number-Complex.html numeric-prelude Complex>.
-newtype Complex a = Complex (C.T a) 
-  deriving (Additive.C, Ring.C, ZeroTestable.C, Field.C, Storable, Eq, Show, Arbitrary, Read)
-
-data ComplexSerialize a = CS a a deriving (Generic)
-instance (Serialize a) => Serialize (ComplexSerialize a) -- using Generics
-instance (Serialize a) => Serialize (Complex a) where
-  get = do
-    CS a b <- get
-    return $ Complex $ a C.+: b
-  put (Complex a) = put (CS (C.real a) (C.imag a))
+newtype Complex a = Complex (C.T a)
+    deriving (Additive.C, Ring.C, ZeroTestable.C, Field.C, Storable, Eq, Show, Arbitrary)
 
 derivingUnbox "Complex"
   [t| forall a . (Unbox a) => Complex a -> (a, a) |]

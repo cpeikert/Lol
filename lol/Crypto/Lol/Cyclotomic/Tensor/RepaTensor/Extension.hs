@@ -41,7 +41,7 @@ derivingUnbox "DIM1"
   [| (Z :.) |]
 
 -- | The "tweaked trace" function in either the powerful or decoding
--- basis of the m'th cyclotomic ring to the mth cyclotomic ring when 
+-- basis of the m'th cyclotomic ring to the mth cyclotomic ring when
 -- @m | m'@.
 twacePowDec' :: forall m m' r . (m `Divides` m', Unbox r)
                  => Arr m' r -> Arr m r
@@ -50,7 +50,7 @@ twacePowDec'
     in coerce $ \ !arr -> force $ backpermute (extent indices) (indices !) arr
 
 -- | The "tweaked trace" function in the CRT
--- basis of the m'th cyclotomic ring to the mth cyclotomic ring when 
+-- basis of the m'th cyclotomic ring to the mth cyclotomic ring when
 -- @m | m'@.
 twaceCRT' :: forall mon m m' r .
              (m `Divides` m', CRTrans mon r, Unbox r, Elt r)
@@ -64,7 +64,7 @@ twaceCRT' = do
       -- tweak = mhat * g' / (m'hat * g)
       tweak = (coerce $ \x -> force . RT.map (* hatRatioInv) . RT.zipWith (*) x) (embed gInv) g' :: Arr m' r
       indices = proxy extIndicesCRT (Proxy::Proxy '(m, m'))
-  return $ 
+  return $
     -- take true trace after mul-by-tweak
     coerce (\ !arr -> sumS . backpermute (extent indices) (indices !) . RT.zipWith (*) arr) tweak
 
@@ -113,7 +113,7 @@ coeffs' =
 -- Outputs a list of arrays in O_m' that are an O_m basis for O_m'
 powBasisPow' :: forall m m' r . (m `Divides` m', Ring r, Unbox r)
                 => Tagged m [Arr m' r]
-powBasisPow' = return $  
+powBasisPow' = return $
   let (_, phi, phi', _) = proxy T.indexInfo (Proxy::Proxy '(m,m'))
       idxs = proxy T.baseIndicesPow (Proxy::Proxy '(m,m'))
   in LP.map (\k -> Arr $ force $ fromFunction (Z :. phi')
@@ -127,7 +127,7 @@ crtSetDec' :: forall m m' fp .
               (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m',
                Unbox fp)
               => Tagged m [Arr m' fp]
-crtSetDec' = return $ 
+crtSetDec' = return $
   let m'p = Proxy :: Proxy m'
       p = proxy valuePrime (Proxy::Proxy (CharOf fp))
       phi = proxy totientFact m'p
@@ -136,13 +136,13 @@ crtSetDec' = return $
       h :: Int = proxy valueHatFact m'p
       hinv = recip $ fromIntegral h
   in reify d $ \(_::Proxy d) ->
-       let twCRTs' :: T.Matrix (GF fp (Reified d))
+       let twCRTs' :: T.Matrix (GF fp d)
              = fromMaybe (error "internal error: crtSetDec': twCRTs") $ proxyT T.twCRTs m'p
            zmsToIdx = proxy T.zmsToIndexFact m'p
            elt j i = T.indexM twCRTs' j (zmsToIdx i)
-           trace' = trace :: GF fp (Reified d) -> fp
+           trace' = trace :: GF fp d -> fp
            cosets = proxy (partitionCosets p) (Proxy::Proxy '(m,m'))
-       in LP.map (\is -> Arr $ force $ fromFunction (Z :. phi) 
+       in LP.map (\is -> Arr $ force $ fromFunction (Z :. phi)
                           (\(Z:.j) -> hinv * trace'
                                       (sum $ LP.map (elt j) is))) cosets
 
@@ -187,6 +187,6 @@ baseIndicesCRT = do
 
 extIndicesCoeffs :: forall m m' . (m `Divides` m')
                     => Tagged '(m, m') (V.Vector (Array U DIM1 DIM1))
-extIndicesCoeffs = 
-  V.map (\arr -> fromUnboxed (Z :. U.length arr) $ 
+extIndicesCoeffs =
+  V.map (\arr -> fromUnboxed (Z :. U.length arr) $
                  U.map (Z:.) arr) <$> T.extIndicesCoeffs

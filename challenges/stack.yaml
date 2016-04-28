@@ -6,17 +6,22 @@ resolver: lts-5.2
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
+- '../lol'   # remove this when sufficient Lol is on Hackage
 
 # Packages to be pulled from upstream that are not in the resolver
 
 extra-deps:
 - arithmoi-0.4.1.3
-- lol-0.2.0.0
+- lol-0.3.0.0
 - numeric-prelude-0.4.2
 - nist-beacon-0.2.0.0
 - storable-record-0.0.3
 - tagged-transformer-0.8
 - non-negative-0.1.1
+#  needed for running hprotoc; not strictly needed to build this package
+- hprotoc-2.3.1
+- protocol-buffers-2.3.1
+- protocol-buffers-descriptor-2.3.1
 
 # need to be held back to older versions to satisfy tagged-transformer
 # deps:

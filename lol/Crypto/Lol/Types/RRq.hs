@@ -16,20 +16,14 @@ import Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative
 import Control.DeepSeq
 
-import Crypto.Lol.CRTrans
 import Crypto.Lol.LatticePrelude
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.ZqBasic
 
 -- for the Elt instance
 import qualified Data.Array.Repa.Eval as E
-import           Data.Foldable        (toList)
-import           Data.Reflection
-import           Data.Sequence        as S (fromList)
-import           Data.Serialize
 
 -- for the Unbox instances
-import qualified Data.Vector                 as V
 import qualified Data.Vector.Generic         as G
 import qualified Data.Vector.Generic.Mutable as M
 import qualified Data.Vector.Unboxed         as U
@@ -37,23 +31,19 @@ import qualified Data.Vector.Unboxed         as U
 import Foreign.Storable
 
 -- invariant: 0 <= x < q
-newtype RRq q r = RRq {unRRq :: r}
-  deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable, Read, Serialize)
+newtype RRq q r = RRq r
+    deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable)
 
 {-# INLINABLE reduce' #-}
 reduce' :: forall q r . (Reflects q r, RealField r) => r -> RRq q r
-reduce' x =
-  let q = proxy value (Proxy::Proxy q)
-      y = floor $ x / q
-  in RRq $ x-q*y
+reduce' = let q = proxy value (Proxy::Proxy q)
+          in \x -> RRq $ x - q * (floor $ x / q)
 
 -- puts value in range [-q/2, q/2)
 decode' :: forall q r . (Reflects q r, Ord r, Additive r, Ring r)
            => RRq q r -> r
 decode' = let qval = proxy value (Proxy::Proxy q)
-          in \(RRq x) -> if x + x < qval
-                           then x
-                           else x - qval
+          in \(RRq x) -> if x + x < qval then x else x - qval
 
 instance (Reflects q r, RealField r, Additive (RRq q r))
   => Reduce r (RRq q r) where
@@ -80,8 +70,8 @@ instance (Reflects q r, RealField r, Ord r) => Additive.C (RRq q r) where
   {-# INLINABLE negate #-}
   negate (RRq x) = reduce' $ negate x
 
-instance (ToInteger i, RealField r, Reflects q i, Reflects (RealMod q) r)
-  => Subgroup (ZqBasic q i) (RRq (RealMod q) r) where
+instance (ToInteger i, RealField r, Reflects q i, Reflects q r)
+  => Subgroup (ZqBasic q i) (RRq q r) where
   fromSubgroup = reduce' . fromIntegral . lift
 
 -- CJP: restored manual Unbox instances, until we have a better way

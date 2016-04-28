@@ -3,9 +3,10 @@
 pubdir=publish
 filename=rlwe_challenges
 execname=gen
-privkey=lolchallenge.key # make sure this matches the value in makeSignKey
 
 mkdir -p $pubdir
+
+echo "CJP says: I don't think this script should be responsible for building/installing the binaries; instead, stack/cabal should do it.  This script should just run the right binaries."
 
 echo "Building challenge generator..."
 cabal build $execname
@@ -16,11 +17,4 @@ echo "Running challenge generator..."
 echo "Tarring challenge files..."
 tar czf $pubdir/$filename.tar.gz $( find -P challenge-files -name "*.instance" -or -name "beaconTime.txt" )
 
-echo "Hashing tarball..."
-# originstamp supports max of 64 hex characters, so use SHA256
-openssl dgst -sha256 -hex $pubdir/$filename.tar.gz
-
-echo "Signing hash..."
-openssl dgst -sha256 -sign ~/.ssh/lolchallenge.key -out $pubdir/$filename.sig $pubdir/$filename.tar.gz
-
-echo "Now go to www.originstamp.org to commit to the hash."
+echo "Now sign the challenge file, and go to www.originstamp.org to commit to it."

@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, NoImplicitPrelude, 
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, NoImplicitPrelude,
              PolyKinds, RebindableSyntax, ScopedTypeVariables,
              TypeFamilies, TypeOperators #-}
 
@@ -46,7 +46,7 @@ embedPow', embedDec' :: (Additive r, Vector v r, m `Divides` m')
                      => Tagged '(m, m') (v r -> v r)
 -- | Embeds an vector in the powerful basis of the the mth cyclotomic ring
 -- to an vector in the powerful basis of the m'th cyclotomic ring when @m | m'@
-embedPow' = (\indices arr -> generate (U.length indices) $ \idx -> 
+embedPow' = (\indices arr -> generate (U.length indices) $ \idx ->
   let (j0,j1) = indices ! idx
   in if j0 == 0
      then arr ! j1
@@ -62,7 +62,7 @@ embedDec' = (\indices arr -> generate (U.length indices)
 -- to an vector in the CRT basis of the m'th cyclotomic ring when @m | m'@
 embedCRT' :: forall mon m m' v r . (CRTrans mon r, Vector v r, m `Divides` m')
           => TaggedT '(m, m') mon (v r -> v r)
-embedCRT' = 
+embedCRT' =
   (lift (proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r))) >>
   (pureT $ backpermute' <$> baseIndicesCRT)
 
@@ -75,7 +75,7 @@ coeffs' = flip (\x -> V.toList . V.map (`backpermute'` x))
           <$> extIndicesCoeffs
 
 -- | The "tweaked trace" function in either the powerful or decoding
--- basis of the m'th cyclotomic ring to the mth cyclotomic ring when 
+-- basis of the m'th cyclotomic ring to the mth cyclotomic ring when
 -- @m | m'@.
 twacePowDec' :: forall m m' r v . (Vector v r, m `Divides` m')
              => Tagged '(m, m') (v r -> v r)
@@ -92,7 +92,7 @@ powBasisPow' :: forall m m' r . (m `Divides` m', Ring r, SV.Storable r)
 powBasisPow' = do
   (_, phi, phi', _) <- indexInfo
   idxs <- baseIndicesPow
-  return $ LP.map (\k -> generate phi' $ \j -> 
+  return $ LP.map (\k -> generate phi' $ \j ->
                            let (j0,j1) = idxs U.! j
                           in if j0==k && j1==0 then one else zero)
     [0..phi' `div` phi - 1]
@@ -110,11 +110,11 @@ crtSetDec' =
       h :: Int = proxy valueHatFact m'p
       hinv = recip $ fromIntegral h
   in reify d $ \(_::Proxy d) -> do
-      let twCRTs' :: Matrix (GF fp (Reified d))
+      let twCRTs' :: Matrix (GF fp d)
             = fromMaybe (error "internal error: crtSetDec': twCRTs") $ proxyT twCRTs m'p
           zmsToIdx = proxy T.zmsToIndexFact m'p
           elt j i = indexM twCRTs' j (zmsToIdx i)
-          trace' = trace :: GF fp (Reified d) -> fp -- to avoid recomputing powTraces
+          trace' = trace :: GF fp d -> fp -- to avoid recomputing powTraces
       cosets <- partitionCosets p
       return $ LP.map (\is -> generate phi
                           (\j -> hinv * trace'

@@ -65,7 +65,7 @@ library
   build-depends:
     base==4.8.*,
     deepseq >= 1.4.1.1 && <1.5,
-    lol == 0.2.0.0,
+    lol >= 0.2.0.0,
     MonadRandom >= 0.2 && < 0.5,
     numeric-prelude >= 0.4.2 && < 0.5
 

@@ -2,8 +2,9 @@
              FlexibleInstances, GADTs, GeneralizedNewtypeDeriving,
              InstanceSigs, MultiParamTypeClasses, NoImplicitPrelude,
              PolyKinds, RankNTypes, RebindableSyntax, RoleAnnotations,
-             ScopedTypeVariables, TupleSections, TypeFamilies,
-             TypeOperators, TypeSynonymInstances, UndecidableInstances #-}
+             ScopedTypeVariables, StandaloneDeriving, TupleSections,
+             TypeFamilies, TypeOperators, TypeSynonymInstances,
+             UndecidableInstances #-}
 
 -- | Wrapper for a C implementation of the 'Tensor' interface.
 
@@ -17,6 +18,7 @@ import Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative    hiding ((*>))
 import Control.Arrow          ((***))
 import Control.DeepSeq
+import Control.Monad.Except
 import Control.Monad.Identity (Identity (..), runIdentity)
 import Control.Monad.Random
 import Control.Monad.Trans    as T (lift)
@@ -34,12 +36,10 @@ import Data.Vector.Storable         as SV (Vector, convert, foldl',
                                            unsafeFreeze, unsafeSlice,
                                            unsafeWith, zipWith, (!))
 import Data.Vector.Storable.Mutable as SM hiding (replicate)
-import Data.Word
 
 import Foreign.Marshal.Utils (with)
 import Foreign.Ptr
 import Test.QuickCheck       hiding (generate)
-import Text.Read             (Read (readPrec))
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
@@ -53,30 +53,19 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.R
-import Crypto.Lol.Types.Proto.Rq
-import Crypto.Lol.Types.Proto.Kq
+import Crypto.Lol.Types.Proto.Lol.Kq
+import Crypto.Lol.Types.Proto.Lol.Rq
 import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
 
-import Data.Foldable         as F
-import Data.Sequence         as S (fromList)
-import Data.Serialize
-import Data.Vector.Serialize
+import Data.Foldable as F
+import Data.Sequence as S (fromList)
 
 import System.IO.Unsafe (unsafePerformIO)
 
--- EAC A note on Generic and Serialize:
--- cereal-vector provides Serialize instances for vectors,
--- but we can't use DeriveGeneric with GADTs. One solution
--- is to make the (Storable r) constraint on the CT constructor
--- an explicit dictionary, but then we still have to serialize
--- the dictionary. Not sure if that's possible.
--- Perhaps easiest thing to do is to define a custom Serialize instance.
-
 -- | Newtype wrapper around a Vector.
 newtype CT' (m :: Factored) r = CT' { unCT :: Vector r }
-                              deriving (Show, Eq, NFData, Read, Serialize)
+                              deriving (Show, Eq, NFData)
 
 -- the first argument, though phantom, affects representation
 type role CT' representational nominal
@@ -89,42 +78,13 @@ data CT (m :: Factored) r where
   CT :: Storable r => CT' m r -> CT m r
   ZV :: IZipVector m r -> CT m r
 
+deriving instance Show r => Show (CT m r)
+
 instance Eq r => Eq (CT m r) where
   (ZV x) == (ZV y) = x == y
   (CT x) == (CT y) = x == y
   x@(CT _) == y = x == toCT y
   y == x@(CT _) = x == toCT y
-
--- no read/show for ZV right now
-instance (Show r, Storable r) => Show (CT m r) where
-  showsPrec n (CT x) = showsPrec n x
-  showsPrec n x = showsPrec n $ toCT x
-instance (Read r, Storable r) => Read (CT m r) where
-  readPrec = CT <$> readPrec
--- we don't support serialization of ZV right now
-instance (Serialize r, Storable r, Fact m) => Serialize (CT m r) where
-  get = CT <$> get
-  put (CT x) = put x
-  put x = put $ toCT x
-
-instance (Fact m) => Protoable (CT m Int64) where
-  type ProtoType (CT m Int64) = R
-
-  toProto (CT (CT' xs)) =
-    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-    in R m $ S.fromList $ SV.toList xs
-  toProto x@(ZV _) = toProto $ toCT x
-
-  fromProto (R m' xs) =
-    let m = proxy valueFact (Proxy::Proxy m)
-        n = proxy totientFact (Proxy::Proxy m)
-        xs' = SV.fromList $ F.toList xs
-        len = F.length xs
-    in if (m == (fromIntegral m') && len == n)
-       then CT $ CT' xs'
-       else error $ "An error occurred while reading the proto type for CT.\n\
-        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-        \Expected n=" ++ show n ++ ", got " ++ show len ++ "."
 
 instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
   type ProtoType (CT m (ZqBasic q Int64)) = Rq
@@ -142,11 +102,12 @@ instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
     in if (m == (fromIntegral m') && len == n && (fromIntegral q) == q')
-       then CT $ CT' $ SV.map reduce $ xs'
-       else error $ "An error occurred while reading the proto type for CT.\n\
-        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-        \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-        \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
+       then return $ CT $ CT' $ SV.map reduce $ xs'
+       else throwError $
+            "An error occurred while reading the proto type for CT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
 
 instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
   type ProtoType (CT m (RRq q Double)) = Kq
@@ -164,11 +125,12 @@ instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
     in if (m == (fromIntegral m') && len == n && q == q')
-       then CT $ CT' $ SV.map reduce xs'
-       else error $ "An error occurred while reading the proto type for CT.\n\
-        \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-        \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-        \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
+       then return $ CT $ CT' $ SV.map reduce xs'
+       else throwError $
+            "An error occurred while reading the proto type for CT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
@@ -209,7 +171,7 @@ type family Em r where
 instance (Additive r, Storable r, Fact m, Dispatch r)
   => Additive.C (CT m r) where
   (CT (CT' a)) + (CT (CT' b)) = CT $ CT' $ SV.zipWith (+) a b
-  a + b = (toCT a) + (toCT b)
+  a + b = toCT a + toCT b
   negate (CT (CT' a)) = CT $ CT' $ SV.map negate a -- EAC: This probably should be converted to C code
   negate a = negate $ toCT a
 
@@ -283,8 +245,8 @@ instance Tensor CT where
 
   crtFuncs = (,,,,) <$>
     return (CT . repl) <*>
-    (wrap <$> untag (cZipDispatch dmul) <$> gCRT) <*>
-    (wrap <$> untag (cZipDispatch dmul) <$> gInvCRT) <*>
+    (wrap . untag (cZipDispatch dmul) <$> gCRT) <*>
+    (wrap . untag (cZipDispatch dmul) <$> gInvCRT) <*>
     (wrap <$> untagT ctCRT) <*>
     (wrap <$> untagT ctCRTInv)
 

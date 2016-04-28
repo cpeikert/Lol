@@ -1,0 +1,70 @@
+
+import "Lol.proto";
+
+// hprotoc -I . -I ../lol -a ../lol/Lol.proto=Crypto.Lol.Types.Proto -p Crypto.Challenges.RLWE.Proto RLWE.proto
+
+message SampleCont {
+  required Rq a                    = 1;
+  required Kq b                    = 2;
+}
+
+message SampleDisc {
+  required Rq a                    = 1;
+  required Rq b                    = 2;
+}
+
+message SampleRLWR {
+  required Rq a                    = 1;
+  required Rq b                    = 2;  // for some modulus p < q
+}
+
+message InstanceCont {
+  required int32 challengeID       = 1;  // challenge this instance belongs to
+  required int32 instanceID        = 2;  // instance within the challenge
+  required int32 m                 = 3;
+  required int64 q                 = 4;
+  required double svar             = 5;
+  required double bound            = 6;
+  repeated SampleCont samples      = 7;
+}
+
+message InstanceDisc {
+  required int32 challengeID       = 1;
+  required int32 instanceID        = 2;
+  required int32 m                 = 3;
+  required int64 q                 = 4;
+  required double svar             = 5;
+  required int64 bound             = 6;
+  repeated SampleDisc samples      = 7;
+}
+
+message InstanceRLWR {
+  required int32 challengeID       = 1;
+  required int32 instanceID        = 2;
+  required int32 m                 = 3;
+  required int64 q                 = 4;
+  required int64 p                 = 5;  // RLWR modulus p < q
+  repeated SampleRLWR samples      = 6;
+}
+
+message Secret {
+  required int32 challengeID       = 1;
+  required int32 instanceID        = 2;
+  required int32 m                 = 3;
+  required int64 q                 = 4;
+  required Rq s                    = 5;
+}
+
+enum ChallengeType {
+  Cont                             = 0;
+  Disc                             = 1;
+  RLWR                             = 2;
+}
+
+message Challenge {
+  required int32 challengeID       = 1;  // unique identifier of challenge
+  required int32 numInstances      = 2;  // number of instances in challenge
+  required int64 beaconEpoch       = 3;  // beacon epoch for suppressing secret
+  required int32 beaconOffset      = 4;  // byte of beacon value used
+  required ChallengeType challType = 5;
+}

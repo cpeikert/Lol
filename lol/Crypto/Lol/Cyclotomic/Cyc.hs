@@ -1,8 +1,8 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveGeneric, FlexibleContexts,
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, GADTs, MultiParamTypeClasses,
              NoImplicitPrelude, PolyKinds, RankNTypes,
-             ScopedTypeVariables, StandaloneDeriving, TypeFamilies,
-             TypeOperators, UndecidableInstances #-}
+             ScopedTypeVariables, TypeFamilies, TypeOperators,
+             UndecidableInstances #-}
 
 -- | An implementation of cyclotomic rings that hides the
 -- internal representations of ring elements (e.g., the choice of
@@ -56,9 +56,8 @@ import qualified Crypto.Lol.Cyclotomic.UCyc       as U
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.LatticePrelude        as LP
 import           Crypto.Lol.Types.FiniteField
-import           Crypto.Lol.Types.RRq
+import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.ZPP
-import           Crypto.Lol.Types.ZqBasic
 
 import Control.Applicative    hiding ((*>))
 import Control.Arrow
@@ -66,18 +65,10 @@ import Control.DeepSeq
 import Control.Monad.Identity
 import Control.Monad.Random
 import Data.Coerce
-import Data.Serialize
 import Data.Traversable
 
-import GHC.Generics (Generic)
-
 import Test.QuickCheck
-import Text.Read       (Read (readPrec))
 
-import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Kq
-import Crypto.Lol.Types.Proto.R
-import Crypto.Lol.Types.Proto.Rq
 
 -- | Represents a cyclotomic ring such as @Z[zeta]@,
 -- @Zq[zeta]@, and @Q(zeta)@ in an explicit representation: @t@ is the
@@ -600,67 +591,9 @@ instance (Arbitrary (UCyc t m P r)) => Arbitrary (Cyc t m r) where
   arbitrary = Pow <$> arbitrary
   shrink = shrinkNothing
 
-data Cyc' t m r =
-  Pow' (UCyc t m P r)
-  | Dec' (UCyc t m D r)
-  | CRT' (UCyc t m C r)
-  | Sc r
-  deriving (Generic)
-
-deriving instance (Read (UCyc t m C r), Read (UCyc t m D r), Read (UCyc t m P r), Read r)
-  => Read (Cyc' t m r)
-
-deriving instance (Show (UCyc t m C r), Show (UCyc t m D r), Show (UCyc t m P r), Show r)
-  => Show (Cyc' t m r)
-
-instance (Serialize (UCyc t m C r), Serialize (UCyc t m D r), Serialize (UCyc t m P r), Serialize r)
-  => Serialize (Cyc' t m r) -- using Generics
-
-instance (Read (Cyc' t m r)) => Read (Cyc t m r) where
-  readPrec = cyc'ToCyc <$> readPrec
-
-instance (Fact m, CElt t r, Show (Cyc' t m r)) => Show (Cyc t m r) where
-  showsPrec n = showsPrec n . cycToCyc'
-
-instance (Serialize (Cyc' t m r), Fact m, CElt t r) => Serialize (Cyc t m r) where
-  get = cyc'ToCyc <$> get
-  put = put . cycToCyc'
-
-cycToCyc' :: (Fact m, CElt t r) => Cyc t m r -> Cyc' t m r
-cycToCyc' (Pow x) = Pow' x
-cycToCyc' (Dec x) = Dec' x
-cycToCyc' (CRT (Right x)) = CRT' x
-cycToCyc' (CRT (Left x)) = Pow' $ toPow x
-cycToCyc' (Scalar x) = Sc x
-cycToCyc' (Sub x) = cycToCyc' $ embed' x
-
-cyc'ToCyc (Pow' x) = Pow x
-cyc'ToCyc (Dec' x) = Dec x
-cyc'ToCyc (CRT' x) = CRT (Right x)
-cyc'ToCyc (Sc x) = Scalar x
-
-instance (Fact m, CElt t Int64, Protoable (UCyc t m D Int64))
-         => Protoable (Cyc t m Int64) where
-
-  type ProtoType (Cyc t m Int64) = ProtoType (UCyc t m D Int64)
+instance (Fact m, CElt t r, Protoable (UCyc t m D r))
+         => Protoable (Cyc t m r) where
+  type ProtoType (Cyc t m r) = ProtoType (UCyc t m D r)
   toProto (Dec uc) = toProto uc
   toProto x = toProto $ toDec' x
-  fromProto x = Dec $ fromProto x
-
-instance (Fact m, CElt t (ZqBasic q Int64), Protoable (UCyc t m D (ZqBasic q Int64)))
-         => Protoable (Cyc t m (ZqBasic q Int64)) where
-
-  type ProtoType (Cyc t m (ZqBasic q Int64)) =
-    ProtoType (UCyc t m D (ZqBasic q Int64))
-  toProto (Dec uc) = toProto uc
-  toProto x = toProto $ toDec' x
-  fromProto x = Dec $ fromProto x
-
-instance (Fact m, CElt t (RRq q Double), Protoable (UCyc t m D (RRq q Double)))
-         => Protoable (Cyc t m (RRq q Double)) where
-
-  type ProtoType (Cyc t m (RRq q Double)) =
-    ProtoType (UCyc t m D (RRq q Double))
-  toProto (Dec uc) = toProto uc
-  toProto x = toProto $ toDec' x
-  fromProto x = Dec $ fromProto x
+  fromProto x = Dec <$> fromProto x
