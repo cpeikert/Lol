@@ -17,6 +17,7 @@ module Harness.Cyc where
 import Control.Monad.Random
 
 import Crypto.Lol
+import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types.ZPP
 import Crypto.Random.DRBG
@@ -28,34 +29,39 @@ import Apply
 data BasicCtxD
 type BasicCtx t m r =
   (CElt t r, Fact m, Random r, Eq r, NFElt r, ShowType '(t,m,r), Random (t m r), m `Divides` m)
+
 instance (params `Satisfy` BasicCtxD, BasicCtx t m r)
   => ( '(t, '(m,r)) ': params) `Satisfy` BasicCtxD where
   data ArgsCtx BasicCtxD where
     BC :: (BasicCtx t m r) => Proxy '(t,m,r) -> ArgsCtx BasicCtxD
   run _ f = (f $ BC (Proxy::Proxy '(t,m,r))) : (run (Proxy::Proxy params) f)
 
-applyBasic :: (params `Satisfy` BasicCtxD, MonadRandom rnd) =>
-  Proxy params
-  -> (forall t m r . (BasicCtx t m r, Generatable rnd r, Generatable rnd (t m r))
-       => Proxy '(t,m,r) -> rnd res)
-  -> [rnd res]
+applyBasic
+    :: (params `Satisfy` BasicCtxD, MonadRandom rnd)
+    => Proxy params
+    -> (forall t m r . (BasicCtx t m r, Generatable rnd r, Generatable rnd (t m r)) => Proxy '(t,m,r) -> rnd res)
+    -> [rnd res]
 applyBasic params g = run params $ \(BC p) -> g p
 
 -- r is Liftable
 data LiftCtxD
 type LiftCtx t m r =
-  (BasicCtx t m r, Lift' r, CElt t (LiftOf r), NFElt (LiftOf r), ToInteger (LiftOf r),
-   TElt CT r, TElt RT r, TElt CT (LiftOf r), TElt RT (LiftOf r))
+  ( BasicCtx t m r, Lift' r, CElt t (LiftOf r), NFElt (LiftOf r), ToInteger (LiftOf r)
+  , CRTrans Maybe Int r -- TLM: hmm..
+  , TElt CT r, TElt RT r, TElt CT (LiftOf r), TElt RT (LiftOf r)
+  )
+
 instance (params `Satisfy` LiftCtxD, LiftCtx t m r)
   => ( '(t, '(m,r)) ': params) `Satisfy` LiftCtxD  where
   data ArgsCtx LiftCtxD where
     LC :: (LiftCtx t m r) => Proxy '(t,m,r) -> ArgsCtx LiftCtxD
   run _ f = (f $ LC (Proxy::Proxy '(t,m,r))) : (run (Proxy::Proxy params) f)
 
-applyLift :: (params `Satisfy` LiftCtxD, MonadRandom rnd) =>
-  Proxy params
-  -> (forall t m r . (LiftCtx t m r, Generatable rnd r) => Proxy '(t,m,r) -> rnd res)
-  -> [rnd res]
+applyLift
+    :: (params `Satisfy` LiftCtxD, MonadRandom rnd)
+    => Proxy params
+    -> (forall t m r . (LiftCtx t m r, Generatable rnd r) => Proxy '(t,m,r) -> rnd res)
+    -> [rnd res]
 applyLift params g = run params $ \(LC p) -> g p
 
 -- similar to LiftCtxD, but with a `gen` param
@@ -63,16 +69,18 @@ data ErrorCtxD
 type ErrorCtx t m r gen = (CElt t r, Fact m, ShowType '(t,m,r,gen),
                            CElt t (LiftOf r), NFElt (LiftOf r), Lift' r,
                            ToInteger (LiftOf r), CryptoRandomGen gen)
+
 instance (params `Satisfy` ErrorCtxD, ErrorCtx t m r gen)
   => ( '(gen, '(t, '(m,r))) ': params) `Satisfy` ErrorCtxD  where
   data ArgsCtx ErrorCtxD where
     EC :: (ErrorCtx t m r gen) => Proxy '(t,m,r,gen) -> ArgsCtx ErrorCtxD
   run _ f = (f $ EC (Proxy::Proxy '(t,m,r,gen))) : (run (Proxy::Proxy params) f)
 
-applyError :: (params `Satisfy` ErrorCtxD, Monad rnd) =>
-  Proxy params
-  -> (forall t m r gen . (ErrorCtx t m r gen) => Proxy '(t,m,r,gen) -> rnd res)
-  -> [rnd res]
+applyError
+    :: (params `Satisfy` ErrorCtxD, Monad rnd)
+    => Proxy params
+    -> (forall t m r gen . (ErrorCtx t m r gen) => Proxy '(t,m,r,gen) -> rnd res)
+    -> [rnd res]
 applyError params g = run params $ \(EC p) -> g p
 
 

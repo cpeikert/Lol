@@ -1,22 +1,32 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, KindSignatures, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
-             ScopedTypeVariables, TypeFamilies, TypeOperators #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module TestTypes (
 
-SmoothZQ1, SmoothZQ2, SmoothZQ3
-, Zq, ZQ1, ZQ2, ZQ3) where
+  SmoothZQ1, SmoothZQ2, SmoothZQ3,
+  Zq, ZQ1, ZQ2, ZQ3
 
-import Control.Monad
+) where
+
 import Control.Monad.Random
 
 import Crypto.Lol
-import Crypto.Lol.Reflects
 
 import Utils
 
 import Test.QuickCheck.Monadic
+
 
 instance (MonadRandom m) => MonadRandom (PropertyM m) where
   getRandom = run getRandom
@@ -37,3 +47,4 @@ type SmoothQ3 = 2150668801
 type SmoothZQ1 = Zq 2148249601
 type SmoothZQ2 = Zq (2148854401 ** 2148249601)
 type SmoothZQ3 = Zq (2148854401 ** 2148249601 ** 2150668801)
+
