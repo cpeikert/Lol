@@ -170,7 +170,7 @@ instance (Fact m, CElt t r) => ZeroTestable.C (Cyc t m r) where
   isZero (Sub c)         = isZero c
   {-# INLINABLE isZero #-}
 
-instance (Eq r, Eq (TRep t r), Fact m, CElt t r) => Eq (Cyc t m r) where
+instance (Eq r, Fact m, CElt t r) => Eq (Cyc t m r) where
   -- same representations
   Scalar c1      == Scalar c2      = c1 == c2
   Pow u1         == Pow u2         = u1 == u2
