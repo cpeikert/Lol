@@ -121,7 +121,7 @@ void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, Prime
 
 
 //for square transforms
-template <typename ring> void tensorFuser2 (ring* y, hShort_t tupSize, void (*f) (ring* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
+template <typename ring> void tensorFuser2 (ring* y, hShort_t tupSize, void (*f) (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
     hDim_t lts = totm;
     hDim_t rts = 1;
@@ -136,15 +136,16 @@ template <typename ring> void tensorFuser2 (ring* y, hShort_t tupSize, void (*f)
           if(qs) {
             Zq::q = qs[tupIdx]; // global update
           }
-          (*f) (y+tupIdx, tupSize, pe, lts, rts);
+          (*f) (y+tupIdx, tupSize, lts, rts, pe);
         }
         rts *= dim;
     }
 }
 
-template void tensorFuser2 (Zq* y, hShort_t tupSize, void (*f) (Zq* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
-template void tensorFuser2 (hInt_t* y, hShort_t tupSize, void (*f) (hInt_t* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
-template void tensorFuser2 (Complex* y, hShort_t tupSize, void (*f) (Complex* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
+template void tensorFuser2 (Zq* y, hShort_t tupSize, void (*f) (Zq* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
+template void tensorFuser2 (hInt_t* y, hShort_t tupSize, void (*f) (hInt_t* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
+template void tensorFuser2 (Complex* y, hShort_t tupSize, void (*f) (Complex* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
+template void tensorFuser2 (double* y, hShort_t tupSize, void (*f) (double* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
 
 
 template <typename ring> void tensorFuserCRT2 (ring* y, hShort_t tupSize, void (*f) (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, ring* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ring** ru, hInt_t* qs)
@@ -170,6 +171,16 @@ template <typename ring> void tensorFuserCRT2 (ring* y, hShort_t tupSize, void (
 template void tensorFuserCRT2 (Zq* y, hShort_t tupSize, void (*f) (Zq* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, Zq* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Zq** ru, hInt_t* qs);
 template void tensorFuserCRT2 (Complex* y, hShort_t tupSize, void (*f) (Complex* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, Complex* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Complex** ru, hInt_t* qs);
 
+void canonicalizeZq (Zq* y, hShort_t tupSize, hDim_t totm, hInt_t* qs) {
+  for(int tupIdx = 0; tupIdx<tupSize; tupIdx++) {
+    hInt_t q = qs[tupIdx];
+    for(hDim_t j = 0; j < totm; j++) {
+      if(y[j*tupSize+tupIdx].x<0) {
+        y[j*tupSize+tupIdx].x+=q;
+      }
+    }
+  }
+}
 
 struct  timespec  tsSubtract (struct  timespec  time1, struct  timespec  time2)
 {    /* Local variables. */
@@ -251,7 +262,7 @@ const  char  *tsShow (struct  timespec  binaryTime, bool  inLocal, const  char  
 
 const char* timeformat = "%M:%S";
 
-void getStats() { 
+void getStats() {
 
 #ifdef STATS
     struct timespec total;
@@ -259,7 +270,7 @@ void getStats() {
     printf("CRT_Rq times: Real:%s\tMono:%s\tProc:%s\tThread:%s\n", tsShow(crttime1, false, timeformat),tsShow(crttime2, false, timeformat),tsShow(crttime3, false, timeformat),tsShow(crttime4, false, timeformat));
     printf("CTR_Rq: %d\t%s\t%d\t%s\n", crtRqCtr, tsShow(crttime1, false, timeformat), crtInvRqCtr, tsShow(crtInvRqTime, false, timeformat));
     printf("CTR_C: %d\t%s\t%d\t%s\n", crtCCtr, tsShow(crtCTime, false, timeformat), crtInvCCtr, tsShow(crtInvCTime, false, timeformat));
-    
+
     printf("\nG Stats:\n");
     printf("GPow_R: %d\t%s\t%d\t%s\n", gprCtr, tsShow(gprTime, false, timeformat), giprCtr, tsShow(giprTime, false, timeformat));
     printf("GPow_Rq: %d\t%s\t%d\t%s\n", gprqCtr, tsShow(gprqTime, false, timeformat), giprqCtr, tsShow(giprqTime, false, timeformat));

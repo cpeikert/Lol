@@ -177,6 +177,7 @@ inline Zq operator/(Zq a, const Zq& b)
   return a;
 }
 
+void canonicalizeZq (Zq* y, hShort_t tupSize, hDim_t totm, hInt_t* qs);
 
 class Complex
 {
@@ -273,7 +274,7 @@ typedef void (*crtFuncPtr) (void* y, hShort_t tupSize, hDim_t lts, hDim_t rts, P
 void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t* qs);
 
 //#ifdef __cplusplus
-template <typename ring> void tensorFuser2 (ring* y, hShort_t tupSize, void (*f) (ring* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
+template <typename ring> void tensorFuser2    (ring* y, hShort_t tupSize, void (*f) (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe),           hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
 template <typename ring> void tensorFuserCRT2 (ring* y, hShort_t tupSize, void (*f) (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, ring* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ring** ru, hInt_t* qs);
 //#endif
 
