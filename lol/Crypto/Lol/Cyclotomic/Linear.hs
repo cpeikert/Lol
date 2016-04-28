@@ -64,8 +64,14 @@ evalLin (RD ys) r = sum (zipWith (*) ys $
 
 instance Additive (Cyc t s z) => Additive.C (Linear t z e r s) where
   zero           = RD []
-  RD as + RD bs  = RD $ zipWith (+) as bs
   negate (RD as) = RD $ negate <$> as
+  RD as + RD bs  = RD $ zipWith' (+) as bs
+    where
+      -- Note this is different to regular zipWith when the arguments have
+      -- different lengths.
+      zipWith' _ []     ys     = ys
+      zipWith' _ xs     []     = xs
+      zipWith' f (x:xs) (y:ys) = f x y : zipWith' f xs ys
 
 instance (Reduce z zq, Reduce (TRep t z) (TRep t zq), Fact s, CElt t z, CElt t zq)
          => Reduce (Linear t z e r s) (Linear t zq e r s) where
