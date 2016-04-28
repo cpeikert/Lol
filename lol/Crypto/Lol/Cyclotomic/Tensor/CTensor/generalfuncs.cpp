@@ -2,21 +2,7 @@
 
 //see note in zq.cc
 hInt_t Zq::q;
-hInt_t* ZqProd::qs;
-hShort_t ZqProd::tupSize;
-
-ZqProd* toZqProd(hShort_t tupSize, hDim_t totm, hInt_t* y, hInt_t* qs)
-{
-  ZqProd::qs = qs;
-  ZqProd::tupSize = tupSize;
-  ZqProd* z = (ZqProd*)malloc(totm*sizeof(ZqProd));
-  for(hDim_t i = 0; i < totm; i++) {
-    z[i].xs = y+i*tupSize;
-    z[i].initd = true;
-    z[i].doFree = false;
-  }
-  return z;
-}
+//uint8_t Zq::tupSize;
 
 hDim_t ipow(hDim_t base, hShort_t exp)
 {
@@ -100,35 +86,36 @@ hInt_t reciprocal (hInt_t a, hInt_t b)
 //for square transforms
 void tensorFuser (void* y, hShort_t tupSize, funcPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
-  hDim_t lts = totm;
-  hDim_t rts = 1;
-  hShort_t i;
+    hDim_t lts = totm;
+    hDim_t rts = 1;
+    hShort_t i;
 
-  for (i = 0; i < sizeOfPE; ++i)
-  {
-    PrimeExponent pe = peArr[i];
-    hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
-    hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
-    lts /= dim;
-    (*f) (y, tupSize, pe, lts, rts, qs);
-    rts *= dim;
-  }
+    for (i = 0; i < sizeOfPE; ++i)
+    {
+        PrimeExponent pe = peArr[i];
+        hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
+        hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
+        lts /= dim;
+        (*f) (y, tupSize, pe, lts, rts, qs);
+        rts *= dim;
+    }
 }
 
 void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, void** ru, hInt_t* qs)
 {
-  hDim_t lts = totm;
-  hDim_t rts = 1;
-  hShort_t i;
+    hDim_t lts = totm;
+    hDim_t rts = 1;
+    hShort_t i;
 
-  for (i = 0; i < sizeOfPE; ++i) {
-    PrimeExponent pe = peArr[i];
-    hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
-    hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
-    lts /= dim;
-    (*f) (y, tupSize, lts, rts, pe, ru[i], qs);
-    rts *= dim;
-  }
+    for (i = 0; i < sizeOfPE; ++i)
+    {
+        PrimeExponent pe = peArr[i];
+        hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
+        hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
+        lts /= dim;
+        (*f) (y, tupSize, lts, rts, pe, ru[i], qs);
+        rts *= dim;
+    }
 }
 
 
@@ -136,23 +123,23 @@ void tensorFuserCRT (void* y, hShort_t tupSize, crtFuncPtr f, hDim_t totm, Prime
 //for square transforms
 template <typename ring> void tensorFuser2 (ring* y, hShort_t tupSize, void (*f) (ring* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
-  hDim_t lts = totm;
-  hDim_t rts = 1;
-  hShort_t i;
+    hDim_t lts = totm;
+    hDim_t rts = 1;
+    hShort_t i;
 
-  for (i = 0; i < sizeOfPE; ++i) {
-    PrimeExponent pe = peArr[i];
-    hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
-    hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
-    lts /= dim;
-    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
-      if(qs) {
-        Zq::q = qs[tupIdx]; // global update
-      }
-      (*f) (y+tupIdx, tupSize, pe, lts, rts);
+    for (i = 0; i < sizeOfPE; ++i) {
+        PrimeExponent pe = peArr[i];
+        hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
+        hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
+        lts /= dim;
+        for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+          if(qs) {
+            Zq::q = qs[tupIdx]; // global update
+          }
+          (*f) (y+tupIdx, tupSize, pe, lts, rts);
+        }
+        rts *= dim;
     }
-    rts *= dim;
-  }
 }
 
 template void tensorFuser2 (Zq* y, hShort_t tupSize, void (*f) (Zq* outputVec, hShort_t tupSize, PrimeExponent pe, hDim_t lts, hDim_t rts), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
@@ -162,66 +149,26 @@ template void tensorFuser2 (Complex* y, hShort_t tupSize, void (*f) (Complex* ou
 
 template <typename ring> void tensorFuserCRT2 (ring* y, hShort_t tupSize, void (*f) (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, ring* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ring** ru, hInt_t* qs)
 {
-  hDim_t lts = totm;
-  hDim_t rts = 1;
-  hShort_t i;
+    hDim_t lts = totm;
+    hDim_t rts = 1;
+    hShort_t i;
 
-  for (i = 0; i < sizeOfPE; ++i) {
-    PrimeExponent pe = peArr[i];
-    hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
-    hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
-    lts /= dim;
-    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
-      if(qs) {
-        Zq::q = qs[tupIdx]; // global update
-      }
-      (*f) (y+tupIdx, tupSize, lts, rts, pe, ru[i]+tupIdx);
+    for (i = 0; i < sizeOfPE; ++i) {
+        PrimeExponent pe = peArr[i];
+        hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
+        hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
+        lts /= dim;
+        for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
+          if(qs) {
+            Zq::q = qs[tupIdx]; // global update
+          }
+          (*f) (y+tupIdx, tupSize, lts, rts, pe, ru[i]+tupIdx);
+        }
+        rts *= dim;
     }
-    rts *= dim;
-  }
 }
 template void tensorFuserCRT2 (Zq* y, hShort_t tupSize, void (*f) (Zq* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, Zq* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Zq** ru, hInt_t* qs);
 template void tensorFuserCRT2 (Complex* y, hShort_t tupSize, void (*f) (Complex* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, Complex* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Complex** ru, hInt_t* qs);
-
-
-
-
-
-template <typename ring> void tensorFuserCRT3 (ring* y, void (*f) (ring* y, hDim_t lts, hDim_t rts, PrimeExponent pe, ring* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ring** ru)
-{
-  hDim_t lts = totm;
-  hDim_t rts = 1;
-  hShort_t i;
-
-  for (i = 0; i < sizeOfPE; ++i) {
-    PrimeExponent pe = peArr[i];
-
-    /*if(pe.prime > 300 || pe.prime < 2 || pe.exponent < 1 || pe.exponent > 10) {
-      printf("\np=%d, e=%d\n", pe.prime, (pe.exponent));
-      exit(0);
-    }*/
-
-    //printf("\nBack0\n");
-    //printf("\np=%d, e=%d\n", pe.prime, (pe.exponent-1));
-    hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
-    //printf("\nBack00\n");
-    hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
-    //printf("\nBack000 %d\t %d\n", ipow_pe, (pe.prime-1));
-    lts /= dim;
-    //printf("\nGoing...\n");
-    (*f) (y, lts, rts, pe, ru[i]);
-    //printf("\nBack\n");
-    rts *= dim;
-    //printf("\nBack2\n");
-  }
-  //printf("TensorFuser done\n");
-}
-
-template void tensorFuserCRT3 (ZqProd* y, void (*f) (ZqProd* y, hDim_t lts, hDim_t rts, PrimeExponent pe, ZqProd* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ZqProd** ru);
-template void tensorFuserCRT3 (Complex* y, void (*f) (Complex* y, hDim_t lts, hDim_t rts, PrimeExponent pe, Complex* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Complex** ru);
-
-
-
 
 
 struct  timespec  tsSubtract (struct  timespec  time1, struct  timespec  time2)
