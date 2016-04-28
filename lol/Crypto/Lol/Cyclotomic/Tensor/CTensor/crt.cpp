@@ -571,9 +571,9 @@ extern "C" void tensorCRTInvRq (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeE
 
   ZqProd mhinv(mhatInv);
 
-  for (i = 0; i < totm; i++) {
-    z[i] *= mhinv;
-    z[i].canonicalize();
+  for (hDim_t j = 0; j < totm; j++) {
+    z[j] *= mhinv;
+    z[j].canonicalize();
   }
   free(z);
   for(i = 0; i < sizeOfPE; i++) {

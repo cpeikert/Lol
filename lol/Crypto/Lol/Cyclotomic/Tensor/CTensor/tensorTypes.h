@@ -182,6 +182,8 @@ class ZqProd
 {
 public:
   hInt_t* xs;
+  hByte_t doFree;
+  hByte_t initd = false;
 
   static hInt_t* qs; // declared here, defined in generalfuncs.cpp
   static hShort_t tupSize;
@@ -262,6 +264,15 @@ public:
     }
   }
 };
+inline char operator==(ZqProd a, const ZqProd& b)
+{
+  for(hShort_t i = 0; i < ZqProd::tupSize; i++) {
+    if(a.xs[i] != b.xs[i]) {
+      return false;
+    }
+  }
+  return true;
+}
 inline ZqProd operator+(ZqProd a, const ZqProd& b)
 {
   a += b;
