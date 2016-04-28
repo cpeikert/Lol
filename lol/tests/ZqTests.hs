@@ -1,9 +1,18 @@
-{-# LANGUAGE NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables, DataKinds, TypeOperators, PolyKinds, FlexibleContexts, RankNTypes, KindSignatures, MultiParamTypeClasses #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module ZqTests (zqTests) where
 
 import Crypto.Lol.Types.ZqBasic
-import Crypto.Lol.LatticePrelude hiding (Nat)
+import Crypto.Lol.LatticePrelude
 import Crypto.Lol.Reflects
 
 import Control.Monad
@@ -33,8 +42,8 @@ type ZqModuli = '[7, 13, 17, 11, 13, 29]
 class CallZqProp xs where
   callProp :: Proxy xs -> Gen Int -> (forall (q :: Nat) . (Reflects q Int, KnownNat q) => Proxy q -> Int -> Int -> Bool) -> [Test]
 
-  callProp2 :: Proxy xs 
-                -> Gen Int 
+  callProp2 :: Proxy xs
+                -> Gen Int
                 -> (forall (q :: Nat) . (Reflects q Int, KnownNat q) => Proxy q -> Int -> Bool)
                 -> [Test]
 
@@ -50,7 +59,8 @@ zqModuli :: Proxy ZqModuli
 zqModuli = Proxy
 
 zqTests :: [Test]
-zqTests = 
+zqTests =
   [testGroup "ZqBasic +" $ callProp zqModuli (choose (-100,100)) prop_add,
    testGroup "ZqBasic *" $ callProp zqModuli (choose (-100,100)) prop_mul,
    testGroup "ZqBasic recip" $ callProp2 zqModuli (choose (-100,100)) prop_recip]
+

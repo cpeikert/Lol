@@ -1,5 +1,11 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, NoImplicitPrelude, PolyKinds,
-             ScopedTypeVariables, TypeOperators, TypeFamilies #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE PolyKinds           #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE TypeOperators       #-}
+
 module CycTests (cycTests) where
 
 import Control.Monad (liftM2,join)
@@ -27,18 +33,18 @@ prop_mulgPow x =
   in test $ y == (fromJust' "prop_mulgPow failed divisibility!" $ divG $ mulG y)
 
 prop_mulgDec :: (CElt t r, Fact m, Eq r) => Cyc t m r -> Test '(t,m,r)
-prop_mulgDec x = 
+prop_mulgDec x =
   let y = adviseDec x
   in test $ y == (fromJust' "prop_mulgDec failed divisibility!" $ divG $ mulG y)
 
 prop_mulgCRT :: (CElt t r, Fact m, Eq r) => Cyc t m r -> Test '(t,m,r)
-prop_mulgCRT x = 
+prop_mulgCRT x =
   let y = adviseCRT x
   in test $ y == (fromJust' "prop_mulgCRT failed divisibility!" $ divG $ mulG y)
 
 prop_coeffsBasis :: forall t m m' r . (m `Divides` m', CElt t r, Eq r)
   => Cyc t m' r -> Test '(t,m,m',r)
-prop_coeffsBasis x = 
+prop_coeffsBasis x =
   let xs = map embed (coeffsCyc Pow x :: [Cyc t m r])
       bs = proxy powBasis (Proxy::Proxy m)
   in test $ (sum $ zipWith (*) xs bs) == x
@@ -47,13 +53,13 @@ prop_coeffsBasis x =
 -- necessary (but not sufficient) condition
 prop_crtSet_pairs :: forall t m m' r . (m `Divides` m', ZPP r, Eq r, CElt t r, CElt t (ZpOf r))
   => Test '(t,m,m',r)
-prop_crtSet_pairs = 
+prop_crtSet_pairs =
   let crtset = proxy crtSet (Proxy::Proxy m) :: [Cyc t m' r]
       pairs = join (liftM2 (,)) crtset
   in test $ and $ map (\(a,b) -> if a == b then a*b == a else a*b == zero) pairs
 
 type Tensors = '[CT,RT]
-type MRCombos = 
+type MRCombos =
   '[ '(F7, Zq 29),
      '(F7, Zq 32),
      '(F12, Zq 2148249601),
@@ -77,7 +83,7 @@ type MM'RCombos = '[
 type AllParams = ( '(,) <$> Tensors) <*> MRCombos
 type BasisParams = ( '(,) <$> Tensors) <*> MM'RCombos
 
--- for crtSet, take all pairwise products 
+-- for crtSet, take all pairwise products
 -- if elts are equal, id
 -- if not, zero
 
@@ -87,6 +93,7 @@ type BasisParams = ( '(,) <$> Tensors) <*> MM'RCombos
 {-
 prop_crtSet_card pm _
   let inferLen = length $ (proxy crtSetDec pm :: [t m' r])
-      expectLen = 
-  in  
+      expectLen =
+  in
 -}
+

@@ -1,6 +1,12 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, DataKinds, NoImplicitPrelude, 
-             RebindableSyntax, ScopedTypeVariables, TypeFamilies, TypeOperators,
-             UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds      #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE NoImplicitPrelude    #-}
+{-# LANGUAGE RebindableSyntax     #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module TensorTests (tensorTests) where
 
@@ -24,7 +30,7 @@ import Data.Promotion.Prelude.List
 import Data.Promotion.Prelude.Eq
 import Data.Singletons.TypeRepStar
 
-tensorTests = 
+tensorTests =
   [testGroupM "fmapT comparison" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_fmapT,
    testGroupM "fmap comparison"  $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_fmap,
    testGroup  "GInv.G == id"       gInvGTests,
@@ -48,19 +54,19 @@ prop_fmap :: (Tensor t, TElt t r, Fact m, Eq r) => t m r -> Test '(t,m,r)
 prop_fmap x = test $ (fmap id x) == x \\ witness entailEqT x \\ witness entailIndexT x
 
 -- divG . mulG == id in Pow basis
-prop_ginv_pow :: (Tensor t, TElt t r, Fact m, Eq r, Ring r, ZeroTestable r, IntegralDomain r) 
+prop_ginv_pow :: (Tensor t, TElt t r, Fact m, Eq r, Ring r, ZeroTestable r, IntegralDomain r)
   => t m r -> Test '(t,m,r)
-prop_ginv_pow x = test $ (fromMaybe (error "could not divide by G in prop_ginv_pow") $ 
+prop_ginv_pow x = test $ (fromMaybe (error "could not divide by G in prop_ginv_pow") $
   divGPow $ mulGPow x) == x \\ witness entailEqT x
 
 -- divG . mulG == id in Dec basis
-prop_ginv_dec :: (Tensor t, TElt t r, Fact m, Eq r, Ring r, ZeroTestable r, IntegralDomain r) 
+prop_ginv_dec :: (Tensor t, TElt t r, Fact m, Eq r, Ring r, ZeroTestable r, IntegralDomain r)
   => t m r -> Test '(t,m,r)
-prop_ginv_dec x = test $ (fromMaybe (error "could not divide by G in prop_ginv_dec") $ 
+prop_ginv_dec x = test $ (fromMaybe (error "could not divide by G in prop_ginv_dec") $
   divGDec $ mulGDec x) == x \\ witness entailEqT x
 
 -- divG . mulG == id in CRT basis
-prop_ginv_crt :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r) 
+prop_ginv_crt :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r)
   => t m r -> Test '(t,m,r)
 prop_ginv_crt x = test $ fromMaybe (error "no CRT in prop_ginv_crt") $ do
   divGCRT' <- divGCRT
@@ -76,7 +82,7 @@ gInvGTests =  [
 prop_g_dec :: (Tensor t, Ring r, Fact m, TElt t r, Eq r) => t m r -> Test '(t,m,r)
 prop_g_dec x = test $ (mulGDec x) == (lInv $ mulGPow $ l x) \\ witness entailEqT x
 
-prop_g_crt :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r) 
+prop_g_crt :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r)
   => t m r -> Test '(t,m,r)
 prop_g_crt x = test $ fromMaybe (error "no CRT in prop_g_crt") $ do
   mulGCRT' <- mulGCRT
@@ -89,7 +95,7 @@ gCommuteTests =  [
   testGroupM "CRT basis" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_g_crt]
 
 -- crtInv . crt == id
-prop_crt_inv :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r) 
+prop_crt_inv :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r)
   => t m r -> Test '(t,m,r)
 prop_crt_inv x = test $ fromMaybe (error "no CRT in prop_crt_inv") $ do
   crt' <- crt
@@ -122,12 +128,12 @@ prop_mul_ext x y = test $
        Nothing -> error "mul have a CRT to call prop_mul_ext"
        Just _ -> (let z = zipWithT (*) x y
                       z' = fmapT fromExt $ zipWithT (*) (fmapT toExt x) (fmapT toExt y)
-                  in z == z') \\ witness entailEqT x 
+                  in z == z') \\ witness entailEqT x
                               \\ witness entailIndexT x
 
 -}
 
-type NormCtx t m r = (TElt t r, TElt t (LiftOf r), 
+type NormCtx t m r = (TElt t r, TElt t (LiftOf r),
   Fact m, Lift' r, CRTrans Maybe r, Eq (LiftOf r),
   ZeroTestable r, Ring (LiftOf r), Ring r, IntegralDomain r)
 
@@ -135,8 +141,8 @@ type NormWrapCtx m r = (NormCtx CT m r, NormCtx RT m r)
 
 -- tests that gSqNormDec of two "random-looking" vectors agrees for RT and CT
 -- t is a dummy param
-prop_gsqnorm :: forall t m r . 
-  (NormWrapCtx m r, NormCtx t m r) 
+prop_gsqnorm :: forall t m r .
+  (NormWrapCtx m r, NormCtx t m r)
   => r -> Test '(t,m,r)
 prop_gsqnorm x = test $
   let crtCT = fromJust crt
@@ -147,8 +153,8 @@ prop_gsqnorm x = test $
   in gSqNormDec ct == gSqNormDec rt
 
 
-type TMM'RCtx t m m' r = 
-  (Tensor t, m `Divides` m', TElt t r, Ring r, 
+type TMM'RCtx t m m' r =
+  (Tensor t, m `Divides` m', TElt t r, Ring r,
    CRTrans Maybe r, Eq r, ZeroTestable r, IntegralDomain r)
 
 -- groups related tests
@@ -181,7 +187,7 @@ embedCommuteTests = [
 
 -- embedDec == lInv . embedPow . l
 prop_embed_dec :: forall t m m' r . (TMM'RCtx t m m' r) => t m r -> Test '(t,m,m',r)
-prop_embed_dec x = test $ (embedDec x :: t m' r) == (lInv $ embedPow $ l x) 
+prop_embed_dec x = test $ (embedDec x :: t m' r) == (lInv $ embedPow $ l x)
   \\ proxy entailEqT (Proxy::Proxy (t m' r))
 
 -- embedCRT = crt . embedPow . crtInv
@@ -190,7 +196,7 @@ prop_embed_crt x = test $ fromMaybe (error "no CRT in prop_embed_crt") $ do
   crt' <- crt
   crtInv' <- crtInv
   embedCRT' <- embedCRT
-  return $ (embedCRT' x :: t m' r) == (crt' $ embedPow $ crtInv' x) 
+  return $ (embedCRT' x :: t m' r) == (crt' $ embedPow $ crtInv' x)
     \\ proxy entailEqT (Proxy::Proxy (t m' r))
 
 twaceCommuteTests = [
@@ -220,17 +226,17 @@ twaceInvarTests = [
   testGroupM "Invar2 CRT basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_twace_invar2_crt
   ]
 
-prop_twEmID :: forall t m r . (Tensor t, TElt t r, CRTrans Maybe r, Fact m, m `Divides` m, Eq r, ZeroTestable r, IntegralDomain r) 
+prop_twEmID :: forall t m r . (Tensor t, TElt t r, CRTrans Maybe r, Fact m, m `Divides` m, Eq r, ZeroTestable r, IntegralDomain r)
   => t m r -> Test '(t,m,r)
-prop_twEmID x = test $ 
+prop_twEmID x = test $
   ((twacePowDec x) == x) &&
   (((fromMaybe (error "twemid_crt") twaceCRT) x) == x) &&
   ((embedPow x) == x) &&
   ((embedDec x) == x) &&
-  (((fromMaybe (error "twemid_crt") embedCRT) x) == x) \\ witness entailEqT x 
+  (((fromMaybe (error "twemid_crt") embedCRT) x) == x) \\ witness entailEqT x
 
 -- twace mhat'/g' = mhat*totm'/totm/g (Pow basis)
-prop_twace_invar1_pow :: forall t m m' r . (TMM'RCtx t m m' r) 
+prop_twace_invar1_pow :: forall t m m' r . (TMM'RCtx t m m' r)
   => Test '(t,m,m',r)
 prop_twace_invar1_pow = test $ fromMaybe (error "could not divide by G in prop_twace_invar1_pow") $ do
   let mhat = proxy valueHatFact (Proxy::Proxy m)
@@ -346,3 +352,4 @@ type NormParams = ( '(,) <$> '[RT]) <*> (Filter Liftable MRCombos)
 
 data Liftable :: TyFun (Factored, *) Bool -> *
 type instance Apply Liftable '(m,zq) = Int64 :== (LiftOf zq)
+
