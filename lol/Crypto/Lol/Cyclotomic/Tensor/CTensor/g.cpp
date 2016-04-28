@@ -2,6 +2,7 @@
 
 template <typename ring> void gPow (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p)
 {
+  if (p == 2) {return;}
   hDim_t tmp1 = rts*(p-1);
   hDim_t tmp2 = tmp1 - rts;
   hDim_t blockOffset, modOffset;
@@ -20,18 +21,9 @@ template <typename ring> void gPow (ring* y, hShort_t tupSize, hDim_t lts, hDim_
   }
 }
 
-template <typename ring> void ppGPow (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe)
-{
-  hDim_t p = pe.prime;
-  hShort_t e = pe.exponent;
-
-  if (p != 2) {
-    gPow (y, tupSize, lts*ipow(p,e-1), rts, p);
-  }
-}
-
 template <typename ring> void gDec (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p)
 {
+  if (p == 2) {return;}
   hDim_t tmp1 = rts*(p-1);
   hDim_t blockOffset;
   hDim_t modOffset;
@@ -52,18 +44,9 @@ template <typename ring> void gDec (ring* y, hShort_t tupSize, hDim_t lts, hDim_
   }
 }
 
-template <typename ring> void ppGDec (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe)
-{
-  hDim_t p = pe.prime;
-  hShort_t e = pe.exponent;
-
-  if (p != 2) {
-    gDec (y, tupSize, lts*ipow(p,e-1), rts, p);
-  }
-}
-
 template <typename ring> void gInvPow (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p)
 {
+  if (p == 2) {return;}
   hDim_t tmp1 = rts * (p-1);
   hDim_t blockOffset, modOffset;
   hDim_t i;
@@ -93,18 +76,9 @@ template <typename ring> void gInvPow (ring* y, hShort_t tupSize, hDim_t lts, hD
   }
 }
 
-template <typename ring> void ppGInvPow (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe)
-{
-  hDim_t p = pe.prime;
-  hShort_t e = pe.exponent;
-
-  if (p != 2) {
-    gInvPow (y, tupSize, lts*ipow(p,e-1), rts, p);
-  }
-}
-
 template <typename ring> void gInvDec (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p)
 {
+  if (p == 2) {return;}
   hDim_t blockOffset;
   hDim_t modOffset;
   hDim_t i;
@@ -136,66 +110,56 @@ template <typename ring> void gInvDec (ring* y, hShort_t tupSize, hDim_t lts, hD
   }
 }
 
-template <typename ring> void ppGInvDec (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe)
-{
-  hDim_t p = pe.prime;
-  hShort_t e = pe.exponent;
-
-  if (p != 2) {
-    gInvDec (y, tupSize, lts*ipow(p,e-1), rts, p);
-  }
-}
-
 extern "C" void tensorGPowR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuser2 (y, tupSize, ppGPow, totm, peArr, sizeOfPE, (hInt_t*)0);
+  tensorFuserPrime (y, tupSize, gPow, totm, peArr, sizeOfPE, (hInt_t*)0);
 }
 
 extern "C" void tensorGPowRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
-  tensorFuser2 (y, tupSize, ppGPow, totm, peArr, sizeOfPE, qs);
+  tensorFuserPrime (y, tupSize, gPow, totm, peArr, sizeOfPE, qs);
   canonicalizeZq(y,tupSize,totm,qs);
 }
 
 extern "C" void tensorGPowC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuser2 (y, tupSize, ppGPow, totm, peArr, sizeOfPE, (hInt_t*)0);
+  tensorFuserPrime (y, tupSize, gPow, totm, peArr, sizeOfPE, (hInt_t*)0);
 }
 
 extern "C" void tensorGDecR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuser2 (y, tupSize, ppGDec, totm, peArr, sizeOfPE, (hInt_t*)0);
+  tensorFuserPrime (y, tupSize, gDec, totm, peArr, sizeOfPE, (hInt_t*)0);
 }
 
 extern "C" void tensorGDecRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
-  tensorFuser2 (y, tupSize, ppGDec, totm, peArr, sizeOfPE, qs);
+  tensorFuserPrime (y, tupSize, gDec, totm, peArr, sizeOfPE, qs);
   canonicalizeZq(y,tupSize,totm,qs);
 }
 
 extern "C" void tensorGInvPowR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuser2 (y, tupSize, ppGInvPow, totm, peArr, sizeOfPE, (hInt_t*)0);
+  tensorFuserPrime (y, tupSize, gInvPow, totm, peArr, sizeOfPE, (hInt_t*)0);
 }
 
 extern "C" void tensorGInvPowRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
-  tensorFuser2 (y, tupSize, ppGInvPow, totm, peArr, sizeOfPE, qs);
+  tensorFuserPrime (y, tupSize, gInvPow, totm, peArr, sizeOfPE, qs);
   canonicalizeZq(y,tupSize,totm,qs);
 }
 
 extern "C" void tensorGInvPowC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuser2 (y, tupSize, ppGInvPow, totm, peArr, sizeOfPE, (hInt_t*)0);
+  tensorFuserPrime (y, tupSize, gInvPow, totm, peArr, sizeOfPE, (hInt_t*)0);
 }
 
 extern "C" void tensorGInvDecR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuser2 (y, tupSize, ppGInvDec, totm, peArr, sizeOfPE, (hInt_t*)0);
+  tensorFuserPrime (y, tupSize, gInvDec, totm, peArr, sizeOfPE, (hInt_t*)0);
 }
 
 extern "C" void tensorGInvDecRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
-  tensorFuser2 (y, tupSize, ppGInvDec, totm, peArr, sizeOfPE, qs);
+  tensorFuserPrime (y, tupSize, gInvDec, totm, peArr, sizeOfPE, qs);
   canonicalizeZq(y,tupSize,totm,qs);
 }

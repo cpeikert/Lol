@@ -478,7 +478,7 @@ template <typename ring> void ppcrtinv (ring* y, hShort_t tupSize, hDim_t lts, h
 
 extern "C" void tensorCRTRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Zq** ru, hInt_t* qs)
 {
-  tensorFuserCRT2 (y, tupSize, ppcrt, totm, peArr, sizeOfPE, ru, qs);
+  tensorFuserCRT (y, tupSize, ppcrt, totm, peArr, sizeOfPE, ru, qs);
   canonicalizeZq(y,tupSize,totm,qs);
 }
 
@@ -486,7 +486,7 @@ extern "C" void tensorCRTRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent
 extern "C" void tensorCRTInvRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE,
                     Zq** ruinv, Zq* mhatInv, hInt_t* qs)
 {
-  tensorFuserCRT2 (y, tupSize, ppcrtinv, totm, peArr, sizeOfPE, ruinv, qs);
+  tensorFuserCRT (y, tupSize, ppcrtinv, totm, peArr, sizeOfPE, ruinv, qs);
   for (hShort_t i = 0; i < tupSize; i++) {
     Zq::q = qs[i];
     for (hDim_t j = 0; j < totm; j++) {
@@ -499,17 +499,17 @@ extern "C" void tensorCRTInvRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExpon
 
 extern "C" void tensorCRTC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Complex** ru)
 {
-  tensorFuserCRT2 (y, tupSize, ppcrt, totm, peArr, sizeOfPE, ru, (hInt_t*)0);
+  tensorFuserCRT (y, tupSize, ppcrt, totm, peArr, sizeOfPE, ru, (hInt_t*)0);
 }
 
 //takes inverse rus
 extern "C" void tensorCRTInvC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr,
                     hShort_t sizeOfPE, Complex** ruinv, Complex* mhatInv)
 {
-  tensorFuserCRT2 (y, tupSize, ppcrtinv, totm, peArr, sizeOfPE, ruinv, (hInt_t*)0);
+  tensorFuserCRT (y, tupSize, ppcrtinv, totm, peArr, sizeOfPE, ruinv, (hInt_t*)0);
   for (hShort_t i = 0; i < tupSize; i++) {
     for (hDim_t j = 0; j < totm; j++) {
-      CMPLX_IMUL(y[j*tupSize+i], mhatInv[i]);
+      y[j*tupSize+i] *= mhatInv[i];
     }
   }
 }
