@@ -1,24 +1,36 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             GeneralizedNewtypeDeriving, KindSignatures,
-             MultiParamTypeClasses, NoImplicitPrelude, RoleAnnotations,
-             ScopedTypeVariables, StandaloneDeriving, TypeFamilies,
-             TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE RoleAnnotations            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 -- | Functions from one cyclotomic ring to another that are linear
 -- over a common subring.
 
-module Crypto.Lol.Cyclotomic.Linear
-( Linear, ExtendLinIdx
-, linearDec, evalLin, extendLin
+module Crypto.Lol.Cyclotomic.Linear (
+
+  Linear, ExtendLinIdx,
+  linearDec, evalLin, extendLin
+
 ) where
 
 import Crypto.Lol.Cyclotomic.Cyc
+import Crypto.Lol.Cyclotomic.Tensor                                 ( TRep )
 import Crypto.Lol.LatticePrelude
 
-import Algebra.Additive as Additive (C)
+import Algebra.Additive                                             as Additive (C)
 
 import Control.Applicative
 import Control.DeepSeq
+
 
 -- | An @E@-linear function from @R@ to @S@.
 
@@ -51,22 +63,19 @@ evalLin (RD ys) r = sum (zipWith (*) ys $
                          embed <$> (coeffsCyc Dec r :: [Cyc t e z]))
 
 instance Additive (Cyc t s z) => Additive.C (Linear t z e r s) where
-  zero = RD []
-
-  (RD as) + (RD bs) = RD $ sumall as bs
-    where sumall [] ys = ys
-          sumall xs [] = xs
-          sumall (x:xs) (y:ys) = x+y : sumall xs ys
-
+  zero           = RD []
+  RD as + RD bs  = RD $ zipWith (+) as bs
   negate (RD as) = RD $ negate <$> as
 
-instance (Reduce z zq, Fact s, CElt t z, CElt t zq)
+instance (Reduce z zq, Reduce (TRep t z) (TRep t zq), Fact s, CElt t z, CElt t zq)
          => Reduce (Linear t z e r s) (Linear t zq e r s) where
   reduce (RD ys) = RD $ reduce <$> ys
 
 type instance LiftOf (Linear t zp e r s) = Linear t (LiftOf zp) e r s
 
-instance (CElt t zp, CElt t z, z ~ LiftOf zp, Lift zp z, Fact s)
+instance ( CElt t zp, CElt t z, z ~ LiftOf zp, Lift zp z, Fact s
+         , Reduce (TRep t z) (TRep t zp), Lift (TRep t zp) (TRep t z)
+         )
          => Lift' (Linear t zp e r s) where
   lift (RD ys) = RD $ liftCyc Pow <$> ys
 
@@ -88,3 +97,4 @@ extendLin :: (ExtendLinIdx e r s e' r' s', CElt t z)
 -- relax the constraint on E then we'd have to change the
 -- implementation to something more difficult.
 extendLin (RD ys) = RD (embed <$> ys)
+
