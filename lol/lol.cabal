@@ -43,7 +43,7 @@ source-repository head
 
 -- For information on compiling C with cabal: http://blog.ezyang.com/2010/06/setting-up-cabal-the-ffi-and-c2hs/
 
-Flag useICC
+Flag icc
   Description: Use ICC instead of GCC to compile C backend.
   Default:     False
 
@@ -70,7 +70,7 @@ library
   Includes: Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
   default-language:   Haskell2010
 
-  if flag(useICC)
+  if flag(icc)
     ghc-options: -pgml icc -optc-O3
     cc-options: -std=gnu99 -Wall -DSTATS -DCINTRIN
   else
