@@ -10,7 +10,7 @@ module Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
 , dnorm
 , dmulgpow, dmulgdec
 , dginvpow, dginvdec
-, dadd, dmul
+, dmul
 , marshalFactors
 , CPP
 , withArray, withPtrArray
