@@ -37,8 +37,8 @@ import Crypto.Random.DRBG
 import Data.ByteString.Lazy as BS (writeFile)
 import Data.Reflection      hiding (D)
 
-import System.Console.ANSI
-import System.Directory    (createDirectoryIfMissing)
+
+import System.Directory (createDirectoryIfMissing)
 
 import Text.ProtocolBuffers        (messagePut)
 import Text.ProtocolBuffers.Header
@@ -59,26 +59,27 @@ generateMain path beaconStart cps = do
 
 genAndWriteChallenge :: (MonadRandom m, MonadIO m)
   => FilePath -> ChallengeParams -> ChallengeID -> BeaconAddr -> m ()
-genAndWriteChallenge path cp challID ba@(BA t _) = do
-  let name = challengeName cp
+genAndWriteChallenge path cp challID ba@(BA _ _) = do
+  let name = challengeName challID cp
   liftIO $ putStrLn $ "Generating challenge " ++ name
+
   -- CJP: not printing warning because it's annoying to implement
   -- correctly: dont want to trust local time, don't want to rely on
   -- network when generating
 
   -- isAvail <- isBeaconAvailable t
   -- when isAvail $ printANSI Red "Beacon is already available!"
+
   chall <- genChallengeU cp challID ba
   liftIO $ writeChallengeU path name chall
 
 -- | The name for each challenge directory.
-challengeName :: ChallengeParams -> FilePath
-challengeName C{..} =
-  "chall-rlwec-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
-challengeName D{..} =
-  "chall-rlwed-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
-challengeName R{..} =
-  "chall-rlwr-m" ++ show m ++ "-q" ++ show q ++ "-p" ++ show p
+challengeName :: ChallengeID -> ChallengeParams -> FilePath
+challengeName challID params =
+  let base = "chall-id" ++ show challID in case params of
+    C{..} -> base ++ "-rlwec-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
+    D{..} -> base ++ "-rlwed-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
+    R{..} -> base ++ "-rlwr-m" ++ show m ++ "-q" ++ show q ++ "-p" ++ show p
 
 -- | Generate a challenge with the given parameters.
 genChallengeU :: (MonadRandom rnd)

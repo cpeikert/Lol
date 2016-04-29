@@ -9,7 +9,6 @@ import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
 import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
 import           Crypto.Challenges.RLWE.Proto.RLWE.Secret
 import qualified Crypto.Lol                                     as Lol
-import           Crypto.Lol.Reflects
 
 import Control.Monad.Except
 
