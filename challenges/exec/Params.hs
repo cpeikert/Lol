@@ -13,11 +13,12 @@ import Text.Parsec.Token
 
 -- | Information to generate a challenge.
 data ChallengeParams =
-    C {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64,
-       svar::Double, eps::Double}
-  | D {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64,
-       svar::Double, eps::Double}
-  | R {numSamples::Int, numInsts::InstanceID, m::Int32, q::Int64, p::Int64}
+    C { m :: Int32, q :: Int64, svar :: Double, numSamples :: Int,
+        numInsts :: InstanceID, eps :: Double }
+  | D { m :: Int32, q :: Int64, svar :: Double, numSamples :: Int,
+        numInsts :: InstanceID, eps :: Double }
+  | R { m :: Int32, q :: Int64, p :: Int64, numSamples :: Int,
+        numInsts :: InstanceID }
   deriving (Show)
 
 contLineID, discLineID, rlwrLineID :: String
@@ -79,10 +80,10 @@ rlwecParams, rlwedParams, rlwrParams ::
   (MonadError String m, Stream s m Char) => ParsecT s InstanceID m ChallengeParams
 rlwecParams = do
   parseWord contLineID
-  numSamples <- parseIntegral
   m <- parseIntegral
   q <- parseIntegral
   svar <- parseDouble
+  numSamples <- parseIntegral
 
   numInsts <- getState
   let eps = epsDef
@@ -90,10 +91,10 @@ rlwecParams = do
 
 rlwedParams = do
   parseWord discLineID
-  numSamples <- parseIntegral
   m <- parseIntegral
   q <- parseIntegral
   svar <- parseDouble
+  numSamples <- parseIntegral
 
   numInsts <- getState
   let eps = epsDef
@@ -101,10 +102,10 @@ rlwedParams = do
 
 rlwrParams = do
   parseWord rlwrLineID
-  numSamples <- parseIntegral
   m <- parseIntegral
   q <- parseIntegral
   p <- parseIntegral
+  numSamples <- parseIntegral
 
   numInsts <- getState
   when (p > q) $ throwError $
