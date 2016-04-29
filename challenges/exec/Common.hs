@@ -10,7 +10,6 @@ import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
 import           Crypto.Challenges.RLWE.Proto.RLWE.Secret
 import qualified Crypto.Lol                                     as Lol
 
-
 import Control.Monad.Except
 
 import           Data.ByteString.Lazy (unpack)
