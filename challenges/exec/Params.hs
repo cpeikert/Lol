@@ -6,6 +6,7 @@ import Common (InstanceID)
 
 import Control.Monad.Except
 import Data.Int
+import Prelude hiding (lex)
 import Text.Parsec
 import Text.Parsec.Token
 
@@ -27,7 +28,7 @@ rlwrLineID = "RLWR"
 epsDef :: Double
 epsDef = 2 ** (-50)
 
-lang :: (Stream s m Char) => GenLanguageDef s InstanceID m
+lang :: (Stream s m Char) => GenLanguageDef s u m
 lang = LanguageDef
   {commentStart = "/*",
    commentEnd = "*/",
@@ -41,21 +42,25 @@ lang = LanguageDef
    reservedOpNames = [],
    caseSensitive = True}
 
-langParser :: (Stream s m Char) => GenTokenParser s InstanceID m
+lex :: (Stream s m Char) => ParsecT s u m a -> ParsecT s u m a
+lex = lexeme langParser
+
+langParser :: (Stream s m Char) => GenTokenParser s u m
 langParser = makeTokenParser lang
 
-parseWhiteSpace :: (Stream s m Char) => ParsecT s InstanceID m ()
-parseWhiteSpace = whiteSpace langParser
+parseIntegral :: (Integral i, Monad m, Stream s m Char) => ParsecT s u m i
+parseIntegral = fromIntegral <$> (lex $ natural langParser)
 
-parseIntegral :: (Integral i, Monad m, Stream s m Char) => ParsecT s InstanceID m i
-parseIntegral = (fromIntegral <$> natural langParser) <* parseWhiteSpace
+parseDouble :: (Monad m, Stream s m Char) => ParsecT s u m Double
+parseDouble = lex $ float langParser
 
-parseDouble :: (Monad m, Stream s m Char) => ParsecT s InstanceID m Double
-parseDouble = float langParser <* parseWhiteSpace
+parseWord ::  (Monad m, Stream s m Char) => String -> ParsecT s u m ()
+parseWord =  lex . void . try . string
 
 paramsFile :: (MonadError String m, Stream s m Char) => ParsecT s InstanceID m [ChallengeParams]
-paramsFile = many line
-
+paramsFile = do
+  whiteSpace langParser -- skip leading whitespace
+  many line
 line :: (MonadError String m, Stream s m Char) => ParsecT s InstanceID m ChallengeParams
 line = rlwecParams <|> rlwedParams <|> rlwrParams <?> "Expected one of '" ++
   show contLineID ++ "', '" ++
@@ -63,39 +68,39 @@ line = rlwecParams <|> rlwedParams <|> rlwrParams <?> "Expected one of '" ++
   show rlwrLineID ++ "'."
 
 rlwecParams, rlwedParams, rlwrParams ::
-  (MonadError String m, Stream s m Char) => ParsecT s InstanceID m ChallengeParams
+  (Stream s m Char) => ParsecT s InstanceID m ChallengeParams
 rlwecParams = do
-  _ <- try $ string contLineID
-  whiteSpace langParser
+  parseWord contLineID
   numSamples <- parseIntegral
-  numInsts <- getState
   m <- parseIntegral
   q <- parseIntegral
   svar <- parseDouble
+
+  numInsts <- getState
   let eps = epsDef
   return C{..}
 
 rlwedParams = do
-  _ <- try $ string discLineID
-  whiteSpace langParser
+  parseWord discLineID
   numSamples <- parseIntegral
-  numInsts <- getState
   m <- parseIntegral
   q <- parseIntegral
   svar <- parseDouble
+
+  numInsts <- getState
   let eps = epsDef
   return D{..}
 
 rlwrParams = do
-  _ <- try $ string rlwrLineID
-  whiteSpace langParser
+  parseWord rlwrLineID
   numSamples <- parseIntegral
-  numInsts <- getState
   m <- parseIntegral
   q <- parseIntegral
   p <- parseIntegral
-  when (p > q) $ throwError $
-    "Expected p <= q; parsed q=" ++ show q ++ " and p=" ++ show p
+
+  numInsts <- getState
+  --when (p > q) $ throwError $
+  --  "Expected p <= q; parsed q=" ++ show q ++ " and p=" ++ show p
   return R{..}
 
 parseChallParams :: String -> InstanceID -> [ChallengeParams]
@@ -105,4 +110,4 @@ parseChallParams input numInsts = do
     Left e -> error $ "Invalid parameters:" ++ e
     Right r -> case r of
       Left e -> error $ "Error parsing input:" ++ show e
-      Right v -> v
+      Right v -> error $ show v
