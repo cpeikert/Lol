@@ -46,7 +46,7 @@ lang = LanguageDef
 -- applies `p` zero or more times, stopping when it reaches EOF
 -- if an error occurs, it stops parsing and reports the error
 manyError :: (Stream s m Char) => ParsecT s u m a -> ParsecT s u m [a]
-manyError p = (try $ eof *> return []) <|> (liftA2 (:) p (manyError p))
+manyError p = try (eof *> return []) <|> liftA2 (:) p (manyError p)
 
 lex :: (Stream s m Char) => ParsecT s u m a -> ParsecT s u m a
 lex = lexeme langParser
@@ -55,7 +55,7 @@ langParser :: (Stream s m Char) => GenTokenParser s u m
 langParser = makeTokenParser lang
 
 parseIntegral :: (Integral i, Monad m, Stream s m Char) => ParsecT s u m i
-parseIntegral = fromIntegral <$> (lex $ natural langParser)
+parseIntegral = fromIntegral <$> lex (natural langParser)
 
 parseDouble :: (Monad m, Stream s m Char) => ParsecT s u m Double
 parseDouble = lex $ float langParser
