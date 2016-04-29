@@ -76,10 +76,12 @@ genAndWriteChallenge path cp challID ba@(BA _ _) = do
 -- | The name for each challenge directory.
 challengeName :: ChallengeID -> ChallengeParams -> FilePath
 challengeName challID params =
-  let base = "chall-id" ++ show challID in case params of
-    C{..} -> base ++ "-rlwec-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
-    D{..} -> base ++ "-rlwed-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
-    R{..} -> base ++ "-rlwr-m" ++ show m ++ "-q" ++ show q ++ "-p" ++ show p
+  "chall-id" ++ show challID ++
+  (case params of
+     C{..} -> "-rlwec-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
+     D{..} -> "-rlwed-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
+     R{..} -> "-rlwr-m" ++ show m ++ "-q" ++ show q ++ "-p" ++ show p)
+  ++ "-l" ++ show (numSamples params)
 
 -- | Generate a challenge with the given parameters.
 genChallengeU :: (MonadRandom rnd)
