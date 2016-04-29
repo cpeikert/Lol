@@ -59,7 +59,7 @@ generateMain path beaconStart cps = do
 
 genAndWriteChallenge :: (MonadRandom m, MonadIO m)
   => FilePath -> ChallengeParams -> ChallengeID -> BeaconAddr -> m ()
-genAndWriteChallenge path cp challID ba@(BA t _) = do
+genAndWriteChallenge path cp challID ba@(BA _ _) = do
   let name = challengeName cp
   liftIO $ putStrLn $ "Generating challenge " ++ name
   -- CJP: not printing warning because it's annoying to implement
