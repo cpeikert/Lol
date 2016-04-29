@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns, ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, MultiParamTypeClasses, NoImplicitPrelude,
-             PolyKinds, ScopedTypeVariables, TemplateHaskell, TypeFamilies,
-             TypeOperators #-}
+             PolyKinds, ScopedTypeVariables, TemplateHaskell,
+             TypeFamilies, TypeOperators #-}
 
 -- | RT-specific functions for embedding/twacing in various bases
 
@@ -10,22 +10,22 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 , coeffs', powBasisPow', crtSetDec'
 ) where
 
-import           Crypto.Lol.LatticePrelude              as LP hiding (lift, (!!))
 import           Crypto.Lol.CRTrans
-import qualified Crypto.Lol.Cyclotomic.Tensor                      as T
+import qualified Crypto.Lol.Cyclotomic.Tensor                     as T
 import           Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 import           Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
-import           Crypto.Lol.Reflects
-import           Crypto.Lol.Types.FiniteField
-import           Crypto.Lol.Types.ZmStar
+import           Crypto.Lol.LatticePrelude                        as LP
+
+import Crypto.Lol.Types.FiniteField
+import Crypto.Lol.Types.ZmStar
 
 import Control.Applicative
-import Control.Arrow       (first, (***))
+import Control.Arrow       (first, second)
 
 import           Data.Coerce
 import           Data.Default
 import           Data.Maybe
-import           Data.Reflection (reify)
+import           Data.Reflection              (reify)
 import qualified Data.Vector                  as V
 import qualified Data.Vector.Unboxed          as U
 import           Data.Vector.Unboxed.Deriving
@@ -175,7 +175,7 @@ baseIndicesCRT :: forall m m' . (m `Divides` m')
 
 baseIndicesPow = do
   idxs <- T.baseIndicesPow
-  return $ fromUnboxed (Z :. U.length idxs) $ U.map (id *** (Z:.)) idxs
+  return $ fromUnboxed (Z :. U.length idxs) $ U.map (second (Z:.)) idxs
 
 baseIndicesDec = do
   idxs <- T.baseIndicesDec

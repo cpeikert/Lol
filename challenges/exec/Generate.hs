@@ -37,8 +37,8 @@ import Crypto.Random.DRBG
 import Data.ByteString.Lazy as BS (writeFile)
 import Data.Reflection      hiding (D)
 
-import System.Console.ANSI
-import System.Directory    (createDirectoryIfMissing)
+
+import System.Directory (createDirectoryIfMissing)
 
 import Text.ProtocolBuffers        (messagePut)
 import Text.ProtocolBuffers.Header
