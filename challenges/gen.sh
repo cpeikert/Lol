@@ -5,7 +5,7 @@ tarfile=rlwe-challenges.tar.gz
 challDir=rlwe-challenges
 
 echo "Running challenge generator..."
-./dist/build/$execname/$execname generate --init-beacon=1461816000
+./dist/build/$execname/$execname generate
 
 echo "Tarring challenge files..."
 tar czf $tarfile $( find -P $challDir -name "*.instance" -or -name "*.challenge" )
