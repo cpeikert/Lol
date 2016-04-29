@@ -1,20 +1,13 @@
 #!/bin/sh
 
-execname=verify
-pubdir=publish
-
-mkdir -p $pubdir
-
-echo "CJP says: I don't think this script should be responsible for building/installing the binaries; instead, stack/cabal should do it.  This script should just run the right binaries."
-
-echo "Building challenge verifier..."
-cabal build $execname
+execname=rlwe-challenges
+challDir=rlwe-challenges
 
 echo "Running challenge verifier..."
-./dist/build/$execname/$execname
+./dist/build/$execname/$execname verify
 
 echo "Verifying beacon signatures..."
-beacons=$( find ./challenge-files -name "*.xml" )
+beacons=$( find $challDir -name "*.xml" )
 
 RED='\033[1;31m'
 GREEN='\033[1;32m'
@@ -25,7 +18,7 @@ do
   echo -n "\t"
   echo -n $f
   echo -n "..."
-  ./beaconVerify.sh $f
+  ./beaconVerify.sh $challDir $f
   rc=$?
   if [ $rc -ne 0 ]
   then echo "${RED}FAILED${NC}"

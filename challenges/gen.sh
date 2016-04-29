@@ -1,20 +1,27 @@
 #!/bin/sh
 
-pubdir=publish
-filename=rlwe_challenges
-execname=gen
-
-mkdir -p $pubdir
-
-echo "CJP says: I don't think this script should be responsible for building/installing the binaries; instead, stack/cabal should do it.  This script should just run the right binaries."
-
-echo "Building challenge generator..."
-cabal build $execname
+execname=rlwe-challenges
+tarfile=rlwe-challenges.tar.gz
+challDir=rlwe-challenges
 
 echo "Running challenge generator..."
-./dist/build/$execname/$execname
+./dist/build/$execname/$execname generate --init-beacon=1461816000
 
 echo "Tarring challenge files..."
-tar czf $pubdir/$filename.tar.gz $( find -P challenge-files -name "*.instance" -or -name "beaconTime.txt" )
+tar czf $tarfile $( find -P $challDir -name "*.instance" -or -name "*.challenge" )
 
-echo "Now sign the challenge file, and go to www.originstamp.org to commit to it."
+echo "Signing the tar file..."
+
+# run "gpg --fingerprint"
+# > ...
+# > pub   4096R/B8B245F5 2016-04-12 [expires: 2020-04-11]
+# >       Key fingerprint = 8126 1E02 FC1A 11C9 631A  65BE B5B3 1682 B8B2 45F5
+# > uid       Chris Peikert (Signing key for Ring-LWE challenges) <cpeikert@alum.mit.edu>
+
+# put 0xB8242E6B below (not sure if this is the same across multiple computers)
+gpg -u 0xB8242E6B -s $tarfile
+
+echo "Hashing the tar file..."
+openssl dgst -sha256 $tarfile
+
+echo "Go to www.originstamp.org to commit to the signature."

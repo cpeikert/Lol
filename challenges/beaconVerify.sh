@@ -4,18 +4,18 @@
 ## This code is slightly adapted from the script
 ## provided by Elliot Williams at hackaday.com/2014/12/19/nist-randomness-beacon/
 ## which is itself modified from code provided by Lawrence Bassham, NIST.
- 
+
 ## The UNIX time that you'd like to test:
 ##
-## whichRecord=1400878200 
- 
+## whichRecord=1400878200
+
 ## --------------- Utility Functions ----------------
- 
+
 ## Extracts specified record from xml file
 getValue() {
  xmllint --xpath "string(//*[local-name()='$1'])" $2
 }
- 
+
 ## Converts little-endian to big-endian
 byteReverse() {
  len=${#1}
@@ -33,13 +33,13 @@ cleanup() {
 ## ---------------- Get an arbitrary record -----------------
 ## echo "Downloading data for: ${whichRecord}"
 ## curl -s https://beacon.nist.gov/rest/record/${whichRecord} -o rec.xml
-
-rec=$1
+path=$1
+rec=$2
 
 ## ------------- Pack data into correct format --------------
 ## echo
 ## echo "## Create a summary of all of the data, save as beacon.bin"
- 
+
 ## Strangest choice of format ever!
 ## Version number (ascii text)
 ## Update frequency (4 bytes)
@@ -54,16 +54,16 @@ printf "%.16x" `getValue timeStamp $rec` | xxd -r -p >> beacon.bin
 getValue seedValue $rec | xxd -r -p >> beacon.bin
 getValue previousOutputValue $rec | xxd -r -p >> beacon.bin
 printf "%.8x" `getValue statusCode $rec` | xxd -r -p >> beacon.bin
- 
+
 ## ------------------ Verify signature on data --------------------
 
 ## echo "## Verify that the signature and NIST's public key correctly SHA512 sign the data"
- 
+
 ## Download Beacon's public key
 ## echo "Downloading Beacon's public key"
 ## curl -s https://beacon.nist.gov/certificate/beacon.cer -o beacon.cer
 
- 
+
 ## Create a bytewise reversed version of the listed signature
 ## This is necessary b/c Beacon signs with Microsoft CryptoAPI which outputs
 ## the signature as little-endian instead of big-endian like many other tools
@@ -72,9 +72,9 @@ signature=`getValue signatureValue $rec`
 byteReverse ${signature} | xxd -r -p > beacon.sig
 
 ## Pull public key out of certificate
-/usr/bin/openssl x509 -pubkey -noout -in challenge-files/beacon.cer > challenge-files/beaconpubkey.pem
+/usr/bin/openssl x509 -pubkey -noout -in $path/beacon.cer > $path/beaconpubkey.pem
 ## Test signature / key on packed data
-sigcheck=$( /usr/bin/openssl dgst -sha512 -verify challenge-files/beaconpubkey.pem -signature beacon.sig beacon.bin )
+sigcheck=$( /usr/bin/openssl dgst -sha512 -verify $path/beaconpubkey.pem -signature beacon.sig beacon.bin )
 ## echo
 ## echo
 
@@ -90,12 +90,12 @@ fi
 ## echo " the reported output value"
 ## echo " next record's previous output value"
 ## echo
- 
+
 ## Just print output value
 ## echo "Reported output value"
 beaconoutput=$( getValue outputValue $rec )
 ## echo
- 
+
 ## Now turn the signature into the output value: again SHA512
 ## echo "SHA512 of the signature"
 hashofsig=$( getValue signatureValue $rec | xxd -r -p | openssl sha512 -binary | xxd -p -u -c 128 )
@@ -115,14 +115,14 @@ fi
 ## getValue previousOutputValue next.xml
 ## echo
 ## echo
- 
+
 ## --------------------- The End -----------------------------------------
- 
+
 ## If this all worked, we've verified that the signature (plus NIST's key)
 ## sign the hash of the random number and its support info
 ## _and_ we've verified that the outputValue is derived from them,
 ## so we know that this output value is in the chain.
- 
+
 ## If we run this on every entry in the chain, and all works out just fine,
 ## then we'd know all is well
 
