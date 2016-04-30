@@ -92,7 +92,7 @@ instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
   toProto (CT (CT' xs)) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = proxy value (Proxy::Proxy q) :: Int64
-    in Rq m (fromIntegral q) $ S.fromList $ SV.toList $ SV.map LP.lift $ xs
+    in Rq m (fromIntegral q) $ S.fromList $ SV.toList $ SV.map LP.lift xs
   toProto x@(ZV _) = toProto $ toCT x
 
   fromProto (Rq m' q' xs) =
@@ -101,8 +101,8 @@ instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
         n = proxy totientFact (Proxy::Proxy m)
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
-    in if (m == (fromIntegral m') && len == n && (fromIntegral q) == q')
-       then return $ CT $ CT' $ SV.map reduce $ xs'
+    in if m == fromIntegral m' && len == n && fromIntegral q == q'
+       then return $ CT $ CT' $ SV.map reduce xs'
        else throwError $
             "An error occurred while reading the proto type for CT.\n\
             \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
@@ -115,7 +115,7 @@ instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
   toProto (CT (CT' xs)) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = proxy value (Proxy::Proxy q) :: Double
-    in Kq m q $ S.fromList $ SV.toList $ SV.map LP.lift $ xs
+    in Kq m q $ S.fromList $ SV.toList $ SV.map LP.lift xs
   toProto x@(ZV _) = toProto $ toCT x
 
   fromProto (Kq m' q' xs) =
@@ -124,7 +124,7 @@ instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
         n = proxy totientFact (Proxy::Proxy m)
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
-    in if (m == (fromIntegral m') && len == n && q == q')
+    in if m == fromIntegral m' && len == n && q == q'
        then return $ CT $ CT' $ SV.map reduce xs'
        else throwError $
             "An error occurred while reading the proto type for CT.\n\
