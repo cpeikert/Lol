@@ -170,7 +170,7 @@ type family Em r where
 --      which used a (very fast) C function for (*) and (+)
 instance (Additive r, Storable r, Fact m, Dispatch r)
   => Additive.C (CT m r) where
-  (CT a@(CT' _)) + (CT b@(CT' _)) = CT $ (untag $ cZipDispatch dadd) a b
+  (CT (CT' a)) + (CT (CT' b)) = CT $ CT' $ SV.zipWith (+) a b
   a + b = toCT a + toCT b
   negate (CT (CT' a)) = CT $ CT' $ SV.map negate a -- EAC: This probably should be converted to C code
   negate a = negate $ toCT a
