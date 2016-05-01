@@ -30,16 +30,12 @@ library
   ghc-options: -O3 -auto-all -caf-all -Wall
 
   exposed-modules:
-    Crypto.Challenges.RLWE.Proto.RLWE
-    Crypto.Challenges.RLWE.Proto.RLWE.Challenge
-    Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType
-    Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
-    Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
-    Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
-    Crypto.Challenges.RLWE.Proto.RLWE.SampleCont
-    Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
-    Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
-    Crypto.Challenges.RLWE.Proto.RLWE.Secret
+    Crypto.Proto.RLWE.Challenges.Challenge
+    Crypto.Proto.RLWE.Challenges.ChallengeType
+    Crypto.Proto.RLWE.Challenges.InstanceCont
+    Crypto.Proto.RLWE.Challenges.InstanceDisc
+    Crypto.Proto.RLWE.Challenges.InstanceRLWR
+    Crypto.Proto.RLWE.Challenges.Secret
 
   build-depends: base,
                  lol,

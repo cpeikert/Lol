@@ -21,10 +21,11 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Lol.Kq
-import Crypto.Lol.Types.Proto.Lol.Rq
 import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
+
+import Crypto.Proto.RLWE.Kq
+import Crypto.Proto.RLWE.Rq
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Module       as Module (C)

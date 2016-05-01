@@ -4,24 +4,24 @@
 
 module Verify where
 
-import           Beacon
-import           Common
+import Beacon
+import Common
+
+import           Crypto.Lol                 hiding (RRq, lift)
 import qualified Crypto.Lol.RLWE.Continuous as C
 import qualified Crypto.Lol.RLWE.Discrete   as D
 import qualified Crypto.Lol.RLWE.RLWR       as R
+import           Crypto.Lol.Types.Proto
 
-import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
-import Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
-import Crypto.Challenges.RLWE.Proto.RLWE.SampleCont
-import Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
-import Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
-import Crypto.Challenges.RLWE.Proto.RLWE.Secret
-
-import Crypto.Lol             hiding (RRq, lift)
-import Crypto.Lol.Types.Proto
+import Crypto.Proto.RLWE.Challenges.Challenge
+import Crypto.Proto.RLWE.Challenges.ChallengeType
+import Crypto.Proto.RLWE.Challenges.InstanceCont
+import Crypto.Proto.RLWE.Challenges.InstanceDisc
+import Crypto.Proto.RLWE.Challenges.InstanceRLWR
+import Crypto.Proto.RLWE.Challenges.Secret
+import Crypto.Proto.RLWE.SampleCont
+import Crypto.Proto.RLWE.SampleDisc
+import Crypto.Proto.RLWE.SampleRLWR
 
 import           Control.Applicative
 import           Control.Monad.Except

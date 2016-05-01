@@ -1,21 +1,21 @@
+import "RLWE.proto";
 
-import "Lol.proto";
+// run this:
 
-// hprotoc -I . -I ../lol -a ../lol/Lol.proto=Crypto.Lol.Types.Proto -p Crypto.Challenges.RLWE.Proto RLWE.proto
+// hprotoc -I . -I ../lol -a RLWE.proto=Crypto.Proto -p Crypto.Proto.RLWE Challenges.proto
 
-message SampleCont {
-  required Rq a                    = 1;
-  required Kq b                    = 2;
+message Challenge {
+  required int32 challengeID       = 1;  // unique identifier of challenge
+  required int32 numInstances      = 2;  // number of instances in challenge
+  required int64 beaconEpoch       = 3;  // beacon epoch for suppressing secret
+  required int32 beaconOffset      = 4;  // byte of beacon value used
+  required ChallengeType challType = 5;
 }
 
-message SampleDisc {
-  required Rq a                    = 1;
-  required Rq b                    = 2;
-}
-
-message SampleRLWR {
-  required Rq a                    = 1;
-  required Rq b                    = 2;  // for some modulus p < q
+enum ChallengeType {
+  Cont                             = 0;
+  Disc                             = 1;
+  RLWR                             = 2;
 }
 
 message InstanceCont {
@@ -53,18 +53,4 @@ message Secret {
   required int32 m                 = 3;
   required int64 q                 = 4;
   required Rq s                    = 5;
-}
-
-enum ChallengeType {
-  Cont                             = 0;
-  Disc                             = 1;
-  RLWR                             = 2;
-}
-
-message Challenge {
-  required int32 challengeID       = 1;  // unique identifier of challenge
-  required int32 numInstances      = 2;  // number of instances in challenge
-  required int64 beaconEpoch       = 3;  // beacon epoch for suppressing secret
-  required int32 beaconOffset      = 4;  // byte of beacon value used
-  required ChallengeType challType = 5;
 }

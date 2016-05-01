@@ -1,14 +1,16 @@
-{-# LANGUAGE FlexibleContexts, RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, RecordWildCards #-}
 
 module Common where
 
-import           Beacon
-import           Crypto.Challenges.RLWE.Proto.RLWE.Challenge
-import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
-import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
-import           Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
-import           Crypto.Challenges.RLWE.Proto.RLWE.Secret
-import qualified Crypto.Lol                                     as Lol
+import Beacon
+
+import qualified Crypto.Lol as Lol
+
+import Crypto.Proto.RLWE.Challenges.Challenge
+import Crypto.Proto.RLWE.Challenges.InstanceCont
+import Crypto.Proto.RLWE.Challenges.InstanceDisc
+import Crypto.Proto.RLWE.Challenges.InstanceRLWR
+import Crypto.Proto.RLWE.Challenges.Secret
 
 import Control.Monad.Except
 

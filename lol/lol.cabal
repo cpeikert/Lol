@@ -94,11 +94,16 @@ library
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
     Crypto.Lol.Types.Proto
-    Crypto.Lol.Types.Proto.Lol.Rq
-    Crypto.Lol.Types.Proto.Lol.Kq
     Crypto.Lol.Types.RRq
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.ZqBasic
+
+    -- Crypto.Proto.RLWE  -- CJP: do we want to export this?
+    Crypto.Proto.RLWE.Rq
+    Crypto.Proto.RLWE.Kq
+    Crypto.Proto.RLWE.SampleCont
+    Crypto.Proto.RLWE.SampleDisc
+    Crypto.Proto.RLWE.SampleRLWR
 
   other-modules:
 

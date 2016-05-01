@@ -6,33 +6,34 @@ module Generate (generateMain) where
 
 import Beacon
 import Common
+import Params
+
+import Crypto.Lol                 hiding (RRq)
+import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.RLWE.Continuous as C
 import Crypto.Lol.RLWE.Discrete   as D
 import Crypto.Lol.RLWE.RLWR       as R
-import Params
+import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.Random
 
-import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
-import Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceCont
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceDisc
-import Crypto.Challenges.RLWE.Proto.RLWE.InstanceRLWR
-import Crypto.Challenges.RLWE.Proto.RLWE.SampleCont
-import Crypto.Challenges.RLWE.Proto.RLWE.SampleDisc
-import Crypto.Challenges.RLWE.Proto.RLWE.SampleRLWR
-import Crypto.Challenges.RLWE.Proto.RLWE.Secret        as S
+import Crypto.Proto.RLWE.Challenges.Challenge
+import Crypto.Proto.RLWE.Challenges.ChallengeType
+import Crypto.Proto.RLWE.Challenges.InstanceCont
+import Crypto.Proto.RLWE.Challenges.InstanceDisc
+import Crypto.Proto.RLWE.Challenges.InstanceRLWR
+import Crypto.Proto.RLWE.Challenges.Secret        as S
+import Crypto.Proto.RLWE.Kq
+import Crypto.Proto.RLWE.Rq
+import Crypto.Proto.RLWE.SampleCont
+import Crypto.Proto.RLWE.SampleDisc
+import Crypto.Proto.RLWE.SampleRLWR
+
+import Crypto.Random.DRBG
 
 import Control.Applicative
 import Control.Monad
 import Control.Monad.IO.Class
 import Control.Monad.Random
-
-import Crypto.Lol                    hiding (RRq, lift)
-import Crypto.Lol.Cyclotomic.UCyc
-import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.Proto.Lol.Kq
-import Crypto.Lol.Types.Proto.Lol.Rq
-import Crypto.Lol.Types.Random
-import Crypto.Random.DRBG
 
 import Data.ByteString.Lazy as BS (writeFile)
 import Data.Reflection      hiding (D)

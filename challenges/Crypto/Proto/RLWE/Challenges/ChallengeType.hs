@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
-module Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType (ChallengeType(..)) where
+module Crypto.Proto.RLWE.Challenges.ChallengeType (ChallengeType(..)) where
 import Prelude ((+), (/), (.))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
@@ -34,14 +34,14 @@ instance Prelude'.Enum ChallengeType where
   fromEnum Disc = 1
   fromEnum RLWR = 2
   toEnum
-   = P'.fromMaybe (Prelude'.error "hprotoc generated code: toEnum failure for type Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType")
-      . toMaybe'Enum
+   = P'.fromMaybe (Prelude'.error "hprotoc generated code: toEnum failure for type Crypto.Proto.RLWE.Challenges.ChallengeType") .
+      toMaybe'Enum
   succ Cont = Disc
   succ Disc = RLWR
-  succ _ = Prelude'.error "hprotoc generated code: succ failure for type Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType"
+  succ _ = Prelude'.error "hprotoc generated code: succ failure for type Crypto.Proto.RLWE.Challenges.ChallengeType"
   pred Disc = Cont
   pred RLWR = Disc
-  pred _ = Prelude'.error "hprotoc generated code: pred failure for type Crypto.Challenges.RLWE.Proto.RLWE.ChallengeType"
+  pred _ = Prelude'.error "hprotoc generated code: pred failure for type Crypto.Proto.RLWE.Challenges.ChallengeType"
 
 instance P'.Wire ChallengeType where
   wireSize ft' enum = P'.wireSize ft' (Prelude'.fromEnum enum)
@@ -59,8 +59,8 @@ instance P'.MessageAPI msg' (msg' -> ChallengeType) ChallengeType where
 instance P'.ReflectEnum ChallengeType where
   reflectEnum = [(0, "Cont", Cont), (1, "Disc", Disc), (2, "RLWR", RLWR)]
   reflectEnumInfo _
-   = P'.EnumInfo (P'.makePNF (P'.pack ".RLWE.ChallengeType") ["Crypto", "Challenges", "RLWE", "Proto"] ["RLWE"] "ChallengeType")
-      ["Crypto", "Challenges", "RLWE", "Proto", "RLWE", "ChallengeType.hs"]
+   = P'.EnumInfo (P'.makePNF (P'.pack ".Challenges.ChallengeType") ["Crypto", "Proto", "RLWE"] ["Challenges"] "ChallengeType")
+      ["Crypto", "Proto", "RLWE", "Challenges", "ChallengeType.hs"]
       [(0, "Cont"), (1, "Disc"), (2, "RLWR")]
 
 instance P'.TextType ChallengeType where

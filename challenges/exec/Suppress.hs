@@ -7,7 +7,8 @@ import Control.Monad.State
 
 import Beacon
 import Common
-import Crypto.Challenges.RLWE.Proto.RLWE.Challenge
+
+import Crypto.Proto.RLWE.Challenges.Challenge
 
 import Data.ByteString.Lazy (writeFile)
 
