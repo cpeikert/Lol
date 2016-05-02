@@ -16,7 +16,7 @@ import Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative
 import Control.DeepSeq
 
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.ZqBasic
 

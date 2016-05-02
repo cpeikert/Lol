@@ -10,7 +10,7 @@
 -- used modules, plus some low-level classes, missing instances, and
 -- assorted utility functions.
 
-module Crypto.Lol.LatticePrelude
+module Crypto.Lol.Prelude
 (
 -- * Classes and families
   Enumerable(..)

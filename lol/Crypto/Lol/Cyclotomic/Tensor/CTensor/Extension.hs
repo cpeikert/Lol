@@ -13,7 +13,7 @@ module Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
 ) where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.LatticePrelude as LP hiding (null, lift)
+import Crypto.Lol.Prelude as LP hiding (null, lift)
 import Crypto.Lol.Cyclotomic.Tensor as T
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZmStar

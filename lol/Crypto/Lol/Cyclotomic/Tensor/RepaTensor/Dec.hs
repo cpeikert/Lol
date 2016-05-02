@@ -8,7 +8,7 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
 
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as R
 import Crypto.Lol.GaussRandom
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 
 import Control.Monad.Random
 

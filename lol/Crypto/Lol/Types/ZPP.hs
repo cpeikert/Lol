@@ -6,7 +6,7 @@ module Crypto.Lol.Types.ZPP
 ( ZPP(..)
 ) where
 
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 import Crypto.Lol.Types.FiniteField
 
 -- | Represents integers modulo a prime power.

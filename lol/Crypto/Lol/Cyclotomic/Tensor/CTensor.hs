@@ -46,7 +46,7 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
 import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
 import Crypto.Lol.GaussRandom
-import Crypto.Lol.LatticePrelude                      as LP hiding
+import Crypto.Lol.Prelude                      as LP hiding
                                                              (replicate,
                                                              unzip, zip)
 import Crypto.Lol.Reflects

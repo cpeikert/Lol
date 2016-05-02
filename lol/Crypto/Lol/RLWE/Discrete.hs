@@ -6,7 +6,7 @@
 module Crypto.Lol.RLWE.Discrete where
 
 import Crypto.Lol.Cyclotomic.Cyc
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 import Crypto.Lol.RLWE.Continuous as C (errorBound)
 
 import Control.Applicative

@@ -8,7 +8,7 @@ module Crypto.Lol.RLWE.Continuous where
 import Crypto.Lol.Cyclotomic.Cyc    as C
 import Crypto.Lol.Cyclotomic.Tensor (TElt)
 import Crypto.Lol.Cyclotomic.UCyc   as U
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 
 import Control.Applicative
 import Control.Monad.Random

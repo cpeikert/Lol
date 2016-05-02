@@ -10,7 +10,7 @@ module Crypto.Lol.CRTrans
 , CRTInfo
 ) where
 
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 
 import Control.Arrow

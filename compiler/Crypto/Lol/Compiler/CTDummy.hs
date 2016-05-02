@@ -23,7 +23,7 @@ import Control.Monad.Identity
 
 import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Types.ZPP
-import Crypto.Lol.LatticePrelude hiding (lookup)
+import Crypto.Lol.Prelude hiding (lookup)
 import Crypto.Lol.Applications.SymmSHE
 
 import Data.Dynamic

@@ -12,7 +12,7 @@ module Crypto.Lol.Types.ZqBasic
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Gadget
-import Crypto.Lol.LatticePrelude    as LP
+import Crypto.Lol.Prelude    as LP
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField hiding (toList,fromList)
 import Crypto.Lol.Types.ZPP

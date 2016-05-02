@@ -75,7 +75,7 @@ library
     Crypto.Lol.Reflects
     Crypto.Lol.CRTrans
     Crypto.Lol.Gadget
-    Crypto.Lol.LatticePrelude
+    Crypto.Lol.Prelude
 
     Crypto.Lol.Cyclotomic.Cyc
     Crypto.Lol.Cyclotomic.UCyc

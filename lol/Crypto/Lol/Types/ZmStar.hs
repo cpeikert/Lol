@@ -10,7 +10,7 @@ module Crypto.Lol.Types.ZmStar
 ) where
 
 import Crypto.Lol.Factored
-import Crypto.Lol.LatticePrelude as LP hiding (null)
+import Crypto.Lol.Prelude as LP hiding (null)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.ZqBasic
 

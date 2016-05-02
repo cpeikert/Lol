@@ -9,7 +9,7 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
-import Crypto.Lol.LatticePrelude                        as LP
+import Crypto.Lol.Prelude                        as LP
 import Data.Coerce
 
 fL, fLInv, fGPow, fGDec :: (Fact m, Additive r, Unbox r, Elt r)

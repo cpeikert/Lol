@@ -18,7 +18,7 @@ module Crypto.Lol.Types.FiniteField
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Factored
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 
 import Algebra.Additive     as Additive (C)

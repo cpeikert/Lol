@@ -22,7 +22,7 @@ module Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
 
 import Control.Applicative
 
-import Crypto.Lol.LatticePrelude as LP (Complex, PP, Proxy (..), Tagged,
+import Crypto.Lol.Prelude as LP (Complex, PP, Proxy (..), Tagged,
                                         map, mapM_, proxy, tag, (++))
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.RRq

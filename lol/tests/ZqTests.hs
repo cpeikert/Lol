@@ -3,7 +3,7 @@
 module ZqTests (zqTests) where
 
 import Crypto.Lol.Types.ZqBasic
-import Crypto.Lol.LatticePrelude hiding (Nat)
+import Crypto.Lol.Prelude hiding (Nat)
 import Crypto.Lol.Reflects
 
 import Control.Monad

@@ -18,7 +18,7 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon
 , sumS, sumAllS
 ) where
 
-import Crypto.Lol.LatticePrelude as LP hiding ((!!))
+import Crypto.Lol.Prelude as LP hiding ((!!))
 
 import Algebra.Additive as Additive (C)
 import Algebra.Ring as Ring (C)

@@ -6,7 +6,7 @@
 
 module Crypto.Lol.Types.IrreducibleChar2 () where
 
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 

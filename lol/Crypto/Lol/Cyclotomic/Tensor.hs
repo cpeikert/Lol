@@ -23,7 +23,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.LatticePrelude as LP hiding (lift, (*>))
+import Crypto.Lol.Prelude as LP hiding (lift, (*>))
 import Crypto.Lol.Types.FiniteField
 
 import           Control.Applicative

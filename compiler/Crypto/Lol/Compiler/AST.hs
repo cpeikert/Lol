@@ -22,7 +22,7 @@ import Algebra.Ring as Ring (C)
 import Control.DeepSeq
 import Control.Monad.State
 
-import Crypto.Lol.LatticePrelude hiding ((!!), lookup, lift)
+import Crypto.Lol.Prelude hiding ((!!), lookup, lift)
 
 import Language.Syntactic
 import Language.Syntactic.Functional hiding (Let, Literal)

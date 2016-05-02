@@ -5,7 +5,7 @@
 module Crypto.Lol.GaussRandom
 ( realGaussian, realGaussians ) where
 
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 
 import qualified Data.Vector.Generic as V
 

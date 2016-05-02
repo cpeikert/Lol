@@ -54,7 +54,7 @@ import qualified Crypto.Lol.Cyclotomic.RescaleCyc as R
 import           Crypto.Lol.Cyclotomic.Tensor     (TElt, Tensor)
 import qualified Crypto.Lol.Cyclotomic.UCyc       as U
 import           Crypto.Lol.Gadget
-import           Crypto.Lol.LatticePrelude        as LP
+import           Crypto.Lol.Prelude        as LP
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.ZPP

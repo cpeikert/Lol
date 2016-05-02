@@ -37,7 +37,7 @@ import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Cyclotomic.UCyc (UCyc, D)
 import Crypto.Lol.Cyclotomic.Linear
 import Crypto.Lol.Gadget
-import Crypto.Lol.LatticePrelude    as LP hiding (sin)
+import Crypto.Lol.Prelude    as LP hiding (sin)
 
 import Control.Applicative  hiding ((*>))
 import Control.DeepSeq
