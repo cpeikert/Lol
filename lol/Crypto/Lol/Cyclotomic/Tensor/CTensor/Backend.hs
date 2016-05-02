@@ -316,8 +316,3 @@ foreign import ccall unsafe "tensorGaussianDec" tensorGaussianDec :: Int16 -> Pt
 
 foreign import ccall unsafe "mulRq" mulRq :: Int16 -> Ptr (ZqBasic q Int64) -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr Int64 -> IO ()
 foreign import ccall unsafe "mulC" mulC :: Int16 -> Ptr (Complex Double) -> Ptr (Complex Double) -> Int64 -> IO ()
-
-foreign import ccall unsafe "addRq" addRq :: Int16 -> Ptr (ZqBasic q Int64) -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr Int64 -> IO ()
-foreign import ccall unsafe "addR" addR :: Int16 -> Ptr Int64 -> Ptr Int64 -> Int64 -> IO ()
-foreign import ccall unsafe "addC" addC :: Int16 -> Ptr (Complex Double) -> Ptr (Complex Double) -> Int64 -> IO ()
-foreign import ccall unsafe "addD" addD :: Int16 -> Ptr Double -> Ptr Double -> Int64 -> IO ()
