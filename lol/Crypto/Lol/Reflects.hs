@@ -41,7 +41,7 @@ instance (BinC a, ToInteger.C i) => Reflects a i where
 
 -}
 
-instance (Prim p, ToInteger.C i) => Reflects p i where
+instance (Prime p, ToInteger.C i) => Reflects p i where
   value = fromIntegral <$> valuePrime
 
 instance (PPow pp, ToInteger.C i) => Reflects pp i where

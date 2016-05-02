@@ -46,7 +46,7 @@ type role GF representational representational
 
 -- | Constraint synonym for a prime field.
 type PrimeField fp = (Enumerable fp, Field fp, Eq fp, ZeroTestable fp,
-                      Prim (CharOf fp), IrreduciblePoly fp)
+                      Prime (CharOf fp), IrreduciblePoly fp)
 
 -- | Constraint synonym for a finite field.
 type GFCtx fp d = (PrimeField fp, Reflects d Int)

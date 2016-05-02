@@ -243,7 +243,7 @@ fMatrix mat = tagT $ go $ sUnF (sing :: SFactored m)
 -- prime @p@ to @1_(p^{e-1}) \otimes M@, where @1@ denotes the all-1s
 -- vector.
 ppMatrix :: forall pp r mon . (PPow pp, Monad mon, Ring r)
-            => (forall p . (Prim p) => TaggedT p mon (MatrixC r))
+            => (forall p . (Prime p) => TaggedT p mon (MatrixC r))
             -> TaggedT pp mon (MatrixC r)
 ppMatrix mat = tagT $ case (sing :: SPrimePower pp) of
   pp@(SPP (STuple2 sp _)) -> do
@@ -295,7 +295,7 @@ gCRTPPow, gInvCRTPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (MatrixC r)
 gCRTPPow = ppMatrix gCRTPrime
 gInvCRTPPow = ppMatrix gInvCRTPrime
 
-gCRTPrime, gInvCRTPrime :: (Prim p, CRTrans mon r) => TaggedT p mon (MatrixC r)
+gCRTPrime, gInvCRTPrime :: (Prime p, CRTrans mon r) => TaggedT p mon (MatrixC r)
 
 -- | A @(p-1)@-by-1 matrix of the CRT coefficients of @g_p@, for @p@th
 -- cyclotomic.
