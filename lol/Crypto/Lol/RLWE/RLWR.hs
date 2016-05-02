@@ -1,6 +1,8 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, MultiParamTypeClasses,
              NoImplicitPrelude, ScopedTypeVariables #-}
 
+-- | Functions and types for working with ring-LWR samples.
+
 module Crypto.Lol.RLWE.RLWR where
 
 import Crypto.Lol

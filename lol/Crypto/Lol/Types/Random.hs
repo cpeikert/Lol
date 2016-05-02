@@ -15,6 +15,7 @@ import Control.Monad.Random       (RandT, evalRandT)
 import Crypto.Random
 import System.Random
 
+-- | Turns a 'CryptoRandomGen' @g@ into a standard 'RandomGen'.
 newtype CryptoRand g = CryptoRand g deriving (CryptoRandomGen)
 
 -- | Evaluate a 'RandT' computation using a cryptographic generator

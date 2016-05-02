@@ -98,7 +98,7 @@ library
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.ZqBasic
 
-    -- Crypto.Proto.RLWE  -- CJP: do we want to export this?
+    Crypto.Proto.RLWE
     Crypto.Proto.RLWE.Rq
     Crypto.Proto.RLWE.Kq
     Crypto.Proto.RLWE.SampleCont
@@ -140,6 +140,7 @@ library
     numeric-prelude >= 0.4.2 && < 0.5,
     QuickCheck >= 2.8 && < 2.9,
     protocol-buffers,
+    protocol-buffers-descriptor,
     random >= 1.1 && < 1.2,
     reflection >= 1.5.1 && < 2.2,
     repa==3.4.*,

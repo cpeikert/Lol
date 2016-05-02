@@ -2,6 +2,10 @@
              MultiParamTypeClasses, PolyKinds, ScopedTypeVariables,
              TypeFamilies, UndecidableInstances #-}
 
+-- | This module contains the functions to transform Haskell types into their
+-- C counterpart, and to transform polymorphic Haskell functions into C funtion
+-- calls in a type-safe way.
+
 module Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
 ( Dispatch
 , dcrt, dcrtinv
@@ -36,10 +40,12 @@ import           Foreign.Ptr             (Ptr, castPtr, plusPtr)
 import           Foreign.Storable        (Storable (..))
 import qualified Foreign.Storable.Record as Store
 
+-- | Convert a list of prime powers to a suitable C representation.
 marshalFactors :: [PP] -> Vector CPP
 marshalFactors = SV.fromList . LP.map (\(p,e) -> CPP (fromIntegral p) (fromIntegral e))
 
 -- http://stackoverflow.com/questions/6517387/vector-vector-foo-ptr-ptr-foo-io-a-io-a
+-- | Evaluates a C function that takes a @a** ptr@ on a list of Vectors.
 withPtrArray :: (Storable a) => [Vector a] -> (Ptr (Ptr a) -> IO b) -> IO b
 withPtrArray v f = do
   let vs = LP.map SV.unsafeToForeignPtr0 v
@@ -48,6 +54,7 @@ withPtrArray v f = do
   LP.mapM_ (\(fp,_) -> touchForeignPtr fp) vs
   return res
 
+-- | C representation of a prime power.
 data CPP = CPP {p' :: !Int32, e' :: !Int16}
 -- stolen from http://hackage.haskell.org/packages/archive/numeric-prelude/0.4.0.3/doc/html/src/Number-Complex.html#T
 -- the NumericPrelude Storable instance for complex numbers
@@ -129,21 +136,32 @@ instance {-# Overlappable #-} Tuple a where
 instance (Tuple a, Tuple b) => Tuple (a,b) where
   numComponents = tag $ (proxy numComponents (Proxy::Proxy a)) + (proxy numComponents (Proxy::Proxy b))
 
+-- | Single-argument synonym for @Dispatch'@.
 type Dispatch r = (Dispatch' (CTypeOf r) r)
 
 -- | Class to safely match Haskell types with the appropriate C function.
 class (repr ~ CTypeOf r) => Dispatch' repr r where
+  -- | Equivalent to 'Tensor's @crt@.
   dcrt      :: Ptr (Ptr r) ->           Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  -- | Equivalent to 'Tensor's @crtInv@.
   dcrtinv   :: Ptr (Ptr r) -> Ptr r ->  Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  -- | Equivalent to 'Tensor's @tGaussianDec@.
   dgaussdec :: Ptr (Ptr (Complex r)) -> Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-
+  -- | Equivalent to 'Tensor's @l@.
   dl        :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  -- | Equivalent to 'Tensor's @lInv@.
   dlinv     :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  -- | Equivalent to 'Tensor's @gSqNormDec@.
   dnorm     :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  -- | Equivalent to 'Tensor's @mulGPow@.
   dmulgpow  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  -- | Equivalent to 'Tensor's @mulGDec@.
   dmulgdec  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  -- | Equivalent to 'Tensor's @divGPow@.
   dginvpow  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  -- | Equivalent to 'Tensor's @divGDec@.
   dginvdec  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  -- | Equivalent to @zipWith (*)@
   dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
 
 instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ RRqD)

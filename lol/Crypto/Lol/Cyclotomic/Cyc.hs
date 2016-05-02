@@ -400,7 +400,9 @@ coeffsCyc R.Dec c' = Dec <$> U.coeffsDec (uncycDec c')
 coeffsPow, coeffsDec :: (m `Divides` m', CElt t r) => Cyc t m' r -> [Cyc t m r]
 {-# INLINABLE coeffsPow #-}
 {-# INLINABLE coeffsDec #-}
+-- | Specialized version of @coeffsCyc@ for powerful basis.
 coeffsPow = coeffsCyc R.Pow
+-- | Specialized version of @coeffsCyc@ for decoding basis.
 coeffsDec = coeffsCyc R.Dec
 
 -- | The relative powerful basis of @O_m' / O_m@.

@@ -1,6 +1,8 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, MultiParamTypeClasses,
              NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
 
+-- | Functions and types for working with continuous ring-LWE samples.
+
 module Crypto.Lol.RLWE.Continuous where
 
 import Crypto.Lol.Cyclotomic.Cyc    as C

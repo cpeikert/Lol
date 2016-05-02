@@ -31,6 +31,8 @@ import qualified Data.Vector.Unboxed         as U
 import Foreign.Storable
 
 -- invariant: 0 <= x < q
+-- | The ring @RR_q@ of reals modulo 'q', using underlying floating
+-- type 'r'.
 newtype RRq q r = RRq r
     deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable)
 

@@ -1,6 +1,8 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, MultiParamTypeClasses,
              NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
 
+-- | Functions and types for working with discretized ring-LWE samples.
+
 module Crypto.Lol.RLWE.Discrete where
 
 import Crypto.Lol.Cyclotomic.Cyc
