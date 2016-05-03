@@ -96,9 +96,10 @@ genChallengeU cp challengeID (BA beaconEpoch beaconOffset) = do
   insts <- mapM (genInstanceU params' challengeID) instIDs
   return $ CU chall insts
 
--- | Generate an RLWE instance with the given parameters.
+-- | Generate an instance for the given parameters.
 genInstanceU :: (MonadRandom rnd)
   => Params -> ChallengeID -> InstanceID -> rnd InstanceU
+
 genInstanceU (Cparams params@ContParams{..}) challengeID instanceID =
   reify q (\(_::Proxy q) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
@@ -106,6 +107,7 @@ genInstanceU (Cparams params@ContParams{..}) challengeID instanceID =
       let s'' = Secret{s = toProto s', ..}
           samples = (uncurry SampleCont) <$> (toProto samples')
       return $ IC s'' InstanceCont{..}))
+
 genInstanceU (Dparams params@DiscParams{..}) challengeID instanceID =
   reify q (\(_::Proxy q) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
@@ -113,6 +115,7 @@ genInstanceU (Dparams params@DiscParams{..}) challengeID instanceID =
       let s'' = Secret{s = toProto s', ..}
           samples = (uncurry SampleDisc) <$> (toProto samples')
       return $ ID s'' InstanceDisc{..}))
+
 genInstanceU (Rparams params@RLWRParams{..}) challengeID instanceID =
   reify q (\(_::Proxy q) -> reify p (\(_::Proxy p) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
@@ -165,7 +168,7 @@ writeProtoType fileName obj = BS.writeFile fileName $ messagePut obj
 -- random) secret, using the given scaled variance and number of
 -- desired samples.
 instanceCont :: (C.RLWECtx t m zq rrq, Random zq, Random (LiftOf rrq),
-              OrdFloat (LiftOf rrq), MonadRandom rnd, ToRational v)
+                 OrdFloat (LiftOf rrq), MonadRandom rnd, ToRational v)
   => v -> Int -> rnd (Cyc t m zq, [C.Sample t m zq rrq])
 instanceCont svar num = do
   s <- getRandom
