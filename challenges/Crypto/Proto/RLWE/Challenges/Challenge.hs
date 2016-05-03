@@ -7,10 +7,12 @@ import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Crypto.Proto.RLWE.Challenges.ChallengeType as Challenges (ChallengeType)
+import qualified Crypto.Proto.RLWE.Challenges.Challenge.Params as Challenges.Challenge (Params)
+import qualified Crypto.Proto.RLWE.Challenges.Challenge.Params as Challenges.Challenge.Params
+       (Params(..), get'cparams, get'dparams, get'rparams)
 
 data Challenge = Challenge{challengeID :: !(P'.Int32), numInstances :: !(P'.Int32), beaconEpoch :: !(P'.Int64),
-                           beaconOffset :: !(P'.Int32), challType :: !(Challenges.ChallengeType)}
+                           beaconOffset :: !(P'.Int32), params :: P'.Maybe (Challenges.Challenge.Params)}
                deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
 
 instance P'.Mergeable Challenge where
@@ -30,7 +32,9 @@ instance P'.Wire Challenge where
     where
         calc'Size
          = (P'.wireSizeReq 1 5 x'1 + P'.wireSizeReq 1 5 x'2 + P'.wireSizeReq 1 3 x'3 + P'.wireSizeReq 1 5 x'4 +
-             P'.wireSizeReq 1 14 x'5)
+             P'.wireSizeOpt 1 11 (Challenges.Challenge.Params.get'cparams Prelude'.=<< x'5)
+             + P'.wireSizeOpt 1 11 (Challenges.Challenge.Params.get'dparams Prelude'.=<< x'5)
+             + P'.wireSizeOpt 1 11 (Challenges.Challenge.Params.get'rparams Prelude'.=<< x'5))
   wirePut ft' self'@(Challenge x'1 x'2 x'3 x'4 x'5)
    = case ft' of
        10 -> put'Fields
@@ -45,7 +49,9 @@ instance P'.Wire Challenge where
              P'.wirePutReq 16 5 x'2
              P'.wirePutReq 24 3 x'3
              P'.wirePutReq 32 5 x'4
-             P'.wirePutReq 40 14 x'5
+             P'.wirePutOpt 42 11 (Challenges.Challenge.Params.get'cparams Prelude'.=<< x'5)
+             P'.wirePutOpt 50 11 (Challenges.Challenge.Params.get'dparams Prelude'.=<< x'5)
+             P'.wirePutOpt 58 11 (Challenges.Challenge.Params.get'rparams Prelude'.=<< x'5)
   wireGet ft'
    = case ft' of
        10 -> P'.getBareMessageWith update'Self
@@ -58,7 +64,21 @@ instance P'.Wire Challenge where
              16 -> Prelude'.fmap (\ !new'Field -> old'Self{numInstances = new'Field}) (P'.wireGet 5)
              24 -> Prelude'.fmap (\ !new'Field -> old'Self{beaconEpoch = new'Field}) (P'.wireGet 3)
              32 -> Prelude'.fmap (\ !new'Field -> old'Self{beaconOffset = new'Field}) (P'.wireGet 5)
-             40 -> Prelude'.fmap (\ !new'Field -> old'Self{challType = new'Field}) (P'.wireGet 14)
+             42 -> Prelude'.fmap
+                    (\ !new'Field ->
+                      old'Self{params =
+                                P'.mergeAppend (params old'Self) (Prelude'.Just (Challenges.Challenge.Params.Cparams new'Field))})
+                    (P'.wireGet 11)
+             50 -> Prelude'.fmap
+                    (\ !new'Field ->
+                      old'Self{params =
+                                P'.mergeAppend (params old'Self) (Prelude'.Just (Challenges.Challenge.Params.Dparams new'Field))})
+                    (P'.wireGet 11)
+             58 -> Prelude'.fmap
+                    (\ !new'Field ->
+                      old'Self{params =
+                                P'.mergeAppend (params old'Self) (Prelude'.Just (Challenges.Challenge.Params.Rparams new'Field))})
+                    (P'.wireGet 11)
              _ -> let (field'Number, wire'Type) = P'.splitWireTag wire'Tag in P'.unknown field'Number wire'Type old'Self
 
 instance P'.MessageAPI msg' (msg' -> Challenge) Challenge where
@@ -67,10 +87,10 @@ instance P'.MessageAPI msg' (msg' -> Challenge) Challenge where
 instance P'.GPB Challenge
 
 instance P'.ReflectDescriptor Challenge where
-  getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList [8, 16, 24, 32, 40]) (P'.fromDistinctAscList [8, 16, 24, 32, 40])
+  getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList [8, 16, 24, 32]) (P'.fromDistinctAscList [8, 16, 24, 32])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".Challenges.Challenge\", haskellPrefix = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule = [MName \"Challenges\"], baseName = MName \"Challenge\"}, descFilePath = [\"Crypto\",\"Proto\",\"RLWE\",\"Challenges\",\"Challenge.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.challengeID\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\"], baseName' = FName \"challengeID\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 8}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 5}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.numInstances\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\"], baseName' = FName \"numInstances\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 16}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 5}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.beaconEpoch\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\"], baseName' = FName \"beaconEpoch\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 3}, wireTag = WireTag {getWireTag = 24}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 3}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.beaconOffset\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\"], baseName' = FName \"beaconOffset\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 4}, wireTag = WireTag {getWireTag = 32}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 5}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.challType\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\"], baseName' = FName \"challType\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 5}, wireTag = WireTag {getWireTag = 40}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 14}, typeName = Just (ProtoName {protobufName = FIName \".Challenges.ChallengeType\", haskellPrefix = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule = [MName \"Challenges\"], baseName = MName \"ChallengeType\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".Challenges.Challenge\", haskellPrefix = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule = [MName \"Challenges\"], baseName = MName \"Challenge\"}, descFilePath = [\"Crypto\",\"Proto\",\"RLWE\",\"Challenges\",\"Challenge.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.challengeID\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\"], baseName' = FName \"challengeID\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 8}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 5}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.numInstances\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\"], baseName' = FName \"numInstances\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 16}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 5}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.beaconEpoch\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\"], baseName' = FName \"beaconEpoch\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 3}, wireTag = WireTag {getWireTag = 24}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 3}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.beaconOffset\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\"], baseName' = FName \"beaconOffset\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 4}, wireTag = WireTag {getWireTag = 32}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 5}, typeName = Nothing, hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [OneofInfo {oneofName = ProtoName {protobufName = FIName \".Challenges.Challenge.params\", haskellPrefix = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule = [MName \"Challenges\",MName \"Challenge\"], baseName = MName \"Params\"}, oneofFName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.params\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\"], baseName' = FName \"params\", baseNamePrefix' = \"\"}, oneofFilePath = [\"Crypto\",\"Proto\",\"RLWE\",\"Challenges\",\"Challenge\",\"Params.hs\"], oneofFields = fromList [(ProtoName {protobufName = FIName \".Challenges.Challenge.params.cparams\", haskellPrefix = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule = [MName \"Challenges\",MName \"Challenge\",MName \"Params\"], baseName = MName \"Cparams\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.params.cparams\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\",MName \"Params\"], baseName' = FName \"cparams\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 5}, wireTag = WireTag {getWireTag = 42}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Challenges.ContParams\", haskellPrefix = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule = [MName \"Challenges\"], baseName = MName \"ContParams\"}), hsRawDefault = Nothing, hsDefault = Nothing}),(ProtoName {protobufName = FIName \".Challenges.Challenge.params.dparams\", haskellPrefix = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule = [MName \"Challenges\",MName \"Challenge\",MName \"Params\"], baseName = MName \"Dparams\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.params.dparams\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\",MName \"Params\"], baseName' = FName \"dparams\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 6}, wireTag = WireTag {getWireTag = 50}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Challenges.DiscParams\", haskellPrefix = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule = [MName \"Challenges\"], baseName = MName \"DiscParams\"}), hsRawDefault = Nothing, hsDefault = Nothing}),(ProtoName {protobufName = FIName \".Challenges.Challenge.params.rparams\", haskellPrefix = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule = [MName \"Challenges\",MName \"Challenge\",MName \"Params\"], baseName = MName \"Rparams\"},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".Challenges.Challenge.params.rparams\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule' = [MName \"Challenges\",MName \"Challenge\",MName \"Params\"], baseName' = FName \"rparams\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 7}, wireTag = WireTag {getWireTag = 58}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".Challenges.RLWRParams\", haskellPrefix = [MName \"Crypto\",MName \"Proto\",MName \"RLWE\"], parentModule = [MName \"Challenges\"], baseName = MName \"RLWRParams\"}), hsRawDefault = Nothing, hsDefault = Nothing})], oneofMakeLenses = False}], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
 
 instance P'.TextType Challenge where
   tellT = P'.tellSubMessage
@@ -83,11 +103,14 @@ instance P'.TextMsg Challenge where
        P'.tellT "numInstances" (numInstances msg)
        P'.tellT "beaconEpoch" (beaconEpoch msg)
        P'.tellT "beaconOffset" (beaconOffset msg)
-       P'.tellT "challType" (challType msg)
+       case (params msg) of
+         Prelude'.Just (Challenges.Challenge.Params.Cparams cparams) -> P'.tellT "cparams" cparams
+         Prelude'.Just (Challenges.Challenge.Params.Dparams dparams) -> P'.tellT "dparams" dparams
+         Prelude'.Just (Challenges.Challenge.Params.Rparams rparams) -> P'.tellT "rparams" rparams
+         Prelude'.Nothing -> Prelude'.return ()
   textGet
    = do
-       mods <- P'.sepEndBy
-                (P'.choice [parse'challengeID, parse'numInstances, parse'beaconEpoch, parse'beaconOffset, parse'challType])
+       mods <- P'.sepEndBy (P'.choice [parse'challengeID, parse'numInstances, parse'beaconEpoch, parse'beaconOffset, parse'params])
                 P'.spaces
        Prelude'.return (Prelude'.foldl (\ v f -> f v) P'.defaultValue mods)
     where
@@ -111,8 +134,20 @@ instance P'.TextMsg Challenge where
             (do
                v <- P'.getT "beaconOffset"
                Prelude'.return (\ o -> o{beaconOffset = v}))
-        parse'challType
-         = P'.try
-            (do
-               v <- P'.getT "challType"
-               Prelude'.return (\ o -> o{challType = v}))
+        parse'params = P'.try (P'.choice [parse'cparams, parse'dparams, parse'rparams])
+          where
+              parse'cparams
+               = P'.try
+                  (do
+                     v <- P'.getT "cparams"
+                     Prelude'.return (\ s -> s{params = Prelude'.Just (Challenges.Challenge.Params.Cparams v)}))
+              parse'dparams
+               = P'.try
+                  (do
+                     v <- P'.getT "dparams"
+                     Prelude'.return (\ s -> s{params = Prelude'.Just (Challenges.Challenge.Params.Dparams v)}))
+              parse'rparams
+               = P'.try
+                  (do
+                     v <- P'.getT "rparams"
+                     Prelude'.return (\ s -> s{params = Prelude'.Just (Challenges.Challenge.Params.Rparams v)}))
