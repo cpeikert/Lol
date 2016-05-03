@@ -13,12 +13,12 @@ import Text.Parsec.Token
 
 -- | Information to generate a challenge.
 data ChallengeParams =
-    C { m :: Int32, q :: Int64, svar :: Double, numSamples :: Int,
-        numInsts :: InstanceID, eps :: Double }
-  | D { m :: Int32, q :: Int64, svar :: Double, numSamples :: Int,
-        numInsts :: InstanceID, eps :: Double }
-  | R { m :: Int32, q :: Int64, p :: Int64, numSamples :: Int,
-        numInsts :: InstanceID }
+    C { m :: Int32, q :: Int64, svar :: Double, numSamples :: Int32,
+        numInstances :: InstanceID, eps :: Double }
+  | D { m :: Int32, q :: Int64, svar :: Double, numSamples :: Int32,
+        numInstances :: InstanceID, eps :: Double }
+  | R { m :: Int32, q :: Int64, p :: Int64, numSamples :: Int32,
+        numInstances :: InstanceID }
   deriving (Show)
 
 contLineID, discLineID, rlwrLineID :: String
@@ -85,7 +85,7 @@ rlwecParams = do
   svar <- parseDouble
   numSamples <- parseIntegral
 
-  numInsts <- getState
+  numInstances <- getState
   let eps = epsDef
   return C{..}
 
@@ -96,7 +96,7 @@ rlwedParams = do
   svar <- parseDouble
   numSamples <- parseIntegral
 
-  numInsts <- getState
+  numInstances <- getState
   let eps = epsDef
   return D{..}
 
@@ -107,7 +107,7 @@ rlwrParams = do
   p <- parseIntegral
   numSamples <- parseIntegral
 
-  numInsts <- getState
+  numInstances <- getState
   when (p > q) $ throwError $
     "Expected p <= q; parsed q=" ++ show q ++ " and p=" ++ show p
   return R{..}

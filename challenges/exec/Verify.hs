@@ -14,10 +14,13 @@ import qualified Crypto.Lol.RLWE.RLWR       as R
 import           Crypto.Lol.Types.Proto
 
 import Crypto.Proto.RLWE.Challenges.Challenge
-import Crypto.Proto.RLWE.Challenges.ChallengeType
+import Crypto.Proto.RLWE.Challenges.Challenge.Params
+import Crypto.Proto.RLWE.Challenges.ContParams
+import Crypto.Proto.RLWE.Challenges.DiscParams
 import Crypto.Proto.RLWE.Challenges.InstanceCont
 import Crypto.Proto.RLWE.Challenges.InstanceDisc
 import Crypto.Proto.RLWE.Challenges.InstanceRLWR
+import Crypto.Proto.RLWE.Challenges.RLWRParams
 import Crypto.Proto.RLWE.Challenges.Secret
 import Crypto.Proto.RLWE.SampleCont
 import Crypto.Proto.RLWE.SampleDisc
@@ -26,9 +29,10 @@ import Crypto.Proto.RLWE.SampleRLWR
 import           Control.Applicative
 import           Control.Monad.Except
 import qualified Data.ByteString.Lazy as BS
-import           Data.List            (nub)
-
-import Data.Reflection hiding (D)
+import           Data.Int
+import           Data.List              (nub)
+import           Data.Maybe
+import           Data.Reflection hiding (D)
 
 import Net.Beacon
 
@@ -99,45 +103,59 @@ readSuppChallenge path challName Challenge{..} = do
   throwErrorIf delSecretExists $
     "Secret " ++ show deletedID ++
     " should not exist, but it does! You may need to run the 'suppress' command."
-  insts <- mapM (readInstanceU challType path challName challengeID) $
+  throwErrorUnless (isJust params) $ "Challenge " ++ challName ++ " does not contain parameters."
+  insts <- mapM (readInstanceU (fromJust params) path challName challengeID) $
     filter (/= deletedID) $ take numInsts' [0..]
   checkParamsEq challName "numInstances" (numInsts'-1) (length insts)
   return (BA beaconEpoch beaconOffset, insts)
 
 readFullChallenge path challName Challenge{..} = do
   let numInsts' = fromIntegral numInstances
-  insts <- mapM (readInstanceU challType path challName challengeID) $ take numInsts' [0..]
+  throwErrorUnless (isJust params) $ "Challenge " ++ challName ++ " does not contain parameters."
+  insts <- mapM (readInstanceU (fromJust params) path challName challengeID) $ take numInsts' [0..]
   checkParamsEq challName "numInstances" numInsts' (length insts)
   return (BA beaconEpoch beaconOffset, insts)
 
+validateSecret :: (Monad m, MonadError String m)
+  => String -> ChallengeID -> InstanceID -> Int32 -> Int64 -> Secret -> m ()
+validateSecret sfile cid iid m q (Secret cid' iid' m' q' _) = do
+  checkParamsEq sfile "challID" cid cid'
+  checkParamsEq sfile "instID" iid iid'
+  checkParamsEq sfile "m" m m'
+  checkParamsEq sfile "q" q q'
+
+validateInstance :: (Monad m, MonadError String m)
+  => String -> ChallengeID -> InstanceID -> Params
+            -> ChallengeID -> InstanceID -> Params -> m ()
+validateInstance instFile cid iid params cid' iid' params' = do
+  checkParamsEq instFile "challID" cid cid'
+  checkParamsEq instFile "instID" iid iid'
+  checkParamsEq instFile "params" params params'
+
 -- | Read an 'InstanceU' from a file.
 readInstanceU :: (MonadIO m, MonadError String m)
-                 => ChallengeType -> FilePath -> String
+                 => Params -> FilePath -> String
                  -> ChallengeID -> InstanceID -> m InstanceU
-readInstanceU challType path challName cid1 iid1 = do
-  let secFile = secretFilePath path challName iid1
-  sec@(Secret cid2 iid2 m q _) <- readProtoType secFile
-  checkParamsEq secFile "challID" cid1 cid2
-  checkParamsEq secFile "instID" iid1 iid2
-  let instFile = instFilePath path challName iid1
-      validateParams cid' iid' m' q' = do
-        checkParamsEq instFile "challID" cid1 cid'
-        checkParamsEq instFile "instID" iid1 iid'
-        checkParamsEq instFile "m" m m'
-        checkParamsEq instFile "q" q q'
-  case challType of
-    Cont -> do
-      inst@(InstanceCont cid' iid' m' q' _ _ _) <- readProtoType instFile
-      validateParams cid' iid' m' q'
-      return $ IC sec inst
-    Disc -> do
-      inst@(InstanceDisc cid' iid' m' q' _ _ _) <- readProtoType instFile
-      validateParams cid' iid' m' q'
-      return $ ID sec inst
-    RLWR -> do
-      inst@(InstanceRLWR cid' iid' m' q' _ _) <- readProtoType instFile
-      validateParams cid' iid' m' q'
-      return $ IR sec inst
+readInstanceU params path challName cid iid = do
+  let secFile = secretFilePath path challName iid
+  s <- readProtoType secFile
+  let instFile = instFilePath path challName iid
+  case params of
+    (Cparams ContParams{..}) -> do
+      inst@(InstanceCont cid' iid' params' _) <- readProtoType instFile
+      validateSecret secFile s m q cid iid
+      validateInstance instFile cid iid params cid' iid' (Cparams params')
+      return $ IC s inst
+    (Dparams DiscParams{..}) -> do
+      inst@(InstanceDisc cid' iid' params' _) <- readProtoType instFile
+      validateSecret secFile s m q cid iid
+      validateInstance instFile cid iid params cid' iid' (Dparams params')
+      return $ ID s inst
+    (Rparams RLWRParams{..}) -> do
+      inst@(InstanceRLWR cid' iid' params' _) <- readProtoType instFile
+      validateSecret secFile s m q cid iid
+      validateInstance instFile cid iid params cid' iid' (Rparams params')
+      return $ IR s inst
 
 checkParamsEq :: (Monad m, MonadError String m, Show a, Eq a)
   => String -> String -> a -> a -> m ()
@@ -149,8 +167,9 @@ checkParamsEq data' param expected actual =
 -- | Verify an 'InstanceU'.
 verifyInstanceU :: (MonadError String m) => InstanceU -> m ()
 
-verifyInstanceU (IC (Secret _ _ _ _ s) InstanceCont{..}) =
-  reifyFactI (fromIntegral m) (\(_::proxy m) ->
+verifyInstanceU (IC (Secret _ _ _ _ s) inst@InstanceCont{..}) =
+  let ContParams {..} = params
+  in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
       s' :: Cyc T m (Zq q) <- fromProto s
       samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
@@ -158,16 +177,18 @@ verifyInstanceU (IC (Secret _ _ _ _ s) InstanceCont{..}) =
       throwErrorUnless (validInstanceCont bound s' samples')
         "A continuous RLWE sample exceeded the error bound."))
 
-verifyInstanceU (ID (Secret _ _ _ _ s) InstanceDisc{..}) =
-  reifyFactI (fromIntegral m) (\(_::proxy m) ->
+verifyInstanceU (ID (Secret _ _ _ _ s) inst@InstanceDisc{..}) =
+  let DiscParams {..} = params
+  in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
       s' :: Cyc T m (Zq q) <- fromProto s
       samples' <- fromProto $ fmap (\(SampleDisc a b) -> (a,b)) samples
       throwErrorUnless (validInstanceDisc bound s' samples')
         "A discrete RLWE sample exceeded the error bound."))
 
-verifyInstanceU (IR (Secret _ _ _ _ s) InstanceRLWR{..}) =
-  reifyFactI (fromIntegral m) (\(_::proxy m) ->
+verifyInstanceU (IR (Secret _ _ _ _ s) inst@InstanceRLWR{..}) =
+  let RLWRParams {..} = params
+  in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) ->
       reify (fromIntegral p :: Int64) (\(_::Proxy p) -> do
         s' :: Cyc T m (Zq q) <- fromProto s
