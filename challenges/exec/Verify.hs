@@ -30,9 +30,9 @@ import           Control.Applicative
 import           Control.Monad.Except
 import qualified Data.ByteString.Lazy as BS
 import           Data.Int
-import           Data.List              (nub)
+import           Data.List            (nub)
 import           Data.Maybe
-import           Data.Reflection hiding (D)
+import           Data.Reflection      hiding (D)
 
 import Net.Beacon
 
@@ -143,17 +143,17 @@ readInstanceU params path challName cid iid = do
   case params of
     (Cparams ContParams{..}) -> do
       inst@(InstanceCont cid' iid' params' _) <- readProtoType instFile
-      validateSecret secFile s m q cid iid
+      validateSecret secFile cid iid m q s
       validateInstance instFile cid iid params cid' iid' (Cparams params')
       return $ IC s inst
     (Dparams DiscParams{..}) -> do
       inst@(InstanceDisc cid' iid' params' _) <- readProtoType instFile
-      validateSecret secFile s m q cid iid
+      validateSecret secFile cid iid m q s
       validateInstance instFile cid iid params cid' iid' (Dparams params')
       return $ ID s inst
     (Rparams RLWRParams{..}) -> do
       inst@(InstanceRLWR cid' iid' params' _) <- readProtoType instFile
-      validateSecret secFile s m q cid iid
+      validateSecret secFile cid iid m q s
       validateInstance instFile cid iid params cid' iid' (Rparams params')
       return $ IR s inst
 
