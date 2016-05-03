@@ -167,7 +167,7 @@ checkParamsEq data' param expected actual =
 -- | Verify an 'InstanceU'.
 verifyInstanceU :: (MonadError String m) => InstanceU -> m ()
 
-verifyInstanceU (IC (Secret _ _ _ _ s) inst@InstanceCont{..}) =
+verifyInstanceU (IC (Secret _ _ _ _ s) InstanceCont{..}) =
   let ContParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
@@ -177,7 +177,7 @@ verifyInstanceU (IC (Secret _ _ _ _ s) inst@InstanceCont{..}) =
       throwErrorUnless (validInstanceCont bound s' samples')
         "A continuous RLWE sample exceeded the error bound."))
 
-verifyInstanceU (ID (Secret _ _ _ _ s) inst@InstanceDisc{..}) =
+verifyInstanceU (ID (Secret _ _ _ _ s) InstanceDisc{..}) =
   let DiscParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
@@ -186,7 +186,7 @@ verifyInstanceU (ID (Secret _ _ _ _ s) inst@InstanceDisc{..}) =
       throwErrorUnless (validInstanceDisc bound s' samples')
         "A discrete RLWE sample exceeded the error bound."))
 
-verifyInstanceU (IR (Secret _ _ _ _ s) inst@InstanceRLWR{..}) =
+verifyInstanceU (IR (Secret _ _ _ _ s) InstanceRLWR{..}) =
   let RLWRParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) ->
