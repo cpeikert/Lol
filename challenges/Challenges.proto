@@ -24,7 +24,7 @@ message RLWRParams {                      // RLWR parameters
   required int32 m                 = 1;   // cyclotomic index
   required int64 q                 = 2;   // modulus
   required int64 p                 = 3;   // rounding modulus p < q
-  required int32 l                 = 5;   // number of samples
+  required int32 l                 = 4;   // number of samples
 }
 
 message Challenge {
