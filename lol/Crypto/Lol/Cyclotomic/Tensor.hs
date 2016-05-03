@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             NoImplicitPrelude, PolyKinds, RankNTypes, ScopedTypeVariables,
-             TupleSections, TypeFamilies, TypeOperators,
-             UndecidableInstances #-}
+             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
+             RankNTypes, ScopedTypeVariables, TupleSections, TypeFamilies,
+             TypeOperators, UndecidableInstances #-}
 
 -- | Interface for cyclotomic tensors, and helper functions for tensor
 -- indexing.
@@ -23,7 +23,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Prelude as LP hiding (lift, (*>))
+import Crypto.Lol.Prelude           as LP hiding (lift, (*>))
 import Crypto.Lol.Types.FiniteField
 
 import           Control.Applicative
@@ -32,9 +32,9 @@ import           Control.Monad.Random
 import           Data.Constraint
 import           Data.Singletons.Prelude hiding ((:-))
 import           Data.Traversable
-import           Data.Tuple           (swap)
-import qualified Data.Vector          as V
-import qualified Data.Vector.Unboxed  as U
+import           Data.Tuple              (swap)
+import qualified Data.Vector             as V
+import qualified Data.Vector.Unboxed     as U
 
 -- | 'Tensor' encapsulates all the core linear transformations needed
 -- for cyclotomic ring arithmetic.
@@ -56,8 +56,7 @@ import qualified Data.Vector.Unboxed  as U
 -- inputs for each method is determined by the linear transform it
 -- implements.
 
-class (TElt t Double, TElt t (Complex Double))
-      => Tensor (t :: Factored -> * -> *) where
+class (TElt t Double, TElt t (Complex Double)) => Tensor t where
 
   -- | Constraints needed by @t@ to hold type @r@.
   type TElt t r :: Constraint

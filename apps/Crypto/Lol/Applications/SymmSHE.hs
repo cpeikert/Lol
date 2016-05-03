@@ -1,7 +1,7 @@
-{-# LANGUAGE ConstraintKinds, DataKinds,
-             FlexibleContexts, FlexibleInstances, GADTs,
-             MultiParamTypeClasses, NoImplicitPrelude, ScopedTypeVariables,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
+             FlexibleInstances, GADTs, MultiParamTypeClasses,
+             NoImplicitPrelude, ScopedTypeVariables, TypeFamilies,
+             TypeOperators, UndecidableInstances #-}
 
 -- | Symmetric-key somewhat homomorphic encryption.
 
@@ -34,10 +34,10 @@ import qualified Algebra.Additive as Additive (C)
 import qualified Algebra.Ring     as Ring (C)
 
 import Crypto.Lol.Cyclotomic.Cyc
-import Crypto.Lol.Cyclotomic.UCyc (UCyc, D)
 import Crypto.Lol.Cyclotomic.Linear
+import Crypto.Lol.Cyclotomic.UCyc   (D, UCyc)
 import Crypto.Lol.Gadget
-import Crypto.Lol.Prelude    as LP hiding (sin)
+import Crypto.Lol.Prelude           as LP hiding (sin)
 
 import Control.Applicative  hiding ((*>))
 import Control.DeepSeq
@@ -137,12 +137,12 @@ decrypt sk ct =
 
 type DecryptUCtx t m m' z zp zq =
   (Fact m, Fact m', CElt t zp, m `Divides` m',
-   Reduce z zq, Lift' zq, CElt t z, 
+   Reduce z zq, Lift' zq, CElt t z,
    ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp)
 
 -- | More general form of 'errorTerm' that works for unrestricted
 -- output coefficient types.
-errorTermUnrestricted :: 
+errorTermUnrestricted ::
   (Reduce z zq, Lift' zq, CElt t z, ToSDCtx t m' zp zq)
   => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> UCyc t m' D (LiftOf zq)
 errorTermUnrestricted (SK _ s) = let sq = reduce s in
@@ -228,15 +228,15 @@ type LWECtx t m' z zq =
 lweSample :: (LWECtx t m' z zq, MonadRandom rnd)
              => SK (Cyc t m' z) -> rnd (Polynomial (Cyc t m' zq))
 lweSample (SK svar s) =
-  -- adviseCRT because we call `replicateM (lweSample s)` below, but only want to do CRT once. 
-  let sq = adviseCRT $ negate $ reduce s 
+  -- adviseCRT because we call `replicateM (lweSample s)` below, but only want to do CRT once.
+  let sq = adviseCRT $ negate $ reduce s
   in do
     e <- errorRounded svar
     c1 <- adviseCRT <$> getRandom -- want entire hint to be in CRT form
     return $ fromCoeffs [c1 * sq + reduce (e `asTypeOf` s), c1]
 
 -- | Constraint synonym for generating key-switch hints.
-type KSHintCtx gad t m' z zq = 
+type KSHintCtx gad t m' z zq =
   (LWECtx t m' z zq, Reduce (DecompOf zq) zq, Gadget gad zq,
    NFElt zq, CElt t (DecompOf zq))
 
@@ -264,7 +264,7 @@ knapsack :: (Fact m', CElt t zq, r'q ~ Cyc t m' zq)
 -- adviseCRT here because we map (x *) onto each polynomial coeff
 knapsack hint xs = sum $ zipWith (*>>) (adviseCRT <$> xs) hint
 
-type SwitchCtx gad t m' zq = 
+type SwitchCtx gad t m' zq =
   (Decompose gad zq, Fact m', CElt t zq, CElt t (DecompOf zq))
 
 -- Helper function: applies key-switch hint to a ring element.

@@ -20,12 +20,12 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon
 
 import Crypto.Lol.Prelude as LP hiding ((!!))
 
-import Algebra.Additive as Additive (C)
-import Algebra.Ring as Ring (C)
+import Algebra.Additive     as Additive (C)
+import Algebra.Ring         as Ring (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
 import Control.DeepSeq              (NFData (..))
-import Control.Monad.Identity
+import Control.Monad.Identity       ()
 import Control.Monad.Random
 import Data.Array.Repa              as R hiding (sumAllP, sumAllS, sumP,
                                           sumS, (*^), (+^), (-^), (/^))
@@ -34,7 +34,7 @@ import Data.Array.Repa.Repr.Unboxed
 import Data.Coerce
 import Data.Singletons
 import Data.Singletons.Prelude      hiding ((:.))
-import qualified Data.Vector.Unboxed as U
+import Data.Vector.Unboxed          as U (replicate, replicateM)
 import Test.QuickCheck
 
 -- always unboxed (manifest); intermediate calculations can use
@@ -83,7 +83,7 @@ instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (Arr m r) where
 
 instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (Arr m r) where
   -- not using 'zero' to avoid Additive r constraint
-  isZero (Arr a) 
+  isZero (Arr a)
       = isZero $ foldAllS (\ x y -> if isZero x then y else x) (a R.! (Z:.0)) a
   {-# INLINABLE isZero #-}
 
@@ -231,7 +231,7 @@ mulMat !m !v
     in if mcols == vrows then fromFunction (sh :. mrows) f
        else error "mulMatVec: mcols != vdim"
 {-# INLINABLE mulMat #-}
-            
+
 -- | multiplication by a diagonal matrix along innermost dim
 mulDiag :: (Source r1 r, Source r2 r, Ring r, Unbox r, Elt r)
            => Array r1 DIM1 r -> Array r2 DIM2 r -> Array D DIM2 r
@@ -244,7 +244,7 @@ mulDiag !diag !arr = fromFunction (extent arr) f
 -- | Embeds a scalar into a powerful-basis representation of a Repa array,
 -- tagged by the cyclotomic index
 scalarPow' :: forall m r . (Fact m, Additive r, Unbox r) => r -> Arr m r
-scalarPow' = coerce . (go $ proxy totientFact (Proxy::Proxy m))
+scalarPow' = coerce . go (proxy totientFact (Proxy::Proxy m))
   where go n !r = let fct (Z:.0) = r
                       fct _ = LP.zero
                   in force $ fromFunction (Z:.n) fct

@@ -1,6 +1,7 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, NoImplicitPrelude,
-             PolyKinds, RebindableSyntax, ScopedTypeVariables,
-             TypeFamilies, TypeOperators #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
+             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
+             RebindableSyntax, ScopedTypeVariables, TypeFamilies,
+             TypeOperators #-}
 
 -- | CT-specific functions for embedding/twacing in various bases
 
@@ -13,8 +14,8 @@ module Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
 ) where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Prelude as LP hiding (null, lift)
 import Crypto.Lol.Cyclotomic.Tensor as T
+import Crypto.Lol.Prelude           as LP hiding (lift, null)
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZmStar
 
@@ -23,11 +24,11 @@ import Control.Applicative hiding (empty)
 import Control.Monad.Trans (lift)
 
 import           Data.Maybe
-import           Data.Reflection (reify)
-import qualified Data.Vector         as V
-import           Data.Vector.Generic as G (generate, Vector, (!), length)
-import qualified Data.Vector.Unboxed as U
+import           Data.Reflection      (reify)
+import qualified Data.Vector          as V
+import           Data.Vector.Generic  as G (Vector, generate, length, (!))
 import qualified Data.Vector.Storable as SV
+import qualified Data.Vector.Unboxed  as U
 
 
 -- | /O(n)/ Yield the vector obtained by replacing each element @i@ of the

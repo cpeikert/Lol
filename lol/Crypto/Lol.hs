@@ -7,7 +7,7 @@ module Crypto.Lol
 
 import Crypto.Lol.Cyclotomic.Cyc as X
 import Crypto.Lol.Gadget         as X
-import Crypto.Lol.Prelude as X
+import Crypto.Lol.Prelude        as X
 
 import Crypto.Lol.Cyclotomic.Tensor.CTensor    as X
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor as X

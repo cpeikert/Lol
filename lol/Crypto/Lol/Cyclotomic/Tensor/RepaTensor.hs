@@ -16,7 +16,7 @@ import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT hiding
                                                                 ((++))
-import Crypto.Lol.Prelude                         as LP
+import Crypto.Lol.Prelude                                as LP
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector

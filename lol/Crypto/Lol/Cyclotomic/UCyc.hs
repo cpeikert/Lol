@@ -39,7 +39,7 @@ import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
 
 import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.Tensor as T
-import           Crypto.Lol.Prelude    as LP
+import           Crypto.Lol.Prelude           as LP
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZPP
 
