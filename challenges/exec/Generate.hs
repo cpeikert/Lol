@@ -8,7 +8,6 @@ import Common
 import Params as P
 
 import Crypto.Lol                 hiding (RRq)
-import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.RLWE.Continuous as C
 import Crypto.Lol.RLWE.Discrete   as D
 import Crypto.Lol.RLWE.RLWR       as R
@@ -24,8 +23,6 @@ import Crypto.Proto.RLWE.Challenges.InstanceDisc
 import Crypto.Proto.RLWE.Challenges.InstanceRLWR
 import Crypto.Proto.RLWE.Challenges.RLWRParams
 import Crypto.Proto.RLWE.Challenges.Secret           as S
-import Crypto.Proto.RLWE.Kq
-import Crypto.Proto.RLWE.Rq
 import Crypto.Proto.RLWE.SampleCont
 import Crypto.Proto.RLWE.SampleDisc
 import Crypto.Proto.RLWE.SampleRLWR
