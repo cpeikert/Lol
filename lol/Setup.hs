@@ -48,7 +48,7 @@ copyExtLib _ flags pkg_descr lbi = do
     let verbosity = fromFlag $ copyVerbosity flags
     -- copies from the output of makefile to libPref
     -- make sure the path below matches the makefile output file
-    rawSystemExit verbosity "cp" ["dist/build/staticliblibctensor.a", libPref]
+    rawSystemExit verbosity "cp" ["dist/build/staticlib/libctensor.a", libPref]
     rawSystemExit verbosity "cp" ["dist/build/dynamiclib/libctensor.so", libPref]
 
 cleanExtLib :: Args -> CleanFlags -> PackageDescription -> () -> IO ()
