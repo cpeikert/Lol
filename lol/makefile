@@ -4,14 +4,17 @@ CXXFLAGS ?= -Wall -O3 -std=c++11 -fPIC
 
 CSRCPATH = Crypto/Lol/Cyclotomic/Tensor/CTensor
 OBJPATH = dist/build/lib
-LIBPATH = dist/build
+# if you change LIBPATH or LIBNAME, you must update Setup.hs.
+STATICLIBPATH = dist/build/staticlib
+DYNLIBPATH = dist/build/dynamiclib
 LIBNAME = libctensor
 
 all: makelib
 
 mkdst:
 	mkdir -p $(OBJPATH)
-	mkdir -p $(LIBPATH)
+	mkdir -p $(STATICLIBPATH)
+	mkdir -p $(DYNLIBPATH)
 
 $(OBJPATH)/%.o: $(CSRCPATH)/%.cpp
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
@@ -24,13 +27,13 @@ $(OBJPATH)/%.o: $(CSRCPATH)/%.cpp
 # the .a file and the .so file must have different names, or cabal configure gets confused and reports
 # that it can't find libctensor.
 makelib: mkdst $(OBJPATH)/crt.o $(OBJPATH)/g.o $(OBJPATH)/generalfuncs.o $(OBJPATH)/l.o $(OBJPATH)/mul.o $(OBJPATH)/norm.o $(OBJPATH)/random.o
-	$(CXX) -shared $(CXXFLAGS) -o $(LIBPATH)/$(LIBNAME)_dyn.so $(OBJPATH)/*.o
-	$(AR) rcvs $(LIBPATH)/$(LIBNAME).a $(OBJPATH)/*.o
+	$(CXX) -shared $(CXXFLAGS) -o $(DYNLIBPATH)/$(LIBNAME).so $(OBJPATH)/*.o
+	$(AR) rcvs $(STATICLIBPATH)/$(LIBNAME).a $(OBJPATH)/*.o
 
 clean:
 	rm -f ./$(OBJPATH)/*.o
-	rm -f ./$(LIBPATH)/*.a
-	rm -f ./$(LIBPATH)/*.so
+	rm -f ./$(STATICLIBPATH)/*.a
+	rm -f ./$(DYNLIBPATH)/*.so
 	# make sure that cabal re-links with the new lib
 	rm -f ./dist/build/test-lol/test-lol
 	rm -f ./dist/build/bench-lol/bench-lol

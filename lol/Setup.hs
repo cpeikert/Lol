@@ -6,6 +6,8 @@ import           Distribution.Simple.Setup
 import           Distribution.Simple.Utils
 import           System.Directory
 
+-- http://codinginfinity.me/post/2015-04-18/haskell_and_cpp
+
 main = defaultMainWithHooks simpleUserHooks
   {
     preConf = makeExtLib
@@ -31,7 +33,7 @@ updateExtraLibDirs localBuildInfo = do
         localPkgDescr = packageDescription {
             library = Just $ lib {
                 libBuildInfo = libBuild {
-                    extraLibDirs = (dir ++ "/dist/build") :
+                    extraLibDirs = (dir ++ "/dist/build/staticlib") :
                         extraLibDirs libBuild
                 }
             }
@@ -44,7 +46,10 @@ copyExtLib _ flags pkg_descr lbi = do
                 . fromFlag . copyDest
                 $ flags
     let verbosity = fromFlag $ copyVerbosity flags
-    rawSystemExit verbosity "cp" ["dist/build/libctensor.a", libPref]
+    -- copies from the output of makefile to libPref
+    -- make sure the path below matches the makefile output file
+    rawSystemExit verbosity "cp" ["dist/build/staticliblibctensor.a", libPref]
+    rawSystemExit verbosity "cp" ["dist/build/dynamiclib/libctensor.so", libPref]
 
 cleanExtLib :: Args -> CleanFlags -> PackageDescription -> () -> IO ()
 cleanExtLib _ flags _ _ =

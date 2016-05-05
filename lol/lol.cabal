@@ -59,7 +59,7 @@ Flag opt
 library
   default-language:   Haskell2010
   ghc-options: -fwarn-dodgy-imports
-  extra-libraries: ctensor, stdc++
+  extra-libraries: ctensor
 
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
