@@ -56,8 +56,7 @@ Flag opt
   Default:     True
 
 Flag usestack
-  Description: Set to 'true' when using stack. This is automatically done by
-  the stack.yaml file.
+  Description: Set to 'true' when using stack. This is automatically done by the stack.yaml file.
   Default:     False
 
 library
