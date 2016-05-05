@@ -54,12 +54,24 @@ Flag llvm
 Flag opt
   Description: Turn on library optimizations
   Default:     True
-  Manual:      False
+
+Flag usestack
+  Description: Set to 'true' when using stack. This is automatically done by
+  the stack.yaml file.
+  Default:     False
 
 library
   default-language:   Haskell2010
   ghc-options: -fwarn-dodgy-imports
   extra-libraries: ctensor
+
+  -- This flag is set to true by the stack.yaml file for this project.
+  -- Without extra-lib-dirs, 'stack ghci' won't work because it can't find
+  -- the .so/.dylib file. We have to have a flag becase there's a cabal bug
+  -- (https://github.com/haskell/cabal/issues/1317) that won't let us write
+  -- relative paths.
+  if flag(usestack)
+    extra-lib-dirs: dist/build/dynamiclib
 
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3

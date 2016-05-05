@@ -8,6 +8,7 @@ OBJPATH = dist/build/lib
 STATICLIBPATH = dist/build/staticlib
 DYNLIBPATH = dist/build/dynamiclib
 LIBNAME = libctensor
+current_dir = $(shell pwd)
 
 all: makelib
 
@@ -27,13 +28,15 @@ $(OBJPATH)/%.o: $(CSRCPATH)/%.cpp
 # the .a file and the .so file must have different names, or cabal configure gets confused and reports
 # that it can't find libctensor.
 makelib: mkdst $(OBJPATH)/crt.o $(OBJPATH)/g.o $(OBJPATH)/generalfuncs.o $(OBJPATH)/l.o $(OBJPATH)/mul.o $(OBJPATH)/norm.o $(OBJPATH)/random.o
-	$(CXX) -shared $(CXXFLAGS) -o $(DYNLIBPATH)/$(LIBNAME).so $(OBJPATH)/*.o
 	$(AR) rcvs $(STATICLIBPATH)/$(LIBNAME).a $(OBJPATH)/*.o
+	$(CXX) -shared $(CXXFLAGS) -o $(DYNLIBPATH)/$(LIBNAME).so $(OBJPATH)/*.o
+	ln -s $(current_dir)/$(DYNLIBPATH)/$(LIBNAME).so $(current_dir)/$(DYNLIBPATH)/$(LIBNAME).dylib
 
 clean:
 	rm -f ./$(OBJPATH)/*.o
 	rm -f ./$(STATICLIBPATH)/*.a
 	rm -f ./$(DYNLIBPATH)/*.so
+	rm -f ./$(DYNLIBPATH)/*.dylib
 	# make sure that cabal re-links with the new lib
 	rm -f ./dist/build/test-lol/test-lol
 	rm -f ./dist/build/bench-lol/bench-lol
