@@ -45,26 +45,26 @@ module Crypto.Lol.Cyclotomic.UCyc (
 
 ) where
 
-import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
-                                            scalarCRT, scalarPow, twaceCRT)
+import Crypto.Lol.Cyclotomic.Tensor hiding
+  ( embedCRT, embedDec, embedPow, scalarCRT, scalarPow, twaceCRT )
 
 import           Crypto.Lol.CRTrans
-import qualified Crypto.Lol.Cyclotomic.Tensor as T
-import           Crypto.Lol.LatticePrelude    as LP
+import           Crypto.Lol.LatticePrelude                          as LP
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZPP
+import qualified Crypto.Lol.Cyclotomic.Tensor                       as T
 
-import qualified Algebra.Additive     as Additive (C)
-import qualified Algebra.Module       as Module (C)
-import qualified Algebra.Ring         as Ring (C)
-import qualified Algebra.ZeroTestable as ZeroTestable (C)
+import qualified Algebra.Additive                                   as Additive (C)
+import qualified Algebra.Module                                     as Module (C)
+import qualified Algebra.Ring                                       as Ring (C)
+import qualified Algebra.ZeroTestable                               as ZeroTestable (C)
 
-import Control.Applicative    as A
+import Control.Applicative                                          as A
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity hiding ( ap )
+import Control.Monad.Identity                                       hiding ( ap )
 import Control.Monad.Random
-import Data.Foldable          as F
+import Data.Foldable                                                as F
 import Data.Maybe
 import Data.Traversable
 import Test.QuickCheck
@@ -104,8 +104,7 @@ data UCyc t m rep r where
 -- | Constraints needed for CRT-related operations on 'UCyc' data.
 type UCRTElt t r =
     ( Tensor t
-    , CRTEmbed r
-    , CRTEmbed (TRep t r) , TRep t (CRTExt r) ~ CRTExt (TRep t r) -- TLM: suspicious...
+    , CRTEmbed t r
     , CRTrans Maybe    (TRep t Int) (TRep t r),          TElt t r
     , CRTrans Identity (TRep t Int) (TRep t (CRTExt r)), TElt t (CRTExt r)
     )
@@ -114,15 +113,23 @@ type UCRTElt t r =
 type NFElt r = (NFData r, NFData (CRTExt r))
 
 -- | Embed a scalar from the base ring.
-scalarPow :: (Tensor t, Fact m, Additive (TRep t r), TElt t r) => r -> UCyc t m P r
-scalarPow = Pow . T.scalarPow
+scalarPow
+    :: forall t m r. (Tensor t, Fact m, Additive (TRep t r), TElt t r)
+    => r
+    -> UCyc t m P r
+scalarPow x = Pow $ T.scalarPow (proxy (constant x) (Proxy::Proxy t))
 {-# INLINABLE scalarPow #-}
 
 -- | Embed a scalar from the base ring.
-scalarCRT :: (Fact m, UCRTElt t r) => r -> UCycEC t m r
-scalarCRT = fromMaybe
-            (Left . CRTe . runIdentity T.scalarCRT . toExt)
-            (((Right .) CRTr .) <$> T.scalarCRT)
+scalarCRT
+    :: forall m t r. (Fact m, UCRTElt t r)
+    => r
+    -> UCycEC t m r
+scalarCRT x =
+  let x' = proxy (constant x) (Proxy::Proxy t) in
+  case T.scalarCRT of
+    Just f  -> Right $ CRTr (f x')
+    Nothing -> Left  $ CRTe (runIdentity T.scalarCRT (proxy toExt (Proxy::Proxy (t m r)) x'))
 {-# INLINABLE scalarCRT #-}
 
 
@@ -190,7 +197,7 @@ instance (Tensor t, Additive r, Additive (TRep t r), Fact m, TElt t r)
 -- no Additive instances for C/E alone, because 'zero' would violate
 -- 'UCyc' invariant if C/E were invalid representations
 
-instance (Fact m, UCRTElt t r) => Additive.C (UCycEC t m r) where
+instance (Fact m, Ring r, UCRTElt t r) => Additive.C (UCycEC t m r) where
 
   zero = scalarCRT zero
 
@@ -214,10 +221,10 @@ instance (Fact m, UCRTElt t r) => Additive.C (UCycEC t m r) where
 
 -- Ring instance: only for CRT
 
-instance (Fact m, UCRTElt t r) => Ring.C (UCycEC t m r) where
+instance (Fact m, Ring r, UCRTElt t r) => Ring.C (UCycEC t m r) where
 
   one           = scalarCRT one
-  fromInteger c = scalarCRT $ fromInteger c
+  fromInteger c = scalarCRT (fromInteger c)
 
   (Right (CRTr v1)) * (Right (CRTr v2)) = Right $ CRTr $ zipWithT (*) v1 v2
   (Left  (CRTe v1)) * (Left  (CRTe v2)) = Left  $ CRTe $ zipWithT (*) v1 v2
@@ -229,18 +236,21 @@ instance (Fact m, UCRTElt t r) => Ring.C (UCycEC t m r) where
 
 instance (Tensor t, Ring r, Ring (TRep t r), Fact m, TElt t r)
     => Module.C r (UCyc t m P r) where
-  r *> Pow v = Pow $ r T.*> v
+  r *> Pow v = Pow $ fmapT (proxy (constant r) (Proxy::Proxy t) *) v
   {-# INLINABLE (*>) #-}
 
 instance (Tensor t, Ring r, Ring (TRep t r), Fact m, TElt t r)
     => Module.C r (UCyc t m D r) where
-  r *> (Dec v) = Dec $ r T.*> v
+  r *> (Dec v) = Dec $ fmapT (proxy (constant r) (Proxy::Proxy t) *) v
   {-# INLINABLE (*>) #-}
 
-instance (Ring (TRep t r), Fact m, UCRTElt t r)
+instance (Ring r, Fact m, UCRTElt t r)
     => Module.C r (UCycEC t m r) where
-  r *> (Right (CRTr v)) = Right $ CRTr $ r       T.*> v
-  r *> (Left  (CRTe v)) = Left  $ CRTe $ toExt r T.*> v
+  r *> Right (CRTr v) = Right $ CRTr $ fmapT (proxy (constant r) (Proxy::Proxy t) *) v
+  r *> Left (CRTe v)  = Left  $ CRTe $ let r' = proxy (constant r) (Proxy::Proxy t)
+                                           re = proxy toExt (Proxy::Proxy (t m r)) r'
+                                       in
+                                       fmapT (re *) v
   {-# INLINABLE (*>) #-}
 
 instance (Tensor t, GFCtx fp d, Additive (TRep t fp), Fact m, TElt t fp)
@@ -357,17 +367,16 @@ unzipCRTC (CRTr v)
 -- output components are 'Either's because each target base might
 -- instead support 'C'.
 unzipCRTE
-    :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
+    :: forall t m a b. (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b, CRTExt (a,b) ~ (CRTExt a, CRTExt b))
     => UCyc t m E (a,b)
     -> ( Either (UCyc t m P a) (UCyc t m E a)
        , Either (UCyc t m P b) (UCyc t m E b)
        )
 unzipCRTE (CRTe v)
   = let (ae,be) = CRTe *** CRTe $ unzipT v
-        (a',b') = unzipT $ fmapT fromExt $ runIdentity crtInv v
-        (ap,bp) = Pow *** Pow $ (a',b')
-    in (fromMaybe (Right ae) (witnessT hasCRTFuncs a' A.*> pure (Left ap)),
-        fromMaybe (Right be) (witnessT hasCRTFuncs b' A.*> pure (Left bp)))
+        (a',b') = unzipT $ fmapT (proxy fromExt (Proxy::Proxy (t m (a,b)))) $ runIdentity crtInv v
+    in (fromMaybe (Right ae) (witnessT hasCRTFuncs a' A.*> pure (Left (Pow a'))),
+        fromMaybe (Right be) (witnessT hasCRTFuncs b' A.*> pure (Left (Pow b'))))
 
 
 -- | Multiply by the special element @g@.
@@ -560,7 +569,8 @@ crtSet :: forall t m m' r p mbar m'bar .
           ( m `Divides` m', ZPP r, p ~ CharOf (ZpOf r)
           , mbar ~ PFree p m, m'bar ~ PFree p m'
           , UCRTElt t r, TElt t (ZpOf r)
-          , ZPP (TRep t r), ZpOf (TRep t r) ~ TRep t (ZpOf r) -- TLM: hmm...
+          , ZPP (TRep t r)
+          , ZpOf (TRep t r) ~ TRep t (ZpOf r) -- TLM: suspicious...
           )
        => Tagged m [UCyc t m' P r]
 {-# INLINABLE crtSet #-}
@@ -585,14 +595,14 @@ crtSet =
 
 
 -- | Convert to powerful-basis representation.
-toPow :: (Fact m, UCRTElt t r)
+toPow :: forall t m rep r. (Fact m, UCRTElt t r)
       => UCyc t m rep r
-      -> UCyc t m P r
+      -> UCyc t m P   r
 {-# INLINABLE toPow #-}
 toPow x@(Pow _) = x
 toPow (Dec v) = Pow $ l v
 toPow (CRTr v) = Pow $ fromJust' "UCyc.toPow CRTr" crtInv v
-toPow (CRTe v) = Pow $ fmapT fromExt $ runIdentity crtInv v
+toPow (CRTe v) = Pow $ fmapT (proxy fromExt (Proxy::Proxy (t m r))) $ runIdentity crtInv v
 
 -- | Convenient version of 'toPow' for 'Either' CRT basis type.
 toPowCE :: (Fact m, UCRTElt t r)
@@ -617,15 +627,20 @@ toCRT :: forall t m rep r . (Fact m, UCRTElt t r)
       => UCyc t m rep r
       -> UCycEC t m r
 {-# INLINABLE toCRT #-}
-toCRT = let crte = Left . CRTe . runIdentity crt
-            crtr = ((Right .) CRTr .) <$> crt
-            fromPow :: t m r -> UCycEC t m r
-            fromPow v = fromMaybe (crte $ fmapT toExt v) (crtr <*> Just v)
-        in \x -> case x of
-                   CRTr{} -> Right x
-                   CRTe{} -> Left x
-                   Pow v  -> fromPow v
-                   Dec v  -> fromPow $ l v
+toCRT x =
+  let
+    fromPow :: t m r -> UCycEC t m r
+    fromPow v =
+      case crt :: Maybe (t m r -> t m r) of
+        Just f  -> Right $ CRTr (f v)
+        Nothing -> Left  $ CRTe (runIdentity crt $ fmapT (proxy toExt (Proxy::Proxy (t m r))) v)
+  in
+  case x of
+    CRTr{} -> Right x
+    CRTe{} -> Left x
+    Pow v  -> fromPow v
+    Dec v  -> fromPow $ l v
+
 
 ---------- Category-theoretic instances ----------
 
