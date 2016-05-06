@@ -172,12 +172,6 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> 
         -> t m a
         -> t m b
 
-  -- | Potentially optimized monadic 'fmap'.
-  fmapTM :: (Monad mon, Fact m, TElt t a, TElt t b)
-         => (TRep t a -> mon (TRep t b))
-         -> t m a
-         -> mon (t m b)
-
   -- | Potentially optimized zipWith for types that satisfy 'TElt'.
   zipWithT :: (Fact m, TElt t a, TElt t b, TElt t c)
            => (TRep t a -> TRep t b -> TRep t c)
@@ -197,6 +191,12 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> 
        -> t m a
 
   {- CJP: suppressed, apparently not needed
+
+  -- | Potentially optimized monadic 'fmap'.
+  fmapTM :: (Monad mon, Fact m, TElt t a, TElt t b)
+         => (TRep t a -> mon (TRep t b))
+         -> t m a
+         -> mon (t m b)
 
   -- | Unzip for arbitrary types.
   unzipTUnrestricted :: (Fact m) => t m (a,b) -> (t m a, t m b)

@@ -220,10 +220,8 @@ instance Tensor CT where
   fmapT f (CT v) = CT $ coerce (SV.map f) v
   fmapT f v@(ZV _) = fmapT f $ toCT v
 
-  fmapTM f (CT (CT' v)) = (CT . CT') <$> SV.mapM f v
-  fmapTM f v@(ZV _) = fmapTM f $ toCT v
-
-  r *> v = fmapT (r * ) v
+  -- fmapTM f (CT (CT' v)) = (CT . CT') <$> SV.mapM f v
+  -- fmapTM f v@(ZV _) = fmapTM f $ toCT v
 
   zipWithT f (CT (CT' v1)) (CT (CT' v2)) = CT $ CT' $ SV.zipWith f v1 v2
   zipWithT f v1 v2 = zipWithT f (toCT v1) (toCT v2)
@@ -255,7 +253,6 @@ instance Tensor CT where
   {-# INLINABLE powBasisPow #-}
   {-# INLINABLE crtSetDec #-}
   {-# INLINABLE fmapT #-}
-  {-# INLINABLE fmapTM #-}
   {-# INLINABLE zipWithT #-}
   {-# INLINABLE unzipT #-}
 
