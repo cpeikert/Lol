@@ -76,10 +76,12 @@ wrapM :: (Unbox r, Monad mon) => (Arr l r -> mon (Arr m r))
 wrapM f (RT v) = RT <$> f v
 wrapM f (ZV v) = RT <$> f (zvToArr v)
 
+
+type instance TRep RT r = r
+
 instance Tensor RT where
 
   type TElt RT r = (Unbox r, Elt r)
-  type TRep RT r = r
 
   entailIndexT  = tag $ Sub Dict
   entailEqT     = tag $ Sub Dict

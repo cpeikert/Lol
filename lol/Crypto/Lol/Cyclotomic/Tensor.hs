@@ -14,7 +14,7 @@
 -- indexing.
 
 module Crypto.Lol.Cyclotomic.Tensor
-( Tensor(..)
+( Tensor(..), TRep
 -- * Top-level CRT functions
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
@@ -32,6 +32,8 @@ where
 import Crypto.Lol.CRTrans
 import Crypto.Lol.LatticePrelude                                    as LP hiding ( lift, (*>) )
 import Crypto.Lol.Types.FiniteField
+
+import Crypto.Lol.Cyclotomic.Tensor.Representation
 
 import           Control.Applicative                                as A
 import           Control.DeepSeq
@@ -67,9 +69,6 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> 
 
   -- | Constraints needed by @t@ to hold type @r@.
   type TElt t r :: Constraint
-
-  -- | Representation of values of type @r@ in @t@
-  type TRep t r :: *
 
   -- | Properties that hold for any index. Use with '\\'.
   entailIndexT  :: Tagged (t m r) (Fact m :- (Applicative (t m), Traversable (t m)))

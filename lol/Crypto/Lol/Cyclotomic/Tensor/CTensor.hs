@@ -164,10 +164,11 @@ instance Fact m => Traversable (CT m) where
   traverse f r@(CT _) = T.traverse f $ toZV r
   traverse f (ZV v) = ZV <$> T.traverse f v
 
+type instance TRep CT r = r
+
 instance Tensor CT where
 
   type TElt CT r = (Storable r, Dispatch r)
-  type TRep CT r = r
 
   entailIndexT = tag $ Sub Dict
   entailEqT = tag $ Sub Dict

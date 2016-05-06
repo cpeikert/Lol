@@ -100,6 +100,7 @@ library
     Crypto.Lol.Cyclotomic.Linear
 
     Crypto.Lol.Cyclotomic.Tensor
+    Crypto.Lol.Cyclotomic.Tensor.Representation
     Crypto.Lol.Cyclotomic.Tensor.CTensor
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor
 
