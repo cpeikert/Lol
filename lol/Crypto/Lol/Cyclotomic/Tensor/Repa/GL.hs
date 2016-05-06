@@ -4,11 +4,11 @@
 
 -- | The @G@ and @L@ transforms for Repa arrays.
 
-module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
+module Crypto.Lol.Cyclotomic.Tensor.Repa.GL
 ( fL, fLInv, fGPow, fGDec, fGInvPow, fGInvDec
 ) where
 
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
+import Crypto.Lol.Cyclotomic.Tensor.Repa.Common         as RT
 import Crypto.Lol.LatticePrelude                        as LP
 import Data.Coerce
 

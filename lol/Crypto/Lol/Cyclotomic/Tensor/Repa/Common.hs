@@ -8,7 +8,7 @@
 -- | A simple DSL for tensoring Repa arrays and other common functionality
 -- on Repa arrays
 
-module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon
+module Crypto.Lol.Cyclotomic.Tensor.Repa.Common
 ( module R
 , module Data.Array.Repa.Eval
 , module Data.Array.Repa.Repr.Unboxed

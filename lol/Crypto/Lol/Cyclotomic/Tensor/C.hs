@@ -8,7 +8,7 @@
 
 -- | Wrapper for a C implementation of the 'Tensor' interface.
 
-module Crypto.Lol.Cyclotomic.Tensor.CTensor
+module Crypto.Lol.Cyclotomic.Tensor.C
 ( CT ) where
 
 import Algebra.Additive     as Additive (C)
@@ -43,8 +43,8 @@ import Test.QuickCheck       hiding (generate)
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
-import Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
-import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
+import Crypto.Lol.Cyclotomic.Tensor.C.Backend
+import Crypto.Lol.Cyclotomic.Tensor.C.Extension
 import Crypto.Lol.GaussRandom
 import Crypto.Lol.LatticePrelude                      as LP hiding (lift,
                                                              replicate,

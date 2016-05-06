@@ -6,16 +6,16 @@
 
 -- | RT-specific functions for embedding/twacing in various bases
 
-module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
+module Crypto.Lol.Cyclotomic.Tensor.Repa.Extension
 ( twacePowDec', twaceCRT', embedPow', embedDec', embedCRT'
 , coeffs', powBasisPow', crtSetDec'
 ) where
 
-import           Crypto.Lol.LatticePrelude              as LP hiding (lift, (!!))
+import           Crypto.Lol.LatticePrelude                          as LP hiding (lift, (!!))
 import           Crypto.Lol.CRTrans
-import qualified Crypto.Lol.Cyclotomic.Tensor                      as T
-import           Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
-import           Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
+import qualified Crypto.Lol.Cyclotomic.Tensor                       as T
+import           Crypto.Lol.Cyclotomic.Tensor.Repa.CRT
+import           Crypto.Lol.Cyclotomic.Tensor.Repa.Common           as RT
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZmStar
 

@@ -3,10 +3,10 @@
 
 -- | Linear transforms and operations related to the decoding basis.
 
-module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
+module Crypto.Lol.Cyclotomic.Tensor.Repa.Dec
 ( tGaussianDec', gSqNormDec' ) where
 
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as R
+import Crypto.Lol.Cyclotomic.Tensor.Repa.Common as R
 import Crypto.Lol.GaussRandom
 import Crypto.Lol.LatticePrelude
 

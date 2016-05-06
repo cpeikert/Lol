@@ -6,15 +6,15 @@
 
 -- | A pure, repa-based implementation of the Tensor interface.
 
-module Crypto.Lol.Cyclotomic.Tensor.RepaTensor
+module Crypto.Lol.Cyclotomic.Tensor.Repa
 ( RT ) where
 
 import Crypto.Lol.Cyclotomic.Tensor                                 as T
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon             as RT
+import Crypto.Lol.Cyclotomic.Tensor.Repa.CRT
+import Crypto.Lol.Cyclotomic.Tensor.Repa.Dec
+import Crypto.Lol.Cyclotomic.Tensor.Repa.Extension
+import Crypto.Lol.Cyclotomic.Tensor.Repa.GL
+import Crypto.Lol.Cyclotomic.Tensor.Repa.Common                     as RT
 import Crypto.Lol.Cyclotomic.Tensor.Representation
 import Crypto.Lol.LatticePrelude                                    as LP hiding ((!!))
 import Crypto.Lol.Types.FiniteField                                 as FF

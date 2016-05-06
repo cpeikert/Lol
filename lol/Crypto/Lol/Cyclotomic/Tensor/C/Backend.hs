@@ -2,7 +2,7 @@
              PolyKinds, ScopedTypeVariables, TypeFamilies, UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
-module Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
+module Crypto.Lol.Cyclotomic.Tensor.C.Backend
 (Dispatch
 ,dcrt
 ,dcrtinv
