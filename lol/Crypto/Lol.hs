@@ -1,7 +1,7 @@
 
 -- | Re-exports primary interfaces.
 
-module Crypto.Lol 
+module Crypto.Lol
 ( module Crypto.Lol.Cyclotomic.Cyc
 , module Crypto.Lol.Gadget
 , module Crypto.Lol.LatticePrelude

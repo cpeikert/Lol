@@ -9,32 +9,34 @@
 module Crypto.Lol.Cyclotomic.Tensor.RepaTensor
 ( RT ) where
 
-import Crypto.Lol.Cyclotomic.Tensor                      as T
+import Crypto.Lol.Cyclotomic.Tensor                                 as T
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT
-import Crypto.Lol.LatticePrelude                         as LP hiding
-                                                                ((!!))
-import Crypto.Lol.Types.FiniteField                      as FF
+import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon             as RT
+import Crypto.Lol.Cyclotomic.Tensor.Representation
+import Crypto.Lol.LatticePrelude                                    as LP hiding ((!!))
+import Crypto.Lol.Types.FiniteField                                 as FF
 import Crypto.Lol.Types.IZipVector
 
-import Algebra.Additive     as Additive (C)
-import Algebra.Module       as Module (C)
-import Algebra.ZeroTestable as ZeroTestable (C)
+import Crypto.Lol.CRTrans
 
-import Control.Applicative  hiding ((*>))
-import Control.Arrow        hiding (arr)
-import Control.DeepSeq      (NFData (rnf))
+import Algebra.Additive                                             as Additive (C)
+import Algebra.Module                                               as Module (C)
+import Algebra.ZeroTestable                                         as ZeroTestable (C)
+
+import Control.Applicative                                          hiding ((*>))
+import Control.Arrow                                                hiding (arr)
+import Control.DeepSeq                                              (NFData (rnf))
 import Control.Monad.Random
 import Data.Coerce
-import Data.Constraint      hiding ((***))
-import Data.Foldable        as F
+import Data.Constraint                                              hiding ((***))
+import Data.Foldable                                                as F
 import Data.Maybe
-import Data.Traversable     as T
-import Data.Vector          as V hiding (force)
-import Data.Vector.Unboxed  as U hiding (force)
+import Data.Traversable                                             as T
+import Data.Vector                                                  as V hiding (force)
+import Data.Vector.Unboxed                                          as U hiding (force)
 import Test.QuickCheck
 
 -- | An implementation of 'Tensor' backed by repa.

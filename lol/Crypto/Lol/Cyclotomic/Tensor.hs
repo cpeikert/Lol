@@ -46,26 +46,27 @@ import           Data.Tuple                                         ( swap )
 import qualified Data.Vector                                        as V
 import qualified Data.Vector.Unboxed                                as U
 
+
 -- | 'Tensor' encapsulates all the core linear transformations needed
 -- for cyclotomic ring arithmetic.
-
--- | The type @t m r@ represents a cyclotomic coefficient tensor of
+--
+-- The type @t m r@ represents a cyclotomic coefficient tensor of
 -- index @m@ over base ring @r@.  Most of the methods represent linear
 -- transforms corresponding to operations in particular bases.
 -- CRT-related methods are wrapped in 'Maybe' because they are
 -- well-defined only when a CRT basis exists over the ring @r@ for
 -- index @m@.
-
--- | The superclass constraints are for convenience, to ensure that we
+--
+-- The superclass constraints are for convenience, to ensure that we
 -- can sample error tensors of 'Double's.
-
--- | __WARNING:__ as with all fixed-point arithmetic, the methods
+--
+-- __WARNING:__ as with all fixed-point arithmetic, the methods
 -- in 'Tensor' may result in overflow (and thereby incorrect answers
 -- and potential security flaws) if the input arguments are too close
 -- to the bounds imposed by the base type.  The acceptable range of
 -- inputs for each method is determined by the linear transform it
 -- implements.
-
+--
 class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> *) where
 
   -- | Constraints needed by @t@ to hold type @r@.
@@ -112,7 +113,7 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> 
   -- | A tuple of all the operations relating to the CRT basis, in a
   -- single 'Maybe' value for safety.  Clients should typically not
   -- use this method directly, but instead call the corresponding
-  -- top-level functions: the elements of the tuple correpond to the
+  -- top-level functions: the elements of the tuple correspond to the
   -- functions 'scalarCRT', 'mulGCRT', 'divGCRT', 'crt', 'crtInv'.
   crtFuncs :: (CRTrans mon (TRep t Int) (TRep t r), Fact m, TElt t r)
             => mon (     r -> t m r   -- scalarCRT
@@ -124,19 +125,24 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> 
 
   -- | Sample from the "tweaked" Gaussian error distribution @t*D@
   -- in the decoding basis, where @D@ has scaled variance @v@.
-  tGaussianDec :: (OrdFloat q, Random q, TElt t q,
-                   ToRational v, Fact m, MonadRandom rnd)
-                  => v -> rnd (t m q)
+  tGaussianDec :: ( OrdFloat q, Random q, TElt t q
+                  , ToRational v, Fact m, MonadRandom rnd
+                  )
+               => v -> rnd (t m q)
 
   -- | Given the coefficient tensor of @e@ with respect to the
   -- decoding basis of @R@, yield the (scaled) squared norm of @g_m
   -- \cdot e@ under the canonical embedding, namely,
   --  @\hat{m}^{ -1 } \cdot || \sigma(g_m \cdot e) ||^2@ .
-  gSqNormDec :: (Ring (TRep t r), Fact m, TElt t r) => t m r -> r
+  gSqNormDec :: (Ring (TRep t r), Fact m, TElt t r)
+             => t m r
+             -> r
 
   -- | The @twace@ linear transformation, which is the same in both the
   -- powerful and decoding bases.
-  twacePowDec :: (Ring (TRep t r), m `Divides` m', TElt t r) => t m' r -> t m r
+  twacePowDec :: (Ring (TRep t r), m `Divides` m', TElt t r)
+              => t m' r
+              -> t m r
 
   -- | The @embed@ linear transformations, for the powerful and
   -- decoding bases.
@@ -219,25 +225,35 @@ scalarCRT
 {-# INLINABLE scalarCRT #-}
 scalarCRT = (\(f,_,_,_,_) -> f) <$> crtFuncs
 
-mulGCRT, divGCRT, crt, crtInv
+-- | Multiply by @g@ in the CRT basis. (This function is simply an
+-- appropriate entry from 'crtFuncs'.)
+mulGCRT
     :: (CRTrans mon (TRep t Int) (TRep t r), Tensor t, Fact m, TElt t r)
     => mon (t m r -> t m r)
 {-# INLINABLE mulGCRT #-}
-{-# INLINABLE divGCRT #-}
-{-# INLINABLE crt #-}
-{-# INLINABLE crtInv #-}
-
--- | Multiply by @g@ in the CRT basis. (This function is simply an
--- appropriate entry from 'crtFuncs'.)
 mulGCRT = (\(_,f,_,_,_) -> f) <$> crtFuncs
+
 -- | Divide by @g@ in the CRT basis.  (This function is simply an
 -- appropriate entry from 'crtFuncs'.)
+divGCRT
+    :: (CRTrans mon (TRep t Int) (TRep t r), Tensor t, Fact m, TElt t r)
+    => mon (t m r -> t m r)
+{-# INLINABLE divGCRT #-}
 divGCRT = (\(_,_,f,_,_) -> f) <$> crtFuncs
+
 -- | The CRT transform.  (This function is simply an appropriate entry
 -- from 'crtFuncs'.)
+crt :: (CRTrans mon (TRep t Int) (TRep t r), Tensor t, Fact m, TElt t r)
+    => mon (t m r -> t m r)
+{-# INLINABLE crt #-}
 crt = (\(_,_,_,f,_) -> f) <$> crtFuncs
+
 -- | The inverse CRT transform.  (This function is simply an
 -- appropriate entry from 'crtFuncs'.)
+crtInv
+    :: (CRTrans mon (TRep t Int) (TRep t r), Tensor t, Fact m, TElt t r)
+    => mon (t m r -> t m r)
+{-# INLINABLE crtInv #-}
 crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 
 -- | The "tweaked trace" function for tensors in the CRT basis:

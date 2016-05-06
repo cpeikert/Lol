@@ -11,7 +11,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-{-# LANGUAGE ViewPatterns          #-}
 {-# OPTIONS_GHC -fno-warn-unused-imports #-} -- Control.Monad.Identity
 
 -- | An implementation of cyclotomic rings that hides the
@@ -61,7 +60,7 @@ import Crypto.Lol.Cyclotomic.UCyc hiding (coeffsDec, coeffsPow, crtSet,
                                    mulG, powBasis, tGaussian)
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Cyclotomic.Tensor                                 ( Tensor(TElt, TRep) )
+import Crypto.Lol.Cyclotomic.Tensor                                 ( Tensor, TElt, TRep )
 import Crypto.Lol.Gadget
 import Crypto.Lol.LatticePrelude                                    as LP
 import Crypto.Lol.Types.FiniteField
