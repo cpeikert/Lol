@@ -1,5 +1,6 @@
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE DefaultSignatures    #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE NoImplicitPrelude    #-}
 {-# LANGUAGE PolyKinds            #-}
@@ -30,7 +31,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.LatticePrelude                                    as LP hiding ( lift, (*>) )
+import Crypto.Lol.LatticePrelude                                    as LP
 import Crypto.Lol.Types.FiniteField
 
 import Crypto.Lol.Cyclotomic.Tensor.Representation
@@ -81,6 +82,11 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> 
   entailRandomT :: Tagged (t m r) ((Random r, Fact m, TElt t r)              :- Random (t m r))
   entailShowT   :: Tagged (t m r) ((Show r, Fact m, TElt t r)                :- Show (t m r))
   entailModuleT :: Tagged (GF fp d, t m fp) ((GFCtx fp d, Fact m, TElt t fp) :- Module (GF fp d) (t m fp))
+
+  -- | Lift a raw scalar value into the representation for this tensor
+  constant :: TElt t r => r -> Tagged t (TRep t r)
+  default constant :: (TElt t r, TRep t r ~ r) => r -> Tagged t r
+  constant = tag
 
   -- | Convert a scalar to a tensor in the powerful basis.
   scalarPow :: (Additive (TRep t r), Fact m, TElt t r) => r -> t m r
@@ -183,12 +189,6 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> 
          => t m (a,b)
          -> (t m a, t m b)
 
-  -- | Scale by a scalar. Potentially optimised version of @fmapT (c *)@
-  (*>) :: (Fact m, Ring (TRep t a), TElt t a)
-       => a
-       -> t m a
-       -> t m a
-
   {- CJP: suppressed, apparently not needed
 
   -- | Potentially optimized monadic 'fmap'.
@@ -200,6 +200,7 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> 
   -- | Unzip for arbitrary types.
   unzipTUnrestricted :: (Fact m) => t m (a,b) -> (t m a, t m b)
   -}
+
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
 hasCRTFuncs

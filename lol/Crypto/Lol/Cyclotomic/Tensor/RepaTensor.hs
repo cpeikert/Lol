@@ -130,8 +130,6 @@ instance Tensor RT where
   fmapT f (RT v) = RT $ (coerce $ force . RT.map f) v
   fmapT f v@(ZV _) = fmapT f $ toRT v
 
-  r *> v = fmapT (r *) v
-
   -- Repa arrays don't have mapM, so apply to underlying Unboxed
   -- vector instead
   -- fmapTM f (RT (Arr arr)) = (RT . Arr . fromUnboxed (extent arr)) <$>
