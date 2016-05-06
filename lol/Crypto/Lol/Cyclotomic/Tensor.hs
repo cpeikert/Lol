@@ -90,7 +90,9 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> 
   constant = tag
 
   -- | Convert a scalar to a tensor in the powerful basis.
-  scalarPow :: (Additive (TRep t r), Fact m, TElt t r) => r -> t m r
+  scalarPow :: (Additive (TRep t r), Fact m, TElt t r)
+            => TRep t r
+            -> t m r
 
   -- | 'l' converts from decoding-basis representation to
   -- powerful-basis representation; 'lInv' is its inverse.
@@ -116,12 +118,12 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> 
   -- top-level functions: the elements of the tuple correspond to the
   -- functions 'scalarCRT', 'mulGCRT', 'divGCRT', 'crt', 'crtInv'.
   crtFuncs :: (CRTrans mon (TRep t Int) (TRep t r), Fact m, TElt t r)
-            => mon (     r -> t m r   -- scalarCRT
-                   , t m r -> t m r   -- mulGCRT
-                   , t m r -> t m r   -- divGCRT
-                   , t m r -> t m r   -- crt
-                   , t m r -> t m r   -- crtInv
-                   )
+           => mon ( TRep t r -> t m r   -- scalarCRT
+                  , t m r -> t m r      -- mulGCRT
+                  , t m r -> t m r      -- divGCRT
+                  , t m r -> t m r      -- crt
+                  , t m r -> t m r      -- crtInv
+                  )
 
   -- | Sample from the "tweaked" Gaussian error distribution @t*D@
   -- in the decoding basis, where @D@ has scaled variance @v@.
@@ -214,14 +216,14 @@ hasCRTFuncs
     => TaggedT (t m r) mon ()
 {-# INLINABLE hasCRTFuncs #-}
 hasCRTFuncs = tagT $ do
-  (_ :: r -> t m r,_,_,_,_) <- crtFuncs
+  (_ :: TRep t r -> t m r,_,_,_,_) <- crtFuncs
   return ()
 
 -- | Yield a tensor for a scalar in the CRT basis.  (This function is
 -- simply an appropriate entry from 'crtFuncs'.)
 scalarCRT
     :: (CRTrans mon (TRep t Int) (TRep t r), Tensor t, Fact m, TElt t r)
-    => mon (r -> t m r)
+    => mon (TRep t r -> t m r)
 {-# INLINABLE scalarCRT #-}
 scalarCRT = (\(f,_,_,_,_) -> f) <$> crtFuncs
 
