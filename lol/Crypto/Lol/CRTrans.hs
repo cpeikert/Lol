@@ -16,6 +16,7 @@ module Crypto.Lol.CRTrans
 , CRTInfo
 ) where
 
+import Crypto.Lol.Cyclotomic.Tensor.Representation
 import Crypto.Lol.LatticePrelude
 import Crypto.Lol.Reflects
 
@@ -89,16 +90,28 @@ omegaPowC m i = cis (2*pi*fromIntegral i / fromIntegral m)
 -- | A ring with a ring embedding into some ring @CRTExt r@ that has an
 -- invertible CRT transformation for /every/ positive index @m@.
 --
-class (Ring r, Ring (CRTExt r)) => CRTEmbed r where
+-- A Tensor t should declare appropriate instances for:
+--
+--  * Int
+--  * Int64
+--  * Integer
+--  * Double
+--  * Transcendental a => Complex a
+--  * (CRTEmbed a, CRTEmbed b) => CRTEmbed (a,b)
+--
+-- See below for the canonical implementations.
+--
+class (Ring (TRep t r), Ring (TRep t (CRTExt r))) => CRTEmbed (t :: Factored -> * -> *) r where
   type CRTExt r
 
   -- | Embeds from @r@ to @CRTExt r@
-  toExt   :: r -> CRTExt r
+  toExt   :: Tagged (t m r) (TRep t r -> TRep t (CRTExt r))
 
   -- | Projects from @CRTExt r@ to @r@
-  fromExt :: CRTExt r -> r
+  fromExt :: Tagged (t m r) (TRep t (CRTExt r) -> TRep t r)
 
 
+{--
 -- CRTEmbed instance for product rings
 instance (CRTEmbed a, CRTEmbed b) => CRTEmbed (a,b) where
   type CRTExt (a,b) = (CRTExt a, CRTExt b)
@@ -134,4 +147,5 @@ instance CRTEmbed Integer where
   type CRTExt Integer = Complex Double
   toExt   = fromIntegral
   fromExt = fst . roundComplex
+--}
 
