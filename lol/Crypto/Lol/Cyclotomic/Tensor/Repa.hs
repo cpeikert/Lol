@@ -1,86 +1,66 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RebindableSyntax,
-             RoleAnnotations, ScopedTypeVariables, StandaloneDeriving,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
--- | A pure, repa-based implementation of the Tensor interface.
+-- | A pure, Repa-based implementation of the Tensor interface.
+--
+module Crypto.Lol.Cyclotomic.Tensor.Repa (
 
-module Crypto.Lol.Cyclotomic.Tensor.Repa
-( RT ) where
+  Tensor(..), RT
+
+) where
 
 import Crypto.Lol.Cyclotomic.Tensor                                 as T
+
 import Crypto.Lol.Cyclotomic.Tensor.Repa.CRT
+import Crypto.Lol.Cyclotomic.Tensor.Repa.Common                     as RT
 import Crypto.Lol.Cyclotomic.Tensor.Repa.Dec
 import Crypto.Lol.Cyclotomic.Tensor.Repa.Extension
 import Crypto.Lol.Cyclotomic.Tensor.Repa.GL
-import Crypto.Lol.Cyclotomic.Tensor.Repa.Common                     as RT
-import Crypto.Lol.Cyclotomic.Tensor.Representation
-import Crypto.Lol.LatticePrelude                                    as LP hiding ((!!))
-import Crypto.Lol.Types.FiniteField                                 as FF
-import Crypto.Lol.Types.IZipVector
 
 import Crypto.Lol.CRTrans
+import Crypto.Lol.LatticePrelude                                    as LP hiding ( (!!) )
+import Crypto.Lol.Types.FiniteField                                 as FF
+import Crypto.Lol.Types.IZipVector
 
 import Algebra.Additive                                             as Additive (C)
 import Algebra.Module                                               as Module (C)
 import Algebra.ZeroTestable                                         as ZeroTestable (C)
 
-import Control.Applicative                                          hiding ((*>))
-import Control.Arrow                                                hiding (arr)
-import Control.DeepSeq                                              (NFData (rnf))
+import Control.Applicative                                          hiding ( (*>) )
+import Control.Arrow                                                hiding ( arr )
+import Control.DeepSeq                                              ( NFData (rnf) )
 import Control.Monad.Random
 import Data.Coerce
-import Data.Constraint                                              hiding ((***))
+import Data.Constraint                                              hiding ( (***) )
 import Data.Foldable                                                as F
 import Data.Maybe
 import Data.Traversable                                             as T
-import Data.Vector                                                  as V hiding (force)
-import Data.Vector.Unboxed                                          as U hiding (force)
+import Data.Vector                                                  as V hiding ( force )
+import Data.Vector.Unboxed                                          as U hiding ( force )
 import Test.QuickCheck
 
--- | An implementation of 'Tensor' backed by repa.
+
+-- | The underlying representation for a Repa-backed Tensor
+--
 data RT (m :: Factored) r where
   RT :: Unbox r => !(Arr m r) -> RT m r
-  ZV :: IZipVector m r -> RT m r
+  ZV :: IZipVector m r        -> RT m r
 
-deriving instance Show r => Show (RT m r)
-
-instance Eq r => Eq (RT m r) where
-  (ZV a) == (ZV b) = a == b
-  (RT a) == (RT b) = a == b
-  a@(RT _) == b = a == toRT b
-  a == b@(RT _) = toRT a == b
-  {-# INLINABLE (==) #-}
-
-zvToArr :: Unbox r => IZipVector m r -> Arr m r
-zvToArr v = let vec = convert $ unIZipVector v
-            in Arr $ fromUnboxed (Z :. U.length vec) vec
-
--- converts to RT constructor
-toRT :: Unbox r => RT m r -> RT m r
-toRT v@(RT _) = v
-toRT (ZV v) = RT $ zvToArr v
-
-toZV :: Fact m => RT m r -> RT m r
-toZV (RT (Arr v)) = ZV $ fromMaybe (error "toZV: internal error") $
-                    iZipVector $ convert $ toUnboxed v
-toZV v@(ZV _) = v
-
-{-# INLINABLE wrap #-}
-wrap :: Unbox r => (Arr l r -> Arr m r) -> RT l r -> RT m r
-wrap f (RT v) = RT $ f v
-wrap f (ZV v) = RT $ f $ zvToArr v
-
-{-# INLINABLE wrapM #-}
-wrapM :: (Unbox r, Monad mon) => (Arr l r -> mon (Arr m r))
-         -> RT l r -> mon (RT m r)
-wrapM f (RT v) = RT <$> f v
-wrapM f (ZV v) = RT <$> f (zvToArr v)
-
-
+-- | Repa-tensor corresponds to directly executing Haskel code, so elements in
+--   RT are simply raw values.
+--
 type instance TRep RT r = r
 
+-- | An implementation of 'Tensor' backed by Repa.
+--
 instance Tensor RT where
 
   type TElt RT r = (Unbox r, Elt r)
@@ -95,7 +75,7 @@ instance Tensor RT where
 
   scalarPow = RT . scalarPow'
 
-  l = wrap fL
+  l    = wrap fL
   lInv = wrap fLInv
 
   mulGPow = wrap fGPow
@@ -104,32 +84,32 @@ instance Tensor RT where
   divGPow = wrapM fGInvPow
   divGDec = wrapM fGInvDec
 
-  crtFuncs = (,,,,) <$>
-             ((RT .) <$> scalarCRT') <*>
-             (wrap <$> mulGCRT') <*>
-             (wrap <$> divGCRT') <*>
-             (wrap <$> fCRT) <*>
-             (wrap <$> fCRTInv)
+  crtFuncs = (,,,,) <$> ((RT .) <$> scalarCRT')
+                    <*> (wrap <$> mulGCRT')
+                    <*> (wrap <$> divGCRT')
+                    <*> (wrap <$> fCRT)
+                    <*> (wrap <$> fCRTInv)
 
   tGaussianDec = fmap RT . tGaussianDec'
 
   gSqNormDec (RT e) = gSqNormDec' e
-  gSqNormDec e = gSqNormDec $ toRT e
+  gSqNormDec e      = gSqNormDec $ toRT e
 
   twacePowDec = wrap twacePowDec'
 
   embedPow = wrap embedPow'
   embedDec = wrap embedDec'
 
-  crtExtFuncs = (,) <$> (wrap <$> twaceCRT') <*> (wrap <$> embedCRT')
+  crtExtFuncs = (,) <$> (wrap <$> twaceCRT')
+                    <*> (wrap <$> embedCRT')
 
   coeffs = wrapM coeffs'
 
   powBasisPow = (RT <$>) <$> powBasisPow'
 
-  crtSetDec = (RT <$>) <$> crtSetDec'
+  crtSetDec   = (RT <$>) <$> crtSetDec'
 
-  fmapT f (RT v) = RT $ (coerce $ force . RT.map f) v
+  fmapT f (RT v)   = RT $ (coerce $ force . RT.map f) v
   fmapT f v@(ZV _) = fmapT f $ toRT v
 
   -- Repa arrays don't have mapM, so apply to underlying Unboxed
@@ -139,10 +119,10 @@ instance Tensor RT where
   -- fmapTM f v = fmapTM f $ toRT v
 
   zipWithT f (RT (Arr a1)) (RT (Arr a2)) = RT $ Arr $ force $ RT.zipWith f a1 a2
-  zipWithT f v1 v2 = zipWithT f (toRT v1) (toRT v2)
+  zipWithT f v1            v2            = zipWithT f (toRT v1) (toRT v2)
 
   unzipT v@(RT _) = unzipT $ toZV v
-  unzipT (ZV v) = ZV *** ZV $ unzipIZV v
+  unzipT (ZV v)   = ZV *** ZV $ unzipIZV v
 
   {-# INLINABLE entailIndexT #-}
   {-# INLINABLE entailEqT #-}
@@ -172,6 +152,85 @@ instance Tensor RT where
   {-# INLINABLE unzipT #-}
 
 
+---------- Conversions ----------
+
+zvToArr :: Unbox r => IZipVector m r -> Arr m r
+zvToArr v = let vec = convert $ unIZipVector v
+            in Arr $ fromUnboxed (Z :. U.length vec) vec
+
+-- converts to RT constructor
+toRT :: Unbox r => RT m r -> RT m r
+toRT v@(RT _) = v
+toRT (ZV v) = RT $ zvToArr v
+
+toZV :: Fact m => RT m r -> RT m r
+toZV (RT (Arr v)) = ZV $ fromMaybe (error "toZV: internal error") $
+                    iZipVector $ convert $ toUnboxed v
+toZV v@(ZV _) = v
+
+{-# INLINABLE wrap #-}
+wrap :: Unbox r => (Arr l r -> Arr m r) -> RT l r -> RT m r
+wrap f (RT v) = RT $ f v
+wrap f (ZV v) = RT $ f $ zvToArr v
+
+{-# INLINABLE wrapM #-}
+wrapM :: (Unbox r, Monad mon) => (Arr l r -> mon (Arr m r))
+         -> RT l r -> mon (RT m r)
+wrapM f (RT v) = RT <$> f v
+wrapM f (ZV v) = RT <$> f (zvToArr v)
+
+
+---------- Prelude instances ----------
+
+deriving instance Show r => Show (RT m r)
+
+instance Eq r => Eq (RT m r) where
+  (ZV a) == (ZV b) = a == b
+  (RT a) == (RT b) = a == b
+  a@(RT _) == b = a == toRT b
+  a == b@(RT _) = toRT a == b
+  {-# INLINABLE (==) #-}
+
+
+---------- CRT embedding instances ----------
+
+instance (CRTEmbed RT a, CRTEmbed RT b) => CRTEmbed RT (a,b) where
+  type CRTExt (a,b) = (CRTExt a, CRTExt b)
+  --
+  toExt   = tag $ \(a,b) -> ( proxy toExt (Proxy::Proxy (RT m a)) a
+                            , proxy toExt (Proxy::Proxy (RT m b)) b
+                            )
+  fromExt = tag $ \(a,b) -> ( proxy fromExt (Proxy::Proxy (RT m a)) a
+                            , proxy fromExt (Proxy::Proxy (RT m b)) b
+                            )
+
+instance Transcendental a => CRTEmbed RT (Complex a) where
+  type CRTExt (Complex a) = Complex a
+  toExt   = tag id
+  fromExt = tag id
+
+instance CRTEmbed RT Double where
+  type CRTExt Double = Complex Double
+  toExt   = tag fromReal
+  fromExt = tag real
+
+instance CRTEmbed RT Int where
+  type CRTExt Int = Complex Double
+  toExt   = tag fromIntegral
+  fromExt = tag $ fst . roundComplex
+
+instance CRTEmbed RT Int64 where
+  type CRTExt Int64 = Complex Double
+  toExt   = tag fromIntegral
+  fromExt = tag $ fst . roundComplex
+
+instance CRTEmbed RT Integer where
+  -- CJP: sufficient precision?  Not in general.
+  type CRTExt Integer = Complex Double
+  toExt   = tag fromIntegral
+  fromExt = tag $ fst . roundComplex
+
+
 ---------- Category-theoretic instances ----------
 
 instance Fact m => Functor (RT m) where
@@ -192,7 +251,7 @@ instance Fact m => Foldable (RT m) where
 
 instance Fact m => Traversable (RT m) where
   traverse f r@(RT _) = T.traverse f $ toZV r
-  traverse f (ZV v) = ZV <$> T.traverse f v
+  traverse f (ZV v)   = ZV <$> T.traverse f v
 
 
 ---------- Numeric Prelude instances ----------
@@ -245,8 +304,7 @@ instance (GFCtx fp d, Fact m, Additive (RT m fp))
 ---------- Miscellaneous instances ----------
 
 instance (Unbox r, Random (Arr m r)) => Random (RT m r) where
-  random = runRand $ RT <$> liftRand random
-
+  random  = runRand $ RT <$> liftRand random
   randomR = error "randomR nonsensical for RT"
 
 instance (Unbox r, Arbitrary (Arr m r)) => Arbitrary (RT m r) where
@@ -255,3 +313,4 @@ instance (Unbox r, Arbitrary (Arr m r)) => Arbitrary (RT m r) where
 instance (NFData r) => NFData (RT m r) where
   rnf (RT v) = rnf v
   rnf (ZV v) = rnf v
+
