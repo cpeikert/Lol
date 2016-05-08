@@ -36,12 +36,17 @@ description:
     Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
     For a detailed description of interfaces and functionality, see
     <https://eprint.iacr.org/2015/1134 Λ ○ λ: A Functional Library for Lattice Cryptography>.
-    For example cryptographic applications, see <https://hackage.haskell.org/package/lol-apps lol-apps>.
+    .
+    For example cryptographic applications, see
+    <https://hackage.haskell.org/package/lol-apps lol-apps>.
+    .
+
 source-repository head
   type: git
   location: https://github.com/cpeikert/Lol
 
--- For information on compiling C with cabal: http://blog.ezyang.com/2010/06/setting-up-cabal-the-ffi-and-c2hs/
+-- For information on compiling C with cabal:
+-- http://blog.ezyang.com/2010/06/setting-up-cabal-the-ffi-and-c2hs/
 
 Flag icc
   Description: Use ICC instead of GCC to compile C backend.
@@ -60,12 +65,12 @@ Flag opt
 
 library
   Include-dirs: Crypto/Lol/Cyclotomic/Tensor/C
-  C-sources:    Crypto/Lol/Cyclotomic/Tensor/C/basic.c,
-                Crypto/Lol/Cyclotomic/Tensor/C/crt.c,
-                Crypto/Lol/Cyclotomic/Tensor/C/g.c,
-                Crypto/Lol/Cyclotomic/Tensor/C/generalfuncs.c,
-                Crypto/Lol/Cyclotomic/Tensor/C/l.c,
-                Crypto/Lol/Cyclotomic/Tensor/C/norm.c,
+  C-sources:    Crypto/Lol/Cyclotomic/Tensor/C/basic.c
+                Crypto/Lol/Cyclotomic/Tensor/C/crt.c
+                Crypto/Lol/Cyclotomic/Tensor/C/g.c
+                Crypto/Lol/Cyclotomic/Tensor/C/generalfuncs.c
+                Crypto/Lol/Cyclotomic/Tensor/C/l.c
+                Crypto/Lol/Cyclotomic/Tensor/C/norm.c
                 Crypto/Lol/Cyclotomic/Tensor/C/random.c
 
   Includes:     Crypto/Lol/Cyclotomic/Tensor/C/tensorTypes.h
@@ -89,39 +94,39 @@ library
 
   exposed-modules:
     Crypto.Lol
-    Crypto.Lol.PosBin
-    Crypto.Lol.Factored
-    Crypto.Lol.Reflects
     Crypto.Lol.CRTrans
+    Crypto.Lol.Factored
     Crypto.Lol.Gadget
     Crypto.Lol.LatticePrelude
+    Crypto.Lol.PosBin
+    Crypto.Lol.Reflects
 
     Crypto.Lol.Cyclotomic.Cyc
-    Crypto.Lol.Cyclotomic.UCyc
-    Crypto.Lol.Cyclotomic.RescaleCyc
     Crypto.Lol.Cyclotomic.Linear
+    Crypto.Lol.Cyclotomic.RescaleCyc
+    Crypto.Lol.Cyclotomic.UCyc
 
     Crypto.Lol.Cyclotomic.Tensor
-    Crypto.Lol.Cyclotomic.Tensor.Representation
     Crypto.Lol.Cyclotomic.Tensor.C
     Crypto.Lol.Cyclotomic.Tensor.Repa
+    Crypto.Lol.Cyclotomic.Tensor.Representation
 
-    Crypto.Lol.Types.Random
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
+    Crypto.Lol.Types.Random
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.ZqBasic
 
     -- exposed but hidden
-    Crypto.Lol.Types.IZipVector
     Crypto.Lol.Types.Complex
+    Crypto.Lol.Types.IZipVector
 
   other-modules:
     Crypto.Lol.FactoredDefs
-    Crypto.Lol.PosBinDefs
     Crypto.Lol.GaussRandom
-    Crypto.Lol.Types.ZmStar
+    Crypto.Lol.PosBinDefs
     Crypto.Lol.Types.Numeric
+    Crypto.Lol.Types.ZmStar
 
     -- Repa backend
     Crypto.Lol.Cyclotomic.Tensor.Repa.CRT
@@ -131,8 +136,8 @@ library
     Crypto.Lol.Cyclotomic.Tensor.Repa.GL
 
     -- C backend
-    Crypto.Lol.Cyclotomic.Tensor.C.Extension
     Crypto.Lol.Cyclotomic.Tensor.C.Backend
+    Crypto.Lol.Cyclotomic.Tensor.C.Extension
 
   build-depends:
       base               == 4.8.*
