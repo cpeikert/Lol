@@ -133,9 +133,10 @@ prop_scalar_crt
     => r
     -> Test '(t,m,r)
 prop_scalar_crt r = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
+  let r' = proxy (constant r) (Proxy :: Proxy t)
   scalarCRT' <- scalarCRT
-  crt' <- crt
-  return $ (scalarCRT' r :: t m r) == (crt' $ scalarPow r)
+  crt'       <- crt
+  return $ (scalarCRT' r' :: t m r) == (crt' $ scalarPow r')
   \\ proxy entailEqT (Proxy::Proxy (t m r))
 
 

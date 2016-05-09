@@ -11,7 +11,6 @@ module CycTests (cycTests) where
 import Control.Monad (liftM2,join)
 
 import Crypto.Lol
-import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types.ZPP
 
 import Harness.Cyc
@@ -27,7 +26,7 @@ cycTests =
   , testGroupM "mulGPow" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgPow
   , testGroupM "mulGDec" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgDec
   , testGroupM "mulGCRT" $ applyBasic (Proxy::Proxy AllParams)   $ hideArgs prop_mulgCRT
-  -- , testGroupM "crtSet"  $ applyBasis (Proxy::Proxy BasisParams) $ hideArgs prop_crtSet_pairs
+  , testGroupM "crtSet"  $ applyBasis (Proxy::Proxy BasisParams) $ hideArgs prop_crtSet_pairs
   ]
 
 prop_mulgPow
@@ -66,8 +65,7 @@ prop_coeffsBasis x =
 -- verifies that CRT set elements satisfy c_i * c_j = delta_ij * c_i
 -- necessary (but not sufficient) condition
 prop_crtSet_pairs
-    :: forall t m m' r . ( m `Divides` m', ZPP r, Eq r, CElt t r, CElt t (ZpOf r)
-                         , ZPP (TRep t r), ZpOf (TRep t r) ~ TRep t (ZpOf r))
+    :: forall t m m' r . (m `Divides` m', ZPP t r, Eq r, CElt t r, CElt t (ZpOf r))
     => Test '(t,m,m',r)
 prop_crtSet_pairs =
   let crtset = proxy crtSet (Proxy::Proxy m) :: [Cyc t m' r]

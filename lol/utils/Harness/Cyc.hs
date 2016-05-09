@@ -102,7 +102,7 @@ applyTwoIdx params g = run params $ \(TI p) -> g p
 
 -- similar to TwoIdxCtxD, but r must be a prime-power
 data BasisCtxD
-type BasisCtx t m m' r = (m `Divides` m', Eq r, ZPP r, CElt t r, CElt t (ZpOf r), ShowType '(t,m,m',r))
+type BasisCtx t m m' r = (m `Divides` m', Eq r, ZPP t r, CElt t r, CElt t (ZpOf r), ShowType '(t,m,m',r))
 
 instance (params `Satisfy` BasisCtxD, BasisCtx t m m' r)
   => ( '(t, '(m,m',r)) ': params) `Satisfy` BasisCtxD where
