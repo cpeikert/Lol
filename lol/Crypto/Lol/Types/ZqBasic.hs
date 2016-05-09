@@ -1,18 +1,33 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GeneralizedNewtypeDeriving,
-             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
-             RebindableSyntax, RoleAnnotations, ScopedTypeVariables,
-             StandaloneDeriving, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RebindableSyntax           #-}
+{-# LANGUAGE RoleAnnotations            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 -- | An implementation of modular arithmetic, i.e., the ring Zq.
+--
+module Crypto.Lol.Types.ZqBasic (
 
-module Crypto.Lol.Types.ZqBasic
-( ZqBasic -- export the type, but not the constructor (for safety)
+  -- For safety we should not be exporting the constructor, only the type, but
+  -- the constructor is necessary for external backends. One compromise would be
+  -- to export the constructor from an 'internals' module only, which is hidden
+  -- from clients by default.
+  ZqBasic(..)
+
 ) where
 
 import Crypto.Lol.CRTrans
+import Crypto.Lol.Cyclotomic.Tensor.Representation
 import Crypto.Lol.Gadget
-import Crypto.Lol.LatticePrelude    as LP
+import Crypto.Lol.LatticePrelude                                    as LP
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZPP
@@ -22,29 +37,30 @@ import Math.NumberTheory.Primes.Testing
 
 import Control.Applicative
 import Control.Arrow
-import Control.DeepSeq        (NFData)
+import Control.DeepSeq                                              ( NFData )
 import Data.Coerce
 import Data.Maybe
-import NumericPrelude.Numeric as NP (round)
+import NumericPrelude.Numeric                                       as NP (round)
 import System.Random
 import Test.QuickCheck
 
 -- for the Unbox instances
-import qualified Data.Vector                 as V
-import qualified Data.Vector.Generic         as G
-import qualified Data.Vector.Generic.Mutable as M
-import qualified Data.Vector.Unboxed         as U
+import qualified Data.Vector                                        as V
+import qualified Data.Vector.Generic                                as G
+import qualified Data.Vector.Generic.Mutable                        as M
+import qualified Data.Vector.Unboxed                                as U
 
 import Foreign.Storable
 
 -- for the Elt instance
-import qualified Data.Array.Repa.Eval as E
+import qualified Data.Array.Repa.Eval                               as E
 
-import qualified Algebra.Additive       as Additive (C)
-import qualified Algebra.Field          as Field (C)
-import qualified Algebra.IntegralDomain as IntegralDomain (C)
-import qualified Algebra.Ring           as Ring (C)
-import qualified Algebra.ZeroTestable   as ZeroTestable (C)
+import qualified Algebra.Additive                                   as Additive (C)
+import qualified Algebra.Field                                      as Field (C)
+import qualified Algebra.IntegralDomain                             as IntegralDomain (C)
+import qualified Algebra.Ring                                       as Ring (C)
+import qualified Algebra.ZeroTestable                               as ZeroTestable (C)
+
 
 -- | The ring @Z_q@ of integers modulo 'q', using underlying integer
 -- type 'z'.
@@ -83,6 +99,7 @@ instance (ReflectsTI q z) => Mod (ZqBasic q z) where
 
 type instance CharOf (ZqBasic p z) = p
 
+{--
 instance (PPow pp, zq ~ ZqBasic pp z,
           PrimeField (ZpOf zq), Ring zq, Ring (ZpOf zq))
          => ZPP (ZqBasic (pp :: PrimePower) z) where
@@ -91,6 +108,7 @@ instance (PPow pp, zq ~ ZqBasic pp z,
 
   modulusZPP = retag (ppPPow :: Tagged pp PP)
   liftZp = coerce
+--}
 
 instance (ReflectsTI q z) => Reduce z (ZqBasic q z) where
   reduce = reduce'
@@ -157,12 +175,14 @@ instance (ReflectsTI q z, PID z, Enumerable (ZqBasic q z))
 
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
+{--
 -- instance of CRTEmbed
 instance (ReflectsTI q z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
   type CRTExt (ZqBasic q z) = Complex Double
 
   toExt (ZqB x) = fromReal $ fromIntegral x
   fromExt x = reduce' $ NP.round $ real x
+--}
 
 -- instance of Additive
 instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where

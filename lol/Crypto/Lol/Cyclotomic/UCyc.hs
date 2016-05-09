@@ -367,7 +367,8 @@ unzipCRTC (CRTr v)
 -- output components are 'Either's because each target base might
 -- instead support 'C'.
 unzipCRTE
-    :: forall t m a b. (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b, CRTExt (a,b) ~ (CRTExt a, CRTExt b))
+    :: forall t m a b. ( Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b
+                       , CRTExt (a,b) ~ (CRTExt a, CRTExt b))
     => UCyc t m E (a,b)
     -> ( Either (UCyc t m P a) (UCyc t m E a)
        , Either (UCyc t m P b) (UCyc t m E b)
@@ -566,11 +567,11 @@ powBasis = (Pow <$>) <$> powBasisPow
 -- respect to the powerful basis (which seems to be the best choice
 -- for typical use cases).
 crtSet :: forall t m m' r p mbar m'bar .
-          ( m `Divides` m', ZPP r, p ~ CharOf (ZpOf r)
+          ( m `Divides` m', p ~ CharOf (ZpOf r)
           , mbar ~ PFree p m, m'bar ~ PFree p m'
           , UCRTElt t r, TElt t (ZpOf r)
-          , ZPP (TRep t r)
-          , ZpOf (TRep t r) ~ TRep t (ZpOf r) -- TLM: suspicious...
+          , ZPP t r
+          , Ring r
           )
        => Tagged m [UCyc t m' P r]
 {-# INLINABLE crtSet #-}
@@ -579,13 +580,13 @@ crtSet =
   --DT.trace ("UCyc.crtSet: m = " ++
   --          show (proxy valueFact (Proxy::Proxy m)) ++ ", m'= " ++
   --          show (proxy valueFact (Proxy::Proxy m'))) $
-  let (p,e) = proxy modulusZPP (Proxy::Proxy r)
+  let (p,e) = proxy modulusZPP (Proxy::Proxy (t m r))
       pp    = Proxy::Proxy p
       pm    = Proxy::Proxy m
       pm'   = Proxy::Proxy m'
   in retag (fmap (embedPow .
                   (if e > 1 then toPowCE . (^(p^(e-1))) . toCRT else toPow) .
-                  Dec . fmapT liftZp) <$>
+                  Dec . fmapT (proxy liftZp (Proxy::Proxy (t m r)))) <$>
             (crtSetDec :: Tagged mbar [t m'bar (ZpOf r)]))
      \\ pFreeDivides pp pm pm'
      \\ pSplitTheorems  pp pm

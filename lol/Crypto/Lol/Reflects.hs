@@ -24,7 +24,7 @@ import GHC.TypeLits              as TL
 -- specific functionality.
 
 class Reflects a i where
-  -- | Reflect the value assiated with the type @a@.
+  -- | Reflect the value associated with the type @a@.
   value :: Tagged a i
 
 instance (KnownNat a, ToInteger.C i) => Reflects (a :: TL.Nat) i where

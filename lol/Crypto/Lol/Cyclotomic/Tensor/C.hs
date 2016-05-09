@@ -7,7 +7,7 @@
              UndecidableInstances #-}
 
 -- | Wrapper for a C implementation of the 'Tensor' interface.
-
+--
 module Crypto.Lol.Cyclotomic.Tensor.C
 ( CT ) where
 
@@ -47,8 +47,13 @@ import Crypto.Lol.Cyclotomic.Tensor.C.Backend
 import Crypto.Lol.Cyclotomic.Tensor.C.Extension
 import Crypto.Lol.GaussRandom
 import Crypto.Lol.LatticePrelude                                    as LP hiding ( lift, replicate, unzip, zip )
+import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
+import Crypto.Lol.Types.ZPP
+import Crypto.Lol.Types.ZqBasic
+
+import NumericPrelude.Numeric                                       as NP ( round )
 
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -144,6 +149,23 @@ instance CRTEmbed CT Integer where
   type CRTExt Integer = Complex Double
   toExt   = tag fromIntegral
   fromExt = tag $ fst . roundComplex
+
+
+---------- ZqBasic instances ----------
+
+instance (Reflects q z, ToInteger z, Ring (ZqBasic q z)) => CRTEmbed CT (ZqBasic q z) where
+  type CRTExt (ZqBasic q z) = Complex Double
+  toExt   = tag $ \(ZqB x) -> fromReal (fromIntegral x)
+  fromExt = tag $ reduce' . NP.round . real
+    where
+      reduce' = ZqB . (`mod` proxy value (Proxy::Proxy q))
+
+instance (PPow pp, zq ~ ZqBasic pp z, PrimeField (ZpOf zq), Ring zq, Ring (ZpOf zq))
+    => ZPP CT (ZqBasic (pp :: PrimePower) z) where
+  type ZpOf (ZqBasic pp z) = ZqBasic (PrimePP pp) z
+  --
+  modulusZPP = retag (ppPPow :: Tagged pp PP)
+  liftZp     = tag coerce
 
 
 ---------- NUMERIC PRELUDE INSTANCES ----------
