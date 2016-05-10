@@ -45,10 +45,10 @@ applyBasic
 applyBasic params g = run params $ \(BC p) -> g p
 
 
-prop_add :: forall t r. (Ring r, Eq r) => Int -> Int -> Test '(t,r)
+prop_add :: forall t r. (Ring r, Eq r) => Integer -> Integer -> Test '(t,r)
 prop_add x y = test $ (fromIntegral $ x + y) == ((fromIntegral x) + (fromIntegral y :: r))
 
-prop_mul :: forall t r . (Ring r, Eq r) => Int -> Int -> Test '(t,r)
+prop_mul :: forall t r . (Ring r, Eq r) => Integer -> Integer -> Test '(t,r)
 prop_mul x y = test $ (fromIntegral $ x * y) == ((fromIntegral x) * (fromIntegral y :: r))
 
 prop_recip :: forall t r . (Field r, Eq r) => r -> Test '(t,r)
