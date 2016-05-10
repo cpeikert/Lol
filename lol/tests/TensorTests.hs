@@ -26,29 +26,22 @@ import Data.Maybe
 
 import Data.Singletons
 import Data.Promotion.Prelude.Eq
-import Data.Singletons.TypeRepStar                        ()
+import Data.Singletons.TypeRepStar
 
-import qualified Test.Framework                           as TF
-
-
-tensorTests :: [TF.Test]
 tensorTests =
-  [
-    testGroupM "fmapT comparison"  $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_fmapT
-  , testGroupM "fmap comparison"   $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_fmap
-  , testGroup  "GInv.G == id"      $ gInvGTests
-  , testGroupM "CRTInv.CRT == id"  $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_crt_inv
-  , testGroupM "LInv.L == id"      $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_l_inv
-  , testGroupM "Scalar"            $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_scalar_crt
-  , testGroup  "G commutes with L" $  gCommuteTests
-  -- CJP: suppressed because it's not actually a Tensor test
-  -- , testGroupM "Extension Mult"     $ applyBasic (Proxy::Proxy ExtParams) $ hideArgs prop_mul_ext
-  , testGroupM "GSqNormDec"         $ applyLift (Proxy::Proxy NormParams) $ hideArgs prop_gsqnorm
-  , testGroup  "Tw.Em == id"        $ tremTests
-  , testGroup  "Em commutes with L" $ embedCommuteTests
-  , testGroup  "Tw commutes with L" $ twaceCommuteTests
-  , testGroup  "Twace invariants"   $ twaceInvarTests
-  ]
+  [testGroupM "fmapT comparison" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_fmapT,
+   testGroupM "fmap comparison"  $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_fmap,
+   testGroup  "GInv.G == id"       gInvGTests,
+   testGroupM "CRTInv.CRT == id" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_crt_inv,
+   testGroupM "LInv.L == id"     $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_l_inv,
+   testGroupM "Scalar"           $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_scalar_crt,
+   testGroup  "G commutes with L"  gCommuteTests,
+   testGroupM "GSqNormDec"       $ applyLift (Proxy::Proxy NormParams) $ hideArgs prop_gsqnorm,
+   testGroup  "Tw.Em == id"        tremTests,
+   testGroup  "Em commutes with L" embedCommuteTests,
+   testGroup "Tw commutes with L"  twaceCommuteTests,
+   testGroup  "Twace invariants"   twaceInvarTests
+   ]
 
 prop_fmapT :: (Tensor t, TElt t r, Fact m, Eq r) => t m r -> Test '(t,m,r)
 prop_fmapT x = test $ fmapT id x == x \\ witness entailEqT x \\ witness entailIndexT x
@@ -139,29 +132,9 @@ prop_scalar_crt r = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
   return $ (scalarCRT' r' :: t m r) == (crt' $ scalarPow r')
   \\ proxy entailEqT (Proxy::Proxy (t m r))
 
-
--- {- CJP: this test makes no sense in the Tensor context: it's just
--- checking that multiplication in the extension ring of r and in r
--- itself are consistent; no Tensor needed.
-
--- -- tests that multiplication in the extension ring matches CRT multiplication
--- prop_mul_ext :: forall t m r . (Tensor t, Fact m, TElt t r, TElt t (CRTExt r), CRTrans Maybe Int r, CRTEmbed r, Ring r, Eq r)
---   => t m r -> t m r -> Test '(t,m,r)
--- prop_mul_ext x y = test $
---   case (proxyT crtInfo (Proxy::Proxy m)) of
---        Nothing -> error "mul have a CRT to call prop_mul_ext"
---        Just _ -> (let z = zipWithT (*) x y
---                       z' = fmapT fromExt $ zipWithT (*) (fmapT toExt x) (fmapT toExt y)
---                   in z == z') \\ witness entailEqT x
---                               \\ witness entailIndexT x
-
--- -}
-
-type NormCtx t m r =
-  ( TElt t r, TElt t (LiftOf r)
-  , Fact m, Lift' r, CRTrans Maybe Int r, Eq (LiftOf r)
-  , ZeroTestable r, IntegralDomain r, Ring r, Ring (LiftOf r)
-  )
+type NormCtx t m r = (TElt t r, TElt t (LiftOf r),
+  Fact m, Lift' r, CRTrans Maybe r, Eq (LiftOf r),
+  ZeroTestable r, Ring (LiftOf r), Ring r, IntegralDomain r)
 
 type NormWrapCtx m r = (NormCtx CT m r, NormCtx RT m r)
 

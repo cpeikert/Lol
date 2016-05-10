@@ -241,7 +241,7 @@ instance (ReflectsTI q z, Ring z) => Correct TrivGad (ZqBasic q z) where
 
 gadlen :: (RealIntegral z) => z -> z -> Int
 gadlen _ q | isZero q = 0
-gadlen b q = 1 + (gadlen b $ q `div` b)
+gadlen b q = 1 + gadlen b (q `div` b)
 
 -- | The base-@b@ gadget for modulus @q@, over integers (not mod
 -- anything).
@@ -287,7 +287,7 @@ correctZ q b =
       -- | Yield @w = round(\bar{B}^t \cdot v / q)@, along with the inner
       -- product of @w@ with the top row of @q \bar{D}@.
       barBtRnd :: z -> [z] -> ([z], z)
-      barBtRnd _ (_:[]) = ([], zero)
+      barBtRnd _ [_] = ([], zero)
       barBtRnd q' (v1:vs@(v2:_)) = let quo = fst $ divModCent (b*v1-v2) q
                                    in (quo:) *** (quo*q' +) $
                                       barBtRnd (q' `div` b) vs
