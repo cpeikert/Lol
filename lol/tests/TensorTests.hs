@@ -26,8 +26,12 @@ import Data.Maybe
 
 import Data.Singletons
 import Data.Promotion.Prelude.Eq
-import Data.Singletons.TypeRepStar
+import Data.Singletons.TypeRepStar ()
 
+import qualified Test.Framework as TF
+
+
+tensorTests :: [TF.Test]
 tensorTests =
   [testGroupM "fmapT comparison" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_fmapT,
    testGroupM "fmap comparison"  $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_fmap,
@@ -133,7 +137,7 @@ prop_scalar_crt r = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
   \\ proxy entailEqT (Proxy::Proxy (t m r))
 
 type NormCtx t m r = (TElt t r, TElt t (LiftOf r),
-  Fact m, Lift' r, CRTrans Maybe r, Eq (LiftOf r),
+  Fact m, Lift' r, CRTrans Maybe Int r, Eq (LiftOf r),
   ZeroTestable r, Ring (LiftOf r), Ring r, IntegralDomain r)
 
 type NormWrapCtx m r = (NormCtx CT m r, NormCtx RT m r)

@@ -1,5 +1,17 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, GADTs, MultiParamTypeClasses, NoImplicitPrelude, 
-             RebindableSyntax, ScopedTypeVariables, PolyKinds, RankNTypes, TypeFamilies, TypeOperators #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module ZqTests (zqTests) where
 
@@ -10,49 +22,70 @@ import Apply
 
 import Crypto.Lol
 import Crypto.Lol.CRTrans
+import Crypto.Lol.Cyclotomic.Tensor.Representation
 
 import Control.Monad.Random
+import qualified Test.Framework as TF
+
 
 data BasicCtxD
-type BasicCtx r =  (Field r, Eq r, Random r, ShowType r, CRTEmbed r)
-instance (params `Satisfy` BasicCtxD, BasicCtx r) 
-  => ( r ': params) `Satisfy` BasicCtxD where
-  data ArgsCtx BasicCtxD where
-    BC :: (BasicCtx r) => Proxy r -> ArgsCtx BasicCtxD
-  run _ f = (f $ BC (Proxy::Proxy r)) : (run (Proxy::Proxy params) f)
+type BasicCtx t r = (Field r, Tensor t, TElt t r, Eq r, Eq (TRep t r), Random r, ShowType '(t,r), CRTEmbed t r)
 
-applyBasic :: (params `Satisfy` BasicCtxD, MonadRandom rnd) =>
-  Proxy params 
-  -> (forall r . (BasicCtx r, Generatable rnd r) 
-       => Proxy r -> rnd res)
-  -> [rnd res]
+instance (params `Satisfy` BasicCtxD, BasicCtx t r) => ( '(t,r) ': params) `Satisfy` BasicCtxD where
+  data ArgsCtx BasicCtxD where
+    BC :: BasicCtx t r => Proxy '(t,r) -> ArgsCtx BasicCtxD
+  --
+  run _ f = (f $ BC (Proxy::Proxy '(t,r))) : (run (Proxy::Proxy params) f)
+
+applyBasic
+    :: (params `Satisfy` BasicCtxD, MonadRandom rnd)
+    => Proxy params
+    -> (forall t r . (BasicCtx t r, Generatable rnd r) => Proxy '(t,r) -> rnd res)
+    -> [rnd res]
 applyBasic params g = run params $ \(BC p) -> g p
 
-prop_add :: forall r . (Ring r, Eq r) => Proxy r -> Int -> Int -> Test r
-prop_add _ x y = test $ (fromIntegral $ x + y) == ((fromIntegral x) + (fromIntegral y :: r))
 
-prop_mul :: forall r . (Ring r, Eq r) => Proxy r -> Int -> Int -> Test r
-prop_mul _ x y = test $ (fromIntegral $ x * y) == ((fromIntegral x) * (fromIntegral y :: r))
+prop_add :: forall t r. (Ring r, Eq r) => Int -> Int -> Test '(t,r)
+prop_add x y = test $ (fromIntegral $ x + y) == ((fromIntegral x) + (fromIntegral y :: r))
 
-prop_recip :: forall r . (Field r, Eq r) => r -> Test r
+prop_mul :: forall t r . (Ring r, Eq r) => Int -> Int -> Test '(t,r)
+prop_mul x y = test $ (fromIntegral $ x * y) == ((fromIntegral x) * (fromIntegral y :: r))
+
+prop_recip :: forall t r . (Field r, Eq r) => r -> Test '(t,r)
 prop_recip x = test $ (x == 0) || (one == (x * recip x))
 
 -- tests that multiplication in the extension ring matches CRT multiplication
-prop_mul_ext :: forall r . (CRTEmbed r, Ring r, Eq r)
-  => r -> r -> Test r
-prop_mul_ext x y = test $
-  let z = x * y
-      z' = fromExt $ (toExt x) * (toExt y)
-  in z == z'
+prop_mul_ext
+    :: forall t r . (Tensor t, TElt t r, CRTEmbed t r, Ring (TRep t r), Eq (TRep t r))
+    => Proxy '(t,r)
+    -> r
+    -> r
+    -> Test '(t,r)
+prop_mul_ext _ x y = test $
+  let x' = proxy (constant x) (Proxy :: Proxy t)
+      y' = proxy (constant y) (Proxy :: Proxy t)
+      --
+      z  = x' * y'
+      z' = proxy fromExt (Proxy::Proxy (t m r))
+         $ proxy toExt (Proxy::Proxy (t m r)) x' * proxy toExt (Proxy::Proxy (t m r)) y'
+  in
+  z == z'
 
-type ZqTypes = [
-  Zq 3,
-  Zq (3 ** 5),
-  Zq (3 ** 5 ** 7)]
 
-zqTests = [
-  testGroupM "(+)" $ applyBasic (Proxy::Proxy '[ Zq 3, Zq (3 ** 5) ]) $ hideArgs prop_add,
-  testGroupM "(*)" $ applyBasic (Proxy::Proxy '[ Zq 3, Zq (3 ** 5) ]) $ hideArgs prop_mul,
-  testGroupM "^-1" $ applyBasic (Proxy::Proxy '[ Zq 3, Zq (3 ** 5) ]) $ hideArgs prop_recip,
-  testGroupM "extension ring (*)" $ applyBasic (Proxy::Proxy '[ Zq 3, Zq (3 ** 5) ]) $ hideArgs prop_mul_ext
+type Tensors = '[CT,RT]
+type ZqTypes = '[
+    Zq 3
+  , Zq (3 ** 5)
+  , Zq (3 ** 5 ** 7)
   ]
+
+type ZqParams = '(,) <$> Tensors <*> ZqTypes
+
+zqTests :: [TF.Test]
+zqTests =
+  [ testGroupM "(+)"                $ applyBasic (Proxy::Proxy ZqParams) $ hideArgs prop_add
+  , testGroupM "(*)"                $ applyBasic (Proxy::Proxy ZqParams) $ hideArgs prop_mul
+  , testGroupM "^-1"                $ applyBasic (Proxy::Proxy ZqParams) $ hideArgs prop_recip
+  , testGroupM "extension ring (*)" $ applyBasic (Proxy::Proxy ZqParams) $ hideArgs prop_mul_ext
+  ]
+

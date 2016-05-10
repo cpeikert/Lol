@@ -1,4 +1,7 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 -- generates arguments to functions
 module Gen where
@@ -12,8 +15,8 @@ class GenArgs rnd bnch where
   type ResultOf bnch
   genArgs :: bnch -> rnd (ResultOf bnch)
 
-instance (Generatable rnd a, GenArgs rnd b, 
-          Monad rnd, ResultOf b ~ ResultOf (a -> b)) 
+instance (Generatable rnd a, GenArgs rnd b,
+          Monad rnd, ResultOf b ~ ResultOf (a -> b))
   => GenArgs rnd (a -> b) where
   type ResultOf (a -> b) = ResultOf b
   genArgs f = do
