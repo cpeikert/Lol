@@ -8,7 +8,7 @@ OBJPATH = dist/build/lib
 STATICLIBPATH = dist/build/staticlib
 DYNLIBPATH = dist/build/dynamiclib
 LIBNAME = libctensor
-current_dir = $(shell pwd)
+CD = $(shell pwd)
 
 all: makelib
 
@@ -30,7 +30,7 @@ $(OBJPATH)/%.o: $(CSRCPATH)/%.cpp
 makelib: mkdst $(OBJPATH)/crt.o $(OBJPATH)/g.o $(OBJPATH)/generalfuncs.o $(OBJPATH)/l.o $(OBJPATH)/mul.o $(OBJPATH)/norm.o $(OBJPATH)/random.o
 	$(AR) rcvs $(STATICLIBPATH)/$(LIBNAME).a $(OBJPATH)/*.o
 	$(CXX) -shared $(CXXFLAGS) -o $(DYNLIBPATH)/$(LIBNAME).so $(OBJPATH)/*.o
-	ln -s $(current_dir)/$(DYNLIBPATH)/$(LIBNAME).so $(current_dir)/$(DYNLIBPATH)/$(LIBNAME).dylib
+	ln -sf $(CD)/$(DYNLIBPATH)/$(LIBNAME).so $(CD)/$(DYNLIBPATH)/$(LIBNAME).dylib
 
 clean:
 	rm -f ./$(OBJPATH)/*.o
