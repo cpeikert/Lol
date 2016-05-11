@@ -25,12 +25,9 @@ module Crypto.Lol.Types.ZqBasic (
 ) where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Cyclotomic.Tensor.Representation
 import Crypto.Lol.Gadget
 import Crypto.Lol.LatticePrelude                                    as LP
 import Crypto.Lol.Reflects
-import Crypto.Lol.Types.FiniteField
-import Crypto.Lol.Types.ZPP
 
 import Math.NumberTheory.Primes.Factorisation
 import Math.NumberTheory.Primes.Testing
@@ -40,7 +37,6 @@ import Control.Arrow
 import Control.DeepSeq                                              ( NFData )
 import Data.Coerce
 import Data.Maybe
-import NumericPrelude.Numeric                                       as NP (round)
 import System.Random
 import Test.QuickCheck
 
