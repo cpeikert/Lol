@@ -6,6 +6,7 @@ resolver: lts-5.14
 # Local packages, usually specified by relative directory name
 packages:
 - lol
+- lol-test
 # - 'apps'
 # - 'compiler'
 

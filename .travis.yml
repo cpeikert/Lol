@@ -43,9 +43,9 @@ install:
   - cabal --version
   - opt --version; true
   - llc --version; true
-  - travis_retry stack build --test --only-dependencies --no-terminal --no-haddock-deps -j2
+  - travis_retry stack build --only-dependencies --no-terminal --no-haddock-deps -j2
 
 script:
-  - stack build --test --no-run-tests --no-terminal --haddock --no-haddock-deps
-  - stack test
+  - stack build --no-terminal --haddock --no-haddock-deps
+  - stack exec lol-test
 

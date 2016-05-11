@@ -20,9 +20,6 @@ build-type:          Simple
 extra-source-files:  README, CHANGES.md,
                      benchmarks/CycBenches.hs,
                      benchmarks/ZqBenches.hs,
-                     tests/CycTests.hs,
-                     tests/ZqTests.hs,
-                     tests/TensorTests.hs,
                      utils/Apply.hs,
                      utils/Benchmarks.hs,
                      utils/Gen.hs,
@@ -165,42 +162,6 @@ library
     , vector             == 0.11.*
     , vector-th-unbox    >= 0.2.1.0 && < 0.3
 
-test-suite test-lol
-  type:               exitcode-stdio-1.0
-  hs-source-dirs:     tests,utils
-  default-language:   Haskell2010
-  main-is:            Main.hs
-  other-modules:
-    -- utils
-    Apply
-    Gen
-    Harness.Cyc
-    Tests
-    Utils
-
-    -- tests
-    CycTests
-    TensorTests
-    TestTypes
-    ZqTests
-
-  ghc-options: -threaded -rtsopts
-
-  build-depends:
-      base
-    , constraints
-    , deepseq
-    , DRBG
-    , lol                        == 0.3.*
-    , MonadRandom
-    , mtl
-    , QuickCheck                 >= 2.8 && < 2.9
-    , random
-    , repa
-    , singletons
-    , test-framework             >= 0.8 && < 0.9
-    , test-framework-quickcheck2 >= 0.3 && < 0.4
-    , vector
 
 Benchmark bench-lol
   type:               exitcode-stdio-1.0
