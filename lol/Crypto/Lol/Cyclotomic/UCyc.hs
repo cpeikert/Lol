@@ -398,7 +398,7 @@ errorCoset :: forall t m zp z v rnd .
 {-# INLINABLE errorCoset #-}
 errorCoset =
   let pval = fromIntegral $ proxy modulus (Proxy::Proxy zp)
-  in \ svar c -> do err <- tGaussian (svar*pval*pval) :: rnd (UCyc t m D Double)
+  in \ svar c -> do err :: UCyc t m D Double <- tGaussian (svar*pval*pval)
                     return $! roundCoset <$> c <*> err
 
 
