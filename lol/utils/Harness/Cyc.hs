@@ -18,7 +18,6 @@ import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types.ZPP
 import Crypto.Random.DRBG
 
