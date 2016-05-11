@@ -514,7 +514,7 @@ instance ( Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b
          , CElt t (a,b), CElt t a, CElt t b, CElt t (LiftOf a)
          , Lift (TRep t a) (TRep t b)
          , Reduce (LiftOf (TRep t a)) (TRep t b)
-         , LiftOf (TRep t a) ~ TRep t (LiftOf a)
+         , LiftOf (TRep t a) ~ TRep t (LiftOf a)  -- TLM: hmm...
          , CRTExt (a,b) ~ (CRTExt a, CRTExt b)
          )
          => R.RescaleCyc (Cyc t) (a,b) b where
