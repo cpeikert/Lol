@@ -1,7 +1,8 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, GADTs, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RankNTypes, ScopedTypeVariables,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+             NoImplicitPrelude, PolyKinds, RankNTypes,
+             ScopedTypeVariables, TypeFamilies, TypeOperators,
+             UndecidableInstances #-}
 
 -- | An implementation of cyclotomic rings that hides the
 -- internal representations of ring elements (e.g., the choice of
@@ -60,7 +61,7 @@ import           Crypto.Lol.Types.ZPP
 import Control.Applicative    hiding ((*>))
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity   -- needed for coerce
+import Control.Monad.Identity
 import Control.Monad.Random
 import Data.Coerce
 import Data.Traversable
@@ -330,7 +331,7 @@ gSqNorm (Dec u) = U.gSqNorm u
 gSqNorm c = gSqNorm $ toDec' c
 
 -- | Generate an LWE error term with given scaled variance,
--- deterministically rounded with respect to the decoding basis. 
+-- deterministically rounded with respect to the decoding basis.
 -- (Note: This
 -- implementation uses Double precision to generate the Gaussian
 -- sample, which may not be sufficient for rigorous proof-based
@@ -496,10 +497,9 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
 
 instance (Gadget gad zq, Fact m, CElt t zq) => Gadget gad (Cyc t m zq) where
   gadget = (scalarCyc <$>) <$> gadget
-  -- specialization of 'encode', done efficiently
-  encode s = ((* adviseCRT s) <$>) <$> gadget
   {-# INLINABLE gadget #-}
-  {-# INLINABLE encode #-}
+
+  -- CJP: default 'encode' works because mul-by-Scalar is fast
 
 -- promote Decompose, using the powerful basis
 instance (Decompose gad zq, Fact m, CElt t zq, CElt t (DecompOf zq))
