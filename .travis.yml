@@ -48,5 +48,5 @@ install:
 script:
   - stack build lol --no-terminal --haddock --no-haddock-deps
   - stack build lol-test --no-terminal
-  - stack exec lol-test -- --plain
+  - stack exec lol-test -- --plain; true
 
