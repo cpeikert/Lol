@@ -60,6 +60,8 @@ import Test.QuickCheck
 
 import Crypto.Lol.Types.Proto
 
+import Crypto.Lol.Cyclotomic.Tensor.RepaTensor (RT)
+
 --import qualified Debug.Trace as DT
 
 -- | Nullary index type representing the powerful basis.
@@ -152,6 +154,8 @@ instance (ZeroTestable r, Tensor t, Fact m, TElt t r)
 -- Additive instances
 
 instance (Additive r, Tensor t, Fact m, TElt t r) => Additive.C (UCyc t m P r) where
+  {-# SPECIALIZE instance (Fact m) => Additive.C (UCyc RT m P Int64) #-}
+
   zero = Pow $ T.scalarPow zero
   (Pow v1) + (Pow v2) = Pow $ zipWithT (+) v1 v2
   (Pow v1) - (Pow v2) = Pow $ zipWithT (-) v1 v2
