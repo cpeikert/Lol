@@ -1,22 +1,30 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
-             ScopedTypeVariables, TypeFamilies, TypeOperators #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module TestTypes (
 
-SmoothZQ1, SmoothZQ2, SmoothZQ3
-, Zq, ZQ1, ZQ2, ZQ3) where
+  SmoothZQ1, SmoothZQ2, SmoothZQ3,
+  Zq, ZQ1, ZQ2, ZQ3
 
-import Control.Monad
-import Control.Monad.Random
+) where
 
 import Crypto.Lol
-import Crypto.Lol.Reflects
-
 import Utils
 
+import Control.Monad.Random
 import Test.QuickCheck.Monadic
+
 
 instance (MonadRandom m) => MonadRandom (PropertyM m) where
   getRandom = run getRandom
