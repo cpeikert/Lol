@@ -50,7 +50,7 @@ class (Monad mon, Ring r) => CRTrans mon i r where
   -- | 'CRTInfo' for a given index @m@. The method itself may be
   -- slow, but the function it returns should be fast, e.g., via
   -- internal memoization.
-  crtInfo :: Reflects m i => TaggedT m mon (CRTInfo i r)
+  crtInfo :: Reflects m Int => TaggedT m mon (CRTInfo i r)
 
 
 -- CRTrans instance for product rings
