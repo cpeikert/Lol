@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                 #-}
 {-# LANGUAGE DataKinds           #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE NoImplicitPrelude   #-}
@@ -18,6 +19,10 @@ import Tests
 import Utils
 
 import qualified Test.Framework                           as TF
+
+#if ACCELERATE_TENSOR_ENABLE
+import Crypto.Lol.Cyclotomic.Tensor.Accelerate
+#endif
 
 
 cycTests :: [TF.Test]
@@ -72,7 +77,14 @@ prop_crtSet_pairs =
       pairs  = join (liftM2 (,)) crtset
   in test $ and $ map (\(a,b) -> if a == b then a*b == a else a*b == zero) pairs
 
-type Tensors = '[CT,RT]
+
+type Tensors =
+  '[CT,RT
+#if ACCELERATE_TENSOR_ENABLE
+   ,AT
+#endif
+   ]
+
 type MRCombos =
   '[ '(F7, Zq 29),
      '(F7, Zq 32),

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -26,6 +27,10 @@ import Crypto.Lol.Cyclotomic.Tensor.Representation
 
 import Control.Monad.Random
 import qualified Test.Framework as TF
+
+#if ACCELERATE_TENSOR_ENABLE
+import Crypto.Lol.Cyclotomic.Tensor.Accelerate
+#endif
 
 
 data BasicCtxD
@@ -72,7 +77,13 @@ prop_mul_ext _ x y = test $
   z == z'
 
 
-type Tensors = '[CT,RT]
+type Tensors =
+  '[CT,RT
+#if ACCELERATE_TENSOR_ENABLE
+   ,AT
+#endif
+   ]
+
 type ZqTypes = '[
     Zq 3
   , Zq (3 ** 5)

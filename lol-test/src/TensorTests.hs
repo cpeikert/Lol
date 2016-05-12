@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                  #-}
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
@@ -29,6 +30,10 @@ import Data.Promotion.Prelude.Eq
 import Data.Singletons.TypeRepStar ()
 
 import qualified Test.Framework as TF
+
+#if ACCELERATE_TENSOR_ENABLE
+import Crypto.Lol.Cyclotomic.Tensor.Accelerate
+#endif
 
 
 tensorTests :: [TF.Test]
@@ -314,9 +319,13 @@ prop_twace_invar2_crt = test $ fromMaybe (error "no CRT in prop_twace_invar2_crt
 
 
 
+type Tensors =
+  '[CT,RT
+#if ACCELERATE_TENSOR_ENABLE
+   ,AT
+#endif
+   ]
 
-
-type Tensors  = '[CT,RT]
 type MRCombos = '[
   '(F7, Zq 29),
   '(F12, SmoothZQ1),

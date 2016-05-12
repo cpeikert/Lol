@@ -14,6 +14,19 @@ build-type:           Simple
 cabal-version:        >=1.10
 
 
+flag c
+  description: Enable the C backend
+  default:     True
+
+flag repa
+  description: Enable the Repa backend
+  default:     True
+
+flag accelerate
+  description: Enable Accelerate backend
+  default:     False
+
+
 executable lol-test
   default-language:   Haskell2010
   main-is:            Main.hs
@@ -50,6 +63,18 @@ executable lol-test
     , test-framework             >= 0.8     && < 0.9
     , test-framework-quickcheck2 >= 0.3     && < 0.4
     , vector                     == 0.11.*
+
+  if flag(c)
+    cpp-options: -DC_TENSOR_ENABLE
+
+  if flag(repa)
+    cpp-options: -DREPA_TENSOR_ENABLE
+
+  if flag(accelerate)
+    cpp-options: -DACCELERATE_TENSOR_ENABLE
+    build-depends:
+      lol-accelerate             == 0.1.*
+
 
 -- vim: nospell
 

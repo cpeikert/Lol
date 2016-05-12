@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -30,6 +31,12 @@ import Crypto.Lol.Types.ZqBasic
 import Crypto.Random.DRBG
 
 import Data.Promotion.Prelude.List
+
+#if ACCELERATE_TENSOR_ENABLE
+import Crypto.Lol.Cyclotomic.Tensor.Accelerate
+#endif
+
+
 {-
 import Math.NumberTheory.Primes.Testing (isPrime)
 
@@ -91,6 +98,11 @@ instance Show (ArgType RT) where
 
 instance Show (ArgType CT) where
   show _ = "CT"
+
+#if ACCELERATE_TENSOR_ENABLE
+instance Show (ArgType AT) where
+  show _ = "AT"
+#endif
 
 instance Show (ArgType Int64) where
   show _ = "Int64"
