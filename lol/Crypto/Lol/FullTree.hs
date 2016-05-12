@@ -59,14 +59,13 @@ augmentVector a0 a1 (Internal _ l r) =
 -- The input is a row vector of dimension 1xn.
 -- The output is a nxn matrix.
 decomposeEntries :: forall s u.
-                    (Reduce [DecompOf u] [u], Decompose s u) =>
+                    (Ring u, Reduce [DecompOf u] [u], Decompose (BaseBGad 2) u) =>
                     MMatrix u ->
-                    s ->
                     MMatrix u
-decomposeEntries m s =
+decomposeEntries m =
   let n = M.numColumns m
   in M.fromColumns n n ((fmap (reduce . take n . untag) taggedList) :: [[u]])
-  where taggedList = fmap decompose (concat $ M.rows m) :: [Tagged s [DecompOf u]]
+  where taggedList = fmap decompose $ concat $ M.rows m :: [Tagged (BaseBGad 2) [DecompOf u]]
 
 -- Only tested with 1xn * nxn matrix. Additional testing needed.
 matrixMult :: (Ring a) => MMatrix a -> MMatrix a -> MMatrix a
