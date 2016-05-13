@@ -163,6 +163,7 @@ instance (Eq r, Fact m, CElt t r) => Eq (Cyc t m r) where
   (Dec u1) == (Dec u2) = u1 == u2
   (CRT (Right u1)) == (CRT (Right u2)) = u1 == u2
   -- compare Subs in compositum
+  -- EAC: would like to convert c2 to basis of c1 before embedding
   (Sub (c1 :: Cyc t l1 r)) == (Sub (c2 :: Cyc t l2 r)) =
     (embed' c1 :: Cyc t (FLCM l1 l2) r) == embed' c2
     \\ lcmDivides (Proxy::Proxy l1) (Proxy::Proxy l2)
@@ -191,6 +192,7 @@ instance (Fact m, CElt t r) => Additive.C (Cyc t m r) where
   (Dec u1) + (Dec u2) = Dec $ u1 + u2
   (CRT u1) + (CRT u2) = CRT $ u1 + u2
   -- Sub plus Sub: work in compositum
+  -- EAC: would like to convert c2 to basis of c1 before embedding
   (Sub (c1 :: Cyc t m1 r)) + (Sub (c2 :: Cyc t m2 r)) =
     (Sub $ (embed' c1 :: Cyc t (FLCM m1 m2) r) + embed' c2)
     \\ lcm2Divides (Proxy::Proxy m1) (Proxy::Proxy m2) (Proxy::Proxy m)
@@ -208,6 +210,7 @@ instance (Fact m, CElt t r) => Additive.C (Cyc t m r) where
   (Sub c1) + (Scalar c2) = Sub $ c1 + Scalar c2
 
   -- SUB PLUS NON-SUB, NON-SCALAR: work in full ring
+  -- EAC: would like to convert sub to basis of other before embedding
   (Sub c1) + c2 = embed' c1 + c2
   c1 + (Sub c2) = c1 + embed' c2
 
