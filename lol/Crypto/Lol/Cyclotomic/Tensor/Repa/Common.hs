@@ -222,16 +222,28 @@ unexpose !r !arr =
   in backpermute (Z :. sz*d) f arr
 {-# INLINABLE unexpose #-}
 
--- | general matrix multiplication along innermost dim of v
-mulMat :: (Source r1 r, Source r2 r, Ring r, Unbox r, Elt r)
-          => Array r1 DIM2 r -> Array r2 DIM2 r -> Array D DIM2 r
-mulMat !m !v
-  = let (Z :. mrows :. mcols) = extent m
-        (sh :. vrows) = extent v
-        f (sh' :. i) = sumAllS $ R.zipWith (*) (slice m (Z:.i:.All)) $ slice v (sh':.All)
-    in if mcols == vrows then fromFunction (sh :. mrows) f
-       else error "mulMatVec: mcols != vdim"
+
+-- | Matrix multiplication along innermost dim of v
+--
+-- > m * transpose v
+--
+mulMat
+    :: (Source r1 r, Source r2 r, Ring r, Unbox r, Elt r)
+    => Array r1 DIM2 r
+    -> Array r2 DIM2 r
+    -> Array D  DIM2 r
 {-# INLINABLE mulMat #-}
+mulMat !m !v
+  | mcols /= vcols = error "mulMat: dimension mismatch"
+  | otherwise      = fromFunction (Z :. vrows :. mrows) f
+  where
+    Z  :. mrows :. mcols  = extent m
+    Z  :. vrows :. vcols  = extent v
+    --
+    f (Z :. j :. i)       = sumAllS
+                          $ R.zipWith (*) (slice m (Z :. i :. All))
+                                          (slice v (Z :. j :. All))
+
 
 -- | multiplication by a diagonal matrix along innermost dim
 mulDiag :: (Source r1 r, Source r2 r, Ring r, Unbox r, Elt r)
