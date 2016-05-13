@@ -199,6 +199,7 @@ Benchmark bench-lol
   -- if flag(llvm)
   --   ghc-options: -fllvm -optlo-O3
   ghc-options: -threaded -rtsopts
+  -- ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
   -- ghc-options: -O2 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
   -- ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
