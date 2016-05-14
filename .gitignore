@@ -26,3 +26,5 @@ secret-files
 publish
 blockchaintest*
 test*
+metriculator.sh
+clean-benches.sh
