@@ -520,6 +520,11 @@ crtSet =
 
 
 -- | Convert to powerful-basis representation.
+-- {-# SPECIALIZE toPow :: (Fact m, Reflects q Int64) => UCyc RT m D (ZqBasic q Int64) -> UCyc RT m P (ZqBasic q Int64) #-}
+-- EAC: I can't specialize toPow due to the constraint synonym TElt. See GHC ticket 12068
+-- For future reference, it seemed to help in general to simplify constraints as much as possible
+-- (i.e. replacing (Ring (ZqBasic q z)) with (Ring z, Reflects t z)) and
+-- removing type synonyms wherever possible.
 toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
 {-# INLINABLE toPow #-}
 toPow x@(Pow _) = x
@@ -624,6 +629,22 @@ instance (Tensor t, Fact m) => Traversable (UCyc t m C) where
 
 
 ---------- Utility instances ----------
+
+instance (Random r, UCRTElt t r, Fact m)
+         => Random (UCyc t m P r) where
+
+  random g = let (v,g') = random g \\ witness entailRandomT v
+             in (Pow v, g')
+
+  randomR _ = error "randomR non-sensical for UCyc"
+
+instance (Random r, UCRTElt t r, Fact m)
+         => Random (UCyc t m D r) where
+
+  random g = let (v,g') = random g \\ witness entailRandomT v
+             in (Dec v, g')
+
+  randomR _ = error "randomR non-sensical for UCyc"
 
 instance (Random r, UCRTElt t r, Fact m)
          => Random (Either (UCyc t m P r) (UCyc t m C r)) where

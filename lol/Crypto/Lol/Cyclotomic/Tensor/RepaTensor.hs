@@ -146,7 +146,6 @@ instance Tensor RT where
 
   scalarPow = RT . scalarPow'
 
-  {-# SPECIALIZE l :: (Fact m) => RT m Int64 -> RT m Int64 #-}
   l = wrap fL
   lInv = wrap fLInv
 
