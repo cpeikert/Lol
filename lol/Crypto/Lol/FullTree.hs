@@ -5,20 +5,19 @@
 
 module Crypto.Lol.FullTree
 ( augmentBitString
-, decomposeEntries
+, flipBit
 , FullTree(..)
-, matrixMult
+, rootValue
 ) where
 
 import Crypto.Lol.Gadget
 import Crypto.Lol.LatticePrelude
+import Crypto.Lol.MMatrix
 import Crypto.Lol.PosBinDefs
 import Crypto.Lol.Reflects
 import Crypto.Lol.SafeBitString
-import Crypto.Lol.SafeMatrix
 
 import Crypto.Lol.Types.Numeric as N
-import Crypto.Lol.Types.ZqBasic
 
 import Data.Functor.Trans.Tagged
 
@@ -31,8 +30,12 @@ data FullTree (n :: Pos) l v where
                 -> FullTree nr l v
                 -> FullTree (AddPos nl nr) l v
 
--- check that length of the bitstring == n.
--- But how to do that in the type signature?
+-- | Returns the vector attached to the FullTree.
+rootValue :: FullTree n l v -> v
+rootValue (Leaf b v) = v
+rootValue (Internal v l r) = v
+
+-- | Augments the leaves of the FullTree with Bool values.
 augmentBitString :: FullTree n () () -> -- ^ Full tree T (topology)
                     SafeBitString n -> -- Bit string x
                     FullTree n Bool () -- ^ Full tree T (bit on each leaf)
@@ -41,34 +44,29 @@ augmentBitString (Leaf _ _) (Bit b) = Leaf b ()
   --let (leftBits, rightBits) = splitSBS bits
   --in Internal () (augmentBitString left leftBits) (augmentBitString right rightBits)
 
--- Use SafeRowVector instead of SafeMatrix for the base vectors a0, a1.
-{- augmentVector :: SafeMatrix a -> -- ^ Base vector a0
-                 SafeMatrix a -> -- ^ Base vector a1
-                 FullTree (n :: Pos) Bool () -> -- ^ Full tree T (bit on each leaf)
-                 FullTree (n :: Pos) Bool (SafeMatrix a) -- ^ Full tree T (calculated a_T(x))
+-- | Augments the nodes of the FullTree with MMatrix values.
+{-augmentVector :: (Ring a, Reduce [DecompOf a] [a], Decompose (BaseBGad 2) a) =>
+                 MMatrix a -> -- ^ Base vector a0
+                 MMatrix a -> -- ^ Base vector a1
+                 FullTree n Bool () -> -- ^ Full tree T (bit on each leaf)
+                 FullTree n Bool (MMatrix a) -- ^ Full tree T (calculated a_T(x))
 augmentVector a0 a1 (Leaf b _)
   | b = Leaf b a1
   | otherwise = Leaf b a0
 augmentVector a0 a1 (Internal _ l r) =
-  let l' = augmentVector a0 a1 l -- use pattern matching for l' and r'?
-      r' = augmentVector a0 a1 r -- so that we can obtain the internal vectors?
-      c = a0 -- wrong, but I think this is where decompose goes.
-  in (Internal c l' r')
--}
+  let l' = augmentVector a0 a1 l
+      r' = augmentVector a0 a1 r
+      c = combineVectors (rootValue l') (rootValue r')
+  in (Internal c l' r')-}
 
--- The input is a row vector of dimension 1xn.
--- The output is a nxn matrix.
-decomposeEntries :: forall s u.
-                    (Ring u, Reduce [DecompOf u] [u], Decompose (BaseBGad 2) u) =>
-                    MMatrix u ->
-                    MMatrix u
-decomposeEntries m =
-  let n = M.numColumns m
-  in M.fromColumns n n ((fmap (reduce . take n . untag) taggedList) :: [[u]])
-  where taggedList = fmap decompose $ concat $ M.rows m :: [Tagged (BaseBGad 2) [DecompOf u]]
-
--- Only tested with 1xn * nxn matrix. Additional testing needed.
-matrixMult :: (Ring a) => MMatrix a -> MMatrix a -> MMatrix a
-matrixMult m1 m2 =
-  let elts = [N.sum $ zipWith (N.*) xs ys | xs <- (M.rows m1), ys <- (M.columns m2)]
-  in (M.fromList (M.numRows m1) (M.numColumns m2) elts)
+-- | Flip the boolean value at a chosen leaf.
+flipBit :: (Ring a) =>
+           MMatrix a ->
+           MMatrix a ->
+           Pos ->
+           FullTree n Bool (MMatrix a) ->
+           FullTree n Bool (MMatrix a)
+flipBit a0 a1 O (Leaf b v)
+  | b = Leaf (not b) a0
+  | otherwise = Leaf (not b) a1
+-- pseudocode available for the other case in 5/13/16 log.

@@ -8,19 +8,19 @@
 -- TODO: change module to Crypto.Lol.Applications.KeyHomomorphicPRF.
 --       llvm is not functioning.
 module Crypto.Lol.KeyHomomorphicPRF
-( 
+( flipBit
 ) where
 
 import Crypto.Lol.FullTree
+import Crypto.Lol.LatticePrelude
 import Crypto.Lol.PosBinDefs
-import Crypto.Lol.SafeMatrix
 
-import Crypto.Lol.Types.Numeric
+import Crypto.Lol.Types.Numeric as N
 
--- SafeMatrix may require a scalar multiplication (for s * a_T(x)) (not difficult)
--- Equation (2.10) in [BP14]
---computePRF :: FullTree (n :: Pos) Bool (SafeMatrix a) -> -- ^ Full tree T
---              Int -> -- ^ modulus p
---              Int -> -- ^ secret s
---              SafeMatrix a
---computePrf a0 a1 t p s = map (rescale (s * (computeVector a0 a1 t)) :: ZqBasic p Int)
+-- Equation (2.10) in [BP14].
+{-computePRF :: (Ring a, Rescale a b) =>
+              FullTree n Bool (MMatrix a) -> -- ^ Full tree T
+              a -> -- ^ secret s
+              b -> -- ^ modulus p
+              MMatrix b
+computePRF t s p = fmap (rescale . (N.*s)) (rootValue t) :: MMatrix b-}
