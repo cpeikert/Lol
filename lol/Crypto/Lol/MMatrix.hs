@@ -12,8 +12,6 @@ matrixMult
 import Crypto.Lol.Gadget
 import Crypto.Lol.LatticePrelude
 import Crypto.Lol.PosBinDefs
-import Crypto.Lol.Reflects
-import Crypto.Lol.SafeBitString
 
 import Crypto.Lol.Types.Numeric as N
 
@@ -38,7 +36,7 @@ matrixMult m1 m2 =
 
 -- | Multiply two vectors as given in the
 -- | "otherwise" case of Equation (2.9) in [BP14].
-combineVectors :: (Ring (DecompOf a), Lift b a, Reduce (DecompOf a) a,
+combineVectors :: (Ring (DecompOf a), Lift b (DecompOf a), Reduce (DecompOf a) a,
       Decompose (BaseBGad 2) a, DecompOf a ~ LiftOf b) =>
       MMatrix b ->
       MMatrix a ->
