@@ -1,7 +1,7 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, 
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses,
              PolyKinds, RankNTypes, ScopedTypeVariables, TypeFamilies #-}
 
-module Benchmarks 
+module Benchmarks
 (Benchmarks.bench
 ,benchIO
 ,benchGroup
@@ -14,8 +14,6 @@ import Gen
 import Utils
 
 import Control.DeepSeq
-import Control.Monad.Random
-import Control.Monad.State
 import Criterion as C
 
 import Data.Proxy
@@ -28,11 +26,11 @@ bench f = Bench . nf f
 benchIO :: NFData b => IO b -> Bench params
 benchIO = Bench . nfIO
 
--- wrapper for Criterion's 
+-- wrapper for Criterion's
 benchGroup :: (Monad rnd) => String -> [rnd Benchmark] -> rnd Benchmark
 benchGroup str = (bgroup str <$>) . sequence
 
--- normalizes any function resulting in a Benchmark to 
+-- normalizes any function resulting in a Benchmark to
 -- one that takes a proxy for its arguments
 hideArgs :: (GenArgs rnd bnch, Monad rnd, ShowType a,
              ResultOf bnch ~ Bench a)

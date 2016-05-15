@@ -19,6 +19,8 @@ stability:           experimental
 build-type:          Custom
 extra-source-files:  README, CHANGES.md,
                      benchmarks/CycBenches.hs,
+                     benchmarks/TensorBenches.hs,
+                     benchmarks/UCycBenches.hs,
                      benchmarks/ZqBenches.hs,
                      tests/CycTests.hs,
                      tests/ZqTests.hs,
@@ -196,10 +198,10 @@ Benchmark bench-lol
   default-language:   Haskell2010
   main-is:            Main.hs
 
-  -- if flag(llvm)
-  --   ghc-options: -fllvm -optlo-O3
-  ghc-options: -threaded -rtsopts
-  -- ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3
+  -- ghc-options: -threaded -rtsopts
+  ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
   -- ghc-options: -O2 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
   -- ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
