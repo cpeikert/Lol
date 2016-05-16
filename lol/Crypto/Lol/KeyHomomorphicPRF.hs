@@ -8,7 +8,8 @@
 -- TODO: change module to Crypto.Lol.Applications.KeyHomomorphicPRF.
 --       llvm is not functioning.
 module Crypto.Lol.KeyHomomorphicPRF
-( flipBit
+( computePRF
+, flipBit
 ) where
 
 import Crypto.Lol.FullTree
@@ -18,9 +19,8 @@ import Crypto.Lol.PosBinDefs
 import Crypto.Lol.Types.Numeric as N
 
 -- Equation (2.10) in [BP14].
-{-computePRF :: (Ring a, Rescale a b) =>
-              FullTree n Bool (MMatrix a) -> -- ^ Full tree T
+computePRF :: (Ring a, Ring b, Rescale a b) =>
+              FullTree n l (MMatrix a) -> -- ^ Full tree T
               a -> -- ^ secret s
-              b -> -- ^ modulus p
               MMatrix b
-computePRF t s p = fmap (rescale . (N.*s)) (rootValue t) :: MMatrix b-}
+computePRF t s = fmap (rescale . (N.*s)) (rootValue t)

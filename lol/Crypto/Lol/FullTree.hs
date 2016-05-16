@@ -45,7 +45,8 @@ augmentBitString (Leaf _ _) (Bit b) = Leaf b ()
   --in Internal () (augmentBitString left leftBits) (augmentBitString right rightBits)
 
 -- | Augments the nodes of the FullTree with MMatrix values.
-{-augmentVector :: (Ring a, Reduce [DecompOf a] [a], Decompose (BaseBGad 2) a) =>
+{-augmentVector :: (Ring (DecompOf a), Lift b (DecompOf a), Reduce (DecompOf a) a,
+                 Decompose (BaseBGad 2) a, DecompOf a ~ LiftOf b) =>
                  MMatrix a -> -- ^ Base vector a0
                  MMatrix a -> -- ^ Base vector a1
                  FullTree n Bool () -> -- ^ Full tree T (bit on each leaf)
