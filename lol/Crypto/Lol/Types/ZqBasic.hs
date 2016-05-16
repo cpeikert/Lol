@@ -6,6 +6,11 @@
 
 -- | An implementation of the quotient ring Zq = Z/qZ.
 
+-- EAC: It may help GHC do specialization at higher levels of the library
+-- if we "simplify" constraints in this module. For example, replace the
+-- (Additive (ZqBasic q z)) constraint on the Reduce instance with
+-- (Additive z)
+
 module Crypto.Lol.Types.ZqBasic
 ( ZqBasic -- export the type, but not the constructor (for safety)
 ) where
@@ -90,7 +95,7 @@ instance (PPow pp, zq ~ ZqBasic pp z,
 instance (Reflects q z, ToInteger z) => Reduce z (ZqBasic q z) where
   reduce = reduce'
 
-instance (Reflects q z, ToInteger z, Additive z) => Reduce Integer (ZqBasic q z) where
+instance (Reflects q z, ToInteger z, Additive (ZqBasic q z)) => Reduce Integer (ZqBasic q z) where
   reduce = fromInteger
 
 type instance LiftOf (ZqBasic q z) = z
@@ -103,7 +108,7 @@ instance (Reflects q z, ToInteger z, Reflects q' z, Ring z)
 
   rescale = rescaleMod
 
-instance (Reflects p z, Reflects q z, ToInteger z, PID z, Show z)
+instance (Reflects p z, Reflects q z, ToInteger z, Field (ZqBasic q z), Field (ZqBasic p z))
          => Encode (ZqBasic p z) (ZqBasic q z) where
 
   lsdToMSD = let pval :: z = proxy value (Proxy::Proxy p)
@@ -115,9 +120,8 @@ instance (Reflects p z, Reflects q z, ToInteger z, PID z, Show z)
 -- generator of @Z_q^*@ and raising it to the @(q-1)/m@ power.
 -- Therefore, outputs for different values of @m@ are consistent,
 -- i.e., @omega_{m'}^(m'/m) = omega_m@.
-
 principalRootUnity ::
-    forall m q z . (Reflects m Int, Reflects q z, ToInteger z, Enum z)
+    forall m q z . (Reflects m Int, Reflects q z, ToInteger z, Enumerable (ZqBasic q z))
                => TaggedT m Maybe (Int -> ZqBasic q z)
 principalRootUnity =        -- use Integers for all intermediate calcs
   let qval = fromIntegral $ (proxy value (Proxy::Proxy q) :: z)
@@ -146,13 +150,13 @@ mhatInv = let qval = proxy value (Proxy::Proxy q)
                  valueHat <$> (value :: Tagged m Int)
 
 -- instance of CRTrans
-instance (Reflects q z, ToInteger z, PID z, Enum z)
+instance (Reflects q z, ToInteger z, PID z, Enumerable (ZqBasic q z))
          => CRTrans Maybe (ZqBasic q z) where
 
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
 -- instance of CRTEmbed
-instance (Reflects q z, ToInteger z, Ring z) => CRTEmbed (ZqBasic q z) where
+instance (Reflects q z, ToInteger z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
   type CRTExt (ZqBasic q z) = Complex Double
 
   toExt (ZqB x) = fromReal $ fromIntegral x
@@ -195,7 +199,7 @@ instance (Reflects q z, ToInteger z, PID z, Show z) => Field.C (ZqBasic q z) whe
                          show x ++ "\t" ++ show qval) $ modinv x qval
 
 -- (canonical) instance of IntegralDomain, needed for Cyclotomics
-instance (Reflects q z, ToInteger z, PID z, Show z) => IntegralDomain.C (ZqBasic q z) where
+instance (Reflects q z, ToInteger z, Field (ZqBasic q z)) => IntegralDomain.C (ZqBasic q z) where
   divMod a b = (a/b, zero)
 
 -- Gadget-related instances

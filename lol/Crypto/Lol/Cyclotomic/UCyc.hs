@@ -525,6 +525,124 @@ crtSet =
 -- For future reference, it seemed to help in general to simplify constraints as much as possible
 -- (i.e. replacing (Ring (ZqBasic q z)) with (Ring z, Reflects t z)) and
 -- removing type synonyms wherever possible.
+
+{-
+EAC: I tried specializing the function
+toPow :: (Fact m, C) for C \subseteq [Tensor t , CRTEmbed r , CRTrans Maybe r , TElt t r , CRTrans Identity (CRTExt r) , TElt t (CRTExt r)]
+using
+{-# SPECIALIZE toPow :: (Fact m, Reflects q Int64) => UCyc RT m D (ZqBasic q Int64) -> UCyc RT m P (ZqBasic q Int64) #-}
+
+The results for subsets with (Tensor t) were identical to those without (Tensor t), so we ignore (Tensor t) in what follows
+
+There were three outcomes:
+1. "Good": no warnings.
+2. "NB": Warning: Forall'd constraint ‘Reflects k q Int64’ is not bound in RULE lhs
+      I have no idea what this means, or how bad it is. This case occurred precisely when
+      the constraint list contained neither (CRTrans Maybe r) nor (CRTEmbed r)
+      (For the empty subset, this makes sense.)
+3. "Bad": Warning: RULE left-hand side too complicated to desugar
+
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r
+BAD:  CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+good: CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r,                                        TElt t (CRTExt r)
+good: CRTEmbed r, CRTrans Maybe r
+BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r)
+BAD:  CRTEmbed r,                  TElt t r,                              TElt t (CRTExt r)
+good: CRTEmbed r,                  TElt t r
+BAD:  CRTEmbed r,                            CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+good: CRTEmbed r,                            CRTrans Identity (CRTExt r)
+good: CRTEmbed r,                                                         TElt t (CRTExt r)
+good: CRTEmbed r
+BAD:              CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+good:             CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
+BAD:              CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
+good:             CRTrans Maybe r, TElt t r
+good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r)
+good:             CRTrans Maybe r,                                        TElt t (CRTExt r)
+good:             CRTrans Maybe r
+NB:                                TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+NB:                                TElt t r, CRTrans Identity (CRTExt r)
+NB:                                TElt t r,                              TElt t (CRTExt r)
+NB:                                TElt t r
+NB:                                          CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+NB:                                          CRTrans Identity (CRTExt r)
+NB:                                                                       TElt t (CRTExt r)
+NB:
+
+Assigning variables to constraints as follows,
+
+A=CRTEmbed r
+B=CRTrans Maybe r
+C=TElt t r
+D=CRTrans Identity (CRTExt r)
+E=TElt t (CRTExt r)
+
+using outcome values
+
+BAD=0
+NB=0
+GOOD=1
+
+the formula for results is
+
+y=(-A)*B*(-C) + (-A)*B*(-E) + A*(-C)*(-E) + A*(-B)*(-C)*(-D) + A*(-B)*(-D)*(-E)
+
+Below this line, I've reordered the subsets into logical groups.
+
+-- always nb if we dont' have either of (CRTEmbed r) or (CRTrans Maybe r)
+-- I think this error makes sense: type families aren't injective, so references
+-- to TElt and CRTExt may not refer to 'r' on their RHS.
+NB:                                TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+NB:                                TElt t r, CRTrans Identity (CRTExt r)
+NB:                                TElt t r,                              TElt t (CRTExt r)
+NB:                                TElt t r
+NB:                                          CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+NB:                                          CRTrans Identity (CRTExt r)
+NB:                                                                       TElt t (CRTExt r)
+NB:
+
+-- always bad if we have both TElt constraints.
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:              CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:  CRTEmbed r,                  TElt t r,                              TElt t (CRTExt r)
+BAD:              CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
+
+-- always good if we don't have either TElt constraint.
+good: CRTEmbed r, CRTrans Maybe r
+good: CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r)
+good: CRTEmbed r,                            CRTrans Identity (CRTExt r)
+good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r)
+good: CRTEmbed r
+good:             CRTrans Maybe r
+
+-- bad if we have both (CRTEmbed r) and (CRTrans Maybe r) with at least one of the TElt constraints
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r
+BAD:  CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r,                                        TElt t (CRTExt r)
+
+-- a few more good cases: symmetric for (CRTEmbed r)  and (CRTrans Maybe r)
+good: CRTEmbed r,                  TElt t r
+good:             CRTrans Maybe r, TElt t r
+good: CRTEmbed r,                                                         TElt t (CRTExt r)
+good:             CRTrans Maybe r,                                        TElt t (CRTExt r)
+
+-- strange cases: works for (CRTrans Maybe r), fails for (CRTEmbed r)
+BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r)
+good:             CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
+BAD:  CRTEmbed r,                            CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+
+-}
+
 toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
 {-# INLINABLE toPow #-}
 toPow x@(Pow _) = x
