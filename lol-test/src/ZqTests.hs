@@ -32,6 +32,10 @@ import qualified Test.Framework as TF
 import Crypto.Lol.Cyclotomic.Tensor.Accelerate
 #endif
 
+-- TLM: These tests need to lift the value 'r' into 'TRep t r', and then we need
+-- to be able to eval 'TRep t r -> r' (or similar).
+--
+
 
 data BasicCtxD
 type BasicCtx t r = (Field r, Tensor t, TElt t r, Eq r, Eq (TRep t r), Random r, ShowType '(t,r), CRTEmbed t r)
@@ -79,9 +83,9 @@ prop_mul_ext _ x y = test $
 
 type Tensors =
   '[CT,RT
-#if ACCELERATE_TENSOR_ENABLE
-   ,AT
-#endif
+-- #if ACCELERATE_TENSOR_ENABLE
+--    ,AT
+-- #endif
    ]
 
 type ZqTypes = '[
