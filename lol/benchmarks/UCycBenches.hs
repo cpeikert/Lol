@@ -24,6 +24,7 @@ bench_l :: (BasicCtx t m r) => UCyc t m D r -> Bench '(t,m,r)
 bench_l = bench toPow
 
 type QuickTest = '[ '(F128, Zq 257),
-                    '(F32 * F9, Zq 577) ]
+                    '(F32 * F9, Zq 577),
+                    '(F32 * F9, Int64) ]
 type Tensors = '[CT,RT]
 type QuickParams = ( '(,) <$> Tensors) <*> QuickTest

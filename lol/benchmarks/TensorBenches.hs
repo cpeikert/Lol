@@ -23,6 +23,7 @@ bench_l :: (Tensor t, Fact m, Additive r, TElt t r, NFData (t m r)) => t m r -> 
 bench_l = bench l
 
 type QuickTest = '[ '(F128, Zq 257),
-                    '(F32 * F9, Zq 577) ]
+                    '(F32 * F9, Zq 577),
+                    '(F32 * F9, Int64) ]
 type Tensors = '[CT,RT]
 type QuickParams = ( '(,) <$> Tensors) <*> QuickTest

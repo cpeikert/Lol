@@ -537,9 +537,6 @@ The results for subsets with (Tensor t) were identical to those without (Tensor 
 There were three outcomes:
 1. "Good": no warnings.
 2. "NB": Warning: Forall'd constraint ‘Reflects k q Int64’ is not bound in RULE lhs
-      I have no idea what this means, or how bad it is. This case occurred precisely when
-      the constraint list contained neither (CRTrans Maybe r) nor (CRTEmbed r)
-      (For the empty subset, this makes sense.)
 3. "Bad": Warning: RULE left-hand side too complicated to desugar
 
 BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
@@ -595,7 +592,7 @@ y=(-A)*B*(-C) + (-A)*B*(-E) + A*(-C)*(-E) + A*(-B)*(-C)*(-D) + A*(-B)*(-D)*(-E)
 
 Below this line, I've reordered the subsets into logical groups.
 
--- always nb if we dont' have either of (CRTEmbed r) or (CRTrans Maybe r)
+-- always nb if we don't have either of (CRTEmbed r) or (CRTrans Maybe r)
 -- I think this error makes sense: type families aren't injective, so references
 -- to TElt and CRTExt may not refer to 'r' on their RHS.
 NB:                                TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
@@ -636,13 +633,14 @@ good: CRTEmbed r,                                                         TElt t
 good:             CRTrans Maybe r,                                        TElt t (CRTExt r)
 
 -- strange cases: works for (CRTrans Maybe r), fails for (CRTEmbed r)
+--   removing the (Ring (CRTExt r)) superclass constraint from CRTEmbed makes all four of these work.
+--   (but doesn't change the behavior of other failing cases)
 BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r)
 good:             CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
 BAD:  CRTEmbed r,                            CRTrans Identity (CRTExt r), TElt t (CRTExt r)
 good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
 
 -}
-
 toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
 {-# INLINABLE toPow #-}
 toPow x@(Pow _) = x
