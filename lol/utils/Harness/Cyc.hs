@@ -19,15 +19,15 @@ import Apply
 data BasicCtxD
 type BasicCtx t m r =
   (CElt t r, Fact m, Random r, Eq r, NFElt r, ShowType '(t,m,r), Random (t m r), m `Divides` m, NFData (t m r))
-instance (params `Satisfy` BasicCtxD, BasicCtx t m r)
+instance (params `Satisfy` BasicCtxD, BasicCtx t m r, BasicCtx t m (r,r))
   => ( '(t, '(m,r)) ': params) `Satisfy` BasicCtxD where
   data ArgsCtx BasicCtxD where
-    BC :: (BasicCtx t m r) => Proxy '(t,m,r) -> ArgsCtx BasicCtxD
+    BC :: (BasicCtx t m r, BasicCtx t m (r,r)) => Proxy '(t,m,r) -> ArgsCtx BasicCtxD
   run _ f = (f $ BC (Proxy::Proxy '(t,m,r))) : (run (Proxy::Proxy params) f)
 
 applyBasic :: (params `Satisfy` BasicCtxD, MonadRandom rnd) =>
   Proxy params
-  -> (forall t m r . (BasicCtx t m r, Generatable rnd r, Generatable rnd (t m r))
+  -> (forall t m r . (BasicCtx t m r, BasicCtx t m (r,r), Generatable rnd r, Generatable rnd (t m r))
        => Proxy '(t,m,r) -> rnd res)
   -> [rnd res]
 applyBasic params g = run params $ \(BC p) -> g p

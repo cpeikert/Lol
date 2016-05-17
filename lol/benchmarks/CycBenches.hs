@@ -17,20 +17,33 @@ import Crypto.Random.DRBG
 
 import Data.Singletons
 import Data.Promotion.Prelude.Eq
+import Data.Singletons.TypeRepStar () -- required for singletons below
 
 cycBenches :: (MonadRandom m) => m Benchmark
 cycBenches = benchGroup "Cyc" [
-  benchGroup "*"      $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_mul,
-  benchGroup "crt"    $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_crt,
-  benchGroup "crtInv" $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_crtInv,
-  benchGroup "l"      $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_l,
-  benchGroup "*g Pow" $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_mulgPow,
-  benchGroup "*g CRT" $ applyBasic (Proxy::Proxy AllParams) $ hideArgs bench_mulgCRT,
-  benchGroup "lift"   $ applyLift  (Proxy::Proxy LiftParams) $ hideArgs bench_liftPow,
-  benchGroup "error"  $ applyError (Proxy::Proxy ErrorParams) $ hideArgs $ bench_errRounded 0.1,
-  benchGroup "twace"  $ applyTwoIdx (Proxy::Proxy TwoIdxParams) $ hideArgs bench_twacePow,
-  benchGroup "embed"  $ applyTwoIdx (Proxy::Proxy TwoIdxParams) $ hideArgs bench_embedPow
+  benchGroup "unzipCycPow" $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_unzipCycPow,
+  benchGroup "unzipCycCRT" $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_unzipCycCRT,
+  benchGroup "*"           $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_mul,
+  benchGroup "crt"         $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_crt,
+  benchGroup "crtInv"      $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_crtInv,
+  benchGroup "l"           $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_l,
+  benchGroup "*g Pow"      $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_mulgPow,
+  benchGroup "*g CRT"      $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_mulgCRT,
+  benchGroup "lift"        $ applyLift   (Proxy::Proxy LiftParams)   $ hideArgs bench_liftPow,
+  benchGroup "error"       $ applyError  (Proxy::Proxy ErrorParams)  $ hideArgs $ bench_errRounded 0.1,
+  benchGroup "twace"       $ applyTwoIdx (Proxy::Proxy TwoIdxParams) $ hideArgs bench_twacePow,
+  benchGroup "embed"       $ applyTwoIdx (Proxy::Proxy TwoIdxParams) $ hideArgs bench_embedPow
   ]
+
+bench_unzipCycPow :: (BasicCtx t m r, BasicCtx t m (r,r)) => Cyc t m (r,r) -> Bench '(t,m,r)
+bench_unzipCycPow a =
+  let a' = advisePow a
+  in bench unzipCyc a'
+
+bench_unzipCycCRT :: (BasicCtx t m r, BasicCtx t m (r,r)) => Cyc t m (r,r) -> Bench '(t,m,r)
+bench_unzipCycCRT a =
+  let a' = adviseCRT a
+  in bench unzipCyc a'
 
 -- no CRT conversion, just coefficient-wise multiplication
 bench_mul :: (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> Bench '(t,m,r)
