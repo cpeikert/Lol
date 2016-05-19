@@ -155,15 +155,19 @@ principalRootUnity =        -- use Integers for all intermediate calcs
                    in if mr == 0
                       then let omega = head (filter isGen values) ^ mq
                                omegaPows = V.iterateN mval (*omega) one
-                           in Just $ (omegaPows V.!) . (`mod` mval)
+                           in Just $ \i -> omegaPows V.! (i `mod` mval)
                       else Nothing
               else Nothing       -- fail if q composite
 
 mhatInv :: forall m q z . (Reflects m Int, ReflectsTI q z, PID z)
            => TaggedT m Maybe (ZqBasic q z)
-mhatInv = let qval = proxy value (Proxy::Proxy q)
-          in peelT $ (fmap reduce' . (`modinv` qval) . fromIntegral) <$>
-                 valueHat <$> (value :: Tagged m Int)
+mhatInv =
+  let qval = proxy value (Proxy::Proxy q) :: z
+      mval = proxy value (Proxy::Proxy m) :: Int
+      mhat = valueHat mval
+  in
+  tagT $ fmap reduce' (fromIntegral mhat `modinv` qval)
+
 
 -- instance of CRTrans
 instance (ReflectsTI q z, PID z, Enumerable (ZqBasic q z))
