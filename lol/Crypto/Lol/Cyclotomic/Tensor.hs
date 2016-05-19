@@ -43,8 +43,10 @@ import           Data.Constraint
 import           Data.Singletons.Prelude                            hiding ( (:-) )
 import           Data.Traversable
 import           Data.Tuple                                         ( swap )
+import qualified Data.Vector.Generic                                as G
 import qualified Data.Vector                                        as V
-import qualified Data.Vector.Unboxed                                as U
+import qualified Data.Vector.Unboxed                                as U ( Vector, Unbox )
+import qualified Data.Vector.Storable                               as S ( Vector, Storable )
 
 
 -- | 'Tensor' encapsulates all the core linear transformations needed
@@ -367,7 +369,9 @@ gInvCRTPrime = do
     else (\i -> const $ phatinv *
                 sum [fromIntegral j * wPow ((i+1)*(p-1-j)) | j <- [1..p-1]])
 
+
 -- Reindexing functions
+-- --------------------
 
 -- | Base-p digit reversal; input and output are in @[p^e]@.
 digitRev :: PP -> Int -> Int
@@ -412,14 +416,17 @@ zmsToIndexPP :: PP -> Int -> Int
 zmsToIndexPP (p,_) i = let (i1,i0) = i `divMod` p
                        in (p-1)*i1 + i0 - 1
 
+
 -- Index correspondences for ring extensions
+-- -----------------------------------------
 
 -- | Correspondences between the linear indexes into a basis of O_m',
 -- and pair indices into (extension basis) \otimes (basis of O_m).
 -- The work the same for Pow,Dec,CRT bases because all these bases
 -- have that factorization.  The first argument is the list of
 -- @(phi(m),phi(m'))@ pairs for the (merged) prime powers of @m@,@m'@.
-toIndexPair :: [(Int,Int)] -> Int -> (Int,Int)
+--
+toIndexPair   :: [(Int,Int)] -> Int -> (Int,Int)
 fromIndexPair :: [(Int,Int)] -> (Int,Int) -> Int
 
 toIndexPair [] 0 = (0,0)
@@ -440,82 +447,125 @@ fromIndexPair ((phi,phi'):rest) (i1,i0) =
 fromIndexPair _ _ =
   error "fromIndexPair: unexpected input"
 
+
 -- | A collection of useful information for working with tensor
 -- extensions.  The first component is a list of triples @(p,e,e')@
 -- where @e@, @e'@ are respectively the exponents of prime @p@ in @m@,
 -- @m'@.  The next two components are @phi(m)@ and @phi(m')@.  The
 -- final component is a pair @(phi(p^e), phi(p^e'))@ for each triple
 -- in the first component.
-indexInfo :: forall m m' . (m `Divides` m')
-             => Tagged '(m, m') ([(Int,Int,Int)], Int, Int, [(Int,Int)])
-indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
-                pps' = proxy ppsFact (Proxy::Proxy m')
-                mpps = mergePPs pps pps'
-                phi = totientPPs pps
-                phi' = totientPPs pps'
-                tots = totients mpps
-            in tag (mpps, phi, phi', tots)
+--
+indexInfo
+    :: forall m m' . (m `Divides` m')
+    => Tagged '(m, m') ([(Int,Int,Int)], Int, Int, [(Int,Int)])
+indexInfo =
+  let
+      pps  = proxy ppsFact (Proxy::Proxy m)
+      pps' = proxy ppsFact (Proxy::Proxy m')
+      mpps = mergePPs pps pps'
+      phi  = totientPPs pps
+      phi' = totientPPs pps'
+      tots = totients mpps
+  in
+  tag (mpps, phi, phi', tots)
+
 
 -- | A vector of @phi(m)@ entries, where the @i@th entry is the index
 -- into the powerful\/decoding basis of @O_m'@ of the
 -- @i@th entry of the powerful\/decoding basis of @O_m@.
-extIndicesPowDec :: (m `Divides` m') => Tagged '(m, m') (U.Vector Int)
+--
+{-# INLINEABLE extIndicesPowDec #-}
+{-# SPECIALIZE extIndicesPowDec :: (m `Divides` m') => Tagged '(m,m') (U.Vector Int) #-}
+{-# SPECIALIZE extIndicesPowDec :: (m `Divides` m') => Tagged '(m,m') (S.Vector Int) #-}
+extIndicesPowDec :: (m `Divides` m', G.Vector v Int) => Tagged '(m, m') (v Int)
 extIndicesPowDec = do
   (_, phi, _, tots) <- indexInfo
-  return $ U.generate phi (fromIndexPair tots . (0,))
+  return $ G.generate phi (fromIndexPair tots . (0,))
+
 
 -- | A vector of @phi(m)@ blocks of @phi(m')\/phi(m)@ consecutive
 -- entries. Each block contains all those indices into the CRT basis
 -- of @O_m'@ that "lie above" the corresponding index into the CRT
 -- basis of @O_m@.
-extIndicesCRT :: forall m m' . (m `Divides` m')
-                 => Tagged '(m, m') (U.Vector Int)
+--
+{-# INLINEABLE extIndicesCRT #-}
+{-# SPECIALIZE extIndicesCRT :: (m `Divides` m') => Tagged '(m,m') (U.Vector Int) #-}
+{-# SPECIALIZE extIndicesCRT :: (m `Divides` m') => Tagged '(m,m') (S.Vector Int) #-}
+extIndicesCRT
+    :: forall v m m'. (m `Divides` m', G.Vector v Int)
+    => Tagged '(m, m') (v Int)
 extIndicesCRT = do
   (_, phi, phi', tots) <- indexInfo
-  return $ U.generate phi'
-           (fromIndexPair tots . swap . (`divMod` (phi' `div` phi)))
+  return $ G.generate phi' (fromIndexPair tots . swap . (`divMod` (phi' `div` phi)))
 
-baseWrapper :: forall m m' a . (m `Divides` m', U.Unbox a)
-               => ([(Int,Int,Int)] -> Int -> a)
-               -> Tagged '(m, m') (U.Vector a)
+
+{-# INLINEABLE baseWrapper #-}
+{-# SPECIALIZE baseWrapper :: (m `Divides` m', U.Unbox a)    => ([(Int,Int,Int)] -> Int -> a) -> Tagged '(m,m') (U.Vector a) #-}
+{-# SPECIALIZE baseWrapper :: (m `Divides` m', S.Storable a) => ([(Int,Int,Int)] -> Int -> a) -> Tagged '(m,m') (S.Vector a) #-}
+baseWrapper
+    :: forall v m m' a . (m `Divides` m', G.Vector v a)
+    => ([(Int,Int,Int)] -> Int -> a)
+    -> Tagged '(m, m') (v a)
 baseWrapper f = do
   (mpps, _, phi', _) <- indexInfo
-  return $ U.generate phi' (f mpps)
+  return $ G.generate phi' (f mpps)
+
 
 -- | A lookup table for 'toIndexPair' applied to indices @[phi(m')]@.
-baseIndicesPow :: forall m m' . (m `Divides` m')
-                  => Tagged '(m, m') (U.Vector (Int,Int))
--- | A lookup table for 'baseIndexDec' applied to indices @[phi(m')]@.
-baseIndicesDec :: forall m m' . (m `Divides` m')
-                  => Tagged '(m, m') (U.Vector (Maybe (Int,Bool)))
-
--- | Same as 'baseIndicesPow', but only includes the second component
--- of each pair.
-baseIndicesCRT :: forall m m' . (m `Divides` m')
-                  => Tagged '(m, m') (U.Vector Int)
-
+--
+{-# INLINEABLE baseIndicesPow #-}
+{-# SPECIALIZE baseIndicesPow :: (m `Divides` m') => Tagged '(m,m') (U.Vector (Int,Int)) #-}
+baseIndicesPow
+    :: forall v m m'. (m `Divides` m', G.Vector v (Int,Int))
+    => Tagged '(m, m') (v (Int,Int))
 baseIndicesPow = baseWrapper (toIndexPair . totients)
 
+
+-- | A lookup table for 'baseIndexDec' applied to indices @[phi(m')]@.
+--
+{-# INLINEABLE baseIndicesDec #-}
+{-# SPECIALIZE baseIndicesDec :: (m `Divides` m') => Tagged '(m,m') (U.Vector (Maybe (Int,Bool))) #-}
+baseIndicesDec
+    :: forall v m m'. (m `Divides` m', G.Vector v (Maybe (Int,Bool)))
+    => Tagged '(m, m') (v (Maybe (Int,Bool)))
 -- this one is more complicated; requires the prime powers
 baseIndicesDec = baseWrapper baseIndexDec
 
+
+-- | Same as 'baseIndicesPow', but only includes the second component of each
+-- pair.
+--
+{-# INLINEABLE baseIndicesCRT #-}
+{-# SPECIALIZE baseIndicesCRT :: (m `Divides` m') => Tagged '(m,m') (U.Vector Int) #-}
+{-# SPECIALIZE baseIndicesCRT :: (m `Divides` m') => Tagged '(m,m') (S.Vector Int) #-}
+baseIndicesCRT
+    :: forall v m m'. (m `Divides` m', G.Vector v Int)
+    => Tagged '(m, m') (v Int)
 baseIndicesCRT =
   baseWrapper (\pps -> snd . toIndexPair (totients pps))
 
 
 -- | The @i0@th entry of the @i1@th vector is 'fromIndexPair' @(i1,i0)@.
-extIndicesCoeffs :: forall m m' . (m `Divides` m')
-                    => Tagged '(m, m') (V.Vector (U.Vector Int))
+--
+{-# INLINEABLE extIndicesCoeffs #-}
+{-# SPECIALIZE extIndicesCoeffs :: (m `Divides` m') => Tagged '(m,m') (V.Vector (U.Vector Int)) #-}
+{-# SPECIALIZE extIndicesCoeffs :: (m `Divides` m') => Tagged '(m,m') (V.Vector (S.Vector Int)) #-}
+extIndicesCoeffs
+    :: forall v m m'. (m `Divides` m', G.Vector v Int)
+    => Tagged '(m, m') (V.Vector (v Int))
 extIndicesCoeffs = do
   (_, phi, phi', tots) <- indexInfo
   return $ V.generate (phi' `div` phi)
-           (\i1 -> U.generate phi (\i0 -> fromIndexPair tots (i1,i0)))
+                      (\i1 -> G.generate phi (\i0 -> fromIndexPair tots (i1,i0)))
 
--- | Convenient reindexing functions
+
+-- Convenient reindexing functions
+-- -------------------------------
 
 -- | Maps an index of the extension ring array to its corresponding
 -- index in the base ring array (if it exists), with sign, under the
 -- decoding basis.
+--
 baseIndexDec :: [(Int,Int,Int)] -> Int -> Maybe (Int, Bool)
 baseIndexDec [] 0 = Just (0,False)
 baseIndexDec ((p,e,e'):rest) i'
