@@ -7,6 +7,7 @@ module Crypto.Lol.UFullTree
 ( augmentSBS
 , augmentVector
 , flipBit
+, left, right
 , UFullTree(..)
 , rootValue
 ) where
@@ -39,6 +40,14 @@ rootValue :: UFullTree nl nr l v -> v
 rootValue (ULeaf _ v) = v
 rootValue (UInternal _ _ v _ _) = v
 
+-- | Used for debugging.
+left :: UFullTree Int Int l v -> UFullTree Int Int l v
+left (UInternal _ _ _ lt _) = lt
+
+-- | Used for debugging.
+right :: UFullTree Int Int l v -> UFullTree Int Int l v
+right (UInternal _ _ _ _ rt) = rt
+
 -- | Augments the leaves of the FullTree with Bool values.
 augmentSBS :: UFullTree Int Int () () -> -- ^ Full tree T (topology)
               [Bool] -> -- Bit string x (size: nl + nr)
@@ -65,13 +74,21 @@ augmentVector a0 a1 (UInternal nl nr _ l r) =
   in (UInternal nl nr c l' r')
 
 -- | Flip the boolean value at a chosen leaf.
-flipBit :: (Ring a) =>
+-- | Updates the affected matrices at each node.
+flipBit :: (Ring (DecompOf a), Lift a (DecompOf a),
+           Decompose (BaseBGad 2) a, LiftOf a ~ DecompOf a) =>
            MMatrix a -> -- ^ Base vector a0
            MMatrix a -> -- ^ Base vector a1
-           Pos -> -- ^ # of bit to flip
+           Int -> -- ^ # of bit to flip
            UFullTree Int Int Bool (MMatrix a) -> -- ^ Full Tree T
            UFullTree Int Int Bool (MMatrix a) -- ^ Full Tree T (after bit flip)
-flipBit a0 a1 O (ULeaf b v)
+flipBit a0 a1 _ (ULeaf b v)
   | b = ULeaf (not b) a0
   | otherwise = ULeaf (not b) a1
--- pseudocode available for the other case in 5/13/16 log.
+flipBit a0 a1 n (UInternal nl nr v l r)
+  | (n > nl) =
+    let r' = flipBit a0 a1 ((N.-) n nl) r
+    in UInternal nl nr (combineVectors (rootValue l) (rootValue r')) l r'
+  | otherwise =
+    let l' = flipBit a0 a1 n l
+    in UInternal nl nr (combineVectors (rootValue l') (rootValue r)) l' r
