@@ -3,10 +3,10 @@
              ScopedTypeVariables, TemplateHaskell, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
 
-module Crypto.Lol.MMatrix (
-combineVectors,
-decomposeEntries,
-matrixMult
+module Crypto.Lol.MMatrix
+( combineVectors
+, decomposeEntries
+, matrixMult
 ) where
 
 import Crypto.Lol.Gadget
@@ -36,9 +36,9 @@ matrixMult m1 m2 =
 
 -- | Multiply two vectors as given in the
 -- | "otherwise" case of Equation (2.9) in [BP14].
-combineVectors :: (Ring (DecompOf a), Lift b (DecompOf a), Reduce (DecompOf a) a,
-      Decompose (BaseBGad 2) a, DecompOf a ~ LiftOf b) =>
-      MMatrix b ->
+combineVectors :: (Ring (DecompOf a), Lift a (DecompOf a),
+      Decompose (BaseBGad 2) a, LiftOf a ~ DecompOf a) =>
+      MMatrix a ->
       MMatrix a ->
       MMatrix a
 combineVectors l r = fmap reduce (matrixMult (fmap lift l) (decomposeEntries r))
