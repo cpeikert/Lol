@@ -9,12 +9,13 @@
 --       llvm is not functioning.
 module Crypto.Lol.KeyHomomorphicPRF
 ( computePRF
-, flipBit
+, uComputePRF
 ) where
 
-import Crypto.Lol.FullTree
+import Crypto.Lol.FullTree as F
 import Crypto.Lol.LatticePrelude
 import Crypto.Lol.PosBinDefs
+import Crypto.Lol.UFullTree as U
 
 import Crypto.Lol.Types.Numeric as N
 
@@ -23,4 +24,10 @@ computePRF :: (Ring a, Ring b, Rescale a b) =>
               FullTree n l (MMatrix a) -> -- ^ Full tree T
               a -> -- ^ secret s
               MMatrix b
-computePRF t s = fmap (rescale . (N.*s)) (rootValue t)
+computePRF t s = fmap (rescale . (N.*s)) (F.rootValue t)
+
+uComputePRF :: (Ring a, Ring b, Rescale a b) =>
+              UFullTree Int Int l (MMatrix a) -> -- ^ Full tree T
+              a -> -- ^ secret s
+              MMatrix b
+uComputePRF t s = fmap (rescale . (N.*s)) (U.rootValue t)
