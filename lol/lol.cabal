@@ -117,13 +117,13 @@ library
     -- exposed but hidden
     Crypto.Lol.Types.Complex
     Crypto.Lol.Types.IZipVector
+    Crypto.Lol.Types.ZmStar
 
   other-modules:
     Crypto.Lol.FactoredDefs
     Crypto.Lol.GaussRandom
     Crypto.Lol.PosBinDefs
     Crypto.Lol.Types.Numeric
-    Crypto.Lol.Types.ZmStar
 
     -- Repa backend
     Crypto.Lol.Cyclotomic.Tensor.Repa.CRT

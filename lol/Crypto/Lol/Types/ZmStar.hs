@@ -2,6 +2,7 @@
              NoImplicitPrelude, PolyKinds, RebindableSyntax,
              ScopedTypeVariables, TypeFamilies, TypeOperators, 
              UndecidableInstances #-}
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | A collection of helper functions for working with @Z_m^*@
 
