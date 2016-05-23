@@ -21,18 +21,18 @@ import Data.Singletons.TypeRepStar () -- required for singletons below
 
 cycBenches :: (MonadRandom m) => m Benchmark
 cycBenches = benchGroup "Cyc" [
-  benchGroup "unzipCycPow" $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_unzipCycPow,
-  benchGroup "unzipCycCRT" $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_unzipCycCRT,
-  benchGroup "*"           $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_mul,
-  benchGroup "crt"         $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_crt,
-  benchGroup "crtInv"      $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_crtInv,
-  benchGroup "l"           $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_l,
-  benchGroup "*g Pow"      $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_mulgPow,
-  benchGroup "*g CRT"      $ applyBasic  (Proxy::Proxy AllParams)    $ hideArgs bench_mulgCRT,
-  benchGroup "lift"        $ applyLift   (Proxy::Proxy LiftParams)   $ hideArgs bench_liftPow,
-  benchGroup "error"       $ applyError  (Proxy::Proxy ErrorParams)  $ hideArgs $ bench_errRounded 0.1,
-  benchGroup "twace"       $ applyTwoIdx (Proxy::Proxy TwoIdxParams) $ hideArgs bench_twacePow,
-  benchGroup "embed"       $ applyTwoIdx (Proxy::Proxy TwoIdxParams) $ hideArgs bench_embedPow
+  benchGroup "unzipCycPow" $ applyBasic  allParams    $ hideArgs bench_unzipCycPow,
+  benchGroup "unzipCycCRT" $ applyBasic  allParams    $ hideArgs bench_unzipCycCRT,
+  benchGroup "*"           $ applyBasic  allParams    $ hideArgs bench_mul,
+  benchGroup "crt"         $ applyBasic  allParams    $ hideArgs bench_crt,
+  benchGroup "crtInv"      $ applyBasic  allParams    $ hideArgs bench_crtInv,
+  benchGroup "l"           $ applyBasic  allParams    $ hideArgs bench_l,
+  benchGroup "*g Pow"      $ applyBasic  allParams    $ hideArgs bench_mulgPow,
+  benchGroup "*g CRT"      $ applyBasic  allParams    $ hideArgs bench_mulgCRT,
+  benchGroup "lift"        $ applyLift   liftParams   $ hideArgs bench_liftPow,
+  benchGroup "error"       $ applyError  errorParams  $ hideArgs $ bench_errRounded 0.1,
+  benchGroup "twace"       $ applyTwoIdx twoIdxParams $ hideArgs bench_twacePow,
+  benchGroup "embed"       $ applyTwoIdx twoIdxParams $ hideArgs bench_embedPow
   ]
 
 bench_unzipCycPow :: (BasicCtx t m r, BasicCtx t m (r,r)) => Cyc t m (r,r) -> Bench '(t,m,r)
@@ -112,15 +112,23 @@ type MM'RCombos =
     ]
 -- EAC: must be careful where we use Nub: apparently TypeRepStar doesn't work well with the Tensor constructors
 type AllParams = ( '(,) <$> Tensors) <*> (Nub (Map RemoveM MM'RCombos))
+allParams :: Proxy AllParams
+allParams = Proxy
+
 type LiftParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable (Map RemoveM MM'RCombos)))
+liftParams :: Proxy LiftParams
+liftParams = Proxy
+
 type TwoIdxParams = ( '(,) <$> Tensors) <*> MM'RCombos
+twoIdxParams :: Proxy TwoIdxParams
+twoIdxParams = Proxy
 
 type ErrorParams = ( '(,) <$> '[HashDRBG]) <*> LiftParams
+errorParams :: Proxy ErrorParams
+errorParams = Proxy
 
 data Liftable :: TyFun (Factored, *) Bool -> *
 type instance Apply Liftable '(m',r) = Int64 :== (LiftOf r)
 
 data RemoveM :: TyFun (Factored, Factored, *) (Factored, *) -> *
 type instance Apply RemoveM '(m,m',r) = '(m',r)
-
-
