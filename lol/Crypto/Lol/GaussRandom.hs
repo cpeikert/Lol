@@ -1,69 +1,88 @@
-{-# LANGUAGE NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE RebindableSyntax    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# OPTIONS_HADDOCK hide #-}
 
 -- | Functions for sampling from a continuous Gaussian distribution
+--
+module Crypto.Lol.GaussRandom (
 
-module Crypto.Lol.GaussRandom
-( realGaussian, realGaussians ) where
+  realGaussian, realGaussians
+
+) where
 
 import Crypto.Lol.LatticePrelude
 
-import qualified Data.Vector.Generic as V
+import qualified Data.Vector.Generic                                as G
+import qualified Data.Vector.Unboxed                                as U
 
-import Control.Monad
+import Control.Applicative                                          ( (<$>), (<*>) )
 import Control.Monad.Random
+
 
 -- | Using polar form of Box-Muller transform, returns a pair of
 -- centered, Gaussian-distributed real numbers with scaled variance
--- @svar = true variance * (2*pi)@. See
+-- @svar = true variance * (2*pi)@.
+--
+-- See
 -- <http://www.alpheratz.net/murison/Maple/GaussianDistribution/GaussianDistribution.pdf
 -- this link> for details.
+--
+realGaussian
+    :: forall v q m . (ToRational v, OrdFloat q, Random q, MonadRandom m)
+    => v
+    -> m (q,q)
+realGaussian svar = do
+  let
+      new       = (,) <$> getRandomR (zero,one) <*> getRandomR (zero,one)
+      bad (u,v) = let t = u*u+v*v
+                  in  t >= one || t == zero
+  --
+  (u,v) <- iterateWhile bad new
+  s1    <- getRandom
+  s2    <- getRandom
+  --
+  let t   = u*u+v*v
+      com = sqrt (-var * log t / t)
+      var = realToField svar / pi :: q -- twice true variance
 
-realGaussian :: forall v q m .
-                (ToRational v, OrdFloat q, Random q, MonadRandom m)
-                => v -> m (q,q)
-realGaussian svar =
-    let var = realToField svar / pi :: q -- twice true variance
-    in do (u,v) <- iterateWhile uvGuard getUV
-          let t = u*u+v*v
-              com = sqrt (-var * log t / t)
-          -- we can either sample u,v from [-1,1]
-          -- or generate sign bits for the outputs
-          s1 <- getRandom
-          s2 <- getRandom
-          let u' = if s1 then u else -u
-              v' = if s2 then v else -v
-          return (u'*com,v'*com)
-    where getUV = do u <- getRandomR (zero,one)
-                     v <- getRandomR (zero,one)
-                     return (u,v)
-          uvGuard (u,v) = (u*u+v*v >= one) || (u*u+v*v == zero)
+      -- We can either sample u,v from [-1,1], or generate sign bits for the
+      -- outputs (which is what we do)
+      u' = if s1 then u else negate u
+      v' = if s2 then v else negate v
+  --
+  return (u'*com,v'*com)
 
--- | Generate @n@ real, independent gaussians of scaled variance @svar
--- = true variance * (2*pi)@.
-realGaussians ::
-    (ToRational svar, OrdFloat i, Random i, V.Vector v i, MonadRandom m)
-    => svar -> Int -> m (v i)
+
+-- | Generate @n@ real, independent gaussians of scaled variance
+-- @svar = true variance * (2*pi)@.
+--
+{-# INLINEABLE realGaussians #-}
+{-# SPECIALIZE realGaussians :: (ToRational svar, OrdFloat i, Random i, MonadRandom m, U.Unbox i) => svar -> Int -> m (U.Vector i) #-}
+realGaussians
+    :: (ToRational svar, OrdFloat i, Random i, G.Vector v (i,i), G.Vector v i, MonadRandom m)
+    => svar
+    -> Int
+    -> m (v i)
 realGaussians var n
-    | odd n = liftM V.tail (realGaussians var (n+1)) -- O(1) tail
-    | otherwise = liftM (V.fromList . uncurry (++) . unzip) $
-                  replicateM (n `div` 2) (realGaussian var)
-
-
-
-
+  | odd n     = G.tail                   <$> realGaussians var (n+1)
+  | otherwise = uncurry (G.++) . G.unzip <$> G.replicateM (n `div` 2) (realGaussian var)
 
 
 -- Taken from monad-loops-0.4.3
 
 -- | Execute an action repeatedly until its result fails to satisfy a predicate,
 -- and return that result (discarding all others).
+--
 iterateWhile :: (Monad m) => (a -> Bool) -> m a -> m a
 iterateWhile p x = x >>= iterateUntilM (not . p) (const x)
 
 -- | Analogue of @('Prelude.until')@
 -- Yields the result of applying f until p holds.
+--
 iterateUntilM :: (Monad m) => (a -> Bool) -> (a -> m a) -> a -> m a
-iterateUntilM p f v 
+iterateUntilM p f v
     | p v       = return v
     | otherwise = f v >>= iterateUntilM p f
 
