@@ -332,7 +332,8 @@ divG (Sub c) = divG $ embed' c  -- must go to full ring
 -- | Sample from the "tweaked" Gaussian error distribution @t*D@ in
 -- the decoding basis, where @D@ has scaled variance @v@.
 tGaussian
-    :: (Fact m, OrdFloat q, Random q, Tensor t, TElt t q, ToRational v, MonadRandom rnd)
+    :: ( Tensor t, Fact m, Ord q, Transcendental q, Transcendental (TRep t q), Random q, TElt t q
+       , ToRational v, MonadRandom rnd )
     => v
     -> rnd (Cyc t m q)
 tGaussian = (Dec <$>) . U.tGaussian
@@ -353,7 +354,8 @@ gSqNorm c       = gSqNorm $ toDec' c
 -- sample, which may not be sufficient for rigorous proof-based security.
 --
 errorRounded
-    :: (Tensor t, Fact m, TElt t z, ToInteger (TRep t z), RealField (TRep t Double), ToRational v, MonadRandom rnd)
+    :: ( Tensor t, Fact m, TElt t z, ToInteger (TRep t z), ToRational v, MonadRandom rnd
+       , RealField (TRep t Double), Transcendental (TRep t Double) )
     => v
     -> rnd (Cyc t m z)
 {-# INLINABLE errorRounded #-}
@@ -366,7 +368,8 @@ errorRounded = (Dec <$>) . U.errorRounded
 -- sample, which may not be sufficient for rigorous proof-based security.
 --
 errorCoset
-    :: (Mod zp, z ~ ModRep zp, Lift zp z, Fact m, CElt t zp, TElt t z, ToRational v, MonadRandom rnd)
+    :: ( Mod zp, z ~ ModRep zp, Lift zp z, Fact m, ToRational v, MonadRandom rnd
+       , CElt t zp, TElt t z, Transcendental (TRep t Double) )
     => v
     -> Cyc t m zp
     -> rnd (Cyc t m z)

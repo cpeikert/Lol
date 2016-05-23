@@ -129,8 +129,8 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor (t :: Factored -> * -> 
 
   -- | Sample from the "tweaked" Gaussian error distribution @t*D@
   -- in the decoding basis, where @D@ has scaled variance @v@.
-  tGaussianDec :: ( OrdFloat q, Random q, TElt t q
-                  , ToRational v, Fact m, MonadRandom rnd
+  tGaussianDec :: ( Fact m, ToRational v, MonadRandom rnd
+                  , Random q, Ord q, Transcendental q, Transcendental (TRep t q), TElt t q
                   )
                => v -> rnd (t m q)
 

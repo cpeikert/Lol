@@ -416,7 +416,8 @@ gSqNorm (Dec v) = gSqNormDec v
 -- | Sample from the "tweaked" Gaussian error distribution @t*D@ in
 -- the decoding basis, where @D@ has scaled variance @v@.
 tGaussian
-    :: (Tensor t, Fact m, OrdFloat q, Random q, TElt t q, ToRational v, MonadRandom rnd)
+    :: ( Tensor t, Fact m, Ord q, Transcendental q, Transcendental (TRep t q)
+       , Random q, TElt t q, ToRational v, MonadRandom rnd )
     => v
     -> rnd (UCyc t m D q)
 tGaussian = fmap Dec . tGaussianDec
@@ -429,7 +430,8 @@ tGaussian = fmap Dec . tGaussianDec
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
 errorRounded
-    :: forall v rnd t m z . (Tensor t, Fact m, TElt t z, ToInteger (TRep t z), ToRational v, RealField (TRep t Double), MonadRandom rnd)
+    :: forall v rnd t m z. ( Tensor t, Fact m, TElt t z, ToInteger (TRep t z), ToRational v, MonadRandom rnd
+                           , RealField (TRep t Double), Transcendental (TRep t Double) )
     => v
     -> rnd (UCyc t m D z)
 {-# INLINABLE errorRounded #-}
@@ -444,7 +446,8 @@ errorRounded svar =
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
 errorCoset
-    :: forall t m zp z v rnd . (Mod zp, z ~ ModRep zp, Lift zp z, Tensor t, Fact m, TElt t zp, TElt t z, ToRational v, MonadRandom rnd)
+    :: forall t m zp z v rnd. ( Mod zp, z ~ ModRep zp, Lift zp z, Tensor t, Fact m, ToRational v, MonadRandom rnd
+                              , TElt t zp, TElt t z, Transcendental (TRep t Double) )
     => v
     -> UCyc t m D zp
     -> rnd (UCyc t m D z)
