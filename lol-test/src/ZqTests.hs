@@ -38,7 +38,7 @@ import Crypto.Lol.Cyclotomic.Tensor.Accelerate
 
 
 data BasicCtxD
-type BasicCtx t r = (Field r, Tensor t, TElt t r, Eq r, Eq (TRep t r), Random r, ShowType '(t,r), CRTEmbed t r)
+type BasicCtx t r = (Field r, Tensor t, TElt t r, Eq r, Eq (TRep t r), Random r, ShowType '(t,r), CRTEmbed (TRep t r))
 
 instance (params `Satisfy` BasicCtxD, BasicCtx t r) => ( '(t,r) ': params) `Satisfy` BasicCtxD where
   data ArgsCtx BasicCtxD where
@@ -65,7 +65,7 @@ prop_recip x = test $ (x == 0) || (one == (x * recip x))
 
 -- tests that multiplication in the extension ring matches CRT multiplication
 prop_mul_ext
-    :: forall t r . (Tensor t, TElt t r, CRTEmbed t r, Ring (TRep t r), Eq (TRep t r))
+    :: forall t r . (Tensor t, TElt t r, CRTEmbed (TRep t r), Ring (TRep t r), Eq (TRep t r))
     => Proxy '(t,r)
     -> r
     -> r
@@ -75,8 +75,7 @@ prop_mul_ext _ x y = test $
       y' = proxy (constant y) (Proxy :: Proxy t)
       --
       z  = x' * y'
-      z' = proxy fromExt (Proxy::Proxy (t m r))
-         $ proxy toExt (Proxy::Proxy (t m r)) x' * proxy toExt (Proxy::Proxy (t m r)) y'
+      z' = fromExt (toExt x' * toExt y')
   in
   z == z'
 

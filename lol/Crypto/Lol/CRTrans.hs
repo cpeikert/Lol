@@ -11,12 +11,13 @@
 -- | Classes and helper methods for the Chinese remainder transform and ring
 -- extensions.
 --
-module Crypto.Lol.CRTrans
-( CRTrans(..), CRTEmbed(..)
-, CRTInfo
+module Crypto.Lol.CRTrans (
+
+  CRTrans(..), CRTEmbed(..),
+  CRTInfo
+
 ) where
 
-import Crypto.Lol.Cyclotomic.Tensor.Representation
 import Crypto.Lol.LatticePrelude
 import Crypto.Lol.Reflects
 
@@ -101,17 +102,16 @@ omegaPowC m i = cis (2*pi*fromIntegral i / fromIntegral m)
 --
 -- See below for the canonical implementations.
 --
-class (Ring (TRep t r), Ring (TRep t (CRTExt r))) => CRTEmbed (t :: Factored -> * -> *) r where
+class (Ring r, Ring (CRTExt r)) => CRTEmbed r where
   type CRTExt r
 
   -- | Embeds from @r@ to @CRTExt r@
-  toExt   :: Tagged (t m r) (TRep t r -> TRep t (CRTExt r))
+  toExt   :: r -> CRTExt r
 
   -- | Projects from @CRTExt r@ to @r@
-  fromExt :: Tagged (t m r) (TRep t (CRTExt r) -> TRep t r)
+  fromExt :: CRTExt r -> r
 
 
-{--
 -- CRTEmbed instance for product rings
 instance (CRTEmbed a, CRTEmbed b) => CRTEmbed (a,b) where
   type CRTExt (a,b) = (CRTExt a, CRTExt b)
@@ -147,5 +147,4 @@ instance CRTEmbed Integer where
   type CRTExt Integer = Complex Double
   toExt   = fromIntegral
   fromExt = fst . roundComplex
---}
 

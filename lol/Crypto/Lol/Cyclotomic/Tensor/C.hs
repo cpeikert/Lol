@@ -112,53 +112,7 @@ type family Em r where
   Em (Maybe (CT' m r -> CT' m' r)) = TaggedT '(m,m') Maybe (Vector r -> Vector r)
 
 
----------- CRT embedding instances ----------
-
-instance (CRTEmbed CT a, CRTEmbed CT b) => CRTEmbed CT (a,b) where
-  type CRTExt (a,b) = (CRTExt a, CRTExt b)
-  --
-  toExt   = tag $ \(a,b) -> ( proxy toExt (Proxy::Proxy (CT m a)) a
-                            , proxy toExt (Proxy::Proxy (CT m b)) b
-                            )
-  fromExt = tag $ \(a,b) -> ( proxy fromExt (Proxy::Proxy (CT m a)) a
-                            , proxy fromExt (Proxy::Proxy (CT m b)) b
-                            )
-
-instance Transcendental a => CRTEmbed CT (Complex a) where
-  type CRTExt (Complex a) = Complex a
-  toExt   = tag id
-  fromExt = tag id
-
-instance CRTEmbed CT Double where
-  type CRTExt Double = Complex Double
-  toExt   = tag fromReal
-  fromExt = tag real
-
-instance CRTEmbed CT Int where
-  type CRTExt Int = Complex Double
-  toExt   = tag fromIntegral
-  fromExt = tag $ fst . roundComplex
-
-instance CRTEmbed CT Int64 where
-  type CRTExt Int64 = Complex Double
-  toExt   = tag fromIntegral
-  fromExt = tag $ fst . roundComplex
-
-instance CRTEmbed CT Integer where
-  -- CJP: sufficient precision?  Not in general.
-  type CRTExt Integer = Complex Double
-  toExt   = tag fromIntegral
-  fromExt = tag $ fst . roundComplex
-
-
 ---------- ZqBasic instances ----------
-
-instance (Reflects q z, ToInteger z, Ring (ZqBasic q z)) => CRTEmbed CT (ZqBasic q z) where
-  type CRTExt (ZqBasic q z) = Complex Double
-  toExt   = tag $ \(ZqB x) -> fromReal (fromIntegral x)
-  fromExt = tag $ reduce' . NP.round . real
-    where
-      reduce' = ZqB . (`mod` proxy value (Proxy::Proxy q))
 
 instance (PPow pp, zq ~ ZqBasic pp z, PrimeField (ZpOf zq), Ring zq, Ring (ZpOf zq))
     => ZPP CT (ZqBasic (pp :: PrimePower) z) where

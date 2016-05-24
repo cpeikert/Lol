@@ -175,14 +175,14 @@ instance (ReflectsTI q z, PID z, Enumerable (ZqBasic q z))
 
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
-{--
+
 -- instance of CRTEmbed
 instance (ReflectsTI q z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
   type CRTExt (ZqBasic q z) = Complex Double
 
   toExt (ZqB x) = fromReal $ fromIntegral x
-  fromExt x = reduce' $ NP.round $ real x
---}
+  fromExt x = reduce' $ LP.round $ real x
+
 
 -- instance of Additive
 instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where

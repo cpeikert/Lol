@@ -104,9 +104,10 @@ data UCyc t m rep r where
 -- | Constraints needed for CRT-related operations on 'UCyc' data.
 type UCRTElt t r =
     ( Tensor t
-    , CRTEmbed t r
+    , CRTEmbed (TRep t r)
     , CRTrans Maybe    (TRep t Int) (TRep t r),          TElt t r
     , CRTrans Identity (TRep t Int) (TRep t (CRTExt r)), TElt t (CRTExt r)
+    , TRep t (CRTExt r) ~ CRTExt (TRep t r)
     )
 
 -- | Convenient synonym for 'deepseq'-able element type.
@@ -129,7 +130,7 @@ scalarCRT x =
   let x' = proxy (constant x) (Proxy::Proxy t) in
   case T.scalarCRT of
     Just f  -> Right $ CRTr (f x')
-    Nothing -> Left  $ CRTe (runIdentity T.scalarCRT (proxy toExt (Proxy::Proxy (t m r)) x'))
+    Nothing -> Left  $ CRTe (runIdentity T.scalarCRT (toExt x'))
 {-# INLINABLE scalarCRT #-}
 
 
@@ -248,7 +249,7 @@ instance (Ring r, Fact m, UCRTElt t r)
     => Module.C r (UCycEC t m r) where
   r *> Right (CRTr v) = Right $ CRTr $ fmapT (proxy (constant r) (Proxy::Proxy t) *) v
   r *> Left (CRTe v)  = Left  $ CRTe $ let r' = proxy (constant r) (Proxy::Proxy t)
-                                           re = proxy toExt (Proxy::Proxy (t m r)) r'
+                                           re = toExt r'
                                        in
                                        fmapT (re *) v
   {-# INLINABLE (*>) #-}
@@ -277,13 +278,13 @@ type instance LiftOf (UCyc t m P r) = UCyc t m P (LiftOf r)
 type instance LiftOf (UCyc t m D r) = UCyc t m D (LiftOf r)
 
 instance ( Tensor t, Lift' r, Lift' (TRep t r), Fact m, TElt t r, TElt t (LiftOf r)
-         , TRep t (LiftOf r) ~ LiftOf (TRep t r)) -- TLM: hmm...
+         , TRep t (LiftOf r) ~ LiftOf (TRep t r))
          => Lift' (UCyc t m P r) where
   lift (Pow v) = Pow $ fmapT lift v
   {-# INLINABLE lift #-}
 
 instance ( Tensor t, Lift' r, Lift' (TRep t r), Fact m, TElt t r, TElt t (LiftOf r)
-         , TRep t (LiftOf r) ~ LiftOf (TRep t r)) -- TLM: hmm...
+         , TRep t (LiftOf r) ~ LiftOf (TRep t r))
          => Lift' (UCyc t m D r) where
   lift (Dec v) = Dec $ fmapT lift v
   {-# INLINABLE lift #-}
@@ -377,7 +378,7 @@ unzipCRTE
        )
 unzipCRTE (CRTe v)
   = let (ae,be) = CRTe *** CRTe $ unzipT v
-        (a',b') = unzipT $ fmapT (proxy fromExt (Proxy::Proxy (t m (a,b)))) $ runIdentity crtInv v
+        (a',b') = unzipT $ fmapT fromExt $ runIdentity crtInv v
     in (fromMaybe (Right ae) (witnessT hasCRTFuncs a' A.*> pure (Left (Pow a'))),
         fromMaybe (Right be) (witnessT hasCRTFuncs b' A.*> pure (Left (Pow b'))))
 
@@ -608,7 +609,7 @@ toPow :: forall t m rep r. (Fact m, UCRTElt t r)
 toPow x@(Pow _) = x
 toPow (Dec v) = Pow $ l v
 toPow (CRTr v) = Pow $ fromJust' "UCyc.toPow CRTr" crtInv v
-toPow (CRTe v) = Pow $ fmapT (proxy fromExt (Proxy::Proxy (t m r))) $ runIdentity crtInv v
+toPow (CRTe v) = Pow $ fmapT fromExt $ runIdentity crtInv v
 
 -- | Convenient version of 'toPow' for 'Either' CRT basis type.
 toPowCE :: (Fact m, UCRTElt t r)
@@ -639,7 +640,7 @@ toCRT x =
     fromPow v =
       case crt :: Maybe (t m r -> t m r) of
         Just f  -> Right $ CRTr (f v)
-        Nothing -> Left  $ CRTe (runIdentity crt $ fmapT (proxy toExt (Proxy::Proxy (t m r))) v)
+        Nothing -> Left  $ CRTe (runIdentity crt $ fmapT toExt v)
   in
   case x of
     CRTr{} -> Right x

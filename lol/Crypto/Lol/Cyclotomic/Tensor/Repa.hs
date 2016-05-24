@@ -26,9 +26,7 @@ import Crypto.Lol.Cyclotomic.Tensor.Repa.Dec
 import Crypto.Lol.Cyclotomic.Tensor.Repa.Extension
 import Crypto.Lol.Cyclotomic.Tensor.Repa.GL
 
-import Crypto.Lol.CRTrans
 import Crypto.Lol.LatticePrelude                                    as LP hiding ( (!!) )
-import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField                                 as FF
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.ZqBasic
@@ -37,7 +35,6 @@ import Crypto.Lol.Types.ZPP
 import Algebra.Additive                                             as Additive (C)
 import Algebra.Module                                               as Module (C)
 import Algebra.ZeroTestable                                         as ZeroTestable (C)
-import NumericPrelude.Numeric                                       as NP ( round )
 
 import Control.Applicative                                          hiding ( (*>) )
 import Control.Arrow                                                hiding ( arr )
@@ -197,53 +194,7 @@ instance Eq r => Eq (RT m r) where
   {-# INLINABLE (==) #-}
 
 
----------- CRT embedding instances ----------
-
-instance (CRTEmbed RT a, CRTEmbed RT b) => CRTEmbed RT (a,b) where
-  type CRTExt (a,b) = (CRTExt a, CRTExt b)
-  --
-  toExt   = tag $ \(a,b) -> ( proxy toExt (Proxy::Proxy (RT m a)) a
-                            , proxy toExt (Proxy::Proxy (RT m b)) b
-                            )
-  fromExt = tag $ \(a,b) -> ( proxy fromExt (Proxy::Proxy (RT m a)) a
-                            , proxy fromExt (Proxy::Proxy (RT m b)) b
-                            )
-
-instance Transcendental a => CRTEmbed RT (Complex a) where
-  type CRTExt (Complex a) = Complex a
-  toExt   = tag id
-  fromExt = tag id
-
-instance CRTEmbed RT Double where
-  type CRTExt Double = Complex Double
-  toExt   = tag fromReal
-  fromExt = tag real
-
-instance CRTEmbed RT Int where
-  type CRTExt Int = Complex Double
-  toExt   = tag fromIntegral
-  fromExt = tag $ fst . roundComplex
-
-instance CRTEmbed RT Int64 where
-  type CRTExt Int64 = Complex Double
-  toExt   = tag fromIntegral
-  fromExt = tag $ fst . roundComplex
-
-instance CRTEmbed RT Integer where
-  -- CJP: sufficient precision?  Not in general.
-  type CRTExt Integer = Complex Double
-  toExt   = tag fromIntegral
-  fromExt = tag $ fst . roundComplex
-
-
 ---------- ZqBasic instances ----------
-
-instance (Reflects q z, ToInteger z, Ring (ZqBasic q z)) => CRTEmbed RT (ZqBasic q z) where
-  type CRTExt (ZqBasic q z) = Complex Double
-  toExt   = tag $ \(ZqB x) -> fromReal (fromIntegral x)
-  fromExt = tag $ reduce' . NP.round . real
-    where
-      reduce' = ZqB . (`mod` proxy value (Proxy::Proxy q))
 
 instance (PPow pp, zq ~ ZqBasic pp z, PrimeField (ZpOf zq), Ring zq, Ring (ZpOf zq))
     => ZPP RT (ZqBasic (pp :: PrimePower) z) where
