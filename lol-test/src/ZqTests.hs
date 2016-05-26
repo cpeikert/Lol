@@ -28,9 +28,9 @@ import Crypto.Lol.Cyclotomic.Tensor.Representation
 import Control.Monad.Random
 import qualified Test.Framework as TF
 
-#if ACCELERATE_TENSOR_ENABLE
-import Crypto.Lol.Cyclotomic.Tensor.Accelerate
-#endif
+-- #if ACCELERATE_TENSOR_ENABLE
+-- import Crypto.Lol.Cyclotomic.Tensor.Accelerate
+-- #endif
 
 -- TLM: These tests need to lift the value 'r' into 'TRep t r', and then we need
 -- to be able to eval 'TRep t r -> r' (or similar).

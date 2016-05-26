@@ -1,6 +1,10 @@
-{-# LANGUAGE FlexibleInstances, NoImplicitPrelude, PolyKinds,
-             RebindableSyntax, ScopedTypeVariables, TypeFamilies,
-             UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE NoImplicitPrelude    #-}
+{-# LANGUAGE PolyKinds            #-}
+{-# LANGUAGE RebindableSyntax     #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 -- | Orphan instance of 'IrreduciblePoly' for characteristic-2 fields.

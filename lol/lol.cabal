@@ -46,14 +46,13 @@ source-repository head
 -- http://blog.ezyang.com/2010/06/setting-up-cabal-the-ffi-and-c2hs/
 
 Flag icc
-  Description: Use ICC instead of GCC to compile C backend.
   Default:     False
+  Description: Use ICC instead of GCC to compile C backend.
 
 Flag llvm
+  Default:      False
   Description:  Compile via LLVM. This produces much better object code,
                 but you need to have the LLVM compiler installed.
-
-  Default:      False
 
 Flag opt
   Description: Turn on library optimizations
@@ -84,10 +83,15 @@ library
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
 
-  ghc-options: -fwarn-dodgy-imports
+  ghc-options: -Wall
+
   -- ghc optimizations
   if flag(opt)
-    ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+    ghc-options:  -O3 -Odph
+                  -fno-liberate-case
+                  -funbox-strict-fields
+                  -funfolding-use-threshold1000
+                  -funfolding-keeness-factor1000
 
   exposed-modules:
     Crypto.Lol

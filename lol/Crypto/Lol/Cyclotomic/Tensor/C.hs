@@ -47,13 +47,10 @@ import Crypto.Lol.Cyclotomic.Tensor.C.Backend
 import Crypto.Lol.Cyclotomic.Tensor.C.Extension
 import Crypto.Lol.GaussRandom
 import Crypto.Lol.LatticePrelude                                    as LP hiding ( lift, replicate, unzip, zip )
-import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.ZPP
 import Crypto.Lol.Types.ZqBasic
-
-import NumericPrelude.Numeric                                       as NP ( round )
 
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -167,8 +164,9 @@ instance Fact m => Functor (CT m) where
 instance Fact m => Applicative (CT m) where
   pure = ZV . pure
 
-  (ZV f) <*> (ZV a) = ZV (f <*> a)
-  f@(ZV _) <*> v@(CT _) = f <*> toZV v
+  (ZV f)   <*> (ZV a) = ZV (f <*> a)
+  f@(ZV _) <*> v@CT{} = f <*> toZV v
+  _        <*> _      = error "CT can never hold an (a -> b)"
 
 instance Fact m => Foldable (CT m) where
   -- Foldable instance is implied by Traversable
