@@ -1,5 +1,11 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses,
-             NoImplicitPrelude, RankNTypes, TypeFamilies #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ZqBenches (zqBenches) where
 
@@ -9,8 +15,7 @@ import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
 import qualified Data.Vector.Unboxed as U
-import qualified Data.Array.Repa as R
-import GHC.TypeLits
+import qualified Data.Array.Repa     as R
 
 import Utils
 import Gen
@@ -30,10 +35,12 @@ bench_mul_repa a b = bench (R.computeUnboxedS . R.zipWith (*) a) b
 bench_mul_unb :: (Ring zq, U.Unbox zq) => U.Vector zq -> U.Vector zq -> Bench zq
 bench_mul_unb a b = bench (U.zipWith (*) a) b
 
-vecLen = 100 :: Int
+vecLen :: Int
+vecLen = 100
 
 instance (U.Unbox zq, Random zq, MonadRandom rnd) => Generatable rnd (Arr zq) where
   genArg = R.fromListUnboxed (R.Z R.:. vecLen) <$> replicateM vecLen getRandom
 
 instance (U.Unbox zq, Random zq, MonadRandom rnd) => Generatable rnd (U.Vector zq) where
   genArg = U.fromList <$> replicateM vecLen getRandom
+

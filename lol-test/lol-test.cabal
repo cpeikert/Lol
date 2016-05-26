@@ -36,13 +36,13 @@ executable lol-test
     Apply
     Gen
     Harness.Cyc
-    TestTypes
-    Tests
     Utils
 
     -- tests
     CycTests
     TensorTests
+    TestTypes
+    Tests
     ZqTests
 
   ghc-options: -threaded -rtsopts

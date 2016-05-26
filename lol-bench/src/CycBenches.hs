@@ -1,7 +1,11 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, 
-             NoImplicitPrelude, RebindableSyntax, 
-             ScopedTypeVariables, TypeFamilies, 
-             TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE NoImplicitPrelude    #-}
+{-# LANGUAGE RebindableSyntax     #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE TypeOperators        #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module CycBenches (cycBenches) where
 
@@ -36,7 +40,7 @@ cycBenches = benchGroup "Cyc" [
 
 -- no CRT conversion, just coefficient-wise multiplication
 bench_mul :: (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> Bench '(t,m,r)
-bench_mul a b = 
+bench_mul a b =
   let a' = adviseCRT a
       b' = adviseCRT b
   in bench (a' *) b'
@@ -66,26 +70,26 @@ bench_mulgCRT :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
 bench_mulgCRT x = let y = adviseCRT x in bench mulG y
 
 -- generate a rounded error term
-bench_errRounded :: forall t m r gen . (ErrorCtx t m r gen) 
+bench_errRounded :: forall t m r gen . (ErrorCtx t m r gen)
   => Double -> Bench '(t,m,r,gen)
 bench_errRounded v = benchIO $ do
   gen <- newGenIO
   return $ evalRand (errorRounded v :: Rand (CryptoRand gen) (Cyc t m (LiftOf r))) gen
 
-bench_twacePow :: forall t m m' r . (TwoIdxCtx t m m' r) 
+bench_twacePow :: forall t m m' r . (TwoIdxCtx t m m' r)
   => Cyc t m' r -> Bench '(t,m,m',r)
-bench_twacePow x = 
-  let y = advisePow x 
+bench_twacePow x =
+  let y = advisePow x
   in bench (twace :: Cyc t m' r -> Cyc t m r) y
 
-bench_embedPow :: forall t m m' r . (TwoIdxCtx t m m' r) 
+bench_embedPow :: forall t m m' r . (TwoIdxCtx t m m' r)
   => Cyc t m r -> Bench '(t,m,m',r)
-bench_embedPow x = 
-  let y = advisePow x 
+bench_embedPow x =
+  let y = advisePow x
   in bench (embed :: Cyc t m r -> Cyc t m' r) y
 
 type Tensors = '[CT,RT]
-type MM'RCombos = 
+type MM'RCombos =
   '[ '(F4, F128, Zq 257),
      '(F1, PToF Prime281, Zq 563),
      '(F12, F32 * F9, Zq 512),
@@ -111,5 +115,4 @@ type instance Apply Liftable '(m',r) = Int64 :== (LiftOf r)
 
 data RemoveM :: TyFun (Factored, Factored, *) (Factored, *) -> *
 type instance Apply RemoveM '(m,m',r) = '(m',r)
-
 
