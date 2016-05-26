@@ -23,7 +23,6 @@ import Apply
 
 import Crypto.Lol
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Cyclotomic.Tensor.Representation
 
 import Control.Monad.Random
 import qualified Test.Framework as TF

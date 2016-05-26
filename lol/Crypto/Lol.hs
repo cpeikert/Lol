@@ -9,6 +9,7 @@ module Crypto.Lol
 , module Crypto.Lol.Types.ZqBasic
 , module Crypto.Lol.Cyclotomic.Tensor.C
 , module Crypto.Lol.Cyclotomic.Tensor.Repa
+, module Crypto.Lol.Cyclotomic.Tensor.Representation
 ) where
 
 import Crypto.Lol.Cyclotomic.Cyc
@@ -18,5 +19,6 @@ import Crypto.Lol.LatticePrelude
 import Crypto.Lol.Types.ZqBasic
 import Crypto.Lol.Cyclotomic.Tensor.C
 import Crypto.Lol.Cyclotomic.Tensor.Repa
+import Crypto.Lol.Cyclotomic.Tensor.Representation
 import Crypto.Lol.Types.IrreducibleChar2 () -- instances only
 
