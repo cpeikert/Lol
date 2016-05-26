@@ -72,7 +72,7 @@ import qualified Crypto.Lol.Cyclotomic.UCyc                         as U
 import Control.Applicative                                          hiding ((*>))
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity -- needed for coerce
+import Control.Monad.Identity -- required for coerce
 import Control.Monad.Random
 import Data.Coerce
 import Data.Traversable
@@ -539,10 +539,9 @@ instance ( Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b
 
 instance (Gadget gad zq, Fact m, CElt t zq) => Gadget gad (Cyc t m zq) where
   gadget = (scalarCyc <$>) <$> gadget
-  -- specialization of 'encode', done efficiently
-  encode s = ((* adviseCRT s) <$>) <$> gadget
   {-# INLINABLE gadget #-}
-  {-# INLINABLE encode #-}
+
+  -- CJP: default 'encode' works because mul-by-Scalar is fast
 
 -- promote Decompose, using the powerful basis
 instance ( Decompose gad zq, Fact m, CElt t zq, CElt t (DecompOf zq)
