@@ -1,6 +1,9 @@
+Λ ○ λ
+-----
+
 Overview of key modules, roughly from highest- to lowest-level:
 
-* Cyc.hs, which defines an interface for using cyclotomic fields, 
+* Cyc.hs, which defines an interface for using cyclotomic fields,
   rings R, and quotient rings Rq=R/qR; as well as many other
   commonly used operations, e.g., converting
   between rings, decoding and decomposing elements, modulus
