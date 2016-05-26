@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -25,6 +26,11 @@ import Utils
 import Gen
 import Apply
 
+#if ACCELERATE_TENSOR_ENABLE
+import Crypto.Lol.Cyclotomic.Tensor.Accelerate
+#endif
+
+
 data BasicCtxD
 type BasicCtx t m r =
   (CElt t r, Fact m, Random r, Eq r, NFElt r, ShowType '(t,m,r), Random (t m r), m `Divides` m)
@@ -45,9 +51,14 @@ applyBasic params g = run params $ \(BC p) -> g p
 -- r is Liftable
 data LiftCtxD
 type LiftCtx t m r =
-  ( BasicCtx t m r, Lift' r, CElt t (LiftOf r), NFElt (LiftOf r), ToInteger (LiftOf r)
-  , CRTrans Maybe Int r -- TLM: hmm..
-  , TElt CT r, TElt RT r, TElt CT (LiftOf r), TElt RT (LiftOf r)
+  ( BasicCtx t m r, Lift' r, Lift' (TRep t r), CElt t (LiftOf r), NFElt (LiftOf r), ToInteger (LiftOf r)
+  , TRep t (LiftOf r) ~ LiftOf (TRep t r) -- TLM: hmm...
+  , CRTrans Maybe Int r
+  , TElt CT r, TElt CT (LiftOf r)
+  , TElt RT r, TElt RT (LiftOf r)
+#if ACCELERATE_TENSOR_ENABLE
+  , TElt AT r, TElt AT (LiftOf r)
+#endif
   )
 
 instance (params `Satisfy` LiftCtxD, LiftCtx t m r)
@@ -65,9 +76,12 @@ applyLift params g = run params $ \(LC p) -> g p
 
 -- similar to LiftCtxD, but with a `gen` param
 data ErrorCtxD
-type ErrorCtx t m r gen = (CElt t r, Fact m, ShowType '(t,m,r,gen),
-                           CElt t (LiftOf r), NFElt (LiftOf r), Lift' r,
-                           ToInteger (LiftOf r), CryptoRandomGen gen)
+type ErrorCtx t m r gen =
+  ( Fact m, ShowType '(t,m,r,gen)
+  , CElt t r, CElt t (LiftOf r), NFElt (LiftOf r), Lift' r
+  , ToInteger (TRep t (LiftOf r)), CryptoRandomGen gen
+  , RealField (TRep t Double) , Transcendental (TRep t Double)
+  )
 
 instance (params `Satisfy` ErrorCtxD, ErrorCtx t m r gen)
   => ( '(gen, '(t, '(m,r))) ': params) `Satisfy` ErrorCtxD  where

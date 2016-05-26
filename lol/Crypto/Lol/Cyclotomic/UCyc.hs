@@ -278,13 +278,13 @@ type instance LiftOf (UCyc t m P r) = UCyc t m P (LiftOf r)
 type instance LiftOf (UCyc t m D r) = UCyc t m D (LiftOf r)
 
 instance ( Tensor t, Lift' r, Lift' (TRep t r), Fact m, TElt t r, TElt t (LiftOf r)
-         , TRep t (LiftOf r) ~ LiftOf (TRep t r))
+         , TRep t (LiftOf r) ~ LiftOf (TRep t r)) -- TLM: hmm...
          => Lift' (UCyc t m P r) where
   lift (Pow v) = Pow $ fmapT lift v
   {-# INLINABLE lift #-}
 
 instance ( Tensor t, Lift' r, Lift' (TRep t r), Fact m, TElt t r, TElt t (LiftOf r)
-         , TRep t (LiftOf r) ~ LiftOf (TRep t r))
+         , TRep t (LiftOf r) ~ LiftOf (TRep t r)) -- TLM: hmm...
          => Lift' (UCyc t m D r) where
   lift (Dec v) = Dec $ fmapT lift v
   {-# INLINABLE lift #-}

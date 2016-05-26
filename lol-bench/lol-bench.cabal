@@ -67,7 +67,11 @@ executable lol-bench
   ghc-options: -Wall -threaded -rtsopts
 
   if flag(opt)
-    ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+    ghc-options:  -O3 -Odph
+                  -funbox-strict-fields
+                  -fno-liberate-case
+                  -funfolding-use-threshold1000
+                  -funfolding-keeness-factor1000
 
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
