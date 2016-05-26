@@ -49,8 +49,6 @@ import Crypto.Lol.GaussRandom
 import Crypto.Lol.LatticePrelude                                    as LP hiding ( lift, replicate, unzip, zip )
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
-import Crypto.Lol.Types.ZPP
-import Crypto.Lol.Types.ZqBasic
 
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -107,16 +105,6 @@ type family Tw (r :: *) :: * where
 type family Em r where
   Em (CT' m r -> CT' m' r) = Tagged '(m,m') (Vector r -> Vector r)
   Em (Maybe (CT' m r -> CT' m' r)) = TaggedT '(m,m') Maybe (Vector r -> Vector r)
-
-
----------- ZqBasic instances ----------
-
-instance (PPow pp, zq ~ ZqBasic pp z, PrimeField (ZpOf zq), Ring zq, Ring (ZpOf zq))
-    => ZPP CT (ZqBasic (pp :: PrimePower) z) where
-  type ZpOf (ZqBasic pp z) = ZqBasic (PrimePP pp) z
-  --
-  modulusZPP = retag (ppPPow :: Tagged pp PP)
-  liftZp     = tag coerce
 
 
 ---------- NUMERIC PRELUDE INSTANCES ----------

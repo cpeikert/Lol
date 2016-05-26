@@ -29,8 +29,6 @@ import Crypto.Lol.Cyclotomic.Tensor.Repa.GL
 import Crypto.Lol.LatticePrelude                                    as LP hiding ( (!!) )
 import Crypto.Lol.Types.FiniteField                                 as FF
 import Crypto.Lol.Types.IZipVector
-import Crypto.Lol.Types.ZqBasic
-import Crypto.Lol.Types.ZPP
 
 import Algebra.Additive                                             as Additive (C)
 import Algebra.Module                                               as Module (C)
@@ -192,16 +190,6 @@ instance Eq r => Eq (RT m r) where
   a@(RT _) == b = a == toRT b
   a == b@(RT _) = toRT a == b
   {-# INLINABLE (==) #-}
-
-
----------- ZqBasic instances ----------
-
-instance (PPow pp, zq ~ ZqBasic pp z, PrimeField (ZpOf zq), Ring zq, Ring (ZpOf zq))
-    => ZPP RT (ZqBasic (pp :: PrimePower) z) where
-  type ZpOf (ZqBasic pp z) = ZqBasic (PrimePP pp) z
-  --
-  modulusZPP = retag (ppPPow :: Tagged pp PP)
-  liftZp     = tag coerce
 
 
 ---------- Category-theoretic instances ----------

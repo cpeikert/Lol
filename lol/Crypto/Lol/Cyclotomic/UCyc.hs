@@ -576,7 +576,7 @@ crtSet :: forall t m m' r p mbar m'bar .
           ( m `Divides` m', p ~ CharOf (ZpOf r)
           , mbar ~ PFree p m, m'bar ~ PFree p m'
           , UCRTElt t r, TElt t (ZpOf r)
-          , ZPP t r
+          , ZPP r, ZPP (TRep t r), TRep t (ZpOf r) ~ ZpOf (TRep t r)
           , Ring r
           )
        => Tagged m [UCyc t m' P r]
@@ -586,13 +586,13 @@ crtSet =
   --DT.trace ("UCyc.crtSet: m = " ++
   --          show (proxy valueFact (Proxy::Proxy m)) ++ ", m'= " ++
   --          show (proxy valueFact (Proxy::Proxy m'))) $
-  let (p,e) = proxy modulusZPP (Proxy::Proxy (t m r))
+  let (p,e) = proxy modulusZPP (Proxy::Proxy r)
       pp    = Proxy::Proxy p
       pm    = Proxy::Proxy m
       pm'   = Proxy::Proxy m'
   in retag (fmap (embedPow .
                   (if e > 1 then toPowCE . (^(p^(e-1))) . toCRT else toPow) .
-                  Dec . fmapT (proxy liftZp (Proxy::Proxy (t m r)))) <$>
+                  Dec . fmapT liftZp) <$>
             (crtSetDec :: Tagged mbar [t m'bar (ZpOf r)]))
      \\ pFreeDivides pp pm pm'
      \\ pSplitTheorems  pp pm

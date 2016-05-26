@@ -70,7 +70,9 @@ prop_coeffsBasis x =
 -- verifies that CRT set elements satisfy c_i * c_j = delta_ij * c_i
 -- necessary (but not sufficient) condition
 prop_crtSet_pairs
-    :: forall t m m' r . (m `Divides` m', ZPP t r, Eq r, CElt t r, CElt t (ZpOf r))
+    :: forall t m m' r . ( m `Divides` m', Eq r, CElt t r, CElt t (ZpOf r)
+                         , ZPP r, ZPP (TRep t r), TRep t (ZpOf r) ~ ZpOf (TRep t r)
+                         )
     => Test '(t,m,m',r)
 prop_crtSet_pairs =
   let crtset = proxy crtSet (Proxy::Proxy m) :: [Cyc t m' r]

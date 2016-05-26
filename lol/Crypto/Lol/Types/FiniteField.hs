@@ -44,8 +44,14 @@ newtype GF fp d = GF (Polynomial fp)
 -- the second argument, though phantom, affects representation
 type role GF representational representational
 
-type PrimeField fp = (Enumerable fp, Field fp, Eq fp, ZeroTestable fp,
-                      Prim (CharOf fp), IrreduciblePoly fp)
+type PrimeField fp =
+    ( Enumerable fp
+    , Field fp
+    , Eq fp
+    , ZeroTestable fp
+    , Prim (CharOf fp)
+    , IrreduciblePoly fp
+    )
 
 type GFCtx fp d = (PrimeField fp, Reflects d Int)
 
