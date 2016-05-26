@@ -7,6 +7,7 @@ resolver: lts-5.14
 packages:
 - lol
 - lol-test
+- lol-bench
 # - 'apps'
 # - 'compiler'
 
