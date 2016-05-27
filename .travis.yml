@@ -49,5 +49,6 @@ script:
   - stack build lol --no-terminal --haddock --no-haddock-deps
   - stack build lol-test --no-terminal
   - stack build lol-bench --no-terminal
+  - stack build lol-apps --no-terminal
   - stack exec lol-test -- --plain; true
 

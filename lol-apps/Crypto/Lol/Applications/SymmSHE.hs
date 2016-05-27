@@ -1,14 +1,21 @@
-{-# LANGUAGE ConstraintKinds, DataKinds,
-             FlexibleContexts, FlexibleInstances, GADTs,
-             MultiParamTypeClasses, NoImplicitPrelude, ScopedTypeVariables,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 -- | Symmetric-key somewhat homomorphic encryption.
 
 module Crypto.Lol.Applications.SymmSHE
 (
 -- * Data types
-SK, PT, CT                    -- don't export constructors!
+  SK, PT, CT                  -- don't export constructors!
 -- * Keygen, encryption, decryption
 , genSK
 , encrypt
@@ -30,23 +37,24 @@ SK, PT, CT                    -- don't export constructors!
 , TunnelCtx
 ) where
 
-import qualified Algebra.Additive as Additive (C)
-import qualified Algebra.Ring     as Ring (C)
+import qualified Algebra.Additive                                   as Additive (C)
+import qualified Algebra.Ring                                       as Ring (C)
+import MathObj.Polynomial                                           as P
 
 import Crypto.Lol.Cyclotomic.Cyc
-import Crypto.Lol.Cyclotomic.UCyc (UCyc, D)
 import Crypto.Lol.Cyclotomic.Linear
+import Crypto.Lol.Cyclotomic.Tensor                                 ( TRep )
+import Crypto.Lol.Cyclotomic.UCyc                                   ( UCyc, D )
 import Crypto.Lol.Gadget
-import Crypto.Lol.LatticePrelude    as LP hiding (sin)
+import Crypto.Lol.LatticePrelude                                    as LP hiding ( sin )
 
-import Control.Applicative  hiding ((*>))
+import Control.Applicative                                          hiding ( (*>) )
 import Control.DeepSeq
-import Control.Monad        as CM
+import Control.Monad                                                as CM
 import Control.Monad.Random
 import Data.Maybe
-import Data.Traversable     as DT
+import Data.Traversable                                             as DT
 
-import MathObj.Polynomial as P
 
 -- | secret key
 data SK r where
@@ -80,38 +88,55 @@ instance (NFData r) => NFData (SK r) where
 
 -- | Constraint synonym for generating a secret key.
 type GenSKCtx t m z v =
-  (ToInteger z, Fact m, CElt t z, ToRational v, NFData v)
+  ( Fact m, CElt t z, ToRational v, NFData v
+  , ToInteger (TRep t z), Transcendental (TRep t Double), RealField (TRep t Double)
+  )
 
 -- | Generates a secret key with (index-independent) scaled variance
 -- parameter @v@; see 'errorRounded'.
 genSK :: (GenSKCtx t m z v, MonadRandom rnd)
-         => v -> rnd (SK (Cyc t m z))
+      => v
+      -> rnd (SK (Cyc t m z))
 genSK v = liftM (SK v) $ errorRounded v
 
 -- | Constraint synonym for encryption.
 type EncryptCtx t m m' z zp zq =
-  (Mod zp, Ring zp, Ring zq, Lift zp (ModRep zp), Random zq,
-   Reduce z zq, Reduce (LiftOf zp) zq,
-   CElt t zq, CElt t zp, CElt t z, CElt t (LiftOf zp),
-   m `Divides` m')
+  ( Mod zp, Ring zp, Ring zq, Lift zp (ModRep zp), Random zq
+  , CElt t zq, CElt t zp, CElt t z, CElt t (LiftOf zp)
+  , Reduce z zq, Reduce (LiftOf zp) zq
+  , Reduce (TRep t z) (TRep t zq), Reduce (TRep t (LiftOf zp)) (TRep t zq)
+  , Transcendental (TRep t Double)
+  , m `Divides` m'
+  )
 
 -- | Encrypt a plaintext under a secret key.
-encrypt :: forall t m m' z zp zq rnd . (EncryptCtx t m m' z zp zq, MonadRandom rnd)
-           => SK (Cyc t m' z) -> PT (Cyc t m zp) -> rnd (CT m zp (Cyc t m' zq))
+encrypt
+    :: forall t m m' z zp zq rnd . (EncryptCtx t m m' z zp zq, MonadRandom rnd)
+    => SK (Cyc t m' z)
+    -> PT (Cyc t m zp)
+    -> rnd (CT m zp (Cyc t m' zq))
 encrypt (SK svar s) =
   let sq = adviseCRT $ reduce s
   in \pt -> do
-    e <- errorCoset svar (embed pt :: PT (Cyc t m' zp))
+    e  <- errorCoset svar (embed pt :: PT (Cyc t m' zp))
     c1 <- getRandom
     return $! CT LSD zero one $ fromCoeffs [reduce e - c1 * sq, c1]
 
 -- | Constraint synonym for extracting the error term of a ciphertext.
 type ErrorTermCtx t m' z zp zq =
-  (Reduce z zq, Lift' zq, CElt t z, CElt t (LiftOf zq), ToSDCtx t m' zp zq)
+  ( ToSDCtx t m' zp zq
+  , CElt t z, CElt t (LiftOf zq)
+  , Reduce z zq, Lift' zq
+  , Reduce (TRep t z) (TRep t zq), Lift' (TRep t zq)
+  , LiftOf (TRep t zq) ~ TRep t (LiftOf zq)
+  )
 
 -- | Extract the error term of a ciphertext.
-errorTerm :: (ErrorTermCtx t m' z zp zq)
-             => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Cyc t m' (LiftOf zq)
+errorTerm
+    :: (ErrorTermCtx t m' z zp zq)
+    => SK (Cyc t m' z)
+    -> CT m zp (Cyc t m' zq)
+    -> Cyc t m' (LiftOf zq)
 errorTerm (SK _ s) = let sq = reduce s in
   \ct -> let (CT LSD _ _ c) = toLSD ct
          in liftCyc Dec $ evaluate c sq
@@ -122,12 +147,18 @@ divG' = fromJust . divG
 
 -- | Constraint synonym for decryption.
 type DecryptCtx t m m' z zp zq =
-  (ErrorTermCtx t m' z zp zq, Reduce (LiftOf zq) zp,
-   m `Divides` m', CElt t zp)
+  ( ErrorTermCtx t m' z zp zq
+  , Reduce (LiftOf zq) zp
+  , Reduce (LiftOf (TRep t zq)) (TRep t zp)
+  , m `Divides` m', CElt t zp
+  )
 
 -- | Decrypt a ciphertext.
-decrypt :: forall t m m' z zp zq . (DecryptCtx t m m' z zp zq)
-           => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> PT (Cyc t m zp)
+decrypt
+    :: forall t m m' z zp zq . (DecryptCtx t m m' z zp zq)
+    => SK (Cyc t m' z)
+    -> CT m zp (Cyc t m' zq)
+    -> PT (Cyc t m zp)
 decrypt sk ct =
   let ct'@(CT LSD k l _) = toLSD ct
   in let e :: Cyc t m' zp = reduce $ errorTerm sk ct'
@@ -136,15 +167,22 @@ decrypt sk ct =
 --- unrestricted versions ---
 
 type DecryptUCtx t m m' z zp zq =
-  (Fact m, Fact m', CElt t zp, m `Divides` m',
-   Reduce z zq, Lift' zq, CElt t z, 
-   ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp)
+  ( Fact m, Fact m', CElt t zp, m `Divides` m'
+  , Reduce z zq, Reduce (LiftOf zq) zp
+  , Reduce (TRep t z) (TRep t zq)
+  , Lift' zq
+  , CElt t z
+  , ToSDCtx t m' zp zq
+  )
 
 -- | More general form of 'errorTerm' that works for unrestricted
 -- output coefficient types.
-errorTermUnrestricted :: 
-  (Reduce z zq, Lift' zq, CElt t z, ToSDCtx t m' zp zq)
-  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> UCyc t m' D (LiftOf zq)
+errorTermUnrestricted
+    :: ( Reduce z zq, Reduce (TRep t z) (TRep t zq), Lift' zq
+       , CElt t z, ToSDCtx t m' zp zq )
+    => SK (Cyc t m' z)
+    -> CT m zp (Cyc t m' zq)
+    -> UCyc t m' D (LiftOf zq)
 errorTermUnrestricted (SK _ s) = let sq = reduce s in
   \ct -> let (CT LSD _ _ c) = toLSD ct
              eval = evaluate c sq
@@ -152,8 +190,11 @@ errorTermUnrestricted (SK _ s) = let sq = reduce s in
 
 -- | More general form of 'decrypt' that works for unrestricted output
 -- coefficient types.
-decryptUnrestricted :: (DecryptUCtx t m m' z zp zq)
-  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> PT (Cyc t m zp)
+decryptUnrestricted
+    :: (DecryptUCtx t m m' z zp zq)
+    => SK (Cyc t m' z)
+    -> CT m zp (Cyc t m' zq)
+    -> PT (Cyc t m zp)
 decryptUnrestricted (SK _ s) = let sq = reduce s in
   \ct -> let (CT LSD k l c) = toLSD ct
          in let eval = evaluate c sq
@@ -164,7 +205,7 @@ decryptUnrestricted (SK _ s) = let sq = reduce s in
 ---------- LSD/MSD switching ----------
 
 -- | Constraint synonym for converting between ciphertext encodings.
-type ToSDCtx t m' zp zq = (Encode zp zq, Fact m', CElt t zq)
+type ToSDCtx t m' zp zq = ( Encode zp zq, Fact m', CElt t zq )
 
 toLSD, toMSD :: ToSDCtx t m' zp zq
  => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
@@ -189,8 +230,10 @@ toLSD = let (zpScale, zqScale) = msdToLSD
 
 -- | Rescale a linear polynomial in MSD encoding, for best noise
 -- behavior.
-rescaleLinearMSD :: (RescaleCyc (Cyc t) zq zq', Fact m')
-                    => Polynomial (Cyc t m' zq) -> Polynomial (Cyc t m' zq')
+rescaleLinearMSD
+    :: (RescaleCyc (Cyc t) zq zq', Fact m')
+    => Polynomial (Cyc t m' zq)
+    -> Polynomial (Cyc t m' zq')
 rescaleLinearMSD c = case coeffs c of
   [] -> fromCoeffs []
   [c0] -> fromCoeffs [rescaleCyc Dec c0]
@@ -201,53 +244,66 @@ rescaleLinearMSD c = case coeffs c of
        show (length $ coeffs c)
 
 -- | Rescale a linear ciphertext to a new modulus.
-rescaleLinearCT :: (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq)
-           => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq')
+rescaleLinearCT
+    :: (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq)
+    => CT m zp (Cyc t m' zq)
+    -> CT m zp (Cyc t m' zq')
 rescaleLinearCT ct = let CT MSD k l c = toMSD ct
                      in CT MSD k l $ rescaleLinearMSD c
 
 -- | Constraint synonym for modulus switching.
 type ModSwitchPTCtx t m' zp zp' zq =
-  (Lift' zp, Reduce (LiftOf zp) zp', ToSDCtx t m' zp zq)
+  ( Lift' zp, Reduce (LiftOf zp) zp', ToSDCtx t m' zp zq )
 
 -- | Homomorphically divide a plaintext that is known to be a multiple
 -- of @(p\/p\')@ by that factor, thereby scaling the plaintext modulus
 -- from @p@ to @p\'@.
-modSwitchPT :: (ModSwitchPTCtx t m' zp zp' zq)
-            => CT m zp (Cyc t m' zq) -> CT m zp' (Cyc t m' zq)
+modSwitchPT
+    :: (ModSwitchPTCtx t m' zp zp' zq)
+    => CT m zp (Cyc t m' zq)
+    -> CT m zp' (Cyc t m' zq)
 modSwitchPT ct = let CT MSD k l c = toMSD ct in
     CT MSD k (reduce (lift l)) c
 
 ---------- Key switching ----------
 
 type LWECtx t m' z zq =
-  (ToInteger z, Reduce z zq, Ring zq, Random zq, Fact m', CElt t z, CElt t zq)
+  ( Random zq, Fact m', CElt t z, CElt t zq
+  , Reduce z zq
+  , Reduce (TRep t z) (TRep t zq)
+  , ToInteger (TRep t z), Transcendental (TRep t Double), RealField (TRep t Double)
+  )
 
 -- | An LWE sample for a given secret (corresponding to a linear
 -- ciphertext encrypting 0 in MSD form)
-lweSample :: (LWECtx t m' z zq, MonadRandom rnd)
-             => SK (Cyc t m' z) -> rnd (Polynomial (Cyc t m' zq))
+lweSample
+    :: (LWECtx t m' z zq, MonadRandom rnd)
+    => SK (Cyc t m' z)
+    -> rnd (Polynomial (Cyc t m' zq))
 lweSample (SK svar s) =
-  -- adviseCRT because we call `replicateM (lweSample s)` below, but only want to do CRT once. 
-  let sq = adviseCRT $ negate $ reduce s 
+  -- adviseCRT because we call `replicateM (lweSample s)` below, but only want to do CRT once.
+  let sq = adviseCRT $ negate $ reduce s
   in do
-    e <- errorRounded svar
+    e  <- errorRounded svar
     c1 <- adviseCRT <$> getRandom -- want entire hint to be in CRT form
     return $ fromCoeffs [c1 * sq + reduce (e `asTypeOf` s), c1]
 
 -- | Constraint synonym for generating key-switch hints.
-type KSHintCtx gad t m' z zq = 
-  (LWECtx t m' z zq, Reduce (DecompOf zq) zq, Gadget gad zq,
-   NFElt zq, CElt t (DecompOf zq))
+type KSHintCtx gad t m' z zq =
+  ( LWECtx t m' z zq, Reduce (DecompOf zq) zq, Gadget gad zq
+  , NFElt zq, CElt t (DecompOf zq)
+  )
 
 -- | Generate a hint that "encrypts" a value under a secret key, in
 -- the sense required for key-switching.  The hint works for any
 -- plaintext modulus, but must be applied on a ciphertext in MSD form.
 -- The output is 'force'd, i.e., evaluating it to whnf will actually
 -- cause it to be be evaluated to nf.
-ksHint :: (KSHintCtx gad t m' z zq, MonadRandom rnd)
-          => SK (Cyc t m' z) -> Cyc t m' z
-          -> rnd (Tagged gad [Polynomial (Cyc t m' zq)])
+ksHint
+    :: (KSHintCtx gad t m' z zq, MonadRandom rnd)
+    => SK (Cyc t m' z)
+    -> Cyc t m' z
+    -> rnd (Tagged gad [Polynomial (Cyc t m' zq)])
 ksHint skout val = do -- rnd monad
   let valq = reduce val
       valgad = encode valq
@@ -259,30 +315,40 @@ ksHint skout val = do -- rnd monad
 (*>>) :: (Ring r, Functor f) => r -> f r -> f r
 (*>>) r = fmap (r *)
 
-knapsack :: (Fact m', CElt t zq, r'q ~ Cyc t m' zq)
-            => [Polynomial r'q] -> [r'q] -> Polynomial r'q
+knapsack
+    :: (Fact m', CElt t zq, r'q ~ Cyc t m' zq)
+    => [Polynomial r'q]
+    -> [r'q]
+    -> Polynomial r'q
 -- adviseCRT here because we map (x *) onto each polynomial coeff
 knapsack hint xs = sum $ zipWith (*>>) (adviseCRT <$> xs) hint
 
-type SwitchCtx gad t m' zq = 
-  (Decompose gad zq, Fact m', CElt t zq, CElt t (DecompOf zq))
+type SwitchCtx gad t m' zq =
+  ( Decompose gad zq, Fact m', CElt t zq, CElt t (DecompOf zq)
+  , Reduce (TRep t (DecompOf zq)) (TRep t zq)
+  )
 
 -- Helper function: applies key-switch hint to a ring element.
-switch :: (SwitchCtx gad t m' zq, r'q ~ Cyc t m' zq)
-          => Tagged gad [Polynomial r'q] -> r'q -> Polynomial r'q
+switch
+    :: (SwitchCtx gad t m' zq, r'q ~ Cyc t m' zq)
+    => Tagged gad [Polynomial r'q]
+    -> r'q
+    -> Polynomial r'q
 switch hint c = untag $ knapsack <$> hint <*> (fmap reduce <$> decompose c)
 
 -- | Constraint synonym for key switching.
 type KeySwitchCtx gad t m' zp zq zq' =
-  (RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
-   ToSDCtx t m' zp zq, SwitchCtx gad t m' zq')
+  ( RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq'
+  , ToSDCtx t m' zp zq
+  , SwitchCtx gad t m' zq'
+  )
 
 -- | Switch a linear ciphertext under @s_in@ to a linear one under @s_out@
-keySwitchLinear :: forall gad t m' zp zq zq' z rnd m .
-  (KeySwitchCtx gad t m' zp zq zq', KSHintCtx gad t m' z zq', MonadRandom rnd)
-  => SK (Cyc t m' z)                -- sout
-  -> SK (Cyc t m' z)                -- sin
-  -> TaggedT (gad, zq') rnd (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
+keySwitchLinear
+    :: forall gad t m' zp zq zq' z rnd m . (KeySwitchCtx gad t m' zp zq zq', KSHintCtx gad t m' z zq', MonadRandom rnd)
+    => SK (Cyc t m' z)      -- sout
+    -> SK (Cyc t m' z)      -- sin
+    -> TaggedT (gad, zq') rnd (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
 keySwitchLinear skout (SK _ sin) = tagT $ do
   hint :: Tagged gad [Polynomial (Cyc t m' zq')] <- ksHint skout sin
   return $! hint `seq`
@@ -293,10 +359,10 @@ keySwitchLinear skout (SK _ sin) = tagT $ do
 
 -- | Switch a quadratic ciphertext (i.e., one with three components)
 -- to a linear one under the /same/ key.
-keySwitchQuadCirc :: forall gad t m' zp zq zq' z m rnd .
-  (KeySwitchCtx gad t m' zp zq zq', KSHintCtx gad t m' z zq', MonadRandom rnd)
-  => SK (Cyc t m' z)
-  -> TaggedT (gad, zq') rnd (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
+keySwitchQuadCirc
+    :: forall gad t m' zp zq zq' z m rnd . (KeySwitchCtx gad t m' zp zq zq', KSHintCtx gad t m' z zq', MonadRandom rnd)
+    => SK (Cyc t m' z)
+    -> TaggedT (gad, zq') rnd (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
 keySwitchQuadCirc sk@(SK _ s) = tagT $ do
   hint :: Tagged gad [Polynomial (Cyc t m' zq')] <- ksHint sk (s*s)
   return $ hint `seq` (\ct ->
@@ -308,28 +374,38 @@ keySwitchQuadCirc sk@(SK _ s) = tagT $ do
 ---------- Misc homomorphic operations ----------
 
 type AddScalarCtx t m' zp zq =
-  (Lift' zp, Reduce (LiftOf zp) zq, ToSDCtx t m' zp zq)
+  ( Lift' zp, Reduce (LiftOf zp) zq, ToSDCtx t m' zp zq )
 
 -- | Homomorphically add a public @Z_p@ value to an encrypted value.  The
 -- ciphertext must not carry any @g@ factors.
-addScalar :: (AddScalarCtx t m' zp zq)
-             => zp -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
+addScalar
+    :: (AddScalarCtx t m' zp zq)
+    => zp
+    -> CT m zp (Cyc t m' zq)
+    -> CT m zp (Cyc t m' zq)
 addScalar b ct =
   let (l,c) = case toLSD ct of
-        CT LSD 0 l c -> (l,c)
-        CT LSD _ _ _ -> error "cannot add public scalar to ciphertext with 'g' factors"
+        CT LSD 0 l' c' -> (l',c')
+        CT LSD _ _  _  -> error "cannot add public scalar to ciphertext with 'g' factors"
         _ -> error "internal error: addScalar"
       b' = scalarCyc (reduce $ lift $ b * recip l)
   in CT LSD 0 l $ c + P.const b'
 
 -- | Constraint synonym for adding a public value to an encrypted value
 type AddPublicCtx t m m' zp zq =
-  (Lift' zp, Reduce (LiftOf zp) zq, m `Divides` m',
-   CElt t zp, CElt t (LiftOf zp), ToSDCtx t m' zp zq)
+  ( m `Divides` m'
+  , Lift' zp, Reduce (LiftOf zp) zq
+  , Lift' (TRep t zp), Reduce (LiftOf (TRep t zp)) (TRep t zq)
+  , LiftOf (TRep t zp) ~ TRep t (LiftOf zp)
+  , CElt t zp, CElt t (LiftOf zp), ToSDCtx t m' zp zq
+  )
 
 -- | Homomorphically add a public @R_p@ value to an encrypted value.
-addPublic :: forall t m m' zp zq . (AddPublicCtx t m m' zp zq)
-          => Cyc t m zp -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
+addPublic
+    :: forall t m m' zp zq . (AddPublicCtx t m m' zp zq)
+    => Cyc t m zp
+    -> CT m zp (Cyc t m' zq)
+    -> CT m zp (Cyc t m' zq)
 addPublic b ct = let CT LSD k l c = toLSD ct in
   let linv = scalarCyc $ recip l
       -- multiply public value by appropriate power of g and divide by the
@@ -339,20 +415,29 @@ addPublic b ct = let CT LSD k l c = toLSD ct in
 
 -- | Constraint synonym for multiplying a public value with an encrypted value
 type MulPublicCtx t m m' zp zq =
-  (Lift' zp, Reduce (LiftOf zp) zq, Ring zq, m `Divides` m',
-   CElt t zp, CElt t (LiftOf zp), CElt t zq)
+  ( m `Divides` m', Ring zq
+  , Lift' zp, Reduce (LiftOf zp) zq
+  , Lift' (TRep t zp), Reduce (LiftOf (TRep t zp)) (TRep t zq)
+  , LiftOf (TRep t zp) ~ TRep t (LiftOf zp)
+  , CElt t zp, CElt t (LiftOf zp), CElt t zq
+  )
 
 -- | Homomorphically multiply an encrypted value by a public @R_p@ value.
-mulPublic :: forall t m m' zp zq . (MulPublicCtx t m m' zp zq)
-             => Cyc t m zp -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
+mulPublic
+    :: forall t m m' zp zq . (MulPublicCtx t m m' zp zq)
+    => Cyc t m zp
+    -> CT m zp (Cyc t m' zq)
+    -> CT m zp (Cyc t m' zq)
 mulPublic a (CT enc k l c) =
   let a' = embed (reduce $ liftCyc Pow a :: Cyc t m zq)
   in CT enc k l $ (a' *) <$> c
 
 -- | Increment the internal g exponent without changing the encrypted
 -- message.
-mulGCT :: (Fact m', CElt t zq)
-          => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
+mulGCT
+    :: (Fact m', CElt t zq)
+    => CT m zp (Cyc t m' zq)
+    -> CT m zp (Cyc t m' zq)
 mulGCT (CT enc k l c) = CT enc (k+1) l $ mulG <$> c
 
 ---------- NumericPrelude instances ----------
@@ -394,14 +479,20 @@ instance (ToSDCtx t m' zp zq, Additive (CT m zp (Cyc t m' zq)))
 ---------- Ring switching ----------
 
 type AbsorbGCtx t m' zp zq =
-  (Lift' zp, Reduce (LiftOf zp) zq, Ring zp, Ring zq, Fact m',
-   CElt t (LiftOf zp), CElt t zp, CElt t zq)
+  ( Ring zp, Ring zq, Fact m'
+  , Lift' zp, Reduce (LiftOf zp) zq
+  , Lift' (TRep t zp), Reduce (LiftOf (TRep t zp)) (TRep t zq)
+  , LiftOf (TRep t zp) ~ TRep t (LiftOf zp)
+  , CElt t (LiftOf zp), CElt t zp, CElt t zq
+  )
 
 -- | "Absorb" the powers of g associated with the ciphertext, at the
 -- cost of some increase in noise. This is usually needed before
 -- changing the index of the ciphertext ring.
-absorbGFactors :: forall t zp zq m m' . (AbsorbGCtx t m' zp zq)
-                  => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
+absorbGFactors
+    :: forall t zp zq m m' . (AbsorbGCtx t m' zp zq)
+    => CT m zp (Cyc t m' zq)
+    -> CT m zp (Cyc t m' zq)
 absorbGFactors ct@(CT enc k l c)
   | k == 0 = ct
   | k > 0 = let d :: Cyc t m' zp = iterate divG' one !! k
@@ -413,9 +504,10 @@ absorbGFactors ct@(CT enc k l c)
 -- ciphertext in T' encrypting a plaintext in T. The target ciphertext
 -- ring T' must contain both the the source ciphertext ring R' and the
 -- target plaintext ring T.
-embedCT :: (CElt t zq,
-            r `Divides` r', s `Divides` s', r `Divides` s, r' `Divides` s')
-           => CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
+embedCT
+    :: (CElt t zq, r `Divides` r', s `Divides` s', r `Divides` s, r' `Divides` s')
+    => CT r zp (Cyc t r' zq)
+    -> CT s zp (Cyc t s' zq)
 -- We could call absorbGFactors first, insead of error.  Embedding
 -- *essentially* maintains the invariant that noise*g is "round."
 -- While g'/g can be non-spherical, it only stretches by at most a
@@ -433,9 +525,10 @@ embedSK (SK v s) = SK v $ embed s
 -- target plaintext ring @S@ must contain the intersection of the
 -- source plaintext ring @T@ and the target ciphertext ring @S\'@.
 -- Here we make the stricter requirement that @s = gcd(s\', t)@.
-twaceCT :: (CElt t zq, r `Divides` r', s' `Divides` r',
-            s ~ (FGCD s' r))
-           => CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
+twaceCT
+    :: (CElt t zq, r `Divides` r', s' `Divides` r', s ~ (FGCD s' r))
+    => CT r zp (Cyc t r' zq)
+    -> CT s zp (Cyc t s' zq)
 -- we could call absorbGFactors first, insead of error
 twaceCT (CT d 0 l c) = CT d 0 l (twace <$> c)
 twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
@@ -443,25 +536,28 @@ twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 
 -- | Constraint synonym for ring tunneling.
 type TunnelCtx t e r s e' r' s' z zp zq gad =
-  (ExtendLinIdx e r s e' r' s',     -- liftLin
-   e' ~ (e * (r' / r)),             -- convenience; implied by prev constraint
-   ToSDCtx t r' zp zq,              -- toMSD
-   KSHintCtx gad t r' z zq,         -- ksHint
-   Reduce z zq,                     -- Reduce on Linear
-   Lift zp z,                       -- liftLin
-   CElt t zp,                       -- liftLin
-   SwitchCtx gad t s' zq)           -- switch
+  ( ExtendLinIdx e r s e' r' s'     -- liftLin
+  , e' ~ (e * (r' / r))             -- convenience; implied by prev constraint
+  , ToSDCtx t r' zp zq              -- toMSD
+  , KSHintCtx gad t r' z zq         -- ksHint
+  , Reduce z zq                     -- Reduce on Linear
+  , Lift zp z                       -- liftLin
+  , CElt t zp                       -- liftLin
+  , SwitchCtx gad t s' zq           -- switch
+  , Lift' (TRep t zp)
+  , LiftOf (TRep t zp) ~ TRep t z
+  )
 
 -- | Homomorphically apply the @E@-linear function that maps the
 -- elements of the decoding basis of @R\/E@ to the corresponding
 -- @S@-elements in the input array.
-tunnelCT :: forall gad t e r s e' r' s' z zp zq rnd .
-  (TunnelCtx t e r s e' r' s' z zp zq gad,
-   MonadRandom rnd)
-  => Linear t zp e r s
-  -> SK (Cyc t s' z)
-  -> SK (Cyc t r' z)
-  -> TaggedT gad rnd (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq))
+tunnelCT
+    :: forall gad t e r s e' r' s' z zp zq rnd .
+       (TunnelCtx t e r s e' r' s' z zp zq gad, MonadRandom rnd)
+    => Linear t zp e r s
+    -> SK (Cyc t s' z)
+    -> SK (Cyc t r' z)
+    -> TaggedT gad rnd (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq))
 tunnelCT f skout (SK _ sin) = tagT $ (do -- in rnd
   -- generate hints
   let f' = extendLin $ lift f :: Linear t z e' r' s'
@@ -487,3 +583,4 @@ tunnelCT f skout (SK _ sin) = tagT $ (do -- in rnd
         c1' = sum c1s'
     in CT MSD 0 s $ P.const c0' + c1')
       \\ lcmDivides (Proxy::Proxy r) (Proxy::Proxy e')
+
