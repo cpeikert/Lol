@@ -1,5 +1,5 @@
 name:                lol
--- The package version.  See the Haskell package versioning policy (PVP) 
+-- The package version.  See the Haskell package versioning policy (PVP)
 -- for standards guiding when and how versions should be incremented.
 -- http://www.haskell.org/haskellwiki/Package_versioning_policy
 -- PVP summary:      +-+------- breaking API changes
@@ -20,9 +20,6 @@ build-type:          Simple
 extra-source-files:  README, CHANGES.md,
                      benchmarks/CycBenches.hs,
                      benchmarks/ZqBenches.hs,
-                     tests/CycTests.hs,
-                     tests/ZqTests.hs,
-                     tests/TensorTests.hs,
                      utils/Apply.hs,
                      utils/Benchmarks.hs,
                      utils/Gen.hs,
@@ -30,28 +27,32 @@ extra-source-files:  README, CHANGES.md,
                      utils/TestTypes.hs,
                      utils/Utils.hs,
                      utils/Harness/Cyc.hs,
-                     Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
+                     Crypto/Lol/Cyclotomic/Tensor/C/tensorTypes.h
 cabal-version:       >= 1.10
-description:         
+description:
     Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
-    For a detailed description of interfaces and functionality, see 
+    For a detailed description of interfaces and functionality, see
     <https://eprint.iacr.org/2015/1134 Λ ○ λ: A Functional Library for Lattice Cryptography>.
-    For example cryptographic applications, see <https://hackage.haskell.org/package/lol-apps lol-apps>.
+    .
+    For example cryptographic applications, see
+    <https://hackage.haskell.org/package/lol-apps lol-apps>.
+    .
+
 source-repository head
   type: git
   location: https://github.com/cpeikert/Lol
 
--- For information on compiling C with cabal: http://blog.ezyang.com/2010/06/setting-up-cabal-the-ffi-and-c2hs/
+-- For information on compiling C with cabal:
+-- http://blog.ezyang.com/2010/06/setting-up-cabal-the-ffi-and-c2hs/
 
-Flag useICC
-  Description: Use ICC instead of GCC to compile C backend.
+Flag icc
   Default:     False
+  Description: Use ICC instead of GCC to compile C backend.
 
 Flag llvm
+  Default:      False
   Description:  Compile via LLVM. This produces much better object code,
                 but you need to have the LLVM compiler installed.
-
-  Default:      False
 
 Flag opt
   Description: Turn on library optimizations
@@ -59,146 +60,112 @@ Flag opt
   Manual:      False
 
 library
-  Include-dirs: Crypto/Lol/Cyclotomic/Tensor/CTensor
-  C-sources: Crypto/Lol/Cyclotomic/Tensor/CTensor/basic.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/crt.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/g.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/generalfuncs.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/l.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/norm.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/random.c
-  Includes: Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
+  Include-dirs: Crypto/Lol/Cyclotomic/Tensor/C
+  C-sources:    Crypto/Lol/Cyclotomic/Tensor/C/basic.c
+                Crypto/Lol/Cyclotomic/Tensor/C/crt.c
+                Crypto/Lol/Cyclotomic/Tensor/C/g.c
+                Crypto/Lol/Cyclotomic/Tensor/C/generalfuncs.c
+                Crypto/Lol/Cyclotomic/Tensor/C/l.c
+                Crypto/Lol/Cyclotomic/Tensor/C/norm.c
+                Crypto/Lol/Cyclotomic/Tensor/C/random.c
+
+  Includes:     Crypto/Lol/Cyclotomic/Tensor/C/tensorTypes.h
+
   default-language:   Haskell2010
 
-  if flag(useICC)
-    ghc-options: -pgml icc -optc-O3 
+  if flag(icc)
+    ghc-options: -pgml icc -optc-O3
     cc-options: -std=gnu99 -Wall -DSTATS -DCINTRIN
   else
-    ghc-options: -pgml gcc -fPIC -optc-O3 
+    ghc-options: -pgml gcc -fPIC -optc-O3
     cc-options: -std=gnu99 -fPIC -Wall
 
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
 
-  ghc-options: -fwarn-dodgy-imports
+  ghc-options: -Wall
+
   -- ghc optimizations
   if flag(opt)
-    ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+    ghc-options:  -O3 -Odph
+                  -fno-liberate-case
+                  -funbox-strict-fields
+                  -funfolding-use-threshold1000
+                  -funfolding-keeness-factor1000
 
-  exposed-modules: 
+  exposed-modules:
     Crypto.Lol
-    Crypto.Lol.PosBin
-    Crypto.Lol.Factored
-    Crypto.Lol.Reflects
     Crypto.Lol.CRTrans
+    Crypto.Lol.Factored
     Crypto.Lol.Gadget
     Crypto.Lol.LatticePrelude
+    Crypto.Lol.PosBin
+    Crypto.Lol.Reflects
 
     Crypto.Lol.Cyclotomic.Cyc
-    Crypto.Lol.Cyclotomic.UCyc
-    Crypto.Lol.Cyclotomic.RescaleCyc
     Crypto.Lol.Cyclotomic.Linear
+    Crypto.Lol.Cyclotomic.RescaleCyc
+    Crypto.Lol.Cyclotomic.UCyc
 
     Crypto.Lol.Cyclotomic.Tensor
-    Crypto.Lol.Cyclotomic.Tensor.CTensor
-    Crypto.Lol.Cyclotomic.Tensor.RepaTensor
-    
-    Crypto.Lol.Types.Random
+    Crypto.Lol.Cyclotomic.Tensor.C
+    Crypto.Lol.Cyclotomic.Tensor.Repa
+    Crypto.Lol.Cyclotomic.Tensor.Representation
+
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
+    Crypto.Lol.Types.Random
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.ZqBasic
 
+    -- exposed but hidden
+    Crypto.Lol.GaussRandom
+    Crypto.Lol.Types.Complex
+    Crypto.Lol.Types.IZipVector
+    Crypto.Lol.Types.ZmStar
+
   other-modules:
-        
     Crypto.Lol.FactoredDefs
     Crypto.Lol.PosBinDefs
-    Crypto.Lol.GaussRandom
-    Crypto.Lol.Types.ZmStar
-    Crypto.Lol.Types.Complex
     Crypto.Lol.Types.Numeric
-    Crypto.Lol.Types.IZipVector
-    Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
-    Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
-    Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
-    Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
-    Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon
-    Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
-    Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
+
+    -- Repa backend
+    Crypto.Lol.Cyclotomic.Tensor.Repa.CRT
+    Crypto.Lol.Cyclotomic.Tensor.Repa.Common
+    Crypto.Lol.Cyclotomic.Tensor.Repa.Dec
+    Crypto.Lol.Cyclotomic.Tensor.Repa.Extension
+    Crypto.Lol.Cyclotomic.Tensor.Repa.GL
+
+    -- C backend
+    Crypto.Lol.Cyclotomic.Tensor.C.Backend
+    Crypto.Lol.Cyclotomic.Tensor.C.Extension
 
   build-depends:
-    arithmoi >= 0.4.1.3 && <0.5,
-    base==4.8.*,
-    binary,
-    bytestring,
-    constraints,
-    containers >= 0.5.6.2 && < 0.6,
-    crypto-api,
-    data-default >= 0.3.0 && < 0.6,
-    deepseq >= 1.4.1.1 && <1.5,
-    MonadRandom >= 0.2 && < 0.5,
-    mtl >= 2.2.1 && < 2.3,
-    numeric-prelude >= 0.4.2 && < 0.5,
-    QuickCheck >= 2.8 && < 2.9,
-    random >= 1.1 && < 1.2,
-    reflection >= 1.5.1 && < 2.2,
-    repa==3.4.*,
-    singletons >= 1.1.2.1 && < 2.1,
-    storable-record >= 0.0.3 && < 0.1,
-    th-desugar >= 1.5.4 && < 1.6,
-    tagged-transformer >= 0.7 && < 0.9,
-    template-haskell  >=  2.2.0.0,
-    transformers >= 0.4.2.0 && < 0.5,
-    vector==0.11.*,
-    vector-th-unbox >= 0.2.1.0 && < 0.3
+      base               == 4.8.*
+    , arithmoi           >= 0.4.1.3 && <0.5
+    , binary
+    , bytestring
+    , constraints
+    , containers         >= 0.5.6.2 && < 0.6
+    , crypto-api
+    , data-default       >= 0.3.0   && < 0.6
+    , deepseq            >= 1.4.1.1 && < 1.5
+    , MonadRandom        >= 0.2     && < 0.5
+    , mtl                >= 2.2.1   && < 2.3
+    , numeric-prelude    >= 0.4.2   && <0.5
+    , QuickCheck         >= 2.8     && < 2.9
+    , random             >= 1.1     && < 1.2
+    , reflection         >= 1.5.1   && < 2.2
+    , repa               == 3.4.*
+    , singletons         >= 1.1.2.1 && < 2.1
+    , storable-record    >= 0.0.3   && < 0.1
+    , tagged-transformer >= 0.7     && < 0.9
+    , template-haskell   >= 2.2.0.0
+    , th-desugar         >= 1.5.4   && < 1.6
+    , transformers       >= 0.4.2.0 && < 0.5
+    , vector             == 0.11.*
+    , vector-th-unbox    >= 0.2.1.0 && < 0.3
 
-  other-extensions: TemplateHaskell
 
-test-suite test-lol
-  type:               exitcode-stdio-1.0
-  hs-source-dirs:     tests,utils
-  default-language:   Haskell2010
-  main-is:            Main.hs
+-- vim: nospell
 
-  ghc-options: -threaded -rtsopts
-
-  build-depends:
-    base,
-    constraints,
-    deepseq,
-    DRBG,
-    lol,
-    MonadRandom,
-    mtl,
-    QuickCheck >= 2.8 && < 2.9,
-    random,
-    repa,
-    singletons,
-    test-framework >= 0.8 && < 0.9,
-    test-framework-quickcheck2 >= 0.3 && < 0.4,
-    vector
-
-Benchmark bench-lol
-  type:               exitcode-stdio-1.0
-  hs-source-dirs:     benchmarks,utils
-  default-language:   Haskell2010
-  main-is:            Main.hs
-
-  -- if flag(llvm)
-  --   ghc-options: -fllvm -optlo-O3
-  ghc-options: -threaded -rtsopts
-  -- ghc-options: -O2 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
-  -- ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
-
-  build-depends:
-    base,
-    criterion,
-    deepseq,
-    DRBG,
-    lol,
-    MonadRandom,
-    mtl,
-    singletons,
-    transformers,
-    vector,
-    repa                        

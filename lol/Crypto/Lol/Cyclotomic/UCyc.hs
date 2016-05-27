@@ -1,8 +1,18 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, InstanceSigs, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
-             ScopedTypeVariables, TypeFamilies, TypeOperators,
-             UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 -- | A low-level implementation of cyclotomic rings that allows (and
 -- requires) the programmer to control the underlying representation
@@ -15,45 +25,46 @@
 -- The acceptable range of inputs for each function is determined by
 -- the internal linear transforms and other operations it performs.
 
-module Crypto.Lol.Cyclotomic.UCyc
-(
--- * Data types and constraints
-  UCyc, P, D, C, E, UCycEC, UCRTElt, NFElt
--- * Changing representation
-, toPow, toDec, toCRT, fmapPow, fmapDec
-, unzipPow, unzipDec, unzipCRTC, unzipCRTE
--- * Scalars
-, scalarPow, scalarCRT
--- * Basic operations
-, mulG, divG, gSqNorm
--- * Error sampling
-, tGaussian, errorRounded, errorCoset
--- * Inter-ring operations and values
-, embedPow, embedDec, embedCRTC, embedCRTE
-, twacePow, twaceDec, twaceCRTC, twaceCRTE
-, coeffsPow, coeffsDec, powBasis, crtSet
+module Crypto.Lol.Cyclotomic.UCyc (
+
+  -- * Data types and constraints
+    UCyc, P, D, C, E, UCycEC, UCRTElt, NFElt
+  -- * Changing representation
+  , toPow, toDec, toCRT, fmapPow, fmapDec
+  , unzipPow, unzipDec, unzipCRTC, unzipCRTE
+  -- * Scalars
+  , scalarPow, scalarCRT
+  -- * Basic operations
+  , mulG, divG, gSqNorm
+  -- * Error sampling
+  , tGaussian, errorRounded, errorCoset
+  -- * Inter-ring operations and values
+  , embedPow, embedDec, embedCRTC, embedCRTE
+  , twacePow, twaceDec, twaceCRTC, twaceCRTE
+  , coeffsPow, coeffsDec, powBasis, crtSet
+
 ) where
 
-import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
-                                            scalarCRT, scalarPow, twaceCRT)
+import Crypto.Lol.Cyclotomic.Tensor hiding
+  ( embedCRT, embedDec, embedPow, scalarCRT, scalarPow, twaceCRT )
 
 import           Crypto.Lol.CRTrans
-import qualified Crypto.Lol.Cyclotomic.Tensor as T
-import           Crypto.Lol.LatticePrelude    as LP
+import           Crypto.Lol.LatticePrelude                          as LP
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZPP
+import qualified Crypto.Lol.Cyclotomic.Tensor                       as T
 
-import qualified Algebra.Additive     as Additive (C)
-import qualified Algebra.Module       as Module (C)
-import qualified Algebra.Ring         as Ring (C)
-import qualified Algebra.ZeroTestable as ZeroTestable (C)
+import qualified Algebra.Additive                                   as Additive (C)
+import qualified Algebra.Module                                     as Module (C)
+import qualified Algebra.Ring                                       as Ring (C)
+import qualified Algebra.ZeroTestable                               as ZeroTestable (C)
 
-import Control.Applicative    as A
+import Control.Applicative                                          as A
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity
+import Control.Monad.Identity                                       hiding ( ap )
 import Control.Monad.Random
-import Data.Foldable          as F
+import Data.Foldable                                                as F
 import Data.Maybe
 import Data.Traversable
 import Test.QuickCheck
@@ -87,28 +98,41 @@ data UCyc t m rep r where
   -- Internal invariant: for a given (t,m,r), exactly one of these two
   -- types can have values created : CRTr if crtFuncs exists,
   -- otherwise CRTe
-  CRTr :: !(t m r) -> UCyc t m C r
+  CRTr :: !(t m r)          -> UCyc t m C r
   CRTe :: !(t m (CRTExt r)) -> UCyc t m E r
 
 -- | Constraints needed for CRT-related operations on 'UCyc' data.
-type UCRTElt t r = (Tensor t, CRTEmbed r,
-                    CRTrans Maybe r, TElt t r,
-                    CRTrans Identity (CRTExt r), TElt t (CRTExt r))
+type UCRTElt t r =
+    ( Tensor t
+    , CRTEmbed (TRep t r)
+    , CRTrans Maybe    (TRep t Int) (TRep t r),          TElt t r
+    , CRTrans Identity (TRep t Int) (TRep t (CRTExt r)), TElt t (CRTExt r)
+    , TRep t (CRTExt r) ~ CRTExt (TRep t r)
+    )
 
 -- | Convenient synonym for 'deepseq'-able element type.
 type NFElt r = (NFData r, NFData (CRTExt r))
 
 -- | Embed a scalar from the base ring.
-scalarPow :: (Tensor t, Fact m, Ring r, TElt t r) => r -> UCyc t m P r
-scalarPow = Pow . T.scalarPow
+scalarPow
+    :: forall t m r. (Tensor t, Fact m, Additive (TRep t r), TElt t r)
+    => r
+    -> UCyc t m P r
+scalarPow x = Pow $ T.scalarPow (proxy (constant x) (Proxy::Proxy t))
 {-# INLINABLE scalarPow #-}
 
 -- | Embed a scalar from the base ring.
-scalarCRT :: (Fact m, UCRTElt t r) => r -> UCycEC t m r
-scalarCRT = fromMaybe
-            (Left . CRTe . runIdentity T.scalarCRT . toExt)
-            (((Right .) CRTr .) <$> T.scalarCRT)
+scalarCRT
+    :: forall m t r. (Fact m, UCRTElt t r)
+    => r
+    -> UCycEC t m r
+scalarCRT x =
+  let x' = proxy (constant x) (Proxy::Proxy t) in
+  case T.scalarCRT of
+    Just f  -> Right $ CRTr (f x')
+    Nothing -> Left  $ CRTe (runIdentity T.scalarCRT (toExt x'))
 {-# INLINABLE scalarCRT #-}
+
 
 -- Eq instances
 
@@ -149,21 +173,23 @@ instance (ZeroTestable r, Tensor t, Fact m, TElt t r)
 
 -- Additive instances
 
-instance (Additive r, Tensor t, Fact m, TElt t r) => Additive.C (UCyc t m P r) where
-  zero = Pow $ T.scalarPow zero
+instance (Tensor t, Additive r, Additive (TRep t r), Fact m, TElt t r)
+    => Additive.C (UCyc t m P r) where
+  zero                = Pow $ T.scalarPow zero
   (Pow v1) + (Pow v2) = Pow $ zipWithT (+) v1 v2
   (Pow v1) - (Pow v2) = Pow $ zipWithT (-) v1 v2
-  negate (Pow v) = Pow $ fmapT negate v
+  negate (Pow v)      = Pow $ fmapT negate v
   {-# INLINABLE zero #-}
   {-# INLINABLE (+) #-}
   {-# INLINABLE (-) #-}
   {-# INLINABLE negate #-}
 
-instance (Additive r, Tensor t, Fact m, TElt t r) => Additive.C (UCyc t m D r) where
-  zero = Dec $ T.scalarPow zero -- scalarPow works because it's zero
+instance (Tensor t, Additive r, Additive (TRep t r), Fact m, TElt t r)
+    => Additive.C (UCyc t m D r) where
+  zero                = Dec $ T.scalarPow zero -- scalarPow works because it's zero
   (Dec v1) + (Dec v2) = Dec $ zipWithT (+) v1 v2
   (Dec v1) - (Dec v2) = Dec $ zipWithT (-) v1 v2
-  negate (Dec v) = Dec $ fmapT negate v
+  negate (Dec v)      = Dec $ fmapT negate v
   {-# INLINABLE zero #-}
   {-# INLINABLE (+) #-}
   {-# INLINABLE (-) #-}
@@ -172,22 +198,22 @@ instance (Additive r, Tensor t, Fact m, TElt t r) => Additive.C (UCyc t m D r) w
 -- no Additive instances for C/E alone, because 'zero' would violate
 -- 'UCyc' invariant if C/E were invalid representations
 
-instance (Fact m, UCRTElt t r) => Additive.C (UCycEC t m r) where
+instance (Fact m, Ring r, UCRTElt t r) => Additive.C (UCycEC t m r) where
 
   zero = scalarCRT zero
 
   -- CJP: precision OK?  Alternatively, switch to pow and back after
   -- adding/subtracting.  Expensive, but necessary given output type.
   (Right (CRTr v1)) + (Right (CRTr v2)) = Right $ CRTr $ zipWithT (+) v1 v2
-  (Left (CRTe v1)) + (Left (CRTe v2)) = Left $ CRTe $ zipWithT (+) v1 v2
+  (Left  (CRTe v1)) + (Left  (CRTe v2)) = Left  $ CRTe $ zipWithT (+) v1 v2
   _ + _ = error "UCyc (+) internal error: mixed CRTr/CRTe"
 
   (Right (CRTr v1)) - (Right (CRTr v2)) = Right $ CRTr $ zipWithT (-) v1 v2
-  (Left (CRTe v1)) - (Left (CRTe v2)) = Left $ CRTe $ zipWithT (-) v1 v2
+  (Left  (CRTe v1)) - (Left  (CRTe v2)) = Left  $ CRTe $ zipWithT (-) v1 v2
   _ - _ = error "UCyc (-) internal error: mixed CRTr/CRTe"
 
   negate (Right (CRTr v)) = Right $ CRTr $ fmapT negate v
-  negate (Left (CRTe v)) = Left $ CRTe $ fmapT negate v
+  negate (Left  (CRTe v)) = Left  $ CRTe $ fmapT negate v
 
   {-# INLINABLE zero #-}
   {-# INLINABLE (+) #-}
@@ -196,47 +222,51 @@ instance (Fact m, UCRTElt t r) => Additive.C (UCycEC t m r) where
 
 -- Ring instance: only for CRT
 
-instance (Fact m, UCRTElt t r) => Ring.C (UCycEC t m r) where
-  
-  one = scalarCRT one
-  fromInteger c = scalarCRT $ fromInteger c
+instance (Fact m, Ring r, UCRTElt t r) => Ring.C (UCycEC t m r) where
+
+  one           = scalarCRT one
+  fromInteger c = scalarCRT (fromInteger c)
 
   (Right (CRTr v1)) * (Right (CRTr v2)) = Right $ CRTr $ zipWithT (*) v1 v2
-  (Left (CRTe v1)) * (Left (CRTe v2)) = Left $ CRTe $ zipWithT (*) v1 v2
+  (Left  (CRTe v1)) * (Left  (CRTe v2)) = Left  $ CRTe $ zipWithT (*) v1 v2
   _ * _ = error "UCyc internal error: mixed CRTr/CRTe"
 
   {-# INLINABLE one #-}
   {-# INLINABLE fromInteger #-}
   {-# INLINABLE (*) #-}
 
-
-instance (Ring r, Tensor t, Fact m, TElt t r) => Module.C r (UCyc t m P r) where
-  r *> (Pow v) = Pow $ fmapT (r *) v
+instance (Tensor t, Ring r, Ring (TRep t r), Fact m, TElt t r)
+    => Module.C r (UCyc t m P r) where
+  r *> Pow v = Pow $ fmapT (proxy (constant r) (Proxy::Proxy t) *) v
   {-# INLINABLE (*>) #-}
 
-instance (Ring r, Tensor t, Fact m, TElt t r) => Module.C r (UCyc t m D r) where
-  r *> (Dec v) = Dec $ fmapT (r *) v
+instance (Tensor t, Ring r, Ring (TRep t r), Fact m, TElt t r)
+    => Module.C r (UCyc t m D r) where
+  r *> (Dec v) = Dec $ fmapT (proxy (constant r) (Proxy::Proxy t) *) v
   {-# INLINABLE (*>) #-}
 
-instance (Ring r, Fact m, UCRTElt t r) => Module.C r (UCycEC t m r) where
-
-  r *> (Right (CRTr v)) = Right $ CRTr $ fmapT (r *) v
-  r *> (Left (CRTe v)) = Left $ CRTe $ fmapT (toExt r *) v
+instance (Ring r, Fact m, UCRTElt t r)
+    => Module.C r (UCycEC t m r) where
+  r *> Right (CRTr v) = Right $ CRTr $ fmapT (proxy (constant r) (Proxy::Proxy t) *) v
+  r *> Left (CRTe v)  = Left  $ CRTe $ let r' = proxy (constant r) (Proxy::Proxy t)
+                                           re = toExt r'
+                                       in
+                                       fmapT (re *) v
   {-# INLINABLE (*>) #-}
 
-instance (GFCtx fp d, Fact m, Tensor t, TElt t fp)
+instance (Tensor t, GFCtx fp d, Additive (TRep t fp), Fact m, TElt t fp)
          => Module.C (GF fp d) (UCyc t m P fp) where
   -- can use any r-basis to define module mult, but must be
   -- consistent.
   r *> (Pow v) = Pow $ r LP.*> v \\ witness entailModuleT (r,v)
 
 
-instance (Reduce a b, Tensor t, Fact m, TElt t a, TElt t b)
+instance (Tensor t, Reduce a b, Reduce (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
     => Reduce (UCyc t m P a) (UCyc t m P b) where
   reduce (Pow v) = Pow $ fmapT reduce v
   {-# INLINABLE reduce #-}
 
-instance (Reduce a b, Tensor t, Fact m, TElt t a, TElt t b)
+instance (Tensor t, Reduce a b, Reduce (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
     => Reduce (UCyc t m D a) (UCyc t m D b) where
   reduce (Dec v) = Dec $ fmapT reduce v
   {-# INLINABLE reduce #-}
@@ -247,24 +277,26 @@ instance (Reduce a b, Tensor t, Fact m, TElt t a, TElt t b)
 type instance LiftOf (UCyc t m P r) = UCyc t m P (LiftOf r)
 type instance LiftOf (UCyc t m D r) = UCyc t m D (LiftOf r)
 
-instance (Lift' r, Tensor t, Fact m, TElt t r, TElt t (LiftOf r))
+instance ( Tensor t, Lift' r, Lift' (TRep t r), Fact m, TElt t r, TElt t (LiftOf r)
+         , TRep t (LiftOf r) ~ LiftOf (TRep t r)) -- TLM: hmm...
          => Lift' (UCyc t m P r) where
   lift (Pow v) = Pow $ fmapT lift v
   {-# INLINABLE lift #-}
 
-instance (Lift' r, Tensor t, Fact m, TElt t r, TElt t (LiftOf r))
+instance ( Tensor t, Lift' r, Lift' (TRep t r), Fact m, TElt t r, TElt t (LiftOf r)
+         , TRep t (LiftOf r) ~ LiftOf (TRep t r)) -- TLM: hmm...
          => Lift' (UCyc t m D r) where
   lift (Dec v) = Dec $ fmapT lift v
   {-# INLINABLE lift #-}
 
 -- CJP: no Lift' for C because CRT basis may not exist for target type
 
-instance (Rescale a b, Tensor t, Fact m, TElt t a, TElt t b)
+instance (Tensor t, Rescale a b, Rescale (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
          => Rescale (UCyc t m P a) (UCyc t m P b) where
   rescale (Pow v) = Pow $ fmapT rescale v
   {-# INLINABLE rescale #-}
 
-instance (Rescale a b, Tensor t, Fact m, TElt t a, TElt t b)
+instance (Tensor t, Rescale a b, Rescale (TRep t a) (TRep t b), Fact m, TElt t a, TElt t b)
          => Rescale (UCyc t m D a) (UCyc t m D b) where
   rescale (Dec v) = Dec $ fmapT rescale v
   {-# INLINABLE rescale #-}
@@ -281,91 +313,114 @@ instance (Rescale a b, Tensor t, Fact m, TElt t a, TElt t b)
 
 -- | Type-restricted (and potentially more efficient) 'fmap' for
 -- powerful-basis representation.
-fmapPow :: (Tensor t, Fact m, TElt t a, TElt t b)
-           => (a -> b) -> UCyc t m P a -> UCyc t m P b
+fmapPow
+    :: (Tensor t, Fact m, TElt t a, TElt t b)
+    => (TRep t a -> TRep t b)
+    -> UCyc t m P a
+    -> UCyc t m P b
 fmapPow f (Pow v) = Pow $ fmapT f v
 {-# INLINABLE fmapPow #-}
 
+
 -- | Type-restricted (and potentially more efficient) 'fmap' for
 -- decoding-basis representation.
-fmapDec :: (Tensor t, Fact m, TElt t a, TElt t b)
-           => (a -> b) -> UCyc t m D a -> UCyc t m D b
+fmapDec
+    :: (Tensor t, Fact m, TElt t a, TElt t b)
+    => (TRep t a -> TRep t b)
+    -> UCyc t m D a
+    -> UCyc t m D b
 fmapDec f (Dec v) = Dec $ fmapT f v
 {-# INLINABLE fmapDec #-}
 
 -- | Unzip in the powerful basis.
-unzipPow :: (Tensor t, Fact m, TElt t (a,b), TElt t a, TElt t b)
-            => UCyc t m P (a,b) -> (UCyc t m P a, UCyc t m P b)
+unzipPow
+    :: (Tensor t, Fact m, TElt t (a,b), TElt t a, TElt t b)
+    => UCyc t m P (a,b)
+    -> (UCyc t m P a, UCyc t m P b)
 {-# INLINABLE unzipPow #-}
 unzipPow (Pow v) = Pow *** Pow $ unzipT v
 
 -- | Unzip in the decoding basis.
-unzipDec :: (Tensor t, Fact m, TElt t (a,b), TElt t a, TElt t b)
-            => UCyc t m D (a,b) -> (UCyc t m D a, UCyc t m D b)
+unzipDec
+    :: (Tensor t, Fact m, TElt t (a,b), TElt t a, TElt t b)
+    => UCyc t m D (a,b)
+    -> (UCyc t m D a, UCyc t m D b)
 {-# INLINABLE unzipDec #-}
 unzipDec (Dec v) = Dec *** Dec $ unzipT v
 
 -- | Unzip in the CRT basis over the base ring.  The output components
 -- are 'Either's because each target base ring may not support 'C'.
-unzipCRTC :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
-             => UCyc t m C (a,b)
-             -> (Either (UCyc t m P a) (UCyc t m C a),
-                 Either (UCyc t m P b) (UCyc t m C b))
+unzipCRTC
+    :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
+    => UCyc t m C (a,b)
+    -> ( Either (UCyc t m P a) (UCyc t m C a)
+       , Either (UCyc t m P b) (UCyc t m C b)
+       )
 unzipCRTC (CRTr v)
-  = let (a,b) = unzipT v
+  = let (a,b)   = unzipT v
         (ac,bc) = CRTr *** CRTr $ (a,b)
         -- safe because we're already in CRT C
-        crtinv = fromJust' "UCyc unzipCRTC" crtInv
+        crtinv  = fromJust' "UCyc unzipCRTC" crtInv
         (ap,bp) = Pow *** Pow $ unzipT $ crtinv v
     in (fromMaybe (Left ap) (witnessT hasCRTFuncs a A.*> pure (Right ac)),
         fromMaybe (Left bp) (witnessT hasCRTFuncs b A.*> pure (Right bc)))
 
+
 -- | Unzip in the CRT basis over the extension of the base ring.  The
 -- output components are 'Either's because each target base might
 -- instead support 'C'.
-unzipCRTE :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
-             => UCyc t m E (a,b)
-             -> (Either (UCyc t m P a) (UCyc t m E a),
-                 Either (UCyc t m P b) (UCyc t m E b))
+unzipCRTE
+    :: forall t m a b. ( Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b
+                       , CRTExt (a,b) ~ (CRTExt a, CRTExt b))
+    => UCyc t m E (a,b)
+    -> ( Either (UCyc t m P a) (UCyc t m E a)
+       , Either (UCyc t m P b) (UCyc t m E b)
+       )
 unzipCRTE (CRTe v)
   = let (ae,be) = CRTe *** CRTe $ unzipT v
         (a',b') = unzipT $ fmapT fromExt $ runIdentity crtInv v
-        (ap,bp) = Pow *** Pow $ (a',b')
-    in (fromMaybe (Right ae) (witnessT hasCRTFuncs a' A.*> pure (Left ap)),
-        fromMaybe (Right be) (witnessT hasCRTFuncs b' A.*> pure (Left bp)))
+    in (fromMaybe (Right ae) (witnessT hasCRTFuncs a' A.*> pure (Left (Pow a'))),
+        fromMaybe (Right be) (witnessT hasCRTFuncs b' A.*> pure (Left (Pow b'))))
 
 
 -- | Multiply by the special element @g@.
 mulG :: (Tensor t, Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
 {-# INLINABLE mulG #-}
-mulG (Pow v) = Pow $ mulGPow v
-mulG (Dec v) = Dec $ mulGDec v
+mulG (Pow v)  = Pow $ mulGPow v
+mulG (Dec v)  = Dec $ mulGDec v
 -- fromJust is safe here because we're already in CRTr
 mulG (CRTr v) = CRTr $ fromJust' "UCyc.mulG CRTr" mulGCRT v
 mulG (CRTe v) = CRTe $ runIdentity mulGCRT v
 
 -- | Divide by the special element @g@.
-divG :: (Tensor t, Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
-        => UCyc t m rep r -> Maybe (UCyc t m rep r)
+divG :: (Tensor t, Fact m, UCRTElt t r, ZeroTestable (TRep t r), IntegralDomain (TRep t r))
+     => UCyc t m rep r
+     -> Maybe (UCyc t m rep r)
 {-# INLINABLE divG #-}
-divG (Pow v) = Pow <$> divGPow v
-divG (Dec v) = Dec <$> divGDec v
+divG (Pow v)  = Pow <$> divGPow v
+divG (Dec v)  = Dec <$> divGDec v
 -- fromJust is OK here because we're already in CRTr
 divG (CRTr v) = Just $ CRTr $ fromJust' "UCyc.divG CRTr" divGCRT v
 divG (CRTe v) = Just $ CRTe $ runIdentity divGCRT v
 
+
 -- | Yield the scaled squared norm of @g_m \cdot e@ under
 -- the canonical embedding, namely,
 -- @\hat{m}^{ -1 } \cdot || \sigma(g_m \cdot e) ||^2@ .
-gSqNorm :: (Ring r, Tensor t, Fact m, TElt t r) => UCyc t m D r -> r
+gSqNorm
+    :: (Tensor t, Ring (TRep t r), Fact m, TElt t r)
+    => UCyc t m D r
+    -> r
 gSqNorm (Dec v) = gSqNormDec v
 {-# INLINABLE gSqNorm #-}
 
 -- | Sample from the "tweaked" Gaussian error distribution @t*D@ in
 -- the decoding basis, where @D@ has scaled variance @v@.
-tGaussian :: (Tensor t, Fact m, OrdFloat q, Random q, TElt t q,
-              ToRational v, MonadRandom rnd)
-             => v -> rnd (UCyc t m D q)
+tGaussian
+    :: ( Tensor t, Fact m, Ord q, Transcendental q, Transcendental (TRep t q)
+       , Random q, TElt t q, ToRational v, MonadRandom rnd )
+    => v
+    -> rnd (UCyc t m D q)
 tGaussian = fmap Dec . tGaussianDec
 {-# INLINABLE tGaussian #-}
 
@@ -375,13 +430,15 @@ tGaussian = fmap Dec . tGaussianDec
 -- implementation uses Double precision to generate the Gaussian
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
-errorRounded :: forall v rnd t m z .
-                (ToInteger z, Tensor t, Fact m, TElt t z,
-                 ToRational v, MonadRandom rnd)
-                => v -> rnd (UCyc t m D z)
+errorRounded
+    :: forall v rnd t m z. ( Tensor t, Fact m, TElt t z, ToInteger (TRep t z), ToRational v, MonadRandom rnd
+                           , RealField (TRep t Double), Transcendental (TRep t Double) )
+    => v
+    -> rnd (UCyc t m D z)
 {-# INLINABLE errorRounded #-}
 errorRounded svar =
   Dec . fmapT (roundMult one) <$> (tGaussianDec svar :: rnd (t m Double))
+
 
 -- | Generate an LWE error term from the "tweaked" Gaussian with
 -- scaled variance @v * p^2@, deterministically rounded to the given
@@ -389,10 +446,12 @@ errorRounded svar =
 -- implementation uses Double precision to generate the Gaussian
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
-errorCoset :: forall t m zp z v rnd .
-  (Mod zp, z ~ ModRep zp, Lift zp z, Tensor t, Fact m,
-   TElt t zp, TElt t z, ToRational v, MonadRandom rnd)
-  => v -> UCyc t m D zp -> rnd (UCyc t m D z)
+errorCoset
+    :: forall t m zp z v rnd. ( Mod zp, z ~ ModRep zp, Lift zp z, Tensor t, Fact m, ToRational v, MonadRandom rnd
+                              , TElt t zp, TElt t z, Transcendental (TRep t Double) )
+    => v
+    -> UCyc t m D zp
+    -> rnd (UCyc t m D z)
 {-# INLINABLE errorCoset #-}
 errorCoset =
   let pval = fromIntegral $ proxy modulus (Proxy::Proxy zp)
@@ -403,29 +462,41 @@ errorCoset =
 ----- inter-ring operations
 
 -- | Embed into an extension ring, for the powerful basis.
-embedPow :: (Additive r, Tensor t, m `Divides` m', TElt t r)
-            => UCyc t m P r -> UCyc t m' P r
+embedPow
+    :: (Tensor t, Additive (TRep t r), m `Divides` m', TElt t r)
+    => UCyc t m P r
+    -> UCyc t m' P r
 embedPow (Pow v) = Pow $ T.embedPow v
 {-# INLINABLE embedPow #-}
 
 -- | Embed into an extension ring, for the decoding basis.
-embedDec :: (Additive r, Tensor t, m `Divides` m', TElt t r)
-            => UCyc t m D r -> UCyc t m' D r
+embedDec
+    :: (Tensor t, Additive (TRep t r), m `Divides` m', TElt t r)
+    => UCyc t m D r
+    -> UCyc t m' D r
 embedDec (Dec v) = Dec $ T.embedDec v
 {-# INLINABLE embedDec #-}
 
+
 -- | Embed into an extension ring, for the CRT basis.  (The output is
 -- an 'Either' because the extension ring might not support 'C'.)
-embedCRTC :: (m `Divides` m', UCRTElt t r)
-             => UCyc t m C r -> Either (UCyc t m' P r) (UCyc t m' C r)
+embedCRTC
+    :: (m `Divides` m', UCRTElt t r)
+    => UCyc t m C r
+    -> Either (UCyc t m' P r) (UCyc t m' C r)
 {-# INLINABLE embedCRTC #-}
-embedCRTC x@(CRTr v) = fromMaybe (Left $ embedPow $ toPow x)
-                       (Right . CRTr <$> (T.embedCRT <*> pure v))
+embedCRTC x@(CRTr v)
+  = fromMaybe
+      (Left $ embedPow $ toPow x)
+      (Right . CRTr <$> (T.embedCRT <*> pure v))
+
 
 -- | Similar to 'embedCRTC'.  (The output is an 'Either' because the
 -- extension ring might support 'C', in which case we never use 'E'.)
-embedCRTE :: forall m m' t r . (m `Divides` m', UCRTElt t r)
-             => UCyc t m E r -> Either (UCyc t m' P r) (UCyc t m' E r)
+embedCRTE
+    :: forall m m' t r . (m `Divides` m', UCRTElt t r)
+    => UCyc t m E r
+    -> Either (UCyc t m' P r) (UCyc t m' E r)
 {-# INLINABLE embedCRTE #-}
 embedCRTE x@(CRTe v) =
     -- preserve invariant: CRTe iff CRTr is invalid for m'
@@ -434,54 +505,67 @@ embedCRTE x@(CRTe v) =
                pure (Left $ embedPow $ toPow x))
 
 -- | Twace into a subring, for the powerful basis.
-twacePow :: (Ring r, Tensor t, m `Divides` m', TElt t r)
-            => UCyc t m' P r -> UCyc t m P r
+twacePow
+    :: (Tensor t, Ring (TRep t r), m `Divides` m', TElt t r)
+    => UCyc t m' P r
+    -> UCyc t m  P r
 twacePow (Pow v) = Pow $ twacePowDec v
 {-# INLINABLE twacePow #-}
 
 -- | Twace into a subring, for the decoding basis.
-twaceDec :: (Ring r, Tensor t, m `Divides` m', TElt t r)
-            => UCyc t m' D r -> UCyc t m D r
+twaceDec
+    :: (Tensor t, Ring (TRep t r), m `Divides` m', TElt t r)
+    => UCyc t m' D r
+    -> UCyc t m  D r
 twaceDec (Dec v) = Dec $ twacePowDec v
 {-# INLINABLE twaceDec #-}
 
 -- | Twace into a subring, for the CRT basis.  (The output is an
 -- 'Either' because the subring might not support 'C'.)
-twaceCRTC :: (m `Divides` m', UCRTElt t r)
-             => UCyc t m' C r -> Either (UCyc t m P r) (UCyc t m C r)
+twaceCRTC
+    :: (m `Divides` m', UCRTElt t r)
+    => UCyc t m' C r
+    -> Either (UCyc t m P r) (UCyc t m C r)
 {-# INLINABLE twaceCRTC #-}
 twaceCRTC x@(CRTr v) =
   -- stay in CRTr only iff it's valid for target, else go to Pow
-  fromMaybe (Left $ twacePow $ toPow x) (Right . CRTr <$> (T.twaceCRT <*> pure v))
+  fromMaybe (Left $ twacePow $ toPow x)
+            (Right . CRTr <$> (T.twaceCRT <*> pure v))
 
 -- | Similar to 'twaceCRTC'.  (The output is an 'Either' because the
 -- subring might support 'C', in which case we never use 'E'.)
-twaceCRTE :: forall t m m' r . (m `Divides` m', UCRTElt t r)
-             => UCyc t m' E r -> Either (UCyc t m P r) (UCyc t m E r)
+twaceCRTE
+    :: forall t m m' r . (m `Divides` m', UCRTElt t r)
+    => UCyc t m' E r
+    -> Either (UCyc t m P r) (UCyc t m E r)
 {-# INLINABLE twaceCRTE #-}
 twaceCRTE x@(CRTe v) =
   -- stay in CRTe iff CRTr is invalid for target, else go to Pow
   fromMaybe (Right $ CRTe $ runIdentity T.twaceCRT v)
-            (proxyT hasCRTFuncs (Proxy::Proxy (t m r)) A.*>
-             Just (Left $ twacePow $ toPow x))
+            (proxyT hasCRTFuncs (Proxy::Proxy (t m r)) A.*> Just (Left $ twacePow $ toPow x))
 
 -- | Yield the @O_m@-coefficients of an @O_m'@-element, with respect to
 -- the relative powerful @O_m@-basis.
-coeffsPow :: (Ring r, Tensor t, m `Divides` m', TElt t r)
-             => UCyc t m' P r -> [UCyc t m P r]
+coeffsPow
+    :: (Tensor t, Ring (TRep t r), m `Divides` m', TElt t r)
+    =>  UCyc t m' P r
+    -> [UCyc t m  P r]
 {-# INLINABLE coeffsPow #-}
 coeffsPow (Pow v) = LP.map Pow $ coeffs v
 
 -- | Yield the @O_m@-coefficients of an @O_m'@ element, with respect to
 -- the relative decoding @O_m@-basis.
-coeffsDec :: (Ring r, Tensor t, m `Divides` m', TElt t r)
-             => UCyc t m' D r -> [UCyc t m D r]
+coeffsDec
+    :: (Tensor t, Ring (TRep t r), m `Divides` m', TElt t r)
+    =>  UCyc t m' D r
+    -> [UCyc t m  D r]
 {-# INLINABLE coeffsDec #-}
 coeffsDec (Dec v) = LP.map Dec $ coeffs v
 
 -- | The relative powerful basis of @O_m' / O_m@.
-powBasis :: (Ring r, Tensor t, m `Divides` m', TElt t r)
-            => Tagged m [UCyc t m' P r]
+powBasis
+    :: (Tensor t, Ring (TRep t r), m `Divides` m', TElt t r)
+    => Tagged m [UCyc t m' P r]
 {-# INLINABLE powBasis #-}
 powBasis = (Pow <$>) <$> powBasisPow
 
@@ -489,10 +573,13 @@ powBasis = (Pow <$>) <$> powBasisPow
 -- respect to the powerful basis (which seems to be the best choice
 -- for typical use cases).
 crtSet :: forall t m m' r p mbar m'bar .
-           (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r),
-            mbar ~ PFree p m, m'bar ~ PFree p m',
-            UCRTElt t r, TElt t (ZpOf r))
-           => Tagged m [UCyc t m' P r]
+          ( m `Divides` m', p ~ CharOf (ZpOf r)
+          , mbar ~ PFree p m, m'bar ~ PFree p m'
+          , UCRTElt t r, TElt t (ZpOf r)
+          , ZPP r, ZPP (TRep t r), TRep t (ZpOf r) ~ ZpOf (TRep t r)
+          , Ring r
+          )
+       => Tagged m [UCyc t m' P r]
 {-# INLINABLE crtSet #-}
 crtSet =
   -- CJP: consider using traceEvent or traceMarker
@@ -500,21 +587,24 @@ crtSet =
   --          show (proxy valueFact (Proxy::Proxy m)) ++ ", m'= " ++
   --          show (proxy valueFact (Proxy::Proxy m'))) $
   let (p,e) = proxy modulusZPP (Proxy::Proxy r)
-      pp = Proxy::Proxy p
-      pm = Proxy::Proxy m
-      pm' = Proxy::Proxy m'
+      pp    = Proxy::Proxy p
+      pm    = Proxy::Proxy m
+      pm'   = Proxy::Proxy m'
   in retag (fmap (embedPow .
                   (if e > 1 then toPowCE . (^(p^(e-1))) . toCRT else toPow) .
                   Dec . fmapT liftZp) <$>
             (crtSetDec :: Tagged mbar [t m'bar (ZpOf r)]))
-     \\ pFreeDivides pp pm pm' \\ pSplitTheorems pp pm \\ pSplitTheorems pp pm'
-
+     \\ pFreeDivides pp pm pm'
+     \\ pSplitTheorems  pp pm
+     \\ pSplitTheorems  pp pm'
 
 --------- Conversion methods ------------------
 
 
 -- | Convert to powerful-basis representation.
-toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
+toPow :: forall t m rep r. (Fact m, UCRTElt t r)
+      => UCyc t m rep r
+      -> UCyc t m P   r
 {-# INLINABLE toPow #-}
 toPow x@(Pow _) = x
 toPow (Dec v) = Pow $ l v
@@ -522,32 +612,41 @@ toPow (CRTr v) = Pow $ fromJust' "UCyc.toPow CRTr" crtInv v
 toPow (CRTe v) = Pow $ fmapT fromExt $ runIdentity crtInv v
 
 -- | Convenient version of 'toPow' for 'Either' CRT basis type.
-toPowCE :: (Fact m, UCRTElt t r) => UCycEC t m r -> UCyc t m P r
+toPowCE :: (Fact m, UCRTElt t r)
+        => UCycEC t m r
+        -> UCyc t m P r
 {-# INLINABLE toPowCE #-}
-toPowCE (Left u) = toPow u
+toPowCE (Left  u) = toPow u
 toPowCE (Right u) = toPow u
 
 -- | Convert to decoding-basis representation.
-toDec :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m D r
+toDec :: (Fact m, UCRTElt t r)
+      => UCyc t m rep r
+      -> UCyc t m D r
 {-# INLINABLE toDec #-}
-toDec (Pow v) = Dec $ lInv v
-toDec x@(Dec _) = x
-toDec x@(CRTr _) = toDec $ toPow x
-toDec x@(CRTe _) = toDec $ toPow x
+toDec (Pow v)  = Dec $ lInv v
+toDec x@Dec{}  = x
+toDec x@CRTr{} = toDec $ toPow x
+toDec x@CRTe{} = toDec $ toPow x
 
 -- | Convert to a CRT-basis representation.
 toCRT :: forall t m rep r . (Fact m, UCRTElt t r)
-         => UCyc t m rep r -> UCycEC t m r
+      => UCyc t m rep r
+      -> UCycEC t m r
 {-# INLINABLE toCRT #-}
-toCRT = let crte = Left . CRTe . runIdentity crt
-            crtr = ((Right .) CRTr .) <$> crt
-            fromPow :: t m r -> UCycEC t m r
-            fromPow v = fromMaybe (crte $ fmapT toExt v) (crtr <*> Just v)
-        in \x -> case x of
-                   (CRTr _) -> Right x
-                   (CRTe _) -> Left x
-                   (Pow v) -> fromPow v
-                   (Dec v) -> fromPow $ l v
+toCRT x =
+  let
+    fromPow :: t m r -> UCycEC t m r
+    fromPow v =
+      case crt :: Maybe (t m r -> t m r) of
+        Just f  -> Right $ CRTr (f v)
+        Nothing -> Left  $ CRTe (runIdentity crt $ fmapT toExt v)
+  in
+  case x of
+    CRTr{} -> Right x
+    CRTe{} -> Left x
+    Pow v  -> fromPow v
+    Dec v  -> fromPow $ l v
 
 
 ---------- Category-theoretic instances ----------
@@ -640,11 +739,11 @@ instance (Show r, Show (CRTExt r), Tensor t, Fact m, TElt t r, TElt t (CRTExt r)
 
 instance (Arbitrary (t m r)) => Arbitrary (UCyc t m P r) where
   arbitrary = Pow <$> arbitrary
-  shrink = shrinkNothing
+  shrink    = shrinkNothing
 
 instance (Arbitrary (t m r)) => Arbitrary (UCyc t m D r) where
   arbitrary = Dec <$> arbitrary
-  shrink = shrinkNothing
+  shrink    = shrinkNothing
 
 -- no Arbitrary for C or EC due to invariant
 
@@ -654,3 +753,4 @@ instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
   rnf (Dec x)    = rnf x \\ witness entailNFDataT x
   rnf (CRTr x)   = rnf x \\ witness entailNFDataT x
   rnf (CRTe x)   = rnf x \\ witness entailNFDataT x
+

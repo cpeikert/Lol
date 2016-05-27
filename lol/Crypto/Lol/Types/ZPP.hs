@@ -1,15 +1,24 @@
-{-# LANGUAGE FlexibleContexts, TypeFamilies #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 -- | A class for integers mod a prime power.
+--
+module Crypto.Lol.Types.ZPP (
 
-module Crypto.Lol.Types.ZPP
-( ZPP(..)
+  ZPP(..)
+
 ) where
 
+import Crypto.Lol.FactoredDefs
 import Crypto.Lol.LatticePrelude
 import Crypto.Lol.Types.FiniteField
 
+
 -- | Represents integers modulo a prime power.
+--
 class (PrimeField (ZpOf zq), Ring zq) => ZPP zq where
 
   -- | An implementation of the integers modulo the prime base.

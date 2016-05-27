@@ -1,0 +1,54 @@
+# vim: nospell
+language: minimal
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.stack
+
+matrix:
+  fast_finish: true
+  include:
+    - env: GHC=7.10.3 CABAL=1.22
+      compiler: "GHC 7.10"
+      addons:
+        apt:
+          sources:
+            - hvr-ghc
+          packages:
+            - ghc-7.10.3
+            - cabal-install-1.22
+            - happy-1.19.5
+            - alex-3.1.4
+
+
+before_install:
+  - export PATH=/opt/ghc/$GHC/bin:/opt/cabal/$CABAL/bin:/opt/alex/3.1.4/bin:/opt/happy/1.19.5/bin:$PATH
+
+  # cabal
+  - travis_retry cabal update
+  - sed -i 's/^jobs:/-- jobs:/' ${HOME}/.cabal/config
+
+  # stack
+  - mkdir $HOME/bin
+  - export PATH=$HOME/bin:$PATH
+  - travis_retry curl -L "https://www.stackage.org/stack/linux-x86_64" | gunzip | tar -x
+  - mv stack-*/stack $HOME/bin
+  - travis_retry stack setup
+  - travis_retry stack install hscolour
+
+install:
+  - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+  - stack --version
+  - cabal --version
+  - opt --version; true
+  - llc --version; true
+  - travis_retry stack build --only-dependencies --no-terminal --no-haddock-deps -j2
+
+script:
+  - stack build lol --no-terminal --haddock --no-haddock-deps
+  - stack build lol-test --no-terminal
+  - stack build lol-bench --no-terminal
+  - stack build lol-apps --no-terminal
+  - stack exec lol-test -- --plain; true
+

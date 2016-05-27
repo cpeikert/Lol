@@ -44,8 +44,14 @@ newtype GF fp d = GF (Polynomial fp)
 -- the second argument, though phantom, affects representation
 type role GF representational representational
 
-type PrimeField fp = (Enumerable fp, Field fp, Eq fp, ZeroTestable fp,
-                      Prim (CharOf fp), IrreduciblePoly fp)
+type PrimeField fp =
+    ( Enumerable fp
+    , Field fp
+    , Eq fp
+    , ZeroTestable fp
+    , Prim (CharOf fp)
+    , IrreduciblePoly fp
+    )
 
 type GFCtx fp d = (PrimeField fp, Reflects d Int)
 
@@ -69,9 +75,9 @@ instance (GFCtx fp d) => Field.C (GF fp d) where
           in \(GF f) -> let (_,(a,_)) = extendedGCD f g
                            in GF a
 
-instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
+instance (GFCtx fp d) => CRTrans Maybe Int (GF fp d) where
 
-  crtInfo :: forall m . (Reflects m Int) => TaggedT m Maybe (CRTInfo (GF fp d))
+  crtInfo :: forall m . (Reflects m Int) => TaggedT m Maybe (CRTInfo Int (GF fp d))
   crtInfo = tagT $ (,) <$> omegaPow <*> scalarInv
     where
       omegaPow :: Maybe (Int -> GF fp d)

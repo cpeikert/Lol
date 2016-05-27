@@ -1,18 +1,32 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GeneralizedNewtypeDeriving,
-             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
-             RebindableSyntax, RoleAnnotations, ScopedTypeVariables,
-             StandaloneDeriving, TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RebindableSyntax           #-}
+{-# LANGUAGE RoleAnnotations            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 -- | An implementation of modular arithmetic, i.e., the ring Zq.
+--
+module Crypto.Lol.Types.ZqBasic (
 
-module Crypto.Lol.Types.ZqBasic
-( ZqBasic -- export the type, but not the constructor (for safety)
+  -- For safety we should not be exporting the constructor, only the type, but
+  -- the constructor is necessary for external backends. One compromise would be
+  -- to export the constructor from an 'internals' module only, which is hidden
+  -- from clients by default.
+  ZqBasic(..)
+
 ) where
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Gadget
-import Crypto.Lol.LatticePrelude    as LP
+import Crypto.Lol.LatticePrelude                                    as LP
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZPP
@@ -22,29 +36,29 @@ import Math.NumberTheory.Primes.Testing
 
 import Control.Applicative
 import Control.Arrow
-import Control.DeepSeq        (NFData)
+import Control.DeepSeq                                              ( NFData )
 import Data.Coerce
 import Data.Maybe
-import NumericPrelude.Numeric as NP (round)
 import System.Random
 import Test.QuickCheck
 
 -- for the Unbox instances
-import qualified Data.Vector                 as V
-import qualified Data.Vector.Generic         as G
-import qualified Data.Vector.Generic.Mutable as M
-import qualified Data.Vector.Unboxed         as U
+import qualified Data.Vector                                        as V
+import qualified Data.Vector.Generic                                as G
+import qualified Data.Vector.Generic.Mutable                        as M
+import qualified Data.Vector.Unboxed                                as U
 
 import Foreign.Storable
 
 -- for the Elt instance
-import qualified Data.Array.Repa.Eval as E
+import qualified Data.Array.Repa.Eval                               as E
 
-import qualified Algebra.Additive       as Additive (C)
-import qualified Algebra.Field          as Field (C)
-import qualified Algebra.IntegralDomain as IntegralDomain (C)
-import qualified Algebra.Ring           as Ring (C)
-import qualified Algebra.ZeroTestable   as ZeroTestable (C)
+import qualified Algebra.Additive                                   as Additive (C)
+import qualified Algebra.Field                                      as Field (C)
+import qualified Algebra.IntegralDomain                             as IntegralDomain (C)
+import qualified Algebra.Ring                                       as Ring (C)
+import qualified Algebra.ZeroTestable                               as ZeroTestable (C)
+
 
 -- | The ring @Z_q@ of integers modulo 'q', using underlying integer
 -- type 'z'.
@@ -141,28 +155,34 @@ principalRootUnity =        -- use Integers for all intermediate calcs
                    in if mr == 0
                       then let omega = head (filter isGen values) ^ mq
                                omegaPows = V.iterateN mval (*omega) one
-                           in Just $ (omegaPows V.!) . (`mod` mval)
+                           in Just $ \i -> omegaPows V.! (i `mod` mval)
                       else Nothing
               else Nothing       -- fail if q composite
 
 mhatInv :: forall m q z . (Reflects m Int, ReflectsTI q z, PID z)
            => TaggedT m Maybe (ZqBasic q z)
-mhatInv = let qval = proxy value (Proxy::Proxy q)
-          in peelT $ (fmap reduce' . (`modinv` qval) . fromIntegral) <$>
-                 valueHat <$> (value :: Tagged m Int)
+mhatInv =
+  let qval = proxy value (Proxy::Proxy q) :: z
+      mval = proxy value (Proxy::Proxy m) :: Int
+      mhat = valueHat mval
+  in
+  tagT $ fmap reduce' (fromIntegral mhat `modinv` qval)
+
 
 -- instance of CRTrans
 instance (ReflectsTI q z, PID z, Enumerable (ZqBasic q z))
-         => CRTrans Maybe (ZqBasic q z) where
+         => CRTrans Maybe Int (ZqBasic q z) where
 
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
+
 
 -- instance of CRTEmbed
 instance (ReflectsTI q z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
   type CRTExt (ZqBasic q z) = Complex Double
 
   toExt (ZqB x) = fromReal $ fromIntegral x
-  fromExt x = reduce' $ NP.round $ real x
+  fromExt x = reduce' $ LP.round $ real x
+
 
 -- instance of Additive
 instance (ReflectsTI q z, Additive z) => Additive.C (ZqBasic q z) where
@@ -271,6 +291,7 @@ correctZ q b =
       barBtRnd q' (v1:vs@(v2:_)) = let quo = fst $ divModCent (b*v1-v2) q
                                    in (quo:) *** (quo*q' +) $
                                       barBtRnd (q' `div` b) vs
+      barBtRnd _ _ = error "barBtRnd: unexpected input"
 
       -- | Yield @(q \bar{D}) \cdot w@, given precomputed first entry
       qbarD :: [z] -> z -> [z]
@@ -282,6 +303,7 @@ correctZ q b =
       subLast :: [z] -> [z] -> ([z], z)
       subLast [v0] [v'0] = let y = v0-v'0 in ([y], y)
       subLast (v0:vs) (v'0:v's) = first ((v0-v'0):) $ subLast vs v's
+      subLast _ _ = error "subLast: unexpected input"
 
 instance (ReflectsTI q z, Ring z, Reflects b z)
     => Correct (BaseBGad b) (ZqBasic q z) where
