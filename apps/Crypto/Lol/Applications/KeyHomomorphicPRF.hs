@@ -6,9 +6,10 @@
 
 -- TODO: change module to Crypto.Lol.Applications.KeyHomomorphicPRF.
 --       llvm is not functioning.
-module Crypto.Lol.KeyHomomorphicPRF
+module Crypto.Lol.Applications.KeyHomomorphicPRF
 ( computePRF
 , FullTree(..)
+, MMatrix
 , SafeBitString(..)
 , uAugmentSBS
 , uAugmentVector
@@ -17,13 +18,15 @@ module Crypto.Lol.KeyHomomorphicPRF
 , UFullTree(..)
 ) where
 
-import Crypto.Lol.Gadget
-import Crypto.Lol.LatticePrelude
-import Crypto.Lol.PosBinDefs
+import qualified Algebra.Ring as Ring
 
-import Crypto.Lol.Types.Numeric as N
+import Crypto.Lol.Gadget
+import Crypto.Lol.LatticePrelude as L
+import Crypto.Lol.PosBin
 
 import MathObj.Matrix as M
+
+type MMatrix a = M.T a
 
 -- | Type-safe bitstring.
 data SafeBitString (n :: Pos) where
@@ -79,7 +82,7 @@ computePRF :: (Ring a, Ring b, Rescale a b) =>
               FullTree n l (MMatrix a) -> -- ^ Full tree T
               a -> -- ^ secret s
               MMatrix b
-computePRF t s = fmap (rescale . (N.*s)) (rootValue t)
+computePRF t s = fmap (rescale . (L.*s)) (rootValue t)
 
 -- | Flip the boolean value at a chosen leaf.
 flipBit :: (Ring a) =>
@@ -105,14 +108,6 @@ data UFullTree nl nr l v where
 uRootValue :: UFullTree nl nr l v -> v
 uRootValue (ULeaf _ v) = v
 uRootValue (UInternal _ _ v _ _) = v
-
--- | Used for debugging.
-uLeft :: UFullTree Int Int l v -> UFullTree Int Int l v
-uLeft (UInternal _ _ _ lt _) = lt
-
--- | Used for debugging.
-uRight :: UFullTree Int Int l v -> UFullTree Int Int l v
-uRight (UInternal _ _ _ _ rt) = rt
 
 -- | Augments the leaves of the UFullTree with Bool values.
 uAugmentSBS :: UFullTree Int Int () () -> -- ^ Full tree T (topology)
@@ -144,7 +139,7 @@ uComputePRF :: (Ring a, Ring b, Rescale a b) =>
               UFullTree Int Int l (MMatrix a) -> -- ^ Full tree T
               a -> -- ^ secret s
               MMatrix b
-uComputePRF t s = fmap (rescale . (N.*s)) (uRootValue t)
+uComputePRF t s = fmap (rescale . (L.*s)) (uRootValue t)
 
 -- | Flip the boolean value at a chosen leaf.
 -- | Updates the affected matrices at each node.
@@ -160,7 +155,7 @@ uFlipBit a0 a1 _ (ULeaf b v)
   | otherwise = ULeaf (not b) a1
 uFlipBit a0 a1 n (UInternal nl nr v l r)
   | (n > nl) =
-    let r' = uFlipBit a0 a1 ((N.-) n nl) r
+    let r' = uFlipBit a0 a1 ((L.-) n nl) r
     in UInternal nl nr (combineVectors (uRootValue l) (uRootValue r')) l r'
   | otherwise =
     let l' = uFlipBit a0 a1 n l
@@ -178,7 +173,7 @@ decomposeEntries m =
 -- | Performs matrix multiplication for MMatrix types.
 matrixMult :: (Ring a) => MMatrix a -> MMatrix a -> MMatrix a
 matrixMult m1 m2 =
-  let elts = [N.sum $ N.zipWith (N.*) xs ys | xs <- (M.rows m1), ys <- (M.columns m2)]
+  let elts = [L.sum $ L.zipWith (Ring.*) xs ys | xs <- (M.rows m1), ys <- (M.columns m2)]
   in (M.fromList (M.numRows m1) (M.numColumns m2) elts)
 
 -- | Multiply two vectors as given in the
