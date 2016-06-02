@@ -127,6 +127,7 @@ library
     Crypto.Lol.Types.Complex
     Crypto.Lol.Types.Numeric
     Crypto.Lol.Types.IZipVector
+    Crypto.Lol.Cyclotomic.CRTSentinel
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec

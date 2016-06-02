@@ -1,8 +1,18 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, InstanceSigs,
-             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
-             RankNTypes, RebindableSyntax, ScopedTypeVariables,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 -- | A low-level implementation of cyclotomic rings that allows (and
 -- requires) the programmer to control the underlying representation
@@ -61,8 +71,6 @@ import Test.QuickCheck
 
 import Crypto.Lol.Types.Proto
 
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor (RT)
-
 --import qualified Debug.Trace as DT
 
 -- | Nullary index type representing the powerful basis.
@@ -89,9 +97,8 @@ type UCycEC t m r = Either (UCyc t m E r) (UCyc t m C r)
 data UCyc t (m :: Factored) rep r where
   Pow  :: !(t m r) -> UCyc t m P r
   Dec  :: !(t m r) -> UCyc t m D r
-  -- Internal invariant: for a given (t,m,r), exactly one of these two
-  -- types can have values created : CRTC if crtFuncs exists,
-  -- otherwise CRTE
+  -- Use CRTSentinel to enforce invariant that exactly one of these
+  -- can be created for a given (t,m,r).
   CRTC :: !(CSentinel t m r) -> !(t m r) -> UCyc t m C r
   CRTE :: !(ESentinel t m r) -> !(t m (CRTExt r)) -> UCyc t m E r
 
@@ -111,7 +118,7 @@ scalarPow = Pow . T.scalarPow
 -- | Embed a scalar from the base ring.
 scalarCRT :: (Fact m, UCRTElt t r) => r -> UCycEC t m r
 scalarCRT r = case crtSentinel of
-  Right s -> Right $ CRTC s $ fromJust' "UCyc.scalarCRT CRTC" T.scalarCRT r
+  Right s -> Right $ CRTC s $ scalarCRTCS s r
   Left  s -> Left  $ CRTE s $ runIdentity T.scalarCRT $ toExt r
 {-# INLINABLE scalarCRT #-}
 
@@ -155,8 +162,6 @@ instance (ZeroTestable r, Tensor t, Fact m, TElt t r)
 -- Additive instances
 
 instance (Additive r, Tensor t, Fact m, TElt t r) => Additive.C (UCyc t m P r) where
-  {-# SPECIALIZE instance (Fact m) => Additive.C (UCyc RT m P Int64) #-}
-
   zero = Pow $ T.scalarPow zero
   (Pow v1) + (Pow v2) = Pow $ zipWithT (+) v1 v2
   (Pow v1) - (Pow v2) = Pow $ zipWithT (-) v1 v2
@@ -318,11 +323,9 @@ unzipCRTC :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
              => UCyc t m C (a,b)
              -> (Either (UCyc t m P a) (UCyc t m C a),
                  Either (UCyc t m P b) (UCyc t m C b))
-unzipCRTC (CRTC _ v)
+unzipCRTC (CRTC s v)
   = let (ac,bc) = unzipT v
-        -- safe because we're already in CRTC
-        crtinv = fromJust' "UCyc unzipCRTC" crtInv
-        (ap,bp) = Pow *** Pow $ unzipT $ crtinv v
+        (ap,bp) = Pow *** Pow $ unzipT $ crtInvCS s v
     in (fromMaybe (Left ap) (Right <$> (CRTC <$> crtCSentinel <*> pure ac)),
         fromMaybe (Left bp) (Right <$> (CRTC <$> crtCSentinel <*> pure bc)))
 
@@ -346,8 +349,7 @@ mulG :: (Tensor t, Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
 {-# INLINABLE mulG #-}
 mulG (Pow v) = Pow $ mulGPow v
 mulG (Dec v) = Dec $ mulGDec v
--- fromJust is safe here because we're already in CRTC
-mulG (CRTC s v) = CRTC s $ fromJust' "UCyc.mulG CRTC" mulGCRT v
+mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
 mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 
 -- | Divide by the special element @g@.
@@ -356,8 +358,7 @@ divG :: (Tensor t, Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
 {-# INLINABLE divG #-}
 divG (Pow v) = Pow <$> divGPow v
 divG (Dec v) = Dec <$> divGDec v
--- fromJust is OK here because we're already in CRTC
-divG (CRTC s v) = Just $ CRTC s $ fromJust' "UCyc.divG CRTC" divGCRT v
+divG (CRTC s v) = Just $ CRTC s $ divGCRTCS s v
 divG (CRTE s v) = Just $ CRTE s $ runIdentity divGCRT v
 
 -- | Yield the scaled squared norm of @g_m \cdot e@ under
@@ -425,11 +426,11 @@ embedDec (Dec v) = Dec $ T.embedDec v
 embedCRTC :: (m `Divides` m', UCRTElt t r)
              => UCyc t m C r -> Either (UCyc t m' P r) (UCyc t m' C r)
 {-# INLINABLE embedCRTC #-}
-embedCRTC x@(CRTC _ v) =
+embedCRTC x@(CRTC s v) =
   case crtSentinel of
     -- go to CRTC if valid, else go to Pow
     Left  _ -> Left $ embedPow $ toPow x
-    Right s -> Right $ CRTC s $ fromJust' "" T.embedCRT $ v
+    Right s' -> Right $ CRTC s' $ embedCRTCS s s' v
 
 -- | Similar to 'embedCRTC'.  (The output is an 'Either' because the
 -- extension ring might support 'C', in which case we never use 'E'.)
@@ -459,11 +460,11 @@ twaceDec (Dec v) = Dec $ twacePowDec v
 twaceCRTC :: (m `Divides` m', UCRTElt t r)
              => UCyc t m' C r -> Either (UCyc t m P r) (UCyc t m C r)
 {-# INLINABLE twaceCRTC #-}
-twaceCRTC x@(CRTC _ v) =
+twaceCRTC x@(CRTC s' v) =
   case crtSentinel of
     -- go to CRTC if valid for target, else go to Pow
     Left  _ -> Left $ twacePow $ toPow x
-    Right s -> Right $ CRTC s $ fromJust' "" T.twaceCRT $ v
+    Right s -> Right $ CRTC s $ twaceCRTCS s' s v
 
 -- | Similar to 'twaceCRTC'.  (The output is an 'Either' because the
 -- subring might support 'C', in which case we never use 'E'.)
@@ -651,7 +652,7 @@ toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
 {-# INLINABLE toPow #-}
 toPow x@(Pow _) = x
 toPow (Dec v) = Pow $ l v
-toPow (CRTC _ v) = Pow $ fromJust' "UCyc.toPow CRTC" crtInv v
+toPow (CRTC s v) = Pow $ crtInvCS s v
 toPow (CRTE _ v) = Pow $ fmapT fromExt $ runIdentity crtInv v
 
 -- | Convenient version of 'toPow' for 'Either' CRT basis type.
@@ -674,7 +675,7 @@ toCRT :: forall t m rep r . (Fact m, UCRTElt t r)
 {-# INLINABLE toCRT #-}
 toCRT = let fromPow :: t m r -> UCycEC t m r
             fromPow = case crtSentinel of
-              Right s -> Right . CRTC s . fromJust' "" crt
+              Right s -> Right . CRTC s . crtCS s
               Left  s -> Left  . CRTE s . runIdentity crt . fmapT toExt
         in \x -> case x of
                    (CRTC _ _) -> Right x
