@@ -1,5 +1,8 @@
 #include "tensorTypes.h"
 
+// NOTE: You may need to compile/link this file FIRST because it defines Zq::q
+// which is used elsewhere via tensorTypes.h.
+
 //see note in zq.cc
 hInt_t Zq::q;
 

@@ -61,11 +61,6 @@ extra-deps:
 
 # Override default flag values for local packages and extra-deps
 
-# See lol.cabal for more details.
-flags:
-  lol:
-    usestack: true
-
 # Extra package databases containing global packages
 extra-package-dbs: []
 

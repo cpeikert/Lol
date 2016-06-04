@@ -16,7 +16,7 @@ maintainer:          Eric Crockett <ecrockett0@gmail.com>
 copyright:           Eric Crockett, Chris Peikert
 category:            Crypto
 stability:           experimental
-build-type:          Custom
+build-type:          Simple
 extra-source-files:  README, CHANGES.md,
                      benchmarks/CycBenches.hs,
                      benchmarks/TensorBenches.hs,
@@ -33,8 +33,7 @@ extra-source-files:  README, CHANGES.md,
                      utils/Utils.hs,
                      utils/Harness/Cyc.hs,
                      Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h,
-                     Crypto/Lol/Cyclotomic/Tensor/CTensor/*.cpp,
-                     makefile
+                     Crypto/Lol/Cyclotomic/Tensor/CTensor/*.cpp
 cabal-version:       >= 1.10
 description:
     Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
@@ -50,29 +49,31 @@ source-repository head
 Flag llvm
   Description:  Compile via LLVM. This produces much better object code,
                 but you need to have the LLVM compiler installed.
-
+  -- If you enable this and get errors like "Error: can't resolve `.rodata' {.rodata section}"
+  -- then GHC doesn't like your version of LLVM!
   Default:      False
 
 Flag opt
   Description: Turn on library optimizations
   Default:     True
 
-Flag usestack
-  Description: Set to 'true' when using stack. This is automatically done by the stack.yaml file.
-  Default:     False
-
 library
   default-language:   Haskell2010
   ghc-options: -fwarn-dodgy-imports
-  extra-libraries: ctensor
-
-  -- This flag is set to true by the stack.yaml file for this project.
-  -- Without extra-lib-dirs, 'stack ghci' won't work because it can't find
-  -- the .so/.dylib file. We have to have a flag becase there's a cabal bug
-  -- (https://github.com/haskell/cabal/issues/1317) that won't let us write
-  -- relative paths.
-  if flag(usestack)
-    extra-lib-dirs: dist/build/dynamiclib
+  Include-dirs: Crypto/Lol/Cyclotomic/Tensor/CTensor
+  Includes: Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
+  -- It is crucial that generalfuncs.cpp comes first in this list, otherwise
+  -- `cabal repl` (and presumably `stack ghci`) results in error
+  -- "Loading temp shared object failed: /tmp/ghc54651_0/libghc_1.so: undefined symbol _ZN2Zq1qE"
+  -- The apparent cause is that `Zq::q` is defined in generalfuncs, and we can't use Zq operations in other files
+  -- unless `Zq::q` is already defined.
+  C-sources: Crypto/Lol/Cyclotomic/Tensor/CTensor/generalfuncs.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/crt.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/g.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/l.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/mul.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/norm.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/random.cpp
 
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
@@ -141,8 +142,6 @@ library
     base==4.8.*,
     binary,
     bytestring,
-    cereal,
-    cereal-vector,
     constraints,
     containers >= 0.5.6.2 && < 0.6,
     crypto-api,

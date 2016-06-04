@@ -2,18 +2,15 @@
 #ifndef TENSORTYPES_H_
 #define TENSORTYPES_H_
 
-#include <stdbool.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <time.h>
 
 #define ASSERT(EXP) { \
-	if (!(EXP)) { \
-		fprintf (stderr, "Assertion in file '%s' line %d : " #EXP "  is false\n", __FILE__, __LINE__); \
-		exit(-1); \
-	} \
+  if (!(EXP)) { \
+    fprintf (stderr, "Assertion in file '%s' line %d : " #EXP "  is false\n", __FILE__, __LINE__); \
+    exit(-1); \
+  } \
 }
 
 typedef int64_t hInt_t ;
@@ -23,12 +20,13 @@ typedef int8_t hByte_t ;
 
 typedef struct
 {
-	hDim_t prime;
-	hShort_t exponent;
+  hDim_t prime;
+  hShort_t exponent;
 } PrimeExponent;
 
 hInt_t reciprocal (hInt_t a, hInt_t b);
 
+#ifdef __cplusplus
 //http://stackoverflow.com/a/4421719
 class Zq
 {
@@ -147,5 +145,5 @@ hDim_t ipow(hDim_t base, hShort_t exp);
 
 template <typename ring> void tensorFuserPrime (ring* y, hShort_t tupSize, void (*f) (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs);
 template <typename ringy, typename ringru> void tensorFuserCRT (ringy* y, hShort_t tupSize, void (*f) (ringy* y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, ringru* ru), hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ringru** ru, hInt_t* qs);
-
+#endif /* __cplusplus */
 #endif /* TENSORTYPES_H_ */

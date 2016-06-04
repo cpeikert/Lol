@@ -8,6 +8,8 @@ import Crypto.Lol.Reflects
 
 import Control.Monad
 
+import GHC.TypeLits
+
 import Test.Framework
 import Test.Framework.Providers.QuickCheck2
 import Test.QuickCheck

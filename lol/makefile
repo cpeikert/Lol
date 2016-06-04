@@ -1,3 +1,5 @@
+# This file is only used for development, it is not needed to build the library.
+
 CXX      ?= g++
 AR       ?= ar
 CXXFLAGS ?= -Wall -O3 -std=c++11 -fPIC
