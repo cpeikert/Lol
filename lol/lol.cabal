@@ -61,15 +61,14 @@ library
   default-language:   Haskell2010
   ghc-options: -fwarn-dodgy-imports
   Include-dirs: Crypto/Lol/Cyclotomic/Tensor/CTensor
-  Includes: Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
   -- It is crucial that generalfuncs.cpp comes first in this list, otherwise
   -- `cabal repl` (and presumably `stack ghci`) results in error
   -- "Loading temp shared object failed: /tmp/ghc54651_0/libghc_1.so: undefined symbol _ZN2Zq1qE"
   -- The apparent cause is that `Zq::q` is defined in generalfuncs, and we can't use Zq operations in other files
   -- unless `Zq::q` is already defined.
-  C-sources: Crypto/Lol/Cyclotomic/Tensor/CTensor/generalfuncs.cpp,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/crt.cpp,
+  C-sources: Crypto/Lol/Cyclotomic/Tensor/CTensor/crt.cpp,
              Crypto/Lol/Cyclotomic/Tensor/CTensor/g.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/generalfuncs.cpp,
              Crypto/Lol/Cyclotomic/Tensor/CTensor/l.cpp,
              Crypto/Lol/Cyclotomic/Tensor/CTensor/mul.cpp,
              Crypto/Lol/Cyclotomic/Tensor/CTensor/norm.cpp,

@@ -2,6 +2,11 @@
 #include <time.h>
 #include <stdlib.h>
 
+// NOTE: You may need to compile/link this file FIRST because it defines Zq::q
+// which is used elsewhere via tensorTypes.h.
+
+hInt_t Zq::q;
+
 // there should be a special cases that do NOT require temp space to be allocated for all primes *smaller* than DFTP_GENERIC_SIZE
 #define DFTP_GENERIC_SIZE 11
 
