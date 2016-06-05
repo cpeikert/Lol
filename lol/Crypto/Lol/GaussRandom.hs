@@ -5,10 +5,11 @@
 module Crypto.Lol.GaussRandom
 ( realGaussian, realGaussians ) where
 
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 
 import qualified Data.Vector.Generic as V
 
+import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
 
@@ -44,8 +45,8 @@ realGaussians ::
     (ToRational svar, OrdFloat i, Random i, V.Vector v i, MonadRandom m)
     => svar -> Int -> m (v i)
 realGaussians var n
-    | odd n = liftM V.tail (realGaussians var (n+1)) -- O(1) tail
-    | otherwise = liftM (V.fromList . uncurry (++) . unzip) $
+    | odd n = V.tail <$> (realGaussians var (n+1)) -- O(1) tail
+    | otherwise = (V.fromList . uncurry (++) . unzip) <$>
                   replicateM (n `div` 2) (realGaussian var)
 
 

@@ -1,8 +1,18 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, InstanceSigs, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
-             ScopedTypeVariables, TypeFamilies, TypeOperators,
-             UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 -- | A low-level implementation of cyclotomic rings that allows (and
 -- requires) the programmer to control the underlying representation
@@ -35,11 +45,12 @@ module Crypto.Lol.Cyclotomic.UCyc
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
-                                            scalarCRT, scalarPow, twaceCRT)
+                                     scalarCRT, scalarPow, twaceCRT)
 
 import           Crypto.Lol.CRTrans
-import qualified Crypto.Lol.Cyclotomic.Tensor as T
-import           Crypto.Lol.LatticePrelude    as LP
+import           Crypto.Lol.Cyclotomic.CRTSentinel
+import qualified Crypto.Lol.Cyclotomic.Tensor      as T
+import           Crypto.Lol.Prelude                as LP
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZPP
 
@@ -57,6 +68,8 @@ import Data.Foldable          as F
 import Data.Maybe
 import Data.Traversable
 import Test.QuickCheck
+
+import Crypto.Lol.Types.Proto
 
 --import qualified Debug.Trace as DT
 
@@ -81,14 +94,13 @@ type UCycEC t m r = Either (UCyc t m E r) (UCyc t m C r)
 --
 -- The 'Functor', 'Applicative', 'Foldable' and 'Traversable'
 -- instances all work coefficient-wise (in the specified basis).
-data UCyc t m rep r where
+data UCyc t (m :: Factored) rep r where
   Pow  :: !(t m r) -> UCyc t m P r
   Dec  :: !(t m r) -> UCyc t m D r
-  -- Internal invariant: for a given (t,m,r), exactly one of these two
-  -- types can have values created : CRTr if crtFuncs exists,
-  -- otherwise CRTe
-  CRTr :: !(t m r) -> UCyc t m C r
-  CRTe :: !(t m (CRTExt r)) -> UCyc t m E r
+  -- Use CRTSentinel to enforce invariant that exactly one of these
+  -- can be created for a given (t,m,r).
+  CRTC :: !(CSentinel t m r) -> !(t m r) -> UCyc t m C r
+  CRTE :: !(ESentinel t m r) -> !(t m (CRTExt r)) -> UCyc t m E r
 
 -- | Constraints needed for CRT-related operations on 'UCyc' data.
 type UCRTElt t r = (Tensor t, CRTEmbed r,
@@ -105,9 +117,9 @@ scalarPow = Pow . T.scalarPow
 
 -- | Embed a scalar from the base ring.
 scalarCRT :: (Fact m, UCRTElt t r) => r -> UCycEC t m r
-scalarCRT = fromMaybe
-            (Left . CRTe . runIdentity T.scalarCRT . toExt)
-            (((Right .) CRTr .) <$> T.scalarCRT)
+scalarCRT r = case crtSentinel of
+  Right s -> Right $ CRTC s $ scalarCRTCS s r
+  Left  s -> Left  $ CRTE s $ runIdentity T.scalarCRT $ toExt r
 {-# INLINABLE scalarCRT #-}
 
 -- Eq instances
@@ -121,7 +133,7 @@ instance (Eq r, Tensor t, Fact m, TElt t r) => Eq (UCyc t m D r) where
   {-# INLINABLE (==) #-}
 
 instance (Eq r, Tensor t, Fact m, TElt t r) => Eq (UCyc t m C r) where
-  (CRTr v1) == (CRTr v2) = v1 == v2 \\ witness entailEqT v1
+  (CRTC _ v1) == (CRTC _ v2) = v1 == v2 \\ witness entailEqT v1
   {-# INLINABLE (==) #-}
 
 -- no Eq instance for E due to precision
@@ -142,7 +154,7 @@ instance (ZeroTestable r, Tensor t, Fact m, TElt t r)
 
 instance (ZeroTestable r, Tensor t, Fact m, TElt t r)
     => ZeroTestable.C (UCyc t m C r) where
-  isZero (CRTr v) = isZero v \\ witness entailZTT v
+  isZero (CRTC _ v) = isZero v \\ witness entailZTT v
   {-# INLINABLE isZero #-}
 
 -- no ZT instance for E due to precision
@@ -178,16 +190,16 @@ instance (Fact m, UCRTElt t r) => Additive.C (UCycEC t m r) where
 
   -- CJP: precision OK?  Alternatively, switch to pow and back after
   -- adding/subtracting.  Expensive, but necessary given output type.
-  (Right (CRTr v1)) + (Right (CRTr v2)) = Right $ CRTr $ zipWithT (+) v1 v2
-  (Left (CRTe v1)) + (Left (CRTe v2)) = Left $ CRTe $ zipWithT (+) v1 v2
-  _ + _ = error "UCyc (+) internal error: mixed CRTr/CRTe"
+  (Right (CRTC s v1)) + (Right (CRTC _ v2)) = Right $ CRTC s $ zipWithT (+) v1 v2
+  (Left (CRTE s v1)) + (Left (CRTE _ v2)) = Left $ CRTE s $ zipWithT (+) v1 v2
+  _ + _ = error "UCyc (+) internal error: mixed CRTC/CRTE"
 
-  (Right (CRTr v1)) - (Right (CRTr v2)) = Right $ CRTr $ zipWithT (-) v1 v2
-  (Left (CRTe v1)) - (Left (CRTe v2)) = Left $ CRTe $ zipWithT (-) v1 v2
-  _ - _ = error "UCyc (-) internal error: mixed CRTr/CRTe"
+  (Right (CRTC s v1)) - (Right (CRTC _ v2)) = Right $ CRTC s $ zipWithT (-) v1 v2
+  (Left (CRTE s v1)) - (Left (CRTE _ v2)) = Left $ CRTE s $ zipWithT (-) v1 v2
+  _ - _ = error "UCyc (-) internal error: mixed CRTC/CRTE"
 
-  negate (Right (CRTr v)) = Right $ CRTr $ fmapT negate v
-  negate (Left (CRTe v)) = Left $ CRTe $ fmapT negate v
+  negate (Right (CRTC s v)) = Right $ CRTC s $ fmapT negate v
+  negate (Left (CRTE s v)) = Left $ CRTE s $ fmapT negate v
 
   {-# INLINABLE zero #-}
   {-# INLINABLE (+) #-}
@@ -197,13 +209,13 @@ instance (Fact m, UCRTElt t r) => Additive.C (UCycEC t m r) where
 -- Ring instance: only for CRT
 
 instance (Fact m, UCRTElt t r) => Ring.C (UCycEC t m r) where
-  
+
   one = scalarCRT one
   fromInteger c = scalarCRT $ fromInteger c
 
-  (Right (CRTr v1)) * (Right (CRTr v2)) = Right $ CRTr $ zipWithT (*) v1 v2
-  (Left (CRTe v1)) * (Left (CRTe v2)) = Left $ CRTe $ zipWithT (*) v1 v2
-  _ * _ = error "UCyc internal error: mixed CRTr/CRTe"
+  (Right (CRTC s v1)) * (Right (CRTC _ v2)) = Right $ CRTC s $ zipWithT (*) v1 v2
+  (Left (CRTE s v1)) * (Left (CRTE _ v2)) = Left $ CRTE s $ zipWithT (*) v1 v2
+  _ * _ = error "UCyc internal error: mixed CRTC/CRTE"
 
   {-# INLINABLE one #-}
   {-# INLINABLE fromInteger #-}
@@ -220,8 +232,8 @@ instance (Ring r, Tensor t, Fact m, TElt t r) => Module.C r (UCyc t m D r) where
 
 instance (Ring r, Fact m, UCRTElt t r) => Module.C r (UCycEC t m r) where
 
-  r *> (Right (CRTr v)) = Right $ CRTr $ fmapT (r *) v
-  r *> (Left (CRTe v)) = Left $ CRTe $ fmapT (toExt r *) v
+  r *> (Right (CRTC s v)) = Right $ CRTC s $ fmapT (r *) v
+  r *> (Left (CRTE s v)) = Left $ CRTE s $ fmapT (toExt r *) v
   {-# INLINABLE (*>) #-}
 
 instance (GFCtx fp d, Fact m, Tensor t, TElt t fp)
@@ -306,33 +318,30 @@ unzipDec :: (Tensor t, Fact m, TElt t (a,b), TElt t a, TElt t b)
 unzipDec (Dec v) = Dec *** Dec $ unzipT v
 
 -- | Unzip in the CRT basis over the base ring.  The output components
--- are 'Either's because each target base ring may not support 'C'.
+-- are 'Either' because each target base ring may not support 'C'.
 unzipCRTC :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
              => UCyc t m C (a,b)
              -> (Either (UCyc t m P a) (UCyc t m C a),
                  Either (UCyc t m P b) (UCyc t m C b))
-unzipCRTC (CRTr v)
-  = let (a,b) = unzipT v
-        (ac,bc) = CRTr *** CRTr $ (a,b)
-        -- safe because we're already in CRT C
-        crtinv = fromJust' "UCyc unzipCRTC" crtInv
-        (ap,bp) = Pow *** Pow $ unzipT $ crtinv v
-    in (fromMaybe (Left ap) (witnessT hasCRTFuncs a A.*> pure (Right ac)),
-        fromMaybe (Left bp) (witnessT hasCRTFuncs b A.*> pure (Right bc)))
+unzipCRTC (CRTC s v)
+  = let (ac,bc) = unzipT v
+        (ap,bp) = Pow *** Pow $ unzipT $ crtInvCS s v
+    in (fromMaybe (Left ap) (Right <$> (CRTC <$> crtCSentinel <*> pure ac)),
+        fromMaybe (Left bp) (Right <$> (CRTC <$> crtCSentinel <*> pure bc)))
 
 -- | Unzip in the CRT basis over the extension of the base ring.  The
--- output components are 'Either's because each target base might
+-- output components are 'Either' because each target base might
 -- instead support 'C'.
 unzipCRTE :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
              => UCyc t m E (a,b)
              -> (Either (UCyc t m P a) (UCyc t m E a),
                  Either (UCyc t m P b) (UCyc t m E b))
-unzipCRTE (CRTe v)
-  = let (ae,be) = CRTe *** CRTe $ unzipT v
+unzipCRTE (CRTE _ v)
+  = let (ae,be) = unzipT v
         (a',b') = unzipT $ fmapT fromExt $ runIdentity crtInv v
         (ap,bp) = Pow *** Pow $ (a',b')
-    in (fromMaybe (Right ae) (witnessT hasCRTFuncs a' A.*> pure (Left ap)),
-        fromMaybe (Right be) (witnessT hasCRTFuncs b' A.*> pure (Left bp)))
+    in (fromMaybe (Left ap) (Right <$> (CRTE <$> crtESentinel <*> pure ae)),
+        fromMaybe (Left bp) (Right <$> (CRTE <$> crtESentinel <*> pure be)))
 
 
 -- | Multiply by the special element @g@.
@@ -340,9 +349,8 @@ mulG :: (Tensor t, Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
 {-# INLINABLE mulG #-}
 mulG (Pow v) = Pow $ mulGPow v
 mulG (Dec v) = Dec $ mulGDec v
--- fromJust is safe here because we're already in CRTr
-mulG (CRTr v) = CRTr $ fromJust' "UCyc.mulG CRTr" mulGCRT v
-mulG (CRTe v) = CRTe $ runIdentity mulGCRT v
+mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
+mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 
 -- | Divide by the special element @g@.
 divG :: (Tensor t, Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
@@ -350,9 +358,8 @@ divG :: (Tensor t, Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
 {-# INLINABLE divG #-}
 divG (Pow v) = Pow <$> divGPow v
 divG (Dec v) = Dec <$> divGDec v
--- fromJust is OK here because we're already in CRTr
-divG (CRTr v) = Just $ CRTr $ fromJust' "UCyc.divG CRTr" divGCRT v
-divG (CRTe v) = Just $ CRTe $ runIdentity divGCRT v
+divG (CRTC s v) = Just $ CRTC s $ divGCRTCS s v
+divG (CRTE s v) = Just $ CRTE s $ runIdentity divGCRT v
 
 -- | Yield the scaled squared norm of @g_m \cdot e@ under
 -- the canonical embedding, namely,
@@ -396,7 +403,7 @@ errorCoset :: forall t m zp z v rnd .
 {-# INLINABLE errorCoset #-}
 errorCoset =
   let pval = fromIntegral $ proxy modulus (Proxy::Proxy zp)
-  in \ svar c -> do err <- tGaussian (svar*pval*pval) :: rnd (UCyc t m D Double)
+  in \ svar c -> do err :: UCyc t m D Double <- tGaussian (svar*pval*pval)
                     return $! roundCoset <$> c <*> err
 
 
@@ -419,19 +426,22 @@ embedDec (Dec v) = Dec $ T.embedDec v
 embedCRTC :: (m `Divides` m', UCRTElt t r)
              => UCyc t m C r -> Either (UCyc t m' P r) (UCyc t m' C r)
 {-# INLINABLE embedCRTC #-}
-embedCRTC x@(CRTr v) = fromMaybe (Left $ embedPow $ toPow x)
-                       (Right . CRTr <$> (T.embedCRT <*> pure v))
+embedCRTC x@(CRTC s v) =
+  case crtSentinel of
+    -- go to CRTC if valid, else go to Pow
+    Left  _ -> Left $ embedPow $ toPow x
+    Right s' -> Right $ CRTC s' $ embedCRTCS s s' v
 
 -- | Similar to 'embedCRTC'.  (The output is an 'Either' because the
 -- extension ring might support 'C', in which case we never use 'E'.)
 embedCRTE :: forall m m' t r . (m `Divides` m', UCRTElt t r)
              => UCyc t m E r -> Either (UCyc t m' P r) (UCyc t m' E r)
 {-# INLINABLE embedCRTE #-}
-embedCRTE x@(CRTe v) =
-    -- preserve invariant: CRTe iff CRTr is invalid for m'
-    fromMaybe (Right $ CRTe $ runIdentity T.embedCRT v)
-              (proxyT hasCRTFuncs (Proxy::Proxy (t m r)) A.*>
-               pure (Left $ embedPow $ toPow x))
+embedCRTE x@(CRTE _ v) =
+  case crtSentinel of
+    -- go to CRTE if valid, else go to Pow
+    Left  s -> Right $ CRTE s $ runIdentity T.embedCRT v
+    Right _ -> Left $ embedPow $ toPow x
 
 -- | Twace into a subring, for the powerful basis.
 twacePow :: (Ring r, Tensor t, m `Divides` m', TElt t r)
@@ -450,20 +460,22 @@ twaceDec (Dec v) = Dec $ twacePowDec v
 twaceCRTC :: (m `Divides` m', UCRTElt t r)
              => UCyc t m' C r -> Either (UCyc t m P r) (UCyc t m C r)
 {-# INLINABLE twaceCRTC #-}
-twaceCRTC x@(CRTr v) =
-  -- stay in CRTr only iff it's valid for target, else go to Pow
-  fromMaybe (Left $ twacePow $ toPow x) (Right . CRTr <$> (T.twaceCRT <*> pure v))
+twaceCRTC x@(CRTC s' v) =
+  case crtSentinel of
+    -- go to CRTC if valid for target, else go to Pow
+    Left  _ -> Left $ twacePow $ toPow x
+    Right s -> Right $ CRTC s $ twaceCRTCS s' s v
 
 -- | Similar to 'twaceCRTC'.  (The output is an 'Either' because the
 -- subring might support 'C', in which case we never use 'E'.)
 twaceCRTE :: forall t m m' r . (m `Divides` m', UCRTElt t r)
              => UCyc t m' E r -> Either (UCyc t m P r) (UCyc t m E r)
 {-# INLINABLE twaceCRTE #-}
-twaceCRTE x@(CRTe v) =
-  -- stay in CRTe iff CRTr is invalid for target, else go to Pow
-  fromMaybe (Right $ CRTe $ runIdentity T.twaceCRT v)
-            (proxyT hasCRTFuncs (Proxy::Proxy (t m r)) A.*>
-             Just (Left $ twacePow $ toPow x))
+twaceCRTE x@(CRTE _ v) =
+  case crtSentinel of
+    -- go to CRTE if valid for target, else go to Pow
+    Left  s -> Right $ CRTE s $ runIdentity T.twaceCRT v
+    Right _ -> Left $ twacePow $ toPow x
 
 -- | Yield the @O_m@-coefficients of an @O_m'@-element, with respect to
 -- the relative powerful @O_m@-basis.
@@ -514,12 +526,134 @@ crtSet =
 
 
 -- | Convert to powerful-basis representation.
+-- {-# SPECIALIZE toPow :: (Fact m, Reflects q Int64) => UCyc RT m D (ZqBasic q Int64) -> UCyc RT m P (ZqBasic q Int64) #-}
+-- EAC: I can't specialize toPow due to the constraint synonym TElt. See GHC ticket 12068
+-- For future reference, it seemed to help in general to simplify constraints as much as possible
+-- (i.e. replacing (Ring (ZqBasic q z)) with (Ring z, Reflects t z)) and
+-- removing type synonyms wherever possible.
+
+{-
+EAC: I tried specializing the function
+toPow :: (Fact m, C) for C \subseteq [Tensor t , CRTEmbed r , CRTrans Maybe r , TElt t r , CRTrans Identity (CRTExt r) , TElt t (CRTExt r)]
+using
+{-# SPECIALIZE toPow :: (Fact m, Reflects q Int64) => UCyc RT m D (ZqBasic q Int64) -> UCyc RT m P (ZqBasic q Int64) #-}
+
+The results for subsets with (Tensor t) were identical to those without (Tensor t), so we ignore (Tensor t) in what follows
+
+There were three outcomes:
+1. "Good": no warnings.
+2. "NB": Warning: Forall'd constraint ‘Reflects k q Int64’ is not bound in RULE lhs
+3. "Bad": Warning: RULE left-hand side too complicated to desugar
+
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r
+BAD:  CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+good: CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r,                                        TElt t (CRTExt r)
+good: CRTEmbed r, CRTrans Maybe r
+BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r)
+BAD:  CRTEmbed r,                  TElt t r,                              TElt t (CRTExt r)
+good: CRTEmbed r,                  TElt t r
+BAD:  CRTEmbed r,                            CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+good: CRTEmbed r,                            CRTrans Identity (CRTExt r)
+good: CRTEmbed r,                                                         TElt t (CRTExt r)
+good: CRTEmbed r
+BAD:              CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+good:             CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
+BAD:              CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
+good:             CRTrans Maybe r, TElt t r
+good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r)
+good:             CRTrans Maybe r,                                        TElt t (CRTExt r)
+good:             CRTrans Maybe r
+NB:                                TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+NB:                                TElt t r, CRTrans Identity (CRTExt r)
+NB:                                TElt t r,                              TElt t (CRTExt r)
+NB:                                TElt t r
+NB:                                          CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+NB:                                          CRTrans Identity (CRTExt r)
+NB:                                                                       TElt t (CRTExt r)
+NB:
+
+Assigning variables to constraints as follows,
+
+A=CRTEmbed r
+B=CRTrans Maybe r
+C=TElt t r
+D=CRTrans Identity (CRTExt r)
+E=TElt t (CRTExt r)
+
+using outcome values
+
+BAD=0
+NB=0
+GOOD=1
+
+the formula for results is
+
+y=(-A)*B*(-C) + (-A)*B*(-E) + A*(-C)*(-E) + A*(-B)*(-C)*(-D) + A*(-B)*(-D)*(-E)
+
+Below this line, I've reordered the subsets into logical groups.
+
+-- always nb if we don't have either of (CRTEmbed r) or (CRTrans Maybe r)
+-- I think this error makes sense: type families aren't injective, so references
+-- to TElt and CRTExt may not refer to 'r' on their RHS.
+NB:                                TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+NB:                                TElt t r, CRTrans Identity (CRTExt r)
+NB:                                TElt t r,                              TElt t (CRTExt r)
+NB:                                TElt t r
+NB:                                          CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+NB:                                          CRTrans Identity (CRTExt r)
+NB:                                                                       TElt t (CRTExt r)
+NB:
+
+-- always bad if we have both TElt constraints.
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:              CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:  CRTEmbed r,                  TElt t r,                              TElt t (CRTExt r)
+BAD:              CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
+
+-- always good if we don't have either TElt constraint.
+good: CRTEmbed r, CRTrans Maybe r
+good: CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r)
+good: CRTEmbed r,                            CRTrans Identity (CRTExt r)
+good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r)
+good: CRTEmbed r
+good:             CRTrans Maybe r
+
+-- bad if we have both (CRTEmbed r) and (CRTrans Maybe r) with at least one of the TElt constraints
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r
+BAD:  CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+BAD:  CRTEmbed r, CRTrans Maybe r,                                        TElt t (CRTExt r)
+
+-- a few more good cases: symmetric for (CRTEmbed r)  and (CRTrans Maybe r)
+good: CRTEmbed r,                  TElt t r
+good:             CRTrans Maybe r, TElt t r
+good: CRTEmbed r,                                                         TElt t (CRTExt r)
+good:             CRTrans Maybe r,                                        TElt t (CRTExt r)
+
+-- strange cases: works for (CRTrans Maybe r), fails for (CRTEmbed r)
+--   removing the (Ring (CRTExt r)) superclass constraint from CRTEmbed makes all four of these work.
+--   (but doesn't change the behavior of other failing cases)
+BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r)
+good:             CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
+BAD:  CRTEmbed r,                            CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
+
+-}
+
 toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
 {-# INLINABLE toPow #-}
 toPow x@(Pow _) = x
 toPow (Dec v) = Pow $ l v
-toPow (CRTr v) = Pow $ fromJust' "UCyc.toPow CRTr" crtInv v
-toPow (CRTe v) = Pow $ fmapT fromExt $ runIdentity crtInv v
+toPow (CRTC s v) = Pow $ crtInvCS s v
+toPow (CRTE _ v) = Pow $ fmapT fromExt $ runIdentity crtInv v
 
 -- | Convenient version of 'toPow' for 'Either' CRT basis type.
 toPowCE :: (Fact m, UCRTElt t r) => UCycEC t m r -> UCyc t m P r
@@ -532,20 +666,20 @@ toDec :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m D r
 {-# INLINABLE toDec #-}
 toDec (Pow v) = Dec $ lInv v
 toDec x@(Dec _) = x
-toDec x@(CRTr _) = toDec $ toPow x
-toDec x@(CRTe _) = toDec $ toPow x
+toDec x@(CRTC _ _) = toDec $ toPow x
+toDec x@(CRTE _ _) = toDec $ toPow x
 
 -- | Convert to a CRT-basis representation.
 toCRT :: forall t m rep r . (Fact m, UCRTElt t r)
          => UCyc t m rep r -> UCycEC t m r
 {-# INLINABLE toCRT #-}
-toCRT = let crte = Left . CRTe . runIdentity crt
-            crtr = ((Right .) CRTr .) <$> crt
-            fromPow :: t m r -> UCycEC t m r
-            fromPow v = fromMaybe (crte $ fmapT toExt v) (crtr <*> Just v)
+toCRT = let fromPow :: t m r -> UCycEC t m r
+            fromPow = case crtSentinel of
+              Right s -> Right . CRTC s . crtCS s
+              Left  s -> Left  . CRTE s . runIdentity crt . fmapT toExt
         in \x -> case x of
-                   (CRTr _) -> Right x
-                   (CRTe _) -> Left x
+                   (CRTC _ _) -> Right x
+                   (CRTE _ _) -> Left x
                    (Pow v) -> fromPow v
                    (Dec v) -> fromPow $ l v
 
@@ -564,10 +698,8 @@ instance (Tensor t, Fact m) => Functor (UCyc t m D) where
   {-# INLINABLE fmap #-}
   fmap f x = pure f <*> x
 
-instance (Tensor t, Fact m) => Functor (UCyc t m C) where
-  -- Functor instance is implied by Applicative laws
-  {-# INLINABLE fmap #-}
-  fmap f x = pure f <*> x
+-- CJP: no Functor instance for C, because CRTrans for a doesn't imply
+-- it for b.
 
 instance (Tensor t, Fact m) => Applicative (UCyc t m P) where
   pure = Pow . pure \\ proxy entailIndexT (Proxy::Proxy (t m r))
@@ -583,13 +715,9 @@ instance (Tensor t, Fact m) => Applicative (UCyc t m D) where
   {-# INLINABLE pure #-}
   {-# INLINABLE (<*>) #-}
 
-instance (Tensor t, Fact m) => Applicative (UCyc t m C) where
-  pure = CRTr . pure \\ proxy entailIndexT (Proxy::Proxy (t m r))
-  (CRTr f) <*> (CRTr v) = CRTr $ f <*> v \\ witness entailIndexT v
-
-  {-# INLINABLE pure #-}
-  {-# INLINABLE (<*>) #-}
-
+-- CJP: no Applicative instance for C, because 'pure' would circumvent
+-- the invariant.  Moreover, having CRTrans for (a -> b) and for a
+-- doesn't imply it for b.
 
 instance (Tensor t, Fact m) => Foldable (UCyc t m P) where
   {-# INLINABLE foldr #-}
@@ -601,7 +729,7 @@ instance (Tensor t, Fact m) => Foldable (UCyc t m D) where
 
 instance (Tensor t, Fact m) => Foldable (UCyc t m C) where
   {-# INLINABLE foldr #-}
-  foldr f b (CRTr v) = F.foldr f b v \\ witness entailIndexT v
+  foldr f b (CRTC _ v) = F.foldr f b v \\ witness entailIndexT v
 
 
 instance (Tensor t, Fact m) => Traversable (UCyc t m P) where
@@ -612,31 +740,39 @@ instance (Tensor t, Fact m) => Traversable (UCyc t m D) where
   {-# INLINABLE traverse #-}
   traverse f (Dec v) = Dec <$> traverse f v \\ witness entailIndexT v
 
-instance (Tensor t, Fact m) => Traversable (UCyc t m C) where
-  {-# INLINABLE traverse #-}
-  traverse f (CRTr v) = CRTr <$> traverse f v \\ witness entailIndexT v
+-- CJP: no Traversable instance for C, because CRTrans for a doesn't
+-- imply it for b.
 
 
 ---------- Utility instances ----------
 
 instance (Random r, UCRTElt t r, Fact m)
+         => Random (UCyc t m P r) where
+
+  random g = let (v,g') = random g \\ witness entailRandomT v
+             in (Pow v, g')
+
+  randomR _ = error "randomR non-sensical for UCyc"
+
+instance (Random r, UCRTElt t r, Fact m)
+         => Random (UCyc t m D r) where
+
+  random g = let (v,g') = random g \\ witness entailRandomT v
+             in (Dec v, g')
+
+  randomR _ = error "randomR non-sensical for UCyc"
+
+instance (Random r, UCRTElt t r, Fact m)
          => Random (Either (UCyc t m P r) (UCyc t m C r)) where
 
-  -- create in CRTr basis if possible, otherwise in powerful
-  random = let cons = fromMaybe (Left . Pow)
-                      (proxyT hasCRTFuncs (Proxy::Proxy (t m r))
-                       >> Just (Right . CRTr))
+  -- create in CRTC basis if possible, otherwise in powerful
+  random = let cons = case crtSentinel of
+                 Left  _ -> Left  . Pow
+                 Right s -> Right . CRTC s
            in \g -> let (v,g') = random g \\ witness entailRandomT v
                     in (cons v, g')
 
   randomR _ = error "randomR non-sensical for UCyc"
-
-instance (Show r, Show (CRTExt r), Tensor t, Fact m, TElt t r, TElt t (CRTExt r))
-    => Show (UCyc t m rep r) where
-  show (Pow  v) = "UCyc Pow: "  ++ show v \\ witness entailShowT v
-  show (Dec  v) = "UCyc Dec: "  ++ show v \\ witness entailShowT v
-  show (CRTr v) = "UCyc CRTr: " ++ show v \\ witness entailShowT v
-  show (CRTe v) = "UCyc CRTe: " ++ show v \\ witness entailShowT v
 
 instance (Arbitrary (t m r)) => Arbitrary (UCyc t m P r) where
   arbitrary = Pow <$> arbitrary
@@ -646,11 +782,16 @@ instance (Arbitrary (t m r)) => Arbitrary (UCyc t m D r) where
   arbitrary = Dec <$> arbitrary
   shrink = shrinkNothing
 
--- no Arbitrary for C or EC due to invariant
+-- no Arbitrary for C or E due to invariant
 
 instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
          => NFData (UCyc t m rep r) where
-  rnf (Pow x)    = rnf x \\ witness entailNFDataT x
-  rnf (Dec x)    = rnf x \\ witness entailNFDataT x
-  rnf (CRTr x)   = rnf x \\ witness entailNFDataT x
-  rnf (CRTe x)   = rnf x \\ witness entailNFDataT x
+  rnf (Pow x)      = rnf x \\ witness entailNFDataT x
+  rnf (Dec x)      = rnf x \\ witness entailNFDataT x
+  rnf (CRTC _ x)   = rnf x \\ witness entailNFDataT x
+  rnf (CRTE _ x)   = rnf x \\ witness entailNFDataT x
+
+instance (Fact m, Protoable (t m r)) => Protoable (UCyc t m D r) where
+  type ProtoType (UCyc t m D r) = ProtoType (t m r)
+  toProto (Dec t) = toProto t
+  fromProto t = Dec <$> fromProto t

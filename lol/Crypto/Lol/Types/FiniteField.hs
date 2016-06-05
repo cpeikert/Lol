@@ -18,7 +18,7 @@ module Crypto.Lol.Types.FiniteField
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Factored
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 
 import Algebra.Additive     as Additive (C)
@@ -44,9 +44,11 @@ newtype GF fp d = GF (Polynomial fp)
 -- the second argument, though phantom, affects representation
 type role GF representational representational
 
+-- | Constraint synonym for a prime field.
 type PrimeField fp = (Enumerable fp, Field fp, Eq fp, ZeroTestable fp,
-                      Prim (CharOf fp), IrreduciblePoly fp)
+                      Prime (CharOf fp), IrreduciblePoly fp)
 
+-- | Constraint synonym for a finite field.
 type GFCtx fp d = (PrimeField fp, Reflects d Int)
 
 instance (GFCtx fp d) => Enumerable (GF fp d) where
@@ -86,14 +88,17 @@ instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
            then Just $ (omegaPows V.!) . (`mod` mval)
            else Nothing
       scalarInv :: Maybe (GF fp d)
-      scalarInv = Just $ recip $ fromIntegral $ valueHat $ 
+      scalarInv = Just $ recip $ fromIntegral $ valueHat $
                   (proxy value (Proxy::Proxy m) :: Int)
 
+-- | This wrapper for a list of coefficients is used to define a
+-- @GF(p^d)@-module structure for tensors over @F_p@ of dimension @n@, where
+-- @d | n@.
 newtype TensorCoeffs a = Coeffs {unCoeffs :: [a]} deriving (Additive.C)
 instance (Additive fp, Ring (GF fp d), Reflects d Int)
   => Module.C (GF fp d) (TensorCoeffs fp) where
 
-  r *> (Coeffs fps) = 
+  r *> (Coeffs fps) =
     let dval = proxy value (Proxy::Proxy d)
         n = length fps
     in if n `mod` dval /= 0 then
@@ -119,7 +124,7 @@ toList = let dval = proxy value (Proxy::Proxy d)
 fromList :: forall fp d . (Reflects d Int) => [fp] -> GF fp d
 fromList = let dval = proxy value (Proxy::Proxy d)
            in \cs -> if length cs <= dval then GF $ fromCoeffs cs
-                     else error $ "FiniteField.fromList: length " ++ 
+                     else error $ "FiniteField.fromList: length " ++
                               show (length cs) ++ " > degree " ++ show dval
 
 sizePP :: forall fp d . (GFCtx fp d) => Tagged (GF fp d) PP

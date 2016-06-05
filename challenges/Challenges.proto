@@ -1,0 +1,69 @@
+import "RLWE.proto";
+
+// run this:
+
+// hprotoc -I . -I ../lol -a RLWE.proto=Crypto.Proto -p Crypto.Proto.RLWE Challenges.proto
+
+message ContParams {                      // continuous RLWE parameters
+  required int32 m                 = 1;   // cyclotomic index
+  required int64 q                 = 2;   // modulus
+  required double svar             = 3;   // scaled variance
+  required double bound            = 4;   // gSqNorm error bound
+  required int32 numSamples        = 5;   // number of samples
+}
+
+message DiscParams {                      // discrete RLWE parameters
+  required int32 m                 = 1;   // cyclotomic index
+  required int64 q                 = 2;   // modulus
+  required double svar             = 3;   // scaled variance
+  required int64 bound             = 4;   // gSqNorm error bound
+  required int32 numSamples        = 5;   // number of samples
+}
+
+message RLWRParams {                      // RLWR parameters
+  required int32 m                 = 1;   // cyclotomic index
+  required int64 q                 = 2;   // modulus
+  required int64 p                 = 3;   // rounding modulus p < q
+  required int32 numSamples        = 4;   // number of samples
+}
+
+message Challenge {
+  required int32 challengeID       = 1;  // unique identifier of challenge
+  required int32 numInstances      = 2;  // number of instances in challenge
+  required int64 beaconEpoch       = 3;  // beacon epoch for suppressing secret
+  required int32 beaconOffset      = 4;  // byte of beacon value used
+  oneof params {
+    ContParams cparams             = 5;
+    DiscParams dparams             = 6;
+    RLWRParams rparams             = 7;
+  }
+}
+
+message InstanceCont {                   // continuous RLWE instance
+  required int32 challengeID       = 1;  // challenge this instance belongs to
+  required int32 instanceID        = 2;  // instance within the challenge
+  required ContParams params       = 3;  // problem params (self-containment)
+  repeated SampleCont samples      = 4;  // the samples
+}
+
+message InstanceDisc {                   // discrete RLWE instance
+  required int32 challengeID       = 1;
+  required int32 instanceID        = 2;
+  required DiscParams params       = 3;
+  repeated SampleDisc samples      = 4;
+}
+
+message InstanceRLWR {                   // RLWR instance
+  required int32 challengeID       = 1;
+  required int32 instanceID        = 2;
+  required RLWRParams params       = 3;
+  repeated SampleRLWR samples      = 4;
+}
+
+message Secret {                         // a secret for an RLWE/RLWE instance
+  required int32 challengeID       = 1;
+  required int32 instanceID        = 2;
+  required int32 m                 = 3;
+  required int64 q                 = 4;
+  required Rq s                    = 5;
+}

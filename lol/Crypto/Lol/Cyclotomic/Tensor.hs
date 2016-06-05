@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             NoImplicitPrelude, PolyKinds, RankNTypes, ScopedTypeVariables, 
-             TupleSections, TypeFamilies, TypeOperators, 
-             UndecidableInstances #-}
+             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
+             RankNTypes, ScopedTypeVariables, TupleSections, TypeFamilies,
+             TypeOperators, UndecidableInstances #-}
 
 -- | Interface for cyclotomic tensors, and helper functions for tensor
 -- indexing.
@@ -23,7 +23,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.LatticePrelude as LP hiding (lift, (*>))
+import Crypto.Lol.Prelude           as LP hiding (lift, (*>))
 import Crypto.Lol.Types.FiniteField
 
 import           Control.Applicative
@@ -32,9 +32,9 @@ import           Control.Monad.Random
 import           Data.Constraint
 import           Data.Singletons.Prelude hiding ((:-))
 import           Data.Traversable
-import           Data.Tuple           (swap)
-import qualified Data.Vector          as V
-import qualified Data.Vector.Unboxed  as U
+import           Data.Tuple              (swap)
+import qualified Data.Vector             as V
+import qualified Data.Vector.Unboxed     as U
 
 -- | 'Tensor' encapsulates all the core linear transformations needed
 -- for cyclotomic ring arithmetic.
@@ -56,8 +56,7 @@ import qualified Data.Vector.Unboxed  as U
 -- inputs for each method is determined by the linear transform it
 -- implements.
 
-class (TElt t Double, TElt t (Complex Double))
-      => Tensor (t :: Factored -> * -> *) where
+class (TElt t Double, TElt t (Complex Double)) => Tensor t where
 
   -- | Constraints needed by @t@ to hold type @r@.
   type TElt t r :: Constraint
@@ -65,7 +64,7 @@ class (TElt t Double, TElt t (Complex Double))
   -- | Properties that hold for any index. Use with '\\'.
   entailIndexT :: Tagged (t m r)
                   (Fact m :- (Applicative (t m), Traversable (t m)))
-  
+
   -- | Properties that hold for any (legal) fully-applied tensor. Use
   -- with '\\'.
   entailEqT :: Tagged (t m r)
@@ -165,7 +164,7 @@ class (TElt t Double, TElt t (Complex Double))
               => (a -> b -> c) -> t m a -> t m b -> t m c
 
   -- | Potentially optimized unzip for types that satisfy 'TElt'.
-  unzipT :: (Fact m, TElt t (a,b), TElt t a, TElt t b) 
+  unzipT :: (Fact m, TElt t (a,b), TElt t a, TElt t b)
             => t m (a,b) -> (t m a, t m b)
 
   {- CJP: suppressed, apparently not needed
@@ -243,7 +242,7 @@ fMatrix mat = tagT $ go $ sUnF (sing :: SFactored m)
 -- prime @p@ to @1_(p^{e-1}) \otimes M@, where @1@ denotes the all-1s
 -- vector.
 ppMatrix :: forall pp r mon . (PPow pp, Monad mon, Ring r)
-            => (forall p . (Prim p) => TaggedT p mon (MatrixC r))
+            => (forall p . (Prime p) => TaggedT p mon (MatrixC r))
             -> TaggedT pp mon (MatrixC r)
 ppMatrix mat = tagT $ case (sing :: SPrimePower pp) of
   pp@(SPP (STuple2 sp _)) -> do
@@ -253,7 +252,7 @@ ppMatrix mat = tagT $ case (sing :: SPrimePower pp) of
 
 -- deeply embedded DSL for Kronecker products of matrices
 
-data MatrixC r = 
+data MatrixC r =
   MC Int Int                        -- dims
   (Int -> Int -> r)                 -- yields element i,j
 
@@ -269,7 +268,11 @@ indexM (MKron m (MC r c mc)) i j =
       in indexM m iq jq * mc ir jr
 
 gCRTM, gInvCRTM :: (Fact m, CRTrans mon r) => TaggedT m mon (Matrix r)
+-- | A @tot(m)@-by-1 matrix of the CRT coefficients of @g_m@, for @m@th
+-- cyclotomic.
 gCRTM = fMatrix gCRTPPow
+-- | A @tot(m)@-by-1 matrix of the inverse CRT coefficients of @g_m@, for @m@th
+-- cyclotomic.
 gInvCRTM = fMatrix gInvCRTPPow
 
 -- | The "tweaked" CRT^* matrix: @CRT^* . diag(sigma(g_m))@.
@@ -291,9 +294,9 @@ gCRTPPow, gInvCRTPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (MatrixC r)
 gCRTPPow = ppMatrix gCRTPrime
 gInvCRTPPow = ppMatrix gInvCRTPrime
 
-gCRTPrime, gInvCRTPrime :: (Prim p, CRTrans mon r) => TaggedT p mon (MatrixC r)
+gCRTPrime, gInvCRTPrime :: (Prime p, CRTrans mon r) => TaggedT p mon (MatrixC r)
 
--- | A @(p-1)@-by-1 matrix of the CRT coefficients of @g_p@, for @p^e@th
+-- | A @(p-1)@-by-1 matrix of the CRT coefficients of @g_p@, for @p@th
 -- cyclotomic.
 gCRTPrime = do
   p <- pureT valuePrime
@@ -317,7 +320,7 @@ gInvCRTPrime = do
 digitRev :: PP -> Int -> Int
 digitRev (_,0) 0 = 0
 -- CJP: use accumulator to avoid multiple exponentiations?
-digitRev (p,e) j 
+digitRev (p,e) j
   | e >= 1 = let (q,r) = j `divMod` p
              in r * (p^(e-1)) + digitRev (p,e-1) q
 
@@ -340,7 +343,7 @@ indexToPow (p,e) j = let (jq,jr) = j `divMod` (p-1)
 -- element i in @Z_{p^e}^*@.
 indexToZms :: PP -> Int -> Int
 indexToZms (p,_) i = let (i1,i0) = i `divMod` (p-1)
-                       in p*i1 + i0 + 1 
+                       in p*i1 + i0 + 1
 
 -- | Convert a Z_m^* index to a linear tensor index.
 zmsToIndex :: [PP] -> Int -> Int

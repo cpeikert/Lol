@@ -4,11 +4,27 @@ ghci
 lol.sublime-project
 lol.sublime-workspace
 cabal.sandbox.config
+dist
 sandbox-init
 sandbox-reset
+rebuild-proto
+*.prof
 
+**/TAGS
 **/configure
 **/.stack-work
 **/dist
+**/rlwe-challenges
+**/rlwe-secrets.tar.gz
+**/rlwe-challenges.*
 
 sandbox
+test
+challenge-files
+
+secret-files
+publish
+blockchaintest*
+test*
+metriculator.sh
+clean-benches.sh

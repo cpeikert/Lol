@@ -16,7 +16,9 @@ import Algebra.ZeroTestable as ZeroTestable
 import Control.DeepSeq
 import Data.Data
 import Data.Functor.Trans.Tagged
-import Data.Vector               as V
+
+import Data.Vector as V
+
 
 -- | Indexed Zip Vector: a wrapper around a (boxed) 'Vector' that has
 -- zip-py 'Applicative' behavior, analogous to
@@ -28,8 +30,7 @@ newtype IZipVector (m :: Factored) a =
                unIZipVector :: Vector a}
   -- not deriving Read, Monoid, Alternative, Monad[Plus], IsList
   -- because of different semantics and/or length restriction
-  deriving (Show, Eq, NFData, Functor,
-            Foldable, Traversable, ZeroTestable.C)
+  deriving (Show, Eq, NFData, Functor, Foldable, Traversable, ZeroTestable.C)
 
 -- the first argument, though phantom, affects representation
 type role IZipVector representational representational
@@ -42,6 +43,7 @@ iZipVector = let n = proxy totientFact (Proxy::Proxy m)
                        then Just $ IZipVector vec
                        else Nothing
 
+-- | Unzip an IZipVector.
 unzipIZV :: IZipVector m (a,b) -> (IZipVector m a, IZipVector m b)
 unzipIZV (IZipVector v) = let (va,vb) = V.unzip v
                           in (IZipVector va, IZipVector vb)

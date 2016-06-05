@@ -5,10 +5,11 @@
 -- | Generic interface for reflecting types to values.
 
 module Crypto.Lol.Reflects
-( Reflects(..)
+( Reflects(..),
 ) where
 
 import Algebra.ToInteger as ToInteger
+import Algebra.Ring as Ring
 import NumericPrelude
 
 import Crypto.Lol.Factored
@@ -40,7 +41,7 @@ instance (BinC a, ToInteger.C i) => Reflects a i where
 
 -}
 
-instance (Prim p, ToInteger.C i) => Reflects p i where
+instance (Prime p, ToInteger.C i) => Reflects p i where
   value = fromIntegral <$> valuePrime
 
 instance (PPow pp, ToInteger.C i) => Reflects pp i where
@@ -49,5 +50,6 @@ instance (PPow pp, ToInteger.C i) => Reflects pp i where
 instance (Fact m, ToInteger.C i) => Reflects m i where
   value = fromIntegral <$> valueFact
 
-instance {-# OVERLAPS #-} (Reifies rei a) => Reflects (rei :: *) a where
-  value = tag $ reflect (Proxy::Proxy rei)
+instance (Reifies q i, ToInteger.C i, Ring.C r)
+  => Reflects (q :: *) r where
+  value = tag $ fromIntegral $ reflect (Proxy::Proxy q)

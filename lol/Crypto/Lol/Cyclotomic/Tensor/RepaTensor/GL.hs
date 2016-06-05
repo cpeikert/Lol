@@ -9,7 +9,7 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
-import Crypto.Lol.LatticePrelude                        as LP
+import Crypto.Lol.Prelude                               as LP
 import Data.Coerce
 
 fL, fLInv, fGPow, fGDec :: (Fact m, Additive r, Unbox r, Elt r)
@@ -46,7 +46,7 @@ fGInvDec = wrapGInv' pGInvDec'
 
 wrapGInv' :: forall m r .
   (Fact m, IntegralDomain r, ZeroTestable r, Unbox r, Elt r)
-  => (forall p . Prim p => Tagged p (Trans r))
+  => (forall p . Prime p => Tagged p (Trans r))
   -> Arr m r -> Maybe (Arr m r)
 wrapGInv' ginv =
   let fGInv = eval $ fTensor $ ppTensor ginv
@@ -65,7 +65,7 @@ divCheck = coerce $  \ !arr den ->
   in if pass then Just out else Nothing
 {-# INLINABLE divCheck #-}
 
-pWrap :: forall p r . Prim p
+pWrap :: forall p r . Prime p
          => (forall rep . Source rep r => Int -> Array rep DIM2 r -> Array D DIM2 r)
          -> Tagged p (Trans r)
 pWrap f = let pval = proxy valuePrime (Proxy::Proxy p)
@@ -76,10 +76,10 @@ pWrap f = let pval = proxy valuePrime (Proxy::Proxy p)
 {-# INLINABLE pWrap #-}
 
 
-pL, pLInv, pGPow, pGDec :: (Prim p, Additive r, Unbox r, Elt r)
+pL, pLInv, pGPow, pGDec :: (Prime p, Additive r, Unbox r, Elt r)
   => Tagged p (Trans r)
 
-pGInvPow', pGInvDec' :: (Prim p, Ring r, Unbox r, Elt r)
+pGInvPow', pGInvDec' :: (Prime p, Ring r, Unbox r, Elt r)
   => Tagged p (Trans r)
 {-# INLINABLE pL #-}
 {-# INLINABLE pLInv #-}

@@ -18,13 +18,13 @@ import Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative    hiding ((*>))
 import Control.Arrow          ((***))
 import Control.DeepSeq
+import Control.Monad.Except
 import Control.Monad.Identity (Identity (..), runIdentity)
 import Control.Monad.Random
-import Control.Monad.Trans    (lift)
+import Control.Monad.Trans    as T (lift)
 
 import Data.Coerce
 import Data.Constraint              hiding ((***))
-import Data.Foldable                as F
 import Data.Int
 import Data.Maybe
 import Data.Traversable             as T
@@ -46,11 +46,21 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
 import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
 import Crypto.Lol.GaussRandom
-import Crypto.Lol.LatticePrelude                      as LP hiding (lift,
-                                                             replicate,
+import Crypto.Lol.Prelude                             as LP hiding
+                                                             (replicate,
                                                              unzip, zip)
+import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
+import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.RRq
+import Crypto.Lol.Types.ZqBasic
+
+import Crypto.Proto.RLWE.Kq
+import Crypto.Proto.RLWE.Rq
+
+import Data.Foldable as F
+import Data.Sequence as S (fromList)
 
 import System.IO.Unsafe (unsafePerformIO)
 
@@ -69,13 +79,59 @@ data CT (m :: Factored) r where
   CT :: Storable r => CT' m r -> CT m r
   ZV :: IZipVector m r -> CT m r
 
+deriving instance Show r => Show (CT m r)
+
 instance Eq r => Eq (CT m r) where
   (ZV x) == (ZV y) = x == y
   (CT x) == (CT y) = x == y
   x@(CT _) == y = x == toCT y
   y == x@(CT _) = x == toCT y
 
-deriving instance Show r => Show (CT m r)
+instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
+  type ProtoType (CT m (ZqBasic q Int64)) = Rq
+
+  toProto (CT (CT' xs)) =
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+        q = proxy value (Proxy::Proxy q) :: Int64
+    in Rq m (fromIntegral q) $ S.fromList $ SV.toList $ SV.map LP.lift xs
+  toProto x@(ZV _) = toProto $ toCT x
+
+  fromProto (Rq m' q' xs) =
+    let m = proxy valueFact (Proxy::Proxy m) :: Int
+        q = proxy value (Proxy::Proxy q) :: Int64
+        n = proxy totientFact (Proxy::Proxy m)
+        xs' = SV.fromList $ F.toList xs
+        len = F.length xs
+    in if m == fromIntegral m' && len == n && fromIntegral q == q'
+       then return $ CT $ CT' $ SV.map reduce xs'
+       else throwError $
+            "An error occurred while reading the proto type for CT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
+
+instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
+  type ProtoType (CT m (RRq q Double)) = Kq
+
+  toProto (CT (CT' xs)) =
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+        q = proxy value (Proxy::Proxy q) :: Double
+    in Kq m q $ S.fromList $ SV.toList $ SV.map LP.lift xs
+  toProto x@(ZV _) = toProto $ toCT x
+
+  fromProto (Kq m' q' xs) =
+    let m = proxy valueFact (Proxy::Proxy m) :: Int
+        q = proxy value (Proxy::Proxy q) :: Double
+        n = proxy totientFact (Proxy::Proxy m)
+        xs' = SV.fromList $ F.toList xs
+        len = F.length xs
+    in if m == fromIntegral m' && len == n && q == q'
+       then return $ CT $ CT' $ SV.map reduce xs'
+       else throwError $
+            "An error occurred while reading the proto type for CT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
@@ -112,12 +168,11 @@ type family Em r where
 
 -- CJP: Additive, Ring are not necessary when we use zipWithT
 -- EAC: This has performance implications for the CT backend,
---      which used a C function for zipWith (*)
-
+--      which used a (very fast) C function for (*) and (+)
 instance (Additive r, Storable r, Fact m, Dispatch r)
   => Additive.C (CT m r) where
-  (CT a@(CT' _)) + (CT b@(CT' _)) = CT $ (untag $ cZipDispatch dadd) a b
-  a + b = (toCT a) + (toCT b)
+  (CT (CT' a)) + (CT (CT' b)) = CT $ CT' $ SV.zipWith (+) a b
+  a + b = toCT a + toCT b
   negate (CT (CT' a)) = CT $ CT' $ SV.map negate a -- EAC: This probably should be converted to C code
   negate a = negate $ toCT a
 
@@ -191,8 +246,8 @@ instance Tensor CT where
 
   crtFuncs = (,,,,) <$>
     return (CT . repl) <*>
-    (wrap <$> untag (cZipDispatch dmul) <$> gCRT) <*>
-    (wrap <$> untag (cZipDispatch dmul) <$> gInvCRT) <*>
+    (wrap . untag (cZipDispatch dmul) <$> gCRT) <*>
+    (wrap . untag (cZipDispatch dmul) <$> gInvCRT) <*>
     (wrap <$> untagT ctCRT) <*>
     (wrap <$> untagT ctCRTInv)
 
@@ -357,7 +412,7 @@ cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   totm <- pureT totientFact
   m <- pureT valueFact
   rad <- pureT radicalFact
-  yin <- lift $ realGaussians (var * fromIntegral (m `div` rad)) totm
+  yin <- T.lift $ realGaussians (var * fromIntegral (m `div` rad)) totm
   return $ unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdec ruptr) (CT' yin))
 
@@ -422,7 +477,7 @@ ruInv = do
       pureT ppsFact
 
 wrapVector :: forall mon m r . (Monad mon, Fact m, Ring r, Storable r)
-              => TaggedT m mon (Matrix r) -> mon (CT' m r)
+  => TaggedT m mon (Matrix r) -> mon (CT' m r)
 wrapVector v = do
   vmat <- proxyT v (Proxy::Proxy m)
   let n = proxy totientFact (Proxy::Proxy m)
@@ -434,7 +489,7 @@ gCRT = wrapVector gCRTM
 gInvCRT = wrapVector gInvCRTM
 
 -- we can't put this in Extension with the rest of the twace/embed
--- fucntions because it needs access to the C backend
+-- functions because it needs access to the C backend
 twaceCRT' :: forall mon m m' r .
              (TElt CT r, CRTrans mon r, m `Divides` m')
              => TaggedT '(m, m') mon (Vector r -> Vector r)

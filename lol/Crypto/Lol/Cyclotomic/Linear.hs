@@ -13,7 +13,7 @@ module Crypto.Lol.Cyclotomic.Linear
 ) where
 
 import Crypto.Lol.Cyclotomic.Cyc
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 
 import Algebra.Additive as Additive (C)
 

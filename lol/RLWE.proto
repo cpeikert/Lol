@@ -1,0 +1,34 @@
+// run this:
+
+// hprotoc -p Crypto.Proto RLWE.proto
+
+message SampleCont {
+  required Rq a      = 1;
+  required Kq b      = 2;
+}
+
+message SampleDisc {
+  required Rq a      = 1;
+  required Rq b      = 2;
+}
+
+message SampleRLWR {
+  required Rq a      = 1;
+  required Rq b      = 2;  // for some modulus p < q
+}
+
+// For each of the following, the "xs" array is with respect to the
+// decoding basis.
+
+message Rq {
+  required uint32 m  = 1;
+  required uint64 q  = 2;
+  repeated sint64 xs = 3;
+}
+
+message Kq {
+  required uint32 m  = 1;
+  required double q  = 2;
+  repeated double xs = 3;
+}
+

@@ -17,8 +17,8 @@ import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Applications.SymmSHE hiding (CT)
 import qualified Crypto.Lol.Applications.SymmSHE as SHE
 import Crypto.Lol.CRTrans
+import Crypto.Lol.Types.Random
 
-import DRBG
 import Types
 
 import Data.Promotion.Prelude.List
@@ -53,10 +53,8 @@ main = do
 -- and keeping all of the code in the IO monad, which helps write clean code below
 -- No sequencing occurs between separate calls to this function, but it would be hard
 -- to get timing any other way.
-evalCryptoRandIO :: Rand (CryptoRand HashDRBG) a -> IO a
-evalCryptoRandIO x = do
-  gen <- newGenIO -- uses system entropy
-  return $ evalRand x gen
+evalHashDRBG :: Rand (CryptoRand HashDRBG) a -> IO a
+evalHashDRBG = evalCryptoRandIO Proxy
 
 tunnelTest pc@(_::Proxy t) = do -- in IO
     let v = 0.1 :: Double
@@ -65,15 +63,15 @@ tunnelTest pc@(_::Proxy t) = do -- in IO
     ast0 <- time "Computing AST: " $ lamTyped $ tunnelAST pc
 
     (ast1, idMap) <- time "Generating keys: " =<< 
-      evalCryptoRandIO (genKeys v ast0)
+      evalHashDRBG (genKeys v ast0)
 
     let keyMap = M.fromList $ elems idMap
 
     ast2 <- time "Generating hints: " =<< 
-      evalCryptoRandIO (genHints keyMap ast1)
+      evalHashDRBG (genHints keyMap ast1)
 
     (x1,encsk) <- time "Encrypting input: " =<< 
-      evalCryptoRandIO (encryptInput idMap x')
+      evalHashDRBG (encryptInput idMap x')
 
     putStrLn $ "Input noise level:\t" ++ (show $ errRatio x1 encsk)
 
@@ -111,13 +109,13 @@ prfTest pc@(_::Proxy t) = do
   ast0 <- time "Computing AST: " $ lamTyped $ homomPRF c
 
   (ast1, idMap) <- time "Generating keys: " =<< 
-    evalCryptoRandIO (genKeys v ast0)
+    evalHashDRBG (genKeys v ast0)
 
   ast2 <- time "Generating hints: " =<< 
-    evalCryptoRandIO (genHints (M.fromList $ elems idMap) ast1)
+    evalHashDRBG (genHints (M.fromList $ elems idMap) ast1)
 
   (x :: SHE.CT H0 ZP8 (Cyc t H0' ZQ4),_) <- time "Encrypting input: " =<< 
-    evalCryptoRandIO (encryptInput idMap x')
+    evalHashDRBG (encryptInput idMap x')
 
   _ <- time "Evaluating AST: " $ eval ast2 x
   

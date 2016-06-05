@@ -54,8 +54,9 @@ import qualified Crypto.Lol.Cyclotomic.RescaleCyc as R
 import           Crypto.Lol.Cyclotomic.Tensor     (TElt, Tensor)
 import qualified Crypto.Lol.Cyclotomic.UCyc       as U
 import           Crypto.Lol.Gadget
-import           Crypto.Lol.LatticePrelude        as LP
+import           Crypto.Lol.Prelude               as LP
 import           Crypto.Lol.Types.FiniteField
+import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.ZPP
 
 import Control.Applicative    hiding ((*>))
@@ -67,6 +68,7 @@ import Data.Coerce
 import Data.Traversable
 
 import Test.QuickCheck
+
 
 -- | Represents a cyclotomic ring such as @Z[zeta]@,
 -- @Zq[zeta]@, and @Q(zeta)@ in an explicit representation: @t@ is the
@@ -161,6 +163,7 @@ instance (Eq r, Fact m, CElt t r) => Eq (Cyc t m r) where
   (Dec u1) == (Dec u2) = u1 == u2
   (CRT (Right u1)) == (CRT (Right u2)) = u1 == u2
   -- compare Subs in compositum
+  -- EAC: would like to convert c2 to basis of c1 before embedding
   (Sub (c1 :: Cyc t l1 r)) == (Sub (c2 :: Cyc t l2 r)) =
     (embed' c1 :: Cyc t (FLCM l1 l2) r) == embed' c2
     \\ lcmDivides (Proxy::Proxy l1) (Proxy::Proxy l2)
@@ -189,6 +192,7 @@ instance (Fact m, CElt t r) => Additive.C (Cyc t m r) where
   (Dec u1) + (Dec u2) = Dec $ u1 + u2
   (CRT u1) + (CRT u2) = CRT $ u1 + u2
   -- Sub plus Sub: work in compositum
+  -- EAC: would like to convert c2 to basis of c1 before embedding
   (Sub (c1 :: Cyc t m1 r)) + (Sub (c2 :: Cyc t m2 r)) =
     (Sub $ (embed' c1 :: Cyc t (FLCM m1 m2) r) + embed' c2)
     \\ lcm2Divides (Proxy::Proxy m1) (Proxy::Proxy m2) (Proxy::Proxy m)
@@ -206,6 +210,7 @@ instance (Fact m, CElt t r) => Additive.C (Cyc t m r) where
   (Sub c1) + (Scalar c2) = Sub $ c1 + Scalar c2
 
   -- SUB PLUS NON-SUB, NON-SCALAR: work in full ring
+  -- EAC: would like to convert sub to basis of other before embedding
   (Sub c1) + c2 = embed' c1 + c2
   c1 + (Sub c2) = c1 + embed' c2
 
@@ -398,7 +403,9 @@ coeffsCyc R.Dec c' = Dec <$> U.coeffsDec (uncycDec c')
 coeffsPow, coeffsDec :: (m `Divides` m', CElt t r) => Cyc t m' r -> [Cyc t m r]
 {-# INLINABLE coeffsPow #-}
 {-# INLINABLE coeffsDec #-}
+-- | Specialized version of @coeffsCyc@ for powerful basis.
 coeffsPow = coeffsCyc R.Pow
+-- | Specialized version of @coeffsCyc@ for decoding basis.
 coeffsDec = coeffsCyc R.Dec
 
 -- | The relative powerful basis of @O_m' / O_m@.
@@ -588,9 +595,9 @@ instance (Arbitrary (UCyc t m P r)) => Arbitrary (Cyc t m r) where
   arbitrary = Pow <$> arbitrary
   shrink = shrinkNothing
 
-instance (Show r, Show (CRTExt r), Tensor t, Fact m, TElt t r, TElt t (CRTExt r)) => Show (Cyc t m r) where
-  show (Scalar c) = "Cyc Scalar: " ++ show c
-  show (Pow u) = "Cyc: " ++ show u
-  show (Dec u) = "Cyc: " ++ show u
-  show (CRT u) = "Cyc: " ++ show u
-  show (Sub c) = "Cyc Sub: " ++ show c
+instance (Fact m, CElt t r, Protoable (UCyc t m D r))
+         => Protoable (Cyc t m r) where
+  type ProtoType (Cyc t m r) = ProtoType (UCyc t m D r)
+  toProto (Dec uc) = toProto uc
+  toProto x = toProto $ toDec' x
+  fromProto x = Dec <$> fromProto x

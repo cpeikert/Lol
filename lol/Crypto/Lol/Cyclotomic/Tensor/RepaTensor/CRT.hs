@@ -1,5 +1,6 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, GADTs, NoImplicitPrelude,
-             ScopedTypeVariables #-}
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, GADTs,
+             MultiParamTypeClasses, NoImplicitPrelude, ScopedTypeVariables
+             #-}
 
 -- | Functions to support the chinese remainder transform on Repa arrays
 
@@ -12,9 +13,8 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
-import Crypto.Lol.LatticePrelude                        as LP
+import Crypto.Lol.Prelude                               as LP
 
 import Control.Applicative
 import Data.Coerce
@@ -143,7 +143,7 @@ butterfly = trans 2 $ \arr ->
 
 -- DFT_p, CRT_p, scaled DFT_p^{ -1 } and CRT_p^{ -1 }
 pDFT, pDFTInv', pCRT, pCRTInv' ::
-  forall mon p r . (Prim p, CRTrans mon r, Unbox r, Elt r)
+  forall mon p r . (Prime p, CRTrans mon r, Unbox r, Elt r)
   => TaggedT p mon (Trans r)
 
 {-# INLINABLE pDFT #-}

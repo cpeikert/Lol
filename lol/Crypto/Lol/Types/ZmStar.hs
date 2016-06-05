@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             NoImplicitPrelude, PolyKinds, RebindableSyntax,
-             ScopedTypeVariables, TypeFamilies, TypeOperators, 
-             UndecidableInstances #-}
+             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
+             RebindableSyntax, ScopedTypeVariables, TypeFamilies,
+             TypeOperators, UndecidableInstances #-}
 
 -- | A collection of helper functions for working with @Z_m^*@
 
@@ -10,7 +10,7 @@ module Crypto.Lol.Types.ZmStar
 ) where
 
 import Crypto.Lol.Factored
-import Crypto.Lol.LatticePrelude as LP hiding (null)
+import Crypto.Lol.Prelude       as LP hiding (null)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.ZqBasic
 
@@ -26,8 +26,8 @@ order p = tag $
   let mval = proxy value (Proxy::Proxy m)
   in if gcd p mval /= 1
      then error "p and m not coprime"
-     else 1 + (length $ takeWhile (/= one) $
-               tail $ iterate (* (fromIntegral p)) (one :: ZqBasic m Int))
+     else 1 + length (takeWhile (/= one) $
+                      tail $ iterate (* fromIntegral p) (one :: ZqBasic m Int))
 
 -- given p, returns the cosets of Z_m^* / <p>
 cosets :: forall zm . (Mod zm, ModRep zm ~ Int, Ord zm, Ring zm)
