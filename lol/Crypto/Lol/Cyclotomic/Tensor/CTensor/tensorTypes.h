@@ -26,6 +26,7 @@ typedef struct
 
 hInt_t reciprocal (hInt_t a, hInt_t b);
 
+//http://stackoverflow.com/questions/37572628
 #ifdef __cplusplus
 //http://stackoverflow.com/a/4421719
 class Zq

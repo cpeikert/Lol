@@ -1,6 +1,5 @@
 #include "tensorTypes.h"
 #include <math.h>
-#include <stdlib.h>
 
 // this function takes *inverse* RUs, so no negation is needed on the indexing
 // I had been negating the ru-idx, but this was causing a *negative* mod, resulting in a hard-to-find bug
