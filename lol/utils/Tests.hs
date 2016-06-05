@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, GADTs, MultiParamTypeClasses, 
+{-# LANGUAGE FlexibleContexts, FlexibleInstances, GADTs, MultiParamTypeClasses,
              PolyKinds, RankNTypes, ScopedTypeVariables, TypeFamilies #-}
 module Tests
 (test
@@ -12,13 +12,11 @@ import Gen
 import Utils
 
 import Control.Monad.Random
-import Control.Monad.State
 
 import Data.Proxy
 
 import qualified Test.Framework as TF
 import Test.Framework.Providers.QuickCheck2
-import Test.QuickCheck
 
 test :: Bool -> Test params
 test = Test
@@ -29,7 +27,7 @@ testIO = TestM
 testGroupM :: String -> [IO TF.Test] -> TF.Test
 testGroupM str = TF.buildTest . (TF.testGroup str <$>) . sequence
 
--- normalizes any function resulting in a Benchmark to 
+-- normalizes any function resulting in a Benchmark to
 -- one that takes a proxy for its arguments
 hideArgs :: (GenArgs rnd bnch, MonadRandom rnd, ShowType a,
              ResultOf bnch ~ Test a)
