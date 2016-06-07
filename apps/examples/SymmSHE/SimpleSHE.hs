@@ -11,7 +11,6 @@ import Crypto.Lol hiding ((^),CT)
 import qualified Crypto.Lol as Lol
 import Crypto.Lol.Applications.SymmSHE
 import Algebra.Ring ((^)) -- easier to use with the TH commands below
-import Data.Int -- to use the CT backend, you must use Int64 rather than Int
 import Math.NumberTheory.Primes.Testing (isPrime) -- used to generate "good" moduli
 import Control.Monad.Random (getRandom)
 import GHC.TypeLits (Nat)
