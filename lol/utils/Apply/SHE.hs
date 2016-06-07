@@ -1,7 +1,17 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances,
-             GADTs, MultiParamTypeClasses, NoImplicitPrelude, PolyKinds, RankNTypes,
-             RebindableSyntax, ScopedTypeVariables,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Apply.SHE
 (AddZq
@@ -25,14 +35,14 @@ import Control.DeepSeq
 import Control.Monad.Random
 import Control.Monad.State
 
-import Crypto.Lol hiding (CT)
+import Crypto.Lol                      hiding (CT)
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Types.ZPP
 
 import Crypto.Random.DRBG
 
-import Data.Singletons
 import Data.Promotion.Prelude.Eq
+import Data.Singletons
 import Data.Singletons.TypeRepStar ()
 
 data AddZq :: TyFun (Factored, Factored, *, *) (Factored, Factored, *, *, *) -> *
@@ -130,6 +140,7 @@ type family KSQCtx a where
   KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))) =
     (Random zp, Eq zp,          -- CJP: added b/c CElt doesn't have them
      EncryptCtx t m m' (LiftOf zp) zp zq,
+     DecryptUCtx t m m' (LiftOf zp) zp zq,
      KeySwitchCtx gad t m' zp zq zq',
      KSHintCtx gad t m' (LiftOf zp) zq',
      -- ^ these provide the context to generate the parameters

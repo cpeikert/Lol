@@ -1,7 +1,15 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
-             RankNTypes, ScopedTypeVariables, TupleSections, TypeFamilies,
-             TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 -- | Interface for cyclotomic tensors, and helper functions for tensor
 -- indexing.

@@ -181,9 +181,8 @@ instance (Additive r, Tensor t, Fact m, TElt t r) => Additive.C (UCyc t m D r) w
   {-# INLINABLE (-) #-}
   {-# INLINABLE negate #-}
 
--- no Additive instances for C/E alone, because 'zero' would violate
--- 'UCyc' invariant if C/E were invalid representations
-
+-- | only for appropriate CRT representation (otherwise 'zero' would
+-- violate internal invariant)
 instance (Fact m, UCRTElt t r) => Additive.C (UCycEC t m r) where
 
   zero = scalarCRT zero
@@ -206,8 +205,7 @@ instance (Fact m, UCRTElt t r) => Additive.C (UCycEC t m r) where
   {-# INLINABLE (-) #-}
   {-# INLINABLE negate #-}
 
--- Ring instance: only for CRT
-
+-- | only for appropriate CRT representation
 instance (Fact m, UCRTElt t r) => Ring.C (UCycEC t m r) where
 
   one = scalarCRT one
@@ -236,6 +234,9 @@ instance (Ring r, Fact m, UCRTElt t r) => Module.C r (UCycEC t m r) where
   r *> (Left (CRTE s v)) = Left $ CRTE s $ fmapT (toExt r *) v
   {-# INLINABLE (*>) #-}
 
+-- | @Rp@ is an @F_{p^d}@-module when @d@ divides @phi(m)@, by
+-- applying @d@-dimensional @Fp@-linear transform on @d@-dim chunks of
+-- powerful basis coeffs
 instance (GFCtx fp d, Fact m, Tensor t, TElt t fp)
          => Module.C (GF fp d) (UCyc t m P fp) where
   -- can use any r-basis to define module mult, but must be
@@ -688,11 +689,13 @@ toCRT = let fromPow :: t m r -> UCycEC t m r
 
 -- CJP: no instances for E because types (and math) don't make sense.
 
+-- | apply coefficient-wise (with respect to powerful basis)
 instance (Tensor t, Fact m) => Functor (UCyc t m P) where
   -- Functor instance is implied by Applicative laws
   {-# INLINABLE fmap #-}
   fmap f x = pure f <*> x
 
+-- | apply coefficient-wise (with respect to decoding basis)
 instance (Tensor t, Fact m) => Functor (UCyc t m D) where
   -- Functor instance is implied by Applicative laws
   {-# INLINABLE fmap #-}
@@ -746,16 +749,14 @@ instance (Tensor t, Fact m) => Traversable (UCyc t m D) where
 
 ---------- Utility instances ----------
 
-instance (Random r, UCRTElt t r, Fact m)
-         => Random (UCyc t m P r) where
+instance (Random r, UCRTElt t r, Fact m) => Random (UCyc t m P r) where
 
   random g = let (v,g') = random g \\ witness entailRandomT v
              in (Pow v, g')
 
   randomR _ = error "randomR non-sensical for UCyc"
 
-instance (Random r, UCRTElt t r, Fact m)
-         => Random (UCyc t m D r) where
+instance (Random r, UCRTElt t r, Fact m) => Random (UCyc t m D r) where
 
   random g = let (v,g') = random g \\ witness entailRandomT v
              in (Dec v, g')

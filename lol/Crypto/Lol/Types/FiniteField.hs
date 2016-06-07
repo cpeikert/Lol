@@ -1,8 +1,16 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             GeneralizedNewtypeDeriving, InstanceSigs, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RebindableSyntax,
-             RoleAnnotations, ScopedTypeVariables, TypeFamilies,
-             UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE InstanceSigs               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RebindableSyntax           #-}
+{-# LANGUAGE RoleAnnotations            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 -- CJP: need PolyKinds to allow d to have non-* kind
 
@@ -95,6 +103,7 @@ instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
 -- @GF(p^d)@-module structure for tensors over @F_p@ of dimension @n@, where
 -- @d | n@.
 newtype TensorCoeffs a = Coeffs {unCoeffs :: [a]} deriving (Additive.C)
+
 instance (Additive fp, Ring (GF fp d), Reflects d Int)
   => Module.C (GF fp d) (TensorCoeffs fp) where
 

@@ -1,9 +1,20 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, FunctionalDependencies,
-             GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
-             ScopedTypeVariables, StandaloneDeriving, TemplateHaskell,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE FunctionalDependencies     #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE RebindableSyntax           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 -- | A substitute for the Prelude that is more suitable for Lol.  This
 -- module exports most of the Numeric Prelude and other frequently
@@ -142,6 +153,7 @@ roundCoset = let pval = proxy modulus (Proxy::Proxy zp)
 
 type instance LiftOf (a,b) = Integer
 
+-- | Lift product ring of @Zq@s to 'Integer'
 instance (Mod a, Mod b, Lift' a, Lift' b, Reduce Integer (a,b),
           ToInteger (LiftOf a), ToInteger (LiftOf b))
          => Lift' (a,b) where
@@ -159,8 +171,7 @@ instance (Mod a, Mod b, Lift' a, Lift' b, Reduce Integer (a,b),
     in r
 
 
--- NP should define Ring and Field instances for pairs, but doesn't.
--- So we do it here.
+-- | Pair as product ring
 instance (Ring r1, Ring r2) => Ring.C (r1, r2) where
   (x1, x2) * (y1, y2) = (x1*y1, x2*y2)
   one = (one,one)
@@ -170,12 +181,14 @@ instance (Ring r1, Ring r2) => Ring.C (r1, r2) where
   {-# INLINABLE one #-}
   {-# INLINABLE fromInteger #-}
 
+-- | Product ring as an (almost) field
 instance (Field f1, Field f2) => Field.C (f1, f2) where
   (x1, x2) / (y1, y2) = (x1 / y1, x2 / y2)
   recip = recip *** recip
   {-# INLINABLE (/) #-}
   {-# INLINABLE recip #-}
 
+-- | Product ring as an (almost) integral domain
 instance (IntegralDomain a, IntegralDomain b) => IntegralDomain.C (a,b) where
   (a1,b1) `divMod` (a2,b2) =
     let (da,ra) = (a1 `divMod` a2)
@@ -183,6 +196,7 @@ instance (IntegralDomain a, IntegralDomain b) => IntegralDomain.C (a,b) where
     in ((da,db), (ra,rb))
   {-# INLINABLE divMod #-}
 
+-- | Product ring of @Zq@s as a @Zq@ (with 'Integer' modulus)
 instance (Mod a, Mod b) => Mod (a,b) where
   type ModRep (a,b) = Integer
 
@@ -190,11 +204,12 @@ instance (Mod a, Mod b) => Mod (a,b) where
             fromIntegral (proxy modulus (Proxy::Proxy b))
   {-# INLINABLE modulus #-}
 
+-- | Reduce into product ring.
 instance (Reduce a b1, Reduce a b2) => Reduce a (b1, b2) where
   reduce x = (reduce x, reduce x)
   {-# INLINABLE reduce #-}
 
--- instances of Rescale for a product
+-- | Rescale a product ring of @Zq@s
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b)
          => Rescale (a,b) b where
   rescale = let q1val = proxy modulus (Proxy::Proxy a)
@@ -202,6 +217,7 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b)
             in \(x1,x2) -> q1inv * (x2 - reduce (lift x1))
   {-# INLINABLE rescale #-}
 
+-- | Rescale a product ring of @Zq@s
 instance (Mod b, Field a, Lift b (ModRep b), Reduce (LiftOf b) a)
          => Rescale (a,b) a where
   rescale = let q2val = proxy modulus (Proxy::Proxy b)
@@ -209,31 +225,33 @@ instance (Mod b, Field a, Lift b (ModRep b), Reduce (LiftOf b) a)
             in \(x1,x2) -> q2inv * (x1 - reduce (lift x2))
   {-# INLINABLE rescale #-}
 
--- some multi-step scaledowns; could do this forever
+-- | Rescale a (multi-)product ring of @Zq@s
 instance (Rescale (a,(b,c)) (b,c), Rescale (b,c) c)
          => Rescale (a,(b,c)) c where
   rescale = (rescale :: (b,c) -> c) . rescale
   {-# INLINABLE rescale #-}
 
+-- | Rescale a (multi-)product ring of @Zq@s
 instance (Rescale ((a,b),c) (a,b), Rescale (a,b) a)
          => Rescale ((a,b),c) a where
   rescale = (rescale :: (a,b) -> a) . rescale
   {-# INLINABLE rescale #-}
 
--- scaling up to a product
+-- | Rescale /up/ to a product ring of @Zq@s
 instance (Ring a, Mod b, Reduce (ModRep b) a) => Rescale a (a,b) where
   -- multiply by q2
   rescale = let q2val = reduce $ proxy modulus (Proxy::Proxy b)
             in \x -> (q2val * x, zero)
   {-# INLINABLE rescale #-}
 
+-- | Rescale /up/ to a product ring of @Zq@s
 instance (Ring b, Mod a, Reduce (ModRep a) b) => Rescale b (a,b) where
   -- multiply by q1
   rescale = let q1val = reduce $ proxy modulus (Proxy::Proxy a)
             in \x -> (zero, q1val * x)
   {-# INLINABLE rescale #-}
 
--- Instance of 'Encode' for product ring.
+-- | Encode for a product ring
 instance (Encode s t1, Encode s t2, Field (t1, t2)) => Encode s (t1, t2) where
   {-# INLINABLE lsdToMSD #-}
   lsdToMSD = let (s1, t1conv) = lsdToMSD
