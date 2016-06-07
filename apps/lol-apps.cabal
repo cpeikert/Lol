@@ -1,5 +1,5 @@
 name:                lol-apps
--- The package version.  See the Haskell package versioning policy (PVP) 
+-- The package version.  See the Haskell package versioning policy (PVP)
 -- for standards guiding when and how versions should be incremented.
 -- http://www.haskell.org/haskellwiki/Package_versioning_policy
 -- PVP summary:      +-+------- breaking API changes
@@ -21,16 +21,17 @@ extra-source-files:  README, CHANGES.md,
                      benchmarks/SHEBenches.hs,
                      tests/SHETests.hs,
                      utils/Apply.hs,
+                     utils/Apply/SHE.hs
                      utils/Benchmarks.hs,
-                     utils/Gen.hs,
+                     utils/GenArgs.hs,
+                     utils/GenArgs/SHE.hs
                      utils/Tests.hs,
                      utils/TestTypes.hs,
                      utils/Utils.hs
-                     utils/Harness/SHE.hs
 cabal-version:       >= 1.10
 description:
-    This library contains example cryptographic applications built using 
-    <https://hackage.haskell.org/package/lol Λ ○ λ>  (Lol), 
+    This library contains example cryptographic applications built using
+    <https://hackage.haskell.org/package/lol Λ ○ λ>  (Lol),
     a general-purpose library for ring-based lattice cryptography.
 
 source-repository head
@@ -41,7 +42,7 @@ Flag llvm
   Description:  Compile via LLVM. This produces much better object code,
                 but you need to have the LLVM compiler installed.
 
-  Default:      True
+  Default:      False
 
 Flag opt
   Description: Turn on library optimizations
@@ -56,16 +57,16 @@ library
 
   -- ghc optimizations
   if flag(opt)
-    ghc-options: -O3 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
+    ghc-options: -O3 -Odph -funbox-strict-fields -fwarn-dodgy-imports
     ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
-  exposed-modules: 
+  exposed-modules:
     Crypto.Lol.Applications.SymmSHE
 
   build-depends:
     base==4.8.*,
     deepseq >= 1.4.1.1 && <1.5,
-    lol == 0.2.0.0,
+    lol >= 0.2.0.0,
     MonadRandom >= 0.2 && < 0.5,
     numeric-prelude >= 0.4.2 && < 0.5
 
@@ -118,5 +119,5 @@ Benchmark bench-apps
     singletons,
     transformers,
     vector,
-    repa                        
+    repa
 

@@ -10,7 +10,7 @@ module Crypto.Lol.Gadget
 , TrivGad, BaseBGad
 ) where
 
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 
 import Control.Applicative
 import Control.Arrow

@@ -15,7 +15,7 @@ import Control.DeepSeq
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Gadget
-import Crypto.Lol.LatticePrelude hiding (drop, lookup, (!!))
+import Crypto.Lol.Prelude hiding (drop, lookup, (!!))
 import Crypto.Lol.Applications.SymmSHE
 
 import Language.Syntactic

@@ -1,11 +1,11 @@
 name:                lol
--- The package version.  See the Haskell package versioning policy (PVP) 
+-- The package version.  See the Haskell package versioning policy (PVP)
 -- for standards guiding when and how versions should be incremented.
 -- http://www.haskell.org/haskellwiki/Package_versioning_policy
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.2.0.0
+version:             0.3.0.0
 synopsis:            A library for lattice cryptography.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -19,22 +19,27 @@ stability:           experimental
 build-type:          Simple
 extra-source-files:  README, CHANGES.md,
                      benchmarks/CycBenches.hs,
+                     benchmarks/TensorBenches.hs,
+                     benchmarks/UCycBenches.hs,
                      benchmarks/ZqBenches.hs,
                      tests/CycTests.hs,
                      tests/ZqTests.hs,
                      tests/TensorTests.hs,
                      utils/Apply.hs,
+                     utils/Apply/Cyc.hs,
+                     utils/Apply/Zq.hs,
                      utils/Benchmarks.hs,
-                     utils/Gen.hs,
+                     utils/GenArgs.hs,
+                     utils/GenArgs/Zq.hs,
                      utils/Tests.hs,
                      utils/TestTypes.hs,
                      utils/Utils.hs,
-                     utils/Harness/Cyc.hs,
-                     Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
+                     Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h,
+                     Crypto/Lol/Cyclotomic/Tensor/CTensor/*.cpp
 cabal-version:       >= 1.10
-description:         
+description:
     Λ ○ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
-    For a detailed description of interfaces and functionality, see 
+    For a detailed description of interfaces and functionality, see
     <https://eprint.iacr.org/2015/1134 Λ ○ λ: A Functional Library for Lattice Cryptography>.
     For example cryptographic applications, see <https://hackage.haskell.org/package/lol-apps lol-apps>.
 source-repository head
@@ -43,74 +48,82 @@ source-repository head
 
 -- For information on compiling C with cabal: http://blog.ezyang.com/2010/06/setting-up-cabal-the-ffi-and-c2hs/
 
-Flag useICC
-  Description: Use ICC instead of GCC to compile C backend.
-  Default:     False
-
 Flag llvm
   Description:  Compile via LLVM. This produces much better object code,
                 but you need to have the LLVM compiler installed.
-
-  Default:      True
+  -- If you enable this and get errors like "Error: can't resolve `.rodata' {.rodata section}"
+  -- then GHC doesn't like your version of LLVM!
+  Default:      False
 
 Flag opt
   Description: Turn on library optimizations
   Default:     True
-  Manual:      False
 
 library
-  Include-dirs: Crypto/Lol/Cyclotomic/Tensor/CTensor
-  C-sources: Crypto/Lol/Cyclotomic/Tensor/CTensor/basic.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/crt.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/g.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/generalfuncs.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/l.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/norm.c,
-             Crypto/Lol/Cyclotomic/Tensor/CTensor/random.c
-  Includes: Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h
   default-language:   Haskell2010
-
-  if flag(useICC)
-    ghc-options: -pgml icc -optc-O3 
-    cc-options: -std=gnu99 -Wall -DSTATS -DCINTRIN
-  else
-    ghc-options: -pgml gcc -fPIC -optc-O3 
-    cc-options: -std=gnu99 -fPIC -Wall
+  ghc-options: -fwarn-dodgy-imports
+  Include-dirs: Crypto/Lol/Cyclotomic/Tensor/CTensor
+  -- Due to #12152, the file containing the definition of `Zq::q` must be linked first,
+  -- otherwise dynamic linking (`cabal repl` or `stack ghci`) results in the error:
+  -- "Loading temp shared object failed: /tmp/ghc54651_0/libghc_1.so: undefined symbol _ZN2Zq1qE"
+  -- For `cabal repl`, we can simply reorder the list so that the file that should be linked
+  -- first comes first in the list. However `stack ghci` always links alphabetically,
+  -- so we really just have to define `Zq::q` in the first file alphabetically.
+  C-sources: Crypto/Lol/Cyclotomic/Tensor/CTensor/common.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/crt.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/g.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/l.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/mul.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/norm.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/random.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CTensor/tensor.cpp
 
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
 
   -- ghc optimizations
   if flag(opt)
-    ghc-options: -O3 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
-    ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+    ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
-  exposed-modules: 
+  exposed-modules:
     Crypto.Lol
     Crypto.Lol.PosBin
     Crypto.Lol.Factored
     Crypto.Lol.Reflects
     Crypto.Lol.CRTrans
     Crypto.Lol.Gadget
-    Crypto.Lol.LatticePrelude
+    Crypto.Lol.Prelude
 
     Crypto.Lol.Cyclotomic.Cyc
     Crypto.Lol.Cyclotomic.UCyc
     Crypto.Lol.Cyclotomic.RescaleCyc
     Crypto.Lol.Cyclotomic.Linear
 
+    Crypto.Lol.RLWE.Continuous
+    Crypto.Lol.RLWE.Discrete
+    Crypto.Lol.RLWE.RLWR
+
     Crypto.Lol.Cyclotomic.Tensor
     Crypto.Lol.Cyclotomic.Tensor.CTensor
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor
-    
+
     Crypto.Lol.Types.Random
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
+    Crypto.Lol.Types.Proto
+    Crypto.Lol.Types.RRq
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.ZqBasic
 
+    Crypto.Proto.RLWE
+    Crypto.Proto.RLWE.Rq
+    Crypto.Proto.RLWE.Kq
+    Crypto.Proto.RLWE.SampleCont
+    Crypto.Proto.RLWE.SampleDisc
+    Crypto.Proto.RLWE.SampleRLWR
+
   other-modules:
-        
+
     Crypto.Lol.FactoredDefs
     Crypto.Lol.PosBinDefs
     Crypto.Lol.GaussRandom
@@ -118,6 +131,7 @@ library
     Crypto.Lol.Types.Complex
     Crypto.Lol.Types.Numeric
     Crypto.Lol.Types.IZipVector
+    Crypto.Lol.Cyclotomic.CRTSentinel
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
     Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
@@ -136,10 +150,13 @@ library
     crypto-api,
     data-default >= 0.3.0 && < 0.6,
     deepseq >= 1.4.1.1 && <1.5,
+    monadcryptorandom,
     MonadRandom >= 0.2 && < 0.5,
     mtl >= 2.2.1 && < 2.3,
     numeric-prelude >= 0.4.2 && < 0.5,
     QuickCheck >= 2.8 && < 2.9,
+    protocol-buffers,
+    protocol-buffers-descriptor,
     random >= 1.1 && < 1.2,
     reflection >= 1.5.1 && < 2.2,
     repa==3.4.*,
@@ -184,9 +201,10 @@ Benchmark bench-lol
   default-language:   Haskell2010
   main-is:            Main.hs
 
-  -- if flag(llvm)
-  --   ghc-options: -fllvm -optlo-O3
-  ghc-options: -threaded -rtsopts
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3
+  -- ghc-options: -threaded -rtsopts
+  ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
   -- ghc-options: -O2 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
   -- ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
@@ -201,4 +219,4 @@ Benchmark bench-lol
     singletons,
     transformers,
     vector,
-    repa                        
+    repa

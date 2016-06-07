@@ -1,18 +1,17 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, KindSignatures, MultiParamTypeClasses,
+             FlexibleInstances, MultiParamTypeClasses,
              NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
              ScopedTypeVariables, TypeFamilies, TypeOperators #-}
 
-module TestTypes (
+module TestTypes
+(SmoothQ1, SmoothQ2, SmoothQ3
+,SmoothZQ1, SmoothZQ2, SmoothZQ3
+,Zq
+,ZQ1,ZQ2,ZQ3) where
 
-SmoothZQ1, SmoothZQ2, SmoothZQ3
-, Zq, ZQ1, ZQ2, ZQ3) where
-
-import Control.Monad
 import Control.Monad.Random
 
 import Crypto.Lol
-import Crypto.Lol.Reflects
 
 import Utils
 

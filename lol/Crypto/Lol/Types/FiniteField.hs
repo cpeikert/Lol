@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             GeneralizedNewtypeDeriving, MultiParamTypeClasses,
+             GeneralizedNewtypeDeriving, InstanceSigs, MultiParamTypeClasses,
              NoImplicitPrelude, PolyKinds, RebindableSyntax,
              RoleAnnotations, ScopedTypeVariables, TypeFamilies,
              UndecidableInstances #-}
@@ -18,7 +18,7 @@ module Crypto.Lol.Types.FiniteField
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Factored
-import Crypto.Lol.LatticePrelude
+import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 
 import Algebra.Additive     as Additive (C)
@@ -44,9 +44,11 @@ newtype GF fp d = GF (Polynomial fp)
 -- the second argument, though phantom, affects representation
 type role GF representational representational
 
+-- | Constraint synonym for a prime field.
 type PrimeField fp = (Enumerable fp, Field fp, Eq fp, ZeroTestable fp,
-                      Prim (CharOf fp), IrreduciblePoly fp)
+                      Prime (CharOf fp), IrreduciblePoly fp)
 
+-- | Constraint synonym for a finite field.
 type GFCtx fp d = (PrimeField fp, Reflects d Int)
 
 instance (GFCtx fp d) => Enumerable (GF fp d) where
@@ -69,26 +71,34 @@ instance (GFCtx fp d) => Field.C (GF fp d) where
           in \(GF f) -> let (_,(a,_)) = extendedGCD f g
                            in GF a
 
-instance (GFCtx fp d) => CRTrans (GF fp d) where
+instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
 
-  crtInfo m = (,) <$> omegaPow <*> scalarInv
+  crtInfo :: forall m . (Reflects m Int) => TaggedT m Maybe (CRTInfo (GF fp d))
+  crtInfo = tagT $ (,) <$> omegaPow <*> scalarInv
     where
+      omegaPow :: Maybe (Int -> GF fp d)
       omegaPow =
         let size' = proxy size (Proxy :: Proxy (GF fp d))
-            (q,r) = (size'-1) `quotRem` m
+            mval = proxy value (Proxy :: Proxy m)
+            (q,r) = (size'-1) `quotRem` mval
             gen = head $ filter isPrimitive values
             omega = gen^q
-            omegaPows = V.iterateN m (*omega) one
+            omegaPows = V.iterateN mval (*omega) one
         in if r == 0
-           then Just $ (omegaPows V.!) . (`mod` m)
+           then Just $ (omegaPows V.!) . (`mod` mval)
            else Nothing
-      scalarInv = Just $ recip $ fromIntegral $ valueHat m
+      scalarInv :: Maybe (GF fp d)
+      scalarInv = Just $ recip $ fromIntegral $ valueHat
+                    (proxy value (Proxy::Proxy m) :: Int)
 
+-- | This wrapper for a list of coefficients is used to define a
+-- @GF(p^d)@-module structure for tensors over @F_p@ of dimension @n@, where
+-- @d | n@.
 newtype TensorCoeffs a = Coeffs {unCoeffs :: [a]} deriving (Additive.C)
 instance (Additive fp, Ring (GF fp d), Reflects d Int)
   => Module.C (GF fp d) (TensorCoeffs fp) where
 
-  r *> (Coeffs fps) = 
+  r *> (Coeffs fps) =
     let dval = proxy value (Proxy::Proxy d)
         n = length fps
     in if n `mod` dval /= 0 then
@@ -107,14 +117,14 @@ chunksOf n xs
 toList :: forall fp d . (Reflects d Int, Additive fp) => GF fp d -> [fp]
 toList = let dval = proxy value (Proxy::Proxy d)
          in \(GF p) -> let l = coeffs p
-                       in l ++ (replicate (dval - length l) zero)
+                       in l ++ replicate (dval - length l) zero
 
 -- | Yield a field element given up to @d@ coefficients with respect
 -- to the power basis.
 fromList :: forall fp d . (Reflects d Int) => [fp] -> GF fp d
 fromList = let dval = proxy value (Proxy::Proxy d)
            in \cs -> if length cs <= dval then GF $ fromCoeffs cs
-                     else error $ "FiniteField.fromList: length " ++ 
+                     else error $ "FiniteField.fromList: length " ++
                               show (length cs) ++ " > degree " ++ show dval
 
 sizePP :: forall fp d . (GFCtx fp d) => Tagged (GF fp d) PP
@@ -148,7 +158,7 @@ powTraces =
   --          ", d = " ++ show (proxy value (Proxy::Proxy d) :: Int)) $
   let d = proxy value (Proxy :: Proxy d)
   in tag $ map trace' $ take d $
-     iterate (* (GF (X ^^ 1))) (one :: GF fp d)
+     iterate (* GF (X ^^ 1)) (one :: GF fp d)
 
 -- helper that computes trace via brute force: sum frobenius
 -- automorphisms

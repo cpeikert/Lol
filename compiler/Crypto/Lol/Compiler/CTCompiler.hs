@@ -33,7 +33,7 @@ import Crypto.Lol.Compiler.CT
 import Crypto.Lol.Compiler.CTDummy
 import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Cyclotomic.Linear
-import Crypto.Lol.LatticePrelude hiding (lookup, lift)
+import Crypto.Lol.Prelude hiding (lookup, lift)
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Types.ZPP
 

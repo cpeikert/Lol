@@ -1,8 +1,7 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances,
+{-# LANGUAGE DataKinds, DeriveGeneric, FlexibleContexts, FlexibleInstances,
              GeneralizedNewtypeDeriving, MultiParamTypeClasses,
              NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables,
-             StandaloneDeriving, TemplateHaskell, TypeFamilies,
-             UndecidableInstances #-}
+             StandaloneDeriving, TemplateHaskell, TypeFamilies #-}
 
 -- | Data type, functions, and instances for complex numbers.
 
@@ -31,7 +30,8 @@ import Test.QuickCheck
 
 -- | Newtype wrapper (with slightly different instances) for
 -- <https://hackage.haskell.org/package/numeric-prelude-0.4.2/docs/Number-Complex.html numeric-prelude Complex>.
-newtype Complex a = Complex (C.T a) deriving (Additive.C, Ring.C, ZeroTestable.C, Field.C, Storable, Eq, Show, Arbitrary)
+newtype Complex a = Complex (C.T a)
+    deriving (Additive.C, Ring.C, ZeroTestable.C, Field.C, Storable, Eq, Show, Arbitrary)
 
 derivingUnbox "Complex"
   [t| forall a . (Unbox a) => Complex a -> (a, a) |]

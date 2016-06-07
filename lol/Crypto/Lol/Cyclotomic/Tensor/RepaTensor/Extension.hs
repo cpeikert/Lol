@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns, ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, MultiParamTypeClasses, NoImplicitPrelude,
-             PolyKinds, ScopedTypeVariables, TemplateHaskell, TypeFamilies,
-             TypeOperators #-}
+             PolyKinds, ScopedTypeVariables, TemplateHaskell,
+             TypeFamilies, TypeOperators #-}
 
 -- | RT-specific functions for embedding/twacing in various bases
 
@@ -10,22 +10,22 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 , coeffs', powBasisPow', crtSetDec'
 ) where
 
-import           Crypto.Lol.LatticePrelude              as LP hiding (lift, (!!))
 import           Crypto.Lol.CRTrans
-import           Crypto.Lol.Reflects
-import qualified Crypto.Lol.Cyclotomic.Tensor                      as T
+import qualified Crypto.Lol.Cyclotomic.Tensor                     as T
 import           Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 import           Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
-import           Crypto.Lol.Types.FiniteField
-import           Crypto.Lol.Types.ZmStar
+import           Crypto.Lol.Prelude                               as LP
+
+import Crypto.Lol.Types.FiniteField
+import Crypto.Lol.Types.ZmStar
 
 import Control.Applicative
-import Control.Arrow       (first, (***))
+import Control.Arrow       (first, second)
 
 import           Data.Coerce
 import           Data.Default
 import           Data.Maybe
-import           Data.Reflection (reify)
+import           Data.Reflection              (reify)
 import qualified Data.Vector                  as V
 import qualified Data.Vector.Unboxed          as U
 import           Data.Vector.Unboxed.Deriving
@@ -41,7 +41,7 @@ derivingUnbox "DIM1"
   [| (Z :.) |]
 
 -- | The "tweaked trace" function in either the powerful or decoding
--- basis of the m'th cyclotomic ring to the mth cyclotomic ring when 
+-- basis of the m'th cyclotomic ring to the mth cyclotomic ring when
 -- @m | m'@.
 twacePowDec' :: forall m m' r . (m `Divides` m', Unbox r)
                  => Arr m' r -> Arr m r
@@ -50,22 +50,21 @@ twacePowDec'
     in coerce $ \ !arr -> force $ backpermute (extent indices) (indices !) arr
 
 -- | The "tweaked trace" function in the CRT
--- basis of the m'th cyclotomic ring to the mth cyclotomic ring when 
+-- basis of the m'th cyclotomic ring to the mth cyclotomic ring when
 -- @m | m'@.
-twaceCRT' :: forall m m' r .
-             (m `Divides` m', CRTrans r, IntegralDomain r,
-              ZeroTestable r, Unbox r, Elt r)
-             => Maybe (Arr m' r -> Arr m r)
-twaceCRT' = do           -- Maybe monad
+twaceCRT' :: forall mon m m' r .
+             (m `Divides` m', CRTrans mon r, Unbox r, Elt r)
+             => mon (Arr m' r -> Arr m r)
+twaceCRT' = do
   g' :: Arr m' r <- gCRT
   gInv <- gInvCRT
   embed :: Arr m r -> Arr m' r <- embedCRT'
-  (_, m'hatinv) <- proxyT crtInfoFact (Proxy::Proxy m')
+  (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m')
   let hatRatioInv = m'hatinv * fromIntegral (proxy valueHatFact (Proxy::Proxy m))
       -- tweak = mhat * g' / (m'hat * g)
       tweak = (coerce $ \x -> force . RT.map (* hatRatioInv) . RT.zipWith (*) x) (embed gInv) g' :: Arr m' r
       indices = proxy extIndicesCRT (Proxy::Proxy '(m, m'))
-  return $ 
+  return $
     -- take true trace after mul-by-tweak
     coerce (\ !arr -> sumS . backpermute (extent indices) (indices !) . RT.zipWith (*) arr) tweak
 
@@ -92,11 +91,11 @@ embedDec'
 
 -- | Embeds an array in the CRT basis of the the mth cyclotomic ring
 -- to an array in the CRT basis of the m'th cyclotomic ring when @m | m'@
-embedCRT' :: forall m m' r . (m `Divides` m', CRTrans r, Unbox r)
-             => Maybe (Arr m r -> Arr m' r)
-embedCRT' = do -- in Maybe
+embedCRT' :: forall mon m m' r . (m `Divides` m', CRTrans mon r, Unbox r)
+             => mon (Arr m r -> Arr m' r)
+embedCRT' = do
   -- first check existence of CRT transform of index m'
-  proxyT crtInfoFact (Proxy::Proxy m') :: Maybe (CRTInfo r)
+  _ <- proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r)
   let idxs = proxy baseIndicesCRT (Proxy::Proxy '(m,m'))
   return $ coerce $ \ !arr -> (force $ backpermute (extent idxs) (idxs !) arr)
 
@@ -114,7 +113,7 @@ coeffs' =
 -- Outputs a list of arrays in O_m' that are an O_m basis for O_m'
 powBasisPow' :: forall m m' r . (m `Divides` m', Ring r, Unbox r)
                 => Tagged m [Arr m' r]
-powBasisPow' = return $  
+powBasisPow' = return $
   let (_, phi, phi', _) = proxy T.indexInfo (Proxy::Proxy '(m,m'))
       idxs = proxy T.baseIndicesPow (Proxy::Proxy '(m,m'))
   in LP.map (\k -> Arr $ force $ fromFunction (Z :. phi')
@@ -128,7 +127,7 @@ crtSetDec' :: forall m m' fp .
               (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m',
                Unbox fp)
               => Tagged m [Arr m' fp]
-crtSetDec' = return $ 
+crtSetDec' = return $
   let m'p = Proxy :: Proxy m'
       p = proxy valuePrime (Proxy::Proxy (CharOf fp))
       phi = proxy totientFact m'p
@@ -143,7 +142,7 @@ crtSetDec' = return $
            elt j i = T.indexM twCRTs' j (zmsToIdx i)
            trace' = trace :: GF fp d -> fp
            cosets = proxy (partitionCosets p) (Proxy::Proxy '(m,m'))
-       in LP.map (\is -> Arr $ force $ fromFunction (Z :. phi) 
+       in LP.map (\is -> Arr $ force $ fromFunction (Z :. phi)
                           (\(Z:.j) -> hinv * trace'
                                       (sum $ LP.map (elt j) is))) cosets
 
@@ -176,7 +175,7 @@ baseIndicesCRT :: forall m m' . (m `Divides` m')
 
 baseIndicesPow = do
   idxs <- T.baseIndicesPow
-  return $ fromUnboxed (Z :. U.length idxs) $ U.map (id *** (Z:.)) idxs
+  return $ fromUnboxed (Z :. U.length idxs) $ U.map (second (Z:.)) idxs
 
 baseIndicesDec = do
   idxs <- T.baseIndicesDec
@@ -188,6 +187,6 @@ baseIndicesCRT = do
 
 extIndicesCoeffs :: forall m m' . (m `Divides` m')
                     => Tagged '(m, m') (V.Vector (Array U DIM1 DIM1))
-extIndicesCoeffs = 
-  V.map (\arr -> fromUnboxed (Z :. U.length arr) $ 
+extIndicesCoeffs =
+  V.map (\arr -> fromUnboxed (Z :. U.length arr) $
                  U.map (Z:.) arr) <$> T.extIndicesCoeffs

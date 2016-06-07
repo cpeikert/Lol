@@ -14,12 +14,18 @@ import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT
-import Crypto.Lol.LatticePrelude                         as LP hiding
-                                                                ((!!))
+import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT hiding
+                                                                ((++))
+import Crypto.Lol.Prelude                                as LP
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
+import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.RRq
+import Crypto.Lol.Types.ZqBasic
+
+import Crypto.Proto.RLWE.Kq
+import Crypto.Proto.RLWE.Rq
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Module       as Module (C)
@@ -28,14 +34,17 @@ import Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative  hiding ((*>))
 import Control.Arrow        hiding (arr)
 import Control.DeepSeq      (NFData (rnf))
+import Control.Monad.Except (throwError)
 import Control.Monad.Random
 import Data.Coerce
 import Data.Constraint      hiding ((***))
 import Data.Foldable        as F
 import Data.Maybe
+import Data.Sequence        as S (fromList)
 import Data.Traversable     as T
-import Data.Vector          as V hiding (force)
-import Data.Vector.Unboxed  as U hiding (force)
+import Data.Vector          as V hiding (force, (++))
+import Data.Vector.Unboxed  as U hiding (force, (++))
+
 import Test.QuickCheck
 
 -- | An implementation of 'Tensor' backed by repa.
@@ -44,6 +53,52 @@ data RT (m :: Factored) r where
   ZV :: IZipVector m r -> RT m r
 
 deriving instance Show r => Show (RT m r)
+
+instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
+  type ProtoType (RT m (ZqBasic q Int64)) = Rq
+
+  toProto (RT (Arr xs)) =
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+        q = proxy value (Proxy::Proxy q) :: Int64
+    in Rq m (fromIntegral q) $ S.fromList $ RT.toList $ RT.map lift xs
+  toProto x@(ZV _) = toProto $ toRT x
+
+  fromProto (Rq m' q' xs) =
+    let m = proxy valueFact (Proxy::Proxy m) :: Int
+        q = proxy value (Proxy::Proxy q) :: Int64
+        n = proxy totientFact (Proxy::Proxy m)
+        xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
+        len = F.length xs
+    in if m == fromIntegral m' && len == n && fromIntegral q == q'
+       then return $ RT $ Arr xs'
+       else throwError $
+            "An error occurred while reading the proto type for RT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
+
+instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
+  type ProtoType (RT m (RRq q Double)) = Kq
+
+  toProto (RT (Arr xs)) =
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+        q = proxy value (Proxy::Proxy q) :: Double
+    in Kq m q $ S.fromList $ RT.toList $ RT.map lift xs
+  toProto x@(ZV _) = toProto $ toRT x
+
+  fromProto (Kq m' q' xs) =
+    let m = proxy valueFact (Proxy::Proxy m) :: Int
+        q = proxy value (Proxy::Proxy q) :: Double
+        n = proxy totientFact (Proxy::Proxy m)
+        xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
+        len = F.length xs
+    in if m == fromIntegral m' && len == n && q == q'
+       then return $ RT $ Arr xs'
+       else throwError $
+            "An error occurred while reading the proto type for RT.\n\
+            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
+            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
 
 instance Eq r => Eq (RT m r) where
   (ZV a) == (ZV b) = a == b
@@ -84,7 +139,6 @@ instance Tensor RT where
   entailIndexT  = tag $ Sub Dict
   entailEqT     = tag $ Sub Dict
   entailZTT     = tag $ Sub Dict
-  --entailRingT   = tag $ Sub Dict
   entailNFDataT = tag $ Sub Dict
   entailRandomT = tag $ Sub Dict
   entailShowT   = tag $ Sub Dict
@@ -138,11 +192,6 @@ instance Tensor RT where
   zipWithT f (RT (Arr a1)) (RT (Arr a2)) = RT $ Arr $ force $ RT.zipWith f a1 a2
   zipWithT f v1 v2 = zipWithT f (toRT v1) (toRT v2)
 
-  unzipTElt (RT (Arr arr)) = (RT . Arr . fromUnboxed (extent arr)) ***
-                             (RT . Arr . fromUnboxed (extent arr)) $
-                             U.unzip $ toUnboxed arr
-  unzipTElt v = unzipTElt $ toRT v
-
   unzipT v@(RT _) = unzipT $ toZV v
   unzipT (ZV v) = ZV *** ZV $ unzipIZV v
 
@@ -172,7 +221,6 @@ instance Tensor RT where
   {-# INLINABLE fmapT #-}
   {-# INLINABLE fmapTM #-}
   {-# INLINABLE zipWithT #-}
-  {-# INLINABLE unzipTElt #-}
   {-# INLINABLE unzipT #-}
 
 
@@ -240,13 +288,15 @@ instance (GFCtx fp d, Fact m, Additive (RT m fp))
     => Module.C (GF fp d) (RT m fp) where
 
   r *> v = case v of
-    RT (Arr arr) -> RT $ Arr $ RT.fromList (extent arr) $ unCoeffs $ r *> Coeffs $ RT.toList arr
-    ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $ unCoeffs $ r *> Coeffs $ V.toList $ unIZipVector zv
+    RT (Arr arr) -> RT $ Arr $ RT.fromList (extent arr)
+                    $ unCoeffs $ r *> Coeffs $ RT.toList arr
+    ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList
+             $ unCoeffs $ r *> Coeffs $ V.toList $ unIZipVector zv
 
 ---------- Miscellaneous instances ----------
 
 instance (Unbox r, Random (Arr m r)) => Random (RT m r) where
-  random = runRand $ RT <$> (liftRand random)
+  random = runRand $ RT <$> liftRand random
 
   randomR = error "randomR nonsensical for RT"
 

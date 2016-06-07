@@ -1,6 +1,7 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, NoImplicitPrelude, 
-             PolyKinds, RebindableSyntax, ScopedTypeVariables,
-             TypeFamilies, TypeOperators #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
+             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
+             RebindableSyntax, ScopedTypeVariables, TypeFamilies,
+             TypeOperators #-}
 
 -- | CT-specific functions for embedding/twacing in various bases
 
@@ -13,21 +14,21 @@ module Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
 ) where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.LatticePrelude as LP hiding (null, lift)
 import Crypto.Lol.Cyclotomic.Tensor as T
+import Crypto.Lol.Prelude           as LP hiding (lift, null)
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZmStar
-import Crypto.Lol.Reflects
+
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Trans (lift)
 
 import           Data.Maybe
-import           Data.Reflection (reify)
-import qualified Data.Vector         as V
-import           Data.Vector.Generic as G (generate, Vector, (!), length)
-import qualified Data.Vector.Unboxed as U
+import           Data.Reflection      (reify)
+import qualified Data.Vector          as V
+import           Data.Vector.Generic  as G (Vector, generate, length, (!))
 import qualified Data.Vector.Storable as SV
+import qualified Data.Vector.Unboxed  as U
 
 
 -- | /O(n)/ Yield the vector obtained by replacing each element @i@ of the
@@ -46,7 +47,7 @@ embedPow', embedDec' :: (Additive r, Vector v r, m `Divides` m')
                      => Tagged '(m, m') (v r -> v r)
 -- | Embeds an vector in the powerful basis of the the mth cyclotomic ring
 -- to an vector in the powerful basis of the m'th cyclotomic ring when @m | m'@
-embedPow' = (\indices arr -> generate (U.length indices) $ \idx -> 
+embedPow' = (\indices arr -> generate (U.length indices) $ \idx ->
   let (j0,j1) = indices ! idx
   in if j0 == 0
      then arr ! j1
@@ -60,10 +61,10 @@ embedDec' = (\indices arr -> generate (U.length indices)
 
 -- | Embeds an vector in the CRT basis of the the mth cyclotomic ring
 -- to an vector in the CRT basis of the m'th cyclotomic ring when @m | m'@
-embedCRT' :: forall m m' v r . (CRTrans r, Vector v r, m `Divides` m')
-          => TaggedT '(m, m') Maybe (v r -> v r)
-embedCRT' = 
-  (lift (proxyT crtInfoFact (Proxy::Proxy m') :: Maybe (CRTInfo r))) >>
+embedCRT' :: forall mon m m' v r . (CRTrans mon r, Vector v r, m `Divides` m')
+          => TaggedT '(m, m') mon (v r -> v r)
+embedCRT' =
+  (lift (proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r))) >>
   (pureT $ backpermute' <$> baseIndicesCRT)
 
 -- | maps a vector in the powerful/decoding basis, representing an
@@ -75,7 +76,7 @@ coeffs' = flip (\x -> V.toList . V.map (`backpermute'` x))
           <$> extIndicesCoeffs
 
 -- | The "tweaked trace" function in either the powerful or decoding
--- basis of the m'th cyclotomic ring to the mth cyclotomic ring when 
+-- basis of the m'th cyclotomic ring to the mth cyclotomic ring when
 -- @m | m'@.
 twacePowDec' :: forall m m' r v . (Vector v r, m `Divides` m')
              => Tagged '(m, m') (v r -> v r)
@@ -92,7 +93,7 @@ powBasisPow' :: forall m m' r . (m `Divides` m', Ring r, SV.Storable r)
 powBasisPow' = do
   (_, phi, phi', _) <- indexInfo
   idxs <- baseIndicesPow
-  return $ LP.map (\k -> generate phi' $ \j -> 
+  return $ LP.map (\k -> generate phi' $ \j ->
                            let (j0,j1) = idxs U.! j
                           in if j0==k && j1==0 then one else zero)
     [0..phi' `div` phi - 1]

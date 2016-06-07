@@ -1,56 +1,47 @@
-{-# LANGUAGE NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables, DataKinds, TypeOperators, PolyKinds, FlexibleContexts, RankNTypes, KindSignatures, MultiParamTypeClasses #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, NoImplicitPrelude,
+             ScopedTypeVariables, TypeOperators #-}
 
 module ZqTests (zqTests) where
 
-import Crypto.Lol.Types.ZqBasic
-import Crypto.Lol.LatticePrelude hiding (Nat)
-import Crypto.Lol.Reflects
+import Apply.Zq
+import Tests
+import Utils
 
-import Control.Monad
+import Crypto.Lol
+import Crypto.Lol.CRTrans
 
-import GHC.TypeLits
+import qualified Test.Framework as TF
 
-import Test.Framework
-import Test.Framework.Providers.QuickCheck2
-import Test.QuickCheck
+zqTests :: [TF.Test]
+zqTests = [
+  testGroupM "(+)" $ applyBasic zqTypes $ hideArgs prop_add,
+  testGroupM "(*)" $ applyBasic zqTypes $ hideArgs prop_mul,
+  testGroupM "^-1" $ applyBasic zqTypes $ hideArgs prop_recip,
+  testGroupM "extension ring (*)" $ applyBasic zqTypes $ hideArgs prop_mul_ext
+  ]
 
+prop_add :: forall r . (Ring r, Eq r) => LiftedMod r -> LiftedMod r -> Test r
+prop_add (LMod x) (LMod y) = test $ fromIntegral (x + y) == (fromIntegral x + fromIntegral y :: r)
 
-prop_add :: forall (q :: Nat) . (Reflects q Int, KnownNat q) => Proxy q -> Int -> Int -> Bool
-prop_add _ x y = (fromIntegral $ x + y) == ((fromIntegral x) + (fromIntegral y :: ZqBasic q Int))
+prop_mul :: forall r . (Ring r, Eq r) => LiftedInvertible r -> LiftedInvertible r -> Test r
+prop_mul (LInv x) (LInv y) = test $ fromIntegral (x * y) == (fromIntegral x * fromIntegral y :: r)
 
-prop_mul :: forall (q :: Nat) . (Reflects q Int, KnownNat q) => Proxy q -> Int -> Int -> Bool
-prop_mul _ x y = (fromIntegral $ x * y) == ((fromIntegral x) * (fromIntegral y :: ZqBasic q Int))
+prop_recip :: forall r . (Field r, Eq r) => Invertible r -> Test r
+prop_recip (Invertible x) = test $ one == (x * recip x)
 
-prop_recip :: forall (q :: Nat) . (Reflects q Int, KnownNat q) => Proxy q -> Int -> Bool
-prop_recip _ x = let qval = proxy value (Proxy::Proxy q)
-                     y = fromIntegral x :: ZqBasic q Int
-                 in if (x `mod` qval) == 0
-                    then True
-                    else (fromIntegral (1::Int)) == (y * (recip y))
+-- tests that multiplication in the extension ring matches CRT multiplication
+prop_mul_ext :: forall r . (CRTEmbed r, Ring r, Eq r)
+  => Invertible r -> Invertible r -> Test r
+prop_mul_ext (Invertible x) (Invertible y) = test $
+  let z = x * y
+      z' = fromExt $ toExt x * toExt y
+  in z == z'
 
-type ZqModuli = '[7, 13, 17, 11, 13, 29]
+type ZqTypes = [
+  Zq 3,
+  Zq 7,
+  Zq (3 ** 5),
+  Zq (3 ** 5 ** 7)]
 
-class CallZqProp xs where
-  callProp :: Proxy xs -> Gen Int -> (forall (q :: Nat) . (Reflects q Int, KnownNat q) => Proxy q -> Int -> Int -> Bool) -> [Test]
-
-  callProp2 :: Proxy xs 
-                -> Gen Int 
-                -> (forall (q :: Nat) . (Reflects q Int, KnownNat q) => Proxy q -> Int -> Bool)
-                -> [Test]
-
-instance CallZqProp '[] where
-  callProp _ _ _ = []
-  callProp2 _ _ _ = []
-
-instance (CallZqProp qs, KnownNat q) => CallZqProp (q ': qs) where
-  callProp _ gen f = (testProperty ("q = " ++ (show $ (proxy value (Proxy::Proxy q) :: Int))) $ property $ liftM2 (f (Proxy::Proxy q)) gen gen) : (callProp (Proxy::Proxy qs) gen f)
-  callProp2 _ gen f = (testProperty ("q = " ++ (show $ (proxy value (Proxy::Proxy q) :: Int))) $ property $ liftM (f (Proxy::Proxy q)) gen) : (callProp2 (Proxy::Proxy qs) gen f)
-
-zqModuli :: Proxy ZqModuli
-zqModuli = Proxy
-
-zqTests :: [Test]
-zqTests = 
-  [testGroup "ZqBasic +" $ callProp zqModuli (choose (-100,100)) prop_add,
-   testGroup "ZqBasic *" $ callProp zqModuli (choose (-100,100)) prop_mul,
-   testGroup "ZqBasic recip" $ callProp2 zqModuli (choose (-100,100)) prop_recip]
+zqTypes :: Proxy ZqTypes
+zqTypes = Proxy

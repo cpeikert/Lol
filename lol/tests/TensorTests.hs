@@ -1,10 +1,10 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, DataKinds, NoImplicitPrelude, 
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, DataKinds, NoImplicitPrelude,
              RebindableSyntax, ScopedTypeVariables, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
 
 module TensorTests (tensorTests) where
 
-import Harness.Cyc
+import Apply.Cyc
 import Tests
 import Utils
 
@@ -15,24 +15,24 @@ import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
 
 import Control.Applicative
-import Control.Monad.Random
 
 import Data.Maybe
 
 import Data.Singletons
-import Data.Promotion.Prelude.List
 import Data.Promotion.Prelude.Eq
-import Data.Singletons.TypeRepStar
+import Data.Singletons.TypeRepStar ()
 
-tensorTests = 
-  [testGroupM "fmapT comparison" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_fmapT,
-   testGroupM "fmap comparison"  $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_fmap,
+import qualified Test.Framework as TF
+
+tensorTests :: [TF.Test]
+tensorTests =
+  [testGroupM "fmapT comparison" $ applyBasic tmrParams $ hideArgs prop_fmapT,
+   testGroupM "fmap comparison"  $ applyBasic tmrParams $ hideArgs prop_fmap,
    testGroup  "GInv.G == id"       gInvGTests,
-   testGroupM "CRTInv.CRT == id" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_crt_inv,
-   testGroupM "LInv.L == id"     $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_l_inv,
-   testGroupM "Scalar"           $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_scalar_crt,
+   testGroupM "CRTInv.CRT == id" $ applyBasic tmrParams $ hideArgs prop_crt_inv,
+   testGroupM "LInv.L == id"     $ applyBasic tmrParams $ hideArgs prop_l_inv,
+   testGroupM "Scalar"           $ applyBasic tmrParams $ hideArgs prop_scalar_crt,
    testGroup  "G commutes with L"  gCommuteTests,
-   testGroupM "Extension Mult"   $ applyBasic (Proxy::Proxy ExtParams) $ hideArgs prop_mul_ext,
    testGroupM "GSqNormDec"       $ applyLift (Proxy::Proxy NormParams) $ hideArgs prop_gsqnorm,
    testGroup  "Tw.Em == id"        tremTests,
    testGroup  "Em commutes with L" embedCommuteTests,
@@ -47,35 +47,36 @@ prop_fmap :: (Tensor t, TElt t r, Fact m, Eq r) => t m r -> Test '(t,m,r)
 prop_fmap x = test $ (fmap id x) == x \\ witness entailEqT x \\ witness entailIndexT x
 
 -- divG . mulG == id in Pow basis
-prop_ginv_pow :: (Tensor t, TElt t r, Fact m, Eq r, Ring r, ZeroTestable r, IntegralDomain r) 
+prop_ginv_pow :: (Tensor t, TElt t r, Fact m, Eq r, Ring r, ZeroTestable r, IntegralDomain r)
   => t m r -> Test '(t,m,r)
-prop_ginv_pow x = test $ (fromMaybe (error "could not divide by G in prop_ginv_pow") $ 
+prop_ginv_pow x = test $ (fromMaybe (error "could not divide by G in prop_ginv_pow") $
   divGPow $ mulGPow x) == x \\ witness entailEqT x
 
 -- divG . mulG == id in Dec basis
-prop_ginv_dec :: (Tensor t, TElt t r, Fact m, Eq r, Ring r, ZeroTestable r, IntegralDomain r) 
+prop_ginv_dec :: (Tensor t, TElt t r, Fact m, Eq r, Ring r, ZeroTestable r, IntegralDomain r)
   => t m r -> Test '(t,m,r)
-prop_ginv_dec x = test $ (fromMaybe (error "could not divide by G in prop_ginv_dec") $ 
+prop_ginv_dec x = test $ (fromMaybe (error "could not divide by G in prop_ginv_dec") $
   divGDec $ mulGDec x) == x \\ witness entailEqT x
 
 -- divG . mulG == id in CRT basis
-prop_ginv_crt :: (Tensor t, TElt t r, Fact m, Eq r, ZeroTestable r, IntegralDomain r, CRTrans r) 
+prop_ginv_crt :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r)
   => t m r -> Test '(t,m,r)
 prop_ginv_crt x = test $ fromMaybe (error "no CRT in prop_ginv_crt") $ do
   divGCRT' <- divGCRT
   mulGCRT' <- mulGCRT
   return $ (divGCRT' $ mulGCRT' x) == x \\ witness entailEqT x
 
+gInvGTests :: [TF.Test]
 gInvGTests =  [
-  testGroupM "Pow basis" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_ginv_pow,
-  testGroupM "Dec basis" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_ginv_dec,
-  testGroupM "CRT basis" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_ginv_crt]
+  testGroupM "Pow basis" $ applyBasic tmrParams $ hideArgs prop_ginv_pow,
+  testGroupM "Dec basis" $ applyBasic tmrParams $ hideArgs prop_ginv_dec,
+  testGroupM "CRT basis" $ applyBasic tmrParams $ hideArgs prop_ginv_crt]
 
 -- mulGDec == lInv. mulGPow . l
 prop_g_dec :: (Tensor t, Ring r, Fact m, TElt t r, Eq r) => t m r -> Test '(t,m,r)
 prop_g_dec x = test $ (mulGDec x) == (lInv $ mulGPow $ l x) \\ witness entailEqT x
 
-prop_g_crt :: (Tensor t, TElt t r, Fact m, Eq r, ZeroTestable r, IntegralDomain r, CRTrans r) 
+prop_g_crt :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r)
   => t m r -> Test '(t,m,r)
 prop_g_crt x = test $ fromMaybe (error "no CRT in prop_g_crt") $ do
   mulGCRT' <- mulGCRT
@@ -83,12 +84,13 @@ prop_g_crt x = test $ fromMaybe (error "no CRT in prop_g_crt") $ do
   crtInv' <- crtInv
   return $ (mulGCRT' x) == (crt' $ mulGPow $ crtInv' x) \\ witness entailEqT x
 
+gCommuteTests :: [TF.Test]
 gCommuteTests =  [
-  testGroupM "Dec basis" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_g_dec,
-  testGroupM "CRT basis" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_g_crt]
+  testGroupM "Dec basis" $ applyBasic tmrParams $ hideArgs prop_g_dec,
+  testGroupM "CRT basis" $ applyBasic tmrParams $ hideArgs prop_g_crt]
 
 -- crtInv . crt == id
-prop_crt_inv :: (Tensor t, TElt t r, Fact m, Eq r, ZeroTestable r, IntegralDomain r, CRTrans r) 
+prop_crt_inv :: (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r)
   => t m r -> Test '(t,m,r)
 prop_crt_inv x = test $ fromMaybe (error "no CRT in prop_crt_inv") $ do
   crt' <- crt
@@ -100,7 +102,7 @@ prop_l_inv :: (Tensor t, Ring r, Eq r, Fact m, TElt t r) => t m r -> Test '(t,m,
 prop_l_inv x = test $ (lInv $ l x) == x \\ witness entailEqT x
 
 -- scalarCRT = crt . scalarPow
-prop_scalar_crt :: forall t m r . (Tensor t, TElt t r, Fact m, Eq r, ZeroTestable r, IntegralDomain r, CRTrans r)
+prop_scalar_crt :: forall t m r . (Tensor t, TElt t r, Fact m, Eq r, CRTrans Maybe r)
                 => r -> Test '(t,m,r)
 prop_scalar_crt r = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
   scalarCRT' <- scalarCRT
@@ -108,30 +110,16 @@ prop_scalar_crt r = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
   return $ (scalarCRT' r :: t m r) == (crt' $ scalarPow r)
   \\ proxy entailEqT (Proxy::Proxy (t m r))
 
-
-
--- tests that multiplication in the extension ring matches CRT multiplication
-prop_mul_ext :: forall t m r . (Tensor t, Fact m, TElt t r, TElt t (CRTExt r), CRTrans r, CRTEmbed r, Ring r, Eq r)
-  => t m r -> t m r -> Test '(t,m,r)
-prop_mul_ext x y = test $
-  let m = proxy valueFact (Proxy::Proxy m)
-  in case (crtInfo m :: Maybe (CRTInfo r)) of
-       Nothing -> error "mul have a CRT to call prop_mul_ext"
-       Just _ -> (let z = zipWithT (*) x y
-                      z' = fmapT fromExt $ zipWithT (*) (fmapT toExt x) (fmapT toExt y)
-                  in z == z') \\ witness entailEqT x 
-                              \\ witness entailIndexT x
-
-type NormCtx t m r = (TElt t r, TElt t (LiftOf r), 
-  Fact m, Lift' r, CRTrans r, Eq (LiftOf r),
+type NormCtx t m r = (TElt t r, TElt t (LiftOf r),
+  Fact m, Lift' r, CRTrans Maybe r, Eq (LiftOf r),
   ZeroTestable r, Ring (LiftOf r), Ring r, IntegralDomain r)
 
 type NormWrapCtx m r = (NormCtx CT m r, NormCtx RT m r)
 
 -- tests that gSqNormDec of two "random-looking" vectors agrees for RT and CT
 -- t is a dummy param
-prop_gsqnorm :: forall t m r . 
-  (NormWrapCtx m r, NormCtx t m r) 
+prop_gsqnorm :: forall t m r .
+  (NormWrapCtx m r, NormCtx t m r)
   => r -> Test '(t,m,r)
 prop_gsqnorm x = test $
   let crtCT = fromJust crt
@@ -142,15 +130,16 @@ prop_gsqnorm x = test $
   in gSqNormDec ct == gSqNormDec rt
 
 
-type TMM'RCtx t m m' r = 
-  (Tensor t, m `Divides` m', TElt t r, Ring r, 
-   CRTrans r, Eq r, ZeroTestable r, IntegralDomain r)
+type TMM'RCtx t m m' r =
+  (Tensor t, m `Divides` m', TElt t r, Ring r,
+   CRTrans Maybe r, Eq r, ZeroTestable r, IntegralDomain r)
 
 -- groups related tests
+tremTests :: [TF.Test]
 tremTests = [
-  testGroupM "Pow basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_trem_pow,
-  testGroupM "Dec basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_trem_dec,
-  testGroupM "CRT basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_trem_crt]
+  testGroupM "Pow basis" $ applyTwoIdx tremParams $ hideArgs prop_trem_pow,
+  testGroupM "Dec basis" $ applyTwoIdx tremParams $ hideArgs prop_trem_dec,
+  testGroupM "CRT basis" $ applyTwoIdx tremParams $ hideArgs prop_trem_crt]
 
 -- tests that twace . embed == id in the Pow basis
 prop_trem_pow :: forall t m m' r . (TMM'RCtx t m m' r)
@@ -169,14 +158,14 @@ prop_trem_crt x = test $ fromMaybe (error "no CRT in prop_trem_crt") $
   (x==) <$> (twaceCRT <*> (embedCRT <*> pure x :: Maybe (t m' r))) \\ witness entailEqT x
 
 
-
+embedCommuteTests :: [TF.Test]
 embedCommuteTests = [
-  testGroupM "Dec basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_embed_dec,
-  testGroupM "CRT basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_embed_crt]
+  testGroupM "Dec basis" $ applyTwoIdx tremParams $ hideArgs prop_embed_dec,
+  testGroupM "CRT basis" $ applyTwoIdx tremParams $ hideArgs prop_embed_crt]
 
 -- embedDec == lInv . embedPow . l
 prop_embed_dec :: forall t m m' r . (TMM'RCtx t m m' r) => t m r -> Test '(t,m,m',r)
-prop_embed_dec x = test $ (embedDec x :: t m' r) == (lInv $ embedPow $ l x) 
+prop_embed_dec x = test $ (embedDec x :: t m' r) == (lInv $ embedPow $ l x)
   \\ proxy entailEqT (Proxy::Proxy (t m' r))
 
 -- embedCRT = crt . embedPow . crtInv
@@ -185,12 +174,13 @@ prop_embed_crt x = test $ fromMaybe (error "no CRT in prop_embed_crt") $ do
   crt' <- crt
   crtInv' <- crtInv
   embedCRT' <- embedCRT
-  return $ (embedCRT' x :: t m' r) == (crt' $ embedPow $ crtInv' x) 
+  return $ (embedCRT' x :: t m' r) == (crt' $ embedPow $ crtInv' x)
     \\ proxy entailEqT (Proxy::Proxy (t m' r))
 
+twaceCommuteTests :: [TF.Test]
 twaceCommuteTests = [
-  testGroupM "Dec basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_twace_dec,
-  testGroupM "CRT basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_twace_crt]
+  testGroupM "Dec basis" $ applyTwoIdx tremParams $ hideArgs prop_twace_dec,
+  testGroupM "CRT basis" $ applyTwoIdx tremParams $ hideArgs prop_twace_crt]
 
 -- twacePowDec = lInv . twacePowDec . l
 prop_twace_dec :: forall t m m' r . (TMM'RCtx t m m' r) => t m' r -> Test '(t,m,m',r)
@@ -206,26 +196,27 @@ prop_twace_crt x = test $ fromMaybe (error "no CRT in prop_trace_crt") $ do
   return $ (twaceCRT' x :: t m r) == (crt' $ twacePowDec $ crtInv' x)
     \\ proxy entailEqT (Proxy::Proxy (t m r))
 
+twaceInvarTests :: [TF.Test]
 twaceInvarTests = [
-  testGroupM "Tw and Em ID for equal indices" $ applyBasic (Proxy::Proxy TMRParams) $ hideArgs prop_twEmID,
-  testGroupM "Invar1 Pow basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_twace_invar1_pow,
-  testGroupM "Invar1 Dec basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_twace_invar1_dec,
-  testGroupM "Invar1 CRT basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_twace_invar1_crt,
-  testGroupM "Invar2 Pow/Dec basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_twace_invar2_powdec,
-  testGroupM "Invar2 CRT basis" $ applyTwoIdx (Proxy::Proxy TrEmParams) $ hideArgs prop_twace_invar2_crt
+  testGroupM "Tw and Em ID for equal indices" $ applyBasic tmrParams $ hideArgs prop_twEmID,
+  testGroupM "Invar1 Pow basis" $ applyTwoIdx tremParams $ hideArgs prop_twace_invar1_pow,
+  testGroupM "Invar1 Dec basis" $ applyTwoIdx tremParams $ hideArgs prop_twace_invar1_dec,
+  testGroupM "Invar1 CRT basis" $ applyTwoIdx tremParams $ hideArgs prop_twace_invar1_crt,
+  testGroupM "Invar2 Pow/Dec basis" $ applyTwoIdx tremParams $ hideArgs prop_twace_invar2_powdec,
+  testGroupM "Invar2 CRT basis" $ applyTwoIdx tremParams $ hideArgs prop_twace_invar2_crt
   ]
 
-prop_twEmID :: forall t m r . (Tensor t, TElt t r, CRTrans r, Fact m, m `Divides` m, Eq r, ZeroTestable r, IntegralDomain r) 
+prop_twEmID :: forall t m r . (Tensor t, TElt t r, CRTrans Maybe r, Fact m, m `Divides` m, Eq r, ZeroTestable r, IntegralDomain r)
   => t m r -> Test '(t,m,r)
-prop_twEmID x = test $ 
+prop_twEmID x = test $
   ((twacePowDec x) == x) &&
-   (((fromMaybe (error "twemid_crt") twaceCRT) x) == x) &&
-   ((embedPow x) == x) &&
-   ((embedDec x) == x) &&
-   (((fromMaybe (error "twemid_crt") embedCRT) x) == x) \\ witness entailEqT x
+  (((fromMaybe (error "twemid_crt") twaceCRT) x) == x) &&
+  ((embedPow x) == x) &&
+  ((embedDec x) == x) &&
+  (((fromMaybe (error "twemid_crt") embedCRT) x) == x) \\ witness entailEqT x
 
 -- twace mhat'/g' = mhat*totm'/totm/g (Pow basis)
-prop_twace_invar1_pow :: forall t m m' r . (TMM'RCtx t m m' r) 
+prop_twace_invar1_pow :: forall t m m' r . (TMM'RCtx t m m' r)
   => Test '(t,m,m',r)
 prop_twace_invar1_pow = test $ fromMaybe (error "could not divide by G in prop_twace_invar1_pow") $ do
   let mhat = proxy valueHatFact (Proxy::Proxy m)
@@ -279,10 +270,6 @@ prop_twace_invar2_crt = test $ fromMaybe (error "no CRT in prop_twace_invar2_crt
       output = scalarCRT2 one :: t m r
   return $ (twacePowDec input) == output \\ proxy entailEqT (Proxy::Proxy (t m r))
 
-
-
-
-
 type Tensors = '[CT,RT]
 type MRCombos = '[
   '(F7, Zq 29),
@@ -305,7 +292,7 @@ type MRCombos = '[
 
 -- we can't include a large modulus here because there is not enough
 -- precision in Doubles to handle the error
-type MRExtCombos = '[
+{-type MRExtCombos = '[
   '(F7, Zq 29),
   '(F1, Zq 17),
   '(F2, Zq 17),
@@ -316,7 +303,7 @@ type MRExtCombos = '[
   '(F42, ZQ1),
   '(F42, ZQ2),
   '(F89, Zq 179)
-  ]
+  ]-}
 
 type MM'RCombos = '[
   '(F1, F7, Zq 29),
@@ -335,8 +322,14 @@ type MM'RCombos = '[
   ]
 
 type TMRParams = ( '(,) <$> Tensors) <*> MRCombos
-type ExtParams = ( '(,) <$> Tensors) <*> MRExtCombos
+tmrParams :: Proxy TMRParams
+tmrParams = Proxy
+
+--type ExtParams = ( '(,) <$> Tensors) <*> MRExtCombos
 type TrEmParams = ( '(,) <$> Tensors) <*> MM'RCombos
+tremParams :: Proxy TrEmParams
+tremParams = Proxy
+
 type NormParams = ( '(,) <$> '[RT]) <*> (Filter Liftable MRCombos)
 
 data Liftable :: TyFun (Factored, *) Bool -> *

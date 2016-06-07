@@ -131,7 +131,7 @@ type PID a = (Algebra.PrincipalIdealDomain.C a)
 -- | Sane synonym for 'MathObj.Polynomial.T'.
 type Polynomial a = MathObj.Polynomial.T a
 
--- | IntegralDomain instance for Double
+-- IntegralDomain instance for Double
 instance Algebra.IntegralDomain.C Double where
     _ `div` 0 = error "cannot divide Double by 0\n"
     a `div` b = a / b
@@ -204,7 +204,7 @@ divModCent :: (IntegralDomain i, Ord i)
               => i              -- ^ dividend @a@
               -> i              -- ^ divisor @b@
               -> (i,i)          -- ^ (quotient, remainder)
-divModCent = flip (\b -> 
+divModCent = flip (\b ->
              let shift = b `div` 2
              in \a -> let (q,r) = (a+shift) `divMod` b
                       in (q,r-shift))
