@@ -32,13 +32,12 @@ instance (GenSKCtx t m z Double,
   => Generatable rnd (SK (Cyc t m z)) where
   genArg = do
     msk <- get
-    sk <- case msk of
+    case msk of
       Just sk -> return sk
       Nothing -> do
         sk <- genSK (1 :: Double)
         put $ Just sk
         return sk
-    return sk
 
 instance (Generatable rnd (PTCT m zp (Cyc t m' zq)), Monad rnd)
   => Generatable rnd (CT m zp (Cyc t m' zq)) where
@@ -80,8 +79,7 @@ instance (Generatable rnd (SK (Cyc t r' z)),
         -- only take as many crts as we need
         -- otherwise linearDec fails
         linf :: Linear t zp e r s = linearDec (take dim crts) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
-    f <- proxyT (tunnelCT linf skout skin) (Proxy::Proxy gad)
-    return $ Tunnel f
+    Tunnel <$> proxyT (tunnelCT linf skout skin) (Proxy::Proxy gad)
 
 data KSLinear t m m' z zp zq (zq' :: *) (gad :: *) = KSL (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)) (SK (Cyc t m' z))
 instance (KeySwitchCtx gad t m' zp zq zq',
