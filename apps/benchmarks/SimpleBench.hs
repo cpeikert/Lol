@@ -1,10 +1,9 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, NoImplicitPrelude, PolyKinds, RankNTypes, ScopedTypeVariables, TypeFamilies #-}
 
-
-import Gen
-import Utils
-import Harness.SHE
 import Benchmarks hiding (hideArgs)
+import GenArgs
+import Harness.SHE
+import Utils
 
 import Control.Applicative
 import Control.Monad.Random
@@ -31,11 +30,11 @@ main = C.defaultMain =<< (sequence [
 
 -- generates random arguments to functions
 -- Note: The generation time is *not* included in the benchmark time.
-hideArgs :: forall a rnd bnch . 
+hideArgs :: forall a rnd bnch .
   (GenArgs (StateT (Maybe (SKOf a)) rnd) bnch, Monad rnd, ShowType a,
    ResultOf bnch ~ Bench a)
   => bnch -> Proxy a -> rnd Benchmark
-hideArgs f p = (C.bench (showType p) . unbench) <$> 
+hideArgs f p = (C.bench (showType p) . unbench) <$>
   (evalStateT (genArgs f) (Nothing :: Maybe (SKOf a)))
 
 -- benchmark ciphertext multiplication (n.b. for good ciphertext moduli, arguments are generated in the CRT basis,
@@ -51,12 +50,12 @@ bench_mul a = bench (*a)
 -- to CRT before multiplication *is* timed.
 bench_mul2 :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq)))
   => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
-bench_mul2 a b = 
+bench_mul2 a b =
   let a' = advisePow a
       b' = advisePow b
   in bench (*a') b'
 
--- use benchIO because the thing we are benchmarking is monadic 
+-- use benchIO because the thing we are benchmarking is monadic
 bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRandomGen gen, z ~ LiftOf zp, NFElt zp, NFElt zq)
   => SK (Cyc t m' z) -> PT (Cyc t m zp) -> Bench '(t,m,m',zp,zq,gen)
 bench_enc sk pt = benchIO $ do
