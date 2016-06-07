@@ -88,8 +88,8 @@ instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
            then Just $ (omegaPows V.!) . (`mod` mval)
            else Nothing
       scalarInv :: Maybe (GF fp d)
-      scalarInv = Just $ recip $ fromIntegral $ valueHat $
-                  (proxy value (Proxy::Proxy m) :: Int)
+      scalarInv = Just $ recip $ fromIntegral $ valueHat
+                    (proxy value (Proxy::Proxy m) :: Int)
 
 -- | This wrapper for a list of coefficients is used to define a
 -- @GF(p^d)@-module structure for tensors over @F_p@ of dimension @n@, where
@@ -117,7 +117,7 @@ chunksOf n xs
 toList :: forall fp d . (Reflects d Int, Additive fp) => GF fp d -> [fp]
 toList = let dval = proxy value (Proxy::Proxy d)
          in \(GF p) -> let l = coeffs p
-                       in l ++ (replicate (dval - length l) zero)
+                       in l ++ replicate (dval - length l) zero
 
 -- | Yield a field element given up to @d@ coefficients with respect
 -- to the power basis.
@@ -158,7 +158,7 @@ powTraces =
   --          ", d = " ++ show (proxy value (Proxy::Proxy d) :: Int)) $
   let d = proxy value (Proxy :: Proxy d)
   in tag $ map trace' $ take d $
-     iterate (* (GF (X ^^ 1))) (one :: GF fp d)
+     iterate (* GF (X ^^ 1)) (one :: GF fp d)
 
 -- helper that computes trace via brute force: sum frobenius
 -- automorphisms

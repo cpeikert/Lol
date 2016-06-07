@@ -124,7 +124,7 @@ principalRootUnity ::
     forall m q z . (Reflects m Int, Reflects q z, ToInteger z, Enumerable (ZqBasic q z))
                => TaggedT m Maybe (Int -> ZqBasic q z)
 principalRootUnity =        -- use Integers for all intermediate calcs
-  let qval = fromIntegral $ (proxy value (Proxy::Proxy q) :: z)
+  let qval = fromIntegral (proxy value (Proxy::Proxy q) :: z)
       mval = proxy value (Proxy::Proxy m)
       -- order of Zq^* (assuming q prime)
       order = qval-1

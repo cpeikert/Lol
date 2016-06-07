@@ -39,7 +39,7 @@ newtype RRq q r = RRq r
 {-# INLINABLE reduce' #-}
 reduce' :: forall q r . (Reflects q r, RealField r) => r -> RRq q r
 reduce' = let q = proxy value (Proxy::Proxy q)
-          in \x -> RRq $ x - q * (floor $ x / q)
+          in \x -> RRq $ x - q * floor (x / q)
 
 -- puts value in range [-q/2, q/2)
 decode' :: forall q r . (Reflects q r, Ord r, Additive r, Ring r)

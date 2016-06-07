@@ -21,7 +21,7 @@ instance (CharOf a ~ Prime2, Field a) => IrreduciblePoly a where
         "The IrreduciblePoly instance for N2 included with the library " ++
         "(and exported by Crypto.Lol) only contains irreducible polynomials " ++
         "for characteristic-2 fields up to GF(2^^32). You need a polynomial " ++
-        "for GF(2^^" ++ (show n) ++ "). Define your own instance of " ++
+        "for GF(2^^" ++ show n ++ "). Define your own instance of " ++
         "IrreduciblePoly and do not import Crypto.Lol."
 
 polyMap :: (Ring fp) => Map Int (Polynomial fp)

@@ -2,6 +2,7 @@
              InstanceSigs, KindSignatures, PolyKinds, ScopedTypeVariables,
              RankNTypes, TemplateHaskell, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-unused-binds #-}
 
 -- | This sub-module exists only because we can't define and use
 -- template Haskell splices in the same module.

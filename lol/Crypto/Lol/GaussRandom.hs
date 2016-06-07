@@ -45,7 +45,7 @@ realGaussians ::
     (ToRational svar, OrdFloat i, Random i, V.Vector v i, MonadRandom m)
     => svar -> Int -> m (v i)
 realGaussians var n
-    | odd n = V.tail <$> (realGaussians var (n+1)) -- O(1) tail
+    | odd n = V.tail <$> realGaussians var (n+1) -- O(1) tail
     | otherwise = (V.fromList . uncurry (++) . unzip) <$>
                   replicateM (n `div` 2) (realGaussian var)
 
@@ -64,7 +64,7 @@ iterateWhile p x = x >>= iterateUntilM (not . p) (const x)
 -- | Analogue of @('Prelude.until')@
 -- Yields the result of applying f until p holds.
 iterateUntilM :: (Monad m) => (a -> Bool) -> (a -> m a) -> a -> m a
-iterateUntilM p f v 
+iterateUntilM p f v
     | p v       = return v
     | otherwise = f v >>= iterateUntilM p f
 

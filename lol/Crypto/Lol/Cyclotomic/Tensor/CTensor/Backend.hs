@@ -78,7 +78,7 @@ instance (Storable a, Storable b,
   -- enforces right associativity and that each type of
   -- the tuple has the same C repr, so using an array repr is safe
   => Storable (a,b) where
-  sizeOf _ = (sizeOf (undefined :: a)) + (sizeOf (undefined :: b))
+  sizeOf _ = sizeOf (undefined :: a) + sizeOf (undefined :: b)
   alignment _ = max (alignment (undefined :: a)) (alignment (undefined :: b))
   peek p = do
     a <- peek (castPtr p :: Ptr a)
@@ -134,7 +134,7 @@ instance {-# Overlappable #-} Tuple a where
   numComponents = tag 1
 
 instance (Tuple a, Tuple b) => Tuple (a,b) where
-  numComponents = tag $ (proxy numComponents (Proxy::Proxy a)) + (proxy numComponents (Proxy::Proxy b))
+  numComponents = tag $ proxy numComponents (Proxy::Proxy a) + proxy numComponents (Proxy::Proxy b)
 
 -- | Single-argument synonym for @Dispatch'@.
 type Dispatch r = (Dispatch' (CTypeOf r) r)
