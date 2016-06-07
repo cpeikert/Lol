@@ -6,7 +6,7 @@ import ZqTests
 import Test.Framework
 
 main :: IO ()
-main = do
+main =
   flip defaultMainWithArgs ["--threads=1","--maximum-generated-tests=100"]
     [ testGroup "Tensor Tests" tensorTests
      ,testGroup "Cyc Tests" cycTests

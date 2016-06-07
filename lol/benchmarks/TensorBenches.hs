@@ -5,18 +5,16 @@
 
 module TensorBenches (tensorBenches) where
 
+import Apply.Cyc
 import Benchmarks
-import Harness.Cyc
 import Utils
-
-import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor
 
-tensorBenches :: (MonadRandom m) => m Benchmark
+tensorBenches :: IO Benchmark
 tensorBenches = benchGroup "Tensor" [
-  benchGroup "l"      $ applyBasic (Proxy::Proxy QuickParams) $ hideArgs bench_l]
+  benchGroup "l" $ applyBasic (Proxy::Proxy QuickParams) $ hideArgs bench_l]
 
 -- convert input from Dec basis to Pow basis
 bench_l :: (Tensor t, Fact m, Additive r, TElt t r, NFData (t m r)) => t m r -> Bench '(t,m,r)

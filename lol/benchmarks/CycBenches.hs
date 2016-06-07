@@ -5,8 +5,8 @@
 
 module CycBenches (cycBenches) where
 
+import Apply.Cyc
 import Benchmarks
-import Harness.Cyc
 import Utils
 
 import Control.Monad.Random
@@ -17,9 +17,9 @@ import Crypto.Random.DRBG
 
 import Data.Singletons
 import Data.Promotion.Prelude.Eq
-import Data.Singletons.TypeRepStar () -- required for singletons below
+import Data.Singletons.TypeRepStar ()
 
-cycBenches :: (MonadRandom m) => m Benchmark
+cycBenches :: IO Benchmark
 cycBenches = benchGroup "Cyc" [
   benchGroup "unzipCycPow" $ applyBasic  allParams    $ hideArgs bench_unzipCycPow,
   benchGroup "unzipCycCRT" $ applyBasic  allParams    $ hideArgs bench_unzipCycCRT,
@@ -96,20 +96,20 @@ bench_embedPow x =
   in bench (embed :: Cyc t m r -> Cyc t m' r) y
 
 type Tensors = '[CT,RT]
-type MM'RCombos =
-  '[ '(F4, F128, Zq 257),
-     '(F1, PToF Prime281, Zq 563),
-     '(F12, F32 * F9, Zq 512),
-     '(F12, F32 * F9, Zq 577),
-     '(F12, F32 * F9, Zq (577 ** 1153)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489)),
-     '(F12, F32 * F9 * F25, Zq 14401)
+type MRCombos =
+  '[ '(F1024, Zq 1051649),      -- 1024 / 512
+     '(F2048, Zq 1054721),      -- 2048 / 1024
+     '(F64 * F27, Zq 1048897),  -- 1728 / 576
+     '(F64 * F81, Zq 1073089),  -- 5184 / 1728
+     '(F64*F9*F25, Zq 1065601)  -- 14400 / 3840
     ]
+
+type MM'RCombos =
+  '[ '(F8 * F91, F8 * F91 * F4, Zq 8737),
+     '(F8 * F91, F8 * F91 * F5, Zq 14561),
+     '(F128, F128 * F91, Zq 23297)
+    ]
+
 -- EAC: must be careful where we use Nub: apparently TypeRepStar doesn't work well with the Tensor constructors
 type AllParams = ( '(,) <$> Tensors) <*> (Nub (Map RemoveM MM'RCombos))
 allParams :: Proxy AllParams

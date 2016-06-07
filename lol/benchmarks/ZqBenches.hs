@@ -12,22 +12,22 @@ import qualified Data.Vector.Unboxed as U
 import qualified Data.Array.Repa as R
 
 import Utils
-import Gen
+import GenArgs
 import Benchmarks
 
 type Arr = R.Array R.U R.DIM1
 
-zqBenches :: MonadRandom rnd => rnd Benchmark
+zqBenches :: IO Benchmark
 zqBenches = benchGroup "ZqBasic" [
   hideArgs bench_mul_unb (Proxy::Proxy (Zq 577)),
-  hideArgs bench_mul_repa $ (Proxy::Proxy (Zq 577))
+  hideArgs bench_mul_repa (Proxy::Proxy (Zq 577))
   ]
 
 bench_mul_repa :: (Ring zq, U.Unbox zq) => Arr zq -> Arr zq -> Bench zq
-bench_mul_repa a b = bench (R.computeUnboxedS . R.zipWith (*) a) b
+bench_mul_repa a = bench (R.computeUnboxedS . R.zipWith (*) a)
 
 bench_mul_unb :: (Ring zq, U.Unbox zq) => U.Vector zq -> U.Vector zq -> Bench zq
-bench_mul_unb a b = bench (U.zipWith (*) a) b
+bench_mul_unb a = bench (U.zipWith (*) a)
 
 vecLen :: Int
 vecLen = 100

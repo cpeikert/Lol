@@ -1,17 +1,17 @@
-{-# LANGUAGE DataKinds, FlexibleInstances, MultiParamTypeClasses, PolyKinds, 
+{-# LANGUAGE DataKinds, FlexibleInstances, MultiParamTypeClasses, PolyKinds,
              TypeFamilies, TypeOperators #-}
 
 -- applies functions to proxy arguments
 module Apply where
 
-class (params :: [k]) `Satisfy` (ctx :: *)  where
-  data ArgsCtx ctx
+-- not associated due to the generic instance below:
+-- any definition of ArgsCtx would conflict with specific instances
+data family ArgsCtx ctx
 
+class (params :: [k]) `Satisfy` (ctx :: *)  where
   run :: proxy params
-            -> (ArgsCtx ctx -> rnd res) 
+            -> (ArgsCtx ctx -> rnd res)
             -> [rnd res]
 
 instance '[] `Satisfy` ctx  where
-  -- any implementation of ArgsCtx would conflict with concrete instances,
-  -- so skip  
   run _ _ = []

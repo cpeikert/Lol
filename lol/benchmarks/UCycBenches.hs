@@ -5,18 +5,16 @@
 
 module UCycBenches (ucycBenches) where
 
+import Apply.Cyc
 import Benchmarks
-import Harness.Cyc
 import Utils
-
-import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.UCyc
 
-ucycBenches :: (MonadRandom m) => m Benchmark
+ucycBenches :: IO Benchmark
 ucycBenches = benchGroup "UCyc" [
-  benchGroup "l"      $ applyBasic (Proxy::Proxy QuickParams) $ hideArgs bench_l,
+  benchGroup "l"     $ applyBasic (Proxy::Proxy QuickParams) $ hideArgs bench_l,
   benchGroup "twace" $ applyTwoIdx twoIdxParams $ hideArgs bench_twacePow,
   benchGroup "embed" $ applyTwoIdx twoIdxParams $ hideArgs bench_embedPow
   ]
@@ -40,20 +38,10 @@ type Tensors = '[CT,RT]
 type QuickParams = ( '(,) <$> Tensors) <*> QuickTest
 
 type MM'RCombos =
-  '[ '(F4, F128, Zq 257),
-     '(F1, PToF Prime281, Zq 563),
-     '(F12, F32 * F9, Zq 512),
-     '(F12, F32 * F9, Zq 577),
-     '(F12, F32 * F9, Zq (577 ** 1153)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337)),
-     '(F12, F32 * F9, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489)),
-     '(F12, F32 * F9 * F25, Zq 14401)
+  '[ '(F8 * F91, F8 * F91 * F4, Zq 8737),
+     '(F8 * F91, F8 * F91 * F5, Zq 14561),
+     '(F128, F128 * F91, Zq 23297)
     ]
-
 type TwoIdxParams = ( '(,) <$> Tensors) <*> MM'RCombos
 twoIdxParams :: Proxy TwoIdxParams
 twoIdxParams = Proxy

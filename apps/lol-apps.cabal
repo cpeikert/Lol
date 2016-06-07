@@ -21,12 +21,13 @@ extra-source-files:  README, CHANGES.md,
                      benchmarks/SHEBenches.hs,
                      tests/SHETests.hs,
                      utils/Apply.hs,
+                     utils/Apply/SHE.hs
                      utils/Benchmarks.hs,
-                     utils/Gen.hs,
+                     utils/GenArgs.hs,
+                     utils/GenArgs/SHE.hs
                      utils/Tests.hs,
                      utils/TestTypes.hs,
                      utils/Utils.hs
-                     utils/Harness/SHE.hs
 cabal-version:       >= 1.10
 description:
     This library contains example cryptographic applications built using

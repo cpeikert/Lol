@@ -7,9 +7,9 @@ import ZqBenches
 import Criterion.Main
 
 main :: IO ()
-main = defaultMain =<< (sequence [
+main = defaultMain =<< sequence [
   zqBenches,
   tensorBenches,
   ucycBenches,
   cycBenches
-  ])
+  ]

@@ -8,7 +8,7 @@ module Tests
 ,hideArgs
 ,Test(..)) where
 
-import Gen
+import GenArgs
 import Utils
 
 import Control.Monad.Random

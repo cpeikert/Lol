@@ -10,7 +10,7 @@ module Benchmarks
 ,Benchmark
 ,NFData) where
 
-import Gen
+import GenArgs
 import Utils
 
 import Control.DeepSeq
