@@ -1,7 +1,7 @@
 {-# LANGUAGE
      DataKinds,         -- so we can use GHC.TypeLits
-     KindSignatures,
      NoImplicitPrelude, -- an alternate Prelude is imported from Crypto.Lol
+     PolyKinds,
      RebindableSyntax,  -- since we use an alternate Prelude, this lets GHC read literals, etc
      ScopedTypeVariables,
      TemplateHaskell    -- provides a simple way to construct cyclotomic indices and prime-power moduli
@@ -13,7 +13,6 @@ import Crypto.Lol.Applications.SymmSHE
 import Algebra.Ring ((^)) -- easier to use with the TH commands below
 import Math.NumberTheory.Primes.Testing (isPrime) -- used to generate "good" moduli
 import Control.Monad.Random (getRandom)
-import GHC.TypeLits (Nat)
 
 -- an infinite list of primes greater than `lower` and congruent to 1 mod m
 -- useful for generating moduli for CTZq below
@@ -38,7 +37,7 @@ type CTIndex = $(fType $ 2^7 * 7 * 13)
 type PTZq = ZqBasic PP8 Int64
 -- uses GHC.TypeLits as modulus, and Int64 as repr (needed to use with CT backend)
 -- modulus doesn't have to be "good", but "good" moduli are much faster
-type Zq (q :: Nat) = ZqBasic q Int64
+type Zq q = ZqBasic q Int64 -- uses PolyKinds
 type CTZq1 = Zq 536937857
 type CTZq2 = (CTZq1, Zq 536972801)
 type CTZq3 = (CTZq2, Zq 537054337)
