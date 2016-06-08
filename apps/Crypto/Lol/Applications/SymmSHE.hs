@@ -26,7 +26,7 @@ SK, PT, CT                    -- don't export constructors!
 , GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx
 , DecryptCtx, DecryptUCtx
 , AddScalarCtx, AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
-, SwitchCtx, KeySwitchCtx, KSHintCtx
+, KeySwitchCtx, KSHintCtx
 , TunnelCtx
 ) where
 
@@ -134,7 +134,7 @@ decrypt sk ct =
      in (scalarCyc l) * twace (iterate divG' e !! k)
 
 --- unrestricted versions ---
-
+-- | Constraint synonym for unrestricted decryption.
 type DecryptUCtx t m m' z zp zq =
   (Fact m, Fact m', CElt t zp, m `Divides` m',
    Reduce z zq, Lift' zq, CElt t z,
@@ -277,7 +277,7 @@ type KeySwitchCtx gad t m' zp zq zq' =
   (RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
    ToSDCtx t m' zp zq, SwitchCtx gad t m' zq')
 
--- | Switch a linear ciphertext under @s_in@ to a linear one under @s_out@
+-- | Switch a linear ciphertext under @s_in@ to a linear one under @s_out@.
 keySwitchLinear :: forall gad t m' zp zq zq' z rnd m .
   (KeySwitchCtx gad t m' zp zq zq', KSHintCtx gad t m' z zq', MonadRandom rnd)
   => SK (Cyc t m' z)                -- sout
@@ -306,7 +306,7 @@ keySwitchQuadCirc sk@(SK _ s) = tagT $ do
     in CT MSD k l $ P.fromCoeffs [c0,c1] + rescaleLinearMSD (switch hint c2'))
 
 ---------- Misc homomorphic operations ----------
-
+-- | Constraint synonym for adding a public scalar to a ciphertext.
 type AddScalarCtx t m' zp zq =
   (Lift' zp, Reduce (LiftOf zp) zq, ToSDCtx t m' zp zq)
 
@@ -322,7 +322,7 @@ addScalar b ct =
       b' = scalarCyc (reduce $ lift $ b * recip l)
   in CT LSD 0 l $ c + P.const b'
 
--- | Constraint synonym for adding a public value to an encrypted value
+-- | Constraint synonym for adding a public value to an encrypted value.
 type AddPublicCtx t m m' zp zq =
   (Lift' zp, Reduce (LiftOf zp) zq, m `Divides` m',
    CElt t zp, CElt t (LiftOf zp), ToSDCtx t m' zp zq)
@@ -337,7 +337,7 @@ addPublic b ct = let CT LSD k l c = toLSD ct in
       b' :: Cyc t m zq = reduce $ liftCyc Pow $ linv * (iterate mulG b !! k)
   in CT LSD k l $ c + P.const (embed b')
 
--- | Constraint synonym for multiplying a public value with an encrypted value
+-- | Constraint synonym for multiplying a public value with an encrypted value.
 type MulPublicCtx t m m' zp zq =
   (Lift' zp, Reduce (LiftOf zp) zq, Ring zq, m `Divides` m',
    CElt t zp, CElt t (LiftOf zp), CElt t zq)
