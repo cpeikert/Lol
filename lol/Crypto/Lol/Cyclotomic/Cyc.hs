@@ -1,8 +1,16 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RankNTypes,
-             ScopedTypeVariables, TypeFamilies, TypeOperators,
-             UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 -- | An implementation of cyclotomic rings that hides the
 -- internal representations of ring elements (e.g., the choice of
@@ -62,7 +70,7 @@ import           Crypto.Lol.Types.ZPP
 import Control.Applicative    hiding ((*>))
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity -- GHC warning is wrong: https://ghc.haskell.org/trac/ghc/ticket/12067
+import Control.Monad.Identity
 import Control.Monad.Random
 import Data.Coerce
 import Data.Traversable
@@ -86,7 +94,7 @@ data Cyc t m r where
   -- CJP: someday try to merge the above two
 
 -- | Constraints needed for most operations involving 'Cyc' data.
-type CElt t r = (UCRTElt t r, IntegralDomain r, ZeroTestable r)
+type CElt t r = (UCRTElt t r, ZeroTestable r)
 
 ---------- Constructors / deconstructors ----------
 
@@ -268,6 +276,9 @@ instance (Fact m, CElt t r) => Ring.C (Cyc t m r) where
   -- ELSE: work in appropriate CRT rep
   c1 * c2 = toCRT' c1 * toCRT' c2
 
+-- | @Rp@ is an @F_{p^d}@-module when @d@ divides @phi(m)@, by
+-- applying @d@-dimensional @Fp@-linear transform on @d@-dim chunks of
+-- powerful basis coeffs
 instance (GFCtx fp d, Fact m, CElt t fp) => Module.C (GF fp d) (Cyc t m fp) where
   -- CJP: optimize for Scalar if we can: r *> (Scalar c) is the tensor
   -- that has the coeffs of (r*c), followed by zeros.  (This assumes
@@ -311,7 +322,8 @@ mulG (Sub c) = mulG $ embed' c   -- must go to full ring
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
-divG :: (Fact m, CElt t r) => Cyc t m r -> Maybe (Cyc t m r)
+divG :: (Fact m, CElt t r, IntegralDomain r)
+        => Cyc t m r -> Maybe (Cyc t m r)
 {-# INLINABLE divG #-}
 divG (Pow u) = Pow <$> U.divG u
 divG (Dec u) = Dec <$> U.divG u
@@ -470,8 +482,7 @@ unzipCyc (CRT u) = either ((cycPE *** cycPE) . unzipCRTE)
 unzipCyc (Scalar c) = Scalar *** Scalar $ c
 unzipCyc (Sub c) = Sub *** Sub $ unzipCyc c
 
--- generic RescaleCyc instance
-
+-- | generic instance
 instance {-# OVERLAPS #-} (Rescale a b, CElt t a, TElt t b)
     => R.RescaleCyc (Cyc t) a b where
 
@@ -485,7 +496,8 @@ instance {-# OVERLAPS #-} (Rescale a b, CElt t a, TElt t b)
   rescaleCyc R.Dec c = Dec $ fmapDec rescale $ uncycDec c
   {-# INLINABLE rescaleCyc #-}
 
--- specialized instance for product rings: ~2x faster algorithm
+-- | specialized instance for product rings of @Zq@s: ~2x faster
+-- algorithm
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
          CElt t (a,b), CElt t a, CElt t b, CElt t (LiftOf a))
          => R.RescaleCyc (Cyc t) (a,b) b where
@@ -501,14 +513,14 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
                      in Scalar (recip (reduce aval)) * (b - reduce z)
   {-# INLINABLE rescaleCyc #-}
 
-
+-- | promoted from base ring
 instance (Gadget gad zq, Fact m, CElt t zq) => Gadget gad (Cyc t m zq) where
   gadget = (scalarCyc <$>) <$> gadget
   {-# INLINABLE gadget #-}
 
   -- CJP: default 'encode' works because mul-by-Scalar is fast
 
--- promote Decompose, using the powerful basis
+-- | promoted from base ring, using the powerful basis for best geometry
 instance (Decompose gad zq, Fact m, CElt t zq, CElt t (DecompOf zq))
          => Decompose gad (Cyc t m zq) where
 
@@ -531,7 +543,7 @@ toZL = coerce
 fromZL :: TaggedT s ZipList a -> Tagged s [a]
 fromZL = coerce
 
--- promote Correct, using the decoding basis
+-- | promoted from base ring, using the decoding basis for best geometry
 instance (Correct gad zq, Fact m, CElt t zq) => Correct gad (Cyc t m zq) where
   -- sequence: Monad [] and Traversable (UCyc t m D)
   -- sequenceA: Applicative (UCyc t m D) and Traversable (TaggedT gad [])

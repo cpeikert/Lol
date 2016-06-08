@@ -1,8 +1,16 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             GeneralizedNewtypeDeriving, KindSignatures,
-             MultiParamTypeClasses, NoImplicitPrelude, RoleAnnotations,
-             ScopedTypeVariables, StandaloneDeriving, TypeFamilies,
-             TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE RoleAnnotations            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 -- | Functions from one cyclotomic ring to another that are linear
 -- over a common subring.
@@ -66,6 +74,7 @@ instance (Reduce z zq, Fact s, CElt t z, CElt t zq)
 
 type instance LiftOf (Linear t zp e r s) = Linear t (LiftOf zp) e r s
 
+-- | lifts with respect to powerful basis, for best geometry
 instance (CElt t zp, CElt t z, z ~ LiftOf zp, Lift zp z, Fact s)
          => Lift' (Linear t zp e r s) where
   lift (RD ys) = RD $ liftCyc Pow <$> ys

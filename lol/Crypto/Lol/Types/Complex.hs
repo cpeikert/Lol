@@ -1,7 +1,15 @@
-{-# LANGUAGE DataKinds, DeriveGeneric, FlexibleContexts, FlexibleInstances,
-             GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-             NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables,
-             StandaloneDeriving, TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE RebindableSyntax           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeFamilies               #-}
 
 -- | Data type, functions, and instances for complex numbers.
 
@@ -38,12 +46,10 @@ derivingUnbox "Complex"
   [| \ (Complex x) -> (C.real x, C.imag x) |]
   [| \ (r, i) -> Complex $ r C.+: i |]
 
--- a custom IntegralDomain instance, replacing the one provided by NP.
--- it always returns 0 as the remainder of a division.  If we were to
--- use the NP instance, sometimes precision issues yield nonzero
--- remainders, which makes, e.g., 'divGPow' think that division has
--- failed, when it has not.  This in turn causes 'divGCRT' to yield
--- Nothing, among other problems.
+-- | Custom instance replacing the one provided by numeric prelude: it
+-- always returns 0 as the remainder of a division.  (The NP instance
+-- sometimes has precision issues, because it yields nonzero
+-- remainders, which is a problem for 'divG' methods.)
 instance (Field a) => IntegralDomain.C (Complex a) where
   (Complex a) `divMod` (Complex b) = (Complex $ a / b, LP.zero)
 

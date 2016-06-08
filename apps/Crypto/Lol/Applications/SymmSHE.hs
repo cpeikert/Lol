@@ -117,12 +117,12 @@ errorTerm (SK _ s) = let sq = reduce s in
          in liftCyc Dec $ evaluate c sq
 
 -- for when we know the division must succeed
-divG' :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
+divG' :: (Fact m, CElt t r, IntegralDomain r) => Cyc t m r -> Cyc t m r
 divG' = fromJust . divG
 
 -- | Constraint synonym for decryption.
 type DecryptCtx t m m' z zp zq =
-  (ErrorTermCtx t m' z zp zq, Reduce (LiftOf zq) zp,
+  (ErrorTermCtx t m' z zp zq, Reduce (LiftOf zq) zp, IntegralDomain zp,
    m `Divides` m', CElt t zp)
 
 -- | Decrypt a ciphertext.
@@ -138,7 +138,7 @@ decrypt sk ct =
 type DecryptUCtx t m m' z zp zq =
   (Fact m, Fact m', CElt t zp, m `Divides` m',
    Reduce z zq, Lift' zq, CElt t z,
-   ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp)
+   ToSDCtx t m' zp zq, Reduce (LiftOf zq) zp, IntegralDomain zp)
 
 -- | More general form of 'errorTerm' that works for unrestricted
 -- output coefficient types.
@@ -394,8 +394,8 @@ instance (ToSDCtx t m' zp zq, Additive (CT m zp (Cyc t m' zq)))
 ---------- Ring switching ----------
 
 type AbsorbGCtx t m' zp zq =
-  (Lift' zp, Reduce (LiftOf zp) zq, Ring zp, Ring zq, Fact m',
-   CElt t (LiftOf zp), CElt t zp, CElt t zq)
+  (Lift' zp, IntegralDomain zp, Reduce (LiftOf zp) zq, Ring zq,
+   Fact m', CElt t (LiftOf zp), CElt t zp, CElt t zq)
 
 -- | "Absorb" the powers of g associated with the ciphertext, at the
 -- cost of some increase in noise. This is usually needed before
@@ -449,6 +449,7 @@ type TunnelCtx t e r s e' r' s' z zp zq gad =
    KSHintCtx gad t r' z zq,         -- ksHint
    Reduce z zq,                     -- Reduce on Linear
    Lift zp z,                       -- liftLin
+   IntegralDomain zp,               -- absorbGFactors
    CElt t zp,                       -- liftLin
    SwitchCtx gad t s' zq)           -- switch
 

@@ -1,6 +1,16 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances,
-             GADTs, MultiParamTypeClasses, NoImplicitPrelude, PolyKinds, RankNTypes,
-             ScopedTypeVariables, TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Apply.Cyc where
 
@@ -18,7 +28,7 @@ import Utils
 
 data BasicCtxD
 type BasicCtx t m r =
-  (CElt t r, Fact m, Random r, Eq r, NFElt r, ShowType '(t,m,r), Random (t m r), m `Divides` m, NFData (t m r))
+  (CElt t r, Fact m, IntegralDomain r, Random r, Eq r, NFElt r, ShowType '(t,m,r), Random (t m r), m `Divides` m, NFData (t m r))
 data instance ArgsCtx BasicCtxD where
     BC :: (BasicCtx t m r, BasicCtx t m (r,r)) => Proxy '(t,m,r) -> ArgsCtx BasicCtxD
 instance (params `Satisfy` BasicCtxD, BasicCtx t m r, BasicCtx t m (r,r))
@@ -68,7 +78,7 @@ applyError params g = run params $ \(EC p) -> g p
 
 
 data TwoIdxCtxD
-type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, Eq r, Random r, NFElt r,
+type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, IntegralDomain r, Eq r, Random r, NFElt r,
                            ShowType '(t,m,m',r), Random (t m r), Random (t m' r))
 data instance ArgsCtx TwoIdxCtxD where
     TI :: (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> ArgsCtx TwoIdxCtxD

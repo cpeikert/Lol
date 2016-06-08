@@ -1,7 +1,14 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, MultiParamTypeClasses, NoImplicitPrelude,
-             PolyKinds, ScopedTypeVariables, TupleSections, TypeFamilies,
-             UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 -- | Interfaces for "gadgets," decomposition, and error correction.
 
@@ -51,18 +58,19 @@ class Gadget gad u => Correct gad u where
   correct :: Tagged gad [u] -> (u, [LiftOf u])
 
 
--- instances for products
-
+-- | Product ring: concatenate gadgets over component rings
 instance (Gadget gad a, Gadget gad b) => Gadget gad (a,b) where
 
   gadget = (++) <$> (map (,zero) <$> gadget) <*> (map (zero,) <$> gadget)
 
+-- | Product ring: concatenate decompositions for component rings
 instance (Decompose gad a, Decompose gad b, DecompOf a ~ DecompOf b)
          => Decompose gad (a,b) where
 
   type DecompOf (a,b) = DecompOf a
   decompose (a,b) = (++) <$> decompose a <*> decompose b
 
+-- | Product ring
 instance (Correct gad a, Correct gad b,
           Mod a, Mod b, Field a, Field b, Lift' a, Lift' b,
           ToInteger (LiftOf a), ToInteger (LiftOf b))

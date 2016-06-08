@@ -1,6 +1,10 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses,
-             PolyKinds, RebindableSyntax, ScopedTypeVariables,
-             TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 -- | Classes and helper methods for the Chinese remainder transform
 -- and ring extensions.
@@ -50,20 +54,20 @@ class (Ring r, Ring (CRTExt r)) => CRTEmbed r where
   -- | Projects from @CRTExt r@ to @r@
   fromExt :: CRTExt r -> r
 
--- CRTrans instance for product rings
+-- | Product ring
 instance (CRTrans mon a, CRTrans mon b) => CRTrans mon (a,b) where
   crtInfo = do
     (fa, inva) <- crtInfo
     (fb, invb) <- crtInfo
     return (fa &&& fb, (inva, invb))
 
--- CRTEmbed instance for product rings
+-- | Product ring
 instance (CRTEmbed a, CRTEmbed b) => CRTEmbed (a,b) where
   type CRTExt (a,b) = (CRTExt a, CRTExt b)
   toExt = toExt *** toExt
   fromExt = fromExt *** fromExt
 
--- the complex numbers have roots of unity of any order
+-- | Complex numbers have 'CRTrans' for any index @m@
 instance (Monad mon, Transcendental a) => CRTrans mon (Complex a) where
   crtInfo = crtInfoC
 
@@ -76,38 +80,42 @@ crtInfoC = let mval = proxy value (Proxy::Proxy m)
 omegaPowC :: (Transcendental a) => Int -> Int -> Complex a
 omegaPowC m i = cis (2*pi*fromIntegral i / fromIntegral m)
 
--- trivial CRTEmbed instance for complex numbers
+-- | Self-embed
 instance (Transcendental a) => CRTEmbed (Complex a) where
   type CRTExt (Complex a) = Complex a
   toExt = id
   fromExt = id
 
--- CRTrans instances for real and integer types, which do
--- not have roots of unity (except in trivial cases). These are needed
--- to use Cyc with these integral types.
+-- | Returns 'Nothing'
 instance CRTrans Maybe Double where crtInfo = tagT Nothing
+-- | Returns 'Nothing'
 instance CRTrans Maybe Int where crtInfo = tagT Nothing
+-- | Returns 'Nothing'
 instance CRTrans Maybe Int64 where crtInfo = tagT Nothing
+-- | Returns 'Nothing'
 instance CRTrans Maybe Integer where crtInfo = tagT Nothing
 -- can also do for Int8, Int16, Int32 etc.
 
--- CRTEmbed instances for real and integer types, embedding into
--- Complex.  These are needed to use Cyc with these integer types.
+-- | Embeds into complex numbers
 instance CRTEmbed Double where
   type CRTExt Double = Complex Double
   toExt = fromReal . realToField
   fromExt = realToField . real
 
+-- | Embeds into complex numbers
 instance CRTEmbed Int where
   type CRTExt Int = Complex Double
   toExt = fromIntegral
   fromExt = fst . roundComplex
 
+-- | Embeds into complex numbers
 instance CRTEmbed Int64 where
   type CRTExt Int64 = Complex Double
   toExt = fromIntegral
   fromExt = fst . roundComplex
 
+-- | Embeds into complex numbers.  (May not have sufficient
+-- precision.)
 instance CRTEmbed Integer where
   -- CJP: sufficient precision?  Not in general.
   type CRTExt Integer = Complex Double

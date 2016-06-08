@@ -22,17 +22,17 @@ cycTests = [
   testGroupM "coeffsPow" $ applyTwoIdx basisParams $ hideArgs prop_coeffsBasis
   ]
 
-prop_mulgPow :: (CElt t r, Fact m, Eq r) => Cyc t m r -> Test '(t,m,r)
+prop_mulgPow :: (CElt t r, Fact m, Eq r, IntegralDomain r) => Cyc t m r -> Test '(t,m,r)
 prop_mulgPow x =
   let y = advisePow x
   in test $ y == (fromJust' "prop_mulgPow failed divisibility!" $ divG $ mulG y)
 
-prop_mulgDec :: (CElt t r, Fact m, Eq r) => Cyc t m r -> Test '(t,m,r)
+prop_mulgDec :: (CElt t r, Fact m, Eq r, IntegralDomain r) => Cyc t m r -> Test '(t,m,r)
 prop_mulgDec x =
   let y = adviseDec x
   in test $ y == (fromJust' "prop_mulgDec failed divisibility!" $ divG $ mulG y)
 
-prop_mulgCRT :: (CElt t r, Fact m, Eq r) => Cyc t m r -> Test '(t,m,r)
+prop_mulgCRT :: (CElt t r, Fact m, Eq r, IntegralDomain r) => Cyc t m r -> Test '(t,m,r)
 prop_mulgCRT x =
   let y = adviseCRT x
   in test $ y == (fromJust' "prop_mulgCRT failed divisibility!" $ divG $ mulG y)
