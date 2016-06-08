@@ -6,7 +6,7 @@ name:                lol-apps
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
 version:             0.1.0.0
-synopsis:            Lattice-based cryptographic applications using Lol.
+synopsis:            Lattice-based cryptographic applications using <https://hackage.haskell.org/package/lol Lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
 license:             GPL-2
@@ -66,15 +66,15 @@ library
   build-depends:
     base==4.8.*,
     deepseq >= 1.4.1.1 && <1.5,
-    lol >= 0.3.0.0,
+    lol == 0.3.*,
     MonadRandom >= 0.2 && < 0.5,
     numeric-prelude >= 0.4.2 && < 0.5
 
 test-suite test-apps
-  type:               exitcode-stdio-1.0
-  hs-source-dirs:     tests,utils
-  default-language:   Haskell2010
-  main-is:            Main.hs
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   tests,utils
+  default-language: Haskell2010
+  main-is:          Main.hs
 
   ghc-options: -threaded -rtsopts
 
@@ -96,10 +96,10 @@ test-suite test-apps
     vector
 
 Benchmark bench-apps
-  type:               exitcode-stdio-1.0
-  hs-source-dirs:     benchmarks,utils
-  default-language:   Haskell2010
-  main-is:            Main.hs
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   benchmarks,utils
+  default-language: Haskell2010
+  main-is:          Main.hs
 
 --  if flag(llvm)
 --    ghc-options: -fllvm -optlo-O3
@@ -121,3 +121,16 @@ Benchmark bench-apps
     vector,
     repa
 
+executable simpleSHE
+  hs-source-dirs:   examples/SymmSHE
+  default-language: Haskell2010
+  main-is:          SimpleSHE.hs
+
+  ghc-options: -threaded -rtsopts
+
+  build-depends:
+    arithmoi,
+    lol,
+    lol-apps,
+    MonadRandom,
+    numeric-prelude
