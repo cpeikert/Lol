@@ -7,6 +7,8 @@ Changelog for lol project
  * Support for reifying Factored types
  * Support for reals (RR) mod q
  * Replaced C backend with C++ backend
+ * Renamed LatticePrelude -> Prelude
+ * Added monad argument to CRTrans
 
 0.2.0.0
 -----
