@@ -5,7 +5,7 @@ name:                lol-apps
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.0.0.1
+version:             0.1.0.0
 synopsis:            Lattice-based cryptographic applications using Lol.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -66,7 +66,7 @@ library
   build-depends:
     base==4.8.*,
     deepseq >= 1.4.1.1 && <1.5,
-    lol >= 0.2.0.0,
+    lol >= 0.3.0.0,
     MonadRandom >= 0.2 && < 0.5,
     numeric-prelude >= 0.4.2 && < 0.5
 

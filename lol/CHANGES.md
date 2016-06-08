@@ -1,6 +1,13 @@
 Changelog for lol project
 ================================
 
+0.3.0.0
+-----
+ * Support for protocol-buffers
+ * Support for reifying Factored types
+ * Support for reals (RR) mod q
+ * Replaced C backend with C++ backend
+
 0.2.0.0
 -----
  * Added benchmarks
