@@ -106,11 +106,10 @@ twoIdxParams :: Proxy TwoIdxParams
 twoIdxParams = Proxy
 
 prop_ksLin :: (DecryptUCtx t m m' z zp zq, Eq (Cyc t m zp))
-  => SK (Cyc t m' z)
-     -> KSLinear t m m' z zp zq zq' gad
+  => KSLinear t m m' z zp zq zq' gad
      -> PTCT m zp (Cyc t m' zq)
      -> Test '(t,m,m',zp,zq,zq',gad)
-prop_ksLin _ (KSL kswlin skout) (PTCT x' x) =
+prop_ksLin (KSL kswlin skout) (PTCT x' x) =
   let y = kswlin x
       y' = decryptUnrestricted skout y
   in test $ x' == y'
