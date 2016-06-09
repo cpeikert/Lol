@@ -1,4 +1,5 @@
-#include "tensorTypes.h"
+#include "types.h"
+#include "tensor.h"
 
 template <typename ring> void pNormSq (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p)
 {

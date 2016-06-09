@@ -1,4 +1,6 @@
-#include "tensorTypes.h"
+#include "types.h"
+#include "tensor.h"
+#include "common.h"
 
 template <typename ring> void gPow (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p)
 {

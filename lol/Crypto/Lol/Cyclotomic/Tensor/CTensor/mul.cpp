@@ -1,4 +1,4 @@
-#include "tensorTypes.h"
+#include "types.h"
 
 template <typename ring> void zipWithStar (ring* a, ring* b, hShort_t tupSize, hDim_t totm, hInt_t* qs)
 {

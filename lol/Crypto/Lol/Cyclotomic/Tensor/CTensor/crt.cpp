@@ -1,4 +1,6 @@
-#include "tensorTypes.h"
+#include "types.h"
+#include "tensor.h"
+#include "common.h"
 
 // there should be a special cases that do NOT require temp space to be allocated for all primes *smaller* than DFTP_GENERIC_SIZE
 #define DFTP_GENERIC_SIZE 11

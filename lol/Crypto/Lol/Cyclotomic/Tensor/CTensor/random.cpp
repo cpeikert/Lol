@@ -1,4 +1,6 @@
-#include "tensorTypes.h"
+#include "types.h"
+#include "tensor.h"
+#include "common.h"
 #include <math.h>
 
 // this function takes *inverse* RUs, so no negation is needed on the indexing
