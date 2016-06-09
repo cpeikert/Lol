@@ -34,8 +34,8 @@ type CRTInfo r = (Int -> r, r)
 
 -- | The values of 'crtInfo' for different indices @m@ should be
 -- consistent, in the sense that if @omega@, @omega'@ are respectively
--- the roots of unity used for @m@, @m'@ where @m'@ divides @m@, then
--- it should be the case that @omega^(m/m')=omega'@.
+-- the roots of unity used for @m@, @m'@ where @m@ divides @m'@, then
+-- it should be the case that @omega'^(m'/m)=omega@.
 
 class (Monad mon, Ring r) => CRTrans mon r where
 

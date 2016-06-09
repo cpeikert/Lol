@@ -354,6 +354,9 @@ mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
 mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 
 -- | Divide by the special element @g@.
+-- WARNING: this implementation is not a constant-time algorithm, so
+-- information about the argument may be leaked through a timing
+-- channel.
 divG :: (Tensor t, Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
         => UCyc t m rep r -> Maybe (UCyc t m rep r)
 {-# INLINABLE divG #-}
@@ -526,7 +529,6 @@ crtSet =
 --------- Conversion methods ------------------
 
 
--- | Convert to powerful-basis representation.
 -- {-# SPECIALIZE toPow :: (Fact m, Reflects q Int64) => UCyc RT m D (ZqBasic q Int64) -> UCyc RT m P (ZqBasic q Int64) #-}
 -- EAC: I can't specialize toPow due to the constraint synonym TElt. See GHC ticket 12068
 -- For future reference, it seemed to help in general to simplify constraints as much as possible
@@ -648,7 +650,7 @@ BAD:  CRTEmbed r,                            CRTrans Identity (CRTExt r), TElt t
 good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
 
 -}
-
+-- | Convert to powerful-basis representation.
 toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
 {-# INLINABLE toPow #-}
 toPow x@(Pow _) = x

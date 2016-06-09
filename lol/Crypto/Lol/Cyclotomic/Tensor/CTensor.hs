@@ -6,7 +6,7 @@
              TypeFamilies, TypeOperators, TypeSynonymInstances,
              UndecidableInstances #-}
 
--- | Wrapper for a C implementation of the 'Tensor' interface.
+-- | Wrapper for a C++ implementation of the 'Tensor' interface.
 
 module Crypto.Lol.Cyclotomic.Tensor.CTensor
 ( CT ) where
@@ -74,7 +74,7 @@ type role CT' representational nominal
 -- GADT wrapper that distinguishes between Unbox and unrestricted
 -- element types
 
--- | An implementation of 'Tensor' backed by C code.
+-- | An implementation of 'Tensor' backed by C++ code.
 data CT (m :: Factored) r where
   CT :: Storable r => CT' m r -> CT m r
   ZV :: IZipVector m r -> CT m r
