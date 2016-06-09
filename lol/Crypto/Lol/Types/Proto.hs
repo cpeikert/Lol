@@ -23,7 +23,6 @@ class Protoable a where
   -- | Convert from a protocol buffer representation.
   fromProto :: MonadError String m => ProtoType a -> m a
 
--- | list instance
 instance (Protoable a) => Protoable [a] where
   type ProtoType [a] = Seq (ProtoType a)
   toProto = fromList . map toProto

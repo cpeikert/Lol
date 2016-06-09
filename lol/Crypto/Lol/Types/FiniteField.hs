@@ -122,7 +122,7 @@ chunksOf n xs
   | otherwise = error "chunksOf: non-positive n"
 
 -- | Yield a list of length exactly @d@ (i.e., including trailing zeros)
--- of the @fp@-coefficients with respect to the power basis
+-- of the @fp@-coefficients with respect to the power basis.
 toList :: forall fp d . (Reflects d Int, Additive fp) => GF fp d -> [fp]
 toList = let dval = proxy value (Proxy::Proxy d)
          in \(GF p) -> let l = coeffs p
