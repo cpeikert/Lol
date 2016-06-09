@@ -148,7 +148,7 @@ library
     constraints,
     containers >= 0.5.6.2 && < 0.6,
     crypto-api,
-    data-default >= 0.3.0 && < 0.6,
+    data-default >= 0.3.0 && < 0.8,
     deepseq >= 1.4.1.1 && <1.5,
     monadcryptorandom,
     MonadRandom >= 0.2 && < 0.5,
@@ -165,7 +165,7 @@ library
     th-desugar >= 1.5.4 && < 1.7,
     tagged-transformer >= 0.7 && < 0.9,
     template-haskell  >=  2.2.0.0,
-    transformers >= 0.4.2.0 && < 0.5,
+    transformers >= 0.4.2.0 && < 0.6,
     vector==0.11.*,
     vector-th-unbox >= 0.2.1.0 && < 0.3
 
