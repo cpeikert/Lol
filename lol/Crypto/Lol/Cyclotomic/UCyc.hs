@@ -320,7 +320,7 @@ unzipDec (Dec v) = Dec *** Dec $ unzipT v
 
 -- | Unzip in the CRT basis over the base ring.  The output components
 -- are 'Either' because each target base ring may not support 'C'.
-unzipCRTC :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
+unzipCRTC :: (Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
              => UCyc t m C (a,b)
              -> (Either (UCyc t m P a) (UCyc t m C a),
                  Either (UCyc t m P b) (UCyc t m C b))
@@ -333,7 +333,7 @@ unzipCRTC (CRTC s v)
 -- | Unzip in the CRT basis over the extension of the base ring.  The
 -- output components are 'Either' because each target base might
 -- instead support 'C'.
-unzipCRTE :: (Tensor t, Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
+unzipCRTE :: (Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
              => UCyc t m E (a,b)
              -> (Either (UCyc t m P a) (UCyc t m E a),
                  Either (UCyc t m P b) (UCyc t m E b))
@@ -346,7 +346,7 @@ unzipCRTE (CRTE _ v)
 
 
 -- | Multiply by the special element @g@.
-mulG :: (Tensor t, Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
+mulG :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
 {-# INLINABLE mulG #-}
 mulG (Pow v) = Pow $ mulGPow v
 mulG (Dec v) = Dec $ mulGDec v
@@ -357,7 +357,7 @@ mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
-divG :: (Tensor t, Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
+divG :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
         => UCyc t m rep r -> Maybe (UCyc t m rep r)
 {-# INLINABLE divG #-}
 divG (Pow v) = Pow <$> divGPow v
@@ -402,7 +402,7 @@ errorRounded svar =
 -- security.)
 errorCoset :: forall t m zp z v rnd .
   (Mod zp, z ~ ModRep zp, Lift zp z, Tensor t, Fact m,
-   TElt t zp, TElt t z, ToRational v, MonadRandom rnd)
+   ToRational v, MonadRandom rnd)
   => v -> UCyc t m D zp -> rnd (UCyc t m D z)
 {-# INLINABLE errorCoset #-}
 errorCoset =
@@ -794,7 +794,7 @@ instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
   rnf (CRTC _ x)   = rnf x \\ witness entailNFDataT x
   rnf (CRTE _ x)   = rnf x \\ witness entailNFDataT x
 
-instance (Fact m, Protoable (t m r)) => Protoable (UCyc t m D r) where
+instance (Protoable (t m r)) => Protoable (UCyc t m D r) where
   type ProtoType (UCyc t m D r) = ProtoType (t m r)
   toProto (Dec t) = toProto t
   fromProto t = Dec <$> fromProto t

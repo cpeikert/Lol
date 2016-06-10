@@ -426,7 +426,7 @@ embedCT (CT d 0 l c) = CT d 0 l (embed <$> c)
 embedCT _ = error "embedCT requires 0 factors of g; call aborbGFactors first"
 
 -- | Embed a secret key from a subring into a superring.
-embedSK :: (CElt t z, m `Divides` m') => SK (Cyc t m z) -> SK (Cyc t m' z)
+embedSK :: (m `Divides` m') => SK (Cyc t m z) -> SK (Cyc t m' z)
 embedSK (SK v s) = SK v $ embed s
 
 -- | "Tweaked trace" function for ciphertexts.  Mathematically, the

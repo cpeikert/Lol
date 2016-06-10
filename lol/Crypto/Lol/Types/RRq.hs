@@ -42,7 +42,7 @@ reduce' = let q = proxy value (Proxy::Proxy q)
           in \x -> RRq $ x - q * floor (x / q)
 
 -- puts value in range [-q/2, q/2)
-decode' :: forall q r . (Reflects q r, Ord r, Additive r, Ring r)
+decode' :: forall q r . (Reflects q r, Ord r, Ring r)
            => RRq q r -> r
 decode' = let qval = proxy value (Proxy::Proxy q)
           in \(RRq x) -> if x + x < qval then x else x - qval

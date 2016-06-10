@@ -12,7 +12,9 @@ import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
 import Crypto.Lol.Prelude                               as LP
 import Data.Coerce
 
-fL, fLInv, fGPow, fGDec :: (Fact m, Additive r, Unbox r, Elt r)
+fLInv, fGPow :: (Fact m, Additive r, Unbox r)
+  => Arr m r -> Arr m r
+fL, fGDec :: (Fact m, Additive r, Unbox r, Elt r)
   => Arr m r -> Arr m r
 {-# INLINABLE fL #-}
 {-# INLINABLE fLInv #-}
@@ -45,7 +47,7 @@ fGInvPow = wrapGInv' pGInvPow'
 fGInvDec = wrapGInv' pGInvDec'
 
 wrapGInv' :: forall m r .
-  (Fact m, IntegralDomain r, ZeroTestable r, Unbox r, Elt r)
+  (Fact m, IntegralDomain r, ZeroTestable r, Unbox r)
   => (forall p . Prime p => Tagged p (Trans r))
   -> Arr m r -> Maybe (Arr m r)
 wrapGInv' ginv =
@@ -76,9 +78,8 @@ pWrap f = let pval = proxy valuePrime (Proxy::Proxy p)
 {-# INLINABLE pWrap #-}
 
 
-pL, pLInv, pGPow, pGDec :: (Prime p, Additive r, Unbox r, Elt r)
-  => Tagged p (Trans r)
-
+pLInv, pGPow :: (Prime p, Additive r) => Tagged p (Trans r)
+pL, pGDec :: (Prime p, Additive r, Elt r, Unbox r) => Tagged p (Trans r)
 pGInvPow', pGInvDec' :: (Prime p, Ring r, Unbox r, Elt r)
   => Tagged p (Trans r)
 {-# INLINABLE pL #-}

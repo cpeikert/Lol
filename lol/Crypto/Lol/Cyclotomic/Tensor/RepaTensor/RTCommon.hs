@@ -65,7 +65,7 @@ replM = let n = proxy totientFact (Proxy::Proxy m)
         in fmap (Arr . fromUnboxed (Z:.n)) . U.replicateM n
 {-# INLINABLE replM #-}
 
-instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (Arr m r) where
+instance (Fact m, Additive r, Unbox r) => Additive.C (Arr m r) where
   zero = repl zero
   (Arr a) + (Arr b) = Arr $ force $ R.zipWith (+) a b
   negate (Arr a) = Arr $ force $ R.map negate a
@@ -73,7 +73,7 @@ instance (Fact m, Additive r, Unbox r, Elt r) => Additive.C (Arr m r) where
   {-# INLINABLE (+) #-}
   {-# INLINABLE negate #-}
 
-instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (Arr m r) where
+instance (Fact m, Ring r, Unbox r) => Ring.C (Arr m r) where
   one = repl one
   (Arr a) * (Arr b) = Arr $ force $ R.zipWith (*) a b
   fromInteger = repl . fromInteger
@@ -81,7 +81,7 @@ instance (Fact m, Ring r, Unbox r, Elt r) => Ring.C (Arr m r) where
   {-# INLINABLE (*) #-}
   {-# INLINABLE fromInteger #-}
 
-instance (Fact m, ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (Arr m r) where
+instance (ZeroTestable r, Unbox r, Elt r) => ZeroTestable.C (Arr m r) where
   -- not using 'zero' to avoid Additive r constraint
   isZero (Arr a)
       = isZero $ foldAllS (\ x y -> if isZero x then y else x) (a R.! (Z:.0)) a
@@ -104,7 +104,7 @@ instance (Arbitrary r, Unbox r, Fact m) => Arbitrary (Arr m r) where
 
 -- | For a factored index, tensors up any function defined for (and
 -- tagged by) any prime power
-fTensor :: forall m r mon . (Fact m, Monad mon, Unbox r)
+fTensor :: forall m r mon . (Fact m, Monad mon)
   => (forall pp . (PPow pp) => TaggedT pp mon (Trans r))
   -> TaggedT m mon (Trans r)
 
@@ -202,7 +202,7 @@ evalM = fmap (eval . return) . untagT
 
 -- | maps the innermost dimension to a 2-dim array with innermost dim d,
 -- for performing a I_l \otimes f_d \otimes I_r transformation
-expose :: (Source r1 r, Unbox r)
+expose :: (Source r1 r)
           => Int -> Int -> Array r1 DIM1 r -> Array D DIM2 r
 expose !d !r !arr =
   let (Z :. sz) = extent arr
@@ -212,7 +212,7 @@ expose !d !r !arr =
 {-# INLINABLE expose #-}
 
 -- | inverse of expose
-unexpose :: (Source r1 r, Unbox r) => Int -> Array r1 DIM2 r -> Array D DIM1 r
+unexpose :: (Source r1 r) => Int -> Array r1 DIM2 r -> Array D DIM1 r
 unexpose !r !arr =
   let (Z :. sz :. d) = extent arr
       f (Z :. i) = let (idivr,imodr) = i `divMod` r
@@ -233,7 +233,7 @@ mulMat !m !v
 {-# INLINABLE mulMat #-}
 
 -- | multiplication by a diagonal matrix along innermost dim
-mulDiag :: (Source r1 r, Source r2 r, Ring r, Unbox r, Elt r)
+mulDiag :: (Source r1 r, Source r2 r, Ring r)
            => Array r1 DIM1 r -> Array r2 DIM2 r -> Array D DIM2 r
 mulDiag !diag !arr = fromFunction (extent arr) f
   where f idx@(_ :. i) = (arr ! idx) * (diag ! (Z:.i))

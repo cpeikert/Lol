@@ -229,14 +229,14 @@ instance (Mod b, Field a, Lift b (ModRep b), Reduce (LiftOf b) a)
 
 -- | Rescale a (multi-)product ring of @Zq@s
 instance (Rescale (a,(b,c)) (b,c), Rescale (b,c) c,
-          Additive a, Additive b, Additive c)
+          Additive a, Additive c)
          => Rescale (a,(b,c)) c where
   rescale = (rescale :: (b,c) -> c) . rescale
   {-# INLINABLE rescale #-}
 
 -- | Rescale a (multi-)product ring of @Zq@s
 instance (Rescale ((a,b),c) (a,b), Rescale (a,b) a,
-          Additive a, Additive b, Additive c)
+          Additive a, Additive c)
          => Rescale ((a,b),c) a where
   rescale = (rescale :: (a,b) -> a) . rescale
   {-# INLINABLE rescale #-}

@@ -238,7 +238,7 @@ embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
            (snd <$> crtExtFuncs)
 
-fMatrix :: forall m r mon . (Fact m, Monad mon, Ring r)
+fMatrix :: forall m r mon . (Fact m, Monad mon)
            => (forall pp . (PPow pp) => TaggedT pp mon (MatrixC r))
            -> TaggedT m mon (Matrix r)
 fMatrix mat = tagT $ go $ sUnF (sing :: SFactored m)
@@ -253,7 +253,7 @@ fMatrix mat = tagT $ go $ sUnF (sing :: SFactored m)
 -- | For a prime power @p^e@, converts any matrix @M@ for
 -- prime @p@ to @1_(p^{e-1}) \otimes M@, where @1@ denotes the all-1s
 -- vector.
-ppMatrix :: forall pp r mon . (PPow pp, Monad mon, Ring r)
+ppMatrix :: forall pp r mon . (PPow pp, Monad mon)
             => (forall p . (Prime p) => TaggedT p mon (MatrixC r))
             -> TaggedT pp mon (MatrixC r)
 ppMatrix mat = tagT $ case (sing :: SPrimePower pp) of

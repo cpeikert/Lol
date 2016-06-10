@@ -200,7 +200,7 @@ roundScalarCentered p x =
 
 -- | Variant of 'Algebra.IntegralDomain.divMod' in which the remainder
 -- is in the range @[-b\/2,b\/2)@.
-divModCent :: (IntegralDomain i, Ord i)
+divModCent :: (IntegralDomain i)
               => i              -- ^ dividend @a@
               -> i              -- ^ divisor @b@
               -> (i,i)          -- ^ (quotient, remainder)

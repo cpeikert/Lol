@@ -366,7 +366,7 @@ errorRounded = (Dec <$>) . U.errorRounded
 -- security.)
 errorCoset ::
   (Mod zp, z ~ ModRep zp, Lift zp z, Fact m,
-   CElt t zp, TElt t z, ToRational v, MonadRandom rnd)
+   CElt t zp, ToRational v, MonadRandom rnd)
   => v -> Cyc t m zp -> rnd (Cyc t m z)
 errorCoset v = (Dec <$>) . U.errorCoset v . uncycDec
 {-# INLINABLE errorCoset #-}
@@ -472,7 +472,7 @@ liftPow (Sub c) = Sub $ liftPow c
 liftDec c = Dec $ lift $ uncycDec c
 
 -- | Unzip for a pair base ring.
-unzipCyc :: (Tensor t, Fact m, CElt t (a,b), CElt t a, CElt t b)
+unzipCyc :: (Fact m, CElt t (a,b), CElt t a, CElt t b)
             => Cyc t m (a,b) -> (Cyc t m a, Cyc t m b)
 {-# INLINABLE unzipCyc #-}
 unzipCyc (Pow u) = Pow *** Pow $ U.unzipPow u

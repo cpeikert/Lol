@@ -60,7 +60,7 @@ bench_mulPublic :: (MulPublicCtx t m m' zp zq, NFElt zp, NFElt zq) => Cyc t m zp
 bench_mulPublic a ct = bench (mulPublic a) ct
 
 -- requires zq to be Liftable
-bench_dec :: (DecryptCtx t m m' z zp zq, z ~ LiftOf zp, NFElt zp)
+bench_dec :: (DecryptCtx t m m' z zp zq, NFElt zp)
   => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
 bench_dec sk ct = bench (decrypt sk) ct
 

@@ -30,7 +30,7 @@ prop_recip :: forall r . (Field r, Eq r) => Invertible r -> Test r
 prop_recip (Invertible x) = test $ one == (x * recip x)
 
 -- tests that multiplication in the extension ring matches CRT multiplication
-prop_mul_ext :: forall r . (CRTEmbed r, Ring r, Eq r)
+prop_mul_ext :: forall r . (CRTEmbed r, Eq r)
   => Invertible r -> Invertible r -> Test r
 prop_mul_ext (Invertible x) (Invertible y) = test $
   let z = x * y

@@ -90,7 +90,7 @@ type ExtendLinIdx e r s e' r' s' =
 -- @lcm(r,e\') | r\'@ (not equality), but this generality would
 -- significantly complicate the implementation, and for our purposes
 -- there's no reason to use any larger @r'@.)
-extendLin :: (ExtendLinIdx e r s e' r' s', CElt t z)
+extendLin :: (ExtendLinIdx e r s e' r' s')
            => Linear t z e r s -> Linear t z e' r' s'
 -- CJP: this simple implementation works because R/E and R'/E' have
 -- identical decoding bases, because R' \cong R \otimes_E E'.  If we

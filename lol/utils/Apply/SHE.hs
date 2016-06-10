@@ -124,7 +124,7 @@ instance (params `Satisfy` CTEmCtxD, CTEmCtx t r r' s s' zp zq)
   => ( '(t, '(r,r',s,s',zp,zq)) ': params) `Satisfy` CTEmCtxD where
   run _ f = f (TwEmD (Proxy::Proxy '(t,r,r',s,s',zp,zq))) : run (Proxy::Proxy params) f
 
-applyCTTwEm :: (params `Satisfy` CTEmCtxD, MonadRandom rnd) =>
+applyCTTwEm :: (params `Satisfy` CTEmCtxD) =>
   Proxy params ->
   (forall t r r' s s' zp zq . (CTEmCtx t r r' s s' zp zq)
        => Proxy '(t,r,r',s,s',zp,zq) -> rnd res)

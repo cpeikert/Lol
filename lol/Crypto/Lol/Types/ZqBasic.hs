@@ -84,7 +84,7 @@ instance (Reflects q z, ToInteger z) => Mod (ZqBasic q z) where
 type instance CharOf (ZqBasic p z) = p
 
 instance (PPow pp, zq ~ ZqBasic pp z,
-          PrimeField (ZpOf zq), Ring zq, Ring (ZpOf zq))
+          PrimeField (ZpOf zq), Ring zq)
          => ZPP (ZqBasic (pp :: PrimePower) z) where
 
   type ZpOf (ZqBasic pp z) = ZqBasic (PrimePP pp) z
@@ -203,10 +203,10 @@ instance (Reflects q z, ToInteger z, Field (ZqBasic q z)) => IntegralDomain.C (Z
   divMod a b = (a/b, zero)
 
 -- Gadget-related instances
-instance (Reflects q z, ToInteger z, Additive z) => Gadget TrivGad (ZqBasic q z) where
+instance (Reflects q z, ToInteger z) => Gadget TrivGad (ZqBasic q z) where
   gadget = tag [one]
 
-instance (Reflects q z, ToInteger z, Ring z) => Decompose TrivGad (ZqBasic q z) where
+instance (Reflects q z, ToInteger z) => Decompose TrivGad (ZqBasic q z) where
   type DecompOf (ZqBasic q z) = z
   decompose x = tag [lift x]
 
@@ -233,7 +233,7 @@ instance (Reflects q z, ToInteger z, RealIntegral z, Reflects b z)
                bval = proxy value (Proxy :: Proxy b)
            in tag $ reduce' <$> gadgetZ bval qval
 
-instance (Reflects q z, ToInteger z, Ring z, ZeroTestable z, Reflects b z)
+instance (Reflects q z, ToInteger z, Reflects b z)
     => Decompose (BaseBGad b) (ZqBasic q z) where
   type DecompOf (ZqBasic q z) = z
   decompose = let qval = proxy value (Proxy :: Proxy q)
@@ -281,7 +281,7 @@ correctZ q b =
       subLast [v0] [v'0] = let y = v0-v'0 in ([y], y)
       subLast (v0:vs) (v'0:v's) = first ((v0-v'0):) $ subLast vs v's
 
-instance (Reflects q z, ToInteger z, Ring z, Reflects b z)
+instance (Reflects q z, ToInteger z, Reflects b z)
     => Correct (BaseBGad b) (ZqBasic q z) where
 
   correct =

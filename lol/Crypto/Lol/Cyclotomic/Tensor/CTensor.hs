@@ -186,7 +186,7 @@ instance (Fact m, Ring r, Storable r, Dispatch r)
   fromInteger = CT . repl . fromInteger
 -}
 
-instance (ZeroTestable r, Storable r, Fact m)
+instance (ZeroTestable r, Storable r)
          => ZeroTestable.C (CT m r) where
   --{-# INLINABLE isZero #-}
   isZero (CT (CT' a)) = SV.foldl' (\ b x -> b && isZero x) True a
@@ -320,18 +320,15 @@ coerceEm = (coerce <$>) . untagT
 
 -- | Useful coersion for defining @coeffs@ in the @Tensor@
 -- interface. Using 'coerce' alone is insufficient for type inference.
-coerceCoeffs :: (Fact m, Fact m')
-  => Tagged '(m,m') (Vector r -> [Vector r]) -> CT' m' r -> [CT' m r]
+coerceCoeffs :: Tagged '(m,m') (Vector r -> [Vector r]) -> CT' m' r -> [CT' m r]
 coerceCoeffs = coerce
 
 -- | Useful coersion for defining @powBasisPow@ and @crtSetDec@ in the @Tensor@
 -- interface. Using 'coerce' alone is insufficient for type inference.
-coerceBasis ::
-  (Fact m, Fact m')
-  => Tagged '(m,m') [Vector r] -> Tagged m [CT' m' r]
+coerceBasis :: Tagged '(m,m') [Vector r] -> Tagged m [CT' m' r]
 coerceBasis = coerce
 
-mulGPow' :: (TElt CT r, Fact m, Additive r) => CT' m r -> CT' m r
+mulGPow' :: (TElt CT r, Fact m) => CT' m r -> CT' m r
 mulGPow' = untag $ basicDispatch dmulgpow
 
 divGPow' :: (TElt CT r, Fact m, IntegralDomain r, ZeroTestable r)
@@ -352,12 +349,12 @@ withBasicArgs f =
         f pout totm pfac numFacts))
     CT' <$> unsafeFreeze yout
 
-basicDispatch :: (Storable r, Fact m, Additive r)
+basicDispatch :: (Storable r, Fact m)
                  => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
                      -> Tagged m (CT' m r -> CT' m r)
 basicDispatch f = return $ unsafePerformIO . withBasicArgs f
 
-gSqNormDec' :: (Storable r, Fact m, Additive r, Dispatch r)
+gSqNormDec' :: (Storable r, Fact m, Dispatch r)
                => Tagged m (CT' m r -> r)
 gSqNormDec' = return $ (!0) . unCT . unsafePerformIO . withBasicArgs dnorm
 
@@ -390,7 +387,7 @@ divIfDivis :: (IntegralDomain r, ZeroTestable r) => r -> r -> Maybe r
 divIfDivis num den = let (q,r) = num `divMod` den
                      in if isZero r then Just q else Nothing
 
-cZipDispatch :: (Storable r, Fact m, Additive r)
+cZipDispatch :: (Storable r, Fact m)
   => (Ptr r -> Ptr r -> Int64 -> IO ())
      -> Tagged m (CT' m r -> CT' m r -> CT' m r)
 cZipDispatch f = do -- in Tagged m

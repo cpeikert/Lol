@@ -207,8 +207,6 @@ prop_ctone sk =
 prop_ctembed :: forall t r r' s s' z zp zq .
   (DecryptUCtx t r r' z zp zq,
    DecryptUCtx t s s' z zp zq,
-   r `Divides` r',
-   s `Divides` s',
    r `Divides` s,
    r' `Divides` s',
    Eq (Cyc t s zp))
@@ -225,7 +223,6 @@ prop_cttwace :: forall t r r' s s' z zp zq .
    DecryptUCtx t r r' z zp zq,
    r `Divides` s,
    r' `Divides` s',
-   s `Divides` s',
    r ~ (FGCD r' s))
   => SK (Cyc t r' z) -> Cyc t s zp -> Test '(t,r,r',s,s',zp,zq)
 prop_cttwace sk x = testIO $ do
@@ -235,8 +232,7 @@ prop_cttwace sk x = testIO $ do
   return $ (twace x :: Cyc t r zp) == x'
 
 prop_encDecU :: forall t m m' z zp zq .
-  (GenSKCtx t m' z Double,
-   EncryptCtx t m m' z zp zq,
+  (EncryptCtx t m m' z zp zq,
    DecryptUCtx t m m' z zp zq,
    Eq (Cyc t m zp))
   => SK (Cyc t m' z) -> Cyc t m zp -> Test '(t,m,m',zp,zq)
@@ -246,8 +242,7 @@ prop_encDecU sk x = testIO $ do
   return $ x == x'
 
 prop_encDec :: forall t m m' z zp zq .
-  (GenSKCtx t m' z Double,
-   EncryptCtx t m m' z zp zq,
+  (EncryptCtx t m m' z zp zq,
    DecryptCtx t m m' z zp zq,
    Eq (Cyc t m zp))
   => SK (Cyc t m' z) -> Cyc t m zp -> Test '(t,m,m',zp,zq)
@@ -266,7 +261,6 @@ prop_modSwPT :: forall t m m' z zp zp' zq .
    DecryptUCtx t m m' z zp' zq,
    ModSwitchPTCtx t m' zp zp' zq,
    RescaleCyc (Cyc t) zp zp',
-   Ring (Cyc t m zp),
    Mod zp, Mod zp',
    ModRep zp ~ ModRep zp')
   => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Test '(t, '(m,m',zp',zp,zq))

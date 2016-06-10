@@ -70,7 +70,7 @@ instance (params `Satisfy` ErrorCtxD, ErrorCtx t m r gen)
   => ( '(gen, '(t, '(m,r))) ': params) `Satisfy` ErrorCtxD  where
   run _ f = f (EC (Proxy::Proxy '(t,m,r,gen))) : run (Proxy::Proxy params) f
 
-applyError :: (params `Satisfy` ErrorCtxD, Monad rnd) =>
+applyError :: (params `Satisfy` ErrorCtxD) =>
   Proxy params
   -> (forall t m r gen . (ErrorCtx t m r gen) => Proxy '(t,m,r,gen) -> rnd res)
   -> [rnd res]

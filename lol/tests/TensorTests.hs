@@ -118,8 +118,8 @@ type NormWrapCtx m r = (NormCtx CT m r, NormCtx RT m r)
 
 -- tests that gSqNormDec of two "random-looking" vectors agrees for RT and CT
 -- t is a dummy param
-prop_gsqnorm :: forall t m r .
-  (NormWrapCtx m r, NormCtx t m r)
+prop_gsqnorm :: forall (t :: Factored -> * -> *) m r .
+  (NormWrapCtx m r)
   => r -> Test '(t,m,r)
 prop_gsqnorm x = test $
   let crtCT = fromJust crt

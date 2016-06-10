@@ -30,17 +30,17 @@ scalarCRT'
     in pure $ Arr . force . fromFunction sz . const
 
 -- | Multiply by @g_m@ in the CRT basis (when it exists).
-mulGCRT' :: (Fact m, CRTrans mon r, Unbox r, Elt r)
+mulGCRT' :: (Fact m, CRTrans mon r, Unbox r)
             => mon (Arr m r -> Arr  m r)
 {-# INLINABLE mulGCRT' #-}
 mulGCRT' = (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gCRT
 
 -- | Divide by @g@ in the CRT basis (when it exists).
-divGCRT' :: (Fact m, CRTrans mon r, Unbox r, Elt r) => mon (Arr m r -> Arr m r)
+divGCRT' :: (Fact m, CRTrans mon r, Unbox r) => mon (Arr m r -> Arr m r)
 {-# INLINABLE divGCRT' #-}
 divGCRT' = (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gInvCRT
 
-wrapVector :: forall mon m r . (Monad mon, Fact m, Ring r, Unbox r, Elt r)
+wrapVector :: forall mon m r . (Monad mon, Fact m, Ring r, Unbox r)
               => TaggedT m mon (Matrix r) -> mon (Arr m r)
 wrapVector v = do
   vmat <- proxyT v (Proxy::Proxy m)
@@ -48,7 +48,7 @@ wrapVector v = do
   return $ coerce $ force $ RT.fromFunction (Z:.n)
     (\(Z:.i) -> indexM vmat i 0)
 
-gCRT, gInvCRT :: (Fact m, CRTrans mon r, Unbox r, Elt r) => mon (Arr m r)
+gCRT, gInvCRT :: (Fact m, CRTrans mon r, Unbox r) => mon (Arr m r)
 {-# INLINABLE gCRT #-}
 {-# INLINABLE gInvCRT #-}
 
@@ -132,7 +132,7 @@ ppCRTInv' = case (sing :: SPrimePower pp) of
         (Id (dim pp'dftInv') @* pcrtInv') .* pptwidInv .*
         (pp'dftInv' @* Id (dim pcrtInv'))
 
-butterfly :: (Additive r, Unbox r, Elt r) => Trans r
+butterfly :: (Additive r) => Trans r
 butterfly = trans 2 $ \arr ->
             fromFunction (extent arr) $
                              \(sh:.j) -> case j of
@@ -188,7 +188,7 @@ pCRTInv' =
 
 -- twiddle factors for DFT_pp and CRT_pp decompositions
 ppTwid, ppTwidHat ::
-  forall mon pp r . (PPow pp, CRTrans mon r, Unbox r, Elt r)
+  forall mon pp r . (PPow pp, CRTrans mon r, Unbox r)
   => Bool -> TaggedT pp mon (Trans r)
 
 {-# INLINABLE ppTwid #-}
