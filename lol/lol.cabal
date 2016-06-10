@@ -23,8 +23,8 @@ extra-source-files:  README, CHANGES.md,
                      benchmarks/UCycBenches.hs,
                      benchmarks/ZqBenches.hs,
                      tests/CycTests.hs,
-                     tests/ZqTests.hs,
                      tests/TensorTests.hs,
+                     tests/ZqTests.hs,
                      utils/Apply.hs,
                      utils/Apply/Cyc.hs,
                      utils/Apply/Zq.hs,
@@ -34,7 +34,7 @@ extra-source-files:  README, CHANGES.md,
                      utils/Tests.hs,
                      utils/TestTypes.hs,
                      utils/Utils.hs,
-                     Crypto/Lol/Cyclotomic/Tensor/CTensor/tensorTypes.h,
+                     Crypto/Lol/Cyclotomic/Tensor/CTensor/*.h,
                      Crypto/Lol/Cyclotomic/Tensor/CTensor/*.cpp
 cabal-version:       >= 1.10
 description:
