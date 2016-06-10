@@ -111,11 +111,11 @@ type MM'RCombos =
     ]
 
 -- EAC: must be careful where we use Nub: apparently TypeRepStar doesn't work well with the Tensor constructors
-type AllParams = ( '(,) <$> Tensors) <*> (Nub (Map RemoveM MM'RCombos))
+type AllParams = ( '(,) <$> Tensors) <*> MRCombos
 allParams :: Proxy AllParams
 allParams = Proxy
 
-type LiftParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable (Map RemoveM MM'RCombos)))
+type LiftParams = ( '(,) <$> Tensors) <*> MRCombos
 liftParams :: Proxy LiftParams
 liftParams = Proxy
 
