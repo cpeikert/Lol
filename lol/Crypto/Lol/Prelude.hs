@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -66,8 +67,9 @@ import Data.Singletons
 import qualified Data.Vector.Unboxed          as U
 import           Data.Vector.Unboxed.Deriving
 
+#if __GLASGOW_HASKELL__ < 800
 instance NFData (Proxy (a :: k)) where rnf Proxy = ()
-
+#endif
 deriving instance NFData (m a) => NFData (TaggedT s m a)
 deriving instance (MonadRandom m) => MonadRandom (TaggedT (tag :: k) m)
 
@@ -226,13 +228,15 @@ instance (Mod b, Field a, Lift b (ModRep b), Reduce (LiftOf b) a)
   {-# INLINABLE rescale #-}
 
 -- | Rescale a (multi-)product ring of @Zq@s
-instance (Rescale (a,(b,c)) (b,c), Rescale (b,c) c)
+instance (Rescale (a,(b,c)) (b,c), Rescale (b,c) c,
+          Additive a, Additive b, Additive c)
          => Rescale (a,(b,c)) c where
   rescale = (rescale :: (b,c) -> c) . rescale
   {-# INLINABLE rescale #-}
 
 -- | Rescale a (multi-)product ring of @Zq@s
-instance (Rescale ((a,b),c) (a,b), Rescale (a,b) a)
+instance (Rescale ((a,b),c) (a,b), Rescale (a,b) a,
+          Additive a, Additive b, Additive c)
          => Rescale ((a,b),c) a where
   rescale = (rescale :: (a,b) -> a) . rescale
   {-# INLINABLE rescale #-}

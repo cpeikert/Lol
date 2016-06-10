@@ -27,7 +27,7 @@ $(OBJPATH)/%.o: $(CSRCPATH)/%.cpp
 
 # the .a file and the .so file must have different names, or cabal configure gets confused and reports
 # that it can't find libctensor.
-makelib: mkdst $(OBJPATH)/common.o $(OBJPATH)/crt.o $(OBJPATH)/g.o $(OBJPATH)/l.o $(OBJPATH)/mul.o $(OBJPATH)/norm.o $(OBJPATH)/random.o $(OBJPATH)/tensor.o
+makelib: mkdst $(OBJPATH)/common.o $(OBJPATH)/crt.o $(OBJPATH)/g.o $(OBJPATH)/l.o $(OBJPATH)/mul.o $(OBJPATH)/norm.o $(OBJPATH)/random.o $(OBJPATH)/zq.o
 	$(AR) rcvs $(LIBPATH)/$(LIBNAME).a $(OBJPATH)/*.o
 	$(CXX) -shared $(CXXFLAGS) -o $(LIBPATH)/$(LIBNAME).so $(OBJPATH)/*.o
 	ln -sf $(CD)/$(LIBPATH)/$(LIBNAME).so $(CD)/$(LIBPATH)/$(LIBNAME).dylib
