@@ -136,8 +136,7 @@ applyCTTwEm params g = run params $ \(TwEmD p) -> g p
 data KSQCtxD
 -- it'd be nice to make this associated to `Satsify`,
 -- but we have to use a *ton* of kind signatures if we do
-type family KSQCtx a where
-  KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))) =
+type KSQCtx gad t m m' zp zq zq' =
     (Random zp, Eq zp,          -- CJP: added b/c CElt doesn't have them
      EncryptCtx t m m' (LiftOf zp) zp zq,
      DecryptUCtx t m m' (LiftOf zp) zp zq,
@@ -153,15 +152,15 @@ type family KSQCtx a where
      ShowType '(t,m,m',zp,zq,zq',gad))
      -- ^ these provide the context for benchmarks
 data instance ArgsCtx KSQCtxD where
-    KSQD :: (KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))))
+    KSQD :: (KSQCtx gad t m m' zp zq zq')
       => Proxy '(t,m,m',zp,zq,zq',gad) -> ArgsCtx KSQCtxD
-instance (params `Satisfy` KSQCtxD, KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))))
+instance (params `Satisfy` KSQCtxD, KSQCtx gad t m m' zp zq zq')
   => ( '(gad , '(t, '(m, m', zp, zq, zq'))) ': params) `Satisfy` KSQCtxD where
   run _ f = f (KSQD (Proxy::Proxy '(t,m,m',zp,zq,zq',gad))) : run (Proxy::Proxy params) f
 
 applyKSQ :: (params `Satisfy` KSQCtxD) =>
   Proxy params ->
-  (forall t m m' zp zq zq' gad . (KSQCtx '(gad, '(t, '(m,m',zp,zq,zq'))))
+  (forall t m m' zp zq zq' gad . (KSQCtx gad t m m' zp zq zq')
      => Proxy '(t,m,m',zp,zq,zq',gad) -> rnd res)
   -> [rnd res]
 applyKSQ params g = run params $ \(KSQD p) -> g p
