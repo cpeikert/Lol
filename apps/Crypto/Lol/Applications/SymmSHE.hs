@@ -8,7 +8,7 @@
 module Crypto.Lol.Applications.SymmSHE
 (
 -- * Data types
-SK, PT, CT                    -- don't export constructors!
+SK, PT, CT -- don't export constructors!
 -- * Keygen, encryption, decryption
 , genSK
 , encrypt
@@ -28,6 +28,7 @@ SK, PT, CT                    -- don't export constructors!
 , AddScalarCtx, AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
 , KeySwitchCtx, KSHintCtx
 , TunnelCtx
+, SwitchCtx, LWECtx -- these are internal, but exported for better docs
 ) where
 
 import qualified Algebra.Additive as Additive (C)
@@ -58,7 +59,7 @@ type PT rp = rp
 -- | Ciphertext encoding type
 data Encoding = MSD | LSD deriving (Show, Eq)
 
--- | Ciphertext over @R'_q@, encrypting a plaintext in @R_p (R=O_m)@.
+-- | Ciphertext over \(R_q\), encrypting a plaintext in \(R_p\)\, where \(R=\mathcal{O}_m\).
 data CT (m :: Factored) zp r'q =
   CT
   !Encoding                     -- MSD/LSD encoding
@@ -83,7 +84,7 @@ type GenSKCtx t m z v =
   (ToInteger z, Fact m, CElt t z, ToRational v, NFData v)
 
 -- | Generates a secret key with (index-independent) scaled variance
--- parameter @v@; see 'errorRounded'.
+-- parameter \(v\); see 'errorRounded'.
 genSK :: (GenSKCtx t m z v, MonadRandom rnd)
          => v -> rnd (SK (Cyc t m z))
 genSK v = liftM (SK v) $ errorRounded v
@@ -187,8 +188,7 @@ toLSD = let (zpScale, zqScale) = msdToLSD
 
 ---------- Modulus switching ----------
 
--- | Rescale a linear polynomial in MSD encoding, for best noise
--- behavior.
+-- | Rescale a linear polynomial in MSD encoding, for best noise behavior.
 rescaleLinearMSD :: (RescaleCyc (Cyc t) zq zq', Fact m')
                     => Polynomial (Cyc t m' zq) -> Polynomial (Cyc t m' zq')
 rescaleLinearMSD c = case coeffs c of
@@ -211,8 +211,8 @@ type ModSwitchPTCtx t m' zp zp' zq =
   (Lift' zp, Reduce (LiftOf zp) zp', ToSDCtx t m' zp zq)
 
 -- | Homomorphically divide a plaintext that is known to be a multiple
--- of @(p\/p\')@ by that factor, thereby scaling the plaintext modulus
--- from @p@ to @p\'@.
+-- of \( (p/p') \) by that factor, thereby scaling the plaintext modulus
+-- from \(p\) to \(p'\).
 modSwitchPT :: (ModSwitchPTCtx t m' zp zp' zq)
             => CT m zp (Cyc t m' zq) -> CT m zp' (Cyc t m' zq)
 modSwitchPT ct = let CT MSD k l c = toMSD ct in
@@ -220,10 +220,11 @@ modSwitchPT ct = let CT MSD k l c = toMSD ct in
 
 ---------- Key switching ----------
 
+-- | Constraint synonym for generating an LWE sample.
 type LWECtx t m' z zq =
   (ToInteger z, Reduce z zq, Ring zq, Random zq, Fact m', CElt t z, CElt t zq)
 
--- | An LWE sample for a given secret (corresponding to a linear
+-- An LWE sample for a given secret (corresponding to a linear
 -- ciphertext encrypting 0 in MSD form)
 lweSample :: (LWECtx t m' z zq, MonadRandom rnd)
              => SK (Cyc t m' z) -> rnd (Polynomial (Cyc t m' zq))
@@ -264,6 +265,7 @@ knapsack :: (Fact m', CElt t zq, r'q ~ Cyc t m' zq)
 -- adviseCRT here because we map (x *) onto each polynomial coeff
 knapsack hint xs = sum $ zipWith (*>>) (adviseCRT <$> xs) hint
 
+-- | Constraint synonym for applying a key-switch hint.
 type SwitchCtx gad t m' zq =
   (Decompose gad zq, Fact m', CElt t zq, CElt t (DecompOf zq))
 
@@ -277,7 +279,7 @@ type KeySwitchCtx gad t m' zp zq zq' =
   (RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
    ToSDCtx t m' zp zq, SwitchCtx gad t m' zq')
 
--- | Switch a linear ciphertext under @s_in@ to a linear one under @s_out@.
+-- | Switch a linear ciphertext under \(s_{in}\) to a linear one under \(s_{out}\).
 keySwitchLinear :: forall gad t m' zp zq zq' z rnd m .
   (KeySwitchCtx gad t m' zp zq zq', KSHintCtx gad t m' z zq', MonadRandom rnd)
   => SK (Cyc t m' z)                -- sout
@@ -310,8 +312,8 @@ keySwitchQuadCirc sk@(SK _ s) = tagT $ do
 type AddScalarCtx t m' zp zq =
   (Lift' zp, Reduce (LiftOf zp) zq, ToSDCtx t m' zp zq)
 
--- | Homomorphically add a public @Z_p@ value to an encrypted value.  The
--- ciphertext must not carry any @g@ factors.
+-- | Homomorphically add a public \(\mathbb{Z}_p\) value to an encrypted value.
+-- The ciphertext must not carry any \(g\) factors.
 addScalar :: (AddScalarCtx t m' zp zq)
              => zp -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
 addScalar b ct =
@@ -327,7 +329,7 @@ type AddPublicCtx t m m' zp zq =
   (Lift' zp, Reduce (LiftOf zp) zq, m `Divides` m',
    CElt t zp, CElt t (LiftOf zp), ToSDCtx t m' zp zq)
 
--- | Homomorphically add a public @R_p@ value to an encrypted value.
+-- | Homomorphically add a public \(R_p\) value to an encrypted value.
 addPublic :: forall t m m' zp zq . (AddPublicCtx t m m' zp zq)
           => Cyc t m zp -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
 addPublic b ct = let CT LSD k l c = toLSD ct in
@@ -342,15 +344,14 @@ type MulPublicCtx t m m' zp zq =
   (Lift' zp, Reduce (LiftOf zp) zq, Ring zq, m `Divides` m',
    CElt t zp, CElt t (LiftOf zp), CElt t zq)
 
--- | Homomorphically multiply an encrypted value by a public @R_p@ value.
+-- | Homomorphically multiply an encrypted value by a public \(R_p\) value.
 mulPublic :: forall t m m' zp zq . (MulPublicCtx t m m' zp zq)
              => Cyc t m zp -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
 mulPublic a (CT enc k l c) =
   let a' = embed (reduce $ liftCyc Pow a :: Cyc t m zq)
   in CT enc k l $ (a' *) <$> c
 
--- | Increment the internal g exponent without changing the encrypted
--- message.
+-- | Increment the internal g exponent without changing the encrypted message.
 mulGCT :: (Fact m', CElt t zq)
           => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
 mulGCT (CT enc k l c) = CT enc (k+1) l $ mulG <$> c
@@ -397,7 +398,7 @@ type AbsorbGCtx t m' zp zq =
   (Lift' zp, IntegralDomain zp, Reduce (LiftOf zp) zq, Ring zq,
    Fact m', CElt t (LiftOf zp), CElt t zp, CElt t zq)
 
--- | "Absorb" the powers of g associated with the ciphertext, at the
+-- | "Absorb" the powers of \(g\) associated with the ciphertext, at the
 -- cost of some increase in noise. This is usually needed before
 -- changing the index of the ciphertext ring.
 absorbGFactors :: forall t zp zq m m' . (AbsorbGCtx t m' zp zq)
@@ -409,10 +410,10 @@ absorbGFactors ct@(CT enc k l c)
             in CT enc 0 l $ (rep *) <$> c
   | otherwise = error "k < 0 in absorbGFactors"
 
--- | Embed a ciphertext in R' encrypting a plaintext in R to a
--- ciphertext in T' encrypting a plaintext in T. The target ciphertext
--- ring T' must contain both the the source ciphertext ring R' and the
--- target plaintext ring T.
+-- | Embed a ciphertext in \(R'\) encrypting a plaintext in \(R\) to a
+-- ciphertext in \(T'\) encrypting a plaintext in \(T\). The target ciphertext
+-- ring \(T'\) must contain both the the source ciphertext ring \(R'\) and the
+-- target plaintext ring \(T\).
 embedCT :: (CElt t zq,
             r `Divides` r', s `Divides` s', r `Divides` s, r' `Divides` s')
            => CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
@@ -430,9 +431,9 @@ embedSK :: (m `Divides` m') => SK (Cyc t m z) -> SK (Cyc t m' z)
 embedSK (SK v s) = SK v $ embed s
 
 -- | "Tweaked trace" function for ciphertexts.  Mathematically, the
--- target plaintext ring @S@ must contain the intersection of the
--- source plaintext ring @T@ and the target ciphertext ring @S\'@.
--- Here we make the stricter requirement that @s = gcd(s\', t)@.
+-- target plaintext ring \(S\) must contain the intersection of the
+-- source plaintext ring \(T\) and the target ciphertext ring \(S'\).
+-- Here we make the stricter requirement that \(s = \gcd(s', t)\).
 twaceCT :: (CElt t zq, r `Divides` r', s' `Divides` r',
             s ~ (FGCD s' r))
            => CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
@@ -453,9 +454,9 @@ type TunnelCtx t e r s e' r' s' z zp zq gad =
    CElt t zp,                       -- liftLin
    SwitchCtx gad t s' zq)           -- switch
 
--- | Homomorphically apply the @E@-linear function that maps the
--- elements of the decoding basis of @R\/E@ to the corresponding
--- @S@-elements in the input array.
+-- | Homomorphically apply the \(E\)-linear function that maps the
+-- elements of the decoding basis of \(R/E\) to the corresponding
+-- \(S\)-elements in the input array.
 tunnelCT :: forall gad t e r s e' r' s' z zp zq rnd .
   (TunnelCtx t e r s e' r' s' z zp zq gad,
    MonadRandom rnd)
