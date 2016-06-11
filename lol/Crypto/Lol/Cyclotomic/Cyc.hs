@@ -12,7 +12,12 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
--- | An implementation of cyclotomic rings that hides the
+-- | \( \def\Z{\mathbb{Z}} \)
+--   \( \def\F{\mathbb{F}} \)
+--   \( \def\Q{\mathbb{Q}} \)
+--   \( \def\Tw{\text{Tw}} \)
+--   \( \def\Tr{\text{Tr}} \)
+-- An implementation of cyclotomic rings that hides the
 -- internal representations of ring elements (e.g., the choice of
 -- basis), and also offers more efficient storage and operations on
 -- subring elements (including elements from the base ring itself).
@@ -78,12 +83,12 @@ import Data.Traversable
 import Test.QuickCheck
 
 
--- | Represents a cyclotomic ring such as \(\mathbb{Z}[\zeta_m]\),
--- \(\mathbb{Z}_q[\zeta_m]\), and \(\mathbb{Q}[\zeta_m]\) in an explicit
+-- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
+-- \(\Z_q[\zeta_m]\), and \(\Q[\zeta_m]\) in an explicit
 -- representation: @t@ is the
 -- 'Tensor' type for storing coefficient tensors; @m@ is the
 -- cyclotomic index; @r@ is the base ring of the coefficients (e.g.,
--- \(\mathbb{Z}\), \(\mathbb{Z}_q\)).
+-- \(\Z\), \(\Z_q\)).
 data Cyc t m r where
   Pow :: !(UCyc t m P r) -> Cyc t m r
   Dec :: !(UCyc t m D r) -> Cyc t m r
@@ -277,8 +282,8 @@ instance (Fact m, CElt t r) => Ring.C (Cyc t m r) where
   -- ELSE: work in appropriate CRT rep
   c1 * c2 = toCRT' c1 * toCRT' c2
 
--- | \(R_p\) is an \(\mathbb{F}_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
--- applying \(d\)-dimensional \(\mathbb{F}_p\)-linear transform on \(d\)-dim chunks of
+-- | \(R_p\) is an \(\F_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
+-- applying \(d\)-dimensional \(\F_p\)-linear transform on \(d\)-dim chunks of
 -- powerful basis coeffs.
 instance (GFCtx fp d, Fact m, CElt t fp) => Module.C (GF fp d) (Cyc t m fp) where
   -- CJP: optimize for Scalar if we can: r *> (Scalar c) is the tensor
@@ -394,7 +399,7 @@ embed' (Sub (c :: Cyc t k r)) = embed' c
   \\ transDivides (Proxy::Proxy k) (Proxy::Proxy l) (Proxy::Proxy m)
 
 -- | The "tweaked trace" (twace) function
--- \(\text{Tw}(x) = (\hat{m} / \hat{m}') \cdot \text{Tr}((g' / g) \cdot x)\),
+-- \(\Tw(x) = (\hat{m} / \hat{m}') \cdot \Tr((g' / g) \cdot x)\),
 -- which fixes \(R\) pointwise (i.e., @twace . embed == id@).
 twace :: forall t m m' r . (m `Divides` m', CElt t r)
          => Cyc t m' r -> Cyc t m r
@@ -498,7 +503,7 @@ instance {-# OVERLAPS #-} (Rescale a b, CElt t a, TElt t b)
   rescaleCyc R.Dec c = Dec $ fmapDec rescale $ uncycDec c
   {-# INLINABLE rescaleCyc #-}
 
--- | specialized instance for product rings of \(\mathbb{Z}_q\)s: ~2x faster
+-- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
          CElt t (a,b), CElt t a, CElt t b, CElt t (LiftOf a))

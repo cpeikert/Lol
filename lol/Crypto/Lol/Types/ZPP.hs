@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts, TypeFamilies #-}
 
--- | A class for integers mod a prime power.
+-- | \( \def\Z{\mathbb{Z}} \)
+-- A class for integers mod a prime power.
 
 module Crypto.Lol.Types.ZPP
 ( ZPP(..)
@@ -18,6 +19,6 @@ class (PrimeField (ZpOf zq), Ring zq) => ZPP zq where
   -- | The prime and exponent of the modulus.
   modulusZPP :: Tagged zq PP
 
-  -- | Lift from \(\mathbb{Z}_p\) to a representative.
+  -- | Lift from \(\Z_p\) to a representative.
   liftZp :: ZpOf zq -> zq
 

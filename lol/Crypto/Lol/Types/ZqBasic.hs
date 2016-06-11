@@ -4,7 +4,9 @@
              RebindableSyntax, RoleAnnotations, ScopedTypeVariables,
              TypeFamilies, UndecidableInstances #-}
 
--- | An implementation of the quotient ring \(\mathbb{Z}_q = \mathbb{Z}/(q\mathbb{Z})\).
+-- | \( \def\Z{\mathbb{Z}} \)
+--   \( \def\C{\mathbb{C}} \)
+-- An implementation of the quotient ring \(\Z_q = \Z/(q\Z)\).
 
 -- EAC: It may help GHC do specialization at higher levels of the library
 -- if we "simplify" constraints in this module. For example, replace the
@@ -51,7 +53,7 @@ import qualified Algebra.IntegralDomain as IntegralDomain (C)
 import qualified Algebra.Ring           as Ring (C)
 import qualified Algebra.ZeroTestable   as ZeroTestable (C)
 
--- | The ring \(\mathbb{Z}_q\) of integers modulo 'q', using underlying integer
+-- | The ring \(\Z_q\) of integers modulo 'q', using underlying integer
 -- type 'z'.
 newtype ZqBasic q z = ZqB z
     deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable)
@@ -115,9 +117,9 @@ instance (Reflects p z, Reflects q z, ToInteger z, Field (ZqBasic q z), Field (Z
                  negqval :: z = negate $ proxy value (Proxy::Proxy q)
              in (reduce' negqval, recip $ reduce' pval)
 
--- | Yield a /principal/ \(m\)th root of unity \(\omega_m \in \mathbb{Z}_q^*\).
+-- | Yield a /principal/ \(m\)th root of unity \(\omega_m \in \Z_q^*\).
 -- The implementation requires \(q\) to be prime.  It works by finding a
--- generator of \(\mathbb{Z}_q^*\) and raising it to the \( (q-1)/m\) power.
+-- generator of \(\Z_q^*\) and raising it to the \( (q-1)/m\) power.
 -- Therefore, outputs for different values of \(m\) are consistent,
 -- i.e., \(\omega_{m'}^(m'/m) = \omega_m\).
 principalRootUnity ::
@@ -155,7 +157,7 @@ instance (Reflects q z, ToInteger z, PID z, Enumerable (ZqBasic q z))
 
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
--- | Embeds into \(\mathbb{C}\)
+-- | Embeds into the complex numbers \(\C\)
 instance (Reflects q z, ToInteger z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
   type CRTExt (ZqBasic q z) = Complex Double
 

@@ -15,7 +15,11 @@
 {-# LANGUAGE UndecidableSuperClasses #-}
 #endif
 
--- | Interface for cyclotomic tensors, and helper functions for tensor
+-- | \( \def\Z{\mathbb{Z}} \)
+--   \( \def\Tw{\text{Tw}} \)
+--   \( \def\Tr{\text{Tr}} \)
+--   \( \def\CRT{\text{CRT}} \)
+-- Interface for cyclotomic tensors, and helper functions for tensor
 -- indexing.
 
 module Crypto.Lol.Cyclotomic.Tensor
@@ -223,7 +227,7 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 
 -- | The "tweaked trace" function for tensors in the CRT basis:
 -- For cyclotomic indices \(m \mid m'\),
--- \(\text{Tw}(x) = (\hat{m}/\hat{m}') \cdot \text{Tr}((g'/g) \cdot x)\).
+-- \(\Tw(x) = (\hat{m}/\hat{m}') \cdot \Tr((g'/g) \cdot x)\).
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
 twaceCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t, m `Divides` m', TElt t r)
             => mon (t m' r -> t m r)
@@ -289,13 +293,13 @@ gCRTM = fMatrix gCRTPPow
 -- for \(m\)th cyclotomic.
 gInvCRTM = fMatrix gInvCRTPPow
 
--- | The "tweaked" \(\text{CRT}^*\) matrix:
--- \(\text{CRT}^* \cdot \text{diag}(\sigma(g_m))\).
+-- | The "tweaked" \(\CRT^*\) matrix:
+-- \(\CRT^* \cdot \text{diag}(\sigma(g_m))\).
 twCRTs :: (Fact m, CRTrans mon r) => TaggedT m mon (Matrix r)
 twCRTs = fMatrix twCRTsPPow
 
--- | The "tweaked" \(\text{CRT}^*\) matrix (for prime powers):
--- \(\text{CRT}^* \cdot \text{diag}(\sigma(g_p))\).
+-- | The "tweaked" \(\CRT^*\) matrix (for prime powers):
+-- \(\CRT^* \cdot \text{diag}(\sigma(g_p))\).
 twCRTsPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (MatrixC r)
 twCRTsPPow = do
   phi    <- pureT totientPPow
@@ -344,7 +348,7 @@ indexToPowPPow, indexToZmsPPow :: PPow pp => Tagged pp (Int -> Int)
 indexToPowPPow = indexToPow <$> ppPPow
 indexToZmsPPow = indexToZms <$> ppPPow
 
--- | Convert a \(\mathbb{Z}_m^*\) index to a linear tensor index in \([m]\).
+-- | Convert a \(\Z_m^*\) index to a linear tensor index in \([m]\).
 zmsToIndexFact :: Fact m => Tagged m (Int -> Int)
 zmsToIndexFact = zmsToIndex <$> ppsFact
 
@@ -356,12 +360,12 @@ indexToPow (p,e) j = let (jq,jr) = j `divMod` (p-1)
                      in p^(e-1)*jr + digitRev (p,e-1) jq
 
 -- | For a prime power \(p^e\), map a tensor index to the corresponding
--- element \(i \in \mathbb{Z}_{p^e}^*\).
+-- element \(i \in \Z_{p^e}^*\).
 indexToZms :: PP -> Int -> Int
 indexToZms (p,_) i = let (i1,i0) = i `divMod` (p-1)
                        in p*i1 + i0 + 1
 
--- | Convert a \(\mathbb{Z}_m^*\) index to a linear tensor index.
+-- | Convert a \(\Z_m^*\) index to a linear tensor index.
 zmsToIndex :: [PP] -> Int -> Int
 zmsToIndex [] _ = 0
 zmsToIndex (pp:rest) i = zmsToIndexPP pp (i `mod` valuePP pp)

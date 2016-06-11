@@ -3,7 +3,9 @@
              NoImplicitPrelude, PolyKinds, RebindableSyntax,
              ScopedTypeVariables, TypeFamilies, UndecidableInstances #-}
 
--- | An implementation of the additive quotient group \(\mathbb{R}/(q\mathbb{Z})\).
+-- | \( \def\Z{\mathbb{Z}} \)
+--   \( \def\R{\mathbb{R}} \)
+-- An implementation of the additive quotient group \(\R/(q\Z)\).
 
 module Crypto.Lol.Types.RRq
 ( RRq
@@ -30,7 +32,7 @@ import qualified Data.Vector.Unboxed         as U
 import Foreign.Storable
 
 -- invariant: 0 <= x < q
--- | The ring \(\mathbb{R}/(q\mathbb{Z})\) of reals modulo 'q', using
+-- | The ring \(\R/(q\Z)\) of reals modulo 'q', using
 -- underlying floating type 'r'.
 newtype RRq q r = RRq r
     deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable)

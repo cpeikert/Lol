@@ -17,7 +17,8 @@
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
--- | A substitute for the Prelude that is more suitable for Lol.  This
+-- | \( \def\Z{\mathbb{Z}} \)
+-- A substitute for the Prelude that is more suitable for Lol.  This
 -- module exports most of the Numeric Prelude and other frequently
 -- used modules, plus some low-level classes, missing instances, and
 -- assorted utility functions.
@@ -155,7 +156,7 @@ roundCoset = let pval = proxy modulus (Proxy::Proxy zp)
 
 type instance LiftOf (a,b) = Integer
 
--- | Lift product ring of \(\mathbb{Z}_q\)s to 'Integer'
+-- | Lift product ring of \(\Z_q\)s to 'Integer'
 instance (Mod a, Mod b, Lift' a, Lift' b, Reduce Integer (a,b),
           ToInteger (LiftOf a), ToInteger (LiftOf b))
          => Lift' (a,b) where
@@ -198,7 +199,7 @@ instance (IntegralDomain a, IntegralDomain b) => IntegralDomain.C (a,b) where
     in ((da,db), (ra,rb))
   {-# INLINABLE divMod #-}
 
--- | Product ring of \(\mathbb{Z}_q\)s as a \(\mathbb{Z}_q\) (with 'Integer' modulus)
+-- | Product ring of \(\Z_q\)s as a \(\Z_q\) (with 'Integer' modulus)
 instance (Mod a, Mod b) => Mod (a,b) where
   type ModRep (a,b) = Integer
 
@@ -211,7 +212,7 @@ instance (Reduce a b1, Reduce a b2) => Reduce a (b1, b2) where
   reduce x = (reduce x, reduce x)
   {-# INLINABLE reduce #-}
 
--- | Rescale a product ring of \(\mathbb{Z}_q\)s
+-- | Rescale a product ring of \(\Z_q\)s
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b)
          => Rescale (a,b) b where
   rescale = let q1val = proxy modulus (Proxy::Proxy a)
@@ -219,7 +220,7 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b)
             in \(x1,x2) -> q1inv * (x2 - reduce (lift x1))
   {-# INLINABLE rescale #-}
 
--- | Rescale a product ring of \(\mathbb{Z}_q\)s
+-- | Rescale a product ring of \(\Z_q\)s
 instance (Mod b, Field a, Lift b (ModRep b), Reduce (LiftOf b) a)
          => Rescale (a,b) a where
   rescale = let q2val = proxy modulus (Proxy::Proxy b)
@@ -227,28 +228,28 @@ instance (Mod b, Field a, Lift b (ModRep b), Reduce (LiftOf b) a)
             in \(x1,x2) -> q2inv * (x1 - reduce (lift x2))
   {-# INLINABLE rescale #-}
 
--- | Rescale a (multi-)product ring of \(\mathbb{Z}_q\)s
+-- | Rescale a (multi-)product ring of \(\Z_q\)s
 instance (Rescale (a,(b,c)) (b,c), Rescale (b,c) c,
           Additive a, Additive c)
          => Rescale (a,(b,c)) c where
   rescale = (rescale :: (b,c) -> c) . rescale
   {-# INLINABLE rescale #-}
 
--- | Rescale a (multi-)product ring of \(\mathbb{Z}_q\)s
+-- | Rescale a (multi-)product ring of \(\Z_q\)s
 instance (Rescale ((a,b),c) (a,b), Rescale (a,b) a,
           Additive a, Additive c)
          => Rescale ((a,b),c) a where
   rescale = (rescale :: (a,b) -> a) . rescale
   {-# INLINABLE rescale #-}
 
--- | Rescale /up/ to a product ring of \(\mathbb{Z}_q\)s
+-- | Rescale /up/ to a product ring of \(\Z_q\)s
 instance (Ring a, Mod b, Reduce (ModRep b) a) => Rescale a (a,b) where
   -- multiply by q2
   rescale = let q2val = reduce $ proxy modulus (Proxy::Proxy b)
             in \x -> (q2val * x, zero)
   {-# INLINABLE rescale #-}
 
--- | Rescale /up/ to a product ring of \(\mathbb{Z}_q\)s
+-- | Rescale /up/ to a product ring of \(\Z_q\)s
 instance (Ring b, Mod a, Reduce (ModRep a) b) => Rescale b (a,b) where
   -- multiply by q1
   rescale = let q1val = reduce $ proxy modulus (Proxy::Proxy a)

@@ -14,7 +14,10 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
--- | A low-level implementation of cyclotomic rings that allows (and
+-- | \( \def\Z{\mathbb{Z}} \)
+--   \( \def\F{\mathbb{F}} \)
+--   \( \def\Q{\mathbb{Q}} \)
+-- A low-level implementation of cyclotomic rings that allows (and
 -- requires) the programmer to control the underlying representation
 -- of ring elements, i.e., powerful, decoding, or CRT basis.
 --
@@ -86,11 +89,11 @@ data E
 -- | Convenient synonym for either CRT representation.
 type UCycEC t m r = Either (UCyc t m E r) (UCyc t m C r)
 
--- | Represents a cyclotomic ring such as \(\mathbb{Z}[\zeta_m]\),
--- \(\mathbb{Z}_q[\zeta_m]\), and \(\mathbb{Q}(\zeta_m)\) in an explicit
+-- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
+-- \(\Z_q[\zeta_m]\), and \(\Q(\zeta_m)\) in an explicit
 -- representation: @t@ is the 'Tensor' type for storing coefficient tensors;
 -- @m@ is the cyclotomic index; @rep@ is the representation ('P', 'D', or 'C');
--- @r@ is the base ring of the coefficients (e.g., \(\mathbb{Z}\), \(\mathbb{Z}_q\)).
+-- @r@ is the base ring of the coefficients (e.g., \(\Z\), \(\Z_q\)).
 --
 -- The 'Functor', 'Applicative', 'Foldable' and 'Traversable'
 -- instances all work coefficient-wise (in the specified basis).
@@ -234,8 +237,8 @@ instance (Ring r, Fact m, UCRTElt t r) => Module.C r (UCycEC t m r) where
   r *> (Left (CRTE s v)) = Left $ CRTE s $ fmapT (toExt r *) v
   {-# INLINABLE (*>) #-}
 
--- | \(R_p\) is an \(\mathbb{F}_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
--- applying \(d\)-dimensional \(\mathbb{F}_p\)-linear transform on \(d\)-dim chunks of
+-- | \(R_p\) is an \(\F_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
+-- applying \(d\)-dimensional \(\F_p\)-linear transform on \(d\)-dim chunks of
 -- powerful basis coeffs.
 instance (GFCtx fp d, Fact m, Tensor t, TElt t fp)
          => Module.C (GF fp d) (UCyc t m P fp) where

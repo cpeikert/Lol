@@ -12,7 +12,8 @@
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
--- | Functions from one cyclotomic ring to another that are linear
+-- | \( \def\lcm{\text{lcm}} \)
+-- Functions from one cyclotomic ring to another that are linear
 -- over a common subring.
 
 module Crypto.Lol.Cyclotomic.Linear
@@ -87,7 +88,7 @@ type ExtendLinIdx e r s e' r' s' =
 
 -- | Extend an \(E\)-linear function \(R\to S\) to an \(E'\)-linear
 -- function \(R'\to S'\). (Mathematically, such extension only requires
--- \(\text{lcm}(r,e') | r'\) (not equality), but this generality would
+-- \(\lcm(r,e') | r'\) (not equality), but this generality would
 -- significantly complicate the implementation, and for our purposes
 -- there's no reason to use any larger \(r'\).)
 extendLin :: (ExtendLinIdx e r s e' r' s')

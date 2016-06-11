@@ -3,7 +3,8 @@
              RebindableSyntax, ScopedTypeVariables, TypeFamilies,
              TypeOperators, UndecidableInstances #-}
 
--- | A collection of helper functions for working with \(\mathbb{Z}_m^*\).
+-- | \( \def\Z{\mathbb{Z}} \)
+-- A collection of helper functions for working with \(\Z_m^*\).
 
 module Crypto.Lol.Types.ZmStar
 ( order, partitionCosets
@@ -48,9 +49,9 @@ cosets p =
 
 -- CJP: could tag this by '(p,m,m') for safety/memoization.
 
--- | Given \(p\), returns a partition of the cosets of \(\mathbb{Z}_{m'}^* / <p>\)
+-- | Given \(p\), returns a partition of the cosets of \(\Z_{m'}^* / <p>\)
 -- (specified by representatives), where the cosets in each component
--- are in bijective correspondence with the cosets of \(\mathbb{Z}_m^* / <p>\) under
+-- are in bijective correspondence with the cosets of \(\Z_m^* / <p>\) under
 -- the natural (\(\bmod m\)) homomorphism.
 partitionCosets :: forall m m' . (m `Divides` m')
   => Int -> Tagged '(m, m') [[Int]]

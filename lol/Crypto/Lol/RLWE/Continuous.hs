@@ -1,7 +1,9 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, MultiParamTypeClasses,
              NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
 
--- | Functions and types for working with continuous ring-LWE samples.
+-- | \( \def\Z{\mathbb{Z}} \)
+--   \( \def\R{\mathbb{R}} \)
+-- Functions and types for working with continuous ring-LWE samples.
 
 module Crypto.Lol.RLWE.Continuous where
 
@@ -15,7 +17,7 @@ import Control.Monad.Random
 
 -- | A continuous RLWE sample \( (a,b) \in R_q \times K/(qR)\).  (The
 -- second component is a 'UCyc' because the base type @rrq@
--- representing \(\mathbb{R}/(q\mathbb{Z})\), is an additive group
+-- representing \(\R/(q\Z)\), is an additive group
 -- but not a ring, so we can't usefully work with a 'Cyc' over it.)
 type Sample t m zq rrq = (Cyc t m zq, UCyc t m D rrq)
 

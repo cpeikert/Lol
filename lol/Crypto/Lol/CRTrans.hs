@@ -6,7 +6,8 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
--- | Classes and helper methods for the Chinese remainder transform
+-- | \( \def\C{\mathbb{C}} \)
+-- Classes and helper methods for the Chinese remainder transform
 -- and ring extensions.
 
 module Crypto.Lol.CRTrans
@@ -97,25 +98,25 @@ instance CRTrans Maybe Int64 where crtInfo = tagT Nothing
 instance CRTrans Maybe Integer where crtInfo = tagT Nothing
 -- can also do for Int8, Int16, Int32 etc.
 
--- | Embeds into the complex numbers \(\mathbb{C}\).
+-- | Embeds into the complex numbers \(\C\).
 instance CRTEmbed Double where
   type CRTExt Double = Complex Double
   toExt = fromReal . realToField
   fromExt = realToField . real
 
--- | Embeds into the complex numbers \(\mathbb{C}\).
+-- | Embeds into the complex numbers \(\C\).
 instance CRTEmbed Int where
   type CRTExt Int = Complex Double
   toExt = fromIntegral
   fromExt = fst . roundComplex
 
--- | Embeds into the complex numbers \(\mathbb{C}\).
+-- | Embeds into the complex numbers \(\C\).
 instance CRTEmbed Int64 where
   type CRTExt Int64 = Complex Double
   toExt = fromIntegral
   fromExt = fst . roundComplex
 
--- | Embeds into the complex numbers \(\mathbb{C}\).  (May not have sufficient
+-- | Embeds into the complex numbers \(\C\).  (May not have sufficient
 -- precision.)
 instance CRTEmbed Integer where
   -- CJP: sufficient precision?  Not in general.
