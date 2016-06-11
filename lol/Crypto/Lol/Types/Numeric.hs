@@ -131,13 +131,13 @@ type PID a = (Algebra.PrincipalIdealDomain.C a)
 -- | Sane synonym for 'MathObj.Polynomial.T'.
 type Polynomial a = MathObj.Polynomial.T a
 
--- IntegralDomain instance for Double
+-- 'IntegralDomain' instance for 'Double'
 instance Algebra.IntegralDomain.C Double where
     _ `div` 0 = error "cannot divide Double by 0\n"
     a `div` b = a / b
     _ `mod` _ = 0
 
--- NFData instance for Polynomial, missing from NP
+-- 'NFData' instance for 'Polynomial', missing from NP
 instance (NFData r) => NFData (Polynomial r) where
   rnf = rnf . coeffs
 
@@ -165,7 +165,7 @@ x0 ^ y0 | y0 < 0    = error "Negative exponent"
                   | y == 1 = x * z
                   | otherwise = g (x * x) ((y - 1) `quot` 2) (x * z)
 
--- | Inverse of @a@ modulo @q@, in range @0..q-1@.  (Argument order is
+-- | Inverse of \(a\) modulo \(q\), in range \([0,q-1]\).  (Argument order is
 -- infix-friendly.)
 modinv :: (PID i, Eq i) => i -> i -> Maybe i
 modinv a q = let (d, (_, inv)) = extendedGCD q a
@@ -199,10 +199,10 @@ roundScalarCentered p x =
                      else floor x'
 
 -- | Variant of 'Algebra.IntegralDomain.divMod' in which the remainder
--- is in the range @[-b\/2,b\/2)@.
+-- is in the range \([-b/2,b/2)\).
 divModCent :: (IntegralDomain i)
-              => i              -- ^ dividend @a@
-              -> i              -- ^ divisor @b@
+              => i              -- ^ dividend \(a\)
+              -> i              -- ^ divisor \(b\)
               -> (i,i)          -- ^ (quotient, remainder)
 divModCent = flip (\b ->
              let shift = b `div` 2

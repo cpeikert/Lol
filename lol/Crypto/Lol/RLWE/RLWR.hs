@@ -9,7 +9,7 @@ import Crypto.Lol
 
 import Control.Monad.Random
 
--- | An RLWR sample @(a,b) \in R_q \times R_p@.
+-- | An RLWR sample \( (a,b) \in R_q \times R_p\).
 type Sample t m zq zp = (Cyc t m zq, Cyc t m zp)
 
 -- | Common constraints for working with RLWR.
@@ -23,8 +23,8 @@ sample s = let s' = adviseCRT s in do
   a <- getRandom
   return (a, roundedProd s' a)
 
--- | The @b@ component of an RLWR sample for secret @s@ and given @a@,
--- produced by rounding @a*s@ in the decoding basis.
+-- | The \(b\) component of an RLWR sample for secret \(s\) and given \(a\),
+-- produced by rounding \(a\cdot s\) in the decoding basis.
 roundedProd :: (RLWRCtx t m zq zp) => Cyc t m zq -> Cyc t m zq -> Cyc t m zp
 {-# INLINABLE roundedProd #-}
 roundedProd s = let s' = adviseCRT s in \a -> rescaleCyc Dec $ a * s'

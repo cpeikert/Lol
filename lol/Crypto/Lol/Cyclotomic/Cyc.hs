@@ -78,11 +78,12 @@ import Data.Traversable
 import Test.QuickCheck
 
 
--- | Represents a cyclotomic ring such as @Z[zeta]@,
--- @Zq[zeta]@, and @Q(zeta)@ in an explicit representation: @t@ is the
+-- | Represents a cyclotomic ring such as \(\mathbb{Z}[\zeta_m]\),
+-- \(\mathbb{Z}_q[\zeta_m]\), and \(\mathbb{Q}[\zeta_m]\) in an explicit
+-- representation: @t@ is the
 -- 'Tensor' type for storing coefficient tensors; @m@ is the
 -- cyclotomic index; @r@ is the base ring of the coefficients (e.g.,
--- @Z@, @Zq@).
+-- \(\mathbb{Z}\), \(\mathbb{Z}_q\)).
 data Cyc t m r where
   Pow :: !(UCyc t m P r) -> Cyc t m r
   Dec :: !(UCyc t m D r) -> Cyc t m r
@@ -276,9 +277,9 @@ instance (Fact m, CElt t r) => Ring.C (Cyc t m r) where
   -- ELSE: work in appropriate CRT rep
   c1 * c2 = toCRT' c1 * toCRT' c2
 
--- | @Rp@ is an @F_{p^d}@-module when @d@ divides @phi(m)@, by
--- applying @d@-dimensional @Fp@-linear transform on @d@-dim chunks of
--- powerful basis coeffs
+-- | \(R_p\) is an \(F_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
+-- applying \(d\)-dimensional \(F_p\)-linear transform on \(d\)-dim chunks of
+-- powerful basis coeffs.
 instance (GFCtx fp d, Fact m, CElt t fp) => Module.C (GF fp d) (Cyc t m fp) where
   -- CJP: optimize for Scalar if we can: r *> (Scalar c) is the tensor
   -- that has the coeffs of (r*c), followed by zeros.  (This assumes
@@ -309,7 +310,8 @@ adviseDec = toDec'
 -- other values.
 adviseCRT = toCRT'
 
--- | Multiply by the special element @g@ of the @m@th cyclotomic.
+-- | Multiply by the special element \(g\) of the \(m^\text{th}\)
+-- cyclotomic.
 mulG :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
 {-# INLINABLE mulG #-}
 mulG (Pow u) = Pow $ U.mulG u
@@ -318,7 +320,7 @@ mulG (CRT u) = CRT $ either (Left . U.mulG) (Right . U.mulG) u
 mulG c@(Scalar _) = mulG $ toCRT' c
 mulG (Sub c) = mulG $ embed' c   -- must go to full ring
 
--- | Divide by @g@, returning 'Nothing' if not evenly divisible.
+-- | Divide by \(g\), returning 'Nothing' if not evenly divisible.
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
@@ -331,17 +333,17 @@ divG (CRT u) = CRT <$> either (fmap Left . U.divG) (fmap Right . U.divG) u
 divG c@(Scalar _) = divG $ toCRT' c
 divG (Sub c) = divG $ embed' c  -- must go to full ring
 
--- | Sample from the "tweaked" Gaussian error distribution @t*D@ in
--- the decoding basis, where @D@ has scaled variance @v@.
+-- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\) in
+-- the decoding basis, where \(D\) has scaled variance \(v\).
 tGaussian :: (Fact m, OrdFloat q, Random q, Tensor t, TElt t q,
               ToRational v, MonadRandom rnd)
              => v -> rnd (Cyc t m q)
 tGaussian = (Dec <$>) . U.tGaussian
 {-# INLINABLE tGaussian #-}
 
--- | Yield the scaled squared norm of @g_m \cdot e@ under
+-- | Yield the scaled squared norm of \(g_m \cdot e\) under
 -- the canonical embedding, namely,
--- @\hat{m}^{ -1 } \cdot || \sigma(g_m \cdot e) ||^2@ .
+-- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\).
 gSqNorm :: forall t m r . (Fact m, CElt t r) => Cyc t m r -> r
 {-# INLINABLE gSqNorm #-}
 gSqNorm (Dec u) = U.gSqNorm u
@@ -350,7 +352,7 @@ gSqNorm c = gSqNorm $ toDec' c
 -- | Generate an LWE error term with given scaled variance,
 -- deterministically rounded with respect to the decoding basis.
 -- (Note: This
--- implementation uses Double precision to generate the Gaussian
+-- implementation uses 'Double' precision to generate the Gaussian
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
 errorRounded :: (ToInteger z, Tensor t, Fact m, TElt t z,
@@ -358,10 +360,10 @@ errorRounded :: (ToInteger z, Tensor t, Fact m, TElt t z,
 {-# INLINABLE errorRounded #-}
 errorRounded = (Dec <$>) . U.errorRounded
 
--- | Generate an LWE error term with given scaled variance @* p^2@ over
+-- | Generate an LWE error term with given scaled variance \(v \cdot p^2\) over
 -- the given coset, deterministically rounded with respect to the
 -- decoding basis. (Note: This
--- implementation uses Double precision to generate the Gaussian
+-- implementation uses 'Double' precision to generate the Gaussian
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
 errorCoset ::
@@ -392,8 +394,8 @@ embed' (Sub (c :: Cyc t k r)) = embed' c
   \\ transDivides (Proxy::Proxy k) (Proxy::Proxy l) (Proxy::Proxy m)
 
 -- | The "tweaked trace" (twace) function
--- @Tw(x) = (mhat \/ m'hat) * Tr(g' \/ g * x)@,
--- which fixes @R@ pointwise (i.e., @twace . embed == id@).
+-- \(\text{Tw}(x) = (\hat{m} / \hat{m}') \cdot \text{Tr}((g' / g) \cdot x)\),
+-- which fixes \(R\) pointwise (i.e., @twace . embed == id@).
 twace :: forall t m m' r . (m `Divides` m', CElt t r)
          => Cyc t m' r -> Cyc t m r
 {-# INLINABLE twace #-}
@@ -406,7 +408,8 @@ twace (Sub (c :: Cyc t l r)) = Sub (twace c :: Cyc t (FGCD l m) r)
 
 -- | Return the given element's coefficient vector with respect to
 -- the (relative) powerful/decoding basis of the cyclotomic
--- extension @O_m' / O_m@.  See also 'coeffsPow', 'coeffsDec'.
+-- extension \(\mathcal{O}_{m'} / \mathcal{O}_m\).
+-- See also 'coeffsPow', 'coeffsDec'.
 coeffsCyc :: (m `Divides` m', CElt t r) => R.Basis -> Cyc t m' r -> [Cyc t m r]
 {-# INLINABLE coeffsCyc #-}
 coeffsCyc R.Pow c' = Pow <$> U.coeffsPow (uncycPow c')
@@ -415,12 +418,12 @@ coeffsCyc R.Dec c' = Dec <$> U.coeffsDec (uncycDec c')
 coeffsPow, coeffsDec :: (m `Divides` m', CElt t r) => Cyc t m' r -> [Cyc t m r]
 {-# INLINABLE coeffsPow #-}
 {-# INLINABLE coeffsDec #-}
--- | Specialized version of @coeffsCyc@ for powerful basis.
+-- | Specialized version of 'coeffsCyc' for powerful basis.
 coeffsPow = coeffsCyc R.Pow
--- | Specialized version of @coeffsCyc@ for decoding basis.
+-- | Specialized version of 'coeffsCyc' for decoding basis.
 coeffsDec = coeffsCyc R.Dec
 
--- | The relative powerful basis of @O_m' / O_m@.
+-- | The relative powerful basis of \(\mathcal{O}_{m'} / \mathcal{O}_m\).
 powBasis :: (m `Divides` m', CElt t r) => Tagged m [Cyc t m' r]
 powBasis = (Pow <$>) <$> U.powBasis
 {-# INLINABLE powBasis #-}
@@ -435,7 +438,7 @@ crtSet = (Pow <$>) <$> U.crtSet
 ---------- Lattice operations and instances ----------
 
 instance (Reduce a b, Fact m, CElt t a, CElt t b)
-    -- CJP: need these specific constraints to get Reduce instance for Sub case
+  -- CJP: need these specific constraints to get Reduce instance for Sub case
          => Reduce (Cyc t m a) (Cyc t m b) where
   {-# INLINABLE reduce #-}
   reduce (Pow u) = Pow $ reduce u
@@ -482,7 +485,6 @@ unzipCyc (CRT u) = either ((cycPE *** cycPE) . unzipCRTE)
 unzipCyc (Scalar c) = Scalar *** Scalar $ c
 unzipCyc (Sub c) = Sub *** Sub $ unzipCyc c
 
--- | generic instance
 instance {-# OVERLAPS #-} (Rescale a b, CElt t a, TElt t b)
     => R.RescaleCyc (Cyc t) a b where
 
@@ -496,7 +498,7 @@ instance {-# OVERLAPS #-} (Rescale a b, CElt t a, TElt t b)
   rescaleCyc R.Dec c = Dec $ fmapDec rescale $ uncycDec c
   {-# INLINABLE rescaleCyc #-}
 
--- | specialized instance for product rings of @Zq@s: ~2x faster
+-- | specialized instance for product rings of \(\mathbb{Z}_q\)s: ~2x faster
 -- algorithm
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
          CElt t (a,b), CElt t a, CElt t b, CElt t (LiftOf a))

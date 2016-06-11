@@ -22,9 +22,9 @@ import Crypto.Lol.Prelude
 import Control.Applicative
 import Control.Arrow
 
--- | Dummy type representing the gadget @[1]@.
+-- | Dummy type representing the gadget \([1]\).
 data TrivGad
--- | Dummy type representing the gadget @[1,b,b^2,...]@.
+-- | Dummy type representing the gadget \([1,b,b^2,\ldots]\).
 data BaseBGad b
 
 -- | "Gadget" vectors, parameterized by an index type.
@@ -46,7 +46,7 @@ class (Gadget gad u, Reduce (DecompOf u) u) => Decompose gad u where
   -- | The ring that @u@ decomposes over.
   type DecompOf u
 
-  -- | Yield a short vector @x@ such that @\<g, x\> = u@.
+  -- | Yield a short vector \(x\) such that \(\<g, x\> = u\).
   decompose :: u -> Tagged gad [DecompOf u]
 
 -- | Error correction relative to a gadget.

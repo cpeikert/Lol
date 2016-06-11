@@ -45,7 +45,7 @@ marshalFactors :: [PP] -> Vector CPP
 marshalFactors = SV.fromList . LP.map (\(p,e) -> CPP (fromIntegral p) (fromIntegral e))
 
 -- http://stackoverflow.com/questions/6517387/vector-vector-foo-ptr-ptr-foo-io-a-io-a
--- | Evaluates a C function that takes a @a** ptr@ on a list of Vectors.
+-- | Evaluates a C function that takes an "a** ptr" on a list of Vectors.
 withPtrArray :: (Storable a) => [Vector a] -> (Ptr (Ptr a) -> IO b) -> IO b
 withPtrArray v f = do
   let vs = LP.map SV.unsafeToForeignPtr0 v

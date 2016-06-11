@@ -3,7 +3,7 @@
              RebindableSyntax, ScopedTypeVariables, TypeFamilies,
              TypeOperators, UndecidableInstances #-}
 
--- | A collection of helper functions for working with @Z_m^*@
+-- | A collection of helper functions for working with \(\mathbb{Z}_m^*\).
 
 module Crypto.Lol.Types.ZmStar
 ( order, partitionCosets
@@ -19,8 +19,8 @@ import Data.Map  (Map, elems, empty, insertWith')
 import Data.Set  as S (Set, difference, findMin, fromList, map, null)
 
 
--- | The multiplicative order of @p@ (the argument) modulo @m@.
--- Requires @gcd(p,m)=1@.
+-- | The multiplicative order of \(p\) (the argument) modulo \(m\).
+-- Requires \(\gcd(p,m)=1\).
 order :: forall m . (Reflects m Int) => Int -> Tagged m Int
 order p = tag $
   let mval = proxy value (Proxy::Proxy m)
@@ -48,10 +48,10 @@ cosets p =
 
 -- CJP: could tag this by '(p,m,m') for safety/memoization.
 
--- | Given @p@, returns a partition of the cosets of @Z_{m\'}^* \/ \<p>@
+-- | Given \(p\), returns a partition of the cosets of \(\mathbb{Z}_{m'}^* / <p>\)
 -- (specified by representatives), where the cosets in each component
--- are in bijective correspondence with the cosets of @Z_m^* \/ \<p>@ under
--- the natural (@mod m@) homomorphism.
+-- are in bijective correspondence with the cosets of \(\mathbb{Z}_m^* / <p>\) under
+-- the natural (\(\bmod m\)) homomorphism.
 partitionCosets :: forall m m' . (m `Divides` m')
   => Int -> Tagged '(m, m') [[Int]]
 partitionCosets p =

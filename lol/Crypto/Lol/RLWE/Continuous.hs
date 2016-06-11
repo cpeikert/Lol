@@ -13,9 +13,9 @@ import Crypto.Lol.Prelude
 import Control.Applicative
 import Control.Monad.Random
 
--- | A continuous RLWE sample @(a,b) \in R_q \times K/qR@.  (The
+-- | A continuous RLWE sample \( (a,b) \in R_q \times K/(qR)\).  (The
 -- second component is a 'UCyc' because the base type @rrq@
--- representing @RR/qZ@, the reals modulo @qZ@, is an additive group
+-- representing \(\mathbb{R}/(q\mathbb{Z})\), is an additive group
 -- but not a ring, so we can't usefully work with a 'Cyc' over it.)
 type Sample t m zq rrq = (Cyc t m zq, UCyc t m D rrq)
 
@@ -24,8 +24,7 @@ type RLWECtx t m zq rrq =
   (Fact m, Ring zq, CElt t zq, Subgroup zq rrq, Lift' rrq,
    TElt t rrq, TElt t (LiftOf rrq))
 
--- | A continuous RLWE sample with the given scaled variance and
--- secret.
+-- | A continuous RLWE sample with the given scaled variance and secret.
 sample :: forall rnd v t m zq rrq .
   (RLWECtx t m zq rrq, Random zq, Random (LiftOf rrq), OrdFloat (LiftOf rrq),
    MonadRandom rnd, ToRational v)
@@ -52,12 +51,12 @@ errorGSqNorm :: (RLWECtx t m zq rrq, Ring (LiftOf rrq))
 errorGSqNorm s = U.gSqNorm . errorTerm s
 
 -- | A bound such that the 'gSqNorm' of a continuous error generated
--- by 'tGaussian' with scaled variance @v@ (over the @m@th cyclotomic
+-- by 'tGaussian' with scaled variance \(v\) (over the \(m^\text{th}\) cyclotomic
 -- field) is less than the bound except with probability approximately
--- @eps@.
+-- \(\epsilon\).
 errorBound :: (Ord v, Transcendental v, Fact m)
               => v              -- ^ the scaled variance
-              -> v              -- ^ @eps@
+              -> v              -- ^ \(\epsilon\)
               -> Tagged m v
 errorBound v eps = do
   n <- fromIntegral <$> totientFact

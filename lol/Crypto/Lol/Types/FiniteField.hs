@@ -45,7 +45,7 @@ import qualified Data.Vector         as V
 
 --import qualified Debug.Trace as DT
 
--- | A finite field of given degree over @F_p@.
+-- | A finite field of given degree over \(F_p\).
 newtype GF fp d = GF (Polynomial fp)
                   deriving (Eq, Show, Additive.C, ZeroTestable.C, NFData)
 
@@ -100,8 +100,8 @@ instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
                     (proxy value (Proxy::Proxy m) :: Int)
 
 -- | This wrapper for a list of coefficients is used to define a
--- @GF(p^d)@-module structure for tensors over @F_p@ of dimension @n@, where
--- @d | n@.
+-- \(\text{GF}(p^d)\)-module structure for tensors over \(F_p\) of dimension
+-- \(n\), where \(d \mid n\).
 newtype TensorCoeffs a = Coeffs {unCoeffs :: [a]} deriving (Additive.C)
 
 instance (Additive fp, Ring (GF fp d), Reflects d Int)
@@ -121,14 +121,14 @@ chunksOf n xs
   | n > 0 = let (h,t) = splitAt n xs in h : chunksOf n t
   | otherwise = error "chunksOf: non-positive n"
 
--- | Yield a list of length exactly @d@ (i.e., including trailing zeros)
--- of the @fp@-coefficients with respect to the power basis.
+-- | Yield a list of length exactly \(d\) (i.e., including trailing zeros)
+-- of the \(F_p\)-coefficients with respect to the power basis.
 toList :: forall fp d . (Reflects d Int, Additive fp) => GF fp d -> [fp]
 toList = let dval = proxy value (Proxy::Proxy d)
          in \(GF p) -> let l = coeffs p
                        in l ++ replicate (dval - length l) zero
 
--- | Yield a field element given up to @d@ coefficients with respect
+-- | Yield a field element given up to \(d\) coefficients with respect
 -- to the power basis.
 fromList :: forall fp d . (Reflects d Int) => [fp] -> GF fp d
 fromList = let dval = proxy value (Proxy::Proxy d)
@@ -159,7 +159,7 @@ trace :: forall fp d . (GFCtx fp d) => GF fp d -> fp
 trace = let ts = proxy powTraces (Proxy::Proxy (GF fp d))
         in \(GF f) -> dotp ts (coeffs f)
 
--- | Traces of the power basis elements 1, x, x^2, ..., x^(d-1).
+-- | Traces of the power basis elements \(\{1, x, x^2, \ldots, x^{d-1}\}\).
 powTraces :: forall fp d . (GFCtx fp d) => Tagged (GF fp d) [fp]
 powTraces =
   --DT.trace ("FiniteField.powTraces: p = " ++

@@ -28,7 +28,7 @@ import Algebra.Additive as Additive (C)
 import Control.Applicative
 import Control.DeepSeq
 
--- | An @E@-linear function from @R@ to @S@.
+-- | An \(E\)-linear function from \(R\) to \(S\).
 
 -- CJP: also have constructor for relative Pow basis of R/E?  So far
 -- not needed.
@@ -39,8 +39,8 @@ deriving instance (NFData (Cyc t s z)) => NFData (Linear t z e r s)
 -- some params are phantom but matter for safety
 type role Linear representational nominal representational representational nominal
 
--- | Construct an @E@-linear function given a list of its output values
--- (in @S@) on the relative decoding basis of @R/E@.  The number of
+-- | Construct an \(E\)-linear function given a list of its output values
+-- (in \(S\)) on the relative decoding basis of \(R/E\).  The number of
 -- elements in the list must not exceed the size of the basis.
 linearDec :: forall t z e r s .
              (e `Divides` r, e `Divides` s, CElt t z)
@@ -85,11 +85,11 @@ type ExtendLinIdx e r s e' r' s' =
   (Fact r, e ~ FGCD r e', r' ~ FLCM r e', -- these imply R'=R\otimes_E E'
    e' `Divides` s', s `Divides` s') -- lcm(s,e')|s' <=> (S+E') \subseteq S'
 
--- | Extend an @E@-linear function @R->S@ to an @E'@-linear function
--- @R\'->S\'@.  (Mathematically, such extension only requires
--- @lcm(r,e\') | r\'@ (not equality), but this generality would
+-- | Extend an \(E\)-linear function \(R\rightarrow S\) to an \(E'\)-linear
+-- function \(R'\rightarrow S'\). (Mathematically, such extension only requires
+-- \(\text{lcm}(r,e') | r'\) (not equality), but this generality would
 -- significantly complicate the implementation, and for our purposes
--- there's no reason to use any larger @r'@.)
+-- there's no reason to use any larger \(r'\).)
 extendLin :: (ExtendLinIdx e r s e' r' s')
            => Linear t z e r s -> Linear t z e' r' s'
 -- CJP: this simple implementation works because R/E and R'/E' have

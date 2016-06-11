@@ -78,7 +78,7 @@ instance (R.Elt a) => R.Elt (Complex a) where
 roundComplex :: (RealRing a, ToInteger b) => Complex a -> (b,b)
 roundComplex (Complex x) = (round $ C.real x, round $ C.imag x)
 
--- | 'cis' @t@ is a complex value with magnitude 1 and phase t (modulo @2*Pi@).
+-- | 'cis' \(t\) is a complex value with magnitude 1 and phase \(t \bmod 2\cdot\pi\)).
 cis :: Transcendental a => a -> Complex a
 cis = Complex . C.cis
 

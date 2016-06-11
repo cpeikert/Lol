@@ -18,6 +18,6 @@ class (PrimeField (ZpOf zq), Ring zq) => ZPP zq where
   -- | The prime and exponent of the modulus.
   modulusZPP :: Tagged zq PP
 
-  -- | Lift from @Z_p@ to a representative.
+  -- | Lift from \(\mathbb{Z}_p\) to a representative.
   liftZp :: ZpOf zq -> zq
 

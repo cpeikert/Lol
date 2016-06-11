@@ -86,11 +86,11 @@ data E
 -- | Convenient synonym for either CRT representation.
 type UCycEC t m r = Either (UCyc t m E r) (UCyc t m C r)
 
--- | Represents a cyclotomic ring such as @Z[zeta]@,
--- @Zq[zeta]@, and @Q(zeta)@ in an explicit representation: @t@ is the
--- 'Tensor' type for storing coefficient tensors; @m@ is the
--- cyclotomic index; @rep@ is the representation ('P', 'D', or 'C');
--- @r@ is the base ring of the coefficients (e.g., @Z@, @Zq@).
+-- | Represents a cyclotomic ring such as \(\mathbb{Z}[\zeta_m]\),
+-- \(\mathbb{Z}_q[\zeta_m]\), and \(\mathbb{Q}(\zeta_m)\) in an explicit
+-- representation: @t@ is the 'Tensor' type for storing coefficient tensors;
+-- @m@ is the cyclotomic index; @rep@ is the representation ('P', 'D', or 'C');
+-- @r@ is the base ring of the coefficients (e.g., \(\mathbb{Z}\), \(\mathbb{Z}_q\)).
 --
 -- The 'Functor', 'Applicative', 'Foldable' and 'Traversable'
 -- instances all work coefficient-wise (in the specified basis).
@@ -234,9 +234,9 @@ instance (Ring r, Fact m, UCRTElt t r) => Module.C r (UCycEC t m r) where
   r *> (Left (CRTE s v)) = Left $ CRTE s $ fmapT (toExt r *) v
   {-# INLINABLE (*>) #-}
 
--- | @Rp@ is an @F_{p^d}@-module when @d@ divides @phi(m)@, by
--- applying @d@-dimensional @Fp@-linear transform on @d@-dim chunks of
--- powerful basis coeffs
+-- | \(R_p\) is an \(F_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
+-- applying \(d\)-dimensional \(F_p\)-linear transform on \(d\)-dim chunks of
+-- powerful basis coeffs.
 instance (GFCtx fp d, Fact m, Tensor t, TElt t fp)
          => Module.C (GF fp d) (UCyc t m P fp) where
   -- can use any r-basis to define module mult, but must be
@@ -345,7 +345,7 @@ unzipCRTE (CRTE _ v)
         fromMaybe (Left bp) (Right <$> (CRTE <$> crtESentinel <*> pure be)))
 
 
--- | Multiply by the special element @g@.
+-- | Multiply by the special element \(g_m\).
 mulG :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
 {-# INLINABLE mulG #-}
 mulG (Pow v) = Pow $ mulGPow v
@@ -353,7 +353,7 @@ mulG (Dec v) = Dec $ mulGDec v
 mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
 mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 
--- | Divide by the special element @g@.
+-- | Divide by the special element \(g_m\).
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
@@ -365,15 +365,15 @@ divG (Dec v) = Dec <$> divGDec v
 divG (CRTC s v) = Just $ CRTC s $ divGCRTCS s v
 divG (CRTE s v) = Just $ CRTE s $ runIdentity divGCRT v
 
--- | Yield the scaled squared norm of @g_m \cdot e@ under
+-- | Yield the scaled squared norm of \(g_m \cdot e\) under
 -- the canonical embedding, namely,
--- @\hat{m}^{ -1 } \cdot || \sigma(g_m \cdot e) ||^2@ .
+-- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\) .
 gSqNorm :: (Ring r, Tensor t, Fact m, TElt t r) => UCyc t m D r -> r
 gSqNorm (Dec v) = gSqNormDec v
 {-# INLINABLE gSqNorm #-}
 
--- | Sample from the "tweaked" Gaussian error distribution @t*D@ in
--- the decoding basis, where @D@ has scaled variance @v@.
+-- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\) in
+-- the decoding basis, where \(D\) has scaled variance \(v\).
 tGaussian :: (Tensor t, Fact m, OrdFloat q, Random q, TElt t q,
               ToRational v, MonadRandom rnd)
              => v -> rnd (UCyc t m D q)
@@ -395,8 +395,8 @@ errorRounded svar =
   Dec . fmapT (roundMult one) <$> (tGaussianDec svar :: rnd (t m Double))
 
 -- | Generate an LWE error term from the "tweaked" Gaussian with
--- scaled variance @v * p^2@, deterministically rounded to the given
--- coset of @R_p@ using the decoding basis. (Note: This
+-- scaled variance \(v \cdot p^2\), deterministically rounded to the given
+-- coset of \(R_p\) using the decoding basis. (Note: This
 -- implementation uses Double precision to generate the Gaussian
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
@@ -481,29 +481,29 @@ twaceCRTE x@(CRTE _ v) =
     Left  s -> Right $ CRTE s $ runIdentity T.twaceCRT v
     Right _ -> Left $ twacePow $ toPow x
 
--- | Yield the @O_m@-coefficients of an @O_m'@-element, with respect to
--- the relative powerful @O_m@-basis.
+-- | Yield the \(\mathcal{O}_m\)-coefficients of an \(\mathcal{O}_{m'}\)-element,
+-- with respect to the relative powerful \(\mathcal{O}_m\)-basis.
 coeffsPow :: (Ring r, Tensor t, m `Divides` m', TElt t r)
              => UCyc t m' P r -> [UCyc t m P r]
 {-# INLINABLE coeffsPow #-}
 coeffsPow (Pow v) = LP.map Pow $ coeffs v
 
--- | Yield the @O_m@-coefficients of an @O_m'@ element, with respect to
--- the relative decoding @O_m@-basis.
+-- | Yield the \(\mathcal{O}_m\)-coefficients of an \(\mathcal{O}_{m'}\) element,
+-- with respect to the relative decoding \(\mathcal{O}_m\)-basis.
 coeffsDec :: (Ring r, Tensor t, m `Divides` m', TElt t r)
              => UCyc t m' D r -> [UCyc t m D r]
 {-# INLINABLE coeffsDec #-}
 coeffsDec (Dec v) = LP.map Dec $ coeffs v
 
--- | The relative powerful basis of @O_m' / O_m@.
+-- | The relative powerful basis of \(\mathcal{O}_{m'} / \mathcal{O}_m\).
 powBasis :: (Ring r, Tensor t, m `Divides` m', TElt t r)
             => Tagged m [UCyc t m' P r]
 {-# INLINABLE powBasis #-}
 powBasis = (Pow <$>) <$> powBasisPow
 
--- | The relative mod-@r@ CRT set of @O_m' / O_m@, represented with
--- respect to the powerful basis (which seems to be the best choice
--- for typical use cases).
+-- | The relative mod-\(r\) CRT set of \(\mathcal{O}_{m'} / \mathcal{O}_m\),
+-- represented with respect to the powerful basis (which seems to be
+-- the best choice for typical use cases).
 crtSet :: forall t m m' r p mbar m'bar .
            (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r),
             mbar ~ PFree p m, m'bar ~ PFree p m',

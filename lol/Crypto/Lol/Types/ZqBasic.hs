@@ -4,7 +4,7 @@
              RebindableSyntax, RoleAnnotations, ScopedTypeVariables,
              TypeFamilies, UndecidableInstances #-}
 
--- | An implementation of the quotient ring Zq = Z/qZ.
+-- | An implementation of the quotient ring \(\mathbb{Z}_q = \mathbb{Z}/(q\mathbb{Z})\).
 
 -- EAC: It may help GHC do specialization at higher levels of the library
 -- if we "simplify" constraints in this module. For example, replace the
@@ -51,7 +51,7 @@ import qualified Algebra.IntegralDomain as IntegralDomain (C)
 import qualified Algebra.Ring           as Ring (C)
 import qualified Algebra.ZeroTestable   as ZeroTestable (C)
 
--- | The ring @Z_q@ of integers modulo 'q', using underlying integer
+-- | The ring \(\mathbb{Z}_q\) of integers modulo 'q', using underlying integer
 -- type 'z'.
 newtype ZqBasic q z = ZqB z
     deriving (Eq, Ord, ZeroTestable.C, E.Elt, Show, NFData, Storable)
@@ -115,11 +115,11 @@ instance (Reflects p z, Reflects q z, ToInteger z, Field (ZqBasic q z), Field (Z
                  negqval :: z = negate $ proxy value (Proxy::Proxy q)
              in (reduce' negqval, recip $ reduce' pval)
 
--- | Yield a /principal/ @m@th root of unity @omega_m \in @Z_q^*@.
--- The implementation requires @q@ to be prime.  It works by finding a
--- generator of @Z_q^*@ and raising it to the @(q-1)/m@ power.
--- Therefore, outputs for different values of @m@ are consistent,
--- i.e., @omega_{m'}^(m'/m) = omega_m@.
+-- | Yield a /principal/ \(m^\text{th}\) root of unity \(\omega_m \in \mathbb{Z}_q^*\).
+-- The implementation requires \(q\) to be prime.  It works by finding a
+-- generator of \(\mathbb{Z}_q^*\) and raising it to the \( (q-1)/m\) power.
+-- Therefore, outputs for different values of \(m\) are consistent,
+-- i.e., \(\omega_{m'}^(m'/m) = \omega_m\).
 principalRootUnity ::
     forall m q z . (Reflects m Int, Reflects q z, ToInteger z, Enumerable (ZqBasic q z))
                => TaggedT m Maybe (Int -> ZqBasic q z)
@@ -155,7 +155,7 @@ instance (Reflects q z, ToInteger z, PID z, Enumerable (ZqBasic q z))
 
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
--- | Embeds into complex numbers
+-- | Embeds into \(\mathbb{C}\)
 instance (Reflects q z, ToInteger z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
   type CRTExt (ZqBasic q z) = Complex Double
 
@@ -221,7 +221,7 @@ gadlen :: (RealIntegral z) => z -> z -> Int
 gadlen _ q | isZero q = 0
 gadlen b q = 1 + gadlen b (q `div` b)
 
--- | The base-@b@ gadget for modulus @q@, over integers (not mod
+-- | The base-\(b\) gadget for modulus \(q\), over integers (not mod
 -- anything).
 gadgetZ :: (RealIntegral z) => z -> z -> [z]
 gadgetZ b q = take (gadlen b q) $ iterate (*b) one
