@@ -59,7 +59,7 @@ type PT rp = rp
 -- | Ciphertext encoding type
 data Encoding = MSD | LSD deriving (Show, Eq)
 
--- | Ciphertext over \(R_q\), encrypting a plaintext in \(R_p\)\, where \(R=\mathcal{O}_m\).
+-- | Ciphertext over \(R'_q\), encrypting a plaintext in \(R_p\)\, where \(R=\mathcal{O}_m\).
 data CT (m :: Factored) zp r'q =
   CT
   !Encoding                     -- MSD/LSD encoding
@@ -279,7 +279,7 @@ type KeySwitchCtx gad t m' zp zq zq' =
   (RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
    ToSDCtx t m' zp zq, SwitchCtx gad t m' zq')
 
--- | Switch a linear ciphertext under \(s_{in}\) to a linear one under \(s_{out}\).
+-- | Switch a linear ciphertext under \(s_{\text{in}}\) to a linear one under \(s_{\text{out}}\).
 keySwitchLinear :: forall gad t m' zp zq zq' z rnd m .
   (KeySwitchCtx gad t m' zp zq zq', KSHintCtx gad t m' z zq', MonadRandom rnd)
   => SK (Cyc t m' z)                -- sout
@@ -351,7 +351,7 @@ mulPublic a (CT enc k l c) =
   let a' = embed (reduce $ liftCyc Pow a :: Cyc t m zq)
   in CT enc k l $ (a' *) <$> c
 
--- | Increment the internal g exponent without changing the encrypted message.
+-- | Increment the internal \(g\) exponent without changing the encrypted message.
 mulGCT :: (Fact m', CElt t zq)
           => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
 mulGCT (CT enc k l c) = CT enc (k+1) l $ mulG <$> c

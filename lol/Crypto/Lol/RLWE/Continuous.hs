@@ -51,7 +51,7 @@ errorGSqNorm :: (RLWECtx t m zq rrq, Ring (LiftOf rrq))
 errorGSqNorm s = U.gSqNorm . errorTerm s
 
 -- | A bound such that the 'gSqNorm' of a continuous error generated
--- by 'tGaussian' with scaled variance \(v\) (over the \(m^\text{th}\) cyclotomic
+-- by 'tGaussian' with scaled variance \(v\) (over the \(m\)th cyclotomic
 -- field) is less than the bound except with probability approximately
 -- \(\epsilon\).
 errorBound :: (Ord v, Transcendental v, Fact m)

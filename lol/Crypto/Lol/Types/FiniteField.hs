@@ -45,7 +45,7 @@ import qualified Data.Vector         as V
 
 --import qualified Debug.Trace as DT
 
--- | A finite field of given degree over \(F_p\).
+-- | A finite field of given degree over \(\mathbb{F}_p\).
 newtype GF fp d = GF (Polynomial fp)
                   deriving (Eq, Show, Additive.C, ZeroTestable.C, NFData)
 
@@ -100,7 +100,7 @@ instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
                     (proxy value (Proxy::Proxy m) :: Int)
 
 -- | This wrapper for a list of coefficients is used to define a
--- \(\text{GF}(p^d)\)-module structure for tensors over \(F_p\) of dimension
+-- \(\text{GF}(p^d)\)-module structure for tensors over \(\mathbb{F}_p\) of dimension
 -- \(n\), where \(d \mid n\).
 newtype TensorCoeffs a = Coeffs {unCoeffs :: [a]} deriving (Additive.C)
 
@@ -122,7 +122,7 @@ chunksOf n xs
   | otherwise = error "chunksOf: non-positive n"
 
 -- | Yield a list of length exactly \(d\) (i.e., including trailing zeros)
--- of the \(F_p\)-coefficients with respect to the power basis.
+-- of the \(\mathbb{F}_p\)-coefficients with respect to the power basis.
 toList :: forall fp d . (Reflects d Int, Additive fp) => GF fp d -> [fp]
 toList = let dval = proxy value (Proxy::Proxy d)
          in \(GF p) -> let l = coeffs p

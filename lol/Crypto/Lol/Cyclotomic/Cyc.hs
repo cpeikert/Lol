@@ -277,8 +277,8 @@ instance (Fact m, CElt t r) => Ring.C (Cyc t m r) where
   -- ELSE: work in appropriate CRT rep
   c1 * c2 = toCRT' c1 * toCRT' c2
 
--- | \(R_p\) is an \(F_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
--- applying \(d\)-dimensional \(F_p\)-linear transform on \(d\)-dim chunks of
+-- | \(R_p\) is an \(\mathbb{F}_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
+-- applying \(d\)-dimensional \(\mathbb{F}_p\)-linear transform on \(d\)-dim chunks of
 -- powerful basis coeffs.
 instance (GFCtx fp d, Fact m, CElt t fp) => Module.C (GF fp d) (Cyc t m fp) where
   -- CJP: optimize for Scalar if we can: r *> (Scalar c) is the tensor
@@ -310,7 +310,7 @@ adviseDec = toDec'
 -- other values.
 adviseCRT = toCRT'
 
--- | Multiply by the special element \(g\) of the \(m^\text{th}\)
+-- | Multiply by the special element \(g\) of the \(m\)th
 -- cyclotomic.
 mulG :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
 {-# INLINABLE mulG #-}

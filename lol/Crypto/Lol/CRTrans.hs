@@ -20,13 +20,13 @@ import Crypto.Lol.Reflects
 import Control.Arrow
 
 -- | Information that characterizes the (invertible) Chinese remainder
--- transformation over a ring \(r\), namely:
+-- transformation over a ring \(R\) (represented by the type @r@), namely:
 --
---     (1) a function that returns the \(i^\text{th}\) power of some
---     /principal/ \(m^\text{th}\) root of unity
+--     (1) a function that returns the \(i\)th power of some
+--     /principal/ \(m\)th root of unity
 --     (for any integer \(i\))
 --
---     (2) the multiplicative inverse of \(\hat{m}\in r\).
+--     (2) the multiplicative inverse of \(\hat{m}\in R\).
 
 type CRTInfo r = (Int -> r, r)
 
@@ -34,9 +34,9 @@ type CRTInfo r = (Int -> r, r)
 -- transformations of various indices.
 
 -- | The values of 'crtInfo' for different indices \(m\) should be
--- consistent, in the sense that if \(\omega\), \(\omega'\) are respectively
--- the roots of unity used for \(m\), \(m'\) where \(m\) divides \(m'\), then
--- it should be the case that \(\omega'^{m'/m}=\omega\).
+-- consistent, in the sense that if \(\omega_m\), \(\omega_{m'}\) are respectively
+-- \(m\)th, \(m'\)th roots of unity where \(m\) divides \(m'\), then
+-- it should be the case that \(\omega_{m'}^{m'/m}=\omega_m\).
 
 class (Monad mon, Ring r) => CRTrans mon r where
 
@@ -97,25 +97,25 @@ instance CRTrans Maybe Int64 where crtInfo = tagT Nothing
 instance CRTrans Maybe Integer where crtInfo = tagT Nothing
 -- can also do for Int8, Int16, Int32 etc.
 
--- | Embeds into \(\mathbb{C}\)
+-- | Embeds into the complex numbers \(\mathbb{C}\).
 instance CRTEmbed Double where
   type CRTExt Double = Complex Double
   toExt = fromReal . realToField
   fromExt = realToField . real
 
--- | Embeds into \(\mathbb{C}\)
+-- | Embeds into the complex numbers \(\mathbb{C}\).
 instance CRTEmbed Int where
   type CRTExt Int = Complex Double
   toExt = fromIntegral
   fromExt = fst . roundComplex
 
--- | Embeds into \(\mathbb{C}\)
+-- | Embeds into the complex numbers \(\mathbb{C}\).
 instance CRTEmbed Int64 where
   type CRTExt Int64 = Complex Double
   toExt = fromIntegral
   fromExt = fst . roundComplex
 
--- | Embeds into \(\mathbb{C}\).  (May not have sufficient
+-- | Embeds into the complex numbers \(\mathbb{C}\).  (May not have sufficient
 -- precision.)
 instance CRTEmbed Integer where
   -- CJP: sufficient precision?  Not in general.

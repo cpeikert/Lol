@@ -234,8 +234,8 @@ instance (Ring r, Fact m, UCRTElt t r) => Module.C r (UCycEC t m r) where
   r *> (Left (CRTE s v)) = Left $ CRTE s $ fmapT (toExt r *) v
   {-# INLINABLE (*>) #-}
 
--- | \(R_p\) is an \(F_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
--- applying \(d\)-dimensional \(F_p\)-linear transform on \(d\)-dim chunks of
+-- | \(R_p\) is an \(\mathbb{F}_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
+-- applying \(d\)-dimensional \(\mathbb{F}_p\)-linear transform on \(d\)-dim chunks of
 -- powerful basis coeffs.
 instance (GFCtx fp d, Fact m, Tensor t, TElt t fp)
          => Module.C (GF fp d) (UCyc t m P fp) where

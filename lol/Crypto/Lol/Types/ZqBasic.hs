@@ -115,7 +115,7 @@ instance (Reflects p z, Reflects q z, ToInteger z, Field (ZqBasic q z), Field (Z
                  negqval :: z = negate $ proxy value (Proxy::Proxy q)
              in (reduce' negqval, recip $ reduce' pval)
 
--- | Yield a /principal/ \(m^\text{th}\) root of unity \(\omega_m \in \mathbb{Z}_q^*\).
+-- | Yield a /principal/ \(m\)th root of unity \(\omega_m \in \mathbb{Z}_q^*\).
 -- The implementation requires \(q\) to be prime.  It works by finding a
 -- generator of \(\mathbb{Z}_q^*\) and raising it to the \( (q-1)/m\) power.
 -- Therefore, outputs for different values of \(m\) are consistent,

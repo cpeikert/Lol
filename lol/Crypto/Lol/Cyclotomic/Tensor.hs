@@ -283,10 +283,10 @@ indexM (MKron m (MC r c mc)) i j =
 
 gCRTM, gInvCRTM :: (Fact m, CRTrans mon r) => TaggedT m mon (Matrix r)
 -- | A \(\varphi(m)\)-by-1 matrix of the CRT coefficients of \(g_m\), for
--- \(m^\text{th}\) cyclotomic.
+-- \(m\)th cyclotomic.
 gCRTM = fMatrix gCRTPPow
 -- | A \(\varphi(m)\)-by-1 matrix of the inverse CRT coefficients of \(g_m\),
--- for \(m^\text{th}\) cyclotomic.
+-- for \(m\)th cyclotomic.
 gInvCRTM = fMatrix gInvCRTPPow
 
 -- | The "tweaked" \(\text{CRT}^*\) matrix:
@@ -313,7 +313,7 @@ gInvCRTPPow = ppMatrix gInvCRTPrime
 gCRTPrime, gInvCRTPrime :: (Prime p, CRTrans mon r) => TaggedT p mon (MatrixC r)
 
 -- | A \((p-1)\)-by-1 matrix of the CRT coefficients of \(g_p\), for
--- \(p^\text{th}\) cyclotomic.
+-- \(p\)th cyclotomic.
 gCRTPrime = do
   p <- pureT valuePrime
   (wPow, _) <- crtInfo
@@ -321,7 +321,7 @@ gCRTPrime = do
                         else (\i _ -> one - wPow (i+1))
 
 -- | A \((p-1)\)-by-1 matrix of the inverse CRT coefficients of \(g_p\),
--- for the \(p^\text{th}\) cyclotomic.
+-- for the \(p\)th cyclotomic.
 gInvCRTPrime = do
   p <- pureT valuePrime
   (wPow, phatinv) <- crtInfo
@@ -413,9 +413,9 @@ indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
                 tots = totients mpps
             in tag (mpps, phi, phi', tots)
 
--- | A vector of \(\varphi(m)\) entries, where the \(i^\text{th}\) entry is
+-- | A vector of \(\varphi(m)\) entries, where the \(i\)th entry is
 -- the index into the powerful\/decoding basis of \(\mathcal{O}_{m'}\) of the
--- \(i^\text{th}\) entry of the powerful/decoding basis of \(\mathcal{O}_m\).
+-- \(i\)th entry of the powerful/decoding basis of \(\mathcal{O}_m\).
 extIndicesPowDec :: (m `Divides` m') => Tagged '(m, m') (U.Vector Int)
 extIndicesPowDec = do
   (_, phi, _, tots) <- indexInfo
@@ -460,7 +460,7 @@ baseIndicesCRT =
   baseWrapper (\pps -> snd . toIndexPair (totients pps))
 
 
--- | The \(i_0^\text{th}\) entry of the \(i_1^\text{th}\) vector is
+-- | The \(i_0\)th entry of the \(i_1\)th vector is
 -- 'fromIndexPair' \((i_1,i_0)\).
 extIndicesCoeffs :: forall m m' . (m `Divides` m')
                     => Tagged '(m, m') (V.Vector (U.Vector Int))

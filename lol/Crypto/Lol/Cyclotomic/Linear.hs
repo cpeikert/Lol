@@ -85,8 +85,8 @@ type ExtendLinIdx e r s e' r' s' =
   (Fact r, e ~ FGCD r e', r' ~ FLCM r e', -- these imply R'=R\otimes_E E'
    e' `Divides` s', s `Divides` s') -- lcm(s,e')|s' <=> (S+E') \subseteq S'
 
--- | Extend an \(E\)-linear function \(R\rightarrow S\) to an \(E'\)-linear
--- function \(R'\rightarrow S'\). (Mathematically, such extension only requires
+-- | Extend an \(E\)-linear function \(R\to S\) to an \(E'\)-linear
+-- function \(R'\to S'\). (Mathematically, such extension only requires
 -- \(\text{lcm}(r,e') | r'\) (not equality), but this generality would
 -- significantly complicate the implementation, and for our purposes
 -- there's no reason to use any larger \(r'\).)
