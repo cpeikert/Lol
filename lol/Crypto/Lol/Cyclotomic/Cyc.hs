@@ -17,6 +17,7 @@
 --   \( \def\Q{\mathbb{Q}} \)
 --   \( \def\Tw{\text{Tw}} \)
 --   \( \def\Tr{\text{Tr}} \)
+--   \( \def\O{\mathcal{O}} \)
 -- An implementation of cyclotomic rings that hides the
 -- internal representations of ring elements (e.g., the choice of
 -- basis), and also offers more efficient storage and operations on
@@ -413,7 +414,7 @@ twace (Sub (c :: Cyc t l r)) = Sub (twace c :: Cyc t (FGCD l m) r)
 
 -- | Return the given element's coefficient vector with respect to
 -- the (relative) powerful/decoding basis of the cyclotomic
--- extension \(\mathcal{O}_{m'} / \mathcal{O}_m\).
+-- extension \(\O_{m'} / \O_m\).
 -- See also 'coeffsPow', 'coeffsDec'.
 coeffsCyc :: (m `Divides` m', CElt t r) => R.Basis -> Cyc t m' r -> [Cyc t m r]
 {-# INLINABLE coeffsCyc #-}
@@ -428,7 +429,7 @@ coeffsPow = coeffsCyc R.Pow
 -- | Specialized version of 'coeffsCyc' for decoding basis.
 coeffsDec = coeffsCyc R.Dec
 
--- | The relative powerful basis of \(\mathcal{O}_{m'} / \mathcal{O}_m\).
+-- | The relative powerful basis of \(\O_{m'} / \O_m\).
 powBasis :: (m `Divides` m', CElt t r) => Tagged m [Cyc t m' r]
 powBasis = (Pow <$>) <$> U.powBasis
 {-# INLINABLE powBasis #-}

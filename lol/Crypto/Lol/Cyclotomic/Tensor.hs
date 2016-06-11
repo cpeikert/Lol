@@ -19,6 +19,7 @@
 --   \( \def\Tw{\text{Tw}} \)
 --   \( \def\Tr{\text{Tr}} \)
 --   \( \def\CRT{\text{CRT}} \)
+--   \( \def\O{\mathcal{O}} \)
 -- Interface for cyclotomic tensors, and helper functions for tensor
 -- indexing.
 
@@ -158,8 +159,8 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor t where
                       t m  r -> t m' r) -- embedCRT
 
   -- | Map a tensor in the powerful\/decoding\/CRT basis, representing
-  -- an \(\mathcal{O}_{m'}\) element, to a vector of tensors representing
-  -- \(\mathcal{O}_m\) elements in the same kind of basis.
+  -- an \(\O_{m'}\) element, to a vector of tensors representing
+  -- \(\O_m\) elements in the same kind of basis.
   coeffs :: (Ring r, m `Divides` m', TElt t r) => t m' r -> [t m r]
 
   -- | The powerful extension basis w.r.t. the powerful basis.
@@ -379,8 +380,8 @@ zmsToIndexPP (p,_) i = let (i1,i0) = i `divMod` p
 -- Index correspondences for ring extensions
 
 -- | Correspondences between the linear indexes into a basis of
--- \(\mathcal{O}_{m'}\), and pair indices into (extension basis) \(\otimes\)
--- (basis of \(\mathcal{O}_m\)). The work the same for Pow, Dec, and CRT bases
+-- \(\O_{m'}\), and pair indices into (extension basis) \(\otimes\)
+-- (basis of \(\O_m\)). The work the same for Pow, Dec, and CRT bases
 -- because all these bases have that factorization. The first argument is the
 -- list of \((\varphi(m),\varphi(m'))\) pairs for the (merged) prime powers
 -- of \(m\),\(m'\).
@@ -418,8 +419,8 @@ indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
             in tag (mpps, phi, phi', tots)
 
 -- | A vector of \(\varphi(m)\) entries, where the \(i\)th entry is
--- the index into the powerful\/decoding basis of \(\mathcal{O}_{m'}\) of the
--- \(i\)th entry of the powerful/decoding basis of \(\mathcal{O}_m\).
+-- the index into the powerful\/decoding basis of \(\O_{m'}\) of the
+-- \(i\)th entry of the powerful/decoding basis of \(\O_m\).
 extIndicesPowDec :: (m `Divides` m') => Tagged '(m, m') (U.Vector Int)
 extIndicesPowDec = do
   (_, phi, _, tots) <- indexInfo
@@ -427,8 +428,8 @@ extIndicesPowDec = do
 
 -- | A vector of \(\varphi(m)\) blocks of \(\varphi(m')/\varphi(m)\) consecutive
 -- entries. Each block contains all those indices into the CRT basis
--- of \(\mathcal{O}_{m'}\) that "lie above" the corresponding index into the CRT
--- basis of \(\mathcal{O}_m\).
+-- of \(\O_{m'}\) that "lie above" the corresponding index into the CRT
+-- basis of \(\O_m\).
 extIndicesCRT :: forall m m' . (m `Divides` m')
                  => Tagged '(m, m') (U.Vector Int)
 extIndicesCRT = do

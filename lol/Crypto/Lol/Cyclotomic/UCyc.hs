@@ -17,6 +17,7 @@
 -- | \( \def\Z{\mathbb{Z}} \)
 --   \( \def\F{\mathbb{F}} \)
 --   \( \def\Q{\mathbb{Q}} \)
+--   \( \def\O{\mathcal{O}} \)
 -- A low-level implementation of cyclotomic rings that allows (and
 -- requires) the programmer to control the underlying representation
 -- of ring elements, i.e., powerful, decoding, or CRT basis.
@@ -484,27 +485,27 @@ twaceCRTE x@(CRTE _ v) =
     Left  s -> Right $ CRTE s $ runIdentity T.twaceCRT v
     Right _ -> Left $ twacePow $ toPow x
 
--- | Yield the \(\mathcal{O}_m\)-coefficients of an \(\mathcal{O}_{m'}\)-element,
--- with respect to the relative powerful \(\mathcal{O}_m\)-basis.
+-- | Yield the \(\O_m\)-coefficients of an \(\O_{m'}\)-element,
+-- with respect to the relative powerful \(\O_m\)-basis.
 coeffsPow :: (Ring r, Tensor t, m `Divides` m', TElt t r)
              => UCyc t m' P r -> [UCyc t m P r]
 {-# INLINABLE coeffsPow #-}
 coeffsPow (Pow v) = LP.map Pow $ coeffs v
 
--- | Yield the \(\mathcal{O}_m\)-coefficients of an \(\mathcal{O}_{m'}\) element,
--- with respect to the relative decoding \(\mathcal{O}_m\)-basis.
+-- | Yield the \(\O_m\)-coefficients of an \(\O_{m'}\) element,
+-- with respect to the relative decoding \(\O_m\)-basis.
 coeffsDec :: (Ring r, Tensor t, m `Divides` m', TElt t r)
              => UCyc t m' D r -> [UCyc t m D r]
 {-# INLINABLE coeffsDec #-}
 coeffsDec (Dec v) = LP.map Dec $ coeffs v
 
--- | The relative powerful basis of \(\mathcal{O}_{m'} / \mathcal{O}_m\).
+-- | The relative powerful basis of \(\O_{m'} / \O_m\).
 powBasis :: (Ring r, Tensor t, m `Divides` m', TElt t r)
             => Tagged m [UCyc t m' P r]
 {-# INLINABLE powBasis #-}
 powBasis = (Pow <$>) <$> powBasisPow
 
--- | The relative mod-\(r\) CRT set of \(\mathcal{O}_{m'} / \mathcal{O}_m\),
+-- | The relative mod-\(r\) CRT set of \(\O_{m'} / \O_m\),
 -- represented with respect to the powerful basis (which seems to be
 -- the best choice for typical use cases).
 crtSet :: forall t m m' r p mbar m'bar .
