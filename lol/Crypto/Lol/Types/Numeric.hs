@@ -40,7 +40,6 @@ import qualified Algebra.ToRational           (C, realToField)
 import qualified Algebra.Transcendental       (C)
 import qualified Algebra.ZeroTestable         (C)
 import           MathObj.Polynomial
-import qualified MathObj.Matrix
 
 import Data.Int (Int64)
 

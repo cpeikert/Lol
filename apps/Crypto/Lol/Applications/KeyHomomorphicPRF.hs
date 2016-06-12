@@ -6,23 +6,18 @@
 
 -- TODO: Determine exactly which functions should export.
 module Crypto.Lol.Applications.KeyHomomorphicPRF
-( combineVectors
-, decomposeEntries
-, MMatrix
+( MMatrix -- Remove in final commit
 , uAugmentBS
 , uAugmentVector
 , uComputePRF
 , uFlipBit
 , UFullTree(..)
-, uRootValue
 ) where
 
 import Crypto.Lol.Gadget
-import Crypto.Lol.LatticePrelude
-import Crypto.Lol.PosBin
+import Crypto.Lol.Prelude
 
 import Data.List as L
-
 import MathObj.Matrix as M
 
 type MMatrix a = M.T a
@@ -80,9 +75,9 @@ uFlipBit :: (Decompose gad a) =>
             Int -> -- ^ which bit to flip (1-indexed)
             UFullTree Bool (Tagged gad (MMatrix a)) -> -- ^ Matrix at each node of T
             UFullTree Bool (Tagged gad (MMatrix a)) -- ^ Matrix at each node of T
-uFlipBit a0 a1 _ (ULeaf b v) =
+uFlipBit a0 a1 _ (ULeaf b _) =
   ULeaf (not b) $ if b then a0 else a1
-uFlipBit a0 a1 n (UInternal nl nr v l r)
+uFlipBit a0 a1 n (UInternal nl nr _ l r)
   | (n > nl) =
     let r' = uFlipBit a0 a1 (n - nl) r
     in UInternal nl nr (combineVectors (uRootValue l) (uRootValue r')) l r'
