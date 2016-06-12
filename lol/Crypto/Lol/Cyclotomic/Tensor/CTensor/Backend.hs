@@ -1,6 +1,17 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances,
-             MultiParamTypeClasses, PolyKinds, ScopedTypeVariables,
-             TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE UndecidableInstances #-}
+#if __GLASGOW_HASKELL__ >= 800
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE TypeOperators #-}
+{-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
+#endif
 
 -- | This module contains the functions to transform Haskell types into their
 -- C counterpart, and to transform polymorphic Haskell functions into C funtion
@@ -40,6 +51,10 @@ import           Foreign.Ptr             (Ptr, castPtr, plusPtr)
 import           Foreign.Storable        (Storable (..))
 import qualified Foreign.Storable.Record as Store
 
+#if __GLASGOW_HASKELL__ >= 800
+import GHC.TypeLits -- for error message
+#endif
+
 -- | Convert a list of prime powers to a suitable C representation.
 marshalFactors :: [PP] -> Vector CPP
 marshalFactors = SV.fromList . LP.map (\(p,e) -> CPP (fromIntegral p) (fromIntegral e))
@@ -73,10 +88,7 @@ store = Store.run $
 instance Show CPP where
     show (CPP p e) = "(" LP.++ show p LP.++ "," LP.++ show e LP.++ ")"
 
-instance (Storable a, Storable b,
-          CTypeOf a ~ CTypeOf b)
-  -- enforces right associativity and that each type of
-  -- the tuple has the same C repr, so using an array repr is safe
+instance (Storable a, Storable b)
   => Storable (a,b) where
   sizeOf _ = sizeOf (undefined :: a) + sizeOf (undefined :: b)
   alignment _ = max (alignment (undefined :: a)) (alignment (undefined :: b))
@@ -99,12 +111,30 @@ data Int64D
 data RRqD
 
 type family CTypeOf x where
-  CTypeOf (a,b) = CTypeOf a
+  CTypeOf (a,b) = EqCType a b (CTypeOf a) (CTypeOf b)
   CTypeOf (ZqBasic (q :: k) Int64) = ZqB64D
   CTypeOf Double = DoubleD
   CTypeOf Int64 = Int64D
   CTypeOf (Complex Double) = ComplexD
   CTypeOf (RRq (q :: k) Double) = RRqD
+#if __GLASGOW_HASKELL__ >= 800
+  -- EAC: this doesn't display like I had hoped when there is a tuple involved...
+  CTypeOf (ZqBasic (q :: k) i) = TypeError (Text "Unsupported C type: " :<>: ShowType (ZqBasic q i) :$$: Text "Use Int64 as the base ring")
+  CTypeOf (Complex i) = TypeError (Text "Unsupported C type: " :<>: ShowType (Complex i) :$$: Text "Use Double as the base ring")
+  CTypeOf (RRq (q :: k) i) = TypeError (Text "Unsupported C type: " :<>: ShowType (RRq q i) :$$: Text "Use Double as the base ring")
+  CTypeOf a = TypeError (Text "Unsupported C type: " :<>: ShowType a)
+#endif
+
+type family EqCType a b c d where
+  EqCType a b ZqB64D ZqB64D = ZqB64D
+  EqCType a b RRqD RRqD = RRqD
+  EqCType a b ComplexD ComplexD = ComplexD
+#if __GLASGOW_HASKELL__ >= 800
+  EqCType a b c c = TypeError (Text "Cannot call C code on a tuple of type " :<>: ShowType a)
+  EqCType a b c d = TypeError (Text "You are trying to use CTensor on a tuple," :<>:
+                           Text " but the tuple contains two different C types: " :$$:
+                           ShowType a :<>: Text " and " :<>: ShowType b)
+#endif
 
 -- returns the modulus as a nested list of moduli
 class (Tuple a) => ZqTuple a where
@@ -228,6 +258,7 @@ instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ ZqB64D)
         mulRq numPairs (castPtr aout) (castPtr bout) totm (castPtr qsptr)
   dgaussdec = error "cannot call CT gaussianDec on type ZqBasic"
 
+-- products of Complex correspond to CRTExt of a Zq product
 instance (Tuple r, CTypeOf r ~ ComplexD) => Dispatch' ComplexD r where
   dcrt ruptr pout totm pfac numFacts =
     tensorCRTC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr)
@@ -240,47 +271,51 @@ instance (Tuple r, CTypeOf r ~ ComplexD) => Dispatch' ComplexD r where
   dnorm = error "cannot call CT normSq on type Complex Double"
   dmulgpow pout =
     tensorGPowC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dmulgdec = error "cannot call CT mulGDec on type Complex Double"
+  dmulgdec pout =
+    tensorGDecC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dginvpow pout =
     tensorGInvPowC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dginvdec = error "cannot call CT divGDec on type Complex Double"
+  dginvdec pout =
+    tensorGInvDecC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
   dmul aout bout =
     mulC (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout)
   dgaussdec = error "cannot call CT gaussianDec on type Comple Double"
 
-instance (Tuple r, CTypeOf r ~ DoubleD) => Dispatch' DoubleD r where
+-- no support for products of Double
+instance Dispatch' DoubleD Double where
   dcrt = error "cannot call CT Crt on type Double"
   dcrtinv = error "cannot call CT CrtInv on type Double"
   dl pout =
-    tensorLDouble (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorLDouble 1 (castPtr pout)
   dlinv pout =
-    tensorLInvDouble (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
-  dnorm pout = tensorNormSqD (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorLInvDouble 1 (castPtr pout)
+  dnorm pout = tensorNormSqD 1 (castPtr pout)
   dmulgpow = error "cannot call CT mulGPow on type Double"
   dmulgdec = error "cannot call CT mulGDec on type Double"
   dginvpow = error "cannot call CT divGPow on type Double"
   dginvdec = error "cannot call CT divGDec on type Double"
   dmul = error "cannot call CT (*) on type Double"
   dgaussdec ruptr pout totm pfac numFacts =
-    tensorGaussianDec (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr)
+    tensorGaussianDec 1 (castPtr pout) totm pfac numFacts (castPtr ruptr)
 
-instance (Tuple r, CTypeOf r ~ Int64D) => Dispatch' Int64D r where
+-- no support for products of Z
+instance Dispatch' Int64D Int64 where
   dcrt = error "cannot call CT Crt on type Int64"
   dcrtinv = error "cannot call CT CrtInv on type Int64"
   dl pout =
-    tensorLR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorLR 1 (castPtr pout)
   dlinv pout =
-    tensorLInvR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorLInvR 1 (castPtr pout)
   dnorm pout =
-    tensorNormSqR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorNormSqR 1 (castPtr pout)
   dmulgpow pout =
-    tensorGPowR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorGPowR 1 (castPtr pout)
   dmulgdec pout =
-    tensorGDecR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorGDecR 1 (castPtr pout)
   dginvpow pout =
-    tensorGInvPowR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorGInvPowR 1 (castPtr pout)
   dginvdec pout =
-    tensorGInvDecR (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorGInvDecR 1 (castPtr pout)
   dmul = error "cannot call CT (*) on type Int64"
   dgaussdec = error "cannot call CT gaussianDec on type Int64"
 
@@ -301,11 +336,13 @@ foreign import ccall unsafe "tensorGPowRq" tensorGPowRq ::       Int16 -> Ptr (Z
 foreign import ccall unsafe "tensorGPowC" tensorGPowC ::         Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorGDecR" tensorGDecR ::         Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorGDecRq" tensorGDecRq ::       Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO ()
+foreign import ccall unsafe "tensorGDecC" tensorGDecC ::         Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorGInvPowR" tensorGInvPowR ::   Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorGInvPowRq" tensorGInvPowRq :: Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO ()
 foreign import ccall unsafe "tensorGInvPowC" tensorGInvPowC ::   Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorGInvDecR" tensorGInvDecR ::   Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorGInvDecRq" tensorGInvDecRq :: Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO ()
+foreign import ccall unsafe "tensorGInvDecC" tensorGInvDecC ::   Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 
 foreign import ccall unsafe "tensorCRTRq" tensorCRTRq ::         Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (ZqBasic q Int64)) -> Ptr Int64 -> IO ()
 foreign import ccall unsafe "tensorCRTC" tensorCRTC ::           Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) -> IO ()

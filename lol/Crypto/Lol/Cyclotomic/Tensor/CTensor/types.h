@@ -117,7 +117,25 @@ public:
     this->imag = (a*b.imag)+(this->imag*b.real);
     return *this;
   }
+  Complex& operator/=(const Complex& b)
+  {
+    Complex bconj;
+    bconj.real = b.real;
+    bconj.imag = -b.imag;
+    *this *= bconj;
+    double den = (b.real*b.real+b.imag*b.imag);
+    this->real /= den;
+    this->imag /= den;
+    return *this;
+  }
 };
+inline char operator==(Complex a, const Complex& b)
+{
+  // This is only used in divGDec, where we do a divisiblity check.
+  // The divisibility check should always succeed for Complex since \C is a field,
+  // however if we actually implement equality, it would fail due to roundoff.
+  return 1;
+}
 inline Complex operator+(Complex a, const Complex& b)
 {
   a += b;
@@ -131,6 +149,11 @@ inline Complex operator-(Complex a, const Complex& b)
 inline Complex operator*(Complex a, const Complex& b)
 {
   a *= b;
+  return a;
+}
+inline Complex operator/(Complex a, const Complex& b)
+{
+  a /= b;
   return a;
 }
 
