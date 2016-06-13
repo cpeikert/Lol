@@ -169,7 +169,7 @@ type family Em r where
 -- CJP: Additive, Ring are not necessary when we use zipWithT
 -- EAC: This has performance implications for the CT backend,
 --      which used a (very fast) C function for (*) and (+)
-instance (Additive r, Storable r, Fact m, Dispatch r)
+instance (Additive r, Storable r, Fact m)
   => Additive.C (CT m r) where
   (CT (CT' a)) + (CT (CT' b)) = CT $ CT' $ SV.zipWith (+) a b
   a + b = toCT a + toCT b
