@@ -50,8 +50,6 @@ module Crypto.Lol.Cyclotomic.Cyc
 , tGaussian, errorRounded, errorCoset
 -- * Sub/extension rings
 , embed, twace, coeffsCyc, coeffsPow, coeffsDec, powBasis, crtSet
--- * Rescaling cyclotomic elements
-, R.RescaleCyc(..), R.Basis(..)
 ) where
 
 import qualified Algebra.Additive     as Additive (C)
@@ -73,16 +71,16 @@ import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.ZPP
 
-import Control.Applicative    hiding ((*>))
+import Control.Applicative hiding ((*>))
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity -- GHC warning is wrong: https://ghc.haskell.org/trac/ghc/ticket/12067
+-- GHC warning is wrong: https://ghc.haskell.org/trac/ghc/ticket/12067
+import Control.Monad.Identity
 import Control.Monad.Random
 import Data.Coerce
 import Data.Traversable
 
 import Test.QuickCheck
-
 
 -- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
 -- \(\Z_q[\zeta_m]\), and \(\Q[\zeta_m]\) in an explicit

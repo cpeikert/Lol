@@ -5,12 +5,10 @@ module Crypto.Lol
 ( module X
 ) where
 
-import Crypto.Lol.Cyclotomic.Cyc as X
-import Crypto.Lol.Gadget         as X
-import Crypto.Lol.Prelude        as X
+import Crypto.Lol.Cyclotomic.Cyc        as X
+import Crypto.Lol.Cyclotomic.Linear     as X
+import Crypto.Lol.Cyclotomic.RescaleCyc as X
+import Crypto.Lol.Gadget                as X
+import Crypto.Lol.Prelude               as X
 
-import Crypto.Lol.Cyclotomic.Tensor.CTensor    as X
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor as X
-import Crypto.Lol.Types.IrreducibleChar2       as X ()
-import Crypto.Lol.Types.RRq                    as X
-import Crypto.Lol.Types.ZqBasic                as X
+import Crypto.Lol.Types.IrreducibleChar2 as X ()
