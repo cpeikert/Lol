@@ -14,8 +14,10 @@ module Utils
 ,showType
 ,ShowType) where
 
-import Crypto.Lol (Int64,Fact,valueFact,Mod(..), Proxy(..), proxy, RT, CT, TrivGad, BaseBGad)
+import Crypto.Lol (Int64,Fact,valueFact,Mod(..), Proxy(..), proxy, TrivGad, BaseBGad)
 import Crypto.Lol.Reflects
+import Crypto.Lol.Cyclotomic.Tensor.RepaTensor
+import Crypto.Lol.Cyclotomic.Tensor.CTensor
 import Crypto.Lol.Types.ZqBasic
 import Crypto.Random.DRBG
 

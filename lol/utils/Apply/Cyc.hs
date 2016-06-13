@@ -19,6 +19,8 @@ import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor
+import Crypto.Lol.Cyclotomic.Tensor.CTensor
+import Crypto.Lol.Cyclotomic.Tensor.RepaTensor
 import Crypto.Lol.Types.ZPP
 import Crypto.Random.DRBG
 
