@@ -1,10 +1,14 @@
-{-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards       #-}
 
 module Common where
 
 import Beacon
 
-import qualified Crypto.Lol as Lol
+import qualified Crypto.Lol               as Lol
+import qualified Crypto.Lol.Types.RRq     as RRq
+import           Crypto.Lol.Types.ZqBasic
 
 import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.InstanceCont
@@ -40,8 +44,8 @@ data InstanceU = IC {secret :: !Secret, instc :: !InstanceCont}
                | IR {secret :: !Secret, instr :: !InstanceRLWR}
 
 -- Types used to generate and verify instances
-type Zq q = Lol.ZqBasic q Int64
-type RRq q = Lol.RRq q Double
+type Zq q = ZqBasic q Int64
+type RRq q = RRq.RRq q Double
 
 -- | Yield a list of challenge names by getting all directory contents
 -- and filtering on all directories whose names start with "chall".

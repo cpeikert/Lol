@@ -1,16 +1,22 @@
-{-# LANGUAGE FlexibleContexts, GADTs, MultiParamTypeClasses,
-             NoImplicitPrelude, PartialTypeSignatures, RebindableSyntax,
-             RecordWildCards, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 module Verify where
 
 import Beacon
 import Common
 
-import           Crypto.Lol                 hiding (RRq, lift)
-import qualified Crypto.Lol.RLWE.Continuous as C
-import qualified Crypto.Lol.RLWE.Discrete   as D
-import qualified Crypto.Lol.RLWE.RLWR       as R
+import           Crypto.Lol                           hiding (lift)
+import           Crypto.Lol.Cyclotomic.Tensor.CTensor
+import qualified Crypto.Lol.RLWE.Continuous           as C
+import qualified Crypto.Lol.RLWE.Discrete             as D
+import qualified Crypto.Lol.RLWE.RLWR                 as R
 import           Crypto.Lol.Types.Proto
 
 import Crypto.Proto.RLWE.Challenges.Challenge

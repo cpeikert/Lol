@@ -1,17 +1,20 @@
-{-# LANGUAGE
-     DataKinds,         -- so we can use GHC.TypeLits
-     NoImplicitPrelude, -- an alternate Prelude is imported from Crypto.Lol
-     PolyKinds,
-     RebindableSyntax,  -- since we use an alternate Prelude, this lets GHC read literals, etc
-     ScopedTypeVariables,
-     TemplateHaskell    -- provides a simple way to construct cyclotomic indices and prime-power moduli
-     #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE PolyKinds           #-}
+{-# LANGUAGE RebindableSyntax    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell     #-}
 
-import Crypto.Lol hiding ((^),CT)
-import qualified Crypto.Lol as Lol
-import Crypto.Lol.Applications.SymmSHE
-import Algebra.Ring ((^)) -- easier to use with the TH commands below
-import Math.NumberTheory.Primes.Testing (isPrime) -- used to generate "good" moduli
+import           Crypto.Lol                           hiding ((^))
+import qualified Crypto.Lol                           as Lol
+import           Crypto.Lol.Applications.SymmSHE
+import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as C
+import           Crypto.Lol.Types.ZqBasic
+
+import Algebra.Ring ((^))
+
+import Math.NumberTheory.Primes.Testing (isPrime)
+
 import Control.Monad.Random (getRandom)
 
 -- an infinite list of primes greater than `lower` and congruent to 1 mod m
@@ -24,25 +27,32 @@ goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
 
 -- PTIndex must divide CTIndex
 type PTIndex = F128
+
 -- Crypto.Lol includes Factored types F1..F512
 -- for cyclotomic indices outside this range,
 -- we provide a TH wrapper.
 -- TH to constuct the cyclotomic index 11648
 type CTIndex = $(fType $ 2^7 * 7 * 13)
--- to use crtSet (for example, when ring switching), the plaintext modulus must be a PrimePower (ZPP constraint)
--- Crypto.Lol exports PP2,PP4,...,PP128 as well as some prime powers for 3,5,7, and 11.
--- See Crypto.Lol.Factored. Alternately, an arbitrary prime power p^e can be constructed with
--- the TH $(ppType (p,e))
--- for applications that don't use crtSet, PT modulus can be a TypeLit.
+
+-- To use crtSet (for example, when ring switching), the plaintext
+-- modulus must be a PrimePower (ZPP constraint).  Crypto.Lol exports
+-- (via Crypto.Lol.Factored) PP2,PP4,...,PP128, as well as some prime
+-- powers for 3,5,7, and 11.  Alternately, an arbitrary prime power
+-- p^e can be constructed with the Template Haskell splice $(ppType
+-- (p,e)).  For applications that don't use crtSet, the PT modulus can
+-- be a TypeLit.
 type PTZq = ZqBasic PP8 Int64
--- uses GHC.TypeLits as modulus, and Int64 as repr (needed to use with CT backend)
--- modulus doesn't have to be "good", but "good" moduli are much faster
+
+-- uses GHC.TypeLits as modulus, and Int64 as underyling
+-- representation (needed to use with CT backend).  The modulus
+-- doesn't have to be "good", but "good" moduli are faster.
 type Zq q = ZqBasic q Int64 -- uses PolyKinds
 type CTZq1 = Zq 536937857
 type CTZq2 = (CTZq1, Zq 536972801)
 type CTZq3 = (CTZq2, Zq 537054337)
+
 -- Tensor backend, either Repa (RT) or C (CT)
-type T = Lol.CT -- can also use RT
+type T = C.CT -- can also use RT
 
 type KSGad = TrivGad -- can also use (BaseBGad 2), for example
 

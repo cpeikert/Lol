@@ -15,10 +15,11 @@ import Control.Monad
 import Control.Monad.Random
 import Control.Monad.State
 
-import Crypto.Lol hiding (CT)
+import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Cyclotomic.Linear
 import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
+import qualified Crypto.Lol.Cyclotomic.Tensor.RepaTensor as RT
 
 import qualified Test.Framework as TF
 import Test.Framework.Providers.QuickCheck2
@@ -75,7 +76,7 @@ type CTCombos = '[
   ]
 
 type Gadgets = '[TrivGad, BaseBGad 2]
-type Tensors = '[CT.CT,RT]
+type Tensors = '[CT.CT,RT.RT]
 type MM'PQCombos =
   '[ '(F1, F7, Zq 2, Zq (19393921 ** 18869761)),
      '(F2, F4, Zq 8, Zq (2148854401 ** 2148249601)),
@@ -274,13 +275,13 @@ prop_modSwPT sk y =
   in test $ x'' == rescaleCyc Dec x
 
 modSwPTTests :: [IO TF.Test]
-modSwPTTests = (modSwPTTests' (Proxy::Proxy CT.CT)) ++ (modSwPTTests' (Proxy::Proxy RT))
+modSwPTTests = (modSwPTTests' (Proxy::Proxy CT.CT)) ++ (modSwPTTests' (Proxy::Proxy RT.RT))
  where modSwPTTests' p =
         [helper (hideArgs prop_modSwPT) p (Proxy::Proxy '(F7,F21,Zq 4,Zq 8,Zq 18869761)),
          helper (hideArgs prop_modSwPT) p (Proxy::Proxy '(F7,F42,Zq 2,Zq 4,Zq (18869761 ** 19393921)))]
 
 tunnelTests :: [IO TF.Test]
-tunnelTests = (tunnelTests' (Proxy::Proxy CT.CT)) ++ (tunnelTests' (Proxy::Proxy RT))
+tunnelTests = (tunnelTests' (Proxy::Proxy CT.CT)) ++ (tunnelTests' (Proxy::Proxy RT.RT))
   where tunnelTests' p =
          [helper (hideArgs prop_ringTunnel) p
           (Proxy::Proxy '(F8,F40,F20,F60,Zq 4,Zq (18869761 ** 19393921),TrivGad))]

@@ -1,5 +1,9 @@
-{-# LANGUAGE FlexibleContexts, NoImplicitPrelude,
-             RebindableSyntax, RecordWildCards, ScopedTypeVariables #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 module Generate (generateMain) where
 
@@ -7,10 +11,11 @@ import Beacon
 import Common
 import Params as P
 
-import Crypto.Lol                 hiding (RRq)
-import Crypto.Lol.RLWE.Continuous as C
-import Crypto.Lol.RLWE.Discrete   as D
-import Crypto.Lol.RLWE.RLWR       as R
+import Crypto.Lol
+import Crypto.Lol.Cyclotomic.Tensor.CTensor
+import Crypto.Lol.RLWE.Continuous           as C
+import Crypto.Lol.RLWE.Discrete             as D
+import Crypto.Lol.RLWE.RLWR                 as R
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Random
 
