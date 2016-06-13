@@ -1,6 +1,12 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleInstances, GADTs,
-             MultiParamTypeClasses, NoImplicitPrelude, RebindableSyntax,
-             ScopedTypeVariables, TypeOperators #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeOperators         #-}
 
 -- we have some orphan instances here for instances of
 -- package classes with Prelude data types
@@ -39,6 +45,7 @@ import qualified Algebra.ToInteger            (C)
 import qualified Algebra.ToRational           (C, realToField)
 import qualified Algebra.Transcendental       (C)
 import qualified Algebra.ZeroTestable         (C)
+import           MathObj.Matrix               hiding (one, zero)
 import           MathObj.Polynomial
 
 import Data.Int (Int64)
@@ -129,6 +136,9 @@ type PID a = (Algebra.PrincipalIdealDomain.C a)
 
 -- | Sane synonym for 'MathObj.Polynomial.T'.
 type Polynomial a = MathObj.Polynomial.T a
+
+-- | Sane synonym for 'MathObj.Matrix.T'.
+type Matrix a = MathObj.Matrix.T a
 
 -- 'IntegralDomain' instance for 'Double'
 instance Algebra.IntegralDomain.C Double where

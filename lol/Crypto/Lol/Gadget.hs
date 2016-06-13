@@ -14,17 +14,21 @@
 
 module Crypto.Lol.Gadget
 ( Gadget(..), Decompose(..), Correct(..)
+, decomposeT, decomposeList, decomposeMatrix
 , TrivGad, BaseBGad
 ) where
 
 import Crypto.Lol.Prelude
 
+import MathObj.Matrix hiding (one, zero, zipWith)
+
 import Control.Applicative
 import Control.Arrow
+import Data.Traversable
 
--- | Dummy type representing the gadget \([1]\).
+-- | Dummy type representing the gadget \( [1] \).
 data TrivGad
--- | Dummy type representing the gadget \([1,b,b^2,\ldots]\).
+-- | Dummy type representing the gadget \( [1,b,b^2,\ldots] \).
 data BaseBGad b
 
 -- | "Gadget" vectors, parameterized by an index type.
@@ -46,11 +50,26 @@ class (Gadget gad u, Reduce (DecompOf u) u) => Decompose gad u where
   -- | The ring that @u@ decomposes over.
   type DecompOf u
 
-  -- | Yield a short vector \(x\) such that \(\<g, x\> = u\).
+  -- | Yield a short vector \( x \) such that \( \<g, x\> = u \).
   decompose :: u -> Tagged gad [DecompOf u]
 
--- | Error correction relative to a gadget.
+-- | Alternative to 'decompose'.
+decomposeT :: Decompose gad u => u -> TaggedT gad [] (DecompOf u)
+decomposeT = peelT . decompose
 
+-- | Decompose a list entry-wise.
+decomposeList :: Decompose gad u => [u] -> Tagged gad [DecompOf u]
+decomposeList = fmap concat . traverse decompose
+
+-- | Decompose a matrix entry-wise.
+decomposeMatrix :: forall gad u . (Decompose gad u)
+                   => Matrix u -> Tagged gad (Matrix (DecompOf u))
+decomposeMatrix m = do
+  l <- length <$> (gadget :: Tagged gad [u]) -- CJP: avoid scoped type vars?
+  fromColumns (l * numRows m) (numColumns m) <$>
+    traverse decomposeList (columns m)
+
+-- | Error correction relative to a gadget.
 class Gadget gad u => Correct gad u where
 
   -- | Error-correct a "noisy" encoding of an element (see 'encode'),
