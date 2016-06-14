@@ -11,16 +11,7 @@ import Crypto.Lol hiding ((^),CT)
 import qualified Crypto.Lol as Lol
 import Crypto.Lol.Applications.SymmSHE
 import Algebra.Ring ((^)) -- easier to use with the TH commands below
-import Math.NumberTheory.Primes.Testing (isPrime) -- used to generate "good" moduli
 import Control.Monad.Random (getRandom)
-
--- an infinite list of primes greater than `lower` and congruent to 1 mod m
--- useful for generating moduli for CTZq below
-goodQs :: (IntegralDomain i, ToInteger i) => i -> i -> [i]
-goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
-  where checkVal v = if (isPrime (fromIntegral v :: Integer))
-                     then v : checkVal (v+m)
-                    else checkVal (v+m)
 
 -- PTIndex must divide CTIndex
 type PTIndex = F128

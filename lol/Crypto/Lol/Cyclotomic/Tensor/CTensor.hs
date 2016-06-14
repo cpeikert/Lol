@@ -1,10 +1,23 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving,
-             InstanceSigs, MultiParamTypeClasses, NoImplicitPrelude,
-             PolyKinds, RankNTypes, RebindableSyntax, RoleAnnotations,
-             ScopedTypeVariables, StandaloneDeriving, TupleSections,
-             TypeFamilies, TypeOperators, TypeSynonymInstances,
-             UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE InstanceSigs               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE RebindableSyntax           #-}
+{-# LANGUAGE RoleAnnotations            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TupleSections              #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE TypeSynonymInstances       #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 -- | Wrapper for a C++ implementation of the 'Tensor' interface.
 
@@ -474,16 +487,16 @@ ruInv = do
       pureT ppsFact
 
 wrapVector :: forall mon m r . (Monad mon, Fact m, Ring r, Storable r)
-  => TaggedT m mon (Matrix r) -> mon (CT' m r)
+  => TaggedT m mon (Kron r) -> mon (CT' m r)
 wrapVector v = do
   vmat <- proxyT v (Proxy::Proxy m)
   let n = proxy totientFact (Proxy::Proxy m)
-  return $ CT' $ generate n (flip (indexM vmat) 0)
+  return $ CT' $ generate n (flip (indexK vmat) 0)
 
 gCRT, gInvCRT :: (Storable r, CRTrans mon r, Fact m)
                  => mon (CT' m r)
-gCRT = wrapVector gCRTM
-gInvCRT = wrapVector gInvCRTM
+gCRT = wrapVector gCRTK
+gInvCRT = wrapVector gInvCRTK
 
 -- we can't put this in Extension with the rest of the twace/embed
 -- functions because it needs access to the C backend

@@ -1,7 +1,13 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
-             RebindableSyntax, ScopedTypeVariables, TypeFamilies,
-             TypeOperators #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 -- | CT-specific functions for embedding/twacing in various bases
 
@@ -111,10 +117,10 @@ crtSetDec' =
       h :: Int = proxy valueHatFact m'p
       hinv = recip $ fromIntegral h
   in reify d $ \(_::Proxy d) -> do
-      let twCRTs' :: Matrix (GF fp d)
+      let twCRTs' :: Kron (GF fp d)
             = fromMaybe (error "internal error: crtSetDec': twCRTs") $ proxyT twCRTs m'p
           zmsToIdx = proxy T.zmsToIndexFact m'p
-          elt j i = indexM twCRTs' j (zmsToIdx i)
+          elt j i = indexK twCRTs' j (zmsToIdx i)
           trace' = trace :: GF fp d -> fp -- to avoid recomputing powTraces
       cosets <- partitionCosets p
       return $ LP.map (\is -> generate phi

@@ -1,7 +1,15 @@
-{-# LANGUAGE BangPatterns, ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, MultiParamTypeClasses, NoImplicitPrelude,
-             PolyKinds, ScopedTypeVariables, TemplateHaskell,
-             TypeFamilies, TypeOperators #-}
+{-# LANGUAGE BangPatterns          #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 -- | RT-specific functions for embedding/twacing in various bases
 
@@ -136,10 +144,10 @@ crtSetDec' = return $
       h :: Int = proxy valueHatFact m'p
       hinv = recip $ fromIntegral h
   in reify d $ \(_::Proxy d) ->
-       let twCRTs' :: T.Matrix (GF fp d)
+       let twCRTs' :: T.Kron (GF fp d)
              = fromMaybe (error "internal error: crtSetDec': twCRTs") $ proxyT T.twCRTs m'p
            zmsToIdx = proxy T.zmsToIndexFact m'p
-           elt j i = T.indexM twCRTs' j (zmsToIdx i)
+           elt j i = T.indexK twCRTs' j (zmsToIdx i)
            trace' = trace :: GF fp d -> fp
            cosets = proxy (partitionCosets p) (Proxy::Proxy '(m,m'))
        in LP.map (\is -> Arr $ force $ fromFunction (Z :. phi)

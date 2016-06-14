@@ -310,19 +310,16 @@ keySwitchQuadCirc sk@(SK _ s) = tagT $ do
 ---------- Misc homomorphic operations ----------
 -- | Constraint synonym for adding a public scalar to a ciphertext.
 type AddScalarCtx t m' zp zq =
-  (Lift' zp, Reduce (LiftOf zp) zq, ToSDCtx t m' zp zq)
+  (Lift' zp, Reduce (LiftOf zp) zq,
+   CElt t zp, CElt t (LiftOf zp), ToSDCtx t m' zp zq)
 
 -- | Homomorphically add a public \(\mathbb{Z}_p\) value to an encrypted value.
--- The ciphertext must not carry any \(g\) factors.
-addScalar :: (AddScalarCtx t m' zp zq)
+addScalar :: forall t m m' zp zq . (AddScalarCtx t m' zp zq)
              => zp -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
 addScalar b ct =
-  let (l,c) = case toLSD ct of
-        CT LSD 0 l c -> (l,c)
-        CT LSD _ _ _ -> error "cannot add public scalar to ciphertext with 'g' factors"
-        _ -> error "internal error: addScalar"
-      b' = scalarCyc (reduce $ lift $ b * recip l)
-  in CT LSD 0 l $ c + P.const b'
+  let CT LSD k l c = toLSD ct
+      b' = iterate mulG (scalarCyc $ b * recip l) !! k :: Cyc t m' zp
+  in CT LSD k l $ c + (P.const $ reduce $ liftPow b')
 
 -- | Constraint synonym for adding a public value to an encrypted value.
 type AddPublicCtx t m m' zp zq =

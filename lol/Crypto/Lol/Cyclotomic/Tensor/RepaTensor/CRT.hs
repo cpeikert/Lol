@@ -1,6 +1,9 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, GADTs,
-             MultiParamTypeClasses, NoImplicitPrelude, ScopedTypeVariables
-             #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 -- | Functions to support the chinese remainder transform on Repa arrays
 
@@ -41,21 +44,21 @@ divGCRT' :: (Fact m, CRTrans mon r, Unbox r) => mon (Arr m r -> Arr m r)
 divGCRT' = (coerce (\x -> force . RT.zipWith (*) x) `asTypeOf` asTypeOf) <$> gInvCRT
 
 wrapVector :: forall mon m r . (Monad mon, Fact m, Ring r, Unbox r)
-              => TaggedT m mon (Matrix r) -> mon (Arr m r)
+              => TaggedT m mon (Kron r) -> mon (Arr m r)
 wrapVector v = do
   vmat <- proxyT v (Proxy::Proxy m)
   let n = proxy totientFact (Proxy::Proxy m)
   return $ coerce $ force $ RT.fromFunction (Z:.n)
-    (\(Z:.i) -> indexM vmat i 0)
+    (\(Z:.i) -> indexK vmat i 0)
 
 gCRT, gInvCRT :: (Fact m, CRTrans mon r, Unbox r) => mon (Arr m r)
 {-# INLINABLE gCRT #-}
 {-# INLINABLE gInvCRT #-}
 
 -- | The coefficient vector of @g@ in the CRT basis (when it exists).
-gCRT = wrapVector gCRTM
+gCRT = wrapVector gCRTK
 -- | The coefficient vector of @g^{ -1 }@ in the CRT basis (when it exists).
-gInvCRT = wrapVector gInvCRTM
+gInvCRT = wrapVector gInvCRTK
 
 fCRT, fCRTInv ::
   forall mon m r . (Fact m, CRTrans mon r, Unbox r, Elt r)

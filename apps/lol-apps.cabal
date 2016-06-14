@@ -80,6 +80,7 @@ test-suite test-apps
   ghc-options: -threaded -rtsopts
 
   build-depends:
+    arithmoi,
     base,
     constraints,
     deepseq,
@@ -109,6 +110,7 @@ Benchmark bench-apps
 --  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   build-depends:
+    arithmoi,
     base,
     criterion,
     deepseq,
@@ -123,7 +125,7 @@ Benchmark bench-apps
     repa
 
 executable simpleSHE
-  hs-source-dirs:   examples/SymmSHE
+  hs-source-dirs:   examples/SymmSHE, utils
   default-language: Haskell2010
   main-is:          SimpleSHE.hs
 
@@ -131,6 +133,7 @@ executable simpleSHE
 
   build-depends:
     arithmoi,
+    base,
     lol,
     lol-apps,
     MonadRandom,
