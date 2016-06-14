@@ -14,7 +14,7 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
-import Crypto.Lol.Prelude                               as LP
+import Crypto.Lol.Prelude                               as LP hiding (Matrix)
 
 import Control.Applicative
 import Data.Coerce

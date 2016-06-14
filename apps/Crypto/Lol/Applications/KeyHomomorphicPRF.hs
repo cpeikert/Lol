@@ -1,107 +1,91 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, ExplicitNamespaces, FlexibleContexts,
-             GADTs, InstanceSigs, KindSignatures, NoImplicitPrelude, PolyKinds, ScopedTypeVariables,
-             TemplateHaskell, TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE GADTs, NoImplicitPrelude #-}
 
--- An implementation of the ring-LWE key-homomorphic PRF from [BP14].
+-- Ring-LWE key-homomorphic PRF from [BP14].
 
--- TODO: Determine exactly which functions should export.
 module Crypto.Lol.Applications.KeyHomomorphicPRF
-( MMatrix -- Remove in final commit
-, uAugmentBS
-, uAugmentVector
-, uComputePRF
-, uFlipBit
-, UFullTree(..)
+( augmentBS
+, augmentVector
+, computePRF
+, flipBit
+, FullTree(..)
 ) where
+
+import Control.Applicative
 
 import Crypto.Lol.Gadget
 import Crypto.Lol.Prelude
 
-import Data.List as L
-import MathObj.Matrix as M
-
-type MMatrix a = M.T a
-
 -- | Unsafe full tree.
-data UFullTree l v where
-  ULeaf :: l -> v -> UFullTree l v
-  UInternal :: Int -> Int -> v ->
-               UFullTree l v ->
-               UFullTree l v ->
-               UFullTree l v
+data FullTree l v where
+  Leaf :: l -> v -> FullTree l v
+  Internal :: Int -> Int -> v ->
+              FullTree l v ->
+              FullTree l v ->
+              FullTree l v
 
--- | Returns the vertex type attached to the UFullTree.
-uRootValue :: UFullTree l v -> v
-uRootValue (ULeaf _ v) = v
-uRootValue (UInternal _ _ v _ _) = v
+-- | Returns the vertex type attached to the FullTree.
+rootValue :: FullTree l v -> v
+rootValue (Leaf _ v) = v
+rootValue (Internal _ _ v _ _) = v
 
--- | Augments the leaves of the UFullTree with Bool values.
-uAugmentBS :: UFullTree () () -> -- ^ Topology of T
-              [Bool] -> -- ^ Bitstring x of size |T|
-              UFullTree Bool () -- ^ Bit on each leaf of T
-uAugmentBS (ULeaf _ _) [bit] = ULeaf bit ()
-uAugmentBS (UInternal ls rs _ left right) bits =
+-- | Augments the leaves of the FullTree with Bool values.
+augmentBS :: FullTree () () -> -- ^ Topology of T
+             [Bool] -> -- ^ Bitstring x of size |T|
+             FullTree Bool () -- ^ Bit on each leaf of T
+augmentBS (Leaf _ _) [bit] = Leaf bit ()
+augmentBS (Internal ls rs _ left right) bits =
   let (leftBits, rightBits) = splitAt ls bits
-  in UInternal ls rs () (uAugmentBS left leftBits) (uAugmentBS right rightBits)
+  in Internal ls rs () (augmentBS left leftBits) (augmentBS right rightBits)
 
--- | Augments the nodes of the UFullTree with MMatrix values.
-uAugmentVector :: (Decompose gad a) =>
-                  Tagged gad (MMatrix a) -> -- ^ Base vector a0
-                  Tagged gad (MMatrix a) -> -- ^ Base vector a1
-                  UFullTree Bool () -> -- ^ Bit on each leaf of T
-                  UFullTree Bool (Tagged gad (MMatrix a)) -- ^ Matrix at each node of T
-uAugmentVector a0 a1 (ULeaf b _) =
-  ULeaf b $ if b then a1 else a0
-uAugmentVector a0 a1 (UInternal nl nr _ l r) =
-  let l' = uAugmentVector a0 a1 l
-      r' = uAugmentVector a0 a1 r
-      c = combineVectors (uRootValue l') (uRootValue r')
-  in (UInternal nl nr c l' r')
+-- | Augments the nodes of the FullTree with Matrix values.
+-- | Note: The base vectors must have the same number
+-- | of entries as the gadget with which these vectors are decomposed.
+augmentVector :: Decompose gad a =>
+                 Matrix a -> -- ^ Base vector a0
+                 Matrix a -> -- ^ Base vector a1
+                 FullTree Bool () -> -- ^ Bit on each leaf of T
+                 Tagged gad (FullTree Bool (Matrix a)) -- ^ Matrix at nodes of T
+augmentVector a0 a1 (Leaf b _) = do
+  return $ Leaf b $ if b then a1 else a0
+augmentVector a0 a1 (Internal nl nr _ l r) = do
+  l' <- augmentVector a0 a1 l
+  r' <- augmentVector a0 a1 r
+  c <- combineVectors (rootValue l') (rootValue r')
+  return $ Internal nl nr c l' r'
 
--- | Equation (2.10) in [BP14] using an unsafe full tree.
-uComputePRF :: (Ring a, Ring b, Rescale a b) =>
-               UFullTree l (Tagged gad (MMatrix a)) -> -- ^ Matrix at each node of T
-               a -> -- ^ secret s
-               MMatrix b -- ^ Output matrix
-uComputePRF t s =
-  let m = untag $ uRootValue t
-  in fmap (rescale . (*s)) m
+-- | Equation (2.10) in [BP14].
+computePRF :: (Ring a, Ring b, Rescale a b) =>
+              FullTree l (Matrix a) -> -- ^ Matrix at nodes of T
+              a -> -- ^ secret s
+              Matrix b -- ^ Final result
+computePRF t s = rescale . (*s) <$> rootValue t
 
 -- | Flip the boolean value at a chosen leaf.
 -- | Updates the affected matrices at each node.
-uFlipBit :: (Decompose gad a) =>
-            Tagged gad (MMatrix a) -> -- ^ Base vector a0
-            Tagged gad (MMatrix a) -> -- ^ Base vector a1
-            Int -> -- ^ which bit to flip (1-indexed)
-            UFullTree Bool (Tagged gad (MMatrix a)) -> -- ^ Matrix at each node of T
-            UFullTree Bool (Tagged gad (MMatrix a)) -- ^ Matrix at each node of T
-uFlipBit a0 a1 _ (ULeaf b _) =
-  ULeaf (not b) $ if b then a0 else a1
-uFlipBit a0 a1 n (UInternal nl nr _ l r)
-  | (n > nl) =
-    let r' = uFlipBit a0 a1 (n - nl) r
-    in UInternal nl nr (combineVectors (uRootValue l) (uRootValue r')) l r'
-  | otherwise =
-    let l' = uFlipBit a0 a1 n l
-    in UInternal nl nr (combineVectors (uRootValue l') (uRootValue r)) l' r
+flipBit :: Decompose gad a =>
+           Matrix a -> -- ^ Base vector a0
+           Matrix a -> -- ^ Base vector a1
+           Int -> -- ^ which bit to flip (1-indexed)
+           FullTree Bool (Matrix a) -> -- ^ Matrix at nodes of T
+           Tagged gad (FullTree Bool (Matrix a)) -- ^ Matrix at nodes of T
+flipBit a0 a1 _ (Leaf b _) = do
+  return $ Leaf (not b) $ if b then a0 else a1
+flipBit a0 a1 n (Internal nl nr _ l r)
+  | (n > nl) = do
+    r' <- flipBit a0 a1 (n - nl) r
+    c <- combineVectors (rootValue l) (rootValue r')
+    return $ Internal nl nr c l r'
+  | otherwise = do
+    l' <- flipBit a0 a1 n l
+    c <- combineVectors (rootValue l') (rootValue r)
+    return $ Internal nl nr c l' r
 
--- | Decomposes the entries of a 1xn MMatrix. Returns an nxn MMatrix.
-decomposeEntries :: (Decompose gad a) =>
-                    Tagged gad (MMatrix a) ->
-                    Tagged gad (MMatrix (DecompOf a))
-decomposeEntries tm = do
-  m <- tm
-  let n = M.numColumns m
-  [tl] <- sequence $ fmap (sequence . (fmap decompose)) $ M.rows m
-  return $ M.fromRows n n $ L.transpose $ fmap (take n) tl
-
--- | Multiply two vectors as given in the
+-- | Multiply two matrices as given in the
 -- | "otherwise" case of Equation (2.9) in [BP14].
-combineVectors :: (Decompose gad a) =>
-                  Tagged gad (MMatrix a) ->
-                  Tagged gad (MMatrix a) ->
-                  Tagged gad (MMatrix a)
-combineVectors tl tr = do
-  l <- tl
-  r <- decomposeEntries tr
+combineVectors :: Decompose gad a =>
+                  Matrix a ->
+                  Matrix a ->
+                  Tagged gad (Matrix a)
+combineVectors l tr = do
+  r <- decomposeMatrix tr
   return $ l * (fmap reduce r)

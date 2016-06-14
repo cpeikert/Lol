@@ -62,7 +62,6 @@ library
 
   exposed-modules:
     Crypto.Lol.Applications.KeyHomomorphicPRF
-    Crypto.Lol.Applications.PRFTests
     Crypto.Lol.Applications.SymmSHE
 
   build-depends:
