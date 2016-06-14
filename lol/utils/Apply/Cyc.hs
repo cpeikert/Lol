@@ -19,8 +19,6 @@ import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor
-import Crypto.Lol.Cyclotomic.Tensor.CTensor
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor
 import Crypto.Lol.Types.ZPP
 import Crypto.Random.DRBG
 
@@ -48,7 +46,7 @@ applyBasic params g = run params $ \(BC p) -> g p
 data LiftCtxD
 type LiftCtx t m r =
   (BasicCtx t m r, Lift' r, CElt t (LiftOf r), NFElt (LiftOf r), ToInteger (LiftOf r),
-   TElt CT r, TElt RT r, TElt CT (LiftOf r), TElt RT (LiftOf r))
+   TElt t r, TElt t (LiftOf r))
 data instance ArgsCtx LiftCtxD where
     LC :: (LiftCtx t m r) => Proxy '(t,m,r) -> ArgsCtx LiftCtxD
 instance (params `Satisfy` LiftCtxD, LiftCtx t m r)

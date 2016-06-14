@@ -13,8 +13,7 @@ import TestTypes
 import Crypto.Lol
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor
-import Crypto.Lol.Cyclotomic.Tensor.CTensor
+import Crypto.Lol.Types
 
 import Control.Applicative
 

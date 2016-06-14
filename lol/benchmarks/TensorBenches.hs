@@ -11,8 +11,7 @@ import Utils
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor
-import Crypto.Lol.Cyclotomic.Tensor.CTensor
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor
+import Crypto.Lol.Types
 
 tensorBenches :: IO Benchmark
 tensorBenches = benchGroup "Tensor" [

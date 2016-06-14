@@ -5,8 +5,7 @@ module CycTests (cycTests) where
 import Control.Monad (liftM2,join)
 
 import Crypto.Lol
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor
-import Crypto.Lol.Cyclotomic.Tensor.CTensor
+import Crypto.Lol.Types
 import Crypto.Lol.Types.ZPP
 
 import Utils

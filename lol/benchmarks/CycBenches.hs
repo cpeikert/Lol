@@ -12,9 +12,7 @@ import Utils
 import Control.Monad.Random
 
 import Crypto.Lol
-import Crypto.Lol.Cyclotomic.Tensor.CTensor
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor
-import Crypto.Lol.Types.Random
+import Crypto.Lol.Types
 import Crypto.Random.DRBG
 
 import Data.Singletons

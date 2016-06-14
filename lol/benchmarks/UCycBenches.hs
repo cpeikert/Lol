@@ -11,8 +11,7 @@ import Utils
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.UCyc
-import Crypto.Lol.Cyclotomic.Tensor.CTensor
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor
+import Crypto.Lol.Types
 
 ucycBenches :: IO Benchmark
 ucycBenches = benchGroup "UCyc" [
