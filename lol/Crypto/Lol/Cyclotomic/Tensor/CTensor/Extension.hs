@@ -21,7 +21,7 @@ module Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor as T
-import Crypto.Lol.Prelude           as LP hiding (lift, Matrix, null)
+import Crypto.Lol.Prelude           as LP hiding (lift, null)
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZmStar
 

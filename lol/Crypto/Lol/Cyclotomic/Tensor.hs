@@ -40,7 +40,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Prelude           as LP hiding (lift, (*>), Matrix)
+import Crypto.Lol.Prelude           as LP hiding (lift, (*>))
 import Crypto.Lol.Types.FiniteField
 
 import           Control.Applicative
