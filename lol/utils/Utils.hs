@@ -10,7 +10,7 @@ module Utils
 ,type (<*>)
 
 ,module Data.Promotion.Prelude.List
-
+,goodQs
 ,showType
 ,ShowType) where
 
@@ -20,7 +20,7 @@ import Crypto.Lol.Types.ZqBasic
 import Crypto.Random.DRBG
 
 import Data.Promotion.Prelude.List
-{-
+
 import Math.NumberTheory.Primes.Testing (isPrime)
 
 -- an infinite list of primes greater than the input and congruent to
@@ -30,7 +30,6 @@ goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
   where checkVal v = if (isPrime (fromIntegral v :: Integer))
                      then v : checkVal (v+m)
                     else checkVal (v+m)
--}
 
 infixr 9 **
 data a ** b
