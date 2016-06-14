@@ -11,9 +11,8 @@ import Control.Applicative
 import Control.Monad.Random
 import Control.Monad.State
 
-import Crypto.Lol hiding (CT)
+import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Cyclotomic.Linear
 import Crypto.Lol.Types.ZPP
 
 --extract an SK type from a tuple of params
