@@ -88,6 +88,7 @@ library
 
   exposed-modules:
     Crypto.Lol
+    Crypto.Lol.Types
     Crypto.Lol.PosBin
     Crypto.Lol.Factored
     Crypto.Lol.Reflects
