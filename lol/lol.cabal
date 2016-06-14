@@ -181,6 +181,7 @@ test-suite test-lol
   ghc-options: -threaded -rtsopts
 
   build-depends:
+    arithmoi,
     base,
     constraints,
     deepseq,
@@ -210,6 +211,7 @@ Benchmark bench-lol
   -- ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   build-depends:
+    arithmoi,
     base,
     criterion,
     deepseq,

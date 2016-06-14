@@ -28,19 +28,36 @@ import Utils
 
 data BasicCtxD
 type BasicCtx t m r =
-  (CElt t r, Fact m, IntegralDomain r, Random r, Eq r, NFElt r, ShowType '(t,m,r), Random (t m r), m `Divides` m, NFData (t m r))
+  (CElt t r, Fact m, IntegralDomain r, Random r, Eq r, NFElt r, ShowType '(t,m,r),
+   Random (t m r), m `Divides` m, NFData (t m r))
 data instance ArgsCtx BasicCtxD where
-    BC :: (BasicCtx t m r, BasicCtx t m (r,r)) => Proxy '(t,m,r) -> ArgsCtx BasicCtxD
-instance (params `Satisfy` BasicCtxD, BasicCtx t m r, BasicCtx t m (r,r))
+    BC :: (BasicCtx t m r) => Proxy '(t,m,r) -> ArgsCtx BasicCtxD
+instance (params `Satisfy` BasicCtxD, BasicCtx t m r)
   => ( '(t, '(m,r)) ': params) `Satisfy` BasicCtxD where
   run _ f = f (BC (Proxy::Proxy '(t,m,r))) : run (Proxy::Proxy params) f
 
 applyBasic :: (params `Satisfy` BasicCtxD, MonadRandom rnd) =>
   Proxy params
-  -> (forall t m r . (BasicCtx t m r, BasicCtx t m (r,r), Generatable rnd r, Generatable rnd (t m r))
+  -> (forall t m r . (BasicCtx t m r, Generatable rnd r, Generatable rnd (t m r))
        => Proxy '(t,m,r) -> rnd res)
   -> [rnd res]
 applyBasic params g = run params $ \(BC p) -> g p
+
+data UnzipCtxD
+type UnzipCtx t m r =
+  (Fact m, CElt t (r,r), Random (t m (r,r)), CElt t r, ShowType '(t,m,r), NFElt r, Random r)
+data instance ArgsCtx UnzipCtxD where
+    UzC :: (UnzipCtx t m r) => Proxy '(t,m,r) -> ArgsCtx UnzipCtxD
+instance (params `Satisfy` UnzipCtxD, UnzipCtx t m r)
+  => ( '(t, '(m,r)) ': params) `Satisfy` UnzipCtxD where
+  run _ f = f (UzC (Proxy::Proxy '(t,m,r))) : run (Proxy::Proxy params) f
+
+applyUnzip :: (params `Satisfy` UnzipCtxD, MonadRandom rnd) =>
+  Proxy params
+  -> (forall t m r . (UnzipCtx t m r, Generatable rnd (t m (r,r)))
+       => Proxy '(t,m,r) -> rnd res)
+  -> [rnd res]
+applyUnzip params g = run params $ \(UzC p) -> g p
 
 -- r is Liftable
 data LiftCtxD

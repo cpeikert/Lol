@@ -13,17 +13,7 @@ import           Crypto.Lol.Types.ZqBasic
 
 import Algebra.Ring ((^))
 
-import Math.NumberTheory.Primes.Testing (isPrime)
-
 import Control.Monad.Random (getRandom)
-
--- an infinite list of primes greater than `lower` and congruent to 1 mod m
--- useful for generating moduli for CTZq below
-goodQs :: (IntegralDomain i, ToInteger i) => i -> i -> [i]
-goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
-  where checkVal v = if (isPrime (fromIntegral v :: Integer))
-                     then v : checkVal (v+m)
-                    else checkVal (v+m)
 
 -- PTIndex must divide CTIndex
 type PTIndex = F128

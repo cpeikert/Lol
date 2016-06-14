@@ -21,8 +21,8 @@ import Data.Singletons.TypeRepStar ()
 
 cycBenches :: IO Benchmark
 cycBenches = benchGroup "Cyc" [
-  benchGroup "unzipCycPow" $ applyBasic  allParams    $ hideArgs bench_unzipCycPow,
-  benchGroup "unzipCycCRT" $ applyBasic  allParams    $ hideArgs bench_unzipCycCRT,
+  benchGroup "unzipCycPow" $ applyUnzip  allParams    $ hideArgs bench_unzipCycPow,
+  benchGroup "unzipCycCRT" $ applyUnzip  allParams    $ hideArgs bench_unzipCycCRT,
   benchGroup "*"           $ applyBasic  allParams    $ hideArgs bench_mul,
   benchGroup "crt"         $ applyBasic  allParams    $ hideArgs bench_crt,
   benchGroup "crtInv"      $ applyBasic  allParams    $ hideArgs bench_crtInv,
@@ -35,12 +35,12 @@ cycBenches = benchGroup "Cyc" [
   benchGroup "embed"       $ applyTwoIdx twoIdxParams $ hideArgs bench_embedPow
   ]
 
-bench_unzipCycPow :: (BasicCtx t m r, BasicCtx t m (r,r)) => Cyc t m (r,r) -> Bench '(t,m,r)
+bench_unzipCycPow :: (UnzipCtx t m r) => Cyc t m (r,r) -> Bench '(t,m,r)
 bench_unzipCycPow a =
   let a' = advisePow a
   in bench unzipCyc a'
 
-bench_unzipCycCRT :: (BasicCtx t m r, BasicCtx t m (r,r)) => Cyc t m (r,r) -> Bench '(t,m,r)
+bench_unzipCycCRT :: (UnzipCtx t m r) => Cyc t m (r,r) -> Bench '(t,m,r)
 bench_unzipCycCRT a =
   let a' = adviseCRT a
   in bench unzipCyc a'
