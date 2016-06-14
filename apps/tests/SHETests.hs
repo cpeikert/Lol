@@ -17,7 +17,6 @@ import Control.Monad.State
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Cyclotomic.Linear
 import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
 import qualified Crypto.Lol.Cyclotomic.Tensor.RepaTensor as RT
 

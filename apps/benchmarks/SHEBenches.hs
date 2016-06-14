@@ -16,10 +16,10 @@ import Control.Monad.Random
 import Control.Monad.State
 import Crypto.Random.DRBG
 
-import Crypto.Lol hiding (CT)
+import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
-import qualified Crypto.Lol.Cyclotomic.Tensor.CTensor as CT
-import Crypto.Lol.Types.Random
+import Crypto.Lol.Types hiding (CT)
+import qualified Crypto.Lol.Types as CT
 
 import qualified Criterion as C
 
