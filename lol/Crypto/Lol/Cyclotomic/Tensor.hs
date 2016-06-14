@@ -1,5 +1,5 @@
-{-# LANGUAGE ConstraintKinds         #-}
 {-# LANGUAGE CPP                     #-}
+{-# LANGUAGE ConstraintKinds         #-}
 {-# LANGUAGE DataKinds               #-}
 {-# LANGUAGE FlexibleContexts        #-}
 {-# LANGUAGE MultiParamTypeClasses   #-}
@@ -29,7 +29,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
 -- * Special vectors/matrices
-, Matrix, indexM, gCRTM, gInvCRTM, twCRTs
+, Kron, indexK, gCRTK, gInvCRTK, twCRTs
 -- * Tensor indexing
 , zmsToIndexFact
 , indexInfo
@@ -245,11 +245,11 @@ embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
            (snd <$> crtExtFuncs)
 
-fMatrix :: forall m r mon . (Fact m, Monad mon)
-           => (forall pp . (PPow pp) => TaggedT pp mon (MatrixC r))
-           -> TaggedT m mon (Matrix r)
-fMatrix mat = tagT $ go $ sUnF (sing :: SFactored m)
-  where go :: Sing (pplist :: [PrimePower]) -> mon (Matrix r)
+fKron :: forall m r mon . (Fact m, Monad mon)
+         => (forall pp . (PPow pp) => TaggedT pp mon (KronC r))
+         -> TaggedT m mon (Kron r)
+fKron mat = tagT $ go $ sUnF (sing :: SFactored m)
+  where go :: Sing (pplist :: [PrimePower]) -> mon (Kron r)
         go spps = case spps of
           SNil -> return MNil
           (SCons spp rest) -> do
@@ -260,10 +260,10 @@ fMatrix mat = tagT $ go $ sUnF (sing :: SFactored m)
 -- | For a prime power \(p^e\), converts any matrix \(M\) for
 -- prime \(p\) to \(\vece{1}_(p^{e-1}) \otimes M\), where \(\vece{1}\)
 -- denotes the all-1s vector.
-ppMatrix :: forall pp r mon . (PPow pp, Monad mon)
-            => (forall p . (Prime p) => TaggedT p mon (MatrixC r))
-            -> TaggedT pp mon (MatrixC r)
-ppMatrix mat = tagT $ case (sing :: SPrimePower pp) of
+ppKron :: forall pp r mon . (PPow pp, Monad mon)
+          => (forall p . (Prime p) => TaggedT p mon (KronC r))
+          -> TaggedT pp mon (KronC r)
+ppKron mat = tagT $ case (sing :: SPrimePower pp) of
   pp@(SPP (STuple2 sp _)) -> do
     (MC h w f) <- withWitnessT mat sp
     let d = withWitness valuePPow pp `div` withWitness valuePrime sp
@@ -271,37 +271,37 @@ ppMatrix mat = tagT $ case (sing :: SPrimePower pp) of
 
 -- deeply embedded DSL for Kronecker products of matrices
 
-data MatrixC r =
+data KronC r =
   MC Int Int                        -- dims
   (Int -> Int -> r)                 -- yields element i,j
 
 -- | A Kronecker product of zero of more matrices over @r@.
-data Matrix r = MNil | MKron (Matrix r) (MatrixC r) -- snoc list
+data Kron r = MNil | MKron (Kron r) (KronC r) -- snoc list
 
--- | Extract the @(i,j)@ element of a 'Matrix'.
-indexM :: Ring r => Matrix r -> Int -> Int -> r
-indexM MNil 0 0 = LP.one
-indexM (MKron m (MC r c mc)) i j =
+-- | Extract the @(i,j)@ element of a 'Kron'.
+indexK :: Ring r => Kron r -> Int -> Int -> r
+indexK MNil 0 0 = LP.one
+indexK (MKron m (MC r c mc)) i j =
   let (iq,ir) = i `divMod` r
       (jq,jr) = j `divMod` c
-      in indexM m iq jq * mc ir jr
+      in indexK m iq jq * mc ir jr
 
-gCRTM, gInvCRTM :: (Fact m, CRTrans mon r) => TaggedT m mon (Matrix r)
+gCRTK, gInvCRTK :: (Fact m, CRTrans mon r) => TaggedT m mon (Kron r)
 -- | A \(\varphi(m)\)-by-1 matrix of the CRT coefficients of \(g_m\), for
 -- \(m\)th cyclotomic.
-gCRTM = fMatrix gCRTPPow
+gCRTK = fKron gCRTPPow
 -- | A \(\varphi(m)\)-by-1 matrix of the inverse CRT coefficients of \(g_m\),
 -- for \(m\)th cyclotomic.
-gInvCRTM = fMatrix gInvCRTPPow
+gInvCRTK = fKron gInvCRTPPow
 
 -- | The "tweaked" \(\CRT^*\) matrix:
 -- \(\CRT^* \cdot \text{diag}(\sigma(g_m))\).
-twCRTs :: (Fact m, CRTrans mon r) => TaggedT m mon (Matrix r)
-twCRTs = fMatrix twCRTsPPow
+twCRTs :: (Fact m, CRTrans mon r) => TaggedT m mon (Kron r)
+twCRTs = fKron twCRTsPPow
 
 -- | The "tweaked" \(\CRT^*\) matrix (for prime powers):
 -- \(\CRT^* \cdot \text{diag}(\sigma(g_p))\).
-twCRTsPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (MatrixC r)
+twCRTsPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (KronC r)
 twCRTsPPow = do
   phi    <- pureT totientPPow
   iToZms <- pureT indexToZmsPPow
@@ -311,11 +311,11 @@ twCRTsPPow = do
 
   return $ MC phi phi (\j i -> wPow (jToPow j * negate (iToZms i)) * gCRT i 0)
 
-gCRTPPow, gInvCRTPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (MatrixC r)
-gCRTPPow = ppMatrix gCRTPrime
-gInvCRTPPow = ppMatrix gInvCRTPrime
+gCRTPPow, gInvCRTPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (KronC r)
+gCRTPPow = ppKron gCRTPrime
+gInvCRTPPow = ppKron gInvCRTPrime
 
-gCRTPrime, gInvCRTPrime :: (Prime p, CRTrans mon r) => TaggedT p mon (MatrixC r)
+gCRTPrime, gInvCRTPrime :: (Prime p, CRTrans mon r) => TaggedT p mon (KronC r)
 
 -- | A \((p-1)\)-by-1 matrix of the CRT coefficients of \(g_p\), for
 -- \(p\)th cyclotomic.
