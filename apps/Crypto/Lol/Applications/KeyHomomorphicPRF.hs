@@ -12,8 +12,7 @@ module Crypto.Lol.Applications.KeyHomomorphicPRF
 
 import Control.Applicative
 
-import Crypto.Lol.Gadget
-import Crypto.Lol.Prelude
+import Crypto.Lol
 
 -- | Unsafe full tree.
 data FullTree l v where
