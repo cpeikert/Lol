@@ -4,7 +4,7 @@
              RoleAnnotations, ScopedTypeVariables, StandaloneDeriving,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
--- | A pure, repa-based implementation of the Tensor interface.
+-- | A pure, repa-based implementation of the 'Tensor' interface.
 
 module Crypto.Lol.Cyclotomic.Tensor.RepaTensor
 ( RT ) where

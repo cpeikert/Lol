@@ -18,6 +18,7 @@
 --   \( \def\Tw{\text{Tw}} \)
 --   \( \def\Tr{\text{Tr}} \)
 --   \( \def\O{\mathcal{O}} \)
+--
 -- An implementation of cyclotomic rings that hides the
 -- internal representations of ring elements (e.g., the choice of
 -- basis), and also offers more efficient storage and operations on
@@ -25,7 +26,7 @@
 --
 -- For an implementation that allows (and requires) the programmer to
 -- control the underlying representation, see
--- 'Crypto.Lol.Cyclotomic.UCyc.UCyc'.
+-- "Crypto.Lol.Cyclotomic.UCyc".
 --
 -- __WARNING:__ as with all fixed-point arithmetic, the functions
 -- associated with 'Cyc' may result in overflow (and thereby

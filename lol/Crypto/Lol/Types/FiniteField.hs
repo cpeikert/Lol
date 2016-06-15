@@ -14,8 +14,7 @@
 
 -- CJP: need PolyKinds to allow d to have non-* kind
 
--- | \( \def\GF{\text{GF}} \)
---   \( \def\F{\mathbb{F}} \)
+-- | \( \def\F{\mathbb{F}} \)
 -- Basic (unoptimized) finite field arithmetic.
 
 module Crypto.Lol.Types.FiniteField
@@ -102,7 +101,7 @@ instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
                     (proxy value (Proxy::Proxy m) :: Int)
 
 -- | This wrapper for a list of coefficients is used to define a
--- \(\GF(p^d)\)-module structure for tensors over \(\F_p\) of dimension
+-- \(\F_{p^d}\)-module structure for tensors over \(\F_p\) of dimension
 -- \(n\), where \(d \mid n\).
 newtype TensorCoeffs a = Coeffs {unCoeffs :: [a]} deriving (Additive.C)
 
@@ -142,7 +141,7 @@ sizePP :: forall fp d . (GFCtx fp d) => Tagged (GF fp d) PP
 sizePP = tag (proxy valuePrime (Proxy::Proxy (CharOf fp)),
               proxy value (Proxy::Proxy d))
 
--- | The order of the field: @size (GF fp d) = p^d@
+-- | The order of the field: @size (GF fp d) = @\( p^d \)
 size :: (GFCtx fp d) => Tagged (GF fp d) Int
 size = uncurry (^) <$> sizePP
 
@@ -181,8 +180,8 @@ trace' e = let (p,d) = witness sizePP e
 
 -- | Represents fields over which we can get irreducible
 -- polynomials of desired degrees.  (An instance of this class is
--- defined in 'Crypto.Lol.Types.IrreducibleChar2' and exported from
--- 'Crypto.Lol'.)
+-- defined in "Crypto.Lol.Types.IrreducibleChar2" and exported from
+-- "Crypto.Lol.Types".)
 class Field fp => IrreduciblePoly fp where
   irreduciblePoly :: (Reflects d Int) => Tagged d (Polynomial fp)
 

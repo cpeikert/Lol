@@ -18,6 +18,8 @@
 {-# LANGUAGE UndecidableInstances       #-}
 
 -- | \( \def\Z{\mathbb{Z}} \)
+--   \( \def\C{\mathbb{C}} \)
+--
 -- A substitute for the Prelude that is more suitable for Lol.  This
 -- module exports most of the Numeric Prelude and other frequently
 -- used modules, plus some low-level classes, missing instances, and
@@ -144,7 +146,7 @@ rescaleMod =
     in \x -> let (quot',_) = divModCent (q'val * lift x) qval
              in fromIntegral quot'
 
--- | Deterministically round to a nearby value in the desired coset
+-- | Deterministically round to a nearby value in the desired coset.
 roundCoset :: forall zp z r .
               (Mod zp, z ~ ModRep zp, Lift zp z, RealField r) => zp -> r -> z
 {-# INLINABLE roundCoset #-}
@@ -280,19 +282,19 @@ instance (Random a, Random b) => Random (a,b) where
 fromJust' :: String -> Maybe a -> a
 fromJust' str = fromMaybe (error str)
 
--- | Apply any applicative to a Tagged value.
+-- | Apply any applicative to a 'Tagged' value.
 pureT :: Applicative f => Tagged t a -> TaggedT t f a
 pureT = mapTaggedT (pure . runIdentity)
 
--- | Expose the monad of a tagged value.
+-- | Expose the monad of a 'Tagged' value.
 peelT :: Tagged t (f a) -> TaggedT t f a
 peelT = coerce
 
--- | Hide the monad of a tagged value.
+-- | Hide the monad of a 'Tagged' value.
 pasteT :: TaggedT t f a -> Tagged t (f a)
 pasteT = coerce
 
--- | Use a singleton as a witness to extract a value from a tagged value.
+-- | Use a singleton as a witness to extract a value from a 'Tagged' value.
 withWitness :: forall n r . (SingI n => Tagged n r) -> Sing n -> r
 withWitness t wit = withSingI wit $ proxy t (Proxy::Proxy n)
 {-# INLINABLE withWitness #-}

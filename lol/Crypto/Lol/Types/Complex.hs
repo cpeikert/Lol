@@ -37,7 +37,7 @@ import System.Random
 import Test.QuickCheck
 
 -- | Newtype wrapper (with slightly different instances) for
--- <https://hackage.haskell.org/package/numeric-prelude-0.4.2/docs/Number-Complex.html numeric-prelude Complex>.
+-- @Number.Complex@.
 newtype Complex a = Complex (C.T a)
     deriving (Additive.C, Ring.C, ZeroTestable.C, Field.C, Storable, Eq, Show, Arbitrary)
 

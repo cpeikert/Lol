@@ -18,6 +18,7 @@
 --   \( \def\F{\mathbb{F}} \)
 --   \( \def\Q{\mathbb{Q}} \)
 --   \( \def\O{\mathcal{O}} \)
+--
 -- A low-level implementation of cyclotomic rings that allows (and
 -- requires) the programmer to control the underlying representation
 -- of ring elements, i.e., powerful, decoding, or CRT basis.
@@ -387,7 +388,7 @@ tGaussian = fmap Dec . tGaussianDec
 -- | Generate an LWE error term from the "tweaked" Gaussian with given
 -- scaled variance, deterministically rounded using the decoding
 -- basis. (Note: This
--- implementation uses Double precision to generate the Gaussian
+-- implementation uses 'Double' precision to generate the Gaussian
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
 errorRounded :: forall v rnd t m z .
@@ -401,7 +402,7 @@ errorRounded svar =
 -- | Generate an LWE error term from the "tweaked" Gaussian with
 -- scaled variance \(v \cdot p^2\), deterministically rounded to the given
 -- coset of \(R_p\) using the decoding basis. (Note: This
--- implementation uses Double precision to generate the Gaussian
+-- implementation uses 'Double' precision to generate the Gaussian
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
 errorCoset :: forall t m zp z v rnd .

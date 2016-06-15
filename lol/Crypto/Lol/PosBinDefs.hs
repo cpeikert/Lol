@@ -143,13 +143,13 @@ binType n
                     _ -> fail "internal error in PosBinTH.bin"
 
 posDec, binDec :: Int -> DecQ
--- | Template Haskell splice that defines the 'Pos' type synonym @Pn@.
+-- | Template Haskell splice that defines the 'Pos' type synonym @P@\(n\).
 posDec = intDec "P" posType
--- | Template Haskell splice that defines the 'Bin' type synonym @Bn@.
+-- | Template Haskell splice that defines the 'Bin' type synonym @B@\(n\).
 binDec = intDec "B" binType
 
 -- | Template Haskell splice that declares a type synonym
--- @<pfx>n@ as the type @f n@.
+-- @\<pfx\>@\(n\) as the type @f n@.
 intDec :: String               -- ^ @pfx@
        -> (Int -> TypeQ)       -- ^ @f@
        -> Int                  -- ^ @n@

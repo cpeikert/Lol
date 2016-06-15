@@ -157,7 +157,7 @@ instance (Reflects q z, ToInteger z, PID z, Enumerable (ZqBasic q z))
 
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
--- | Embeds into the complex numbers \(\C\)
+-- | Embeds into the complex numbers \( \C \).
 instance (Reflects q z, ToInteger z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
   type CRTExt (ZqBasic q z) = Complex Double
 

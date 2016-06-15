@@ -1,6 +1,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 
--- | A class and helper functions for rescaling cycltomic ring elements.
+-- | \( \def\Z{\mathbb{Z}} \)
+--
+-- A class and helper functions for rescaling cycltomic ring elements.
 
 module Crypto.Lol.Cyclotomic.RescaleCyc where
 

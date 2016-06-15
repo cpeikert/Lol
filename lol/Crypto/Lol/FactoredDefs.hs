@@ -204,10 +204,10 @@ singletons [d|
                       else pp : (go ps)
             |]
 
--- | Type (family) synonym for division of 'Factored' types
+-- | Type (family) synonym for division of 'Factored' types.
 type a / b = FDiv a b
 
--- | Type (family) synonym for multiplication of 'Factored' types
+-- | Type (family) synonym for multiplication of 'Factored' types.
 type a * b = FMul a b
 
 -- convenience aliases: enforce kind, hide SingI
@@ -271,13 +271,13 @@ coerceGCD :: p a -> p' a' -> p'' a'' -> (() :- (FGCD a a' ~ a''))
 coerceGCD _ _ _ = Sub $ unsafeCoerce (Dict :: Dict ())
 
 -- | Entails constraint for transitivity of division, i.e.
--- if @k|l@ and @l|m@, then @k|m@.
+-- if \( k \mid l \) and \( l \mid m \), then \( k \mid m \).
 transDivides :: forall k l m . Proxy k -> Proxy l -> Proxy m ->
                 ((k `Divides` l, l `Divides` m) :- (k `Divides` m))
 transDivides k _ m = Sub Dict \\ coerceFDivs k m
 
 -- | Entailment for divisibility by GCD:
--- if @g=GCD(m1,m2)@ then @g|m1@ and @g|m2@.
+-- if \( g=\gcd(m_1,m_2) \) then \( g \mid m_1 \) and \( g \mid m_2 \).
 gcdDivides :: forall m1 m2 g . Proxy m1 -> Proxy m2 ->
               ((Fact m1, Fact m2, g ~ FGCD m1 m2) :-
                (g `Divides` m1, g `Divides` m2))
@@ -287,7 +287,7 @@ gcdDivides m1 m2 =
        \\ coerceFDivs (Proxy::Proxy g) m2
 
 -- | Entailment for LCM divisibility:
--- if @l=LCM(m1,m2)@ then @m1|l@ and @m2|l@.
+-- if \( l=\lcm(m_1,m_2) \) then \( m_1 \mid l \) and \( m_2 \mid l \).
 lcmDivides :: forall m1 m2 l . Proxy m1 -> Proxy m2 ->
               ((Fact m1, Fact m2, l ~ FLCM m1 m2) :-
                (m1 `Divides` l, m2 `Divides` l))
@@ -297,7 +297,7 @@ lcmDivides m1 m2 =
        \\ coerceFDivs m2 (Proxy::Proxy l)
 
 -- | Entailment for LCM divisibility:
--- the LCM of two divisors of @m@ also divides @m@.
+-- the LCM of two divisors of \( m \) also divides \( m \).
 lcm2Divides :: forall m1 m2 l m . Proxy m1 -> Proxy m2 -> Proxy m ->
                ((m1 `Divides` m, m2 `Divides` m, l ~ FLCM m1 m2) :-
                 (m1 `Divides` l, m2 `Divides` l, (FLCM m1 m2) `Divides` m))
@@ -305,9 +305,9 @@ lcm2Divides m1 m2 m =
   Sub $ withSingI (sFLCM (sing :: SFactored m1) (sing :: SFactored m2))
   Dict \\ coerceFDivs (Proxy::Proxy (FLCM m1 m2)) m \\ lcmDivides m1 m2
 
--- | Entailment for @p@-free division:
--- if @f@ is @m@ after removing all @p@-factors, then @f|m@ and
--- @gcd(f,p)=1@.
+-- | Entailment for \( p \)-free division:
+-- if \( f \) is \(m \) after removing all \( p \)-factors, then \( f \mid m \)
+-- and \( \gcd(f,p)=1 \).
 pSplitTheorems :: forall p m f . Proxy p -> Proxy m ->
                   ((Prime p, Fact m, f ~ PFree p m) :-
                    (f `Divides` m, Coprime (PToF p) f))
@@ -316,8 +316,8 @@ pSplitTheorems _ m =
   Dict \\ coerceFDivs (Proxy::Proxy f) m
   \\ coerceGCD (Proxy::Proxy (PToF p)) (Proxy::Proxy f) (Proxy::Proxy F1)
 
--- | Entailment for @p@-free division:
--- if @m|m'@, then @p-free(m) | p-free(m')@.
+-- | Entailment for \( p \)-free division:
+-- if \( m \mid m' \), then \( \text{p-free}(m) \mid \text{p-free}(m') \).
 pFreeDivides :: forall p m m' . Proxy p -> Proxy m -> Proxy m' ->
                 ((Prime p, m `Divides` m') :-
                  ((PFree p m) `Divides` (PFree p m')))
@@ -343,14 +343,13 @@ valueFact = valuePPs <$> ppsFact
 totientFact = totientPPs <$> ppsFact
 
 -- | The "hat" of a 'Factored' type's value:
--- @\hat{m}@ is @m@ if @m@ is odd, and @m/2@ otherwise.
+-- \( \hat{m} = \begin{cases} m & \mbox{if } m \text{ is odd} \\ m/2 & \text{otherwise} \end{cases} \).
 valueHatFact = valueHat <$> valueFact
 
 -- | The radical (product of prime divisors) of a 'Factored' type.
 radicalFact = radicalPPs <$> ppsFact
 
--- | The odd radical (product of odd prime divisors) of a 'Factored'
--- type.
+-- | The odd radical (product of odd prime divisors) of a 'Factored' type.
 oddRadicalFact = oddRadicalPPs <$> ppsFact
 
 -- | Reflect a 'PrimePower' type to a 'PP' value.
@@ -371,7 +370,7 @@ totientPPow = totientPP <$> ppPPow
 valuePrime :: forall p . Prime p => Tagged p Int
 valuePrime = tag $ binToInt $ unP $ fromSing (sing :: SPrimeBin p)
 
--- | Return @m@ if @m@ is odd, and @m/2@ otherwise.
+-- | Return \( m \) if \( m \) is odd, and \( m/2 \) otherwise.
 valueHat :: Integral i => i -> i
 valueHat m = if m `mod` 2 == 0 then m `div` 2 else m
 
@@ -410,7 +409,7 @@ oddRadicalPPs = product . map oddRadicalPP
 -- given positive prime integer.  (Uses 'prime' to enforce primality
 -- of the base, so should only be used on small-to-moderate-sized
 -- arguments.)  This is the preferred (and only) way of constructing a
--- concrete 'PrimeBin' type (and is used to define the @Primep@ type
+-- concrete 'PrimeBin' type (and is used to define the @Prime@\(p\) type
 -- synonyms).
 pType :: Int -> TypeQ
 pType p
@@ -436,17 +435,17 @@ fType n = conT 'F `appT` (foldr (\pp -> appT (promotedConsT `appT` ppType pp))
                                 promotedNilT $ factorize n)
 
 -- | Template Haskell splice that defines the 'PrimeBin' type synonym
--- @Primep@ for a positive prime integer @p@.
+-- @Prime@\(p\) for a positive prime integer \( p \).
 pDec :: Int -> DecQ
 pDec p = tySynD (mkName $ "Prime" ++ show p) [] $ pType p
 
 -- | Template Haskell splice that defines the 'PrimePower' type synonym
--- @PPn@, where @n=p^e@.
+-- @PP@\(n\), where \( n=p^e \).
 ppDec :: PP -> DecQ
 ppDec pp@(p,e) = tySynD (mkName $ "PP" ++ show (p^e)) [] $ ppType pp
 
 -- | Template Haskell splice that defines the 'Factored' type synonym
--- @Fn@ for a positive integer @n@.
+-- @F@\(n\) for a positive integer \(n\).
 fDec :: Int -> DecQ
 fDec n = tySynD (mkName $ 'F' : show n) [] $ fType n
 

@@ -51,21 +51,21 @@ import           MathObj.Polynomial
 
 import Data.Int (Int64)
 
--- | The Prelude definition of 'max'.
+-- | The Prelude definition of 'Prelude.max'.
 max :: Ord a => a -> a -> a
 max = Prelude.max
 
--- | The Prelude definition of 'min'.
+-- | The Prelude definition of 'Prelude.min'.
 min :: Ord a => a -> a -> a
 min = Prelude.min
 
--- | The sane definition of 'abs' from
+-- | The sane definition of 'NumericPrelude.Numeric.abs' from
 -- 'NumericPrelude.Numeric'
 -- rather than the default from 'NumericPrelude'.
 abs :: Absolute a => a -> a
 abs = NumericPrelude.Numeric.abs
 
--- | The hidden NP function from 'Algebra.ToRational'.
+-- | The hidden NP function from "Algebra.ToRational".
 realToField :: (Field b, ToRational a) => a -> b
 realToField = Algebra.ToRational.realToField
 
@@ -119,7 +119,7 @@ type Transcendental a = (Algebra.Transcendental.C a)
 type RealTranscendental a = (Algebra.RealTranscendental.C a)
 
 {- Transcendental, plus: == <= >= < > -}
--- | Convenient synonym for @(Ord a, Transcendental a)@
+-- | Convenient synonym for @('Ord' a, 'Transcendental' a)@
 type OrdFloat a = (Ord a, Transcendental a)
 
 {- ToRational and Ring, plus: toInteger div mod divmod quot rem quotrem -}
@@ -190,12 +190,12 @@ decomp [] v = [v]
 decomp (b:bs) v = let (q,r) = v `divModCent` b
                   in r : decomp bs q
 
--- | Deterministically round to the nearest multiple of @i@.
+-- | Deterministically round to the nearest multiple of \( i \).
 roundMult :: (RealField r, ToInteger i) => i -> r -> i
 roundMult 1 r  = round r
 roundMult i r = let r' = r / fromIntegral i in i * round r'
 
--- | Randomly round to the nearest larger or smaller multiple of @i@,
+-- | Randomly round to the nearest larger or smaller multiple of \( i \),
 -- where the round-off term has expectation zero.
 roundScalarCentered :: (RealField r, Random r, ToInteger i,
                         MonadRandom mon)

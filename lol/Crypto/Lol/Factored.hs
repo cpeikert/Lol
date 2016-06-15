@@ -1,6 +1,8 @@
 {-# LANGUAGE DataKinds, TemplateHaskell, TupleSections #-}
 
--- | This module defines types and operations for type-level
+-- | \( \def\lcm{\text{lcm}} \)
+--
+-- This module defines types and operations for type-level
 -- representation and manipulation of natural numbers, as represented
 -- by their prime-power factorizations.  It relies on Template
 -- Haskell, so parts of the documentation may be difficult to read.

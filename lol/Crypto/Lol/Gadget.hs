@@ -50,7 +50,7 @@ class (Gadget gad u, Reduce (DecompOf u) u) => Decompose gad u where
   -- | The ring that @u@ decomposes over.
   type DecompOf u
 
-  -- | Yield a short vector \( x \) such that \( \<g, x\> = u \).
+  -- | Yield a short vector \( x \) such that \( \langle g, x\rangle = u \).
   decompose :: u -> Tagged gad [DecompOf u]
 
 -- | Alternative to 'decompose'.

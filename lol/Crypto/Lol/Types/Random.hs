@@ -3,7 +3,7 @@
 -- | Defines a newtype wrapper 'CryptoRand' for crypto-api's
 -- 'CryptoRandomGen', and a corresponding 'RandomGen' wrapper
 -- instance.  These are needed because 'CryptoRandomGen' generators
--- can only be used to get 'ByteString's; the 'RandomGen' wrapper
+-- can only be used to get "Data.ByteString"s; the 'RandomGen' wrapper
 -- instance allows them to be used to generate any 'Random' type.
 
 module Crypto.Lol.Types.Random (CryptoRand, evalCryptoRandIO) where

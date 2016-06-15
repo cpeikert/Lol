@@ -89,7 +89,6 @@ library
   exposed-modules:
     Crypto.Lol
     Crypto.Lol.Types
-    Crypto.Lol.PosBin
     Crypto.Lol.Factored
     Crypto.Lol.Reflects
     Crypto.Lol.CRTrans
@@ -126,6 +125,7 @@ library
 
   other-modules:
 
+    Crypto.Lol.PosBin
     Crypto.Lol.FactoredDefs
     Crypto.Lol.PosBinDefs
     Crypto.Lol.GaussRandom

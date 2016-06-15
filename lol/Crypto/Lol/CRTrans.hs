@@ -7,6 +7,7 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 -- | \( \def\C{\mathbb{C}} \)
+--
 -- Classes and helper methods for the Chinese remainder transform
 -- and ring extensions.
 
@@ -46,14 +47,14 @@ class (Monad mon, Ring r) => CRTrans mon r where
   -- internal memoization.
   crtInfo :: Reflects m Int => TaggedT m mon (CRTInfo r)
 
--- | A ring with a ring embedding into some ring 'CRTExt' @r@ that has
+-- | A ring with a ring embedding into some ring @'CRTExt' r@ that has
 -- an invertible CRT transformation for /every/ positive index \(m\).
 class (Ring r, Ring (CRTExt r)) => CRTEmbed r where
   type CRTExt r
 
-  -- | Embeds from @r@ to 'CRTExt' @r@
+  -- | Embeds from @r@ to @'CRTExt' r@
   toExt :: r -> CRTExt r
-  -- | Projects from 'CRTExt' @r@ to @r@
+  -- | Projects from @'CRTExt' r@ to @r@
   fromExt :: CRTExt r -> r
 
 -- | Product ring

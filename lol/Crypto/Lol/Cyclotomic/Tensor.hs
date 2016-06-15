@@ -20,6 +20,7 @@
 --   \( \def\Tr{\text{Tr}} \)
 --   \( \def\CRT{\text{CRT}} \)
 --   \( \def\O{\mathcal{O}} \)
+--
 -- Interface for cyclotomic tensors, and helper functions for tensor
 -- indexing.
 
@@ -135,8 +136,8 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor t where
                   => v -> rnd (t m q)
 
   -- | Given the coefficient tensor of \(e\) with respect to the
-  -- decoding basis of \(R\), yield the (scaled) squared norm of \(g_m
-  -- \cdot e\) under the canonical embedding, namely,
+  -- decoding basis of \(R\), yield the (scaled) squared norm of
+  -- \(g_m \cdot e\) under the canonical embedding, namely,
   -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\).
   gSqNormDec :: (Ring r, Fact m, TElt t r) => t m r -> r
 
@@ -166,8 +167,7 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor t where
   -- | The powerful extension basis w.r.t. the powerful basis.
   powBasisPow :: (Ring r, TElt t r, m `Divides` m') => Tagged m [t m' r]
 
-  -- | A list of tensors representing the mod-@p@ CRT set of the
-  -- extension.
+  -- | A list of tensors representing the mod-@p@ CRT set of the extension.
   crtSetDec :: (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m',
                 TElt t fp)
                => Tagged m [t m' fp]
@@ -406,8 +406,8 @@ fromIndexPair ((phi,phi'):rest) (i1,i0) =
 -- extensions. The first component is a list of triples \((p,e,e')\)
 -- where \(e\), \(e'\) are respectively the exponents of prime \(p\) in \(m\),
 -- \(m'\). The next two components are \(\varphi(m)\) and \(\varphi(m')\). The
--- final component is a pair \( (\varphi(p^e), \varphi(p^e'))\) for each triple
--- in the first component.
+-- final component is a pair \( ( \varphi(p^e), \varphi(p^{e'}))\) for each
+-- triple in the first component.
 indexInfo :: forall m m' . (m `Divides` m')
              => Tagged '(m, m') ([(Int,Int,Int)], Int, Int, [(Int,Int)])
 indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
