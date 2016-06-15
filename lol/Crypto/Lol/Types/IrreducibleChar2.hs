@@ -28,8 +28,7 @@ polyMap :: (Ring fp) => Map Int (Polynomial fp)
 polyMap = fromList $ map (\xs -> (head xs, coeffsToPoly xs)) coeffs
 
 coeffsToPoly :: (Ring fp) => [Int] -> Polynomial fp
-coeffsToPoly [a,b] = X^^a + X^^b + 1
-coeffsToPoly [a,b,c,d] = X^^a + X^^b + X^^c + X^^d + 1
+coeffsToPoly xs = (sum $ map (X^^) xs) + 1
 
 -- The list below is small portion of the table
 -- "Table of Low-Weight binary Irreducible Polynomials" at
