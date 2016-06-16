@@ -124,6 +124,20 @@ Benchmark bench-apps
     vector,
     repa
 
+executable simplePRF
+  hs-source-dirs: examples/KeyHomomorphicPRF
+  default-language: Haskell2010
+  main-is: SimplePRF.hs
+
+  ghc-options: -threaded -rtsopts
+
+  build-depends:
+    arithmoi,
+    base,
+    lol,
+    lol-apps,
+    numeric-prelude
+
 executable simpleSHE
   hs-source-dirs:   examples/SymmSHE, utils
   default-language: Haskell2010
