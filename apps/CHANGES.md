@@ -1,6 +1,10 @@
 Changelog for lol project
 ================================
 
+0.2.0.0
+----
+ * Updated documentation with MathJax
+
 0.1.0.0
 -----
  * Updated for lol-0.3.*
