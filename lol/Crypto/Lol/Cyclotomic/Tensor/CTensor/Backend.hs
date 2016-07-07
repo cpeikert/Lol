@@ -118,7 +118,7 @@ type family CTypeOf x where
   CTypeOf (Complex Double) = ComplexD
   CTypeOf (RRq (q :: k) Double) = RRqD
 #if __GLASGOW_HASKELL__ >= 800
-  -- EAC: this doesn't display like I had hoped when there is a tuple involved...
+  -- EAC: See #12237 and #11990
   CTypeOf (ZqBasic (q :: k) i) = TypeError (Text "Unsupported C type: " :<>: ShowType (ZqBasic q i) :$$: Text "Use Int64 as the base ring")
   CTypeOf (Complex i) = TypeError (Text "Unsupported C type: " :<>: ShowType (Complex i) :$$: Text "Use Double as the base ring")
   CTypeOf (RRq (q :: k) i) = TypeError (Text "Unsupported C type: " :<>: ShowType (RRq q i) :$$: Text "Use Double as the base ring")
