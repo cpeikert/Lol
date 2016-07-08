@@ -7,11 +7,12 @@ module Main where
 import Data.Time.Clock.POSIX
 import Options
 
+import System.Console.ANSI
 import System.IO
 import System.IO.Unsafe
 
 import Beacon
-import Common   (InstanceID)
+import Common   (InstanceID, printANSI)
 import Generate
 import Params
 import Suppress
@@ -41,7 +42,7 @@ instance Options GenOpts where
     simpleOption "init-beacon"
     -- CJP: sneaky! not referentially transparent, but handy as a default
     (unsafePerformIO $ daysFromNow 3)
-    "Initial beacon epoch for suppress phase (default is 3 days from now)"
+    "Initial beacon epoch for suppress phase (default is 3 days from now)."
 
 -- | Epoch that's @n@ days from now, rounded to a multiple of 60 for
 -- NIST beacon purposes.
@@ -67,7 +68,14 @@ main = do
 
 generate :: MainOpts -> GenOpts -> [String] -> IO ()
 generate MainOpts{..} GenOpts{..} _ = do
-  let initBeacon = BA (beaconFloor optInitBeaconEpoch) 0
+  let initBeaconTime = beaconFloor optInitBeaconEpoch
+      initBeacon = BA initBeaconTime 0
+  currTime <- round <$> getPOSIXTime
+  case initBeaconTime > currTime of
+    True -> putStrLn $ "Challenges can be revealed starting at " ++
+            show initBeaconTime ++ ", " ++ show (initBeaconTime-currTime) ++
+            " seconds from now."
+    False -> printANSI Orange "WARNING: Reveal time is in the past!"
   paramContents <- readFile optParamsFile
   let params = parseChallParams paramContents optNumInstances
   generateMain optChallDir initBeacon params

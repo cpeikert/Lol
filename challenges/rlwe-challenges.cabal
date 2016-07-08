@@ -69,6 +69,7 @@ executable rlwe-challenges
                  directory,
                  DRBG,
                  filepath,
+                 http-client,
                  http-conduit,
                  lol >= 0.3.0.0,
                  MonadRandom,
