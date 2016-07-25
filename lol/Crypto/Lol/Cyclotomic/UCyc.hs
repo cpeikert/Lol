@@ -357,7 +357,7 @@ unzipCRTE (CRTE _ v)
 
 -- | Multiply by the special element \(g_m\).
 mulG :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
-{-# INLINABLE mulG #-}
+{-# INLINE mulG #-}
 mulG (Pow v) = Pow $ mulGPow v
 mulG (Dec v) = Dec $ mulGDec v
 mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
