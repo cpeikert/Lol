@@ -283,8 +283,7 @@ instance Tensor CT where
 
   crtSetDec = (CT <$>) <$> coerceBasis crtSetDec'
 
-  fmapT f (CT v) = CT $ coerce (SV.map f) v
-  fmapT f v@(ZV _) = fmapT f $ toCT v
+  fmapT f = wrap $ coerce (SV.map f)
 
   zipWithT f v1' v2' =
     let (CT (CT' v1)) = toCT v1'
