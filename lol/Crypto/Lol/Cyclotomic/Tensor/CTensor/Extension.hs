@@ -46,7 +46,7 @@ backpermute' :: (Vector v a)
              => U.Vector Int -- ^ @is@ index vector (of length @n@)
              -> v a   -- ^ @xs@ value vector
              -> v a
---{-# INLINE backpermute' #-}
+{-# INLINABLE backpermute' #-}
 backpermute' is v = generate (G.length is) (\i -> v ! (is ! i))
 
 embedPow', embedDec' :: (Additive r, Vector v r, m `Divides` m')
@@ -86,6 +86,7 @@ coeffs' = flip (\x -> V.toList . V.map (`backpermute'` x))
 -- @m | m'@.
 twacePowDec' :: forall m m' r v . (Vector v r, m `Divides` m')
              => Tagged '(m, m') (v r -> v r)
+{-# INLINABLE twacePowDec' #-}
 twacePowDec' = backpermute' <$> extIndicesPowDec
 
 

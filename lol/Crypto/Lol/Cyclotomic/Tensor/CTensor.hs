@@ -158,6 +158,7 @@ zvToCT' :: forall m r . (Storable r) => IZipVector m r -> CT' m r
 zvToCT' v = coerce (convert $ unIZipVector v :: Vector r)
 
 wrap :: (Storable s, Storable r) => (CT' l s -> CT' m r) -> (CT l s -> CT m r)
+{-# INLINABLE wrap #-}
 wrap f (CT v) = CT $ f v
 wrap f (ZV v) = CT $ f $ zvToCT' v
 

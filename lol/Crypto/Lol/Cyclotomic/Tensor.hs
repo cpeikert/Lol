@@ -413,6 +413,7 @@ indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
 -- the index into the powerful\/decoding basis of \(\O_{m'}\) of the
 -- \(i\)th entry of the powerful/decoding basis of \(\O_m\).
 extIndicesPowDec :: (m `Divides` m') => Tagged '(m, m') (U.Vector Int)
+{-# INLINABLE extIndicesPowDec #-}
 extIndicesPowDec = do
   (_, phi, _, tots) <- indexInfo
   return $ U.generate phi (fromIndexPair tots . (0,))
