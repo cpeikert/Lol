@@ -334,6 +334,7 @@ unzipCRTC :: (Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
              => UCyc t m C (a,b)
              -> (Either (UCyc t m P a) (UCyc t m C a),
                  Either (UCyc t m P b) (UCyc t m C b))
+{-# INLINABLE unzipCRTC #-}
 unzipCRTC (CRTC s v)
   = let (ac,bc) = unzipT v
         (ap,bp) = Pow *** Pow $ unzipT $ crtInvCS s v
@@ -347,6 +348,7 @@ unzipCRTE :: (Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
              => UCyc t m E (a,b)
              -> (Either (UCyc t m P a) (UCyc t m E a),
                  Either (UCyc t m P b) (UCyc t m E b))
+{-# INLINABLE unzipCRTE #-}
 unzipCRTE (CRTE _ v)
   = let (ae,be) = unzipT v
         (a',b') = unzipT $ fmapT fromExt $ runIdentity crtInv v

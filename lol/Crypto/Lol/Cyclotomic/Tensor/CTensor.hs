@@ -21,8 +21,7 @@
 
 -- | Wrapper for a C++ implementation of the 'Tensor' interface.
 
-module Crypto.Lol.Cyclotomic.Tensor.CTensor
-( CT ) where
+module Crypto.Lol.Cyclotomic.Tensor.CTensor (CT) where
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Module       as Module (C)
@@ -158,12 +157,12 @@ toZV v@(ZV _) = v
 zvToCT' :: forall m r . (Storable r) => IZipVector m r -> CT' m r
 zvToCT' v = coerce (convert $ unIZipVector v :: Vector r)
 
-wrap :: (Storable r) => (CT' l r -> CT' m r) -> (CT l r -> CT m r)
+wrap :: (Storable s, Storable r) => (CT' l s -> CT' m r) -> (CT l s -> CT m r)
 wrap f (CT v) = CT $ f v
 wrap f (ZV v) = CT $ f $ zvToCT' v
 
-wrapM :: (Storable r, Monad mon) => (CT' l r -> mon (CT' m r))
-         -> (CT l r -> mon (CT m r))
+wrapM :: (Storable s, Storable r, Monad mon) => (CT' l s -> mon (CT' m r))
+         -> (CT l s -> mon (CT m r))
 wrapM f (CT v) = CT <$> f v
 wrapM f (ZV v) = CT <$> f (zvToCT' v)
 
@@ -287,11 +286,14 @@ instance Tensor CT where
   fmapT f (CT v) = CT $ coerce (SV.map f) v
   fmapT f v@(ZV _) = fmapT f $ toCT v
 
-  zipWithT f (CT (CT' v1)) (CT (CT' v2)) = CT $ CT' $ SV.zipWith f v1 v2
-  zipWithT f v1 v2 = zipWithT f (toCT v1) (toCT v2)
+  zipWithT f v1' v2' =
+    let (CT (CT' v1)) = toCT v1'
+        (CT (CT' v2)) = toCT v2'
+    in CT $ CT' $ SV.zipWith f v1 v2
 
-  unzipT (CT (CT' v)) = (CT . CT') *** (CT . CT') $ unzip v
-  unzipT v = unzipT $ toCT v
+  unzipT v =
+    let (CT (CT' x)) = toCT v
+    in (CT . CT') *** (CT . CT') $ unzip x
 
   {-# INLINABLE entailIndexT #-}
   {-# INLINABLE entailEqT #-}
@@ -317,9 +319,8 @@ instance Tensor CT where
   {-# INLINABLE powBasisPow #-}
   {-# INLINABLE crtSetDec #-}
   {-# INLINABLE fmapT #-}
-  {-# INLINABLE zipWithT #-}
-  {-# INLINABLE unzipT #-}
-
+  {-# INLINE zipWithT #-}
+  {-# INLINE unzipT #-}
 
 coerceTw :: (Functor mon) => TaggedT '(m, m') mon (Vector r -> Vector r) -> mon (CT' m' r -> CT' m r)
 coerceTw = (coerce <$>) . untagT
