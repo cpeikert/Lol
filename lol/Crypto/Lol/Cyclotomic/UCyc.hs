@@ -33,7 +33,7 @@
 module Crypto.Lol.Cyclotomic.UCyc
 (
 -- * Data types and constraints
-  UCyc, P, D, C, E, UCycEC, UCRTElt, NFElt
+  UCyc, P, D, C, E, UCycEC, UCycPC, UCRTElt, NFElt
 -- * Changing representation
 , toPow, toDec, toCRT, fmapPow, fmapDec
 , unzipPow, unzipDec, unzipCRTC, unzipCRTE
@@ -92,6 +92,9 @@ data E
 
 -- | Convenient synonym for either CRT representation.
 type UCycEC t m r = Either (UCyc t m E r) (UCyc t m C r)
+
+-- | Convenient synonym for random sampling.
+type UCycPC t m r = Either (UCyc t m P r) (UCyc t m C r)
 
 -- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
 -- \(\Z_q[\zeta_m]\), and \(\Q(\zeta_m)\) in an explicit
@@ -469,7 +472,7 @@ twaceDec (Dec v) = Dec $ twacePowDec v
 -- | Twace into a subring, for the CRT basis.  (The output is an
 -- 'Either' because the subring might not support 'C'.)
 twaceCRTC :: (m `Divides` m', UCRTElt t r)
-             => UCyc t m' C r -> Either (UCyc t m P r) (UCyc t m C r)
+             => UCyc t m' C r -> UCycPC t m r
 {-# INLINABLE twaceCRTC #-}
 twaceCRTC x@(CRTC s' v) =
   case crtSentinel of
@@ -653,7 +656,7 @@ instance (Random r, UCRTElt t r, Fact m) => Random (UCyc t m D r) where
   randomR _ = error "randomR non-sensical for UCyc"
 
 instance (Random r, UCRTElt t r, Fact m)
-         => Random (Either (UCyc t m P r) (UCyc t m C r)) where
+         => Random (UCycPC t m r) where
 
   -- create in CRTC basis if possible, otherwise in powerful
   random = let cons = case crtSentinel of

@@ -1,48 +1,108 @@
-{-# LANGUAGE DataKinds, FlexibleContexts,
-             NoImplicitPrelude, RebindableSyntax,
-             ScopedTypeVariables, TypeFamilies,
-             TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE FlexibleContexts     #-}
+{-# LANGUAGE NoImplicitPrelude    #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeFamilies         #-}
 
 module UCycBenches (ucycBenches) where
 
 import Apply.Cyc
 import Benchmarks
-import Utils
+import BenchParams
 
-import Crypto.Lol
+import Control.Monad.Random
+
+import Crypto.Lol.Prelude
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Types
+import Crypto.Random.DRBG
 
 ucycBenches :: IO Benchmark
 ucycBenches = benchGroup "UCyc" [
-  benchGroup "l"     $ applyBasic (Proxy::Proxy QuickParams) $ hideArgs bench_l,
-  benchGroup "twace" $ applyTwoIdx twoIdxParams $ hideArgs bench_twacePow,
-  benchGroup "embed" $ applyTwoIdx twoIdxParams $ hideArgs bench_embedPow
+  benchGroup "unzipPow"    $ [hideArgs bench_unzipUCycPow testParam], -- applyUnzip  allParams    $ hideArgs bench_unzipUCycPow,
+  benchGroup "unzipDec"    $ [hideArgs bench_unzipUCycDec testParam],
+  benchGroup "unzipCRT"    $ [hideArgs bench_unzipUCycCRT testParam], -- applyUnzip  allParams    $ hideArgs bench_unzipUCycCRT,
+  benchGroup "zipWith (*)" $ [hideArgs bench_mul testParam], -- applyBasic  allParams    $ hideArgs bench_mul,
+  benchGroup "crt"         $ [hideArgs bench_crt testParam], -- applyBasic  allParams    $ hideArgs bench_crt,
+  benchGroup "crtInv"      $ [hideArgs bench_crtInv testParam], -- applyBasic  allParams    $ hideArgs bench_crtInv,
+  benchGroup "l"           $ [hideArgs bench_l testParam], -- applyBasic  allParams    $ hideArgs bench_l,
+  benchGroup "lInv"        $ [hideArgs bench_lInv testParam],
+  benchGroup "*g Pow"      $ [hideArgs bench_mulgPow testParam], -- applyBasic  allParams    $ hideArgs bench_mulgPow,
+  benchGroup "*g CRT"      $ [hideArgs bench_mulgCRT testParam], -- applyBasic  allParams    $ hideArgs bench_mulgCRT,
+  benchGroup "lift"        $ [hideArgs bench_liftPow testParam], -- applyLift   liftParams   $ hideArgs bench_liftPow,
+  benchGroup "error"       $ [hideArgs (bench_errRounded 0.1) testParam'], -- applyError  errorParams  $ hideArgs $ bench_errRounded 0.1
+  benchGroup "twacePow"    $ [hideArgs bench_twacePow twoIdxParam], -- applyTwoIdx twoIdxParams $ hideArgs bench_twacePow,
+  benchGroup "twaceCRT"    $ [hideArgs bench_twaceCRT twoIdxParam],
+  benchGroup "embedPow"    $ [hideArgs bench_embedPow twoIdxParam], -- applyTwoIdx twoIdxParams $ hideArgs bench_embedPow
+  benchGroup "embedDec"    $ [hideArgs bench_embedDec twoIdxParam]
   ]
+
+bench_unzipUCycPow :: (UnzipCtx t m r) => UCyc t m P (r,r) -> Bench '(t,m,r)
+bench_unzipUCycPow = bench unzipPow
+
+bench_unzipUCycDec :: (UnzipCtx t m r) => UCyc t m D (r,r) -> Bench '(t,m,r)
+bench_unzipUCycDec = bench unzipDec
+
+bench_unzipUCycCRT :: (UnzipCtx t m r) => UCycPC t m (r,r) -> Bench '(t,m,r)
+bench_unzipUCycCRT (Right a) = bench unzipCRTC a
+
+pcToEC :: UCycPC t m r -> UCycEC t m r
+pcToEC (Right x) = (Right x)
+
+-- no CRT conversion, just coefficient-wise multiplication
+bench_mul :: (BasicCtx t m r) => UCycPC t m r -> UCycPC t m r -> Bench '(t,m,r)
+bench_mul a b =
+  let a' = pcToEC a
+      b' = pcToEC b
+  in bench (a' *) b'
+
+-- convert input from Pow basis to CRT basis
+bench_crt :: (BasicCtx t m r) => UCyc t m P r -> Bench '(t,m,r)
+bench_crt = bench toCRT
+
+-- convert input from CRT basis to Pow basis
+bench_crtInv :: (BasicCtx t m r) => UCycPC t m r -> Bench '(t,m,r)
+bench_crtInv (Right a) = bench toPow a
 
 -- convert input from Dec basis to Pow basis
 bench_l :: (BasicCtx t m r) => UCyc t m D r -> Bench '(t,m,r)
 bench_l = bench toPow
 
+-- convert input from Pow basis to Dec basis
+bench_lInv :: (BasicCtx t m r) => UCyc t m P r -> Bench '(t,m,r)
+bench_lInv = bench toDec
+
+-- lift an element in the Pow basis
+bench_liftPow :: (LiftCtx t m r) => UCyc t m P r -> Bench '(t,m,r)
+bench_liftPow = bench lift
+
+-- multiply by g when input is in Pow basis
+bench_mulgPow :: (BasicCtx t m r) => UCyc t m P r -> Bench '(t,m,r)
+bench_mulgPow = bench mulG
+
+-- multiply by g when input is in CRT basis
+bench_mulgCRT :: (BasicCtx t m r) => UCycPC t m r -> Bench '(t,m,r)
+bench_mulgCRT (Right a) = bench mulG a
+
+-- generate a rounded error term
+bench_errRounded :: forall t m r gen . (ErrorCtx t m r gen)
+  => Double -> Bench '(t,m,r,gen)
+bench_errRounded v = benchIO $ do
+  gen <- newGenIO
+  return $ evalRand (errorRounded v :: Rand (CryptoRand gen) (UCyc t m D (LiftOf r))) gen
+
 bench_twacePow :: forall t m m' r . (TwoIdxCtx t m m' r)
   => UCyc t m' P r -> Bench '(t,m,m',r)
 bench_twacePow = bench (twacePow :: UCyc t m' P r -> UCyc t m P r)
+
+bench_twaceCRT :: forall t m m' r . (TwoIdxCtx t m m' r)
+  => UCycPC t m' r -> Bench '(t,m,m',r)
+bench_twaceCRT (Right a) = bench (twaceCRTC :: UCyc t m' C r -> UCycPC t m r) a
 
 bench_embedPow :: forall t m m' r . (TwoIdxCtx t m m' r)
   => UCyc t m P r -> Bench '(t,m,m',r)
 bench_embedPow = bench (embedPow :: UCyc t m P r -> UCyc t m' P r)
 
-type QuickTest = '[ '(F128, Zq 257),
-                    '(F32 * F9, Zq 577),
-                    '(F32 * F9, Int64) ]
-type Tensors = '[CT,RT]
-type QuickParams = ( '(,) <$> Tensors) <*> QuickTest
-
-type MM'RCombos =
-  '[ '(F8 * F91, F8 * F91 * F4, Zq 8737),
-     '(F8 * F91, F8 * F91 * F5, Zq 14561),
-     '(F128, F128 * F91, Zq 23297)
-    ]
-type TwoIdxParams = ( '(,) <$> Tensors) <*> MM'RCombos
-twoIdxParams :: Proxy TwoIdxParams
-twoIdxParams = Proxy
+bench_embedDec :: forall t m m' r . (TwoIdxCtx t m m' r)
+  => UCyc t m D r -> Bench '(t,m,m',r)
+bench_embedDec = bench (embedDec :: UCyc t m D r -> UCyc t m' D r)

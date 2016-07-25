@@ -205,14 +205,16 @@ Benchmark bench-lol
 
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
-  -- ghc-options: -threaded -rtsopts
-  ghc-options: -O3 -Odph -funbox-strict-fields -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
-  -- ghc-options: -O2 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
-  -- ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+  ghc-options: -O2 -Odph -funbox-strict-fields
+  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+  ghc-options: -ddump-to-file -ddump-simpl
+  ghc-options: -dsuppress-coercions -dsuppress-type-applications -dsuppress-uniques -dsuppress-module-prefixes
 
   build-depends:
+    ansi-terminal,
     arithmoi,
     base,
+    containers,
     criterion,
     deepseq,
     DRBG,
@@ -220,6 +222,7 @@ Benchmark bench-lol
     MonadRandom,
     mtl,
     singletons,
+    statistics,
     transformers,
     vector,
     repa
