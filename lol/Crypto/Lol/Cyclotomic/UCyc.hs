@@ -55,8 +55,6 @@ import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CRTSentinel
 import qualified Crypto.Lol.Cyclotomic.Tensor      as T
-import           Crypto.Lol.Cyclotomic.Tensor.CTensor (CT)
-import           Crypto.Lol.Cyclotomic.Tensor.RepaTensor (RT)
 import           Crypto.Lol.Prelude                as LP
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZPP
@@ -539,9 +537,6 @@ crtSet =
 
 
 --------- Conversion methods ------------------
--- Used to be a problem in #12068. Now we can write the rules, but do they fire?
-{-# SPECIALIZE toPow :: (Fact m, UCRTElt CT r) => UCyc CT m rep r -> UCyc CT m P r #-}
-{-# SPECIALIZE toPow :: (Fact m, UCRTElt RT r) => UCyc RT m rep r -> UCyc RT m P r #-}
 -- | Convert to powerful-basis representation.
 toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
 {-# INLINABLE toPow #-}

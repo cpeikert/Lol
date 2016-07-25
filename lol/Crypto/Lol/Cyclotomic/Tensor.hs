@@ -202,7 +202,7 @@ mulGCRT, divGCRT, crt, crtInv ::
 {-# INLINABLE mulGCRT #-}
 {-# INLINABLE divGCRT #-}
 {-# INLINABLE crt #-}
-{-# INLINABLE crtInv #-}
+{-# INLINE crtInv #-}
 
 -- | Multiply by \(g_m\) in the CRT basis. (This function is simply an
 -- appropriate entry from 'crtFuncs'.)
