@@ -183,12 +183,6 @@ instance Tensor RT where
   fmapT f (RT v) = RT $ (coerce $ force . RT.map f) v
   fmapT f v@(ZV _) = fmapT f $ toRT v
 
-  -- Repa arrays don't have mapM, so apply to underlying Unboxed
-  -- vector instead
-  fmapTM f (RT (Arr arr)) = (RT . Arr . fromUnboxed (extent arr)) <$>
-                            U.mapM f (toUnboxed arr)
-  fmapTM f v = fmapTM f $ toRT v
-
   zipWithT f (RT (Arr a1)) (RT (Arr a2)) = RT $ Arr $ force $ RT.zipWith f a1 a2
   zipWithT f v1 v2 = zipWithT f (toRT v1) (toRT v2)
 
@@ -219,7 +213,6 @@ instance Tensor RT where
   {-# INLINABLE powBasisPow #-}
   {-# INLINABLE crtSetDec #-}
   {-# INLINABLE fmapT #-}
-  {-# INLINABLE fmapTM #-}
   {-# INLINABLE zipWithT #-}
   {-# INLINABLE unzipT #-}
 
