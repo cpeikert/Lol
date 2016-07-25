@@ -42,10 +42,10 @@ import Data.Maybe
 import Data.Traversable             as T
 import Data.Vector.Generic          as V (fromList, toList, unzip)
 import Data.Vector.Storable         as SV (Vector, convert, foldl',
-                                           foldl1', fromList, generate,
+                                           fromList, generate,
                                            length, map, mapM, replicate,
                                            replicateM, thaw, thaw, toList,
-                                           unsafeFreeze, unsafeSlice,
+                                           unsafeFreeze,
                                            unsafeWith, zipWith, (!))
 import Data.Vector.Storable.Mutable as SM hiding (replicate)
 
@@ -494,25 +494,3 @@ gCRT, gInvCRT :: (Storable r, CRTrans mon r, Fact m)
                  => mon (CT' m r)
 gCRT = wrapVector gCRTK
 gInvCRT = wrapVector gInvCRTK
-
--- we can't put this in Extension with the rest of the twace/embed
--- functions because it needs access to the C backend
-twaceCRT' :: forall mon m m' r .
-             (TElt CT r, CRTrans mon r, m `Divides` m')
-             => TaggedT '(m, m') mon (Vector r -> Vector r)
-twaceCRT' = tagT $ do
-  (CT' g') :: CT' m' r <- gCRT
-  (CT' gInv) :: CT' m r <- gInvCRT
-  embed <- proxyT embedCRT' (Proxy::Proxy '(m,m'))
-  indices <- pure $ proxy extIndicesCRT (Proxy::Proxy '(m,m'))
-  (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m')
-  let phi = proxy totientFact (Proxy::Proxy m)
-      phi' = proxy totientFact (Proxy::Proxy m')
-      mhat = fromIntegral $ proxy valueHatFact (Proxy::Proxy m)
-      hatRatioInv = m'hatinv * mhat
-      reltot = phi' `div` phi
-      -- tweak = mhat * g' / (m'hat * g)
-      tweak = SV.map (* hatRatioInv) $ SV.zipWith (*) (embed gInv) g'
-  return $ \ arr -> -- take true trace after mul-by-tweak
-    let v = backpermute' indices (SV.zipWith (*) tweak arr)
-    in generate phi $ \i -> foldl1' (+) $ SV.unsafeSlice (i*reltot) reltot v
