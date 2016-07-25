@@ -61,7 +61,7 @@ type PrimeField fp = (Enumerable fp, Field fp, Eq fp, ZeroTestable fp,
 type GFCtx fp d = (PrimeField fp, Reflects d Int)
 
 instance (GFCtx fp d) => Enumerable (GF fp d) where
-  values = GF <$> fromCoeffs <$>
+  values = GF . fromCoeffs <$>
            -- d-fold cartesian product of Fp values
            replicateM (proxy value (Proxy::Proxy d)) values
 
