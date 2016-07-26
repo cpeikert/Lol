@@ -223,6 +223,7 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
 twaceCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t, m `Divides` m', TElt t r)
             => mon (t m' r -> t m r)
+{-# INLINABLE twaceCRT #-}
 twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
            (fst <$> crtExtFuncs)
@@ -447,7 +448,6 @@ baseIndicesDec :: forall m m' . (m `Divides` m')
 -- of each pair.
 baseIndicesCRT :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector Int)
-
 baseIndicesPow = baseWrapper (toIndexPair . totients)
 
 -- this one is more complicated; requires the prime powers

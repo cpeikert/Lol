@@ -56,8 +56,8 @@ benches = [
   "*g Pow",
   "*g CRT",
   "lift",
-  "error",-}
-  "twacePow",
+  "error",
+  "twacePow",-}
   "twaceCRT"{-,
   "embedPow",
   "embedDec"-}

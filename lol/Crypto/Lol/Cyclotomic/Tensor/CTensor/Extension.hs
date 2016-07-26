@@ -98,6 +98,7 @@ kronToVec v = do
 twaceCRT' :: forall mon m m' r .
              (Storable r, CRTrans mon r, m `Divides` m')
              => TaggedT '(m, m') mon (Vector r -> Vector r)
+{-# INLINE twaceCRT' #-}
 twaceCRT' = tagT $ do
   g' <- proxyT (kronToVec gCRTK) (Proxy::Proxy m')
   gInv <- proxyT (kronToVec gInvCRTK) (Proxy::Proxy m)

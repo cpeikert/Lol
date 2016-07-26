@@ -314,7 +314,7 @@ instance Tensor CT where
   {-# INLINABLE embedDec #-}
   {-# INLINABLE tGaussianDec #-}
   {-# INLINABLE gSqNormDec #-}
-  {-# INLINABLE crtExtFuncs #-}
+  {-# INLINE crtExtFuncs #-}
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
   {-# INLINABLE crtSetDec #-}
