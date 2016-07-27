@@ -6,7 +6,9 @@
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module SimpleTensorBenches (simpleTensorBenches) where
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+
+module SimpleTensorBenches (simpleTensorBenches1, simpleTensorBenches2) where
 
 import Control.Applicative
 import Control.Monad.Random
@@ -16,15 +18,14 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types
 import Crypto.Random.DRBG
 
+import BenchConfig
 import Criterion
-import BenchParams
 
-simpleTensorBenches :: IO Benchmark
-simpleTensorBenches = do
-  x1 :: T M (R, R) <- getRandom
-  x2 :: T M R <- getRandom
-  x3 :: T M R <- getRandom
-  x4 :: T M' R <- getRandom
+{-# INLINE simpleTensorBenches1 #-}
+simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) = do
+  x1 :: t m (r, r) <- getRandom
+  x2 :: t m r <- getRandom
+  x3 :: t m r <- getRandom
   gen <- newGenIO
   return $ bgroup "STensor" [
     bench "unzipPow"    $ nf unzipT x1,
@@ -39,9 +40,15 @@ simpleTensorBenches = do
     bench "*g CRT"      $ nf (fromJust' "SimpleTensorBenches.gcrt" mulGCRT) x2,
     bench "lift"        $ nf (fmapT lift) x2,
     bench "error"       $ nf (evalRand (fmapT (roundMult one) <$>
-                           (tGaussianDec (0.1 :: Double) :: Rand (CryptoRand HashDRBG) (T M Double))) :: CryptoRand HashDRBG -> T M Int64) gen,
-    bench "twacePow"    $ nf (twacePowDec :: T M R -> T M' R) x2,
-    bench "twaceCRT"    $ nf (fromJust' "SimpleTensorBenches.twaceCRT" twaceCRT :: T M R -> T M' R) x2,
-    bench "embedPow"    $ nf (embedPow :: T M' R -> T M R) x4,
-    bench "embedDec"    $ nf (embedDec :: T M' R -> T M R) x4
+                           (tGaussianDec (0.1 :: Double) :: Rand (CryptoRand Gen) (t m Double))) :: CryptoRand Gen -> t m Int64) gen
+    ]
+{-# INLINE simpleTensorBenches2 #-}
+simpleTensorBenches2 (Proxy :: Proxy '(t,m',m,r)) = do
+  x2 :: t m r <- getRandom
+  x4 :: t m' r <- getRandom
+  return $ bgroup "STensor" [
+    bench "twacePow" $ nf (twacePowDec :: t m r -> t m' r) x2,
+    bench "twaceCRT" $ nf (fromJust' "SimpleTensorBenches.twaceCRT" twaceCRT :: t m r -> t m' r) x2,
+    bench "embedPow" $ nf (embedPow :: t m' r -> t m r) x4,
+    bench "embedDec" $ nf (embedDec :: t m' r -> t m r) x4
     ]

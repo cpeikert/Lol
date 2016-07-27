@@ -4,11 +4,13 @@
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 
-module UCycBenches (ucycBenches) where
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+
+module UCycBenches (ucycBenches1, ucycBenches2) where
 
 import Apply.Cyc
 import Benchmarks
-import BenchParams
+import BenchConfig
 
 import Control.Monad.Random
 
@@ -17,24 +19,27 @@ import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Types
 import Crypto.Random.DRBG
 
-ucycBenches :: IO Benchmark
-ucycBenches = benchGroup "UCyc" [
-  benchGroup "unzipPow"    $ [hideArgs bench_unzipUCycPow testParam], -- applyUnzip  allParams    $ hideArgs bench_unzipUCycPow,
-  benchGroup "unzipDec"    $ [hideArgs bench_unzipUCycDec testParam],
-  benchGroup "unzipCRT"    $ [hideArgs bench_unzipUCycCRT testParam], -- applyUnzip  allParams    $ hideArgs bench_unzipUCycCRT,
-  benchGroup "zipWith (*)" $ [hideArgs bench_mul testParam], -- applyBasic  allParams    $ hideArgs bench_mul,
-  benchGroup "crt"         $ [hideArgs bench_crt testParam], -- applyBasic  allParams    $ hideArgs bench_crt,
-  benchGroup "crtInv"      $ [hideArgs bench_crtInv testParam], -- applyBasic  allParams    $ hideArgs bench_crtInv,
-  benchGroup "l"           $ [hideArgs bench_l testParam], -- applyBasic  allParams    $ hideArgs bench_l,
-  benchGroup "lInv"        $ [hideArgs bench_lInv testParam],
-  benchGroup "*g Pow"      $ [hideArgs bench_mulgPow testParam], -- applyBasic  allParams    $ hideArgs bench_mulgPow,
-  benchGroup "*g CRT"      $ [hideArgs bench_mulgCRT testParam], -- applyBasic  allParams    $ hideArgs bench_mulgCRT,
-  benchGroup "lift"        $ [hideArgs bench_liftPow testParam], -- applyLift   liftParams   $ hideArgs bench_liftPow,
-  benchGroup "error"       $ [hideArgs (bench_errRounded 0.1) testParam'], -- applyError  errorParams  $ hideArgs $ bench_errRounded 0.1
-  benchGroup "twacePow"    $ [hideArgs bench_twacePow twoIdxParam], -- applyTwoIdx twoIdxParams $ hideArgs bench_twacePow,
-  benchGroup "twaceCRT"    $ [hideArgs bench_twaceCRT twoIdxParam],
-  benchGroup "embedPow"    $ [hideArgs bench_embedPow twoIdxParam], -- applyTwoIdx twoIdxParams $ hideArgs bench_embedPow
-  benchGroup "embedDec"    $ [hideArgs bench_embedDec twoIdxParam]
+{-# INLINE ucycBenches1 #-}
+ucycBenches1 param = benchGroup "UCyc" [
+  benchGroup "unzipPow"    $ [hideArgs bench_unzipUCycPow param],
+  benchGroup "unzipDec"    $ [hideArgs bench_unzipUCycDec param],
+  benchGroup "unzipCRT"    $ [hideArgs bench_unzipUCycCRT param],
+  benchGroup "zipWith (*)" $ [hideArgs bench_mul param],
+  benchGroup "crt"         $ [hideArgs bench_crt param],
+  benchGroup "crtInv"      $ [hideArgs bench_crtInv param],
+  benchGroup "l"           $ [hideArgs bench_l param],
+  benchGroup "lInv"        $ [hideArgs bench_lInv param],
+  benchGroup "*g Pow"      $ [hideArgs bench_mulgPow param],
+  benchGroup "*g CRT"      $ [hideArgs bench_mulgCRT param],
+  benchGroup "lift"        $ [hideArgs bench_liftPow param],
+  benchGroup "error"       $ [hideArgs (bench_errRounded 0.1) param]
+  ]
+{-# INLINE ucycBenches2 #-}
+ucycBenches2 param = benchGroup "UCyc" [
+  benchGroup "twacePow"    $ [hideArgs bench_twacePow param],
+  benchGroup "twaceCRT"    $ [hideArgs bench_twaceCRT param],
+  benchGroup "embedPow"    $ [hideArgs bench_embedPow param],
+  benchGroup "embedDec"    $ [hideArgs bench_embedDec param]
   ]
 
 bench_unzipUCycPow :: (UnzipCtx t m r) => UCyc t m P (r,r) -> Bench '(t,m,r)
@@ -85,11 +90,11 @@ bench_mulgCRT :: (BasicCtx t m r) => UCycPC t m r -> Bench '(t,m,r)
 bench_mulgCRT (Right a) = bench mulG a
 
 -- generate a rounded error term
-bench_errRounded :: forall t m r gen . (ErrorCtx t m r gen)
-  => Double -> Bench '(t,m,r,gen)
+bench_errRounded :: forall t m r . (ErrorCtx t m r Gen)
+  => Double -> Bench '(t,m,r)
 bench_errRounded v = benchIO $ do
   gen <- newGenIO
-  return $ evalRand (errorRounded v :: Rand (CryptoRand gen) (UCyc t m D (LiftOf r))) gen
+  return $ evalRand (errorRounded v :: Rand (CryptoRand Gen) (UCyc t m D (LiftOf r))) gen
 
 bench_twacePow :: forall t m m' r . (TwoIdxCtx t m m' r)
   => UCyc t m' P r -> Bench '(t,m,m',r)

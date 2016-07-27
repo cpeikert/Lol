@@ -6,11 +6,13 @@
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module TensorBenches (tensorBenches) where
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+
+module TensorBenches (tensorBenches1, tensorBenches2) where
 
 import Apply.Cyc
 import Benchmarks
-import BenchParams
+import BenchConfig
 
 import Control.Applicative
 import Control.Monad.Random
@@ -20,24 +22,27 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types
 import Crypto.Random.DRBG
 
-tensorBenches :: IO Benchmark
-tensorBenches = benchGroup "Tensor" [
-  benchGroup "unzipPow"    $ [hideArgs bench_unzip testParam],
-  benchGroup "unzipDec"    $ [hideArgs bench_unzip testParam],
-  benchGroup "unzipCRT"    $ [hideArgs bench_unzip testParam], --applyUnzip  allParams    $ hideArgs bench_unzip,
-  benchGroup "zipWith (*)" $ [hideArgs bench_mul testParam], --applyBasic  allParams    $ hideArgs bench_mul,
-  benchGroup "crt"         $ [hideArgs bench_crt testParam], --applyBasic  allParams    $ hideArgs bench_crt,
-  benchGroup "crtInv"      $ [hideArgs bench_crtInv testParam], --applyBasic  allParams    $ hideArgs bench_crtInv,
-  benchGroup "l"           $ [hideArgs bench_l testParam], --applyBasic  allParams    $ hideArgs bench_l,
-  benchGroup "lInv"        $ [hideArgs bench_lInv testParam],
-  benchGroup "*g Pow"      $ [hideArgs bench_mulgPow testParam], --applyBasic  allParams    $ hideArgs bench_mulgPow,
-  benchGroup "*g CRT"      $ [hideArgs bench_mulgCRT testParam], --applyBasic  allParams    $ hideArgs bench_mulgCRT,
-  benchGroup "lift"        $ [hideArgs bench_liftPow testParam], --applyLift   liftParams   $ hideArgs bench_liftPow,
-  benchGroup "error"       $ [hideArgs (bench_errRounded 0.1) testParam'], --applyError  errorParams  $ hideArgs $ bench_errRounded 0.1,
-  benchGroup "twacePow"    $ [hideArgs bench_twacePow twoIdxParam], --applyTwoIdx twoIdxParams $ hideArgs bench_twacePow,
-  benchGroup "twaceCRT"    $ [hideArgs bench_twaceCRT twoIdxParam],
-  benchGroup "embedPow"    $ [hideArgs bench_embedPow twoIdxParam], --applyTwoIdx twoIdxParams $ hideArgs bench_embedPow-}
-  benchGroup "embedDec"    $ [hideArgs bench_embedDec twoIdxParam]
+{-# INLINE tensorBenches1 #-}
+tensorBenches1 param = benchGroup "Tensor" [
+  benchGroup "unzipPow"    $ [hideArgs bench_unzip param],
+  benchGroup "unzipDec"    $ [hideArgs bench_unzip param],
+  benchGroup "unzipCRT"    $ [hideArgs bench_unzip param],
+  benchGroup "zipWith (*)" $ [hideArgs bench_mul param],
+  benchGroup "crt"         $ [hideArgs bench_crt param],
+  benchGroup "crtInv"      $ [hideArgs bench_crtInv param],
+  benchGroup "l"           $ [hideArgs bench_l param],
+  benchGroup "lInv"        $ [hideArgs bench_lInv param],
+  benchGroup "*g Pow"      $ [hideArgs bench_mulgPow param],
+  benchGroup "*g CRT"      $ [hideArgs bench_mulgCRT param],
+  benchGroup "lift"        $ [hideArgs bench_liftPow param],
+  benchGroup "error"       $ [hideArgs (bench_errRounded 0.1) param]
+  ]
+{-# INLINE tensorBenches2 #-}
+tensorBenches2 param = benchGroup "Tensor" [
+  benchGroup "twacePow"    $ [hideArgs bench_twacePow param],
+  benchGroup "twaceCRT"    $ [hideArgs bench_twaceCRT param],
+  benchGroup "embedPow"    $ [hideArgs bench_embedPow param],
+  benchGroup "embedDec"    $ [hideArgs bench_embedDec param]
   ]
 
 bench_unzip :: (UnzipCtx t m r) => t m (r,r) -> Bench '(t,m,r)
@@ -76,13 +81,13 @@ bench_mulgCRT :: (BasicCtx t m r) => t m r -> Bench '(t,m,r)
 bench_mulgCRT = bench (fromJust' "TensorBenches.bench_mulgCRT" mulGCRT)
 
 -- generate a rounded error term
-bench_errRounded :: forall t m r gen . (ErrorCtx t m r gen)
-  => Double -> Bench '(t,m,r,gen)
+bench_errRounded :: forall t m r . (ErrorCtx t m r Gen)
+  => Double -> Bench '(t,m,r)
 bench_errRounded v = benchIO $ do
   gen <- newGenIO
   return $ evalRand
     (fmapT (roundMult one) <$>
-      (tGaussianDec v :: Rand (CryptoRand gen) (t m Double)) :: Rand (CryptoRand gen) (t m (LiftOf r))) gen
+      (tGaussianDec v :: Rand (CryptoRand Gen) (t m Double)) :: Rand (CryptoRand Gen) (t m (LiftOf r))) gen
 
 bench_twacePow :: forall t m m' r . (TwoIdxCtx t m m' r)
   => t m' r -> Bench '(t,m,m',r)

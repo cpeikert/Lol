@@ -1,19 +1,14 @@
-{-
-import TensorBenches
-import Criterion.Main
+{-# LANGUAGE BangPatterns, FlexibleContexts, DataKinds, GADTs, KindSignatures, ScopedTypeVariables, PolyKinds, RecordWildCards, TemplateHaskell #-}
 
-main :: IO ()
-main = defaultMain =<< sequence [
-  tensorBenches
-  ]
--}
-{-# LANGUAGE BangPatterns, RecordWildCards #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
-import CycBenches
+import Benchmarks
+import BenchConfig
 import SimpleTensorBenches
 import TensorBenches
 import SimpleUCycBenches
 import UCycBenches
+import CycBenches
 
 import Criterion.Internal (runAndAnalyseOne)
 import Criterion.Main.Options (defaultConfig)
@@ -30,54 +25,72 @@ import Control.DeepSeq (rnf)
 import Data.List (transpose)
 import qualified Data.Map as Map
 import Data.Maybe
+import Data.Proxy
 
 import Statistics.Resampling.Bootstrap (Estimate(..))
 import System.Console.ANSI
 import System.IO
 import Text.Printf
 
--- table print parameters
-colWidth, testNameWidth :: Int
-colWidth = 15
-testNameWidth = 40
-verb :: Verb
-verb = Abridged
-
-benches :: [String]
-benches = [
-  {-"unzipPow",
-  "unzipDec",
-  "unzipCRT",
-  "zipWith (*)",
-  "crt",
-  "crtInv",
-  "l",
-  "lInv",
-  "*g Pow",
-  "*g CRT",
-  "lift",
-  "error",
-  "twacePow",-}
-  "twaceCRT"{-,
-  "embedPow",
-  "embedDec"-}
-
-  ]
-
-data Verb = Progress | Abridged | Full deriving (Eq)
-
 main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
-  reports <- mapM (getReports =<<) [
-    simpleTensorBenches,
-    tensorBenches,
-    simpleUCycBenches,
-    ucycBenches,
-    cycBenches
-    ]
+  reports1 <- mapM (mapM getReports) =<< benches1
+  reports2 <- mapM (mapM getReports) =<< benches2
+      -- 1. reports1 has
+      --      [[[TensorBenchesParam1], [UCycBenchesParam1]],
+      --       [[TensorBenchesParam2], [UCycBenchesParam2]] ...]
+      -- 2. transpose to get benchmarks in a *layer* in a row
+      --      [[[TensorBenchesParam1], [TensorBenchesParam2], ...],
+      --       [[UCycBenchesParam1], [UCycBenchesParam2], ...]]
+      -- 3. map transpose to get benchmark for one function in a row
+      --      [[[T.crt_param1, T.crt_param2, ...],
+      --        [T.l_param1, T.l_param2, ...],
+      --        ...],
+      --       [same for UCyc]]
+      -- 4. map concat so that all benches for a single layer are grouped
+      --      [[T.crt_param1, T.crt_param2, ..., T.l_param1, T.l_param2, ...],
+      --       [same for UCyc]]
+  let reports1' = map (concat . transpose) $ transpose reports1
+      reports2' = map (concat . transpose) $ transpose reports2
+      -- append benchmarks for each layer
+      reports = filter (not . null) $ zipWith (++) reports1' reports2'
+
   when (verb == Progress) $ putStrLn ""
-  printTable $ map reverse reports
+  printTable reports
+
+getReports :: Benchmark -> IO [Report]
+getReports = withConfig config . runAndAnalyse
+
+flattenTriple :: Proxy '(a, '(b,c)) -> Proxy '(a,b,c)
+flattenTriple _ = Proxy
+
+flattenQuadruple :: Proxy '(a, '(b,c,d)) -> Proxy '(a,b,c,d)
+flattenQuadruple _ = Proxy
+
+benches1, benches2 :: IO [[Benchmark]]
+benches1 = sequence $(applyBenchN 'oneIdxBenches params1)
+benches2 = sequence $(applyBenchN 'twoIdxBenches params2)
+
+oneIdxBenches param =
+  let p = flattenTriple param
+  in sequence $ [
+      simpleTensorBenches1 p,
+      tensorBenches1 p,
+      simpleUCycBenches1 p,
+      ucycBenches1 p,
+      cycBenches1 p
+      ] :: IO [Benchmark]
+
+twoIdxBenches param =
+  let p = flattenQuadruple param
+  in sequence [
+      simpleTensorBenches2 p,
+      tensorBenches2 p,
+      simpleUCycBenches2 p,
+      ucycBenches2 p,
+      cycBenches2 p
+      ] :: IO [Benchmark]
 
 printTable :: [[Report]] -> IO ()
 printTable rpts = do
@@ -115,7 +128,7 @@ printRow xs@(rpt : _) = do
   let times = map getRuntime xs
       minTime = minimum times
       printCol t =
-        if t > (1.1*minTime)
+        if t > (redThreshold*minTime)
         then do
           setSGR [SetColor Foreground Vivid Red]
           printf col $ secs t
@@ -126,9 +139,6 @@ printRow xs@(rpt : _) = do
 
 stripOuterGroup :: String -> String
 stripOuterGroup = tail . dropWhile (/= '/')
-
-getReports :: Benchmark -> IO [Report]
-getReports = withConfig config . runAndAnalyse
 
 -- | Run, and analyse, one or more benchmarks.
 -- From Criterion.Internal
@@ -148,7 +158,10 @@ for :: MonadIO m => Benchmark
     -> (Int -> String -> Benchmarkable -> m a) -> m [a]
 for bs0 handle = snd <$> go (0::Int, []) ("", bs0)
   where
-    select = flip elem benches . takeWhile (/= '/') . stripOuterGroup
+    select name =
+      let lvl = takeWhile (/= '/') name
+          bnch = takeWhile (/= '/') $ stripOuterGroup name
+      in (lvl `elem` layers) && (bnch `elem` benches)
     go (!idx,drs) (pfx, Environment mkenv mkbench)
       | shouldRun pfx mkbench = do
         e <- liftIO $ do
@@ -160,8 +173,8 @@ for bs0 handle = snd <$> go (0::Int, []) ("", bs0)
     go (!idx, drs) (pfx, Benchmark desc b)
       | select desc' = do
           x <- handle idx desc' b;
-          return (idx + 1, x:drs)
-      | otherwise    = return (idx, drs)
+          return (idx + 1, drs ++ [x])
+      | otherwise = return (idx, drs)
       where desc' = addPrefix pfx desc
     go (!idx,drs) (pfx, BenchGroup desc bs) =
       foldM go (idx,drs) [(addPrefix pfx desc, b) | b <- bs]

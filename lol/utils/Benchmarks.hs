@@ -1,14 +1,19 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, MultiParamTypeClasses,
-             PolyKinds, RankNTypes, ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE TemplateHaskellQuotes #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Benchmarks
 (Benchmarks.bench
 ,benchIO
 ,benchGroup
 ,hideArgs
+,applyBench
+,applyBenchN
 ,Bench(..)
-,Benchmark
-,NFData) where
+,Benchmark) where
 
 import GenArgs
 import Utils
@@ -17,6 +22,8 @@ import Control.DeepSeq
 import Criterion as C
 
 import Data.Proxy
+
+import Language.Haskell.TH
 
 -- wrapper for Criterion's `nf`
 bench :: NFData b => (a -> b) -> a -> Bench params
@@ -42,3 +49,11 @@ newtype Bench params = Bench {unbench :: Benchmarkable}
 instance (Monad rnd) => GenArgs rnd (Bench params) where
   type ResultOf (Bench params) = Bench params
   genArgs = return
+
+applyBench :: Name -> TypeQ -> ExpQ
+applyBench n qt =
+  let pt = sigE (conE 'Proxy) $ appT (conT ''Proxy) qt
+  in appE (varE n) pt
+
+applyBenchN :: Name -> [TypeQ] -> ExpQ
+applyBenchN n ts = ListE <$> mapM (applyBench n) ts
