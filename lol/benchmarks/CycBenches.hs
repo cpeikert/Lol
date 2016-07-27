@@ -28,6 +28,7 @@ cycBenches = benchGroup "Cyc" [
   benchGroup "l"           $ [hideArgs bench_l testParam],         --applyBasic  allParams    $ hideArgs bench_l,
   benchGroup "lInv"        $ [hideArgs bench_lInv testParam],
   benchGroup "*g Pow"      $ [hideArgs bench_mulgPow testParam],   --applyBasic  allParams    $ hideArgs bench_mulgPow,
+  benchGroup "*g Dec"      $ [hideArgs bench_mulgDec testParam],
   benchGroup "*g CRT"      $ [hideArgs bench_mulgCRT testParam], --applyBasic  allParams    $ hideArgs bench_mulgCRT,
   benchGroup "lift"        $ [hideArgs bench_liftPow testParam], --applyLift   liftParams   $ hideArgs bench_liftPow,
   benchGroup "error"       $ [hideArgs (bench_errRounded 0.1) testParam'], --applyError  errorParams  $ hideArgs $ bench_errRounded 0.1,
@@ -82,6 +83,10 @@ bench_liftPow x = let y = advisePow x in bench (liftCyc Pow) y
 -- multiply by g when input is in Pow basis
 bench_mulgPow :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
 bench_mulgPow x = let y = advisePow x in bench mulG y
+
+-- multiply by g when input is in Dec basis
+bench_mulgDec :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
+bench_mulgDec x = let y = adviseDec x in bench mulG y
 
 -- multiply by g when input is in CRT basis
 bench_mulgCRT :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)

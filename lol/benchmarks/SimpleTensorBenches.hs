@@ -36,6 +36,7 @@ simpleTensorBenches = do
     bench "l"           $ nf l x2,
     bench "lInv"        $ nf lInv x2,
     bench "*g Pow"      $ nf mulGPow x2,
+    bench "*g Dec"      $ nf mulGDec x2,
     bench "*g CRT"      $ nf (fromJust' "SimpleTensorBenches.gcrt" mulGCRT) x2,
     bench "lift"        $ nf (fmapT lift) x2,
     bench "error"       $ nf (evalRand (fmapT (roundMult one) <$>

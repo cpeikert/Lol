@@ -41,7 +41,7 @@ colWidth, testNameWidth :: Int
 colWidth = 15
 testNameWidth = 40
 verb :: Verb
-verb = Abridged
+verb = Progress
 
 benches :: [String]
 benches = [
@@ -52,13 +52,14 @@ benches = [
   "crt",
   "crtInv",
   "l",
-  "lInv",
+  "lInv",-}
   "*g Pow",
-  "*g CRT",
+  "*g Dec",
+  "*g CRT"{-,
   "lift",
   "error",
-  "twacePow",-}
-  "twaceCRT"{-,
+  "twacePow",
+  "twaceCRT",
   "embedPow",
   "embedDec"-}
 
@@ -71,10 +72,10 @@ main = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
   reports <- mapM (getReports =<<) [
     simpleTensorBenches,
-    tensorBenches,
+    tensorBenches{-,
     simpleUCycBenches,
     ucycBenches,
-    cycBenches
+    cycBenches-}
     ]
   when (verb == Progress) $ putStrLn ""
   printTable $ map reverse reports

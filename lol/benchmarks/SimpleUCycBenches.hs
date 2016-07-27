@@ -39,6 +39,7 @@ simpleUCycBenches = do
     bench "l"           $ nf toPow x5,
     bench "lInv"        $ nf toDec x4,
     bench "*g Pow"      $ nf mulG x4,
+    bench "*g Dec"      $ nf mulG x5,
     bench "*g CRT"      $ nf mulG x6,
     bench "lift"        $ nf lift x4,
     bench "error"       $ nf (evalRand (errorRounded (0.1 :: Double) :: Rand (CryptoRand HashDRBG) (UCyc T M D Int64))) gen,
