@@ -50,6 +50,8 @@ backpermute' is v = generate (U.length is) (\i -> v ! (is U.! i))
 
 embedPow', embedDec' :: (Additive r, Storable r, m `Divides` m')
                      => Tagged '(m, m') (Vector r -> Vector r)
+{-# INLINABLE embedPow' #-}
+{-# INLINABLE embedDec' #-}
 -- | Embeds an vector in the powerful basis of the the mth cyclotomic ring
 -- to an vector in the powerful basis of the m'th cyclotomic ring when @m | m'@
 embedPow' = (\indices arr -> generate (U.length indices) $ \idx ->
