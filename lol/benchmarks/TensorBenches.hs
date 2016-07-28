@@ -33,12 +33,16 @@ tensorBenches = benchGroup "Tensor" [
   benchGroup "*g Pow"      $ [hideArgs bench_mulgPow testParam], --applyBasic  allParams    $ hideArgs bench_mulgPow,
   benchGroup "*g Dec"      $ [hideArgs bench_mulgDec testParam],
   benchGroup "*g CRT"      $ [hideArgs bench_mulgCRT testParam], --applyBasic  allParams    $ hideArgs bench_mulgCRT,
+  benchGroup "divg Pow"    $ [hideArgs bench_divgPow testParam], --applyBasic  allParams    $ hideArgs bench_mulgPow,
+  benchGroup "divg Dec"    $ [hideArgs bench_divgDec testParam],
+  benchGroup "divg CRT"    $ [hideArgs bench_divgCRT testParam],
   benchGroup "lift"        $ [hideArgs bench_liftPow testParam], --applyLift   liftParams   $ hideArgs bench_liftPow,
   benchGroup "error"       $ [hideArgs (bench_errRounded 0.1) testParam'], --applyError  errorParams  $ hideArgs $ bench_errRounded 0.1,
   benchGroup "twacePow"    $ [hideArgs bench_twacePow twoIdxParam], --applyTwoIdx twoIdxParams $ hideArgs bench_twacePow,
   benchGroup "twaceCRT"    $ [hideArgs bench_twaceCRT twoIdxParam],
   benchGroup "embedPow"    $ [hideArgs bench_embedPow twoIdxParam], --applyTwoIdx twoIdxParams $ hideArgs bench_embedPow-}
-  benchGroup "embedDec"    $ [hideArgs bench_embedDec twoIdxParam]
+  benchGroup "embedDec"    $ [hideArgs bench_embedDec twoIdxParam],
+  benchGroup "embedCRT"    $ [hideArgs bench_embedCRT twoIdxParam]
   ]
 
 bench_unzip :: (UnzipCtx t m r) => t m (r,r) -> Bench '(t,m,r)
@@ -80,6 +84,22 @@ bench_mulgDec = bench mulGDec
 bench_mulgCRT :: (BasicCtx t m r) => t m r -> Bench '(t,m,r)
 bench_mulgCRT = bench (fromJust' "TensorBenches.bench_mulgCRT" mulGCRT)
 
+-- divide by g when input is in Pow basis
+bench_divgPow :: (BasicCtx t m r) => t m r -> Bench '(t,m,r)
+bench_divgPow x =
+  let y = mulGPow x
+  in bench divGPow y
+
+-- divide by g when input is in Dec basis
+bench_divgDec :: (BasicCtx t m r) => t m r -> Bench '(t,m,r)
+bench_divgDec x =
+  let y = mulGDec x
+  in bench divGDec y
+
+-- divide by g when input is in CRT basis
+bench_divgCRT :: (BasicCtx t m r) => t m r -> Bench '(t,m,r)
+bench_divgCRT = bench (fromJust' "TensorBenches.bench_divgCRT" divGCRT)
+
 -- generate a rounded error term
 bench_errRounded :: forall t m r gen . (ErrorCtx t m r gen)
   => Double -> Bench '(t,m,r,gen)
@@ -104,3 +124,7 @@ bench_embedPow = bench (embedPow :: t m r -> t m' r)
 bench_embedDec :: forall t m m' r . (TwoIdxCtx t m m' r)
   => t m r -> Bench '(t,m,m',r)
 bench_embedDec = bench (embedDec :: t m r -> t m' r)
+
+bench_embedCRT :: forall t m m' r . (TwoIdxCtx t m m' r)
+  => t m r -> Bench '(t,m,m',r)
+bench_embedCRT = bench (fromJust' "TensorBenches.bench_embedCRT" embedCRT :: t m r -> t m' r)

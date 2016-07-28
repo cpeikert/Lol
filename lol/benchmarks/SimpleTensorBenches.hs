@@ -25,6 +25,8 @@ simpleTensorBenches = do
   x2 :: T M R <- getRandom
   x3 :: T M R <- getRandom
   x4 :: T M' R <- getRandom
+  let x2' = mulGPow x2
+      x2'' = mulGDec x2
   gen <- newGenIO
   return $ bgroup "STensor" [
     bench "unzipPow"    $ nf unzipT x1,
@@ -37,12 +39,16 @@ simpleTensorBenches = do
     bench "lInv"        $ nf lInv x2,
     bench "*g Pow"      $ nf mulGPow x2,
     bench "*g Dec"      $ nf mulGDec x2,
-    bench "*g CRT"      $ nf (fromJust' "SimpleTensorBenches.gcrt" mulGCRT) x2,
+    bench "*g CRT"      $ nf (fromJust' "SimpleTensorBenches.*gcrt" mulGCRT) x2,
+    bench "divg Pow"    $ nf divGPow x2',
+    bench "divg Dec"    $ nf divGDec x2'',
+    bench "divg CRT"    $ nf (fromJust' "SimpleTensorBenches./gcrt" divGCRT) x2,
     bench "lift"        $ nf (fmapT lift) x2,
     bench "error"       $ nf (evalRand (fmapT (roundMult one) <$>
                            (tGaussianDec (0.1 :: Double) :: Rand (CryptoRand HashDRBG) (T M Double))) :: CryptoRand HashDRBG -> T M Int64) gen,
     bench "twacePow"    $ nf (twacePowDec :: T M R -> T M' R) x2,
     bench "twaceCRT"    $ nf (fromJust' "SimpleTensorBenches.twaceCRT" twaceCRT :: T M R -> T M' R) x2,
     bench "embedPow"    $ nf (embedPow :: T M' R -> T M R) x4,
-    bench "embedDec"    $ nf (embedDec :: T M' R -> T M R) x4
+    bench "embedDec"    $ nf (embedDec :: T M' R -> T M R) x4,
+    bench "embedCRT"    $ nf (fromJust' "SimpleTensorBenches.embedCRT" embedCRT :: T M' R -> T M R) x4
     ]
