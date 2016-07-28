@@ -17,7 +17,10 @@ hInt_t reciprocal (hInt_t a, hInt_t b)
     y  = lasty - quotient*y;
     lasty = tmp;
   }
-  ASSERT (a==1);  // if this one fails, then b is not invertible mod a
+  // if a!=1, then b is not invertible mod a
+  if(a!=1) {
+    return 0;
+  }
 
   // this actually returns EITHER the reciprocal OR reciprocal + fieldSize
   hInt_t res = lasty + fieldSize;
