@@ -50,6 +50,7 @@ simpleUCycBenches = do
     bench "lift"        $ nf lift x4,
     bench "error"       $ nf (evalRand (errorRounded (0.1 :: Double) :: Rand (CryptoRand HashDRBG) (UCyc T M D Int64))) gen,
     bench "twacePow"    $ nf (twacePow :: UCyc T M P R -> UCyc T M' P R) x4,
+    bench "twaceDec"    $ nf (twaceDec :: UCyc T M D R -> UCyc T M' D R) x5,
     bench "twaceCRT"    $ nf (twaceCRTC :: UCyc T M C R -> UCycPC T M' R) x6,
     bench "embedPow"    $ nf (embedPow :: UCyc T M' P R -> UCyc T M P R) x7,
     bench "embedDec"    $ nf (embedDec :: UCyc T M' D R -> UCyc T M D R) x8,

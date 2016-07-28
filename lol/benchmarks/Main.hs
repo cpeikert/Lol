@@ -52,20 +52,21 @@ benches = [
   "crt",
   "crtInv",
   "l",
-  "lInv",-}
-  {-"*g Pow",
+  "lInv",
+  "*g Pow",
   "*g Dec",
   "*g CRT",
   "divg Pow",
   "divg Dec",
-  "divg CRT",-}{-
+  "divg CRT",
   "lift",
-  "error",
+  "error",-}
   "twacePow",
-  "twaceCRT",-}
-  --"embedPow",
-  "embedDec"--,
-  --"embedCRT"
+  "twaceDec",
+  "twaceCRT",
+  "embedPow",
+  "embedDec",
+  "embedCRT"
 
   ]
 
@@ -77,9 +78,9 @@ main = do
   reports <- mapM (getReports =<<) [
     simpleTensorBenches,
     tensorBenches,
-    simpleUCycBenches--,
-    --ucycBenches,
-    --cycBenches
+    simpleUCycBenches,
+    ucycBenches,
+    cycBenches
     ]
   when (verb == Progress) $ putStrLn ""
   printTable $ map reverse reports

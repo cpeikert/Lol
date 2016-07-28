@@ -47,6 +47,7 @@ simpleTensorBenches = do
     bench "error"       $ nf (evalRand (fmapT (roundMult one) <$>
                            (tGaussianDec (0.1 :: Double) :: Rand (CryptoRand HashDRBG) (T M Double))) :: CryptoRand HashDRBG -> T M Int64) gen,
     bench "twacePow"    $ nf (twacePowDec :: T M R -> T M' R) x2,
+    bench "twaceDec"    $ nf (twacePowDec :: T M R -> T M' R) x2,
     bench "twaceCRT"    $ nf (fromJust' "SimpleTensorBenches.twaceCRT" twaceCRT :: T M R -> T M' R) x2,
     bench "embedPow"    $ nf (embedPow :: T M' R -> T M R) x4,
     bench "embedDec"    $ nf (embedDec :: T M' R -> T M R) x4,

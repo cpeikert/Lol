@@ -18,25 +18,26 @@ import Crypto.Random.DRBG
 
 cycBenches :: IO Benchmark
 cycBenches = benchGroup "Cyc" [
-  benchGroup "unzipPow"    $ [hideArgs bench_unzipCycPow testParam], -- applyUnzip  allParams    $ hideArgs bench_unzipCycPow,
+  benchGroup "unzipPow"    $ [hideArgs bench_unzipCycPow testParam],
   benchGroup "unzipDec"    $ [hideArgs bench_unzipCycDec testParam],
-  benchGroup "unzipCRT"    $ [hideArgs bench_unzipCycCRT testParam], --applyUnzip  allParams    $ hideArgs bench_unzipCycCRT,
-  benchGroup "zipWith (*)" $ [hideArgs bench_mul testParam], -- applyBasic  allParams    $ hideArgs bench_mul,
-  benchGroup "crt"         $ [hideArgs bench_crt testParam],     --applyBasic  allParams    $ hideArgs bench_crt,
-  benchGroup "crtInv"      $ [hideArgs bench_crtInv testParam],    --applyBasic  allParams    $ hideArgs bench_crtInv,
-  benchGroup "l"           $ [hideArgs bench_l testParam],         --applyBasic  allParams    $ hideArgs bench_l,
+  benchGroup "unzipCRT"    $ [hideArgs bench_unzipCycCRT testParam],
+  benchGroup "zipWith (*)" $ [hideArgs bench_mul testParam],
+  benchGroup "crt"         $ [hideArgs bench_crt testParam],
+  benchGroup "crtInv"      $ [hideArgs bench_crtInv testParam],
+  benchGroup "l"           $ [hideArgs bench_l testParam],
   benchGroup "lInv"        $ [hideArgs bench_lInv testParam],
-  benchGroup "*g Pow"      $ [hideArgs bench_mulgPow testParam],   --applyBasic  allParams    $ hideArgs bench_mulgPow,
+  benchGroup "*g Pow"      $ [hideArgs bench_mulgPow testParam],
   benchGroup "*g Dec"      $ [hideArgs bench_mulgDec testParam],
-  benchGroup "*g CRT"      $ [hideArgs bench_mulgCRT testParam], --applyBasic  allParams    $ hideArgs bench_mulgCRT,
-  benchGroup "divg Pow"    $ [hideArgs bench_divgPow testParam],   --applyBasic  allParams    $ hideArgs bench_mulgPow,
+  benchGroup "*g CRT"      $ [hideArgs bench_mulgCRT testParam],
+  benchGroup "divg Pow"    $ [hideArgs bench_divgPow testParam],
   benchGroup "divg Dec"    $ [hideArgs bench_divgDec testParam],
   benchGroup "divg CRT"    $ [hideArgs bench_divgCRT testParam],
-  benchGroup "lift"        $ [hideArgs bench_liftPow testParam], --applyLift   liftParams   $ hideArgs bench_liftPow,
-  benchGroup "error"       $ [hideArgs (bench_errRounded 0.1) testParam'], --applyError  errorParams  $ hideArgs $ bench_errRounded 0.1,
-  benchGroup "twacePow"    $ [hideArgs bench_twacePow twoIdxParam], --applyTwoIdx twoIdxParams $ hideArgs bench_twacePow,
+  benchGroup "lift"        $ [hideArgs bench_liftPow testParam],
+  benchGroup "error"       $ [hideArgs (bench_errRounded 0.1) testParam'],
+  benchGroup "twacePow"    $ [hideArgs bench_twacePow twoIdxParam],
+  benchGroup "twaceDec"    $ [hideArgs bench_twaceDec twoIdxParam],
   benchGroup "twaceCRT"    $ [hideArgs bench_twaceCRT twoIdxParam],
-  benchGroup "embedPow"    $ [hideArgs bench_embedPow twoIdxParam], --applyTwoIdx twoIdxParams $ hideArgs bench_embedPow
+  benchGroup "embedPow"    $ [hideArgs bench_embedPow twoIdxParam],
   benchGroup "embedDec"    $ [hideArgs bench_embedDec twoIdxParam],
   benchGroup "embedCRT"    $ [hideArgs bench_embedCRT twoIdxParam]
   ]
@@ -118,6 +119,12 @@ bench_twacePow :: forall t m m' r . (TwoIdxCtx t m m' r)
   => Cyc t m' r -> Bench '(t,m,m',r)
 bench_twacePow x =
   let y = advisePow x
+  in bench (twace :: Cyc t m' r -> Cyc t m r) y
+
+bench_twaceDec :: forall t m m' r . (TwoIdxCtx t m m' r)
+  => Cyc t m' r -> Bench '(t,m,m',r)
+bench_twaceDec x =
+  let y = adviseDec x
   in bench (twace :: Cyc t m' r -> Cyc t m r) y
 
 bench_twaceCRT :: forall t m m' r . (TwoIdxCtx t m m' r)
