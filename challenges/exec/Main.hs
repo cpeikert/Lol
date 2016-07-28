@@ -75,7 +75,7 @@ generate MainOpts{..} GenOpts{..} _ = do
     True -> putStrLn $ "Challenges can be revealed starting at " ++
             show initBeaconTime ++ ", " ++ show (initBeaconTime-currTime) ++
             " seconds from now."
-    False -> printANSI Orange "WARNING: Reveal time is in the past!"
+    False -> printANSI Yellow "WARNING: Reveal time is in the past!"
   paramContents <- readFile optParamsFile
   let params = parseChallParams paramContents optNumInstances
   generateMain optChallDir initBeacon params
