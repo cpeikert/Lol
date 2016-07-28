@@ -40,7 +40,7 @@ module Crypto.Lol.Cyclotomic.UCyc
 -- * Scalars
 , scalarPow, scalarCRT
 -- * Basic operations
-, mulG, divG, gSqNorm
+, mulG, divGPow, divGDec, divGCRTC, gSqNorm
 -- * Error sampling
 , tGaussian, errorRounded, errorCoset
 -- * Inter-ring operations and values
@@ -50,7 +50,7 @@ module Crypto.Lol.Cyclotomic.UCyc
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
-                                     scalarCRT, scalarPow, twaceCRT)
+                                     scalarCRT, scalarPow, twaceCRT, divGPow, divGDec)
 
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CRTSentinel
@@ -360,17 +360,27 @@ mulG (Dec v) = Dec $ mulGDec v
 mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
 mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 
+-- Note: We do not allow divGCRTE because division by g in K (might be)
+-- meaningless when converted back to R.
+
 -- | Divide by the special element \(g_m\).
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
-divG :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
-        => UCyc t m rep r -> Maybe (UCyc t m rep r)
-{-# INLINABLE divG #-}
-divG (Pow v) = Pow <$> divGPow v
-divG (Dec v) = Dec <$> divGDec v
-divG (CRTC s v) = Just $ CRTC s $ divGCRTCS s v
-divG (CRTE s v) = Just $ CRTE s $ runIdentity divGCRT v
+divGPow :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
+        => UCyc t m P r -> Maybe (UCyc t m P r)
+{-# INLINABLE divGPow #-}
+divGPow (Pow v) = Pow <$> T.divGPow v
+
+divGDec :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
+        => UCyc t m D r -> Maybe (UCyc t m D r)
+{-# INLINABLE divGDec #-}
+divGDec (Dec v) = Dec <$> T.divGDec v
+
+divGCRTC :: (Fact m, UCRTElt t r)
+        => UCyc t m C r -> Maybe (UCyc t m C r)
+{-# INLINABLE divGCRTC #-}
+divGCRTC (CRTC s v) = Just $ CRTC s $ divGCRTCS s v
 
 -- | Yield the scaled squared norm of \(g_m \cdot e\) under
 -- the canonical embedding, namely,
