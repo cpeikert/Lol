@@ -122,7 +122,7 @@ readFullChallenge path challName Challenge{..} = do
   checkParamsEq challName "numInstances" numInsts' (length insts)
   return (BA beaconEpoch beaconOffset, insts)
 
-validateSecret :: (Monad m, MonadError String m)
+validateSecret :: (MonadError String m)
   => String -> ChallengeID -> InstanceID -> Int32 -> Int64 -> Secret -> m ()
 validateSecret sfile cid iid m q (Secret cid' iid' m' q' _) = do
   checkParamsEq sfile "challID" cid cid'
@@ -130,7 +130,7 @@ validateSecret sfile cid iid m q (Secret cid' iid' m' q' _) = do
   checkParamsEq sfile "m" m m'
   checkParamsEq sfile "q" q q'
 
-validateInstance :: (Monad m, MonadError String m)
+validateInstance :: (MonadError String m)
   => String -> ChallengeID -> InstanceID -> Params
             -> ChallengeID -> InstanceID -> Params -> m ()
 validateInstance instFile cid iid params cid' iid' params' = do
@@ -163,7 +163,7 @@ readInstanceU params path challName cid iid = do
       validateInstance instFile cid iid params cid' iid' (Rparams params')
       return $ IR s inst
 
-checkParamsEq :: (Monad m, MonadError String m, Show a, Eq a)
+checkParamsEq :: (MonadError String m, Show a, Eq a)
   => String -> String -> a -> a -> m ()
 checkParamsEq data' param expected actual =
   throwErrorUnless (expected == actual) $ "Error while reading " ++
