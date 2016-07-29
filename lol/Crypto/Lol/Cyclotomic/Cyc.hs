@@ -59,8 +59,8 @@ import qualified Algebra.Ring         as Ring (C)
 import qualified Algebra.ZeroTestable as ZeroTestable (C)
 
 import Crypto.Lol.Cyclotomic.UCyc hiding (coeffsDec, coeffsPow, crtSet,
-                                   errorCoset, errorRounded, gSqNorm,
-                                   mulG, powBasis, tGaussian)
+                                   errorCoset, errorRounded, gSqNorm, mulG,
+                                   powBasis, tGaussian)
 
 import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.RescaleCyc as R

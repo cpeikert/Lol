@@ -49,15 +49,16 @@ module Crypto.Lol.Cyclotomic.UCyc
 , coeffsPow, coeffsDec, powBasis, crtSet
 ) where
 
-import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
-                                     scalarCRT, scalarPow, twaceCRT, divGPow, divGDec)
+import Crypto.Lol.Cyclotomic.Tensor hiding (divGDec, divGPow, embedCRT,
+                                     embedDec, embedPow, scalarCRT,
+                                     scalarPow, twaceCRT)
 
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CRTSentinel
-import qualified Crypto.Lol.Cyclotomic.Tensor      as T
-import           Crypto.Lol.Cyclotomic.Tensor.CTensor (CT)
+import qualified Crypto.Lol.Cyclotomic.Tensor            as T
+import           Crypto.Lol.Cyclotomic.Tensor.CTensor    (CT)
 import           Crypto.Lol.Cyclotomic.Tensor.RepaTensor (RT)
-import           Crypto.Lol.Prelude                as LP
+import           Crypto.Lol.Prelude                      as LP
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZPP
 
@@ -360,8 +361,9 @@ mulG (Dec v) = Dec $ mulGDec v
 mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
 mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 
--- Note: We do not allow divGCRTE because division by g in K (might be)
--- meaningless when converted back to R.
+-- Note: We do not implement divGCRTE because we can't tell whether
+-- the element is actually divisible by g when using the CRT extension
+-- basis.
 
 -- | Divide by the special element \(g_m\).
 -- WARNING: this implementation is not a constant-time algorithm, so
@@ -372,11 +374,13 @@ divGPow :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
 {-# INLINABLE divGPow #-}
 divGPow (Pow v) = Pow <$> T.divGPow v
 
+-- | Similar to 'divGPow'.
 divGDec :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
         => UCyc t m D r -> Maybe (UCyc t m D r)
 {-# INLINABLE divGDec #-}
 divGDec (Dec v) = Dec <$> T.divGDec v
 
+-- | Similar to 'divGPow'.
 divGCRTC :: (Fact m, UCRTElt t r)
         => UCyc t m C r -> Maybe (UCyc t m C r)
 {-# INLINABLE divGCRTC #-}
@@ -547,6 +551,7 @@ crtSet =
 -- Used to be a problem in #12068. Now we can write the rules, but do they fire?
 {-# SPECIALIZE toPow :: (Fact m, UCRTElt CT r) => UCyc CT m rep r -> UCyc CT m P r #-}
 {-# SPECIALIZE toPow :: (Fact m, UCRTElt RT r) => UCyc RT m rep r -> UCyc RT m P r #-}
+
 -- | Convert to powerful-basis representation.
 toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
 {-# INLINABLE toPow #-}
