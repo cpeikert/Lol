@@ -1,3 +1,13 @@
+module BenchConfig where
+
+import Crypto.Random.DRBG
+
+
+-- The random generator used in benchmarks
+type Gen = HashDRBG
+
+
+{-
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE TemplateHaskell      #-}
@@ -107,4 +117,5 @@ type MM'RCombos =
      '(F8 * F91, F8 * F91 * F5, Zq 14561),
      '(F128, F128 * F91, Zq 23297)
     ]
+-}
 -}

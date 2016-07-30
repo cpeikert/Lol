@@ -6,7 +6,6 @@ module Common where
 
 import Beacon
 
-import qualified Crypto.Lol               as Lol
 import qualified Crypto.Lol.Types.RRq     as RRq
 import           Crypto.Lol.Types.ZqBasic
 

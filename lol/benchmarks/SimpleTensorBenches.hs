@@ -26,6 +26,8 @@ simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) = do
   x1 :: t m (r, r) <- getRandom
   x2 :: t m r <- getRandom
   x3 :: t m r <- getRandom
+  let x2' = mulGPow x2
+      x2'' = mulGDec x2
   gen <- newGenIO
   return $ bgroup "STensor" [
     bench "unzipPow"    $ nf unzipT x1,
@@ -37,10 +39,16 @@ simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) = do
     bench "l"           $ nf l x2,
     bench "lInv"        $ nf lInv x2,
     bench "*g Pow"      $ nf mulGPow x2,
-    bench "*g CRT"      $ nf (fromJust' "SimpleTensorBenches.gcrt" mulGCRT) x2,
+    bench "*g Dec"      $ nf mulGDec x2,
+    bench "*g CRT"      $ nf (fromJust' "SimpleTensorBenches.*gcrt" mulGCRT) x2,
+    bench "divg Pow"    $ nf divGPow x2',
+    bench "divg Dec"    $ nf divGDec x2'',
+    bench "divg CRT"    $ nf (fromJust' "SimpleTensorBenches./gcrt" divGCRT) x2,
     bench "lift"        $ nf (fmapT lift) x2,
     bench "error"       $ nf (evalRand (fmapT (roundMult one) <$>
-                           (tGaussianDec (0.1 :: Double) :: Rand (CryptoRand Gen) (t m Double))) :: CryptoRand Gen -> t m Int64) gen
+                           (tGaussianDec
+                             (0.1 :: Double) :: Rand (CryptoRand Gen) (t m Double)))
+                               :: CryptoRand Gen -> t m Int64) gen
     ]
 {-# INLINE simpleTensorBenches2 #-}
 simpleTensorBenches2 (Proxy :: Proxy '(t,m',m,r)) = do
@@ -48,7 +56,9 @@ simpleTensorBenches2 (Proxy :: Proxy '(t,m',m,r)) = do
   x4 :: t m' r <- getRandom
   return $ bgroup "STensor" [
     bench "twacePow" $ nf (twacePowDec :: t m r -> t m' r) x2,
+    bench "twaceDec" $ nf (twacePowDec :: t m r -> t m' r) x2,
     bench "twaceCRT" $ nf (fromJust' "SimpleTensorBenches.twaceCRT" twaceCRT :: t m r -> t m' r) x2,
     bench "embedPow" $ nf (embedPow :: t m' r -> t m r) x4,
-    bench "embedDec" $ nf (embedDec :: t m' r -> t m r) x4
+    bench "embedDec" $ nf (embedDec :: t m' r -> t m r) x4,
+    bench "embedCRT" $ nf (fromJust' "SimpleTensorBenches.embedCRT" embedCRT :: t m' r -> t m r) x4
     ]

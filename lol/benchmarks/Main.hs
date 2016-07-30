@@ -1,14 +1,16 @@
-{-# LANGUAGE BangPatterns, FlexibleContexts, DataKinds, GADTs, KindSignatures, ScopedTypeVariables, PolyKinds, RecordWildCards, TemplateHaskell #-}
+{-# LANGUAGE BangPatterns, DataKinds, FlexibleContexts, GADTs, KindSignatures, NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables, PolyKinds, RecordWildCards, TemplateHaskell, TypeOperators #-}
 
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
 import Benchmarks
-import BenchConfig
 import SimpleTensorBenches
 import TensorBenches
 import SimpleUCycBenches
 import UCycBenches
 import CycBenches
+
+import Crypto.Lol
+import Crypto.Lol.Types
 
 import Criterion.Internal (runAndAnalyseOne)
 import Criterion.Main.Options (defaultConfig)
@@ -18,20 +20,101 @@ import Criterion.Types
 import Control.Monad (foldM, forM_, when)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 
-import Control.Exception (evaluate)
-
+import Control.Applicative
 import Control.DeepSeq (rnf)
+import Control.Exception (evaluate)
 
 import Data.List (transpose)
 import qualified Data.Map as Map
 import Data.Maybe
-import Data.Proxy
 
 import Statistics.Resampling.Bootstrap (Estimate(..))
 import System.Console.ANSI
 import System.IO
 import Text.Printf
 
+-- table print parameters
+colWidth, testNameWidth :: Int
+colWidth = 15
+testNameWidth = 40
+verb :: Verb
+verb = Progress
+redThreshold :: Double
+redThreshold = 1.1
+
+-- choose which layers of Lol to benchmark
+layers :: [String]
+layers = [
+  "STensor",
+  "Tensor",
+  "SUCyc",
+  "UCyc",
+  "Cyc"
+  ]
+
+benches :: [String]
+benches = [
+  {-"unzipPow",
+  "unzipDec",
+  "unzipCRT",
+  "zipWith (*)",
+  "crt",
+  "crtInv",
+  "l",
+  "lInv",
+  "*g Pow",
+  "*g Dec",
+  "*g CRT",-}
+  "divg Pow",
+  "divg Dec",
+  "divg CRT",
+  "lift",
+  "error"{-,
+  "twacePow",
+  "twaceDec",
+  "twaceCRT",
+  "embedPow",
+  "embedDec",
+  "embedCRT"-}
+  ]
+
+data Verb = Progress | Abridged | Full deriving (Eq)
+
+type T = CT
+type M = F9*F5*F7*F11
+type R = Zq 34651
+type M' = F3*F5*F11
+type Zq (q :: k) = ZqBasic q Int64
+
+testParam :: Proxy '(T, M, R)
+testParam = Proxy
+
+twoIdxParam :: Proxy '(T, M', M, R)
+twoIdxParam = Proxy
+
+main :: IO ()
+main = do
+  hSetBuffering stdout NoBuffering -- for better printing of progress
+  reports <- mapM (getReports =<<) [
+    simpleTensorBenches1 testParam,
+    simpleTensorBenches2 twoIdxParam,
+    tensorBenches1 testParam,
+    tensorBenches2 twoIdxParam,
+    simpleUCycBenches1 testParam,
+    simpleUCycBenches2 twoIdxParam,
+    ucycBenches1 testParam,
+    ucycBenches2 twoIdxParam,
+    cycBenches1 testParam,
+    cycBenches2 twoIdxParam
+    ]
+  when (verb == Progress) $ putStrLn ""
+  printTable $ group2 $ map reverse reports
+
+group2 :: [[a]] -> [[a]]
+group2 [] = []
+group2 (x:y:zs) = (x++y):(group2 zs)
+
+{-
 main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
@@ -58,9 +141,6 @@ main = do
 
   when (verb == Progress) $ putStrLn ""
   printTable reports
-
-getReports :: Benchmark -> IO [Report]
-getReports = withConfig config . runAndAnalyse
 
 flattenTriple :: Proxy '(a, '(b,c)) -> Proxy '(a,b,c)
 flattenTriple _ = Proxy
@@ -91,6 +171,10 @@ twoIdxBenches param =
       ucycBenches2 p,
       cycBenches2 p
       ] :: IO [Benchmark]
+
+-}
+getReports :: Benchmark -> IO [Report]
+getReports = withConfig config . runAndAnalyse
 
 printTable :: [[Report]] -> IO ()
 printTable rpts = do

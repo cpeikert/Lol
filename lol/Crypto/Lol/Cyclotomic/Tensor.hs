@@ -440,10 +440,11 @@ baseWrapper f = do
 -- | A lookup table for 'toIndexPair' applied to indices \([\varphi(m')]\).
 baseIndicesPow :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector (Int,Int))
+{-# INLINABLE baseIndicesPow #-}
 -- | A lookup table for 'baseIndexDec' applied to indices \([\varphi(m')]\).
 baseIndicesDec :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector (Maybe (Int,Bool)))
-
+{-# INLINABLE baseIndicesDec #-}
 -- | Same as 'baseIndicesPow', but only includes the second component
 -- of each pair.
 baseIndicesCRT :: forall m m' . (m `Divides` m')

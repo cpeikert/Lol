@@ -28,6 +28,8 @@ simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) = do
   x4 :: UCyc t m P r <- getRandom
   let x5 = toDec x4
   (Right x6) :: UCycPC t m r <- getRandom
+  let x4' = mulG x4
+      x5' = mulG x5
   gen <- newGenIO
   return $ bgroup "SUCyc" [
     bench "unzipPow"    $ nf unzipPow x1,
@@ -39,21 +41,29 @@ simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) = do
     bench "l"           $ nf toPow x5,
     bench "lInv"        $ nf toDec x4,
     bench "*g Pow"      $ nf mulG x4,
+    bench "*g Dec"      $ nf mulG x5,
     bench "*g CRT"      $ nf mulG x6,
+    bench "divg Pow"    $ nf divGPow x4',
+    bench "divg Dec"    $ nf divGDec x5',
+    bench "divg CRT"    $ nf divGCRTC x6,
     bench "lift"        $ nf lift x4,
     bench "error"       $ nf (evalRand (errorRounded (0.1 :: Double) :: Rand (CryptoRand Gen) (UCyc t m D Int64))) gen
     ]
 {-# INLINE simpleUCycBenches2 #-}
 simpleUCycBenches2 (Proxy :: Proxy '(t,m',m,r)) = do
   x4 :: UCyc t m P r <- getRandom
+  let x5 = toDec x4
   (Right x6) :: UCycPC t m r <- getRandom
   x7 :: UCyc t m' P r <- getRandom
   let x8 = toDec x7
+  (Right x9) :: UCycPC t m' r <- getRandom
   return $ bgroup "SUCyc" [
     bench "twacePow" $ nf (twacePow :: UCyc t m P r -> UCyc t m' P r) x4,
+    bench "twaceDec" $ nf (twaceDec :: UCyc t m D r -> UCyc t m' D r) x5,
     bench "twaceCRT" $ nf (twaceCRTC :: UCyc t m C r -> UCycPC t m' r) x6,
     bench "embedPow" $ nf (embedPow :: UCyc t m' P r -> UCyc t m P r) x7,
-    bench "embedDec" $ nf (embedDec :: UCyc t m' D r -> UCyc t m D r) x8
+    bench "embedDec" $ nf (embedDec :: UCyc t m' D r -> UCyc t m D r) x8,
+    bench "embedCRT" $ nf (embedCRTC :: UCyc t m' C r -> UCycPC t m r) x9
     ]
 
 pcToEC :: UCycPC t m r -> UCycEC t m r

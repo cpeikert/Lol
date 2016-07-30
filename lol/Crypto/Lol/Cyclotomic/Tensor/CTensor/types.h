@@ -3,6 +3,8 @@
 #define TENSORTYPES_H_
 
 #include <inttypes.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 typedef int64_t hInt_t ;
 typedef int32_t hDim_t ;
@@ -17,6 +19,13 @@ typedef struct
 
 
 hInt_t reciprocal (hInt_t a, hInt_t b);
+
+#define ASSERT(EXP) { \
+  if (!(EXP)) { \
+    fprintf (stderr, "Assertion in file '%s' line %d : " #EXP "  is false\n", __FILE__, __LINE__); \
+    exit(-1); \
+  } \
+}
 
 //http://stackoverflow.com/questions/37572628
 #ifdef __cplusplus
@@ -55,14 +64,11 @@ public:
   {
     Zq binv;
     binv = reciprocal(q,b.x);
+    ASSERT (binv.x); // binv == 0 indicates that x is not invertible mod q
     *this *= binv;
     return *this;
   }
 };
-inline char operator==(Zq a, const Zq& b)
-{
-  return (a.x == b.x);
-}
 inline Zq operator+(Zq a, const Zq& b)
 {
   a += b;
@@ -129,13 +135,6 @@ public:
     return *this;
   }
 };
-inline char operator==(Complex a, const Complex& b)
-{
-  // This is only used in divGDec, where we do a divisiblity check.
-  // The divisibility check should always succeed for Complex since \C is a field,
-  // however if we actually implement equality, it would fail due to roundoff.
-  return 1;
-}
 inline Complex operator+(Complex a, const Complex& b)
 {
   a += b;
