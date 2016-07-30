@@ -380,9 +380,9 @@ divGDec (Dec v) = Dec <$> T.divGDec v
 
 -- | Similar to 'divGPow'.
 divGCRTC :: (Fact m, UCRTElt t r)
-        => UCyc t m C r -> Maybe (UCyc t m C r)
+        => UCyc t m C r -> UCyc t m C r
 {-# INLINABLE divGCRTC #-}
-divGCRTC (CRTC s v) = Just $ CRTC s $ divGCRTCS s v
+divGCRTC (CRTC s v) = CRTC s $ divGCRTCS s v
 
 -- | Yield the scaled squared norm of \(g_m \cdot e\) under
 -- the canonical embedding, namely,

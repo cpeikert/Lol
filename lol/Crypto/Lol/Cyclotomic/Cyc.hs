@@ -334,8 +334,8 @@ divG :: (Fact m, CElt t r, IntegralDomain r)
 {-# INLINABLE divG #-}
 divG (Pow u) = Pow <$> U.divGPow u
 divG (Dec u) = Dec <$> U.divGDec u
-divG (CRT (Left u)) = Pow <$> (U.divGPow $ U.toPow u)
-divG (CRT (Right u)) = (CRT . Right) <$> U.divGCRTC u
+divG (CRT (Left u)) = Pow <$> U.divGPow (U.toPow u)
+divG (CRT (Right u)) = Just $ (CRT . Right) $ U.divGCRTC u
 divG c@(Scalar _) = divG $ toCRT' c
 divG (Sub c) = divG $ embed' c  -- must go to full ring
 
