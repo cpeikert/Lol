@@ -57,16 +57,16 @@ benches = [
   "*g Dec",
   "*g CRT",
   "divg Pow",
-  "divg Dec",
-  "divg CRT",
+  "divg Dec",-}
+  "divg CRT"{-,
   "lift",
-  "error",-}
+  "error",
   "twacePow",
   "twaceDec",
   "twaceCRT",
   "embedPow",
   "embedDec",
-  "embedCRT"
+  "embedCRT"-}
 
   ]
 

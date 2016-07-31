@@ -382,7 +382,7 @@ divGDec (Dec v) = Dec <$> T.divGDec v
 
 divGCRTC :: (Fact m, UCRTElt t r)
         => UCyc t m C r -> Maybe (UCyc t m C r)
-{-# INLINABLE divGCRTC #-}
+{-# INLINE divGCRTC #-}
 divGCRTC (CRTC s v) = Just $ CRTC s $ divGCRTCS s v
 
 -- | Yield the scaled squared norm of \(g_m \cdot e\) under
