@@ -98,17 +98,17 @@ bench_mulgCRT (Right a) = bench mulG a
 bench_divgPow :: (BasicCtx t m r) => UCyc t m P r -> Bench '(t,m,r)
 bench_divgPow x =
   let y = mulG x
-  in bench divG y
+  in bench divGPow y
 
 -- divide by g when input is in Dec basis
 bench_divgDec :: (BasicCtx t m r) => UCyc t m D r -> Bench '(t,m,r)
 bench_divgDec x =
   let y = mulG x
-  in bench divG y
+  in bench divGDec y
 
 -- divide by g when input is in CRT basis
 bench_divgCRT :: (BasicCtx t m r) => UCycPC t m r -> Bench '(t,m,r)
-bench_divgCRT (Right a) = bench divG a
+bench_divgCRT (Right a) = bench divGCRTC a
 
 -- generate a rounded error term
 bench_errRounded :: forall t m r gen . (ErrorCtx t m r gen)
