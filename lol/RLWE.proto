@@ -28,7 +28,7 @@ message Rq {
 
 message Kq {
   required uint32 m  = 1;
-  required double q  = 2;
+  required uint64 q  = 2;
   repeated double xs = 3;
 }
 

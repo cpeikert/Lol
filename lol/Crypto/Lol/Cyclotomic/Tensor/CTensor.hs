@@ -128,13 +128,13 @@ instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
 
   toProto (CT (CT' xs)) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-        q = proxy value (Proxy::Proxy q) :: Double
+        q = round (proxy value (Proxy::Proxy q) :: Double)
     in Kq m q $ S.fromList $ SV.toList $ SV.map LP.lift xs
   toProto x@(ZV _) = toProto $ toCT x
 
   fromProto (Kq m' q' xs) =
     let m = proxy valueFact (Proxy::Proxy m) :: Int
-        q = proxy value (Proxy::Proxy q) :: Double
+        q = round (proxy value (Proxy::Proxy q) :: Double)
         n = proxy totientFact (Proxy::Proxy m)
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
@@ -144,7 +144,7 @@ instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
             "An error occurred while reading the proto type for CT.\n\
             \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
             \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-            \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
+            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
