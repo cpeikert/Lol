@@ -52,6 +52,9 @@ extra-deps:
 
 - arithmoi-0.4.1.3
 - distributive-0.4.4
+- http-client-0.5.1
+- http-client-tls-0.3.0
+- http-conduit-2.2.0
 - nist-beacon-0.2.0.0
 - non-negative-0.1.1
 - numeric-prelude-0.4.2
