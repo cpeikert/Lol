@@ -174,9 +174,6 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor t where
 
   -- | Potentially optimized version of 'fmap' for types that satisfy 'TElt'.
   fmapT :: (Fact m, TElt t a, TElt t b) => (a -> b) -> t m a -> t m b
-  -- | Potentially optimized monadic 'fmap'.
-  fmapTM :: (Monad mon, Fact m, TElt t a, TElt t b)
-             => (a -> mon b) -> t m a -> mon (t m b)
 
   -- | Potentially optimized zipWith for types that satisfy 'TElt'.
   zipWithT :: (Fact m, TElt t a, TElt t b, TElt t c)
@@ -185,12 +182,6 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor t where
   -- | Potentially optimized unzip for types that satisfy 'TElt'.
   unzipT :: (Fact m, TElt t (a,b), TElt t a, TElt t b)
             => t m (a,b) -> (t m a, t m b)
-
-  {- CJP: suppressed, apparently not needed
-
-  -- | Unzip for arbitrary types.
-  unzipTUnrestricted :: (Fact m) => t m (a,b) -> (t m a, t m b)
-  -}
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
 hasCRTFuncs :: forall t m mon r . (CRTrans mon r, Tensor t, Fact m, TElt t r)

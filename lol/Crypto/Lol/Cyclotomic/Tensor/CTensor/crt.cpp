@@ -336,40 +336,110 @@ template <typename ring> void crtp (ring* y, hShort_t tupSize, hDim_t lts, hDim_
 template <typename ring> void crtpinv (ring* y, hShort_t tupSize, hDim_t lts, hDim_t rts,
                 hDim_t p, hDim_t rustride, ring* ruinv)
 {
-  if(p ==2) {
-    // need this case so that we can divide overall by mhat^(-1)
-    return;
+  hDim_t tensorOffset;
+  if(p == 2) {
+      return;
+  }
+  else if(p == 3) {
+    hDim_t temp1 = rts*2;
+    ring ru1 = ruinv[rustride*tupSize];
+    ring ru2 = ruinv[(rustride<<1)*tupSize];
+
+    for(hDim_t blockOffset = 0; blockOffset < lts; blockOffset++) {
+      hDim_t temp2 = blockOffset*temp1;
+      for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
+        tensorOffset = temp2 + modOffset;
+        ring y1, y2, shift;
+        y1 = y[tensorOffset*tupSize];
+        y2 = y[(tensorOffset+rts)*tupSize];
+
+        shift = (ru2*y1) + (ru1*y2);
+
+        y[tensorOffset*tupSize]      +=                 y2  - shift;
+        y[(tensorOffset+rts)*tupSize] = (ru1*y1) + (ru2*y2) - shift;
+      }
+    }
+  }
+  else if(p == 5) {
+    hDim_t temp1 = rts*4;
+    ring ru1 = ruinv[rustride*tupSize];
+    ring ru2 = ruinv[(rustride<<1)*tupSize];
+    ring ru3 = ruinv[(rustride*3)*tupSize];
+    ring ru4 = ruinv[(rustride<<2)*tupSize];
+
+    for(hDim_t blockOffset = 0; blockOffset < lts; blockOffset++) {
+      hDim_t temp2 = blockOffset*temp1;
+      for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
+        tensorOffset = temp2 + modOffset;
+        ring y1, y2, y3, y4, shift;
+        y1 = y[tensorOffset*tupSize];
+        y2 = y[(tensorOffset+rts)*tupSize];
+        y3 = y[(tensorOffset+(rts<<1))*tupSize];
+        y4 = y[(tensorOffset+3*rts)*tupSize];
+
+        shift = (ru4*y1) + (ru3*y2) + (ru2*y3) + (ru1*y4);
+
+        y[tensorOffset*tupSize]           +=                 y2  +      y3  +      y4  - shift;
+        y[(tensorOffset+rts)*tupSize]      = (ru1*y1) + (ru2*y2) + (ru3*y3) + (ru4*y4) - shift;
+        y[(tensorOffset+(rts<<1))*tupSize] = (ru2*y1) + (ru4*y2) + (ru1*y3) + (ru3*y4) - shift;
+        y[(tensorOffset+rts*3)*tupSize]    = (ru3*y1) + (ru1*y2) + (ru4*y3) + (ru2*y4) - shift;
+      }
+    }
+  }
+  else if(p == 7) {
+    hDim_t temp1 = rts*6;
+    ring ru1 = ruinv[rustride*tupSize];
+    ring ru2 = ruinv[(rustride<<1)*tupSize];
+    ring ru3 = ruinv[(rustride*3)*tupSize];
+    ring ru4 = ruinv[(rustride<<2)*tupSize];
+    ring ru5 = ruinv[(rustride*5)*tupSize];
+    ring ru6 = ruinv[(rustride*6)*tupSize];
+    for(hDim_t blockOffset = 0; blockOffset < lts; blockOffset++) {
+      hDim_t temp2 = blockOffset*temp1;
+      for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
+        tensorOffset = temp2 + modOffset;
+        ring y1, y2, y3, y4, y5, y6, shift;
+        y1 = y[tensorOffset*tupSize];
+        y2 = y[(tensorOffset+rts)*tupSize];
+        y3 = y[(tensorOffset+(rts<<1))*tupSize];
+        y4 = y[(tensorOffset+3*rts)*tupSize];
+        y5 = y[(tensorOffset+(rts<<2))*tupSize];
+        y6 = y[(tensorOffset+rts*5)*tupSize];
+
+        shift = (ru6*y1) + (ru5*y2) + (ru4*y3) + (ru3*y4) + (ru2*y5) + (ru1*y6);
+
+        y[tensorOffset*tupSize]           +=                 y2  +      y3  +      y4  +      y5  +      y6  - shift;
+        y[(tensorOffset+rts)*tupSize]      = (ru1*y1) + (ru2*y2) + (ru3*y3) + (ru4*y4) + (ru5*y5) + (ru6*y6) - shift;
+        y[(tensorOffset+(rts<<1))*tupSize] = (ru2*y1) + (ru4*y2) + (ru6*y3) + (ru1*y4) + (ru3*y5) + (ru5*y6) - shift;
+        y[(tensorOffset+rts*3)*tupSize]    = (ru3*y1) + (ru6*y2) + (ru2*y3) + (ru5*y4) + (ru1*y5) + (ru4*y6) - shift;
+        y[(tensorOffset+(rts<<2))*tupSize] = (ru4*y1) + (ru1*y2) + (ru5*y3) + (ru2*y4) + (ru6*y5) + (ru3*y6) - shift;
+        y[(tensorOffset+rts*5)*tupSize]    = (ru5*y1) + (ru3*y2) + (ru1*y3) + (ru6*y4) + (ru4*y5) + (ru2*y6) - shift;
+      }
+    }
   }
   else {
-    hDim_t tensorOffset,i;
     ring* tempSpace = (ring*)malloc((p-1)*sizeof(ring));
     hDim_t temp1 = rts*(p-1);
     for(hDim_t blockOffset = 0; blockOffset < lts; blockOffset++) {
       hDim_t temp2 = blockOffset*temp1;
       for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
         tensorOffset = temp2 + modOffset;
-
-        for(i = 0; i < p-1; i++) {
-          tempSpace[i] = (int)0;
-          int j;
-          for(j = 0; j < p-1; j++) {
-            int ruIdx = ((j+1)*i) % p;
-            tempSpace[i] += (y[(tensorOffset+j*rts)*tupSize] * ruinv[ruIdx*rustride*tupSize]);
+        ring shift;
+        shift = 0;
+        for(hDim_t row = 0; row < p-1; row++) {
+          shift += (y[(tensorOffset+row*rts)*tupSize]*ruinv[(p-row-1)*rustride*tupSize]);
+          tempSpace[row] = 0;
+          for(hDim_t col = 0; col < p-1; col++) {
+            tempSpace[row] += (y[(tensorOffset+col*rts)*tupSize]*ruinv[((row*(col+1)) % p)*rustride*tupSize]);
           }
         }
 
-        ring shift; // can't assign to a constant on the same line(?)
-        shift=0;
-        for(i = 0; i < p-1; i++) {
-          // we were given the inverse rus, so we need to negate the indices
-          shift += (y[(tensorOffset+i*rts)*tupSize] * ruinv[rustride*(p-(i+1))*tupSize]);
-        }
-
-        for(i = 0; i < p-1; i++) {
-          y[(tensorOffset+i*rts)*tupSize] = tempSpace[i] - shift;
+        for(hDim_t row = 0; row < p-1; row++) {
+          y[(tensorOffset+rts*row)*tupSize] = tempSpace[row] - shift;
         }
       }
     }
+    free(tempSpace);
   }
 }
 

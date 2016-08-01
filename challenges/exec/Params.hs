@@ -55,13 +55,13 @@ lex = lexeme langParser
 langParser :: (Stream s m Char) => GenTokenParser s u m
 langParser = makeTokenParser lang
 
-parseIntegral :: (Integral i, Monad m, Stream s m Char) => ParsecT s u m i
+parseIntegral :: (Integral i, Stream s m Char) => ParsecT s u m i
 parseIntegral = fromIntegral <$> lex (natural langParser)
 
-parseDouble :: (Monad m, Stream s m Char) => ParsecT s u m Double
+parseDouble :: (Stream s m Char) => ParsecT s u m Double
 parseDouble = lex $ float langParser
 
-parseWord ::  (Monad m, Stream s m Char) => String -> ParsecT s u m ()
+parseWord ::  (Stream s m Char) => String -> ParsecT s u m ()
 parseWord =  lex . void . try . string
 
 

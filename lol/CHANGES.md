@@ -1,6 +1,13 @@
 Changelog for lol project
 ================================
 
+0.4.0.0
+----
+ * Added support for GHC 8.0, also compatible with 7.10.3
+ * Converted documentation to MathJax
+ * Renamed Tensor.Matrix -> Tensor.Kron
+ * Added Crypto.Lol.Types interface file
+
 0.3.0.0
 -----
  * Support for protocol-buffers

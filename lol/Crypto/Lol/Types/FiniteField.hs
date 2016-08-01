@@ -39,10 +39,12 @@ import MathObj.Polynomial
 
 import Math.NumberTheory.Primes.Factorisation
 
-import           Control.Applicative hiding ((*>))
+import           Control.Applicative  hiding ((*>))
 import           Control.DeepSeq
 import           Control.Monad
-import qualified Data.Vector         as V
+import           Control.Monad.Random (liftRand, runRand)
+import qualified Data.Vector          as V
+import           System.Random
 
 --import qualified Debug.Trace as DT
 
@@ -61,9 +63,16 @@ type PrimeField fp = (Enumerable fp, Field fp, Eq fp, ZeroTestable fp,
 type GFCtx fp d = (PrimeField fp, Reflects d Int)
 
 instance (GFCtx fp d) => Enumerable (GF fp d) where
-  values = GF <$> fromCoeffs <$>
+  values = GF . fromCoeffs <$>
            -- d-fold cartesian product of Fp values
            replicateM (proxy value (Proxy::Proxy d)) values
+
+instance (Random fp, Reflects d Int) => Random (GF fp d) where
+  random = let d = proxy value (Proxy::Proxy d)
+           in runRand $ (GF . fromCoeffs) <$> replicateM d (liftRand random)
+  {-# INLINABLE random #-}
+
+  randomR _ = error "randomR non-sensical for GF"
 
 instance (GFCtx fp d) => Ring.C (GF fp d) where
 

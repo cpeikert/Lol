@@ -5,7 +5,11 @@ tarfile=rlwe-challenges.tar.gz
 challDir=rlwe-challenges
 
 echo "Running challenge generator..."
-./dist/build/$execname/$execname generate
+./dist/build/$execname/$execname generate # --init-beacon=1378395540
+rc=$?
+if [ $rc -ne 0 ]
+then exit
+fi;
 
 echo "Tarring challenge files..."
 tar czf $tarfile $( find -P $challDir -name "*.instance" -or -name "*.challenge" )
@@ -19,7 +23,7 @@ echo "Signing the tar file..."
 # > uid       Chris Peikert (Signing key for Ring-LWE challenges) <cpeikert@alum.mit.edu>
 
 # put 0xB8242E6B below (not sure if this is the same across multiple computers)
-gpg -u 0xB8242E6B -s $tarfile
+gpg -u 0xB8242E6B -s $tarfile --yes
 
 echo "Hashing the tar file..."
 openssl dgst -sha256 $tarfile

@@ -11,7 +11,7 @@ typedef int8_t hByte_t ;
 
 typedef struct
 {
-  hDim_t prime;
+  hShort_t prime;
   hShort_t exponent;
 } PrimeExponent;
 

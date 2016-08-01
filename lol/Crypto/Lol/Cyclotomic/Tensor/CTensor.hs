@@ -43,10 +43,10 @@ import Data.Maybe
 import Data.Traversable             as T
 import Data.Vector.Generic          as V (fromList, toList, unzip)
 import Data.Vector.Storable         as SV (Vector, convert, foldl',
-                                           foldl1', fromList, generate,
+                                           fromList, generate,
                                            length, map, mapM, replicate,
                                            replicateM, thaw, thaw, toList,
-                                           unsafeFreeze, unsafeSlice,
+                                           unsafeFreeze,
                                            unsafeWith, zipWith, (!))
 import Data.Vector.Storable.Mutable as SM hiding (replicate)
 
@@ -128,13 +128,13 @@ instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
 
   toProto (CT (CT' xs)) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-        q = proxy value (Proxy::Proxy q) :: Double
+        q = round (proxy value (Proxy::Proxy q) :: Double)
     in Kq m q $ S.fromList $ SV.toList $ SV.map LP.lift xs
   toProto x@(ZV _) = toProto $ toCT x
 
   fromProto (Kq m' q' xs) =
     let m = proxy valueFact (Proxy::Proxy m) :: Int
-        q = proxy value (Proxy::Proxy q) :: Double
+        q = round (proxy value (Proxy::Proxy q) :: Double)
         n = proxy totientFact (Proxy::Proxy m)
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
@@ -144,7 +144,7 @@ instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
             "An error occurred while reading the proto type for CT.\n\
             \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
             \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-            \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
+            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
@@ -159,6 +159,7 @@ zvToCT' :: forall m r . (Storable r) => IZipVector m r -> CT' m r
 zvToCT' v = coerce (convert $ unIZipVector v :: Vector r)
 
 wrap :: (Storable r) => (CT' l r -> CT' m r) -> (CT l r -> CT m r)
+{-# INLINABLE wrap #-}
 wrap f (CT v) = CT $ f v
 wrap f (ZV v) = CT $ f $ zvToCT' v
 
@@ -287,9 +288,6 @@ instance Tensor CT where
   fmapT f (CT v) = CT $ coerce (SV.map f) v
   fmapT f v@(ZV _) = fmapT f $ toCT v
 
-  fmapTM f (CT (CT' v)) = (CT . CT') <$> SV.mapM f v
-  fmapTM f v@(ZV _) = fmapTM f $ toCT v
-
   zipWithT f (CT (CT' v1)) (CT (CT' v2)) = CT $ CT' $ SV.zipWith f v1 v2
   zipWithT f v1 v2 = zipWithT f (toCT v1) (toCT v2)
 
@@ -320,7 +318,6 @@ instance Tensor CT where
   {-# INLINABLE powBasisPow #-}
   {-# INLINABLE crtSetDec #-}
   {-# INLINABLE fmapT #-}
-  {-# INLINABLE fmapTM #-}
   {-# INLINABLE zipWithT #-}
   {-# INLINABLE unzipT #-}
 
@@ -497,25 +494,3 @@ gCRT, gInvCRT :: (Storable r, CRTrans mon r, Fact m)
                  => mon (CT' m r)
 gCRT = wrapVector gCRTK
 gInvCRT = wrapVector gInvCRTK
-
--- we can't put this in Extension with the rest of the twace/embed
--- functions because it needs access to the C backend
-twaceCRT' :: forall mon m m' r .
-             (TElt CT r, CRTrans mon r, m `Divides` m')
-             => TaggedT '(m, m') mon (Vector r -> Vector r)
-twaceCRT' = tagT $ do
-  (CT' g') :: CT' m' r <- gCRT
-  (CT' gInv) :: CT' m r <- gInvCRT
-  embed <- proxyT embedCRT' (Proxy::Proxy '(m,m'))
-  indices <- pure $ proxy extIndicesCRT (Proxy::Proxy '(m,m'))
-  (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m')
-  let phi = proxy totientFact (Proxy::Proxy m)
-      phi' = proxy totientFact (Proxy::Proxy m')
-      mhat = fromIntegral $ proxy valueHatFact (Proxy::Proxy m)
-      hatRatioInv = m'hatinv * mhat
-      reltot = phi' `div` phi
-      -- tweak = mhat * g' / (m'hat * g)
-      tweak = SV.map (* hatRatioInv) $ SV.zipWith (*) (embed gInv) g'
-  return $ \ arr -> -- take true trace after mul-by-tweak
-    let v = backpermute' indices (SV.zipWith (*) tweak arr)
-    in generate phi $ \i -> foldl1' (+) $ SV.unsafeSlice (i*reltot) reltot v

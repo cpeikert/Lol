@@ -58,6 +58,7 @@ singletons [d|
 -- not promotable due to numeric output
 
 -- | Convert a 'Pos' to an integral type.
+{-# INLINABLE posToInt #-}
 posToInt :: ToInteger.C z => Pos -> z
 posToInt O = one
 posToInt (S a) = one + posToInt a
@@ -95,6 +96,7 @@ intToPos x | x > 0 = S $ intToPos $ x-1
 intToPos _ = error "cannot convert non-positive value to a Pos"
 
 -- | Convert a 'Bin' to an integral type.
+{-# INLINABLE binToInt #-}
 binToInt :: ToInteger.C z => Bin -> z
 binToInt B1 = one
 binToInt (D0 a) = 2 * binToInt a

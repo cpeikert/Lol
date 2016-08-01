@@ -59,8 +59,8 @@ import qualified Algebra.Ring         as Ring (C)
 import qualified Algebra.ZeroTestable as ZeroTestable (C)
 
 import Crypto.Lol.Cyclotomic.UCyc hiding (coeffsDec, coeffsPow, crtSet,
-                                   divG, errorCoset, errorRounded, gSqNorm,
-                                   mulG, powBasis, tGaussian)
+                                   errorCoset, errorRounded, gSqNorm, mulG,
+                                   powBasis, tGaussian)
 
 import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.RescaleCyc as R
@@ -332,9 +332,10 @@ mulG (Sub c) = mulG $ embed' c   -- must go to full ring
 divG :: (Fact m, CElt t r, IntegralDomain r)
         => Cyc t m r -> Maybe (Cyc t m r)
 {-# INLINABLE divG #-}
-divG (Pow u) = Pow <$> U.divG u
-divG (Dec u) = Dec <$> U.divG u
-divG (CRT u) = CRT <$> either (fmap Left . U.divG) (fmap Right . U.divG) u
+divG (Pow u) = Pow <$> U.divGPow u
+divG (Dec u) = Dec <$> U.divGDec u
+divG (CRT (Left u)) = Pow <$> U.divGPow (U.toPow u)
+divG (CRT (Right u)) = Just $ (CRT . Right) $ U.divGCRTC u
 divG c@(Scalar _) = divG $ toCRT' c
 divG (Sub c) = divG $ embed' c  -- must go to full ring
 

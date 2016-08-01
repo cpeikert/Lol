@@ -40,7 +40,7 @@ module Crypto.Lol.Cyclotomic.UCyc
 -- * Scalars
 , scalarPow, scalarCRT
 -- * Basic operations
-, mulG, divG, gSqNorm
+, mulG, divGPow, divGDec, divGCRTC, gSqNorm
 -- * Error sampling
 , tGaussian, errorRounded, errorCoset
 -- * Inter-ring operations and values
@@ -49,8 +49,9 @@ module Crypto.Lol.Cyclotomic.UCyc
 , coeffsPow, coeffsDec, powBasis, crtSet
 ) where
 
-import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
-                                     scalarCRT, scalarPow, twaceCRT)
+import Crypto.Lol.Cyclotomic.Tensor hiding (divGDec, divGPow, embedCRT,
+                                     embedDec, embedPow, scalarCRT,
+                                     scalarPow, twaceCRT)
 
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CRTSentinel
@@ -358,17 +359,30 @@ mulG (Dec v) = Dec $ mulGDec v
 mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
 mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 
+-- Note: We do not implement divGCRTE because we can't tell whether
+-- the element is actually divisible by g when using the CRT extension
+-- basis.
+
 -- | Divide by the special element \(g_m\).
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
-divG :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
-        => UCyc t m rep r -> Maybe (UCyc t m rep r)
-{-# INLINABLE divG #-}
-divG (Pow v) = Pow <$> divGPow v
-divG (Dec v) = Dec <$> divGDec v
-divG (CRTC s v) = Just $ CRTC s $ divGCRTCS s v
-divG (CRTE s v) = Just $ CRTE s $ runIdentity divGCRT v
+divGPow :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
+        => UCyc t m P r -> Maybe (UCyc t m P r)
+{-# INLINABLE divGPow #-}
+divGPow (Pow v) = Pow <$> T.divGPow v
+
+-- | Similar to 'divGPow'.
+divGDec :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
+        => UCyc t m D r -> Maybe (UCyc t m D r)
+{-# INLINABLE divGDec #-}
+divGDec (Dec v) = Dec <$> T.divGDec v
+
+-- | Similar to 'divGPow'.
+divGCRTC :: (Fact m, UCRTElt t r)
+        => UCyc t m C r -> UCyc t m C r
+{-# INLINABLE divGCRTC #-}
+divGCRTC (CRTC s v) = CRTC s $ divGCRTCS s v
 
 -- | Yield the scaled squared norm of \(g_m \cdot e\) under
 -- the canonical embedding, namely,
@@ -533,128 +547,6 @@ crtSet =
 
 --------- Conversion methods ------------------
 
-
--- {-# SPECIALIZE toPow :: (Fact m, Reflects q Int64) => UCyc RT m D (ZqBasic q Int64) -> UCyc RT m P (ZqBasic q Int64) #-}
--- EAC: I can't specialize toPow due to the constraint synonym TElt. See GHC ticket 12068
--- For future reference, it seemed to help in general to simplify constraints as much as possible
--- (i.e. replacing (Ring (ZqBasic q z)) with (Ring z, Reflects t z)) and
--- removing type synonyms wherever possible.
-
-{-
-EAC: I tried specializing the function
-toPow :: (Fact m, C) for C \subseteq [Tensor t , CRTEmbed r , CRTrans Maybe r , TElt t r , CRTrans Identity (CRTExt r) , TElt t (CRTExt r)]
-using
-{-# SPECIALIZE toPow :: (Fact m, Reflects q Int64) => UCyc RT m D (ZqBasic q Int64) -> UCyc RT m P (ZqBasic q Int64) #-}
-
-The results for subsets with (Tensor t) were identical to those without (Tensor t), so we ignore (Tensor t) in what follows
-
-There were three outcomes:
-1. "Good": no warnings.
-2. "NB": Warning: Forall'd constraint ‘Reflects k q Int64’ is not bound in RULE lhs
-3. "Bad": Warning: RULE left-hand side too complicated to desugar
-
-BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
-BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
-BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r
-BAD:  CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-good: CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r)
-BAD:  CRTEmbed r, CRTrans Maybe r,                                        TElt t (CRTExt r)
-good: CRTEmbed r, CRTrans Maybe r
-BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r)
-BAD:  CRTEmbed r,                  TElt t r,                              TElt t (CRTExt r)
-good: CRTEmbed r,                  TElt t r
-BAD:  CRTEmbed r,                            CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-good: CRTEmbed r,                            CRTrans Identity (CRTExt r)
-good: CRTEmbed r,                                                         TElt t (CRTExt r)
-good: CRTEmbed r
-BAD:              CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-good:             CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
-BAD:              CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
-good:             CRTrans Maybe r, TElt t r
-good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r)
-good:             CRTrans Maybe r,                                        TElt t (CRTExt r)
-good:             CRTrans Maybe r
-NB:                                TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-NB:                                TElt t r, CRTrans Identity (CRTExt r)
-NB:                                TElt t r,                              TElt t (CRTExt r)
-NB:                                TElt t r
-NB:                                          CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-NB:                                          CRTrans Identity (CRTExt r)
-NB:                                                                       TElt t (CRTExt r)
-NB:
-
-Assigning variables to constraints as follows,
-
-A=CRTEmbed r
-B=CRTrans Maybe r
-C=TElt t r
-D=CRTrans Identity (CRTExt r)
-E=TElt t (CRTExt r)
-
-using outcome values
-
-BAD=0
-NB=0
-GOOD=1
-
-the formula for results is
-
-y=(-A)*B*(-C) + (-A)*B*(-E) + A*(-C)*(-E) + A*(-B)*(-C)*(-D) + A*(-B)*(-D)*(-E)
-
-Below this line, I've reordered the subsets into logical groups.
-
--- always nb if we don't have either of (CRTEmbed r) or (CRTrans Maybe r)
--- I think this error makes sense: type families aren't injective, so references
--- to TElt and CRTExt may not refer to 'r' on their RHS.
-NB:                                TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-NB:                                TElt t r, CRTrans Identity (CRTExt r)
-NB:                                TElt t r,                              TElt t (CRTExt r)
-NB:                                TElt t r
-NB:                                          CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-NB:                                          CRTrans Identity (CRTExt r)
-NB:                                                                       TElt t (CRTExt r)
-NB:
-
--- always bad if we have both TElt constraints.
-BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
-BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-BAD:              CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-BAD:  CRTEmbed r,                  TElt t r,                              TElt t (CRTExt r)
-BAD:              CRTrans Maybe r, TElt t r,                              TElt t (CRTExt r)
-
--- always good if we don't have either TElt constraint.
-good: CRTEmbed r, CRTrans Maybe r
-good: CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r)
-good: CRTEmbed r,                            CRTrans Identity (CRTExt r)
-good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r)
-good: CRTEmbed r
-good:             CRTrans Maybe r
-
--- bad if we have both (CRTEmbed r) and (CRTrans Maybe r) with at least one of the TElt constraints
-BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
-BAD:  CRTEmbed r, CRTrans Maybe r, TElt t r
-BAD:  CRTEmbed r, CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-BAD:  CRTEmbed r, CRTrans Maybe r,                                        TElt t (CRTExt r)
-
--- a few more good cases: symmetric for (CRTEmbed r)  and (CRTrans Maybe r)
-good: CRTEmbed r,                  TElt t r
-good:             CRTrans Maybe r, TElt t r
-good: CRTEmbed r,                                                         TElt t (CRTExt r)
-good:             CRTrans Maybe r,                                        TElt t (CRTExt r)
-
--- strange cases: works for (CRTrans Maybe r), fails for (CRTEmbed r)
---   removing the (Ring (CRTExt r)) superclass constraint from CRTEmbed makes all four of these work.
---   (but doesn't change the behavior of other failing cases)
-BAD:  CRTEmbed r,                  TElt t r, CRTrans Identity (CRTExt r)
-good:             CRTrans Maybe r, TElt t r, CRTrans Identity (CRTExt r)
-BAD:  CRTEmbed r,                            CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-good:             CRTrans Maybe r,           CRTrans Identity (CRTExt r), TElt t (CRTExt r)
-
--}
 -- | Convert to powerful-basis representation.
 toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
 {-# INLINABLE toPow #-}
