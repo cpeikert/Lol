@@ -27,11 +27,9 @@ import Math.NumberTheory.Primes.Testing (isPrime)
 
 -- an infinite list of primes greater than the input and congruent to
 -- 1 mod m
-goodQs :: (Integral i) => i -> i -> [i]
-goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
-  where checkVal v = if (isPrime (fromIntegral v :: Integer))
-                     then v : checkVal (v+m)
-                    else checkVal (v+m)
+goodQs :: Integer -> Integer -> [Integer]
+goodQs m lower = filter isPrime $
+  iterate (+m) $ lower + ((m-lower) `mod` m) + 1
 
 infixr 9 **
 data a ** b
