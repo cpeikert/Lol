@@ -14,13 +14,13 @@ module Crypto.Lol.FactoredDefs
 (
 -- * Factored natural numbers
   Factored, SFactored, Fact, fType, fDec
-, reifyFact, reifyFactI, factToInt, intToFact
+, reifyFact, reifyFactI, intToFact
 -- * Prime powers
 , PrimePower, SPrimePower, Sing(SPP), PPow, ppType, ppDec
-, reifyPPow, reifyPPowI, ppToInt
+, reifyPPow, reifyPPowI
 -- * Primes
 , PrimeBin, SPrimeBin, Prime, pType, pDec
-, reifyPrime, reifyPrimeI, primeToInt
+, reifyPrime, reifyPrimeI, valueP
 -- * Constructors
 , pToPP, sPToPP, PToPP, ppToF, sPpToF, PpToF, pToF, sPToF, PToF
 -- * Unwrappers
@@ -362,8 +362,20 @@ radicalFact = radicalPPs <$> ppsFact
 -- | The odd radical (product of odd prime divisors) of a 'Factored' type.
 oddRadicalFact = oddRadicalPPs <$> ppsFact
 
+valueF, totientF, radicalF, oddRadicalF, valueHatF :: Factored -> Int
+-- | The value of a 'Factored'.
+valueF = valuePPs . map ppToPP . unF
+-- | Totient of a 'Factored'.
+totientF = totientPPs . map ppToPP . unF
+-- | The hat of a 'Factored'.
+valueHatF = valueHatPPs . map ppToPP . unF
+-- | The radical of a 'Factored'.
+radicalF = totientPPs . map ppToPP . unF
+-- | The odd radical of a 'Factored'.
+oddRadicalF = oddRadicalPPs . map ppToPP . unF
 
-primePPow, exponentPPow, valuePPow, totientPPow, radicalPPow, oddRadicalPPow, valueHatPPow :: PPow pp => Tagged pp Int
+primePPow, exponentPPow, valuePPow, totientPPow, radicalPPow, oddRadicalPPow, valueHatPPow ::
+  PPow pp => Tagged pp Int
 -- | Reflect the prime component of a 'PrimePower' type.
 primePPow = fst <$> ppPPow
 -- | Reflect the exponent component of a 'PrimePower' type.
@@ -372,27 +384,13 @@ exponentPPow = snd <$> ppPPow
 valuePPow = valuePP <$> ppPPow
 -- | The totient of a 'PrimePower' type's value.
 totientPPow = totientPP <$> ppPPow
+-- | The "hat" of a 'PrimePower' type's value:
+-- \( p^e \) if \( p \) is odd, \( 2^{e-1} \) otherwise.
+valueHatPPow = valueHatPP <$> ppPPow
 -- | The radical of a 'PrimePower' type's value.
 radicalPPow = radicalPP <$> ppPPow
 -- | The odd radical of a 'PrimePower' type's value.
 oddRadicalPPow = oddRadicalPP <$> ppPPow
--- | The "hat" of a 'PrimePower' type's value:
--- \( p^e \) if \( p \) is odd, \( 2^{e-1} \) otherwise.
-valueHatPPow = valueHatPP <$> ppPPow
-
-
-valueF, totientF, radicalF, oddRadicalF, valueHatF :: Factored -> Int
--- | The value of a 'Factored'.
-valueF = valuePPs . map ppToPP . unF
--- | Totient of a 'Factored'.
-totientF = totientPPs . map ppToPP . unF
--- | The radical of a 'Factored'.
-radicalF = totientPPs . map ppToPP . unF
--- | The odd radical of a 'Factored'.
-oddRadicalF = oddRadicalPPs . map ppToPP . unF
--- | The hat of a 'Factored'.
-valueHatF = valueHatPPs . map ppToPP . unF
-
 
 -- functions on data-level [PP]
 valuePPs, totientPPs, radicalPPs, oddRadicalPPs, valueHatPPs :: [PP] -> Int
@@ -400,34 +398,32 @@ valuePPs, totientPPs, radicalPPs, oddRadicalPPs, valueHatPPs :: [PP] -> Int
 valuePPs = product . map valuePP
 -- | Product of totients of individual 'PP's
 totientPPs = product . map totientPP
+-- | Product of hats of individual 'PP's
+valueHatPPs = product . map valueHatPP
 -- | Product of radicals of individual 'PP's
 radicalPPs = product . map radicalPP
 -- | Product of odd radicals of individual 'PP's
 oddRadicalPPs = product . map oddRadicalPP
--- | Product of hats of individual 'PP's
-valueHatPPs = product . map valueHatPP
-
 
 -- functions on data-level PP
 valuePP, totientPP, radicalPP, oddRadicalPP, valueHatPP :: PP -> Int
 -- | The value of a prime power.
 valuePP (p,e) = p^e
-
 -- | Totient of a prime power.
 totientPP (_,0) = 1
 totientPP (p,e) = (p-1)*(p^(e-1))
-
+-- | The "hat" of a prime power: \( p^e \) if \( p \) is odd, \( 2^{e-1} \)
+-- otherwise.
+valueHatPP = valueHat . valuePP
 -- | The radical of a prime power.
 radicalPP (_,0) = 1
 radicalPP (p,_) = p
-
 -- | The odd radical of a prime power.
 oddRadicalPP (2,_) = 1
 oddRadicalPP (p,_) = p
 
--- | The "hat" of a prime power: \( p^e \) if \( p \) is odd, \( 2^{e-1} \)
--- otherwise.
-valueHatPP = valueHat . valuePP
+valueP :: PrimeBin -> Int
+valueP (P p) = binToInt p
 
 -- | Return \( m \) if \( m \) is odd, and \( m/2 \) otherwise.
 valueHat :: Integral i => i -> i
@@ -478,6 +474,12 @@ ppDec pp@(p,e) = tySynD (mkName $ "PP" ++ show (p^e)) [] $ ppType pp
 fDec :: Int -> DecQ
 fDec n = tySynD (mkName $ 'F' : show n) [] $ fType n
 
+intToFact :: Int -> Factored
+intToFact m =
+  let fcts = factorize m
+      fcts' = map (\(p,e) -> PP (P $ intToBin p, intToPos e)) fcts
+  in F fcts'
+
 -- | Factorize a positive integer into an ordered list of its prime
 -- divisors, with possible duplicates.  First argument is infinite
 -- list of primes left to consider.
@@ -494,18 +496,3 @@ factorize' _ n = error $ "can't factorize non-positive n = " ++ show n
 -- pairs, in strictly increasing order by prime.
 factorize :: Int -> [(Int,Int)]
 factorize = map (head &&& length) . group . factorize' primes
-
-intToFact :: Int -> Factored
-intToFact m =
-  let fcts = factorize m
-      fcts' = map (\(p,e) -> PP (P $ intToBin p, intToPos e)) fcts
-  in F fcts'
-
-factToInt :: Factored -> Int
-factToInt (F pps) = product $ map ppToInt pps
-
-ppToInt :: PrimePower -> Int
-ppToInt (PP (p,e)) = (primeToInt p)^(posToInt e :: Int)
-
-primeToInt :: PrimeBin -> Int
-primeToInt (P p) = binToInt p
