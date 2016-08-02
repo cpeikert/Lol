@@ -10,7 +10,6 @@ module Utils
 ,type (<*>)
 
 ,module Data.Promotion.Prelude.List
-,goodQs
 ,showType
 ,ShowType) where
 
@@ -22,14 +21,6 @@ import Crypto.Lol.Types.ZqBasic
 import Crypto.Random.DRBG
 
 import Data.Promotion.Prelude.List
-
-import Math.NumberTheory.Primes.Testing (isPrime)
-
--- an infinite list of primes greater than the input and congruent to
--- 1 mod m
-goodQs :: Integer -> Integer -> [Integer]
-goodQs m lower = filter isPrime $
-  iterate (+m) $ lower + ((m-lower) `mod` m) + 1
 
 infixr 9 **
 data a ** b

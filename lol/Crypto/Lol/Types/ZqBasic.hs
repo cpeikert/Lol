@@ -15,6 +15,7 @@
 
 module Crypto.Lol.Types.ZqBasic
 ( ZqBasic -- export the type, but not the constructor (for safety)
+, goodQs
 ) where
 
 import Crypto.Lol.CRTrans
@@ -52,6 +53,12 @@ import qualified Algebra.Field          as Field (C)
 import qualified Algebra.IntegralDomain as IntegralDomain (C)
 import qualified Algebra.Ring           as Ring (C)
 import qualified Algebra.ZeroTestable   as ZeroTestable (C)
+
+-- an infinite list of primes greater than the input and congruent to
+-- 1 mod m
+goodQs :: Integer -> Integer -> [Integer]
+goodQs m lower = filter isPrime $
+  iterate (+m) $ lower + ((m-lower) `mod` m) + 1
 
 -- | The ring \(\Z_q\) of integers modulo 'q', using underlying integer
 -- type 'z'.
