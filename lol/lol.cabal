@@ -84,10 +84,8 @@ library
 
   -- ghc optimizations
   if flag(opt)
-    ghc-options: -O2
     -- makes lift much faster!
     ghc-options: -funfolding-use-threshold1000
-
   exposed-modules:
     Crypto.Lol
     Crypto.Lol.Types
