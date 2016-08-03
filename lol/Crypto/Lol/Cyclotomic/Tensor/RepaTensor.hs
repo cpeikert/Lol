@@ -82,13 +82,13 @@ instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
 
   toProto (RT (Arr xs)) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-        q = proxy value (Proxy::Proxy q) :: Double
+        q = round (proxy value (Proxy::Proxy q) :: Double)
     in Kq m q $ S.fromList $ RT.toList $ RT.map lift xs
   toProto x@(ZV _) = toProto $ toRT x
 
   fromProto (Kq m' q' xs) =
     let m = proxy valueFact (Proxy::Proxy m) :: Int
-        q = proxy value (Proxy::Proxy q) :: Double
+        q = round (proxy value (Proxy::Proxy q) :: Double)
         n = proxy totientFact (Proxy::Proxy m)
         xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
         len = F.length xs
@@ -98,7 +98,7 @@ instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
             "An error occurred while reading the proto type for RT.\n\
             \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
             \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-            \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
+            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
 
 instance Eq r => Eq (RT m r) where
   (ZV a) == (ZV b) = a == b

@@ -29,3 +29,4 @@ blockchaintest*
 test*
 metriculator.sh
 clean-benches.sh
+ParamGen.hs
