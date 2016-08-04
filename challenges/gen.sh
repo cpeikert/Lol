@@ -23,7 +23,7 @@ echo "Signing the tar file..."
 # > uid       Chris Peikert (Signing key for Ring-LWE challenges) <cpeikert@alum.mit.edu>
 
 # put 0xB8242E6B below (not sure if this is the same across multiple computers)
-gpg -u 0xB8242E6B -s $tarfile --yes
+gpg -u 0xB8242E6B --yes -s $tarfile
 
 echo "Hashing the tar file..."
 openssl dgst -sha256 $tarfile

@@ -81,10 +81,10 @@ readProtoType file = do
 -- | Parse the beacon time/offset used to reveal a challenge.
 parseBeaconAddr :: (MonadError String m) => Challenge -> m BeaconAddr
 parseBeaconAddr Challenge{..} = do
+  let ba = BA beaconEpoch beaconOffset
   -- validate the time and offset
-  throwErrorUnless (validBeaconAddr $ BA beaconEpoch beaconOffset)
-    "Invalid beacon address."
-  return $ BA beaconEpoch beaconOffset
+  throwErrorUnless (validBeaconAddr ba) $ "Invalid beacon address: " ++ show ba
+  return ba
 
 -- | Yield the ID of the suppressed secret for a challenge, given a
 -- beacon record and a byte offset.

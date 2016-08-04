@@ -91,6 +91,7 @@ readChallenge path challName = do
               readFullChallenge)
 
   liftIO $ putStr msg
+  _ <- parseBeaconAddr c -- verify that the beacon address is valid
   readChall path challName c
 
 -- | Whether we have an XML file for the beacon at the given epoch.
