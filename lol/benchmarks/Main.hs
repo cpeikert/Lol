@@ -45,21 +45,21 @@ verb = Progress
 
 benches :: [String]
 benches = [
-  {-"unzipPow",
-  "unzipDec",
-  "unzipCRT",
+  --"unzipPow",
+  --"unzipDec",
+  --"unzipCRT",
   "zipWith (*)",
   "crt",
   "crtInv",
   "l",
   "lInv",
   "*g Pow",
-  "*g Dec",
+  --"*g Dec",
   "*g CRT",
   "divg Pow",
-  "divg Dec",-}
-  "divg CRT"{-,
-  "lift",
+  "divg Dec",
+  --"divg CRT",
+  "lift"{-,
   "error",
   "twacePow",
   "twaceDec",
@@ -76,11 +76,11 @@ main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
   reports <- mapM (getReports =<<) [
-    simpleTensorBenches,
+    {-simpleTensorBenches,
     tensorBenches,
-    simpleUCycBenches,
-    ucycBenches,
-    cycBenches
+    simpleUCycBenches,-}
+    ucycBenches{-,
+    cycBenches-}
     ]
   when (verb == Progress) $ putStrLn ""
   printTable $ map reverse reports
