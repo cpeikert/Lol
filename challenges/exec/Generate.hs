@@ -5,13 +5,13 @@
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
-module Generate (generateMain) where
+module Generate (generateMain, instanceCont, instanceDisc, instanceRLWR) where
 
 import Beacon
 import Common
 import Params as P
 
-import Crypto.Lol
+import Crypto.Lol                           hiding (lift)
 import Crypto.Lol.Cyclotomic.Tensor.CTensor
 import Crypto.Lol.RLWE.Continuous           as C
 import Crypto.Lol.RLWE.Discrete             as D
@@ -23,6 +23,7 @@ import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.Challenge.Params
 import Crypto.Proto.RLWE.Challenges.ContParams
 import Crypto.Proto.RLWE.Challenges.DiscParams
+import Crypto.Proto.RLWE.Challenges.DRBGSeed
 import Crypto.Proto.RLWE.Challenges.InstanceCont
 import Crypto.Proto.RLWE.Challenges.InstanceDisc
 import Crypto.Proto.RLWE.Challenges.InstanceRLWR
@@ -36,16 +37,18 @@ import Crypto.Random.DRBG
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.IO.Class
+import Control.Monad.Except
 import Control.Monad.Random
 
-import Data.ByteString.Lazy as BS (writeFile)
-import Data.Reflection      hiding (D)
+import           Data.ByteString (ByteString)
+import qualified Data.ByteString.Lazy as BS (writeFile, fromStrict)
+import           Data.Reflection      hiding (D)
+import qualified Data.Tagged          as T
 
 import System.Directory (createDirectoryIfMissing)
 
 import Text.ProtocolBuffers        (messagePut)
-import Text.ProtocolBuffers.Header
+import Text.ProtocolBuffers.Header hiding (ByteString)
 
 -- Tensor type used to generate instances
 type T = CT
@@ -57,12 +60,15 @@ generateMain path beaconStart cps = do
   let len = length cps
       challIDs = take len [0..]
       beaconAddrs = take len $ iterate nextBeaconAddr beaconStart
-  evalCryptoRandIO (sequence_ $
+  err <- runExceptT $ evalCryptoRandIO (sequence_ $
     zipWith3 (genAndWriteChallenge path) cps challIDs beaconAddrs
-    :: RandT (CryptoRand HashDRBG) IO ())
+    :: RandT (CryptoRand HashDRBG) (ExceptT GenError IO) ())
+  case err of
+    (Left e) -> error $ show e
+    (Right _) -> return ()
 
-genAndWriteChallenge :: (MonadRandom m, MonadIO m)
-  => FilePath -> ChallengeParams -> ChallengeID -> BeaconAddr -> m ()
+genAndWriteChallenge :: (CryptoRandomGen g, MonadError GenError m, MonadIO m)
+  => FilePath -> ChallengeParams -> ChallengeID -> BeaconAddr -> RandT g m ()
 genAndWriteChallenge path cp challID ba@(BA _ _) = do
   let name = challengeName challID cp
   liftIO $ putStrLn $ "Generating challenge " ++ name
@@ -88,43 +94,58 @@ challengeName challID params =
   ++ "-l" ++ show (P.numSamples params)
 
 -- | Generate a challenge with the given parameters.
-genChallengeU :: (MonadRandom rnd)
-  => ChallengeParams -> ChallengeID -> BeaconAddr -> rnd ChallengeU
+genChallengeU :: (MonadError GenError m, CryptoRandomGen g)
+  => ChallengeParams -> ChallengeID -> BeaconAddr -> RandT g m ChallengeU
 genChallengeU cp challengeID (BA beaconEpoch beaconOffset) = do
   let params' = toProtoParams cp
       numInstances = P.numInstances cp
+      numInsts = fromIntegral numInstances
       chall = Challenge{params=Just params',..}
-      instIDs = take (fromIntegral numInstances) [0..]
-  insts <- mapM (genInstanceU params' challengeID) instIDs
+      instIDs = take numInsts [0..]
+      genInst = genInstanceU params' challengeID
+      seedLen = T.proxy genSeedLength (Proxy::Proxy InstDRBG)
+  seeds <- replicateM numInsts (liftRandT $ except . (genBytes seedLen))
+  insts <- lift $ zipWithM (flip genInst (fromIntegral seedLen)) instIDs seeds
   return $ CU chall insts
 
 -- | Generate an instance for the given parameters.
-genInstanceU :: (MonadRandom rnd)
-  => Params -> ChallengeID -> InstanceID -> rnd InstanceU
+genInstanceU :: (MonadError GenError m)
+  => Params -> ChallengeID -> InstanceID -> Int32 -> ByteString -> m InstanceU
 
-genInstanceU (Cparams params@ContParams{..}) challengeID instanceID =
-  reify q (\(_::Proxy q) ->
+genInstanceU (Cparams params@ContParams{..}) challengeID instanceID seedLen seedBytes = do
+  g :: CryptoRand InstDRBG <- except $ newGen seedBytes
+  return $ flip evalRand g $ reify q (\(_::Proxy q) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
       (s', samples' :: [C.Sample T m (Zq q) (RRq q)]) <- instanceCont svar $ fromIntegral numSamples
-      let s'' = Secret{s = toProto s', ..}
+      let seed = DRBGSeed{seedBytes = BS.fromStrict seedBytes, ..}
+          s'' = Secret{s = toProto s', ..}
           samples = (uncurry SampleCont) <$> (toProto samples')
       return $ IC s'' InstanceCont{..}))
 
-genInstanceU (Dparams params@DiscParams{..}) challengeID instanceID =
-  reify q (\(_::Proxy q) ->
+genInstanceU (Dparams params@DiscParams{..}) challengeID instanceID seedLen seedBytes = do
+  g :: CryptoRand InstDRBG <- except $ newGen seedBytes
+  return $ flip evalRand g $ reify q (\(_::Proxy q) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
       (s', samples' :: [D.Sample T m (Zq q)]) <- instanceDisc svar $ fromIntegral numSamples
-      let s'' = Secret{s = toProto s', ..}
+      let seed = DRBGSeed{seedBytes = BS.fromStrict seedBytes, ..}
+          s'' = Secret{s = toProto s', ..}
           samples = (uncurry SampleDisc) <$> (toProto samples')
       return $ ID s'' InstanceDisc{..}))
 
-genInstanceU (Rparams params@RLWRParams{..}) challengeID instanceID =
-  reify q (\(_::Proxy q) -> reify p (\(_::Proxy p) ->
+genInstanceU (Rparams params@RLWRParams{..}) challengeID instanceID seedLen seedBytes = do
+  g :: CryptoRand InstDRBG <- except $ newGen seedBytes
+  return $ flip evalRand g $ reify q (\(_::Proxy q) -> reify p (\(_::Proxy p) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
       (s', samples' :: [R.Sample T m (Zq q) (Zq p)]) <- instanceRLWR $ fromIntegral numSamples
-      let s'' = Secret{s = toProto s', ..}
+      let seed = DRBGSeed{seedBytes = BS.fromStrict seedBytes, ..}
+          s'' = Secret{s = toProto s', ..}
           samples = (uncurry SampleRLWR) <$> (toProto samples')
       return $ IR s'' InstanceRLWR{..})))
+
+-- a generalization of the function in Control.Monad.Trans.Except
+except :: (MonadError e m) => Either e a -> m a
+except (Left e) = throwError e
+except (Right a) = return a
 
 -- | Convert the parsed 'ChallengeParams' into serializable 'Params'
 toProtoParams :: ChallengeParams -> Params

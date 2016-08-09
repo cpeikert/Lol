@@ -15,6 +15,8 @@ import Crypto.Proto.RLWE.Challenges.InstanceDisc
 import Crypto.Proto.RLWE.Challenges.InstanceRLWR
 import Crypto.Proto.RLWE.Challenges.Secret
 
+import Crypto.Random.DRBG
+
 import Control.Monad.Except
 
 import           Data.ByteString.Lazy (unpack)
@@ -35,6 +37,7 @@ import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 
 type ChallengeID = Int32
 type InstanceID = Int32
+type InstDRBG = HashDRBG
 
 data ChallengeU = CU !Challenge ![InstanceU]
 
