@@ -40,7 +40,7 @@ import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Random
 
-import           Data.ByteString (ByteString)
+import           Data.ByteString (ByteString, pack)
 import qualified Data.ByteString.Lazy as BS (writeFile, fromStrict)
 import           Data.Reflection      hiding (D)
 import qualified Data.Tagged          as T
@@ -50,7 +50,7 @@ import Prelude ((^^))
 import System.Directory (createDirectoryIfMissing)
 
 import Text.ProtocolBuffers        (messagePut)
-import Text.ProtocolBuffers.Header hiding (ByteString)
+import Text.ProtocolBuffers.Header hiding (ByteString, pack)
 
 -- Tensor type used to generate instances
 type T = CT
@@ -62,15 +62,12 @@ generateMain path beaconStart cps = do
   let len = length cps
       challIDs = take len [0..]
       beaconAddrs = take len $ iterate nextBeaconAddr beaconStart
-  err <- runExceptT $ evalCryptoRandIO (sequence_ $
+  evalCryptoRandIO (sequence_ $
     zipWith3 (genAndWriteChallenge path) cps challIDs beaconAddrs
-    :: RandT (CryptoRand HashDRBG) (ExceptT GenError IO) ())
-  case err of
-    (Left e) -> error $ show e
-    (Right _) -> return ()
+    :: RandT (CryptoRand HashDRBG) IO ())
 
-genAndWriteChallenge :: (CryptoRandomGen g, MonadError GenError m, MonadIO m)
-  => FilePath -> ChallengeParams -> ChallengeID -> BeaconAddr -> RandT g m ()
+genAndWriteChallenge :: (MonadRandom m, MonadIO m)
+  => FilePath -> ChallengeParams -> ChallengeID -> BeaconAddr -> m ()
 genAndWriteChallenge path cp challID ba@(BA _ _) = do
   let name = challengeName challID cp
   liftIO $ putStrLn $ "Generating challenge " ++ name
@@ -98,8 +95,8 @@ challengeName challID params =
         roundPrec f n = (fromInteger $ round $ f * (10^n)) / (10.0^^n)
 
 -- | Generate a challenge with the given parameters.
-genChallengeU :: (MonadError GenError m, CryptoRandomGen g)
-  => ChallengeParams -> ChallengeID -> BeaconAddr -> RandT g m ChallengeU
+genChallengeU :: (MonadRandom m)
+  => ChallengeParams -> ChallengeID -> BeaconAddr -> m ChallengeU
 genChallengeU cp challengeID (BA beaconEpoch beaconOffset) = do
   let params' = toProtoParams cp
       numInstances = P.numInstances cp
@@ -108,17 +105,16 @@ genChallengeU cp challengeID (BA beaconEpoch beaconOffset) = do
       instIDs = take numInsts [0..]
       genInst = genInstanceU params' challengeID
       seedLen = T.proxy genSeedLength (Proxy::Proxy InstDRBG)
-  seeds <- replicateM numInsts (liftRandT $ except . (genBytes seedLen))
-  insts <- lift $ zipWithM (flip genInst (fromIntegral seedLen)) instIDs seeds
+  seeds <- replicateM numInsts (pack <$> replicateM seedLen getRandom)
+  let insts = zipWith (flip genInst (fromIntegral seedLen)) instIDs seeds
   return $ CU chall insts
 
 -- | Generate an instance for the given parameters.
-genInstanceU :: (MonadError GenError m)
-  => Params -> ChallengeID -> InstanceID -> Int32 -> ByteString -> m InstanceU
+genInstanceU :: Params -> ChallengeID -> InstanceID -> Int32 -> ByteString -> InstanceU
 
-genInstanceU (Cparams params@ContParams{..}) challengeID instanceID seedLen seedBytes = do
-  g :: CryptoRand InstDRBG <- except $ newGen seedBytes
-  return $ flip evalRand g $ reify q (\(_::Proxy q) ->
+genInstanceU (Cparams params@ContParams{..}) challengeID instanceID seedLen seedBytes =
+  let (Right (g :: CryptoRand InstDRBG)) = except $ newGen seedBytes
+  in flip evalRand g $ reify q (\(_::Proxy q) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
       (s', samples' :: [C.Sample T m (Zq q) (RRq q)]) <- instanceCont svar $ fromIntegral numSamples
       let seed = DRBGSeed{seedBytes = BS.fromStrict seedBytes, ..}
@@ -126,9 +122,9 @@ genInstanceU (Cparams params@ContParams{..}) challengeID instanceID seedLen seed
           samples = (uncurry SampleCont) <$> (toProto samples')
       return $ IC s'' InstanceCont{..}))
 
-genInstanceU (Dparams params@DiscParams{..}) challengeID instanceID seedLen seedBytes = do
-  g :: CryptoRand InstDRBG <- except $ newGen seedBytes
-  return $ flip evalRand g $ reify q (\(_::Proxy q) ->
+genInstanceU (Dparams params@DiscParams{..}) challengeID instanceID seedLen seedBytes =
+  let (Right (g :: CryptoRand InstDRBG)) = except $ newGen seedBytes
+  in flip evalRand g $ reify q (\(_::Proxy q) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
       (s', samples' :: [D.Sample T m (Zq q)]) <- instanceDisc svar $ fromIntegral numSamples
       let seed = DRBGSeed{seedBytes = BS.fromStrict seedBytes, ..}
@@ -136,9 +132,9 @@ genInstanceU (Dparams params@DiscParams{..}) challengeID instanceID seedLen seed
           samples = (uncurry SampleDisc) <$> (toProto samples')
       return $ ID s'' InstanceDisc{..}))
 
-genInstanceU (Rparams params@RLWRParams{..}) challengeID instanceID seedLen seedBytes = do
-  g :: CryptoRand InstDRBG <- except $ newGen seedBytes
-  return $ flip evalRand g $ reify q (\(_::Proxy q) -> reify p (\(_::Proxy p) ->
+genInstanceU (Rparams params@RLWRParams{..}) challengeID instanceID seedLen seedBytes =
+  let (Right (g :: CryptoRand InstDRBG)) = except $ newGen seedBytes
+  in flip evalRand g $ reify q (\(_::Proxy q) -> reify p (\(_::Proxy p) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
       (s', samples' :: [R.Sample T m (Zq q) (Zq p)]) <- instanceRLWR $ fromIntegral numSamples
       let seed = DRBGSeed{seedBytes = BS.fromStrict seedBytes, ..}
