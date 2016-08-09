@@ -25,7 +25,6 @@ import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.Challenge.Params
 import Crypto.Proto.RLWE.Challenges.ContParams
 import Crypto.Proto.RLWE.Challenges.DiscParams
-import Crypto.Proto.RLWE.Challenges.DRBGSeed
 import Crypto.Proto.RLWE.Challenges.InstanceCont
 import Crypto.Proto.RLWE.Challenges.InstanceDisc
 import Crypto.Proto.RLWE.Challenges.InstanceRLWR
@@ -79,6 +78,9 @@ readAndVerifyChallenge path challName =
   printPassFail ("Verifying " ++ challName) "VERIFIED" $ do
     (ba, insts) <- readChallenge path challName
     mapM_ verifyInstanceU insts
+    regens <- mapM regenInstance insts
+    unless (and regens) $ liftIO $ putStrLn
+      "\t One or more instances could not be regenerated from the seed."
     return ba
 
 -- | Read a challenge from a file, outputting the beacon address and a
@@ -132,12 +134,13 @@ readFullChallenge path challName Challenge{..} = do
 
 validateSecret :: (MonadError String m)
   => String -> ChallengeID -> InstanceID -> Int32 -> Int64 -> Secret -> m ()
-validateSecret sfile cid iid m q (Secret cid' iid' m' q' DRBGSeed{..} _) = do
+validateSecret sfile cid iid m q (Secret cid' iid' m' q' seed _) = do
   checkParamsEq sfile "challID" cid cid'
   checkParamsEq sfile "instID" iid iid'
   checkParamsEq sfile "m" m m'
   checkParamsEq sfile "q" q q'
   let minSeedLen = fromIntegral $ T.proxy genSeedLength (Proxy::Proxy InstDRBG)
+      seedLen = length $ BS.unpack seed
   throwErrorIf (seedLen < minSeedLen) $ "Seed length is too short! Expected at least " ++
     show minSeedLen ++ " bytes, but only found " ++ show seedLen ++ " bytes."
 
@@ -181,51 +184,75 @@ checkParamsEq data' param expected actual =
     data' ++ ": " ++ param ++ " mismatch. Expected " ++
     show expected ++ " but got " ++ show actual
 
--- | Verify an 'InstanceU'.
-verifyInstanceU :: (MonadError String m) => InstanceU -> m ()
-
-verifyInstanceU (IC (Secret _ _ _ _ DRBGSeed{..} s) InstanceCont{..}) =
+-- | Outputs whether or not we successfully regenerated this instance from the DRBG seed.
+regenInstance :: (MonadError String m) => InstanceU -> m Bool
+regenInstance (IC (Secret _ _ _ _ seed s) InstanceCont{..}) =
   let ContParams {..} = params
+      (Right (g :: CryptoRand InstDRBG)) = newGen $ BS.toStrict seed
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
-    reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
-      g :: CryptoRand InstDRBG <- either (throwError . show) return $ newGen $ BS.toStrict seedBytes
-      let (expectedS, expectedSamples :: [C.Sample T m (Zq q) (RRq q)]) =
-            flip evalRand g $ instanceCont svar (fromIntegral numSamples)
-      s' :: Cyc T m (Zq q) <- fromProto s
-      samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
-        fmap (\(SampleCont a b) -> (a,b)) samples
-      throwErrorUnless (expectedS == s') "Secret could not be regenerated from DRBG seed."
-      throwErrorUnless (expectedSamples == samples') "Samples could not be regenerated from DRBG seed."
-      throwErrorUnless (validInstanceCont bound s' samples')
-        "A continuous RLWE sample exceeded the error bound."))
+      reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
+        let (expectedS, expectedSamples :: [C.Sample T m (Zq q) (RRq q)]) =
+              flip evalRand g $ instanceCont svar (fromIntegral numSamples)
+        s' :: Cyc T m (Zq q) <- fromProto s
+        samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
+          fmap (\(SampleCont a b) -> (a,b)) samples
+        return $ (expectedS == s') && (expectedSamples == samples')))
 
-verifyInstanceU (ID (Secret _ _ _ _ DRBGSeed{..} s) InstanceDisc{..}) =
+regenInstance (ID (Secret _ _ _ _ seed s) InstanceDisc{..}) =
   let DiscParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
-      g :: CryptoRand InstDRBG <- either (throwError . show) return $ newGen $ BS.toStrict seedBytes
+      g :: CryptoRand InstDRBG <- either (throwError . show) return $ newGen $ BS.toStrict seed
       let (expectedS, expectedSamples :: [D.Sample T m (Zq q)]) =
             flip evalRand g $ instanceDisc svar (fromIntegral numSamples)
       s' :: Cyc T m (Zq q) <- fromProto s
       samples' <- fromProto $ fmap (\(SampleDisc a b) -> (a,b)) samples
-      throwErrorUnless (expectedS == s') "Secret could not be regenerated from DRBG seed."
-      throwErrorUnless (expectedSamples == samples') "Samples could not be regenerated from DRBG seed."
-      throwErrorUnless (validInstanceDisc bound s' samples')
-        "A discrete RLWE sample exceeded the error bound."))
+      return $ (expectedS == s') && (expectedSamples == samples')))
 
-verifyInstanceU (IR (Secret _ _ _ _ DRBGSeed{..} s) InstanceRLWR{..}) =
+regenInstance (IR (Secret _ _ _ _ seed s) InstanceRLWR{..}) =
   let RLWRParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) ->
       reify (fromIntegral p :: Int64) (\(_::Proxy p) -> do
-        g :: CryptoRand InstDRBG <- either (throwError . show) return $ newGen $ BS.toStrict seedBytes
+        g :: CryptoRand InstDRBG <- either (throwError . show) return $ newGen $ BS.toStrict seed
         let (expectedS, expectedSamples :: [R.Sample T m (Zq q) (Zq p)]) =
               flip evalRand g $ instanceRLWR (fromIntegral numSamples)
         s' :: Cyc T m (Zq q) <- fromProto s
         samples' :: [R.Sample _ _ _ (Zq p)] <- fromProto $
           fmap (\(SampleRLWR a b) -> (a,b)) samples
-        throwErrorUnless (expectedS == s') "Secret could not be regenerated from DRBG seed."
-        throwErrorUnless (expectedSamples == samples') "Samples could not be regenerated from DRBG seed."
+        return $ (expectedS == s') && (expectedSamples == samples'))))
+
+
+-- | Verify an 'InstanceU'.
+verifyInstanceU :: (MonadError String m) => InstanceU -> m ()
+
+verifyInstanceU (IC (Secret _ _ _ _ _ s) InstanceCont{..}) =
+  let ContParams {..} = params
+  in reifyFactI (fromIntegral m) (\(_::proxy m) ->
+    reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
+      s' :: Cyc T m (Zq q) <- fromProto s
+      samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
+        fmap (\(SampleCont a b) -> (a,b)) samples
+      throwErrorUnless (validInstanceCont bound s' samples')
+        "A continuous RLWE sample exceeded the error bound."))
+
+verifyInstanceU (ID (Secret _ _ _ _ _ s) InstanceDisc{..}) =
+  let DiscParams {..} = params
+  in reifyFactI (fromIntegral m) (\(_::proxy m) ->
+    reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
+      s' :: Cyc T m (Zq q) <- fromProto s
+      samples' <- fromProto $ fmap (\(SampleDisc a b) -> (a,b)) samples
+      throwErrorUnless (validInstanceDisc bound s' samples')
+        "A discrete RLWE sample exceeded the error bound."))
+
+verifyInstanceU (IR (Secret _ _ _ _ _ s) InstanceRLWR{..}) =
+  let RLWRParams {..} = params
+  in reifyFactI (fromIntegral m) (\(_::proxy m) ->
+    reify (fromIntegral q :: Int64) (\(_::Proxy q) ->
+      reify (fromIntegral p :: Int64) (\(_::Proxy p) -> do
+        s' :: Cyc T m (Zq q) <- fromProto s
+        samples' :: [R.Sample _ _ _ (Zq p)] <- fromProto $
+          fmap (\(SampleRLWR a b) -> (a,b)) samples
         throwErrorUnless (validInstanceRLWR s' samples')
           "An RLWR sample was invalid.")))
 

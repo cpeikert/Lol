@@ -60,16 +60,11 @@ message InstanceRLWR {                   // RLWR instance
   repeated SampleRLWR samples      = 4;
 }
 
-message DRBGSeed {
-  required bytes seedBytes         = 1; // bytes used to seed the DRBG used to generate the instance
-  required int32 seedLen           = 2; // length of the byte array
-}
-
 message Secret {                         // a secret for an RLWE/RLWE instance
   required int32 challengeID       = 1;
   required int32 instanceID        = 2;
   required int32 m                 = 3;
   required int64 q                 = 4;
-  required DRBGSeed seed           = 5;
+  required bytes seed              = 5;
   required Rq s                    = 6;
 }

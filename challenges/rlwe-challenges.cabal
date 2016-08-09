@@ -35,7 +35,6 @@ library
     Crypto.Proto.RLWE.Challenges.Challenge.Params
     Crypto.Proto.RLWE.Challenges.ContParams
     Crypto.Proto.RLWE.Challenges.DiscParams
-    Crypto.Proto.RLWE.Challenges.DRBGSeed
     Crypto.Proto.RLWE.Challenges.RLWRParams
     Crypto.Proto.RLWE.Challenges.InstanceCont
     Crypto.Proto.RLWE.Challenges.InstanceDisc
