@@ -7,7 +7,7 @@ module Common where
 import Beacon
 
 import qualified Crypto.Lol.Types.RRq     as RRq
-import           Crypto.Lol.Types.ZqBasic
+import           Crypto.Lol.Types hiding (RRq)
 
 import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.InstanceCont
@@ -38,6 +38,9 @@ import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 type ChallengeID = Int32
 type InstanceID = Int32
 type InstDRBG = HashDRBG
+
+-- | Tensor type used to generate and verify instances
+type T = RT
 
 data ChallengeU = CU !Challenge ![InstanceU]
 

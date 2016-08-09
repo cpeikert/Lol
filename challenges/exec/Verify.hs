@@ -50,9 +50,6 @@ import Net.Beacon
 
 import System.Directory (doesFileExist)
 
--- Tensor type used to verify instances
-type T = CT
-
 -- | Verifies all instances in the challenge tree, given the path to the
 -- root of the tree.
 verifyMain :: FilePath -> IO ()
