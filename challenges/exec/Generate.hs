@@ -12,7 +12,7 @@ import Common
 import Params as P
 
 import Crypto.Lol                           hiding (lift)
-import Crypto.Lol.Cyclotomic.Tensor.CTensor
+import Crypto.Lol.Types (CT, RT)
 import Crypto.Lol.RLWE.Continuous           as C
 import Crypto.Lol.RLWE.Discrete             as D
 import Crypto.Lol.RLWE.RLWR                 as R
@@ -51,7 +51,7 @@ import Text.ProtocolBuffers        (messagePut)
 import Text.ProtocolBuffers.Header hiding (ByteString, pack)
 
 -- Tensor type used to generate instances
-type T = CT
+type T = RT
 
 -- | Generate and serialize challenges given the path to the root of the tree
 -- and an initial beacon address.
