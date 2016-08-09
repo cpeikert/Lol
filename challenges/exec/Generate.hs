@@ -45,6 +45,8 @@ import qualified Data.ByteString.Lazy as BS (writeFile, fromStrict)
 import           Data.Reflection      hiding (D)
 import qualified Data.Tagged          as T
 
+import Prelude ((^^))
+
 import System.Directory (createDirectoryIfMissing)
 
 import Text.ProtocolBuffers        (messagePut)
@@ -88,10 +90,12 @@ challengeName :: ChallengeID -> ChallengeParams -> FilePath
 challengeName challID params =
   "chall-id" ++ show challID ++
   (case params of
-     C{..} -> "-rlwec-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
-     D{..} -> "-rlwed-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show svar
+     C{..} -> "-rlwec-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show (roundPrec svar 3)
+     D{..} -> "-rlwed-m" ++ show m ++ "-q" ++ show q ++ "-v" ++ show (roundPrec svar 3)
      R{..} -> "-rlwr-m" ++ show m ++ "-q" ++ show q ++ "-p" ++ show p)
   ++ "-l" ++ show (P.numSamples params)
+  where roundPrec :: Double -> Int -> Double
+        roundPrec f n = (fromInteger $ round $ f * (10^n)) / (10.0^^n)
 
 -- | Generate a challenge with the given parameters.
 genChallengeU :: (MonadError GenError m, CryptoRandomGen g)

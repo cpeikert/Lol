@@ -4,10 +4,12 @@
 
 module Main where
 
+import Control.Monad
 import Data.Time.Clock.POSIX
 import Options
 
 import System.Console.ANSI
+import System.Directory
 import System.IO
 import System.IO.Unsafe
 
@@ -68,6 +70,10 @@ main = do
 
 generate :: MainOpts -> GenOpts -> [String] -> IO ()
 generate MainOpts{..} GenOpts{..} _ = do
+  challDirExists <- doesDirectoryExist optChallDir
+  when challDirExists $
+    error $ "The output directory " ++ optChallDir ++
+      " already exists. Delete it or choose a new destination."
   let initBeaconTime = beaconFloor optInitBeaconEpoch
       initBeacon = BA initBeaconTime 0
   currTime <- round <$> getPOSIXTime

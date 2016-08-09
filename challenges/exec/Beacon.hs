@@ -34,7 +34,7 @@ validBeaconAddr (BA epoch offset) =
 -- beacon if necessary.
 nextBeaconAddr :: BeaconAddr -> BeaconAddr
 nextBeaconAddr (BA time byteOffset) =
-  if byteOffset == bytesPerBeacon
+  if byteOffset == bytesPerBeacon-1
   then BA (time+beaconInterval) 0
   else BA time (byteOffset+1)
 
