@@ -15,9 +15,9 @@ import Generate
 
 import           Crypto.Lol
 import           Crypto.Lol.Cyclotomic.UCyc
-import qualified Crypto.Lol.RLWE.Continuous           as C
-import qualified Crypto.Lol.RLWE.Discrete             as D
-import qualified Crypto.Lol.RLWE.RLWR                 as R
+import qualified Crypto.Lol.RLWE.Continuous as C
+import qualified Crypto.Lol.RLWE.Discrete   as D
+import qualified Crypto.Lol.RLWE.RLWR       as R
 import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.Random
 
@@ -83,7 +83,7 @@ readAndVerifyChallenge path challName = do
     return (ba, insts)
   case bainsts of -- iff the challenge could be verified, try to regenerate
     Just (ba, insts) -> do
-      regen <- printPassWarn ("Regenerating " ++ challName) "VERIFIED" $ do
+      regen <- printPassWarn ("Regenerating " ++ challName ++ "... ") "VERIFIED" $ do
         regens <- mapM regenInstance insts
         let success = and regens
         unless success $ throwError "Unsuccessful"
@@ -207,7 +207,7 @@ regenInstance (IC (Secret _ _ _ _ seed s) InstanceCont{..}) =
         let (expectedS, expectedSamples :: [C.Sample T m (Zq q) (RRq q)]) =
               flip evalRand g $ instanceCont svar (fromIntegral numSamples)
             csampleEq (a,b) (a',b') =
-              (a == a') && ((maximum $ fmapDec abs $ lift $ b-b') < 10 ^- (-3))
+              (a == a') && maximum (fmapDec abs $ lift $ b-b') < 2 ^- (-20)
         s' :: Cyc T m (Zq q) <- fromProto s
         samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
           fmap (\(SampleCont a b) -> (a,b)) samples
