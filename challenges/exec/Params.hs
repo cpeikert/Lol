@@ -14,11 +14,11 @@ import Text.Parsec.Token
 -- | Information to generate a challenge.
 data ChallengeParams =
     C { m :: Int32, q :: Int64, svar :: Double, numSamples :: Int32,
-        numInstances :: InstanceID, eps :: Double }
+        numInstances :: InstanceID, eps :: Double, annotation :: String }
   | D { m :: Int32, q :: Int64, svar :: Double, numSamples :: Int32,
-        numInstances :: InstanceID, eps :: Double }
+        numInstances :: InstanceID, eps :: Double, annotation :: String }
   | R { m :: Int32, q :: Int64, p :: Int64, numSamples :: Int32,
-        numInstances :: InstanceID }
+        numInstances :: InstanceID, annotation :: String }
   deriving (Show)
 
 contLineID, discLineID, rlwrLineID :: String
@@ -61,9 +61,11 @@ parseIntegral = fromIntegral <$> lex (natural langParser)
 parseDouble :: (Stream s m Char) => ParsecT s u m Double
 parseDouble = lex $ float langParser
 
+parseString :: (Stream s m Char) => ParsecT s u m String
+parseString = lex $ stringLiteral langParser
+
 parseWord ::  (Stream s m Char) => String -> ParsecT s u m ()
 parseWord =  lex . void . try . string
-
 
 paramsFile :: (MonadError String m, Stream s m Char) => ParsecT s InstanceID m [ChallengeParams]
 paramsFile = do
@@ -84,6 +86,7 @@ rlwecParams = do
   q <- parseIntegral
   svar <- parseDouble
   numSamples <- parseIntegral
+  annotation <- parseString
 
   numInstances <- getState
   let eps = epsDef
@@ -95,6 +98,7 @@ rlwedParams = do
   q <- parseIntegral
   svar <- parseDouble
   numSamples <- parseIntegral
+  annotation <- parseString
 
   numInstances <- getState
   let eps = epsDef
@@ -106,6 +110,7 @@ rlwrParams = do
   q <- parseIntegral
   p <- parseIntegral
   numSamples <- parseIntegral
+  annotation <- parseString
 
   numInstances <- getState
   when (p > q) $ throwError $

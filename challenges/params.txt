@@ -1,1 +1,2 @@
-Cont 487 64000 4.0 3
+Cont 487 64000 4.0 3 "Grande-Moderate"
+Disc 487 64000 4.0 3 "Tall-Toy"
