@@ -6,8 +6,8 @@ module Common where
 
 import Beacon
 
-import qualified Crypto.Lol.Types.RRq     as RRq
-import           Crypto.Lol.Types hiding (RRq)
+import           Crypto.Lol.Types     hiding (RRq)
+import qualified Crypto.Lol.Types.RRq as RRq
 
 import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.InstanceCont
@@ -40,7 +40,7 @@ type InstanceID = Int32
 type InstDRBG = HashDRBG
 
 -- | Tensor type used to generate and verify instances
-type T = RT
+type T = CT
 
 data ChallengeU = CU !Challenge ![InstanceU]
 
