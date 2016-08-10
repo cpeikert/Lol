@@ -13,8 +13,8 @@ import Beacon
 import Common
 import Generate
 
-import           Crypto.Lol                           hiding (lift)
-import           Crypto.Lol.Cyclotomic.Tensor.CTensor
+import           Crypto.Lol
+import           Crypto.Lol.Cyclotomic.UCyc
 import qualified Crypto.Lol.RLWE.Continuous           as C
 import qualified Crypto.Lol.RLWE.Discrete             as D
 import qualified Crypto.Lol.RLWE.RLWR                 as R
@@ -37,7 +37,7 @@ import Crypto.Proto.RLWE.SampleRLWR
 import Crypto.Random.DRBG
 
 import           Control.Applicative
-import           Control.Monad.Except
+import           Control.Monad.Except hiding (lift)
 import           Control.Monad.Random
 import qualified Data.ByteString.Lazy as BS
 import           Data.Int
@@ -76,8 +76,8 @@ readAndVerifyChallenge path challName =
     (ba, insts) <- readChallenge path challName
     mapM_ verifyInstanceU insts
     regens <- mapM regenInstance insts
-    unless (and regens) $ liftIO $ putStrLn
-      "\t One or more instances could not be regenerated from the seed."
+    unless (and regens) $ liftIO $ putStr
+      "\t One or more instances could not be regenerated from the seed. "
     return ba
 
 -- | Read a challenge from a file, outputting the beacon address and a
@@ -183,6 +183,9 @@ checkParamsEq data' param expected actual =
 
 -- | Outputs whether or not we successfully regenerated this instance from the DRBG seed.
 regenInstance :: (MonadError String m) => InstanceU -> m Bool
+-- as always with floating point arithmetic, nothing is perfect (even deterministic generation of instances)
+-- the secret and a_i are discrete, so they should match exactly.
+-- the b_i shouldn't be too far off
 regenInstance (IC (Secret _ _ _ _ seed s) InstanceCont{..}) =
   let ContParams {..} = params
       (Right (g :: CryptoRand InstDRBG)) = newGen $ BS.toStrict seed
@@ -190,10 +193,12 @@ regenInstance (IC (Secret _ _ _ _ seed s) InstanceCont{..}) =
       reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
         let (expectedS, expectedSamples :: [C.Sample T m (Zq q) (RRq q)]) =
               flip evalRand g $ instanceCont svar (fromIntegral numSamples)
+            csampleEq (a,b) (a',b') =
+              (a == a') && ((maximum $ fmapDec abs $ lift $ b-b') < 10^-(-3))
         s' :: Cyc T m (Zq q) <- fromProto s
         samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
           fmap (\(SampleCont a b) -> (a,b)) samples
-        return $ (expectedS == s') && (expectedSamples == samples')))
+        return $ (expectedS == s') && (and $ zipWith csampleEq expectedSamples samples')))
 
 regenInstance (ID (Secret _ _ _ _ seed s) InstanceDisc{..}) =
   let DiscParams {..} = params
