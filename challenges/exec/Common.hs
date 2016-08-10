@@ -40,7 +40,7 @@ type InstanceID = Int32
 type InstDRBG = HashDRBG
 
 -- | Tensor type used to generate and verify instances
-type T = RT
+type T = CT
 
 data ChallengeU = CU !Challenge ![InstanceU]
 
@@ -151,16 +151,21 @@ maybeThrowError m str = do
   return $ fromJust m
 
 -- | Pretty printing of error messages.
-printPassFail :: (MonadIO m)
-                 => String -> String -> ExceptT String m a -> m (Maybe a)
-printPassFail str pass e = do
+printPassFailGeneric :: (MonadIO m)
+                 => Color -> String -> String -> ExceptT String m a -> m (Maybe a)
+printPassFailGeneric failColor str pass e = do
   liftIO $ putStr str
   res <- runExceptT e
   case res of
-    (Left st) -> do printANSI Red st
+    (Left st) -> do printANSI failColor st
                     return Nothing
     (Right a) -> do printANSI Green pass
                     return $ Just a
+
+printPassFail, printPassWarn :: (MonadIO m)
+  => String -> String -> ExceptT String m a -> m (Maybe a)
+printPassFail = printPassFailGeneric Red
+printPassWarn = printPassFailGeneric Yellow
 
 printANSI :: (MonadIO m) => Color -> String -> m ()
 printANSI sgr str = liftIO $ do

@@ -57,28 +57,41 @@ verifyMain path = do
   -- get a list of challenges to reveal
   challNames <- challengeList path
 
-  beaconAddrs <- sequence <$> mapM (readAndVerifyChallenge path) challNames
+  res <- sequence <$> mapM (readAndVerifyChallenge path) challNames
 
   -- verify that all beacon addresses are distinct
-  case beaconAddrs of
-    (Just addrs) -> do
+  -- and print a note if any challenges could not be regenerated
+  case unzip <$> res of
+    Just (addrs, regens) -> do
       _ <- printPassFail "Checking for distinct beacon addresses... " "DISTINCT"
         $ throwErrorIf (length (nub addrs) /= length addrs) "NOT DISTINCT"
-      return ()
+      unless (and regens) $
+        putStrLn "Note: one or more instances could not be \
+          \regenerated from the seed value. This is non-fatal, \
+          \and is likely due to using a different platform than \
+          \the one used to generate the challenges."
     Nothing -> return ()
 
 -- | Reads a challenge and verifies all instances.
 -- Returns the beacon address for the challenge.
 readAndVerifyChallenge :: (MonadIO m)
-  => FilePath -> String -> m (Maybe BeaconAddr)
-readAndVerifyChallenge path challName =
-  printPassFail ("Verifying " ++ challName) "VERIFIED" $ do
+  => FilePath -> String -> m (Maybe (BeaconAddr, Bool))
+readAndVerifyChallenge path challName = do
+  bainsts <- printPassFail ("Verifying " ++ challName) "VERIFIED" $ do
     (ba, insts) <- readChallenge path challName
     mapM_ verifyInstanceU insts
-    regens <- mapM regenInstance insts
-    unless (and regens) $ liftIO $ putStr
-      "\t One or more instances could not be regenerated from the seed. "
-    return ba
+    return (ba, insts)
+  case bainsts of -- iff the challenge could be verified, try to regenerate
+    Just (ba, insts) -> do
+      regen <- printPassWarn ("Regenerating " ++ challName) "VERIFIED" $ do
+        regens <- mapM regenInstance insts
+        let success = and regens
+        unless success $ throwError "Unsuccessful"
+        return success
+      case regen of
+        Nothing -> return $ Just (ba, False)
+        Just _ -> return $ Just (ba, True)
+    Nothing -> return Nothing
 
 -- | Read a challenge from a file, outputting the beacon address and a
 -- list of instances to be verified.
@@ -194,7 +207,7 @@ regenInstance (IC (Secret _ _ _ _ seed s) InstanceCont{..}) =
         let (expectedS, expectedSamples :: [C.Sample T m (Zq q) (RRq q)]) =
               flip evalRand g $ instanceCont svar (fromIntegral numSamples)
             csampleEq (a,b) (a',b') =
-              (a == a') && ((maximum $ fmapDec abs $ lift $ b-b') < 10^-(-3))
+              (a == a') && ((maximum $ fmapDec abs $ lift $ b-b') < 10 ^- (-3))
         s' :: Cyc T m (Zq q) <- fromProto s
         samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
           fmap (\(SampleCont a b) -> (a,b)) samples
