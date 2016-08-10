@@ -83,7 +83,7 @@ readAndVerifyChallenge path challName = do
     return (ba, insts)
   case bainsts of -- iff the challenge could be verified, try to regenerate
     Just (ba, insts) -> do
-      regen <- printPassWarn ("Regenerating " ++ challName) "VERIFIED" $ do
+      regen <- printPassWarn ("Regenerating " ++ challName ++ "... ") "VERIFIED" $ do
         regens <- mapM regenInstance insts
         let success = and regens
         unless success $ throwError "Unsuccessful"
