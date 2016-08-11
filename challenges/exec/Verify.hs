@@ -48,7 +48,8 @@ import qualified Data.Tagged          as T
 
 import Net.Beacon
 
-import System.Directory (doesFileExist)
+import System.Console.ANSI
+import System.Directory    (doesFileExist)
 
 -- | Verifies all instances in the challenge tree, given the path to the
 -- root of the tree.
@@ -66,10 +67,10 @@ verifyMain path = do
       _ <- printPassFail "Checking for distinct beacon addresses... " "DISTINCT"
         $ throwErrorIf (length (nub addrs) /= length addrs) "NOT DISTINCT"
       unless (and regens) $
-        putStrLn "Note: one or more instances could not be \
-          \regenerated from the seed value. This is non-fatal, \
-          \and is likely due to using a different platform than \
-          \the one used to generate the challenges."
+        printANSI Yellow "NOTE: one or more instances could not be\n \
+          \regenerated from the provided PRG seed. This is NON-FATAL,\n \
+          \and is likely due to the use of a different compiler/platform\n \
+          \than the one used to generate the challenges."
     Nothing -> return ()
 
 -- | Reads a challenge and verifies all instances.
@@ -86,7 +87,7 @@ readAndVerifyChallenge path challName = do
       regen <- printPassWarn ("Regenerating " ++ challName ++ "... ") "VERIFIED" $ do
         regens <- mapM regenInstance insts
         let success = and regens
-        unless success $ throwError "Unsuccessful"
+        unless success $ throwError "UNSUCCESSFUL"
         return success
       case regen of
         Nothing -> return $ Just (ba, False)
