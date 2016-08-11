@@ -79,9 +79,15 @@ challengeName :: ChallengeID -> ChallengeParams -> FilePath
 challengeName challID params =
   "chall-id" ++ show challID ++
     case params of
-      C{..} -> "-rlwec-m" ++ show m ++ "-q" ++ show q ++ "-l" ++ show (P.numSamples params) ++ "-" ++ annotation
-      D{..} -> "-rlwed-m" ++ show m ++ "-q" ++ show q ++ "-l" ++ show (P.numSamples params) ++ "-" ++ annotation
-      R{..} -> "-rlwr-m" ++ show m ++ "-q" ++ show q ++ "-p" ++ show p ++ "-l" ++ show (P.numSamples params) ++ "-" ++ annotation
+      C{..} -> "-rlwec-m" ++ show m ++ "-q" ++ show q ++
+        "-l" ++ show (P.numSamples params) ++
+        if null annotation then "" else "-" ++ annotation
+      D{..} -> "-rlwed-m" ++ show m ++ "-q" ++ show q ++
+        "-l" ++ show (P.numSamples params) ++
+        if null annotation then "" else "-" ++ annotation
+      R{..} -> "-rlwr-m" ++ show m ++ "-q" ++ show q ++ "-p" ++ show p ++
+        "-l" ++ show (P.numSamples params) ++
+        if null annotation then "" else "-" ++ annotation
 
 -- | Generate a challenge with the given parameters.
 genChallengeU :: (MonadRandom m)
