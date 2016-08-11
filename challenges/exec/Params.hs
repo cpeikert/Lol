@@ -65,7 +65,7 @@ parseString :: (Stream s m Char) => ParsecT s u m String
 parseString = lex $ stringLiteral langParser
 
 parseWord ::  (Stream s m Char) => String -> ParsecT s u m ()
-parseWord =  lex . void . try . string
+parseWord = lex . void . try . string
 
 paramsFile :: (MonadError String m, Stream s m Char) => ParsecT s InstanceID m [ChallengeParams]
 paramsFile = do
