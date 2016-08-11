@@ -73,7 +73,7 @@ paramsFile = do
   manyError line
 
 line :: (MonadError String m, Stream s m Char) => ParsecT s InstanceID m ChallengeParams
-line = rlwecParams <|> rlwedParams <|> rlwrParams <?> "Expected one of '" ++
+line = (try rlwecParams) <|> (try rlwedParams) <|> (try rlwrParams) <?> "Expected one of '" ++
   show contLineID ++ "', '" ++
   show discLineID ++ "', or '" ++
   show rlwrLineID ++ "'."
