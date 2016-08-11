@@ -308,6 +308,7 @@ instance (Reflects q z, ToInteger z, Random z) => Random (ZqBasic q z) where
                     in (ZqB x, g')
 
   randomR _ = error "randomR non-sensical for Zq types"
+  {-# INLINABLE random #-}
 
 -- instance of Arbitrary
 instance (Reflects q z, ToInteger z, Random z) => Arbitrary (ZqBasic q z) where

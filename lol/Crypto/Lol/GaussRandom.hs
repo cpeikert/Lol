@@ -18,7 +18,7 @@ import Control.Monad.Random
 -- @svar = true variance * (2*pi)@. See
 -- <http://www.alpheratz.net/murison/Maple/GaussianDistribution/GaussianDistribution.pdf
 -- this link> for details.
-
+{-# INLINABLE realGaussian #-}
 realGaussian :: forall v q m .
                 (ToRational v, OrdFloat q, Random q, MonadRandom m)
                 => v -> m (q,q)
@@ -44,6 +44,7 @@ realGaussian svar =
 realGaussians ::
     (ToRational svar, OrdFloat i, Random i, V.Vector v i, MonadRandom m)
     => svar -> Int -> m (v i)
+{-# INLINABLE realGaussians #-}
 realGaussians var n
     | odd n = V.tail <$> realGaussians var (n+1) -- O(1) tail
     | otherwise = (V.fromList . uncurry (++) . unzip) <$>
@@ -59,11 +60,13 @@ realGaussians var n
 -- | Execute an action repeatedly until its result fails to satisfy a predicate,
 -- and return that result (discarding all others).
 iterateWhile :: (Monad m) => (a -> Bool) -> m a -> m a
+{-# INLINE iterateWhile #-}
 iterateWhile p x = x >>= iterateUntilM (not . p) (const x)
 
 -- | Analogue of @('Prelude.until')@
 -- Yields the result of applying f until p holds.
 iterateUntilM :: (Monad m) => (a -> Bool) -> (a -> m a) -> a -> m a
+{-# INLINE iterateUntilM #-}
 iterateUntilM p f v
     | p v       = return v
     | otherwise = f v >>= iterateUntilM p f
