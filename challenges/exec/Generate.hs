@@ -44,6 +44,7 @@ import qualified Data.Tagged          as T
 
 import System.Directory (createDirectoryIfMissing)
 
+import Text.Printf
 import Text.ProtocolBuffers        (messagePut)
 import Text.ProtocolBuffers.Header hiding (ByteString, pack)
 
@@ -76,7 +77,7 @@ genAndWriteChallenge path cp ba@(BA _ _) = do
 -- | The name for each challenge directory.
 challengeName :: ChallengeParams -> FilePath
 challengeName params =
-  "chall-id" ++ show (challID params) ++
+  "chall-id" ++ (printf "%04d" $ challID params) ++
     case params of
       C{..} -> "-rlwec-m" ++ show m ++ "-q" ++ show q ++
         "-l" ++ show (P.numSamples params) ++
