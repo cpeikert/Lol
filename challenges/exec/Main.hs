@@ -4,10 +4,12 @@
 
 module Main where
 
+import Control.Monad (when)
 import Data.Time.Clock.POSIX
 import Options
 
 import System.Console.ANSI
+import System.Exit
 import System.IO
 
 import Beacon
@@ -68,6 +70,9 @@ generate :: MainOpts -> GenOpts -> [String] -> IO ()
 generate MainOpts{..} GenOpts{..} _ = do
   let initBeaconTime = beaconFloor optInitBeaconEpoch
       initBeacon = BA initBeaconTime 0
+  when (initBeaconTime == 0) $ do
+    putStrLn "You must specify the initial beacon time with --init-beacon"
+    exitFailure
   currTime <- round <$> getPOSIXTime
   case initBeaconTime > currTime of
     True -> putStrLn $ "Challenges can be revealed starting at " ++
