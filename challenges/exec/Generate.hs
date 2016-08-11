@@ -52,16 +52,15 @@ import Text.ProtocolBuffers.Header hiding (ByteString, pack)
 generateMain :: FilePath -> BeaconAddr -> [ChallengeParams] -> IO ()
 generateMain path beaconStart cps = do
   let len = length cps
-      challIDs = take len [0..]
       beaconAddrs = take len $ iterate nextBeaconAddr beaconStart
   evalCryptoRandIO (sequence_ $
-    zipWith3 (genAndWriteChallenge path) cps challIDs beaconAddrs
+    zipWith (genAndWriteChallenge path) cps beaconAddrs
     :: RandT (CryptoRand HashDRBG) IO ())
 
 genAndWriteChallenge :: (MonadRandom m, MonadIO m)
-  => FilePath -> ChallengeParams -> ChallengeID -> BeaconAddr -> m ()
-genAndWriteChallenge path cp challID ba@(BA _ _) = do
-  let name = challengeName challID cp
+  => FilePath -> ChallengeParams -> BeaconAddr -> m ()
+genAndWriteChallenge path cp ba@(BA _ _) = do
+  let name = challengeName cp
   liftIO $ putStrLn $ "Generating challenge " ++ name
 
   -- CJP: not printing warning because it's annoying to implement
@@ -71,13 +70,13 @@ genAndWriteChallenge path cp challID ba@(BA _ _) = do
   -- isAvail <- isBeaconAvailable t
   -- when isAvail $ printANSI Red "Beacon is already available!"
 
-  chall <- genChallengeU cp challID ba
+  chall <- genChallengeU cp ba
   liftIO $ writeChallengeU path name chall
 
 -- | The name for each challenge directory.
-challengeName :: ChallengeID -> ChallengeParams -> FilePath
-challengeName challID params =
-  "chall-id" ++ show challID ++
+challengeName :: ChallengeParams -> FilePath
+challengeName params =
+  "chall-id" ++ show (challID params) ++
     case params of
       C{..} -> "-rlwec-m" ++ show m ++ "-q" ++ show q ++
         "-l" ++ show (P.numSamples params) ++
@@ -91,9 +90,10 @@ challengeName challID params =
 
 -- | Generate a challenge with the given parameters.
 genChallengeU :: (MonadRandom m)
-  => ChallengeParams -> ChallengeID -> BeaconAddr -> m ChallengeU
-genChallengeU cp challengeID (BA beaconEpoch beaconOffset) = do
-  let params' = toProtoParams cp
+  => ChallengeParams -> BeaconAddr -> m ChallengeU
+genChallengeU cp (BA beaconEpoch beaconOffset) = do
+  let challengeID = challID cp
+      params' = toProtoParams cp
       numInstances = P.numInstances cp
       numInsts = fromIntegral numInstances
       chall = Challenge{params=Just params',..}

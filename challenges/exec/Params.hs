@@ -2,7 +2,7 @@
 
 module Params where
 
-import Common (InstanceID)
+import Common (ChallengeID, InstanceID)
 
 import Control.Applicative hiding ((<|>))
 import Control.Monad.Except
@@ -13,11 +13,11 @@ import Text.Parsec.Token
 
 -- | Information to generate a challenge.
 data ChallengeParams =
-    C { m :: Int32, q :: Int64, svar :: Double, numSamples :: Int32,
+    C { challID :: ChallengeID, m :: Int32, q :: Int64, svar :: Double, numSamples :: Int32,
         numInstances :: InstanceID, eps :: Double, annotation :: String }
-  | D { m :: Int32, q :: Int64, svar :: Double, numSamples :: Int32,
+  | D { challID :: ChallengeID, m :: Int32, q :: Int64, svar :: Double, numSamples :: Int32,
         numInstances :: InstanceID, eps :: Double, annotation :: String }
-  | R { m :: Int32, q :: Int64, p :: Int64, numSamples :: Int32,
+  | R { challID :: ChallengeID, m :: Int32, q :: Int64, p :: Int64, numSamples :: Int32,
         numInstances :: InstanceID, annotation :: String }
   deriving (Show)
 
@@ -81,6 +81,7 @@ line = rlwecParams <|> rlwedParams <|> rlwrParams <?> "Expected one of '" ++
 rlwecParams, rlwedParams, rlwrParams ::
   (MonadError String m, Stream s m Char) => ParsecT s InstanceID m ChallengeParams
 rlwecParams = do
+  challID <- parseIntegral
   parseWord contLineID
   m <- parseIntegral
   q <- parseIntegral
@@ -93,6 +94,7 @@ rlwecParams = do
   return C{..}
 
 rlwedParams = do
+  challID <- parseIntegral
   parseWord discLineID
   m <- parseIntegral
   q <- parseIntegral
@@ -105,6 +107,7 @@ rlwedParams = do
   return D{..}
 
 rlwrParams = do
+  challID <- parseIntegral
   parseWord rlwrLineID
   m <- parseIntegral
   q <- parseIntegral
