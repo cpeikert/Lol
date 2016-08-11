@@ -58,41 +58,41 @@ verifyMain path = do
   -- get a list of challenges to reveal
   challNames <- challengeList path
 
-  res <- sequence <$> mapM (readAndVerifyChallenge path) challNames
+  beaconAddrs <- sequence <$> mapM (readAndVerifyChallenge path) challNames
 
   -- verify that all beacon addresses are distinct
-  -- and print a note if any challenges could not be regenerated
-  case unzip <$> res of
-    Just (addrs, regens) -> do
+  case beaconAddrs of
+    (Just addrs) -> do
       _ <- printPassFail "Checking for distinct beacon addresses... " "DISTINCT"
         $ throwErrorIf (length (nub addrs) /= length addrs) "NOT DISTINCT"
-      unless (and regens) $
-        printANSI Yellow "NOTE: one or more instances could not be\n \
-          \regenerated from the provided PRG seed. This is NON-FATAL,\n \
-          \and is likely due to the use of a different compiler/platform\n \
-          \than the one used to generate the challenges."
+      putStrLn "\nAttempting to deterministically regenerate challenges. This will take a while..."
+      regens <- sequence <$> mapM (regenChallenge path) challNames
+      when (isNothing regens) $ printANSI Yellow "NOTE: one or more instances could not be\n \
+        \regenerated from the provided PRG seed. This is NON-FATAL,\n \
+        \and is likely due to the use of a different compiler/platform\n \
+        \than the one used to generate the challenges."
     Nothing -> return ()
 
 -- | Reads a challenge and verifies all instances.
 -- Returns the beacon address for the challenge.
 readAndVerifyChallenge :: (MonadIO m)
-  => FilePath -> String -> m (Maybe (BeaconAddr, Bool))
-readAndVerifyChallenge path challName = do
-  bainsts <- printPassFail ("Verifying " ++ challName) "VERIFIED" $ do
+  => FilePath -> String -> m (Maybe BeaconAddr)
+readAndVerifyChallenge path challName =
+  printPassFail ("Verifying " ++ challName) "VERIFIED" $ do
     (ba, insts) <- readChallenge path challName
     mapM_ verifyInstanceU insts
-    return (ba, insts)
-  case bainsts of -- iff the challenge could be verified, try to regenerate
-    Just (ba, insts) -> do
-      regen <- printPassWarn ("Regenerating " ++ challName ++ "... ") "VERIFIED" $ do
-        regens <- mapM regenInstance insts
-        let success = and regens
-        unless success $ throwError "UNSUCCESSFUL"
-        return success
-      case regen of
-        Nothing -> return $ Just (ba, False)
-        Just _ -> return $ Just (ba, True)
-    Nothing -> return Nothing
+    return ba
+
+-- | Reads a challenge and attempts to regenerate all instances from the
+-- provided seed.
+-- Returns (Just ()) if regeneration succeeded for all instances.
+regenChallenge :: (MonadIO m)
+  => FilePath -> String -> m (Maybe ())
+regenChallenge path challName = do
+  printPassWarn ("Regenerating " ++ challName ++ "... ") "VERIFIED" $ do
+    (_, insts) <- readChallenge path challName
+    regens <- mapM regenInstance insts
+    unless (and regens) $ throwError "UNSUCCESSFUL"
 
 -- | Read a challenge from a file, outputting the beacon address and a
 -- list of instances to be verified.
