@@ -26,7 +26,7 @@ data MainOpts =
 
 instance Options MainOpts where
   defineOptions = MainOpts <$>
-    simpleOption "challenge-dir" "rlwe-challenges/" "Path to challenges"
+    simpleOption "challenge-dir" "challenges/" "Path to challenges"
 
 data GenOpts =
   GenOpts
