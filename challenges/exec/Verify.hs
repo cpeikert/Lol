@@ -65,7 +65,7 @@ verifyMain path = do
     (Just addrs) -> do
       _ <- printPassFail "Checking for distinct beacon addresses... " "DISTINCT"
         $ throwErrorIf (length (nub addrs) /= length addrs) "NOT DISTINCT"
-      putStrLn "\nAttempting to deterministically regenerate challenges. This will take a while..."
+      putStrLn "\nAttempting to regenerate challenges from random seeds. This will take awhile..."
       regens <- sequence <$> mapM (regenChallenge path) challNames
       when (isNothing regens) $ printANSI Yellow "NOTE: one or more instances could not be\n \
         \regenerated from the provided PRG seed. This is NON-FATAL,\n \
@@ -197,9 +197,10 @@ checkParamsEq data' param expected actual =
 
 -- | Outputs whether or not we successfully regenerated this instance from the DRBG seed.
 regenInstance :: (MonadError String m) => InstanceU -> m Bool
--- as always with floating point arithmetic, nothing is perfect (even deterministic generation of instances)
+-- as always with floating point arithmetic, nothing is perfect (even
+-- deterministic generation of instances).
 -- the secret and a_i are discrete, so they should match exactly.
--- the b_i shouldn't be too far off
+-- the b_i shouldn't be too far off.
 regenInstance (IC (Secret _ _ _ _ seed s) InstanceCont{..}) =
   let ContParams {..} = params
       (Right (g :: CryptoRand InstDRBG)) = newGen $ BS.toStrict seed

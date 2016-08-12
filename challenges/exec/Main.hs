@@ -4,7 +4,7 @@
 
 module Main where
 
-import Control.Monad (when)
+import Control.Monad         (when)
 import Data.Time.Clock.POSIX
 import Options
 
@@ -40,7 +40,7 @@ instance Options GenOpts where
     simpleOption "params" "params.txt" "File containing RLWE/R parameters" <*>
     simpleOption "num-instances" 32
     "Number N of instances per challenge, N = 2^k <= 256" <*>
-    (defineOption optionType_int64 $ \o ->
+    defineOption optionType_int64 (\o ->
       o {optionLongFlags = ["init-beacon"],
          optionDescription = "Initial beacon epoch for suppress phase."})
 
@@ -74,11 +74,11 @@ generate MainOpts{..} GenOpts{..} _ = do
     putStrLn "You must specify the initial beacon time with --init-beacon"
     exitFailure
   currTime <- round <$> getPOSIXTime
-  case initBeaconTime > currTime of
-    True -> putStrLn $ "Challenges can be revealed starting at " ++
-            show initBeaconTime ++ ", " ++ show (initBeaconTime-currTime) ++
-            " seconds from now."
-    False -> printANSI Yellow "WARNING: Reveal time is in the past!"
+  if initBeaconTime > currTime
+    then putStrLn $ "Challenges can be revealed starting at " ++
+         show initBeaconTime ++ ", " ++ show (initBeaconTime-currTime) ++
+         " seconds from now."
+    else printANSI Yellow "WARNING: Reveal time is in the past!"
   paramContents <- readFile optParamsFile
   let params = parseChallParams paramContents optNumInstances
   generateMain optChallDir initBeacon params
