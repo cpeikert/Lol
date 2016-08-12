@@ -1,13 +1,15 @@
-{-# LANGUAGE FlexibleContexts, RecordWildCards #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RecordWildCards       #-}
 
 module Params where
 
 import Common (ChallengeID, InstanceID)
 
-import Control.Applicative hiding ((<|>))
+import Control.Applicative  hiding ((<|>))
 import Control.Monad.Except
 import Data.Int
-import Prelude hiding (lex)
+import Prelude              hiding (lex)
 import Text.Parsec
 import Text.Parsec.Token
 
@@ -73,7 +75,7 @@ paramsFile = do
   manyError line
 
 line :: (MonadError String m, Stream s m Char) => ParsecT s InstanceID m ChallengeParams
-line = (try rlwecParams) <|> (try rlwedParams) <|> (try rlwrParams) <?> "Expected one of '" ++
+line = try rlwecParams <|> try rlwedParams <|> try rlwrParams <?> "Expected one of '" ++
   show contLineID ++ "', '" ++
   show discLineID ++ "', or '" ++
   show rlwrLineID ++ "'."
@@ -124,7 +126,7 @@ parseChallParams :: String -> InstanceID -> [ChallengeParams]
 parseChallParams input numInsts = do
   let output = runExcept $ runParserT paramsFile numInsts "" input
   case output of
-    Left e -> error $ "Invalid parameters:" ++ e
+    Left e -> error $ "Invalid parameters: " ++ e
     Right r -> case r of
       Left e -> error $ "Error parsing input:" ++ show e
       Right v -> v
