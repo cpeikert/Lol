@@ -404,8 +404,8 @@ indexInfo :: forall m m' . (m `Divides` m')
 indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
                 pps' = proxy ppsFact (Proxy::Proxy m')
                 mpps = mergePPs pps pps'
-                phi = totientPPs pps
-                phi' = totientPPs pps'
+                phi = proxy totientFact (Proxy::Proxy m)
+                phi' = proxy totientFact (Proxy::Proxy m')
                 tots = totients mpps
             in tag (mpps, phi, phi', tots)
 
