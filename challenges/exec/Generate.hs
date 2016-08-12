@@ -11,10 +11,10 @@ import Beacon
 import Common
 import Params as P
 
-import Crypto.Lol                           hiding (lift)
-import Crypto.Lol.RLWE.Continuous           as C
-import Crypto.Lol.RLWE.Discrete             as D
-import Crypto.Lol.RLWE.RLWR                 as R
+import Crypto.Lol                 hiding (lift)
+import Crypto.Lol.RLWE.Continuous as C
+import Crypto.Lol.RLWE.Discrete   as D
+import Crypto.Lol.RLWE.RLWR       as R
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Random
 
@@ -54,8 +54,7 @@ generateMain :: FilePath -> BeaconAddr -> [ChallengeParams] -> IO ()
 generateMain path beaconStart cps = do
   let len = length cps
       beaconAddrs = take len $ iterate nextBeaconAddr beaconStart
-  evalCryptoRandIO (sequence_ $
-    zipWith (genAndWriteChallenge path) cps beaconAddrs
+  evalCryptoRandIO (zipWithM_ (genAndWriteChallenge path) cps beaconAddrs
     :: RandT (CryptoRand HashDRBG) IO ())
 
 genAndWriteChallenge :: (MonadRandom m, MonadIO m)
@@ -77,7 +76,7 @@ genAndWriteChallenge path cp ba@(BA _ _) = do
 -- | The name for each challenge directory.
 challengeName :: ChallengeParams -> FilePath
 challengeName params =
-  "chall-id" ++ (printf "%04d" $ challID params) ++
+  "chall-id" ++ printf "%04d" (challID params) ++
     case params of
       C{..} -> "-rlwec-m" ++ show m ++ "-q" ++ show q ++
         "-l" ++ show (P.numSamples params) ++
@@ -113,7 +112,7 @@ genInstanceU (Cparams params@ContParams{..}) challengeID instanceID seed =
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
       (s', samples' :: [C.Sample T m (Zq q) (RRq q)]) <- instanceCont svar $ fromIntegral numSamples
       let s'' = Secret{s = toProto s', ..}
-          samples = (uncurry SampleCont) <$> (toProto samples')
+          samples = uncurry SampleCont <$> toProto samples'
       return $ IC s'' InstanceCont{..}))
 
 genInstanceU (Dparams params@DiscParams{..}) challengeID instanceID seed =
@@ -122,7 +121,7 @@ genInstanceU (Dparams params@DiscParams{..}) challengeID instanceID seed =
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
       (s', samples' :: [D.Sample T m (Zq q)]) <- instanceDisc svar $ fromIntegral numSamples
       let s'' = Secret{s = toProto s', ..}
-          samples = (uncurry SampleDisc) <$> (toProto samples')
+          samples = uncurry SampleDisc <$> toProto samples'
       return $ ID s'' InstanceDisc{..}))
 
 genInstanceU (Rparams params@RLWRParams{..}) challengeID instanceID seed =
@@ -131,7 +130,7 @@ genInstanceU (Rparams params@RLWRParams{..}) challengeID instanceID seed =
     reifyFactI (fromIntegral m) (\(_::proxy m) -> do
       (s', samples' :: [R.Sample T m (Zq q) (Zq p)]) <- instanceRLWR $ fromIntegral numSamples
       let s'' = Secret{s = toProto s', ..}
-          samples = (uncurry SampleRLWR) <$> (toProto samples')
+          samples = uncurry SampleRLWR <$> toProto samples'
       return $ IR s'' InstanceRLWR{..})))
 
 -- | Convert the parsed 'ChallengeParams' into serializable 'Params'
@@ -139,12 +138,12 @@ toProtoParams :: ChallengeParams -> Params
 toProtoParams C{..} =
   reifyFactI (fromIntegral m) (\(_::proxy m) ->
     let bound = proxy (C.errorBound svar eps) (Proxy::Proxy m)
-    in Cparams $ ContParams {..})
+    in Cparams ContParams {..})
 toProtoParams D{..} =
   reifyFactI (fromIntegral m) (\(_::proxy m) ->
     let bound = proxy (D.errorBound svar eps) (Proxy::Proxy m)
-    in Dparams $ DiscParams {..})
-toProtoParams R{..} = Rparams $ RLWRParams {..}
+    in Dparams DiscParams {..})
+toProtoParams R{..} = Rparams RLWRParams {..}
 
 -- | Writes a 'ChallengeU' to a file given a path to the root of the tree
 -- and the name of the challenge.
