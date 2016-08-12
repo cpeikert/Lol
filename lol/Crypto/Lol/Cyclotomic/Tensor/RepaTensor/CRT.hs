@@ -28,8 +28,8 @@ scalarCRT' :: forall mon m r . (Fact m, CRTrans mon r, Unbox r)
               => mon (r -> Arr m r)
 {-# INLINABLE scalarCRT' #-}
 scalarCRT'
-  = let pps = proxy ppsFact (Proxy::Proxy m)
-        sz = Z :. (proxy totientFact (Proxy::Proxy m))
+  = let n = proxy totientFact (Proxy::Proxy m)
+        sz = Z :. n
     in pure $ Arr . force . fromFunction sz . const
 
 -- | Multiply by @g_m@ in the CRT basis (when it exists).
