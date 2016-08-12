@@ -370,7 +370,7 @@ totientF = totientPPs . map ppToPP . unF
 -- | The hat of a 'Factored'.
 valueHatF = valueHatPPs . map ppToPP . unF
 -- | The radical of a 'Factored'.
-radicalF = totientPPs . map ppToPP . unF
+radicalF = radicalPPs . map ppToPP . unF
 -- | The odd radical of a 'Factored'.
 oddRadicalF = oddRadicalPPs . map ppToPP . unF
 
