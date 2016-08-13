@@ -10,9 +10,7 @@ main = defaultMain =<< sequence [
 {-# LANGUAGE BangPatterns, RecordWildCards #-}
 
 import CycBenches
-import SimpleTensorBenches
 import TensorBenches
-import SimpleUCycBenches
 import UCycBenches
 
 import Criterion.Internal (runAndAnalyseOne)
@@ -76,9 +74,7 @@ main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
   reports <- mapM (getReports =<<) [
-    simpleTensorBenches,
     tensorBenches,
-    simpleUCycBenches,
     ucycBenches,
     cycBenches
     ]
