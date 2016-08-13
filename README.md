@@ -15,9 +15,8 @@ This repository contains several Haskell libraries:
     just writing your own applications, you don't need to install this
     library.
 
-  * The folder `challenges` contains code to generate and verify the
-    (as yet unpublished) RLWE challenges. For now you can ignore this
-    folder.
+  * The folder `challenges` contains code to generate and verify
+    RLWE and RLWR challenges, which are described [here](https://web.eecs.umich.edu/~cpeikert/rlwe-challenges).
 
   * The folder `compiler` contains an unmaintained, primitive FHE
     compiler for Lol. Eventually, this will work in conjuction with

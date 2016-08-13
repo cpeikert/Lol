@@ -19,7 +19,13 @@ stability:           experimental
 build-type:          Simple
 extra-source-files:  README, CHANGES.md
 cabal-version:       >= 1.10
-description:         TODO.
+description:
+    Contains a library for reading serialized challenges
+    (generated with <https://hackage.haskell.org/package/hprotoc hprotoc>)
+    and an executable used to generate, suppress, and verify RLWE and RLWR
+    challenges using <https://hackage.haskell.org/package/lol Λ ∘ λ>  (Lol).
+    You can find more information about the challenges
+    <https://web.eecs.umich.edu/~cpeikert/rlwe-challenges here>.
 
 source-repository head
   type: git
