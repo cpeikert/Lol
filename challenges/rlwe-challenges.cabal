@@ -42,7 +42,7 @@ library
     Crypto.Proto.RLWE.Challenges.Secret
 
   build-depends: base,
-                 lol >= 0.3.0.0,
+                 lol >= 0.5.0.0,
                  MonadRandom,
                  protocol-buffers,
                  protocol-buffers-descriptor
@@ -71,7 +71,7 @@ executable rlwe-challenges
                  filepath,
                  http-client,
                  http-conduit,
-                 lol >= 0.3.0.0,
+                 lol >= 0.5.0.0,
                  MonadRandom,
                  mtl,
                  options,
@@ -80,5 +80,6 @@ executable rlwe-challenges
                  protocol-buffers,
                  reflection,
                  rlwe-challenges,
+                 tagged,
                  time,
                  transformers

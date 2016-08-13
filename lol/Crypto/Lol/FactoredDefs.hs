@@ -44,7 +44,6 @@ module Crypto.Lol.FactoredDefs
 -- * Utility operations on prime powers
 , valueHat
 , PP, ppToPP, valuePP, totientPP, radicalPP, oddRadicalPP, valueHatPP
-, valuePPs, totientPPs, radicalPPs, oddRadicalPPs, valueHatPPs
 -- * Re-export
 , module Crypto.Lol.PosBin
 ) where
@@ -356,7 +355,7 @@ valueFact = valuePPs <$> ppsFact
 totientFact = totientPPs <$> ppsFact
 -- | The "hat" of a 'Factored' type's value:
 -- \( \hat{m} = \begin{cases} m & \mbox{if } m \text{ is odd} \\ m/2 & \text{otherwise} \end{cases} \).
-valueHatFact = valueHatPPs <$> ppsFact
+valueHatFact = valueHat <$> valueFact
 -- | The radical (product of prime divisors) of a 'Factored' type.
 radicalFact = radicalPPs <$> ppsFact
 -- | The odd radical (product of odd prime divisors) of a 'Factored' type.
@@ -368,9 +367,9 @@ valueF = valuePPs . map ppToPP . unF
 -- | Totient of a 'Factored'.
 totientF = totientPPs . map ppToPP . unF
 -- | The hat of a 'Factored'.
-valueHatF = valueHatPPs . map ppToPP . unF
+valueHatF = valueHat . valueF
 -- | The radical of a 'Factored'.
-radicalF = totientPPs . map ppToPP . unF
+radicalF = radicalPPs . map ppToPP . unF
 -- | The odd radical of a 'Factored'.
 oddRadicalF = oddRadicalPPs . map ppToPP . unF
 
@@ -386,20 +385,18 @@ valuePPow = valuePP <$> ppPPow
 totientPPow = totientPP <$> ppPPow
 -- | The "hat" of a 'PrimePower' type's value:
 -- \( p^e \) if \( p \) is odd, \( 2^{e-1} \) otherwise.
-valueHatPPow = valueHatPP <$> ppPPow
+valueHatPPow = valueHat <$> valuePPow
 -- | The radical of a 'PrimePower' type's value.
 radicalPPow = radicalPP <$> ppPPow
 -- | The odd radical of a 'PrimePower' type's value.
 oddRadicalPPow = oddRadicalPP <$> ppPPow
 
 -- functions on data-level [PP]
-valuePPs, totientPPs, radicalPPs, oddRadicalPPs, valueHatPPs :: [PP] -> Int
+valuePPs, totientPPs, radicalPPs, oddRadicalPPs :: [PP] -> Int
 -- | Product of values of individual 'PP's
 valuePPs = product . map valuePP
 -- | Product of totients of individual 'PP's
 totientPPs = product . map totientPP
--- | Product of hats of individual 'PP's
-valueHatPPs = product . map valueHatPP
 -- | Product of radicals of individual 'PP's
 radicalPPs = product . map radicalPP
 -- | Product of odd radicals of individual 'PP's

@@ -411,7 +411,8 @@ cDispatchGaussian :: forall m r var rnd .
          => var -> rnd (CT' m r)
 cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   -- get rus for (Complex r)
-  ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) ruInv
+  -- takes ru (not ruInv) to match RT
+  ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) ru
   totm <- pureT totientFact
   m <- pureT valueFact
   rad <- pureT radicalFact

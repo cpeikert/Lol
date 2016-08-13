@@ -65,5 +65,6 @@ message Secret {                         // a secret for an RLWE/RLWE instance
   required int32 instanceID        = 2;
   required int32 m                 = 3;
   required int64 q                 = 4;
-  required Rq s                    = 5;
+  required bytes seed              = 5;
+  required Rq s                    = 6;
 }

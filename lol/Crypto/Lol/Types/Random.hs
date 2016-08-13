@@ -33,3 +33,6 @@ instance (CryptoRandomGen g) => RandomGen (CryptoRand g) where
 
   split (CryptoRand g) =
     either (error . show) (CryptoRand *** CryptoRand) $ splitGen g
+
+  {-# INLINABLE next #-}
+  {-# INLINABLE split #-}

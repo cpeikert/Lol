@@ -56,8 +56,8 @@ import qualified Algebra.ZeroTestable   as ZeroTestable (C)
 
 -- an infinite list of primes greater than the input and congruent to
 -- 1 mod m
-goodQs :: Integer -> Integer -> [Integer]
-goodQs m lower = filter isPrime $
+goodQs :: (IntegralDomain a, ToInteger a) => a -> a -> [a]
+goodQs m lower = filter (isPrime . toInteger) $
   iterate (+m) $ lower + ((m-lower) `mod` m) + 1
 
 -- | The ring \(\Z_q\) of integers modulo 'q', using underlying integer
@@ -308,6 +308,7 @@ instance (Reflects q z, ToInteger z, Random z) => Random (ZqBasic q z) where
                     in (ZqB x, g')
 
   randomR _ = error "randomR non-sensical for Zq types"
+  {-# INLINABLE random #-}
 
 -- instance of Arbitrary
 instance (Reflects q z, ToInteger z, Random z) => Arbitrary (ZqBasic q z) where
