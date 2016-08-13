@@ -202,7 +202,7 @@ mulGCRT, divGCRT, crt, crtInv ::
 {-# INLINABLE mulGCRT #-}
 {-# INLINABLE divGCRT #-}
 {-# INLINABLE crt #-}
-{-# INLINABLE crtInv #-}
+{-# INLINE crtInv #-}
 
 -- | Multiply by \(g_m\) in the CRT basis. (This function is simply an
 -- appropriate entry from 'crtFuncs'.)
@@ -223,6 +223,7 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
 twaceCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t, m `Divides` m', TElt t r)
             => mon (t m' r -> t m r)
+{-# INLINABLE twaceCRT #-}
 twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
            (fst <$> crtExtFuncs)
@@ -413,6 +414,7 @@ indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
 -- the index into the powerful\/decoding basis of \(\O_{m'}\) of the
 -- \(i\)th entry of the powerful/decoding basis of \(\O_m\).
 extIndicesPowDec :: (m `Divides` m') => Tagged '(m, m') (U.Vector Int)
+{-# INLINABLE extIndicesPowDec #-}
 extIndicesPowDec = do
   (_, phi, _, tots) <- indexInfo
   return $ U.generate phi (fromIndexPair tots . (0,))
@@ -438,15 +440,15 @@ baseWrapper f = do
 -- | A lookup table for 'toIndexPair' applied to indices \([\varphi(m')]\).
 baseIndicesPow :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector (Int,Int))
+{-# INLINABLE baseIndicesPow #-}
 -- | A lookup table for 'baseIndexDec' applied to indices \([\varphi(m')]\).
 baseIndicesDec :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector (Maybe (Int,Bool)))
-
+{-# INLINABLE baseIndicesDec #-}
 -- | Same as 'baseIndicesPow', but only includes the second component
 -- of each pair.
 baseIndicesCRT :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector Int)
-
 baseIndicesPow = baseWrapper (toIndexPair . totients)
 
 -- this one is more complicated; requires the prime powers

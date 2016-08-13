@@ -402,7 +402,7 @@ embed' (Sub (c :: Cyc t k r)) = embed' c
 -- | The "tweaked trace" (twace) function
 -- \(\Tw(x) = (\hat{m} / \hat{m}') \cdot \Tr((g' / g) \cdot x)\),
 -- which fixes \(R\) pointwise (i.e., @twace . embed == id@).
-twace :: forall t m m' r . (m `Divides` m', CElt t r)
+twace :: forall t m m' r . (m `Divides` m', UCRTElt t r, ZeroTestable r)
          => Cyc t m' r -> Cyc t m r
 {-# INLINABLE twace #-}
 twace (Pow u) = Pow $ U.twacePow u
@@ -562,10 +562,10 @@ instance (Correct gad zq, Fact m, CElt t zq) => Correct gad (Cyc t m zq) where
 
 ---------- Change of representation (internal use only) ----------
 
-toPow', toDec', toCRT' :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
-{-# INLINE toPow' #-}
-{-# INLINE toDec' #-}
-{-# INLINE toCRT' #-}
+toPow', toDec', toCRT' :: (Fact m, UCRTElt t r, ZeroTestable r) => Cyc t m r -> Cyc t m r
+{-# INLINABLE toPow' #-}
+{-# INLINABLE toDec' #-}
+{-# INLINABLE toCRT' #-}
 
 -- | Force to powerful-basis representation (for internal use only).
 toPow' c@(Pow _) = c

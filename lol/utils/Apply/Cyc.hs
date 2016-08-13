@@ -46,7 +46,7 @@ applyBasic params g = run params $ \(BC p) -> g p
 
 data UnzipCtxD
 type UnzipCtx t m r =
-  (Fact m, CElt t (r,r), Random (t m (r,r)), CElt t r, ShowType '(t,m,r), NFElt r, Random r)
+  (Fact m, CElt t (r,r), Random (t m (r,r)), CElt t r, ShowType '(t,m,r), NFElt r, Random r, NFData (t m r))
 data instance ArgsCtx UnzipCtxD where
     UzC :: (UnzipCtx t m r) => Proxy '(t,m,r) -> ArgsCtx UnzipCtxD
 instance (params `Satisfy` UnzipCtxD, UnzipCtx t m r)
@@ -64,7 +64,7 @@ applyUnzip params g = run params $ \(UzC p) -> g p
 data LiftCtxD
 type LiftCtx t m r =
   (BasicCtx t m r, Lift' r, CElt t (LiftOf r), NFElt (LiftOf r), ToInteger (LiftOf r),
-   TElt CT r, TElt RT r, TElt CT (LiftOf r), TElt RT (LiftOf r))
+   TElt CT r, TElt RT r, TElt CT (LiftOf r), TElt RT (LiftOf r), NFData (t m (LiftOf r)))
 data instance ArgsCtx LiftCtxD where
     LC :: (LiftCtx t m r) => Proxy '(t,m,r) -> ArgsCtx LiftCtxD
 instance (params `Satisfy` LiftCtxD, LiftCtx t m r)
@@ -81,7 +81,7 @@ applyLift params g = run params $ \(LC p) -> g p
 data ErrorCtxD
 type ErrorCtx t m r gen = (CElt t r, Fact m, ShowType '(t,m,r,gen),
                            CElt t (LiftOf r), NFElt (LiftOf r), Lift' r,
-                           ToInteger (LiftOf r), CryptoRandomGen gen)
+                           ToInteger (LiftOf r), CryptoRandomGen gen, NFData (t m (LiftOf r)))
 data instance ArgsCtx ErrorCtxD where
     EC :: (ErrorCtx t m r gen) => Proxy '(t,m,r,gen) -> ArgsCtx ErrorCtxD
 instance (params `Satisfy` ErrorCtxD, ErrorCtx t m r gen)
@@ -97,7 +97,7 @@ applyError params g = run params $ \(EC p) -> g p
 
 data TwoIdxCtxD
 type TwoIdxCtx t m m' r = (m `Divides` m', CElt t r, IntegralDomain r, Eq r, Random r, NFElt r,
-                           ShowType '(t,m,m',r), Random (t m r), Random (t m' r))
+                           ShowType '(t,m,m',r), Random (t m r), Random (t m' r), NFData (t m r), NFData (t m' r))
 data instance ArgsCtx TwoIdxCtxD where
     TI :: (TwoIdxCtx t m m' r) => Proxy '(t,m,m',r) -> ArgsCtx TwoIdxCtxD
 instance (params `Satisfy` TwoIdxCtxD, TwoIdxCtx t m m' r)

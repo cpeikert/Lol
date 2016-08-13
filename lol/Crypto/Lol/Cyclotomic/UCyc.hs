@@ -33,7 +33,7 @@
 module Crypto.Lol.Cyclotomic.UCyc
 (
 -- * Data types and constraints
-  UCyc, P, D, C, E, UCycEC, UCRTElt, NFElt
+  UCyc, P, D, C, E, UCycEC, UCycPC, UCRTElt, NFElt
 -- * Changing representation
 , toPow, toDec, toCRT, fmapPow, fmapDec
 , unzipPow, unzipDec, unzipCRTC, unzipCRTE
@@ -91,6 +91,9 @@ data E
 
 -- | Convenient synonym for either CRT representation.
 type UCycEC t m r = Either (UCyc t m E r) (UCyc t m C r)
+
+-- | Convenient synonym for random sampling.
+type UCycPC t m r = Either (UCyc t m P r) (UCyc t m C r)
 
 -- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
 -- \(\Z_q[\zeta_m]\), and \(\Q(\zeta_m)\) in an explicit
@@ -330,6 +333,7 @@ unzipCRTC :: (Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
              => UCyc t m C (a,b)
              -> (Either (UCyc t m P a) (UCyc t m C a),
                  Either (UCyc t m P b) (UCyc t m C b))
+{-# INLINABLE unzipCRTC #-}
 unzipCRTC (CRTC s v)
   = let (ac,bc) = unzipT v
         (ap,bp) = Pow *** Pow $ unzipT $ crtInvCS s v
@@ -343,6 +347,7 @@ unzipCRTE :: (Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
              => UCyc t m E (a,b)
              -> (Either (UCyc t m P a) (UCyc t m E a),
                  Either (UCyc t m P b) (UCyc t m E b))
+{-# INLINABLE unzipCRTE #-}
 unzipCRTE (CRTE _ v)
   = let (ae,be) = unzipT v
         (a',b') = unzipT $ fmapT fromExt $ runIdentity crtInv v
@@ -353,7 +358,7 @@ unzipCRTE (CRTE _ v)
 
 -- | Multiply by the special element \(g_m\).
 mulG :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
-{-# INLINABLE mulG #-}
+{-# INLINE mulG #-}
 mulG (Pow v) = Pow $ mulGPow v
 mulG (Dec v) = Dec $ mulGDec v
 mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
@@ -381,7 +386,7 @@ divGDec (Dec v) = Dec <$> T.divGDec v
 -- | Similar to 'divGPow'.
 divGCRTC :: (Fact m, UCRTElt t r)
         => UCyc t m C r -> UCyc t m C r
-{-# INLINABLE divGCRTC #-}
+{-# INLINE divGCRTC #-}
 divGCRTC (CRTC s v) = CRTC s $ divGCRTCS s v
 
 -- | Yield the scaled squared norm of \(g_m \cdot e\) under
@@ -481,8 +486,8 @@ twaceDec (Dec v) = Dec $ twacePowDec v
 -- | Twace into a subring, for the CRT basis.  (The output is an
 -- 'Either' because the subring might not support 'C'.)
 twaceCRTC :: (m `Divides` m', UCRTElt t r)
-             => UCyc t m' C r -> Either (UCyc t m P r) (UCyc t m C r)
-{-# INLINABLE twaceCRTC #-}
+             => UCyc t m' C r -> UCycPC t m r
+{-# INLINE twaceCRTC #-}
 twaceCRTC x@(CRTC s' v) =
   case crtSentinel of
     -- go to CRTC if valid for target, else go to Pow
@@ -663,7 +668,7 @@ instance (Random r, UCRTElt t r, Fact m) => Random (UCyc t m D r) where
   randomR _ = error "randomR non-sensical for UCyc"
 
 instance (Random r, UCRTElt t r, Fact m)
-         => Random (Either (UCyc t m P r) (UCyc t m C r)) where
+         => Random (UCycPC t m r) where
 
   -- create in CRTC basis if possible, otherwise in powerful
   random = let cons = case crtSentinel of
