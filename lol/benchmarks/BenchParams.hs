@@ -22,7 +22,7 @@ type Tensors = '[T]
 type MRCombos =
   '[ '(M, R) ]
 
-type T = RT
+type T = CT
 type M = F64*F9*F25 -- F9*F5*F7*F11 -- F64*F9*F25   --
 type R = Zq 1065601 --34651 -- Zq 14401     --
 type M' = M --F3*F5*F11
