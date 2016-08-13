@@ -68,10 +68,6 @@ main = do
 
 generate :: MainOpts -> GenOpts -> [String] -> IO ()
 generate MainOpts{..} GenOpts{..} _ = do
-  challDirExists <- doesDirectoryExist optChallDir
-  when challDirExists $
-    error $ "The output directory " ++ optChallDir ++
-      " already exists. Delete it or choose a new destination."
   let initBeaconTime = beaconFloor optInitBeaconEpoch
       initBeacon = BA initBeaconTime 0
   when (initBeaconTime == 0) $ do

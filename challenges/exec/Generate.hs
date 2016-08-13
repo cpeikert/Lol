@@ -42,8 +42,6 @@ import qualified Data.ByteString.Lazy as BS
 import           Data.Reflection      hiding (D)
 import qualified Data.Tagged          as T
 
-import Prelude ((^^))
-
 import System.Directory (createDirectoryIfMissing)
 
 import Text.Printf
