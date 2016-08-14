@@ -1,6 +1,6 @@
 This repository contains several Haskell libraries:
 
-  * The folder `lol` contains the Haskell library Λ ○ λ (Lol),
+  * The `lol` directory contains the Haskell library Λ ○ λ (Lol),
     described in the paper
     [Λ ○ λ: Functional Lattice Cryptography](https://eprint.iacr.org/2015/1134). More
     documentation can be found on
@@ -8,17 +8,17 @@ This repository contains several Haskell libraries:
     core of the project, and you'll need to install it to use anything
     else.
 
-  * The folder `apps` contains example cryptographic applications
+  * The `apps` directory contains example cryptographic applications
     built using Lol. If you are interested in using our example
     applications, you will need this library. It is on Hackage
     [here](https://hackage.haskell.org/package/lol-apps). If you are
     just writing your own applications, you don't need to install this
     library.
 
-  * The folder `challenges` contains code to generate and verify
+  * The `challenges` directory contains code to generate and verify
     RLWE and RLWR challenges, which are described [here](https://web.eecs.umich.edu/~cpeikert/rlwe-challenges).
 
-  * The folder `compiler` contains an unmaintained, primitive FHE
+  * The `compiler` directory contains an unmaintained, primitive FHE
     compiler for Lol. Eventually, this will work in conjuction with
     lol-apps to transform plaintext descriptions of algorithms into
     their homomorphic counterparts.
