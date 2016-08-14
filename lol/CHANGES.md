@@ -1,6 +1,10 @@
 Changelog for lol project
 ================================
 
+0.5.0.2
+----
+ * Updates to README.
+
 0.5.0.1
 ----
  * Benchmarks now compile.
