@@ -17,7 +17,7 @@ import Crypto.Lol.Types
 import Crypto.Random.DRBG
 
 import Criterion
-import BenchParams
+import Params.LolParams
 
 simpleTensorBenches :: IO Benchmark
 simpleTensorBenches = do

@@ -10,7 +10,7 @@ module TensorBenches (tensorBenches) where
 
 import Apply.Cyc
 import Benchmarks
-import BenchParams
+import Params.LolParams
 
 import Control.Applicative
 import Control.Monad.Random

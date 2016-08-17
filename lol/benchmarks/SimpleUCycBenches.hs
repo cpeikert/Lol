@@ -8,7 +8,7 @@ module SimpleUCycBenches (simpleUCycBenches) where
 
 import Control.Applicative
 import Control.Monad.Random
-import BenchParams
+import Params.LolParams
 
 import Crypto.Lol.Prelude
 import Crypto.Lol.Cyclotomic.UCyc

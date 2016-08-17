@@ -8,7 +8,7 @@ module CycBenches (cycBenches) where
 
 import Apply.Cyc
 import Benchmarks
-import BenchParams
+import Params.LolParams
 
 import Control.Monad.Random
 
