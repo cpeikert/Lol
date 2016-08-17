@@ -1,3 +1,4 @@
+-- format: challID challType m q v(=r^2) l(=#samples) annotation
 0 Cont 256 769 7.8125e-3 3 "short-toy"
 1 Disc 256 769 7.8125e-3 3 "short-toy"
 2 Cont 256 512 7.8125e-3 3 "short-toy"
