@@ -1,7 +1,7 @@
-{-# LANGUAGE NoImplicitPrelude, TypeOperators, RankNTypes, KindSignatures, 
-             DataKinds, TypeFamilies, GADTs, FlexibleContexts, 
+{-# LANGUAGE TypeOperators, RankNTypes, KindSignatures,
+             DataKinds, TypeFamilies, GADTs, FlexibleContexts,
              ScopedTypeVariables, FlexibleInstances,
-             UndecidableInstances, InstanceSigs, MultiParamTypeClasses, 
+             UndecidableInstances, InstanceSigs, MultiParamTypeClasses,
              RebindableSyntax, ConstraintKinds #-}
 
 -- | A module containing deep and shallow embeddings for CT operations
@@ -31,17 +31,17 @@ data CTOps :: (* -> *) where
   MulPublic :: (r'q ~ Cyc t m' zq, MulPublicCtx t m m' zp zq, Show (Cyc t m zp), NFData zp, NFData (CRTExt zp))
             => Cyc t m zp -> CTOps (CT m zp r'q :-> Full (CT m zp r'q))
 
-  KeySwQuad :: (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)) 
+  KeySwQuad :: (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
                -> CTOps (CT m zp (Cyc t m' zq) :-> Full (CT m zp (Cyc t m' zq)))
 
-  ModSwitchPT :: (ModSwitchPTCtx t m' zp zp' zq, 
+  ModSwitchPT :: (ModSwitchPTCtx t m' zp zp' zq,
                   -- the next constraints are only needed to safisfy the recursive
                   -- constraints when mapping. FIXME!!!! (a problem due to hidden types)
                   Typeable (Cyc t m' (LiftOf zp)),
                   ToInteger (LiftOf zp), CElt t (LiftOf zp))
               => CTOps (CT m zp (Cyc t m' zq) :-> Full (CT m zp' (Cyc t m' zq)))
 
-  ModSwitchCT :: (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq, CElt t (DecompOf zq), 
+  ModSwitchCT :: (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq, CElt t (DecompOf zq),
                   -- these are needed to satisfy CTArgsCtx in KeyInferPass
                   -- I think it's because I assumed that the constraints are similar
                   -- for all nodes, which is certainly the case, but we clearly need
@@ -53,18 +53,18 @@ data CTOps :: (* -> *) where
                -> CTOps (CT r zp (Cyc t r' zq) :-> Full (CT s zp (Cyc t s' zq)))
 
 -- | adds an unencrypted (public) value to a ciphertext
-addPublicCT :: (AddPublicCtx t m m' zp zq, NFData zp, NFData (CRTExt zp), CTOps :<: dom', 
-                dom ~ Typed dom', Show (Cyc t m zp), Typeable (CT m zp (Cyc t m' zq))) 
+addPublicCT :: (AddPublicCtx t m m' zp zq, NFData zp, NFData (CRTExt zp), CTOps :<: dom',
+                dom ~ Typed dom', Show (Cyc t m zp), Typeable (CT m zp (Cyc t m' zq)))
   => Cyc t m zp -> ASTF dom (CT m zp (Cyc t m' zq)) -> ASTF dom (CT m zp (Cyc t m' zq))
 addPublicCT c = (injT (AddPublic c) :$)
 
-mulPublicCT :: (MulPublicCtx t m m' zp zq, NFData zp, NFData (CRTExt zp), CTOps :<: dom', 
-                dom ~ Typed dom', Show (Cyc t m zp), Typeable (CT m zp (Cyc t m' zq))) 
+mulPublicCT :: (MulPublicCtx t m m' zp zq, NFData zp, NFData (CRTExt zp), CTOps :<: dom',
+                dom ~ Typed dom', Show (Cyc t m zp), Typeable (CT m zp (Cyc t m' zq)))
   => Cyc t m zp -> ASTF dom (CT m zp (Cyc t m' zq)) -> ASTF dom (CT m zp (Cyc t m' zq))
 mulPublicCT c = (injT (MulPublic c) :$)
 
-type ASTRoundPTCtx dom dom' t m m' zp zp' zq = 
-  (CTOps :<: dom', dom ~ Typed dom', ModSwitchPTCtx t m' zp zp' zq, 
+type ASTRoundPTCtx dom dom' t m m' zp zp' zq =
+  (CTOps :<: dom', dom ~ Typed dom', ModSwitchPTCtx t m' zp zp' zq,
    ToInteger (LiftOf zp), CElt t (LiftOf zp),
    Typeable (Cyc t m' (LiftOf zp)), Typeable (CT m zp' (Cyc t m' zq)), m `Divides` m')
 
@@ -73,9 +73,9 @@ roundPT :: (ASTRoundPTCtx dom dom' t m m' zp zp' zq)
   => ASTF dom (CT m zp (Cyc t m' zq)) -> ASTF dom (CT m zp' (Cyc t m' zq))
 roundPT = (injT ModSwitchPT :$)
 
-type ASTRoundCTCtx dom dom' t m m' zp zq zq' = 
+type ASTRoundCTCtx dom dom' t m m' zp zq zq' =
   (CTOps :<: dom', dom ~ Typed dom', RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq,
-   CElt t (DecompOf zq), 
+   CElt t (DecompOf zq),
    ToInteger (DecompOf zq), Typeable (DecompOf zq), Typeable (CT m zp (Cyc t m' zq')), m `Divides` m')
 
 -- | switches the modulus of a ciphertext

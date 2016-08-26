@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, GeneralizedNewtypeDeriving,
-             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
+             MultiParamTypeClasses, PolyKinds,
              RebindableSyntax, RoleAnnotations, ScopedTypeVariables,
              TypeFamilies, UndecidableInstances #-}
 

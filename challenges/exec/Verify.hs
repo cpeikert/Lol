@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE RecordWildCards       #-}

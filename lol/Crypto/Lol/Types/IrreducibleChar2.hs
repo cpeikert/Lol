@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, NoImplicitPrelude, PolyKinds,
+{-# LANGUAGE FlexibleInstances, PolyKinds,
              RebindableSyntax, ScopedTypeVariables, TypeFamilies,
              UndecidableInstances #-}
 

@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, CPP, DataKinds, GADTs, InstanceSigs,
-             KindSignatures, NoImplicitPrelude, PolyKinds, RankNTypes,
+             KindSignatures, PolyKinds, RankNTypes,
              RebindableSyntax, ScopedTypeVariables, TemplateHaskell,
              TypeFamilies, UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-duplicate-exports #-}

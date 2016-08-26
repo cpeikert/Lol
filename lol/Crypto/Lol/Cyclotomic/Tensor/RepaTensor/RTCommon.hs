@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns, ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, GADTs, GeneralizedNewtypeDeriving,
-             KindSignatures, MultiParamTypeClasses, NoImplicitPrelude,
+             KindSignatures, MultiParamTypeClasses,
              RankNTypes, RebindableSyntax, RoleAnnotations,
              ScopedTypeVariables, TypeOperators #-}
 

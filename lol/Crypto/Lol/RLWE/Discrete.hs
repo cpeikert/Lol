@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, MultiParamTypeClasses,
-             NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
+             RebindableSyntax, ScopedTypeVariables #-}
 
 -- | Functions and types for working with discretized ring-LWE samples.
 

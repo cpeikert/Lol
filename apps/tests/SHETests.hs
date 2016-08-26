@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds, FlexibleContexts,
-             NoImplicitPrelude, PolyKinds, RebindableSyntax,
+             PolyKinds, RebindableSyntax,
              ScopedTypeVariables, TypeFamilies, TypeOperators #-}
 
 module SHETests (sheTests) where

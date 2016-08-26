@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude, RebindableSyntax, DataKinds, TypeOperators, 
+{-# LANGUAGE RebindableSyntax, DataKinds, TypeOperators,
              KindSignatures, TypeFamilies, UndecidableInstances, PartialTypeSignatures,
              FlexibleInstances, MultiParamTypeClasses, PackageImports, GADTs,
              FlexibleContexts, ScopedTypeVariables, RankNTypes, PolyKinds,
@@ -42,7 +42,7 @@ main = do
 
   tunnelTest (Proxy::Proxy CT)
   prfTest (Proxy::Proxy CT)
-  
+
   print "RT:"
   tunnelTest (Proxy::Proxy RT)
   prfTest (Proxy::Proxy RT)
@@ -62,15 +62,15 @@ tunnelTest pc@(_::Proxy t) = do -- in IO
 
     ast0 <- time "Computing AST: " $ lamTyped $ tunnelAST pc
 
-    (ast1, idMap) <- time "Generating keys: " =<< 
+    (ast1, idMap) <- time "Generating keys: " =<<
       evalHashDRBG (genKeys v ast0)
 
     let keyMap = M.fromList $ elems idMap
 
-    ast2 <- time "Generating hints: " =<< 
+    ast2 <- time "Generating hints: " =<<
       evalHashDRBG (genHints keyMap ast1)
 
-    (x1,encsk) <- time "Encrypting input: " =<< 
+    (x1,encsk) <- time "Encrypting input: " =<<
       evalHashDRBG (encryptInput idMap x')
 
     putStrLn $ "Input noise level:\t" ++ (show $ errRatio x1 encsk)
@@ -83,12 +83,12 @@ tunnelTest pc@(_::Proxy t) = do -- in IO
 
     putStrLn "Done!"
 
-errRatio :: forall m zp t m' zq z . 
+errRatio :: forall m zp t m' zq z .
   (Reduce z zq, Lift' zq, CElt t z, ToSDCtx t m' zp zq, Mod zq, Absolute (LiftOf zq),
    Ord (LiftOf zq), ToInteger (LiftOf zq))
   => SHE.CT m zp (Cyc t m' zq) -> SK (Cyc t m' z) -> Double
-errRatio ct sk = 
-  (fromIntegral $ maximum $ fmap abs $ errorTermUnrestricted sk ct) / 
+errRatio ct sk =
+  (fromIntegral $ maximum $ fmap abs $ errorTermUnrestricted sk ct) /
   (fromIntegral $ proxy modulus (Proxy::Proxy zq))
 
 tunnelAST (_::Proxy t) (x :: CTExpr (SHE.CT H0 ZP2 (Cyc t H0' ZQ5))) =
@@ -97,7 +97,7 @@ tunnelAST (_::Proxy t) (x :: CTExpr (SHE.CT H0 ZP2 (Cyc t H0' ZQ5))) =
   --tunnHelper (Proxy::Proxy '(H4,H4',ZQ6)) $
   --tunnHelper (Proxy::Proxy '(H3,H3',ZQ6)) $
   --tunnHelper (Proxy::Proxy '(H2,H2',ZQ6)) $
-  tunnHelper2 $ 
+  tunnHelper2 $
   roundCTUp x
 
 prfTest pc@(_::Proxy t) = do
@@ -108,28 +108,28 @@ prfTest pc@(_::Proxy t) = do
 
   ast0 <- time "Computing AST: " $ lamTyped $ homomPRF c
 
-  (ast1, idMap) <- time "Generating keys: " =<< 
+  (ast1, idMap) <- time "Generating keys: " =<<
     evalHashDRBG (genKeys v ast0)
 
-  ast2 <- time "Generating hints: " =<< 
+  ast2 <- time "Generating hints: " =<<
     evalHashDRBG (genHints (M.fromList $ elems idMap) ast1)
 
-  (x :: SHE.CT H0 ZP8 (Cyc t H0' ZQ4),_) <- time "Encrypting input: " =<< 
+  (x :: SHE.CT H0 ZP8 (Cyc t H0' ZQ4),_) <- time "Encrypting input: " =<<
     evalHashDRBG (encryptInput idMap x')
 
   _ <- time "Evaluating AST: " $ eval ast2 x
-  
+
   putStrLn "Done!"
 
 homomPRF c x =
   let scaledX = mulPublicCT c x
-      {-hopX = roundCTDown $ 
-               roundCTDown $ 
-               tunnHelper2 $ 
-               tunnHelper2 $ 
-               tunnHelper2 $ 
-               tunnHelper2 $ 
-               tunnHelper2 $ 
+      {-hopX = roundCTDown $
+               roundCTDown $
+               tunnHelper2 $
+               tunnHelper2 $
+               tunnHelper2 $
+               tunnHelper2 $
+               tunnHelper2 $
                roundCTUp scaledX -} -- scale up modulus for applying hints
       hopX = tunnel (Proxy::Proxy RngList) scaledX
   in share hopX $ \y ->
@@ -156,13 +156,13 @@ ksqHelper :: forall m zp c m' zq z . (KSDummyCtx z TrivGad (ZQUp zq) m zp c m' z
   => CTExpr (SHE.CT m zp (Cyc c m' zq)) -> CTExpr (SHE.CT m zp (Cyc c m' zq))
 ksqHelper u = proxy (ksqDummy u) (Proxy::Proxy '(TrivGad, ZQUp zq))
 
-tunnHelper2 :: (ASTTunnelCtx dom dom' gad c r r' s s' e e' z zp zq, 
+tunnHelper2 :: (ASTTunnelCtx dom dom' gad c r r' s s' e e' z zp zq,
    e' ~ (e * (r' / r)), -- see #11248 and 11249
    gad ~ TrivGad, dom ~ CTDOM, '(s,s') ~ NextListElt '(r,r') RngList)
   => CTExpr (SHE.CT r zp (Cyc c r' zq)) -> CTExpr (SHE.CT s zp (Cyc c s' zq))
 tunnHelper2 x = proxy (tunnDummy x) (Proxy::Proxy TrivGad)
 
-roundCTUp :: (ASTRoundCTCtx CTDOM dom' c m m' zp zq zq', zq' ~ ZQUp zq) 
+roundCTUp :: (ASTRoundCTCtx CTDOM dom' c m m' zp zq zq', zq' ~ ZQUp zq)
   => CTExpr (SHE.CT m zp (Cyc c m' zq)) -> CTExpr (SHE.CT m zp (Cyc c m' zq'))
 roundCTUp x = roundCT x
 
@@ -170,12 +170,12 @@ roundCTDown :: (ASTRoundCTCtx CTDOM dom' c m m' zp zq zq', zq' ~ ZQDown zq)
   => CTExpr (SHE.CT m zp (Cyc c m' zq)) -> CTExpr (SHE.CT m zp (Cyc c m' zq'))
 roundCTDown x = roundCT x
 
-roundPTDown :: (ASTRoundPTCtx CTDOM dom' c m m' zp zp' zq, zp' ~ ZPDiv2 zp) 
+roundPTDown :: (ASTRoundPTCtx CTDOM dom' c m m' zp zp' zq, zp' ~ ZPDiv2 zp)
   => CTExpr (SHE.CT m zp (Cyc c m' zq)) -> CTExpr (SHE.CT m zp' (Cyc c m' zq))
 roundPTDown x = roundPT x
 
 class Tunnel xs c zp zq where
-  tunnel' :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) => 
+  tunnel' :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
     Proxy xs -> CTExpr (SHE.CT r zp (Cyc c r' zq)) -> CTExpr (SHE.CT s zp (Cyc c s' zq))
 
 instance Tunnel '[ '(m,m') ] c zp zq where
@@ -186,9 +186,9 @@ instance (ASTTunnelCtx CTDOM dom' TrivGad c r r' t t' e e' z zp zq,
   => Tunnel ('(r,r') ': '(t,t') ': rngs) c zp zq where
   tunnel' _ = tunnel' (Proxy::Proxy ('(t,t') ': rngs)) . (\x -> proxy (tunnDummy x) (Proxy::Proxy TrivGad))
 
-tunnel :: (Head rngs ~ '(r,r'), Last rngs ~ '(s,s'), Tunnel rngs c zp (ZQUp zq), ZQDown (ZQUp zq) ~ zq, 
+tunnel :: (Head rngs ~ '(r,r'), Last rngs ~ '(s,s'), Tunnel rngs c zp (ZQUp zq), ZQDown (ZQUp zq) ~ zq,
            ASTRoundCTCtx CTDOM dom' c r r' zp zq (ZQUp zq),
            ASTRoundCTCtx CTDOM dom' c s s' zp (ZQUp zq) zq,
-           ASTRoundCTCtx CTDOM dom' c s s' zp zq (ZQDown zq)) => 
+           ASTRoundCTCtx CTDOM dom' c s s' zp zq (ZQDown zq)) =>
   Proxy rngs -> CTExpr (SHE.CT r zp (Cyc c r' zq)) -> CTExpr (SHE.CT s zp (Cyc c s' (ZQDown zq)))
 tunnel rngs x = roundCTDown $ roundCTDown $ tunnel' rngs $ roundCTUp x
