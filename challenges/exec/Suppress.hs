@@ -19,7 +19,7 @@ import Data.Time.Clock.POSIX
 import Data.Map             (Map, empty, insert, lookup)
 
 import Net.Beacon
-import Network.HTTP.Client
+import Network.HTTP.Client hiding (path)
 import Network.HTTP.Conduit (simpleHttp)
 
 import Prelude hiding (lookup, writeFile)

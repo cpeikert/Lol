@@ -9,6 +9,7 @@
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RebindableSyntax           #-}
+{-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE RoleAnnotations            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
@@ -101,48 +102,50 @@ instance Eq r => Eq (CT m r) where
 instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
   type ProtoType (CT m (ZqBasic q Int64)) = Rq
 
-  toProto (CT (CT' xs)) =
+  toProto (CT (CT' xs')) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-        q = proxy value (Proxy::Proxy q) :: Int64
-    in Rq m (fromIntegral q) $ S.fromList $ SV.toList $ SV.map LP.lift xs
+        q = fromIntegral (proxy value (Proxy::Proxy q) :: Int64)
+        xs = S.fromList $ SV.toList $ SV.map LP.lift xs'
+    in Rq{..}
   toProto x@(ZV _) = toProto $ toCT x
 
-  fromProto (Rq m' q' xs) =
-    let m = proxy valueFact (Proxy::Proxy m) :: Int
-        q = proxy value (Proxy::Proxy q) :: Int64
+  fromProto Rq{..} =
+    let m' = proxy valueFact (Proxy::Proxy m) :: Int
+        q' = proxy value (Proxy::Proxy q) :: Int64
         n = proxy totientFact (Proxy::Proxy m)
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
-    in if m == fromIntegral m' && len == n && fromIntegral q == q'
+    in if m' == fromIntegral m && len == n && fromIntegral q' == q
        then return $ CT $ CT' $ SV.map reduce xs'
        else throwError $
             "An error occurred while reading the proto type for CT.\n\
-            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
+            \Expected m=" ++ show m' ++ ", got " ++ show m   ++ "\n\
+            \Expected n=" ++ show n  ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show q' ++ ", got " ++ show q   ++ "."
 
 instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
   type ProtoType (CT m (RRq q Double)) = Kq
 
-  toProto (CT (CT' xs)) =
+  toProto (CT (CT' xs')) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = round (proxy value (Proxy::Proxy q) :: Double)
-    in Kq m q $ S.fromList $ SV.toList $ SV.map LP.lift xs
+        xs = S.fromList $ SV.toList $ SV.map LP.lift xs'
+    in Kq{..}
   toProto x@(ZV _) = toProto $ toCT x
 
-  fromProto (Kq m' q' xs) =
-    let m = proxy valueFact (Proxy::Proxy m) :: Int
-        q = round (proxy value (Proxy::Proxy q) :: Double)
+  fromProto Kq{..} =
+    let m' = proxy valueFact (Proxy::Proxy m) :: Int
+        q' = round (proxy value (Proxy::Proxy q) :: Double)
         n = proxy totientFact (Proxy::Proxy m)
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
-    in if m == fromIntegral m' && len == n && q == q'
+    in if m' == fromIntegral m && len == n && q' == q
        then return $ CT $ CT' $ SV.map reduce xs'
        else throwError $
             "An error occurred while reading the proto type for CT.\n\
-            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
+            \Expected m=" ++ show m' ++ ", got " ++ show m   ++ "\n\
+            \Expected n=" ++ show n  ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show q' ++ ", got " ++ show q   ++ "."
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
@@ -413,9 +416,9 @@ cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   -- takes ru (not ruInv) to match RT
   ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) ru
   totm <- pureT totientFact
-  m <- pureT valueFact
+  mval <- pureT valueFact
   rad <- pureT radicalFact
-  yin <- T.lift $ realGaussians (var * fromIntegral (m `div` rad)) totm
+  yin <- T.lift $ realGaussians (var * fromIntegral (mval `div` rad)) totm
   return $ unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdec ruptr) (CT' yin))
 

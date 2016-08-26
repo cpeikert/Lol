@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, GADTs, MultiParamTypeClasses,
-             PolyKinds, RebindableSyntax,
+             PolyKinds, RebindableSyntax, RecordWildCards,
              RoleAnnotations, ScopedTypeVariables, StandaloneDeriving,
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 
@@ -57,48 +57,50 @@ deriving instance Show r => Show (RT m r)
 instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
   type ProtoType (RT m (ZqBasic q Int64)) = Rq
 
-  toProto (RT (Arr xs)) =
+  toProto (RT (Arr xs')) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-        q = proxy value (Proxy::Proxy q) :: Int64
-    in Rq m (fromIntegral q) $ S.fromList $ RT.toList $ RT.map lift xs
+        q = fromIntegral (proxy value (Proxy::Proxy q) :: Int64)
+        xs = S.fromList $ RT.toList $ RT.map lift xs'
+    in Rq{..}
   toProto x@(ZV _) = toProto $ toRT x
 
-  fromProto (Rq m' q' xs) =
-    let m = proxy valueFact (Proxy::Proxy m) :: Int
-        q = proxy value (Proxy::Proxy q) :: Int64
+  fromProto Rq{..} =
+    let m' = proxy valueFact (Proxy::Proxy m) :: Int
+        q' = proxy value (Proxy::Proxy q) :: Int64
         n = proxy totientFact (Proxy::Proxy m)
         xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
         len = F.length xs
-    in if m == fromIntegral m' && len == n && fromIntegral q == q'
+    in if m' == fromIntegral m && len == n && fromIntegral q' == q
        then return $ RT $ Arr xs'
        else throwError $
             "An error occurred while reading the proto type for RT.\n\
-            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
+            \Expected m=" ++ show m' ++ ", got " ++ show m   ++ "\n\
+            \Expected n=" ++ show n  ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show q' ++ ", got " ++ show q   ++ "."
 
 instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
   type ProtoType (RT m (RRq q Double)) = Kq
 
-  toProto (RT (Arr xs)) =
+  toProto (RT (Arr xs')) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = round (proxy value (Proxy::Proxy q) :: Double)
-    in Kq m q $ S.fromList $ RT.toList $ RT.map lift xs
+        xs = S.fromList $ RT.toList $ RT.map lift xs'
+    in Kq{..}
   toProto x@(ZV _) = toProto $ toRT x
 
-  fromProto (Kq m' q' xs) =
-    let m = proxy valueFact (Proxy::Proxy m) :: Int
-        q = round (proxy value (Proxy::Proxy q) :: Double)
+  fromProto Kq{..} =
+    let m' = proxy valueFact (Proxy::Proxy m) :: Int
+        q' = round (proxy value (Proxy::Proxy q) :: Double)
         n = proxy totientFact (Proxy::Proxy m)
         xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
         len = F.length xs
-    in if m == fromIntegral m' && len == n && q == q'
+    in if m' == fromIntegral m && len == n && q' == q
        then return $ RT $ Arr xs'
        else throwError $
             "An error occurred while reading the proto type for RT.\n\
-            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
+            \Expected m=" ++ show m' ++ ", got " ++ show m   ++ "\n\
+            \Expected n=" ++ show n  ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show q' ++ ", got " ++ show q   ++ "."
 
 instance Eq r => Eq (RT m r) where
   (ZV a) == (ZV b) = a == b

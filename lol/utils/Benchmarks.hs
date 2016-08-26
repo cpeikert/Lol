@@ -94,12 +94,6 @@ col, testName :: Opts -> String
 testName Opts{..} = "%-" ++ (show testNameWidth) ++ "s "
 col Opts{..} = "%-" ++ (show colWidth) ++ "s "
 
-printANSI :: (MonadIO m) => Color -> String -> m ()
-printANSI sgr str = liftIO $ do
-  setSGR [SetColor Foreground Vivid sgr]
-  putStrLn str
-  setSGR [Reset]
-
 config :: Opts -> Config
 config Opts{..} = defaultConfig {verbosity = if verb == Full then Normal else Quiet}
 
