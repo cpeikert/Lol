@@ -37,7 +37,7 @@ import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 
 type ChallengeID = Int32
 type InstanceID = Int32
-type InstDRBG = CtrDRBG
+type InstDRBG = GenBuffered CtrDRBG
 
 -- | Tensor type used to generate and verify instances
 type T = CT
