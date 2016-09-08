@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, CPP, DataKinds, ExplicitNamespaces, GADTs,
+{-# LANGUAGE ConstraintKinds, CPP, DataKinds, GADTs,
              InstanceSigs, KindSignatures, PolyKinds, ScopedTypeVariables,
              RankNTypes, TemplateHaskell, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
