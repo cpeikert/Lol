@@ -1,7 +1,7 @@
 #!/bin/sh
 
 execname=rlwe-challenges
-challDir=rlwe-challenges
+challDir=challenges
 
 echo "Running challenge verifier..."
 ./dist/build/$execname/$execname verify

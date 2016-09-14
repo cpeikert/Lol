@@ -4,7 +4,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RebindableSyntax           #-}
 {-# LANGUAGE RoleAnnotations            #-}

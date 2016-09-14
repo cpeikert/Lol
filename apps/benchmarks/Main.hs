@@ -1,9 +1,22 @@
 
+import Benchmarks hiding (benches)
 import SHEBenches
 
-import Criterion.Main
+benches :: [String]
+benches = [
+  "encrypt",
+  "decrypt",
+  "*",
+  "addPublic",
+  "mulPublic",
+  "rescaleCT",
+  "keySwitch",
+  "tunnel"
+    ]
 
 main :: IO ()
-main = defaultMain =<< sequence [
-  sheBenches
-  ]
+main = 
+  let opts = defaultWidthOpts Progress benches
+      reports = [sheBenches]
+  in prettyBenches opts reports
+

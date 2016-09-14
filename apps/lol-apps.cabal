@@ -24,14 +24,15 @@ extra-source-files:  README, CHANGES.md,
                      utils/Apply/SHE.hs
                      utils/Benchmarks.hs,
                      utils/GenArgs.hs,
-                     utils/GenArgs/SHE.hs
+                     utils/GenArgs/SHE.hs,
+                     utils/Params/SHEParams.hs,
                      utils/Tests.hs,
                      utils/TestTypes.hs,
                      utils/Utils.hs
 cabal-version:       >= 1.10
 description:
     This library contains example cryptographic applications built using
-    <https://hackage.haskell.org/package/lol Λ ○ λ>  (Lol),
+    <https://hackage.haskell.org/package/lol Λ ∘ λ>  (Lol),
     a general-purpose library for ring-based lattice cryptography.
 
 source-repository head
@@ -66,7 +67,7 @@ library
   build-depends:
     base>=4.8 && <5,
     deepseq >= 1.4.1.1 && <1.5,
-    lol >= 0.3 && < 0.5,
+    lol >= 0.3,
     MonadRandom >= 0.2 && < 0.5,
     numeric-prelude >= 0.4.2 && < 0.5
 
@@ -109,8 +110,10 @@ Benchmark bench-apps
 --  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   build-depends:
+    ansi-terminal,
     arithmoi,
     base,
+    containers,
     criterion,
     deepseq,
     DRBG,
@@ -119,6 +122,7 @@ Benchmark bench-apps
     MonadRandom,
     mtl,
     singletons,
+    statistics,
     transformers,
     vector,
     repa

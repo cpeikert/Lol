@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE RecordWildCards       #-}
@@ -11,13 +10,15 @@ module Verify where
 
 import Beacon
 import Common
+import Generate
 
-import           Crypto.Lol                           hiding (lift)
-import           Crypto.Lol.Cyclotomic.Tensor.CTensor
-import qualified Crypto.Lol.RLWE.Continuous           as C
-import qualified Crypto.Lol.RLWE.Discrete             as D
-import qualified Crypto.Lol.RLWE.RLWR                 as R
+import           Crypto.Lol
+import           Crypto.Lol.Cyclotomic.UCyc
+import qualified Crypto.Lol.RLWE.Continuous as C
+import qualified Crypto.Lol.RLWE.Discrete   as D
+import qualified Crypto.Lol.RLWE.RLWR       as R
 import           Crypto.Lol.Types.Proto
+import           Crypto.Lol.Types.Random
 
 import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.Challenge.Params
@@ -32,20 +33,22 @@ import Crypto.Proto.RLWE.SampleCont
 import Crypto.Proto.RLWE.SampleDisc
 import Crypto.Proto.RLWE.SampleRLWR
 
+import Crypto.Random.DRBG
+
 import           Control.Applicative
-import           Control.Monad.Except
+import           Control.Monad.Except hiding (lift)
+import           Control.Monad.Random
 import qualified Data.ByteString.Lazy as BS
 import           Data.Int
 import           Data.List            (nub)
 import           Data.Maybe
 import           Data.Reflection      hiding (D)
+import qualified Data.Tagged          as T
 
 import Net.Beacon
 
-import System.Directory (doesFileExist)
-
--- Tensor type used to verify instances
-type T = CT
+import System.Console.ANSI
+import System.Directory    (doesFileExist)
 
 -- | Verifies all instances in the challenge tree, given the path to the
 -- root of the tree.
@@ -61,7 +64,12 @@ verifyMain path = do
     (Just addrs) -> do
       _ <- printPassFail "Checking for distinct beacon addresses... " "DISTINCT"
         $ throwErrorIf (length (nub addrs) /= length addrs) "NOT DISTINCT"
-      return ()
+      putStrLn "\nAttempting to regenerate challenges from random seeds. This will take awhile..."
+      regens <- sequence <$> mapM (regenChallenge path) challNames
+      when (isNothing regens) $ printANSI Yellow "NOTE: one or more instances could not be\n \
+        \regenerated from the provided PRG seed. This is NON-FATAL,\n \
+        \and is likely due to the use of a different compiler/platform\n \
+        \than the one used to generate the challenges."
     Nothing -> return ()
 
 -- | Reads a challenge and verifies all instances.
@@ -73,6 +81,17 @@ readAndVerifyChallenge path challName =
     (ba, insts) <- readChallenge path challName
     mapM_ verifyInstanceU insts
     return ba
+
+-- | Reads a challenge and attempts to regenerate all instances from the
+-- provided seed.
+-- Returns (Just ()) if regeneration succeeded for all instances.
+regenChallenge :: (MonadIO m)
+  => FilePath -> String -> m (Maybe ())
+regenChallenge path challName = do
+  printPassWarn ("Regenerating " ++ challName ++ "... ") "VERIFIED" $ do
+    (_, insts) <- readChallenge path challName
+    regens <- mapM regenInstance insts
+    unless (and regens) $ throwError "UNSUCCESSFUL"
 
 -- | Read a challenge from a file, outputting the beacon address and a
 -- list of instances to be verified.
@@ -91,6 +110,7 @@ readChallenge path challName = do
               readFullChallenge)
 
   liftIO $ putStr msg
+  _ <- parseBeaconAddr c -- verify that the beacon address is valid
   readChall path challName c
 
 -- | Whether we have an XML file for the beacon at the given epoch.
@@ -124,11 +144,15 @@ readFullChallenge path challName Challenge{..} = do
 
 validateSecret :: (MonadError String m)
   => String -> ChallengeID -> InstanceID -> Int32 -> Int64 -> Secret -> m ()
-validateSecret sfile cid iid m q (Secret cid' iid' m' q' _) = do
+validateSecret sfile cid iid m q (Secret cid' iid' m' q' seed _) = do
   checkParamsEq sfile "challID" cid cid'
   checkParamsEq sfile "instID" iid iid'
   checkParamsEq sfile "m" m m'
   checkParamsEq sfile "q" q q'
+  let minSeedLen = fromIntegral $ T.proxy genSeedLength (Proxy::Proxy InstDRBG)
+      seedLen = length $ BS.unpack seed
+  throwErrorIf (seedLen < minSeedLen) $ "Seed length is too short! Expected at least " ++
+    show minSeedLen ++ " bytes, but only found " ++ show seedLen ++ " bytes."
 
 validateInstance :: (MonadError String m)
   => String -> ChallengeID -> InstanceID -> Params
@@ -170,10 +194,55 @@ checkParamsEq data' param expected actual =
     data' ++ ": " ++ param ++ " mismatch. Expected " ++
     show expected ++ " but got " ++ show actual
 
+-- | Outputs whether or not we successfully regenerated this instance from the DRBG seed.
+regenInstance :: (MonadError String m) => InstanceU -> m Bool
+-- as always with floating point arithmetic, nothing is perfect (even
+-- deterministic generation of instances).
+-- the secret and a_i are discrete, so they should match exactly.
+-- the b_i shouldn't be too far off.
+regenInstance (IC (Secret _ _ _ _ seed s) InstanceCont{..}) =
+  let ContParams {..} = params
+      (Right (g :: CryptoRand InstDRBG)) = newGen $ BS.toStrict seed
+  in reifyFactI (fromIntegral m) (\(_::proxy m) ->
+      reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
+        let (expectedS, expectedSamples :: [C.Sample T m (Zq q) (RRq q)]) =
+              flip evalRand g $ instanceCont svar (fromIntegral numSamples)
+            csampleEq (a,b) (a',b') =
+              (a == a') && maximum (fmapDec abs $ lift $ b-b') < 2 ^- (-20)
+        s' :: Cyc T m (Zq q) <- fromProto s
+        samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
+          fmap (\(SampleCont a b) -> (a,b)) samples
+        return $ (expectedS == s') && (and $ zipWith csampleEq expectedSamples samples')))
+
+regenInstance (ID (Secret _ _ _ _ seed s) InstanceDisc{..}) =
+  let DiscParams {..} = params
+  in reifyFactI (fromIntegral m) (\(_::proxy m) ->
+    reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
+      g :: CryptoRand InstDRBG <- either (throwError . show) return $ newGen $ BS.toStrict seed
+      let (expectedS, expectedSamples :: [D.Sample T m (Zq q)]) =
+            flip evalRand g $ instanceDisc svar (fromIntegral numSamples)
+      s' :: Cyc T m (Zq q) <- fromProto s
+      samples' <- fromProto $ fmap (\(SampleDisc a b) -> (a,b)) samples
+      return $ (expectedS == s') && (expectedSamples == samples')))
+
+regenInstance (IR (Secret _ _ _ _ seed s) InstanceRLWR{..}) =
+  let RLWRParams {..} = params
+  in reifyFactI (fromIntegral m) (\(_::proxy m) ->
+    reify (fromIntegral q :: Int64) (\(_::Proxy q) ->
+      reify (fromIntegral p :: Int64) (\(_::Proxy p) -> do
+        g :: CryptoRand InstDRBG <- either (throwError . show) return $ newGen $ BS.toStrict seed
+        let (expectedS, expectedSamples :: [R.Sample T m (Zq q) (Zq p)]) =
+              flip evalRand g $ instanceRLWR (fromIntegral numSamples)
+        s' :: Cyc T m (Zq q) <- fromProto s
+        samples' :: [R.Sample _ _ _ (Zq p)] <- fromProto $
+          fmap (\(SampleRLWR a b) -> (a,b)) samples
+        return $ (expectedS == s') && (expectedSamples == samples'))))
+
+
 -- | Verify an 'InstanceU'.
 verifyInstanceU :: (MonadError String m) => InstanceU -> m ()
 
-verifyInstanceU (IC (Secret _ _ _ _ s) InstanceCont{..}) =
+verifyInstanceU (IC (Secret _ _ _ _ _ s) InstanceCont{..}) =
   let ContParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
@@ -183,7 +252,7 @@ verifyInstanceU (IC (Secret _ _ _ _ s) InstanceCont{..}) =
       throwErrorUnless (validInstanceCont bound s' samples')
         "A continuous RLWE sample exceeded the error bound."))
 
-verifyInstanceU (ID (Secret _ _ _ _ s) InstanceDisc{..}) =
+verifyInstanceU (ID (Secret _ _ _ _ _ s) InstanceDisc{..}) =
   let DiscParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> do
@@ -192,7 +261,7 @@ verifyInstanceU (ID (Secret _ _ _ _ s) InstanceDisc{..}) =
       throwErrorUnless (validInstanceDisc bound s' samples')
         "A discrete RLWE sample exceeded the error bound."))
 
-verifyInstanceU (IR (Secret _ _ _ _ s) InstanceRLWR{..}) =
+verifyInstanceU (IR (Secret _ _ _ _ _ s) InstanceRLWR{..}) =
   let RLWRParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) ->

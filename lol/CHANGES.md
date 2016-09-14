@@ -1,6 +1,26 @@
 Changelog for lol project
 ================================
 
+0.5.0.2
+----
+ * Updates to README.
+
+0.5.0.1
+----
+ * Benchmarks now compile.
+
+0.5.0.0
+----
+ * Dramatically improved CT performance using Haskell INLINE/INLINABLE pragmas.
+ * Removed fmapTM from Tensor.
+ * Removed valuePPs, totientPPs, radicalPPs, oddRadicalPPs from Factored.
+ * K_q (i.e. base ring RRq) is now serialized with a discrete modulus.
+ * Fixed a bug in UCyc.divG. The result is `divG` is now split into `divGPow`
+   `divGDec`, and `divGCRTC`.
+ * Added `UCycPC` type synonym to UCyc.
+ * Added data-level interface for Factored.
+ * Added Random instance for FiniteField.
+
 0.4.0.0
 ----
  * Added support for GHC 8.0, also compatible with 7.10.3

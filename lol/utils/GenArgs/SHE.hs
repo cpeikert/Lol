@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, GADTs,
-             MultiParamTypeClasses, NoImplicitPrelude, PolyKinds,
+             MultiParamTypeClasses, PolyKinds,
              RebindableSyntax, ScopedTypeVariables, TypeFamilies,
              UndecidableInstances #-}
 

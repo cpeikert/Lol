@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE NoImplicitPrelude   #-}
 {-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE RebindableSyntax    #-}
 {-# LANGUAGE ScopedTypeVariables #-}

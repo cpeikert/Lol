@@ -4,12 +4,13 @@
 
 module Main where
 
+import Control.Monad         (when)
 import Data.Time.Clock.POSIX
 import Options
 
 import System.Console.ANSI
+import System.Exit
 import System.IO
-import System.IO.Unsafe
 
 import Beacon
 import Common   (InstanceID, printANSI)
@@ -25,7 +26,7 @@ data MainOpts =
 
 instance Options MainOpts where
   defineOptions = MainOpts <$>
-    simpleOption "challenge-dir" "rlwe-challenges/" "Path to challenges"
+    simpleOption "challenge-dir" "challenges/" "Path to challenges"
 
 data GenOpts =
   GenOpts
@@ -37,12 +38,11 @@ data GenOpts =
 instance Options GenOpts where
   defineOptions = GenOpts <$>
     simpleOption "params" "params.txt" "File containing RLWE/R parameters" <*>
-    simpleOption "num-instances" 16
+    simpleOption "num-instances" 32
     "Number N of instances per challenge, N = 2^k <= 256" <*>
-    simpleOption "init-beacon"
-    -- CJP: sneaky! not referentially transparent, but handy as a default
-    (unsafePerformIO $ daysFromNow 3)
-    "Initial beacon epoch for suppress phase (default is 3 days from now)."
+    defineOption optionType_int64 (\o ->
+      o {optionLongFlags = ["init-beacon"],
+         optionDescription = "Initial beacon epoch for suppress phase."})
 
 -- | Epoch that's @n@ days from now, rounded to a multiple of 60 for
 -- NIST beacon purposes.
@@ -70,12 +70,15 @@ generate :: MainOpts -> GenOpts -> [String] -> IO ()
 generate MainOpts{..} GenOpts{..} _ = do
   let initBeaconTime = beaconFloor optInitBeaconEpoch
       initBeacon = BA initBeaconTime 0
+  when (initBeaconTime == 0) $ do
+    putStrLn "You must specify the initial beacon time with --init-beacon"
+    exitFailure
   currTime <- round <$> getPOSIXTime
-  case initBeaconTime > currTime of
-    True -> putStrLn $ "Challenges can be revealed starting at " ++
-            show initBeaconTime ++ ", " ++ show (initBeaconTime-currTime) ++
-            " seconds from now."
-    False -> printANSI Yellow "WARNING: Reveal time is in the past!"
+  if initBeaconTime > currTime
+    then putStrLn $ "Challenges can be revealed starting at " ++
+         show initBeaconTime ++ ", " ++ show (initBeaconTime-currTime) ++
+         " seconds from now."
+    else printANSI Yellow "WARNING: Reveal time is in the past!"
   paramContents <- readFile optParamsFile
   let params = parseChallParams paramContents optNumInstances
   generateMain optChallDir initBeacon params

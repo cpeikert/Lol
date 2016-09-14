@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds, FlexibleContexts,
-             NoImplicitPrelude, PolyKinds, RebindableSyntax,
+             PolyKinds, RebindableSyntax,
              ScopedTypeVariables, TypeFamilies,
              TypeOperators #-}
 
@@ -10,6 +10,7 @@ import Benchmarks hiding (hideArgs)
 import GenArgs
 import GenArgs.SHE
 import Utils
+import Params.SHEParams
 
 import Control.Applicative
 import Control.Monad.Random
@@ -32,15 +33,14 @@ hideArgs f p = (C.bench (showType p) . unbench) <$>
 
 sheBenches :: (MonadRandom m) => m Benchmark
 sheBenches = benchGroup "SHE" [
-  benchGroup "encrypt"   $ applyEnc encParams         $ hideArgs bench_enc,
-  benchGroup "decrypt"   $ applyDec decParams         $ hideArgs bench_dec,
-  benchGroup "*"         $ applyCTFunc ctParams       $ hideArgs bench_mul,
-  benchGroup "addPublic" $ applyCTFunc ctParams       $ hideArgs bench_addPublic,
-  benchGroup "mulPublic" $ applyCTFunc ctParams       $ hideArgs bench_mulPublic,
-  benchGroup "dec"       $ applyDec decParams         $ hideArgs bench_dec,
-  benchGroup "rescaleCT" $ applyRescale rescaleParams $ hideArgs bench_rescaleCT,
-  benchGroup "keySwitch" $ applyKSQ ksqParams         $ hideArgs bench_keySwQ,
-  benchGroup "tunnel"    $ applyTunn tunnelParams     $ hideArgs bench_tunnel
+  {-benchGroup "encrypt"   [hideArgs bench_enc enc_param],
+  benchGroup "decrypt"   [hideArgs bench_dec dec_param],
+  benchGroup "*"         [hideArgs bench_mul dec_param],
+  benchGroup "addPublic" [hideArgs bench_addPublic dec_param],
+  benchGroup "mulPublic" [hideArgs bench_mulPublic dec_param],
+  benchGroup "rescaleCT" [hideArgs bench_rescaleCT rescale_param],
+  benchGroup "keySwitch" [hideArgs bench_keySwQ ksw_param],-}
+  benchGroup "tunnel"    [hideArgs bench_tunnel tunn_param]
   ]
 
 bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRandomGen gen, z ~ LiftOf zp, NFElt zp, NFElt zq)
@@ -48,6 +48,11 @@ bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRando
 bench_enc sk pt = benchIO $ do
   gen <- newGenIO
   return $ evalRand (encrypt sk pt :: Rand (CryptoRand gen) (CT m zp (Cyc t m' zq))) gen
+
+-- requires zq to be Liftable
+bench_dec :: (DecryptCtx t m m' z zp zq, NFElt zp)
+  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
+bench_dec sk ct = bench (decrypt sk) ct
 
 bench_mul :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq)))
   => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
@@ -58,11 +63,6 @@ bench_addPublic a ct = bench (addPublic a) ct
 
 bench_mulPublic :: (MulPublicCtx t m m' zp zq, NFElt zp, NFElt zq) => Cyc t m zp -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
 bench_mulPublic a ct = bench (mulPublic a) ct
-
--- requires zq to be Liftable
-bench_dec :: (DecryptCtx t m m' z zp zq, NFElt zp)
-  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
-bench_dec sk ct = bench (decrypt sk) ct
 
 bench_rescaleCT :: forall t m m' zp zq zq' .
   (RescaleCyc (Cyc t) zq' zq, ToSDCtx t m' zp zq', NFData (CT m zp (Cyc t m' zq)))
@@ -76,7 +76,7 @@ bench_keySwQ (KeySwitch kswq) x = bench kswq $ x*x
 bench_tunnel :: (NFData (CT s zp (Cyc t s' zq)))
   => Tunnel t r r' s s' zp zq gad -> CT r zp (Cyc t r' zq) -> Bench '(t,r,r',s,s',zp,zq,gad)
 bench_tunnel (Tunnel f) x = bench f x
-
+{-
 type Gens    = '[HashDRBG]
 type Gadgets = '[TrivGad, BaseBGad 2]
 type Tensors = '[CT.CT,RT]
@@ -134,3 +134,4 @@ type TunnRings = '[
 type TunnMods = '[
   '(Zq PP32, Zq 3144961)
   ]
+-}

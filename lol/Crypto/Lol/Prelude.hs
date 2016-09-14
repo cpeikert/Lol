@@ -6,7 +6,6 @@
 {-# LANGUAGE FunctionalDependencies     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RebindableSyntax           #-}

@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
              FlexibleInstances, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RankNTypes, RebindableSyntax,
+             PolyKinds, RankNTypes, RebindableSyntax,
              ScopedTypeVariables, TypeFamilies, TypeOperators #-}
 
 module TestTypes

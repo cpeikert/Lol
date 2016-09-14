@@ -2,7 +2,6 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}

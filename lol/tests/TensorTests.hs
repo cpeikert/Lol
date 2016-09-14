@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, DataKinds, NoImplicitPrelude,
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, DataKinds,
              RebindableSyntax, ScopedTypeVariables, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
 

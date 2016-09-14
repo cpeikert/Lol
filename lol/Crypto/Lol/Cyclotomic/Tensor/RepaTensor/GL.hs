@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts, GADTs,
-             MultiParamTypeClasses, NoImplicitPrelude, RankNTypes,
+             MultiParamTypeClasses, RankNTypes,
              RebindableSyntax, ScopedTypeVariables #-}
 
 -- | The @G@ and @L@ transforms for Repa arrays.

@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances,
-             GADTs, MultiParamTypeClasses, NoImplicitPrelude, RankNTypes,
+             GADTs, MultiParamTypeClasses, RankNTypes,
              RebindableSyntax, ScopedTypeVariables, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
 

@@ -1,6 +1,6 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, FlexibleInstances,
              GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-             NoImplicitPrelude, PolyKinds, RebindableSyntax,
+             PolyKinds, RebindableSyntax,
              ScopedTypeVariables, TypeFamilies, UndecidableInstances #-}
 
 -- | \( \def\Z{\mathbb{Z}} \)

@@ -33,7 +33,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 , Kron, indexK, gCRTK, gInvCRTK, twCRTs
 -- * Tensor indexing
 , zmsToIndexFact
-, indexInfo
+, toIndexPair, fromIndexPair, indexInfo
 , extIndicesPowDec, extIndicesCRT, extIndicesCoeffs
 , baseIndicesPow, baseIndicesDec, baseIndicesCRT
 , digitRev
@@ -371,11 +371,12 @@ zmsToIndexPP (p,_) i = let (i1,i0) = i `divMod` p
 
 -- Index correspondences for ring extensions
 
--- | Correspondences between the linear indexes into a basis of
--- \(\O_{m'}\), and pair indices into (extension basis) \(\otimes\)
--- (basis of \(\O_m\)). The work the same for Pow, Dec, and CRT bases
--- because all these bases have that factorization. The first argument is the
--- list of \((\varphi(m),\varphi(m'))\) pairs for the (merged) prime powers
+-- | Correspondences between the one-dim indexes into a basis of
+-- \(\O_{m'}\), and pair indices into [extension basis of \(
+-- \O_{m'}/\O_m \)] \(\otimes\) [basis of \(\O_m\)]. The
+-- correspondences are the same for Pow, Dec, and CRT bases because
+-- they all have such a factorization. The first argument is the list
+-- of \((\varphi(m),\varphi(m'))\) pairs for the (merged) prime powers
 -- of \(m\),\(m'\).
 toIndexPair :: [(Int,Int)] -> Int -> (Int,Int)
 fromIndexPair :: [(Int,Int)] -> (Int,Int) -> Int
@@ -405,8 +406,8 @@ indexInfo :: forall m m' . (m `Divides` m')
 indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
                 pps' = proxy ppsFact (Proxy::Proxy m')
                 mpps = mergePPs pps pps'
-                phi = totientPPs pps
-                phi' = totientPPs pps'
+                phi = proxy totientFact (Proxy::Proxy m)
+                phi' = proxy totientFact (Proxy::Proxy m')
                 tots = totients mpps
             in tag (mpps, phi, phi', tots)
 
@@ -440,23 +441,22 @@ baseWrapper f = do
 -- | A lookup table for 'toIndexPair' applied to indices \([\varphi(m')]\).
 baseIndicesPow :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector (Int,Int))
+baseIndicesPow = baseWrapper (toIndexPair . totients)
 {-# INLINABLE baseIndicesPow #-}
+
 -- | A lookup table for 'baseIndexDec' applied to indices \([\varphi(m')]\).
 baseIndicesDec :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector (Maybe (Int,Bool)))
+-- this one is more complicated; requires the prime powers
+baseIndicesDec = baseWrapper baseIndexDec
 {-# INLINABLE baseIndicesDec #-}
+
 -- | Same as 'baseIndicesPow', but only includes the second component
 -- of each pair.
 baseIndicesCRT :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector Int)
-baseIndicesPow = baseWrapper (toIndexPair . totients)
-
--- this one is more complicated; requires the prime powers
-baseIndicesDec = baseWrapper baseIndexDec
-
 baseIndicesCRT =
   baseWrapper (\pps -> snd . toIndexPair (totients pps))
-
 
 -- | The \(i_0\)th entry of the \(i_1\)th vector is
 -- 'fromIndexPair' \((i_1,i_0)\).

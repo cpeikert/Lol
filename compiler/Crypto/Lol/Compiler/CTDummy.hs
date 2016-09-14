@@ -1,4 +1,4 @@
-{-# LANGUAGE NoImplicitPrelude, RebindableSyntax, RankNTypes, TypeOperators,
+{-# LANGUAGE RebindableSyntax, RankNTypes, TypeOperators,
              ScopedTypeVariables, GADTs, KindSignatures, FlexibleInstances,
              MultiParamTypeClasses, UndecidableInstances, FlexibleContexts,
              ConstraintKinds, DeriveGeneric, DeriveDataTypeable, DataKinds #-}
@@ -7,10 +7,10 @@
 -- It is recommended that these are used when constructing an AST of type CT,
 -- together with the CT compiler in CTCompiler.hs
 
--- The nodes in this module *cannot* be evaluated, 
+-- The nodes in this module *cannot* be evaluated,
 -- they must be compiled to CT nodes first.
 
-module Crypto.Lol.Compiler.CTDummy 
+module Crypto.Lol.Compiler.CTDummy
 (CTDummyOps(..)
 ,tunnDummy
 ,ksqDummy
@@ -30,29 +30,29 @@ import Data.Dynamic
 import Language.Syntactic
 import Language.Syntactic.Functional hiding (Let)
 
-type KSDummyCtx z gad zq' m zp c m' zq = 
+type KSDummyCtx z gad zq' m zp c m' zq =
   (Fact m, Fact m',
    z ~ LiftOf zp,
 
    KeySwitchCtx gad c m' zp zq zq',
    KSHintCtx gad c m' z zq',
    NFData zq',
-   
-   Typeable (Cyc c m' z), 
-   Typeable (CT m zp (Cyc c m' zq)), 
+
+   Typeable (Cyc c m' z),
+   Typeable (CT m zp (Cyc c m' zq)),
    Typeable gad, Typeable zq')
 
 
 data CTDummyOps :: (* -> *) where
 
-  KeySwQDummy :: (KSDummyCtx z gad zq' m zp c m' zq) 
+  KeySwQDummy :: (KSDummyCtx z gad zq' m zp c m' zq)
     => proxy gad -> proxy zq'
        -> CTDummyOps (CT m zp (Cyc c m' zq) :-> Full (CT m zp (Cyc c m' zq)))
 
   --http://stackoverflow.com/questions/28870198/polykinds-in-gadt-constructors
-  TunnDummy :: 
+  TunnDummy ::
     (TunnelCtx c e r s e' r' s' z zp zq gad, e ~ FGCD r s, Fact r,
-     Typeable c, Typeable r', Typeable s', Typeable z, Typeable s, Typeable r, 
+     Typeable c, Typeable r', Typeable s', Typeable z, Typeable s, Typeable r,
      Typeable gad, Typeable zq, Typeable zp, CElt c (ZpOf zp),
      ZPP zp)
            => proxy gad -> CTDummyOps (CT r zp (Cyc c r' zq) :-> Full (CT s zp (Cyc c s' zq)))
@@ -78,17 +78,17 @@ instance Render CTDummyOps where
 instance Eval CTDummyOps where
   evalSym = error "cannot evaluate CTDummyOps nodes!"
 
-ksqDummy :: forall dom dom' gad c m m' z zp zq zq' . 
+ksqDummy :: forall dom dom' gad c m m' z zp zq zq' .
   (CTDummyOps :<: dom', dom ~ Typed dom', KSDummyCtx z gad zq' m zp c m' zq)
   => ASTF dom (CT m zp (Cyc c m' zq)) -> Tagged '(gad, zq') (ASTF dom (CT m zp (Cyc c m' zq)))
 ksqDummy = return . (injT (KeySwQDummy (Proxy::Proxy gad) (Proxy::Proxy zq')) :$)
 
 type ASTTunnelCtx dom dom' gad c r r' s s' e e' z zp zq =
-  (CTDummyOps :<: dom', dom ~ Typed dom', TunnelCtx c e r s e' r' s' z zp zq gad, e ~ FGCD r s, 
+  (CTDummyOps :<: dom', dom ~ Typed dom', TunnelCtx c e r s e' r' s' z zp zq gad, e ~ FGCD r s,
    Fact r, Typeable c, Typeable r', Typeable s', Typeable z, Typeable s, Typeable r,
    Typeable gad, Typeable zq, Typeable zp, CElt c (ZpOf zp), ZPP zp)
 
-tunnDummy :: forall dom dom' gad c r r' s s' e e' z zp zq . 
+tunnDummy :: forall dom dom' gad c r r' s s' e e' z zp zq .
   (ASTTunnelCtx dom dom' gad c r r' s s' e e' z zp zq)
   => ASTF dom (CT r zp (Cyc c r' zq)) -> Tagged gad (ASTF dom (CT s zp (Cyc c s' zq)))
 tunnDummy = return . (injT (TunnDummy (Proxy::Proxy gad)) :$)
