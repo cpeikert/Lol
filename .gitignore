@@ -3,8 +3,11 @@ reprof.py
 ghci
 lol.sublime-project
 lol.sublime-workspace
+cabal.project
+cabal.project.local
 cabal.sandbox.config
 dist
+dist-newstyle
 sandbox-init
 sandbox-reset
 rebuild-proto
