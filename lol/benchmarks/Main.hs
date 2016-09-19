@@ -2,7 +2,7 @@
 
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
-import Benchmarks
+import Benchmarks hiding (benches, layers)
 import SimpleTensorBenches
 import TensorBenches
 import SimpleUCycBenches
@@ -12,64 +12,41 @@ import CycBenches
 import Crypto.Lol
 import Crypto.Lol.Types
 
-import Criterion.Internal (runAndAnalyseOne)
-import Criterion.Main.Options (defaultConfig)
-import Criterion.Measurement (secs)
-import Criterion.Monad (Criterion, withConfig)
-import Criterion.Types
-import Control.Monad (foldM, forM_, when)
-import Control.Monad.IO.Class (MonadIO, liftIO)
-
 import Control.Applicative
-import Control.DeepSeq (rnf)
-import Control.Exception (evaluate)
+import Control.Monad (when, join)
 
 import Data.List (transpose)
-import qualified Data.Map as Map
-import Data.Maybe
 
-import Statistics.Resampling.Bootstrap (Estimate(..))
-import System.Console.ANSI
 import System.IO
-import Text.Printf
-
--- table print parameters
-colWidth, testNameWidth :: Int
-colWidth = 15
-testNameWidth = 40
-verb :: Verb
-verb = Progress
-redThreshold :: Double
-redThreshold = 1.1
 
 -- choose which layers of Lol to benchmark
 layers :: [String]
 layers = [
   "STensor",
-  "Tensor",
-  "SUCyc",
-  "UCyc",
+  --"Tensor",
+  --"SUCyc",
+  --"UCyc",
   "Cyc"
   ]
 
 benches :: [String]
 benches = [
-  {-"unzipPow",
-  "unzipDec",
-  "unzipCRT",
+  "unzipPow",
+  --"unzipDec",
+  --"unzipCRT",
   "zipWith (*)",
   "crt",
-  "crtInv",
+  --"crtInv",
   "l",
-  "lInv",
-  "*g Pow",
+  --"lInv",
+  "*g Pow"{-,
   "*g Dec",
-  "*g CRT",-}
+  "*g CRT",
   "divg Pow",
   "divg Dec",
   "divg CRT",
   "lift",
-  "error"{-,
+  "error",
   "twacePow",
   "twaceDec",
   "twaceCRT",
@@ -78,7 +55,6 @@ benches = [
   "embedCRT"-}
   ]
 
-data Verb = Progress | Abridged | Full deriving (Eq)
 
 type T = CT
 type M = F9*F5*F7*F11
@@ -95,24 +71,35 @@ twoIdxParam = Proxy
 main :: IO ()
 main = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
-  reports <- mapM (getReports =<<) [
-    simpleTensorBenches1 testParam,
-    simpleTensorBenches2 twoIdxParam,
-    tensorBenches1 testParam,
-    tensorBenches2 twoIdxParam,
-    simpleUCycBenches1 testParam,
-    simpleUCycBenches2 twoIdxParam,
-    ucycBenches1 testParam,
-    ucycBenches2 twoIdxParam,
-    cycBenches1 testParam,
-    cycBenches2 twoIdxParam
-    ]
-  when (verb == Progress) $ putStrLn ""
-  printTable $ group2 $ map reverse reports
+  let opts = defaultWidthOpts Progress layers benches
+  reports <- join $ mapM (getReports opts) <$>
+    concat <$> transpose <$>
+      sequence [oneIdxBenches testParam, twoIdxBenches twoIdxParam]
+
+  when (verb opts == Progress) $ putStrLn ""
+  printTable opts $ group2 $ map reverse reports
 
 group2 :: [[a]] -> [[a]]
 group2 [] = []
 group2 (x:y:zs) = (x++y):(group2 zs)
+
+--oneIdxBenches p :: IO [Benchmark]
+{-# INLINE oneIdxBenches #-}
+oneIdxBenches p = sequence $ ($ p) <$> [
+  simpleTensorBenches1,
+  tensorBenches1,
+  simpleUCycBenches1,
+  ucycBenches1,
+  cycBenches1
+  ]
+{-# INLINE twoIdxBenches #-}
+twoIdxBenches p = sequence $ ($ p) <$> [
+  simpleTensorBenches2,
+  tensorBenches2,
+  simpleUCycBenches2,
+  ucycBenches2,
+  cycBenches2
+  ]
 
 {-
 main :: IO ()
@@ -172,7 +159,7 @@ twoIdxBenches param =
       cycBenches2 p
       ] :: IO [Benchmark]
 
--}
+
 getReports :: Benchmark -> IO [Report]
 getReports = withConfig config . runAndAnalyse
 
@@ -266,3 +253,4 @@ for bs0 handle = snd <$> go (0::Int, []) ("", bs0)
     shouldRun pfx mkbench =
       any (select . addPrefix pfx) . benchNames . mkbench $
       error "Criterion.env could not determine the list of your benchmarks since they force the environment (see the documentation for details)"
+-}

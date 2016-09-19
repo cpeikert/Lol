@@ -12,38 +12,41 @@ import Apply.Cyc
 import Benchmarks
 import BenchConfig
 
+import Control.Applicative
 import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Types
 import Crypto.Random.DRBG
-{-# INLINE cycBenches1 #-}
-cycBenches1 param = benchGroup "Cyc" [
-  {-benchGroup "unzipPow"    $ [hideArgs bench_unzipCycPow param],
-  benchGroup "unzipDec"    $ [hideArgs bench_unzipCycDec param],
-  benchGroup "unzipCRT"    $ [hideArgs bench_unzipCycCRT param],
-  benchGroup "zipWith (*)" $ [hideArgs bench_mul param],
-  benchGroup "crt"         $ [hideArgs bench_crt param],
-  benchGroup "crtInv"      $ [hideArgs bench_crtInv param],
-  benchGroup "l"           $ [hideArgs bench_l param],
-  benchGroup "lInv"        $ [hideArgs bench_lInv param],
-  benchGroup "*g Pow"      $ [hideArgs bench_mulgPow param],
-  benchGroup "*g Dec"      $ [hideArgs bench_mulgDec param],
-  benchGroup "*g CRT"      $ [hideArgs bench_mulgCRT param],-}
-  benchGroup "divg Pow"    $ [hideArgs bench_divgPow param],
-  benchGroup "divg Dec"    $ [hideArgs bench_divgDec param],
-  benchGroup "divg CRT"    $ [hideArgs bench_divgCRT param],
-  benchGroup "lift"        $ [hideArgs bench_liftPow param],
-  benchGroup "error"       $ [hideArgs (bench_errRounded 0.1) param]
+
+-- cycBenches1 param :: IO Benchmark
+{-# INLINABLE cycBenches1 #-}
+cycBenches1 p = benchGroup "Cyc" $ ($ p) <$> [
+  hideArgs "unzipPow" bench_unzipCycPow,
+  hideArgs "unzipDec" bench_unzipCycDec,
+  hideArgs "unzipCRT" bench_unzipCycCRT,
+  hideArgs "zipWith (*)" bench_mul,
+  hideArgs "crt" bench_crt,
+  hideArgs "crtInv" bench_crtInv,
+  hideArgs "l" bench_l,
+  hideArgs "lInv" bench_lInv,
+  hideArgs "*g Pow" bench_mulgPow,
+  hideArgs "*g Dec" bench_mulgDec,
+  hideArgs "*g CRT" bench_mulgCRT,
+  hideArgs "divg Pow" bench_divgPow,
+  hideArgs "divg Dec" bench_divgDec,
+  hideArgs "divg CRT" bench_divgCRT,
+  hideArgs "lift" bench_liftPow,
+  hideArgs "error" (bench_errRounded 0.1)
   ]
-{-# INLINE cycBenches2 #-}
-cycBenches2 param = benchGroup "Cyc" [
-  benchGroup "twacePow"    $ [hideArgs bench_twacePow param]{-,
-  benchGroup "twaceDec"    $ [hideArgs bench_twaceDec param],
-  benchGroup "twaceCRT"    $ [hideArgs bench_twaceCRT param],
-  benchGroup "embedPow"    $ [hideArgs bench_embedPow param],
-  benchGroup "embedDec"    $ [hideArgs bench_embedDec param],
-  benchGroup "embedCRT"    $ [hideArgs bench_embedCRT param]-}
+{-# INLINABLE cycBenches2 #-}
+cycBenches2 p = benchGroup "Cyc" $ ($ p) <$> [
+  hideArgs "twacePow" bench_twacePow,
+  hideArgs "twaceDec" bench_twaceDec,
+  hideArgs "twaceCRT" bench_twaceCRT,
+  hideArgs "embedPow" bench_embedPow,
+  hideArgs "embedDec" bench_embedDec,
+  hideArgs "embedCRT" bench_embedCRT
   ]
 
 {-# INLINABLE bench_unzipCycPow #-}

@@ -23,32 +23,32 @@ import Crypto.Lol.Types
 import Crypto.Random.DRBG
 
 {-# INLINE tensorBenches1 #-}
-tensorBenches1 param = benchGroup "Tensor" [
-  {-benchGroup "unzipPow"    $ [hideArgs bench_unzip param],
-  benchGroup "unzipDec"    $ [hideArgs bench_unzip param],
-  benchGroup "unzipCRT"    $ [hideArgs bench_unzip param],
-  benchGroup "zipWith (*)" $ [hideArgs bench_mul param],
-  benchGroup "crt"         $ [hideArgs bench_crt param],
-  benchGroup "crtInv"      $ [hideArgs bench_crtInv param],
-  benchGroup "l"           $ [hideArgs bench_l param],
-  benchGroup "lInv"        $ [hideArgs bench_lInv param],
-  benchGroup "*g Pow"      $ [hideArgs bench_mulgPow param],
-  benchGroup "*g Dec"      $ [hideArgs bench_mulgDec param],
-  benchGroup "*g CRT"      $ [hideArgs bench_mulgCRT param],
-  benchGroup "divg Pow"    $ [hideArgs bench_divgPow param],-}
-  benchGroup "divg Dec"    $ [hideArgs bench_divgDec param],
-  benchGroup "divg CRT"    $ [hideArgs bench_divgCRT param],
-  benchGroup "lift"        $ [hideArgs bench_liftPow param],
-  benchGroup "error"       $ [hideArgs (bench_errRounded 0.1) param]
+tensorBenches1 p = benchGroup "Tensor" $ ($ p) <$> [
+  hideArgs "unzipPow" bench_unzip,
+  hideArgs "unzipDec" bench_unzip,
+  hideArgs "unzipCRT" bench_unzip,
+  hideArgs "zipWith (*)" bench_mul,
+  hideArgs "crt" bench_crt,
+  hideArgs "crtInv" bench_crtInv,
+  hideArgs "l" bench_l,
+  hideArgs "lInv" bench_lInv,
+  hideArgs "*g Pow" bench_mulgPow,
+  hideArgs "*g Dec" bench_mulgDec,
+  hideArgs "*g CRT" bench_mulgCRT,
+  hideArgs "divg Pow" bench_divgPow,
+  hideArgs "divg Dec" bench_divgDec,
+  hideArgs "divg CRT" bench_divgCRT,
+  hideArgs "lift" bench_liftPow,
+  hideArgs "error" (bench_errRounded 0.1)
   ]
 {-# INLINE tensorBenches2 #-}
-tensorBenches2 param = benchGroup "Tensor" [
-  benchGroup "twacePow"    $ [hideArgs bench_twacePow param]{-,
-  benchGroup "twaceDec"    $ [hideArgs bench_twacePow param], -- yes, twacePow is correct here. It's the same function!
-  benchGroup "twaceCRT"    $ [hideArgs bench_twaceCRT param],
-  benchGroup "embedPow"    $ [hideArgs bench_embedPow param],
-  benchGroup "embedDec"    $ [hideArgs bench_embedDec param],
-  benchGroup "embedCRT"    $ [hideArgs bench_embedCRT param]-}
+tensorBenches2 p = benchGroup "Tensor" $ ($ p) <$> [
+  hideArgs "twacePow" bench_twacePow,
+  hideArgs "twaceDec" bench_twacePow, -- yes, twacePow is correct here. It's the same function!
+  hideArgs "twaceCRT" bench_twaceCRT,
+  hideArgs "embedPow" bench_embedPow,
+  hideArgs "embedDec" bench_embedDec,
+  hideArgs "embedCRT" bench_embedCRT
   ]
 
 bench_unzip :: (UnzipCtx t m r) => t m (r,r) -> Bench '(t,m,r)
