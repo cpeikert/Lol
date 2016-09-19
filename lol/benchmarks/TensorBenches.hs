@@ -12,7 +12,6 @@ module TensorBenches (tensorBenches1, tensorBenches2) where
 
 import Apply.Cyc
 import Benchmarks
-import BenchConfig
 
 import Control.Applicative
 import Control.Monad.Random
@@ -23,7 +22,7 @@ import Crypto.Lol.Types
 import Crypto.Random.DRBG
 
 {-# INLINE tensorBenches1 #-}
-tensorBenches1 p = benchGroup "Tensor" $ ($ p) <$> [
+tensorBenches1 ptmr pgen = benchGroup "Tensor" $ ($ ptmr) <$> [
   hideArgs "unzipPow" bench_unzip,
   hideArgs "unzipDec" bench_unzip,
   hideArgs "unzipCRT" bench_unzip,
@@ -39,7 +38,7 @@ tensorBenches1 p = benchGroup "Tensor" $ ($ p) <$> [
   hideArgs "divg Dec" bench_divgDec,
   hideArgs "divg CRT" bench_divgCRT,
   hideArgs "lift" bench_liftPow,
-  hideArgs "error" (bench_errRounded 0.1)
+  hideArgs "error" (bench_errRounded 0.1) . addGen pgen
   ]
 {-# INLINE tensorBenches2 #-}
 tensorBenches2 p = benchGroup "Tensor" $ ($ p) <$> [
@@ -107,13 +106,13 @@ bench_divgCRT :: (BasicCtx t m r) => t m r -> Bench '(t,m,r)
 bench_divgCRT = bench (fromJust' "TensorBenches.bench_divgCRT" divGCRT)
 
 -- generate a rounded error term
-bench_errRounded :: forall t m r . (ErrorCtx t m r Gen)
-  => Double -> Bench '(t,m,r)
+bench_errRounded :: forall t m r gen . (ErrorCtx t m r gen)
+  => Double -> Bench '(t,m,r,gen)
 bench_errRounded v = benchIO $ do
   gen <- newGenIO
   return $ evalRand
     (fmapT (roundMult one) <$>
-      (tGaussianDec v :: Rand (CryptoRand Gen) (t m Double)) :: Rand (CryptoRand Gen) (t m (LiftOf r))) gen
+      (tGaussianDec v :: Rand (CryptoRand gen) (t m Double)) :: Rand (CryptoRand gen) (t m (LiftOf r))) gen
 
 bench_twacePow :: forall t m m' r . (TwoIdxCtx t m m' r)
   => t m' r -> Bench '(t,m,m',r)

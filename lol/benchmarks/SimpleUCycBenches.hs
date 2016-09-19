@@ -16,11 +16,10 @@ import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Types
 import Crypto.Random.DRBG
 
-import BenchConfig
 import Criterion
 
 {-# INLINE simpleUCycBenches1 #-}
-simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) = do
+simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
   x1 :: UCyc t m P (r, r) <- getRandom
   let x1' = toDec x1
   (Right x2) :: UCycPC t m (r, r) <- getRandom
@@ -47,7 +46,7 @@ simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) = do
     bench "divg Dec"    $ nf divGDec x5',
     bench "divg CRT"    $ nf divGCRTC x6,
     bench "lift"        $ nf lift x4,
-    bench "error"       $ nf (evalRand (errorRounded (0.1 :: Double) :: Rand (CryptoRand Gen) (UCyc t m D Int64))) gen
+    bench "error"       $ nf (evalRand (errorRounded (0.1 :: Double) :: Rand (CryptoRand gen) (UCyc t m D Int64))) gen
     ]
 {-# INLINE simpleUCycBenches2 #-}
 simpleUCycBenches2 (Proxy :: Proxy '(t,m',m,r)) = do

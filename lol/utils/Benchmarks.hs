@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses,
+{-# LANGUAGE BangPatterns, DataKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses,
              PolyKinds, RankNTypes, RecordWildCards, ScopedTypeVariables, TypeFamilies #-}
 
 module Benchmarks
@@ -9,6 +9,7 @@ module Benchmarks
 ,Bench(..)
 ,Benchmark
 ,NFData
+,addGen
 
 ,prettyBenches
 ,printTable
@@ -42,6 +43,9 @@ import Statistics.Resampling.Bootstrap (Estimate(..))
 import System.Console.ANSI
 import System.IO
 import Text.Printf
+
+addGen :: Proxy gen -> Proxy '(t,m,r) -> Proxy '(t,m,r,gen)
+addGen _ _ = Proxy
 
 -- wrapper for Criterion's `nf`
 bench :: NFData b => (a -> b) -> a -> Bench params

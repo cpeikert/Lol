@@ -18,11 +18,10 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types
 import Crypto.Random.DRBG
 
-import BenchConfig
 import Criterion
 
 {-# INLINE simpleTensorBenches1 #-}
-simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) = do
+simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
   x1 :: t m (r, r) <- getRandom
   x2 :: t m r <- getRandom
   x3 :: t m r <- getRandom
@@ -47,8 +46,8 @@ simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) = do
     bench "lift"        $ nf (fmapT lift) x2,
     bench "error"       $ nf (evalRand (fmapT (roundMult one) <$>
                            (tGaussianDec
-                             (0.1 :: Double) :: Rand (CryptoRand Gen) (t m Double)))
-                               :: CryptoRand Gen -> t m Int64) gen
+                             (0.1 :: Double) :: Rand (CryptoRand gen) (t m Double)))
+                               :: CryptoRand gen -> t m Int64) gen
     ]
 {-# INLINE simpleTensorBenches2 #-}
 simpleTensorBenches2 (Proxy :: Proxy '(t,m',m,r)) = do

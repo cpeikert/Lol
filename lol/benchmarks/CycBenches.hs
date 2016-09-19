@@ -10,7 +10,6 @@ module CycBenches (cycBenches1, cycBenches2) where
 
 import Apply.Cyc
 import Benchmarks
-import BenchConfig
 
 import Control.Applicative
 import Control.Monad.Random
@@ -21,7 +20,7 @@ import Crypto.Random.DRBG
 
 -- cycBenches1 param :: IO Benchmark
 {-# INLINABLE cycBenches1 #-}
-cycBenches1 p = benchGroup "Cyc" $ ($ p) <$> [
+cycBenches1 ptmr pgen = benchGroup "Cyc" $ ($ ptmr) <$> [
   hideArgs "unzipPow" bench_unzipCycPow,
   hideArgs "unzipDec" bench_unzipCycDec,
   hideArgs "unzipCRT" bench_unzipCycCRT,
@@ -37,7 +36,7 @@ cycBenches1 p = benchGroup "Cyc" $ ($ p) <$> [
   hideArgs "divg Dec" bench_divgDec,
   hideArgs "divg CRT" bench_divgCRT,
   hideArgs "lift" bench_liftPow,
-  hideArgs "error" (bench_errRounded 0.1)
+  hideArgs "error" (bench_errRounded 0.1) . addGen pgen
   ]
 {-# INLINABLE cycBenches2 #-}
 cycBenches2 p = benchGroup "Cyc" $ ($ p) <$> [
@@ -114,11 +113,11 @@ bench_divgCRT :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
 bench_divgCRT x = let y = adviseCRT x in bench divG y
 
 -- generate a rounded error term
-bench_errRounded :: forall t m r . (ErrorCtx t m r Gen)
-  => Double -> Bench '(t,m,r)
+bench_errRounded :: forall t m r gen . (ErrorCtx t m r gen)
+  => Double -> Bench '(t,m,r,gen)
 bench_errRounded v = benchIO $ do
   gen <- newGenIO
-  return $ evalRand (errorRounded v :: Rand (CryptoRand Gen) (Cyc t m (LiftOf r))) gen
+  return $ evalRand (errorRounded v :: Rand (CryptoRand gen) (Cyc t m (LiftOf r))) gen
 
 bench_twacePow :: forall t m m' r . (TwoIdxCtx t m m' r)
   => Cyc t m' r -> Bench '(t,m,m',r)

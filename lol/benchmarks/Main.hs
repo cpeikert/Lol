@@ -11,6 +11,7 @@ import CycBenches
 
 import Crypto.Lol
 import Crypto.Lol.Types
+import Crypto.Random.DRBG
 
 import Control.Applicative
 import Control.Monad (when, join)
@@ -62,6 +63,9 @@ type R = Zq 34651
 type M' = F3*F5*F11
 type Zq (q :: k) = ZqBasic q Int64
 
+-- The random generator used in benchmarks
+type Gen = HashDRBG
+
 testParam :: Proxy '(T, M, R)
 testParam = Proxy
 
@@ -74,7 +78,8 @@ main = do
   let opts = defaultWidthOpts Progress layers benches
   reports <- join $ mapM (getReports opts) <$>
     concat <$> transpose <$>
-      sequence [oneIdxBenches testParam, twoIdxBenches twoIdxParam]
+      sequence [oneIdxBenches testParam (Proxy::Proxy Gen),
+                twoIdxBenches twoIdxParam]
 
   when (verb opts == Progress) $ putStrLn ""
   printTable opts $ group2 $ map reverse reports
@@ -85,7 +90,7 @@ group2 (x:y:zs) = (x++y):(group2 zs)
 
 --oneIdxBenches p :: IO [Benchmark]
 {-# INLINE oneIdxBenches #-}
-oneIdxBenches p = sequence $ ($ p) <$> [
+oneIdxBenches ptmr pgen = sequence $ (($ pgen) . ($ ptmr)) <$> [
   simpleTensorBenches1,
   tensorBenches1,
   simpleUCycBenches1,
