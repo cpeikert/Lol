@@ -222,7 +222,6 @@ Benchmark bench-lol
     mtl,
     singletons,
     statistics,
-    template-haskell,
     transformers,
     vector,
     repa
