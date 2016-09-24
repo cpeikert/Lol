@@ -162,7 +162,7 @@ library
     random >= 1.1 && < 1.2,
     reflection >= 1.5.1 && < 2.2,
     repa==3.4.*,
-    singletons >= 1.1.2.1 && < 2.2,
+    singletons >= 1.1.2.1 && < 2.3,
     th-desugar >= 1.5.4 && < 1.7,
     tagged-transformer >= 0.7 && < 0.9,
     template-haskell  >=  2.2.0.0,
