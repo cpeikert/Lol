@@ -47,6 +47,7 @@ import Text.Printf
 addGen :: Proxy gen -> Proxy '(t,m,r) -> Proxy '(t,m,r,gen)
 addGen _ _ = Proxy
 
+{-# INLINABLE bench #-}
 -- wrapper for Criterion's `nf`
 bench :: NFData b => (a -> b) -> a -> Bench params
 bench f = Bench . nf f
@@ -55,6 +56,7 @@ bench f = Bench . nf f
 benchIO :: NFData b => IO b -> Bench params
 benchIO = Bench . nfIO
 
+{-# INLINABLE benchGroup #-}
 -- wrapper for Criterion's
 benchGroup :: (Monad rnd) => String -> [rnd Benchmark] -> rnd Benchmark
 benchGroup str = (bgroup str <$>) . sequence
