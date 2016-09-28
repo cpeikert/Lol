@@ -1,25 +1,26 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE NoImplicitPrelude   #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
 
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module CycBenches (cycBenches1, cycBenches2) where
 
-import Apply.Cyc
 import Benchmarks
 
 import Control.Applicative
 import Control.Monad.Random
 
 import Crypto.Lol
+import Crypto.Lol.Cyclotomic.Tensor (TElt)
 import Crypto.Lol.Types
 import Crypto.Random.DRBG
 
--- cycBenches1 param :: IO Benchmark
 {-# INLINABLE cycBenches1 #-}
+cycBenches1 :: (Monad rnd, _) => _ -> _ -> rnd Benchmark
 cycBenches1 ptmr pgen = benchGroup "Cyc" $ ($ ptmr) <$> [
   hideArgs "unzipPow" bench_unzipCycPow,
   hideArgs "unzipDec" bench_unzipCycDec,
@@ -40,6 +41,7 @@ cycBenches1 ptmr pgen = benchGroup "Cyc" $ ($ ptmr) <$> [
   ]
 
 {-# INLINABLE cycBenches2 #-}
+cycBenches2 :: (Monad rnd, _) => _ -> rnd Benchmark
 cycBenches2 p = benchGroup "Cyc" $ ($ p) <$> [
   hideArgs "twacePow" bench_twacePow,
   hideArgs "twaceDec" bench_twaceDec,
@@ -50,20 +52,20 @@ cycBenches2 p = benchGroup "Cyc" $ ($ p) <$> [
   ]
 
 {-# INLINE bench_unzipCycPow #-}
-bench_unzipCycPow :: (UnzipCtx t m r) => Cyc t m (r,r) -> Bench '(t,m,r)
+bench_unzipCycPow :: _ => Cyc t m (r,r) -> Bench '(t,m,r)
 bench_unzipCycPow = bench unzipCyc . advisePow
 
 {-# INLINE bench_unzipCycDec #-}
-bench_unzipCycDec :: (UnzipCtx t m r) => Cyc t m (r,r) -> Bench '(t,m,r)
+bench_unzipCycDec :: _ => Cyc t m (r,r) -> Bench '(t,m,r)
 bench_unzipCycDec = bench unzipCyc . adviseDec
 
 {-# INLINE bench_unzipCycCRT #-}
-bench_unzipCycCRT :: (UnzipCtx t m r) => Cyc t m (r,r) -> Bench '(t,m,r)
+bench_unzipCycCRT :: _ => Cyc t m (r,r) -> Bench '(t,m,r)
 bench_unzipCycCRT = bench unzipCyc . adviseCRT
 
 {-# INLINABLE bench_mul #-}
 -- no CRT conversion, just coefficient-wise multiplication
-bench_mul :: (BasicCtx t m r) => Cyc t m r -> Cyc t m r -> Bench '(t,m,r)
+bench_mul :: _ => Cyc t m r -> Cyc t m r -> Bench '(t,m,r)
 bench_mul a b =
   let a' = adviseCRT a
       b' = adviseCRT b
@@ -71,94 +73,94 @@ bench_mul a b =
 
 {-# INLINABLE bench_crt #-}
 -- convert input from Pow basis to CRT basis
-bench_crt :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
-bench_crt x = let y = advisePow x in bench adviseCRT y
+bench_crt :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_crt = bench adviseCRT . advisePow
 
 {-# INLINABLE bench_crtInv #-}
 -- convert input from CRT basis to Pow basis
-bench_crtInv :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
-bench_crtInv x = let y = adviseCRT x in bench advisePow y
+bench_crtInv :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_crtInv = bench advisePow . adviseCRT
 
 {-# INLINABLE bench_l #-}
 -- convert input from Dec basis to Pow basis
-bench_l :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
-bench_l x = let y = adviseDec x in bench advisePow y
+bench_l :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_l = bench advisePow . adviseDec
 
 {-# INLINABLE bench_lInv #-}
 -- convert input from Pow basis to Dec basis
-bench_lInv :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
-bench_lInv x = let y = advisePow x in bench adviseDec y
+bench_lInv :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_lInv = bench adviseDec  . advisePow
 
 {-# INLINE bench_liftPow #-}
 -- lift an element in the Pow basis
-bench_liftPow :: forall t m r . (LiftCtx t m r) => Cyc t m r -> Bench '(t,m,r)
+bench_liftPow :: _ => Cyc t m r -> Bench '(t,m,r)
 bench_liftPow = bench (liftCyc Pow) . advisePow
 
 {-# INLINABLE bench_mulgPow #-}
 -- multiply by g when input is in Pow basis
-bench_mulgPow :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
-bench_mulgPow x = let y = advisePow x in bench mulG y
+bench_mulgPow :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_mulgPow = bench mulG . advisePow
 
 {-# INLINABLE bench_mulgDec #-}
 -- multiply by g when input is in Dec basis
-bench_mulgDec :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
-bench_mulgDec x = let y = adviseDec x in bench mulG y
+bench_mulgDec :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_mulgDec = bench mulG . adviseDec
 
 {-# INLINABLE bench_mulgCRT #-}
 -- multiply by g when input is in CRT basis
-bench_mulgCRT :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
-bench_mulgCRT x = let y = adviseCRT x in bench mulG y
+bench_mulgCRT :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_mulgCRT = bench mulG . adviseCRT
 
 {-# INLINABLE bench_divgPow #-}
 -- divide by g when input is in Pow basis
-bench_divgPow :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
-bench_divgPow x = let y = advisePow $ mulG x in bench divG y
+bench_divgPow :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_divgPow = bench divG . advisePow . mulG
 
 {-# INLINABLE bench_divgDec #-}
 -- divide by g when input is in Dec basis
-bench_divgDec :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
-bench_divgDec x = let y = adviseDec $ mulG x in bench divG y
+bench_divgDec :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_divgDec = bench divG . adviseDec . mulG
 
 {-# INLINABLE bench_divgCRT #-}
 -- divide by g when input is in CRT basis
-bench_divgCRT :: (BasicCtx t m r) => Cyc t m r -> Bench '(t,m,r)
-bench_divgCRT x = let y = adviseCRT x in bench divG y
+bench_divgCRT :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_divgCRT = bench divG . adviseCRT
 
 {-# INLINABLE bench_errRounded #-}
 -- generate a rounded error term
-bench_errRounded :: forall t m r gen . (ErrorCtx t m r gen)
+bench_errRounded :: forall t m r gen . (TElt t r, Fact m, CryptoRandomGen gen, _)
   => Double -> Bench '(t,m,r,gen)
 bench_errRounded v = benchIO $ do
   gen <- newGenIO
   return $ evalRand (errorRounded v :: Rand (CryptoRand gen) (Cyc t m (LiftOf r))) gen
 
+-- These need a hint on the kind of the output index. Could use a kind annotation on the forall'd var.
 {-# INLINE bench_twacePow #-}
-bench_twacePow :: forall t m m' r . (TwoIdxCtx t m m' r)
+bench_twacePow :: forall t m m' r . (Fact m, _)
   => Cyc t m' r -> Bench '(t,m,m',r)
 bench_twacePow = bench (twace :: Cyc t m' r -> Cyc t m r) . advisePow
 
 {-# INLINE bench_twaceDec #-}
-bench_twaceDec :: forall t m m' r . (TwoIdxCtx t m m' r)
+bench_twaceDec :: forall t m m' r . (Fact m, _)
   => Cyc t m' r -> Bench '(t,m,m',r)
 bench_twaceDec = bench (twace :: Cyc t m' r -> Cyc t m r) . adviseDec
 
 {-# INLINE bench_twaceCRT #-}
-bench_twaceCRT :: forall t m m' r . (TwoIdxCtx t m m' r)
+bench_twaceCRT :: forall t m m' r . (Fact m, _)
   => Cyc t m' r -> Bench '(t,m,m',r)
 bench_twaceCRT = bench (twace :: Cyc t m' r -> Cyc t m r) . adviseCRT
 
 {-# INLINE bench_embedPow #-}
-bench_embedPow :: forall t m m' r . (TwoIdxCtx t m m' r)
+bench_embedPow :: forall t m m' r . (Fact m', _)
   => Cyc t m r -> Bench '(t,m,m',r)
 bench_embedPow = bench (advisePow . embed :: Cyc t m r -> Cyc t m' r) . advisePow
 
 {-# INLINE bench_embedDec #-}
-bench_embedDec :: forall t m m' r . (TwoIdxCtx t m m' r)
+bench_embedDec :: forall t m m' r . (Fact m', _)
   => Cyc t m r -> Bench '(t,m,m',r)
 bench_embedDec = bench (adviseDec . embed :: Cyc t m r -> Cyc t m' r) . adviseDec
 
 {-# INLINE bench_embedCRT #-}
-bench_embedCRT :: forall t m m' r . (TwoIdxCtx t m m' r)
+bench_embedCRT :: forall t m m' r . (Fact m', _)
   => Cyc t m r -> Bench '(t,m,m',r)
-bench_embedCRT x = let y = adviseCRT x
-                   in bench (adviseCRT . embed :: Cyc t m r -> Cyc t m' r) x
+bench_embedCRT = bench (adviseCRT . embed :: Cyc t m r -> Cyc t m' r) . adviseCRT
