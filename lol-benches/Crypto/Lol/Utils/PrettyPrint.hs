@@ -1,80 +1,33 @@
-{-# LANGUAGE BangPatterns, DataKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses,
-             PolyKinds, RankNTypes, RecordWildCards, ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE RecordWildCards #-}
 
-module Benchmarks
-(Benchmarks.bench
-,benchIO
-,benchGroup
-,hideArgs
-,Bench(..)
-,Benchmark
-,NFData
-,addGen
-
-,prettyBenches
+module Crypto.Lol.Utils.PrettyPrint
+(prettyBenches
 ,printTable
 ,getReports
 ,defaultWidthOpts
 ,Opts(..)
 ,Verb(..)) where
 
-import Criterion as C
+import Control.DeepSeq
+import Control.Exception (evaluate)
+import Control.Monad (foldM, forM_, when)
+import Control.Monad.IO.Class (MonadIO, liftIO)
+
 import Criterion.Internal (runAndAnalyseOne)
 import Criterion.Main.Options (defaultConfig)
 import Criterion.Measurement (secs)
 import Criterion.Monad (Criterion, withConfig)
 import Criterion.Types
-import Control.Monad (foldM, forM_, when)
-import Control.Monad.IO.Class (MonadIO, liftIO)
-
-import Control.Exception (evaluate)
-
-import Control.DeepSeq
 
 import Data.List (transpose)
 import qualified Data.Map as Map
 import Data.Maybe
-import Data.Proxy
-
-import GenArgs
-import Utils
 
 import Statistics.Resampling.Bootstrap (Estimate(..))
 import System.Console.ANSI
 import System.IO
 import Text.Printf
-
-addGen :: Proxy gen -> Proxy '(t,m,r) -> Proxy '(t,m,r,gen)
-addGen _ _ = Proxy
-
-{-# INLINABLE bench #-}
--- wrapper for Criterion's `nf`
-bench :: NFData b => (a -> b) -> a -> Bench params
-bench f = Bench . nf f
-
--- wrapper for Criterion's `nfIO`
-benchIO :: NFData b => IO b -> Bench params
-benchIO = Bench . nfIO
-
-{-# INLINABLE benchGroup #-}
--- wrapper for Criterion's
-benchGroup :: (Monad rnd) => String -> [rnd Benchmark] -> rnd Benchmark
-benchGroup str = (bgroup str <$>) . sequence
-
--- normalizes any function resulting in a Benchmark to
--- one that takes a proxy for its arguments
-hideArgs :: (GenArgs rnd bnch, Monad rnd, ShowType a,
-             ResultOf bnch ~ Bench a)
-  => String -> bnch -> Proxy a -> rnd Benchmark
-hideArgs s f p = (C.bench (s ++ "/" ++ showType p) . unbench) <$> genArgs f
-
-newtype Bench params = Bench {unbench :: Benchmarkable}
-
-instance (Monad rnd) => GenArgs rnd (Bench params) where
-  type ResultOf (Bench params) = Bench params
-  genArgs = return
-
--- everything below this line is for printing tables of benchmark results
 
 data Verb = Progress | Abridged | Full deriving (Eq)
 

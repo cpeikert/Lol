@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, MultiParamTypeClasses,
              NoImplicitPrelude, RankNTypes, TypeFamilies #-}
 
-module ZqBenches (zqBenches) where
+module Crypto.Lol.Benchmarks.ZqBenches (zqBenches) where
 
 import Crypto.Lol
 

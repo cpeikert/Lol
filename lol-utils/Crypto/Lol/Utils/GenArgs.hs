@@ -1,7 +1,9 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, TypeFamilies #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 -- generates arguments to functions
-module GenArgs where
+module Crypto.Lol.Utils.GenArgs where
 
 import Control.Monad.Random
 import Data.Proxy

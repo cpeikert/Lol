@@ -1,0 +1,59 @@
+name:                lol-utils
+-- The package version.  See the Haskell package versioning policy (PVP)
+-- for standards guiding when and how versions should be incremented.
+-- http://www.haskell.org/haskellwiki/Package_versioning_policy
+-- PVP summary:      +-+------- breaking API changes
+--                   | | +----- non-breaking API additions
+--                   | | | +--- code changes with no API change
+version:             0.0.0.1
+synopsis:            A utility library for testing and benchmarking <https://hackage.haskell.org/package/lol Λ ∘ λ>.
+homepage:            https://github.com/cpeikert/Lol
+Bug-Reports:         https://github.com/cpeikert/Lol/issues
+license:             GPL-2
+license-file:        LICENSE
+author:              Eric Crockett <ecrockett0@gmail.com>, Chris Peikert <cpeikert@alum.mit.edu>
+maintainer:          Eric Crockett <ecrockett0@gmail.com>
+copyright:           Eric Crockett, Chris Peikert
+category:            Crypto
+stability:           experimental
+build-type:          Simple
+extra-source-files:  README, CHANGES.md,
+                     benchmarks/CycBenches.hs,
+                     benchmarks/TensorBenches.hs,
+                     benchmarks/UCycBenches.hs,
+                     benchmarks/ZqBenches.hs,
+                     tests/CycTests.hs,
+                     tests/TensorTests.hs,
+                     tests/ZqTests.hs,
+                     utils/Apply.hs,
+                     utils/Apply/Cyc.hs,
+                     utils/Apply/Zq.hs,
+                     utils/Benchmarks.hs,
+                     utils/GenArgs.hs,
+                     utils/GenArgs/Zq.hs,
+                     utils/Params/LolParams.hs,
+                     utils/Tests.hs,
+                     utils/TestTypes.hs,
+                     utils/Utils.hs,
+                     Crypto/Lol/Cyclotomic/Tensor/CTensor/*.h,
+                     Crypto/Lol/Cyclotomic/Tensor/CTensor/*.cpp
+cabal-version:       >= 1.10
+description:
+    This library contains utility code useful for testing and  benchmarking <https://hackage.haskell.org/package/lol Λ ∘ λ (Lol)>.
+    You shouldn't need to use it unless you are writing custom tests/benchmarks for Lol.
+source-repository head
+  type: git
+  location: https://github.com/cpeikert/Lol
+
+library
+  default-language:   Haskell2010
+  ghc-options: -fwarn-dodgy-imports -O2
+
+  exposed-modules:
+    Crypto.Lol.Utils
+    Crypto.Lol.Utils.GenArgs
+
+  build-depends:
+    base,
+    lol,
+    MonadRandom

@@ -1,16 +1,18 @@
-{-# LANGUAGE BangPatterns, DataKinds, FlexibleContexts, GADTs, KindSignatures, NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables, PolyKinds, RecordWildCards, TemplateHaskell, TypeOperators #-}
+{-# LANGUAGE DataKinds           #-}
 
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 
-import Benchmarks hiding (benches, layers)
-import SimpleTensorBenches
-import TensorBenches
-import SimpleUCycBenches
-import UCycBenches
-import CycBenches
-
 import Crypto.Lol
+import Crypto.Lol.Benchmarks hiding (benches, layers)
+--import Crypto.Lol.Benchmarks.SimpleTensorBenches
+import Crypto.Lol.Benchmarks.TensorBenches
+--import Crypto.Lol.Benchmarks.SimpleUCycBenches
+import Crypto.Lol.Benchmarks.UCycBenches
+import Crypto.Lol.Benchmarks.CycBenches
 import Crypto.Lol.Types
+import Crypto.Lol.Utils
+import Crypto.Lol.Utils.PrettyPrint
+
 import Crypto.Random.DRBG
 
 import Control.Applicative
@@ -56,11 +58,19 @@ benches = [
   "embedCRT"
   ]
 
-type T = CT
 type M = F64*F9*F25 --F9*F5*F7*F11
 type R = Zq 1065601 --Zq 34651
 type M' = M -- F3*F5*F11
-type Zq (q :: k) = ZqBasic q Int64
+type T = CT
+
+instance Show (ArgType HashDRBG) where
+  show _ = "HashDRBG"
+
+instance Show (ArgType RT) where
+  show _ = "RT"
+
+instance Show (ArgType CT) where
+  show _ = "CT"
 
 -- The random generator used in benchmarks
 type Gen = HashDRBG
@@ -71,8 +81,8 @@ testParam = Proxy
 twoIdxParam :: Proxy '(T, M', M, R)
 twoIdxParam = Proxy
 
-main :: IO ()
-main = do
+main :: _ => Proxy t -> IO ()
+main pt = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
   let opts = defaultWidthOpts Progress layers benches
   reports <- join $ mapM (getReports opts) <$>

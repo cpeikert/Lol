@@ -9,9 +9,9 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module TensorBenches (tensorBenches1, tensorBenches2) where
+module Crypto.Lol.Benchmarks.TensorBenches (tensorBenches1, tensorBenches2) where
 
-import Benchmarks
+import Crypto.Lol.Benchmarks
 
 import Control.Applicative
 import Control.Monad.Random
@@ -19,7 +19,7 @@ import Control.Monad.Random
 import Crypto.Lol.Prelude
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types
-import Crypto.Random.DRBG
+import Crypto.Random
 
 {-# INLINABLE tensorBenches1 #-}
 tensorBenches1 :: (Monad rnd, _) => _ -> _ -> rnd Benchmark

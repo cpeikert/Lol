@@ -1,12 +1,13 @@
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE NoImplicitPrelude    #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module SimpleUCycBenches (simpleUCycBenches1, simpleUCycBenches2) where
+module Crypto.Lol.Benchmarks.SimpleUCycBenches (simpleUCycBenches1, simpleUCycBenches2) where
 
 import Control.Applicative
 import Control.Monad.Random
@@ -19,6 +20,7 @@ import Crypto.Random.DRBG
 import Criterion
 
 {-# INLINE simpleUCycBenches1 #-}
+simpleUCycBenches1 :: _ => _ -> _ -> Benchmark
 simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
   x1 :: UCyc t m P (r, r) <- getRandom
   let x1' = toDec x1
@@ -49,6 +51,7 @@ simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
     bench "error"       $ nf (evalRand (errorRounded (0.1 :: Double) :: Rand (CryptoRand gen) (UCyc t m D Int64))) gen
     ]
 {-# INLINE simpleUCycBenches2 #-}
+simpleUCycBenches2 :: _ => _ -> Benchmark
 simpleUCycBenches2 (Proxy :: Proxy '(t,m',m,r)) = do
   x4 :: UCyc t m P r <- getRandom
   let x5 = toDec x4

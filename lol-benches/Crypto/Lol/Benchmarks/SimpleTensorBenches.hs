@@ -1,14 +1,15 @@
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE NoImplicitPrelude    #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module SimpleTensorBenches (simpleTensorBenches1, simpleTensorBenches2) where
+module Crypto.Lol.Benchmarks.SimpleTensorBenches (simpleTensorBenches1, simpleTensorBenches2) where
 
 import Control.Applicative
 import Control.Monad.Random
@@ -21,6 +22,7 @@ import Crypto.Random.DRBG
 import Criterion
 
 {-# INLINE simpleTensorBenches1 #-}
+simpleTensorBenches1 :: _ => _ -> _ -> Benchmark
 simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
   x1 :: t m (r, r) <- getRandom
   x2 :: t m r <- getRandom
@@ -50,6 +52,7 @@ simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
                                :: CryptoRand gen -> t m Int64) gen
     ]
 {-# INLINE simpleTensorBenches2 #-}
+simpleTensorBenches2 :: _ => _ -> Benchmark
 simpleTensorBenches2 (Proxy :: Proxy '(t,m',m,r)) = do
   x2 :: t m r <- getRandom
   x4 :: t m' r <- getRandom

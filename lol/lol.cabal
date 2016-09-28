@@ -18,23 +18,6 @@ category:            Crypto
 stability:           experimental
 build-type:          Simple
 extra-source-files:  README, CHANGES.md,
-                     benchmarks/CycBenches.hs,
-                     benchmarks/TensorBenches.hs,
-                     benchmarks/UCycBenches.hs,
-                     benchmarks/ZqBenches.hs,
-                     tests/CycTests.hs,
-                     tests/TensorTests.hs,
-                     tests/ZqTests.hs,
-                     utils/Apply.hs,
-                     utils/Apply/Cyc.hs,
-                     utils/Apply/Zq.hs,
-                     utils/Benchmarks.hs,
-                     utils/GenArgs.hs,
-                     utils/GenArgs/Zq.hs,
-                     utils/Params/LolParams.hs,
-                     utils/Tests.hs,
-                     utils/TestTypes.hs,
-                     utils/Utils.hs,
                      Crypto/Lol/Cyclotomic/Tensor/CTensor/*.h,
                      Crypto/Lol/Cyclotomic/Tensor/CTensor/*.cpp
 cabal-version:       >= 1.10
@@ -199,29 +182,14 @@ test-suite test-lol
 
 Benchmark bench-lol
   type:               exitcode-stdio-1.0
-  hs-source-dirs:     benchmarks,utils
   default-language:   Haskell2010
-  main-is:            Main.hs
+  main-is:            Benchmarks.hs
 
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
   ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
-  -- ghc-options: -ddump-to-file -ddump-simpl
-  -- ghc-options: -dsuppress-coercions -dsuppress-type-applications -dsuppress-uniques -dsuppress-module-prefixes
 
   build-depends:
-    ansi-terminal,
-    arithmoi,
     base,
-    containers,
-    criterion,
-    deepseq,
-    DRBG,
     lol,
-    MonadRandom,
-    mtl,
-    singletons,
-    statistics,
-    transformers,
-    vector,
-    repa
+    lol-benches

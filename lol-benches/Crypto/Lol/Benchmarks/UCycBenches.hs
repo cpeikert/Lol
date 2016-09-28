@@ -7,9 +7,9 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module UCycBenches (ucycBenches1, ucycBenches2) where
+module Crypto.Lol.Benchmarks.UCycBenches (ucycBenches1, ucycBenches2) where
 
-import Benchmarks
+import Crypto.Lol.Benchmarks
 
 import Control.Applicative
 import Control.DeepSeq
@@ -20,7 +20,7 @@ import Crypto.Lol.Cyclotomic.Tensor (TElt)
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Prelude
 import Crypto.Lol.Types
-import Crypto.Random.DRBG
+import Crypto.Random
 
 {-# INLINABLE ucycBenches1 #-}
 ucycBenches1 :: (Monad rnd, _) => _ -> _ -> rnd Benchmark
