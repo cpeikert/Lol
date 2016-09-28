@@ -486,7 +486,7 @@ twaceDec (Dec v) = Dec $ twacePowDec v
 -- 'Either' because the subring might not support 'C'.)
 twaceCRTC :: (m `Divides` m', UCRTElt t r)
              => UCyc t m' C r -> UCycPC t m r
-{-# INLINE twaceCRTC #-}
+{-# INLINABLE twaceCRTC #-}
 twaceCRTC x@(CRTC s' v) =
   case crtSentinel of
     -- go to CRTC if valid for target, else go to Pow

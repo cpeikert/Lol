@@ -63,8 +63,6 @@ Flag opt
 library
   default-language:   Haskell2010
   ghc-options: -fwarn-dodgy-imports
-  ghc-options: -Wmissed-specialisations -Wall-missed-specialisations -Winline-rule-shadowing -funfolding-creation-threshold=150000 -funfolding-dict-discount=60
-  -- -fexpose-all-unfoldings -funfolding-creation-threshold=1500 -funfolding-dict-discount=60
   cc-options: -std=c++11
   Include-dirs: Crypto/Lol/Cyclotomic/Tensor/CTensor
   -- Due to #12152, the file containing the definition of `Zq::q` must be linked first,
@@ -207,11 +205,9 @@ Benchmark bench-lol
 
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
-  ghc-options: -O2 -Wmissed-specialisations -Wall-missed-specialisations -Winline-rule-shadowing -funfolding-creation-threshold=150000 -funfolding-dict-discount=60
-  -- -fexpose-all-unfoldings
-  --
-  -- ghc-options: -ddump-to-file -ddump-simpl
-  -- ghc-options: -dsuppress-coercions -dsuppress-type-applications -dsuppress-uniques -dsuppress-module-prefixes
+  ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
+  ghc-options: -ddump-to-file -ddump-simpl
+  ghc-options: -dsuppress-coercions -dsuppress-type-applications -dsuppress-uniques -dsuppress-module-prefixes
 
   build-depends:
     ansi-terminal,

@@ -38,7 +38,8 @@ ucycBenches1 ptmr pgen = benchGroup "UCyc" $ ($ ptmr) <$> [
   hideArgs "lift" bench_liftPow,
   hideArgs "error" (bench_errRounded 0.1) .  addGen pgen
   ]
-{-# INLINABLE ucycBenches2 #-}
+
+{-# INLINE ucycBenches2 #-}
 ucycBenches2 p = benchGroup "UCyc" $ ($ p) <$> [
   hideArgs "twacePow" bench_twacePow,
   hideArgs "twaceDec" bench_twaceDec,
@@ -76,7 +77,7 @@ bench_mul a b =
 bench_crt :: (BasicCtx t m r) => UCyc t m P r -> Bench '(t,m,r)
 bench_crt = bench toCRT
 
-{-# INLINE bench_crtInv #-}
+{-# INLINABLE bench_crtInv #-}
 -- convert input from CRT basis to Pow basis
 bench_crtInv :: (BasicCtx t m r) => UCycPC t m r -> Bench '(t,m,r)
 bench_crtInv (Right a) = bench toPow a

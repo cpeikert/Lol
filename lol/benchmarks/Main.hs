@@ -24,7 +24,7 @@ import System.IO
 layers :: [String]
 layers = [
   --"STensor",
-  --"Tensor",
+  "Tensor",
   "SUCyc",
   "UCyc",
   "Cyc"
@@ -47,17 +47,17 @@ benches = [
   "divg Dec",
   "divg CRT",
   "lift",
-  "error",-}
+  "error",
   "twacePow",
-  "twaceDec",
-  "twaceCRT",
+  "twaceDec",-}
+  "twaceCRT"{-,
   "embedPow",
   "embedDec",
-  "embedCRT"
+  "embedCRT"-}
   ]
 
 type T = CT
-type M = F64*F9*F25 --9*F5*F7*F11
+type M = F64*F9*F25 --F9*F5*F7*F11
 type R = Zq 1065601 --Zq 34651
 type M' = M -- F3*F5*F11
 type Zq (q :: k) = ZqBasic q Int64

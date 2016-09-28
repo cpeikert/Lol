@@ -73,5 +73,5 @@ embedCRTCS _ _ = fromJust embedCRT
 twaceCRTCS :: (Tensor t, m `Divides` m', CRTrans Maybe r, TElt t r)
               => CSentinel t m' r -> CSentinel t m r -> t m' r -> t m r
 twaceCRTCS _ _ = fromJust twaceCRT
-{-# INLINE twaceCRTCS #-}
+{-# INLINABLE twaceCRTCS #-}
 

@@ -38,6 +38,7 @@ cycBenches1 ptmr pgen = benchGroup "Cyc" $ ($ ptmr) <$> [
   hideArgs "lift" bench_liftPow,
   hideArgs "error" (bench_errRounded 0.1) . addGen pgen
   ]
+
 {-# INLINABLE cycBenches2 #-}
 cycBenches2 p = benchGroup "Cyc" $ ($ p) <$> [
   hideArgs "twacePow" bench_twacePow,
@@ -146,7 +147,7 @@ bench_twaceCRT :: forall t m m' r . (TwoIdxCtx t m m' r)
   => Cyc t m' r -> Bench '(t,m,m',r)
 bench_twaceCRT = bench (twace :: Cyc t m' r -> Cyc t m r) . adviseCRT
 
-{-# INLINABLE bench_embedPow #-}
+{-# INLINE bench_embedPow #-}
 bench_embedPow :: forall t m m' r . (TwoIdxCtx t m m' r)
   => Cyc t m r -> Bench '(t,m,m',r)
 bench_embedPow = bench (advisePow . embed :: Cyc t m r -> Cyc t m' r) . advisePow
