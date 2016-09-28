@@ -23,7 +23,7 @@ import System.IO
 -- choose which layers of Lol to benchmark
 layers :: [String]
 layers = [
-  --"STensor",
+  "STensor",
   "Tensor",
   "SUCyc",
   "UCyc",
@@ -32,7 +32,7 @@ layers = [
 
 benches :: [String]
 benches = [
-  {-"unzipPow",
+  "unzipPow",
   "unzipDec",
   "unzipCRT",
   "zipWith (*)",
@@ -49,11 +49,11 @@ benches = [
   "lift",
   "error",
   "twacePow",
-  "twaceDec",-}
-  "twaceCRT"{-,
+  "twaceDec",
+  "twaceCRT",
   "embedPow",
   "embedDec",
-  "embedCRT"-}
+  "embedCRT"
   ]
 
 type T = CT
