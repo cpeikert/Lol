@@ -1,9 +1,14 @@
-{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE TypeOperators         #-}
 
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 import Crypto.Lol
-import Crypto.Lol.Benchmarks hiding (benches, layers)
+import Crypto.Lol.Benchmarks
 --import Crypto.Lol.Benchmarks.SimpleTensorBenches
 import Crypto.Lol.Benchmarks.TensorBenches
 --import Crypto.Lol.Benchmarks.SimpleUCycBenches
@@ -11,7 +16,7 @@ import Crypto.Lol.Benchmarks.UCycBenches
 import Crypto.Lol.Benchmarks.CycBenches
 import Crypto.Lol.Types
 import Crypto.Lol.Utils
-import Crypto.Lol.Utils.PrettyPrint
+import Crypto.Lol.Utils.PrettyPrint hiding (benches, layers)
 
 import Crypto.Random.DRBG
 
@@ -81,8 +86,8 @@ testParam = Proxy
 twoIdxParam :: Proxy '(T, M', M, R)
 twoIdxParam = Proxy
 
-main :: _ => Proxy t -> IO ()
-main pt = do
+main :: IO ()
+main = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
   let opts = defaultWidthOpts Progress layers benches
   reports <- join $ mapM (getReports opts) <$>
@@ -100,17 +105,17 @@ group2 (x:y:zs) = (x++y):(group2 zs)
 --oneIdxBenches p :: IO [Benchmark]
 {-# INLINABLE oneIdxBenches #-}
 oneIdxBenches ptmr pgen = sequence $ (($ pgen) . ($ ptmr)) <$> [
-  simpleTensorBenches1,
+  --simpleTensorBenches1,
   tensorBenches1,
-  simpleUCycBenches1,
+  --simpleUCycBenches1,
   ucycBenches1,
   cycBenches1
   ]
 {-# INLINABLE twoIdxBenches #-}
 twoIdxBenches p = sequence $ ($ p) <$> [
-  simpleTensorBenches2,
+  --simpleTensorBenches2,
   tensorBenches2,
-  simpleUCycBenches2,
+  --simpleUCycBenches2,
   ucycBenches2,
   cycBenches2
   ]
