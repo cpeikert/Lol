@@ -9,12 +9,11 @@
 
 module Crypto.Lol.Benchmarks.CycBenches (cycBenches1, cycBenches2) where
 
-import Crypto.Lol.Benchmarks
-
 import Control.Applicative
 import Control.Monad.Random
 
 import Crypto.Lol
+import Crypto.Lol.Benchmarks
 import Crypto.Lol.Cyclotomic.Tensor (TElt)
 import Crypto.Lol.Types
 import Crypto.Random

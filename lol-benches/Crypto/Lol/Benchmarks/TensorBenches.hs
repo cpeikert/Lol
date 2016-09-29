@@ -11,11 +11,10 @@
 
 module Crypto.Lol.Benchmarks.TensorBenches (tensorBenches1, tensorBenches2) where
 
-import Crypto.Lol.Benchmarks
-
 import Control.Applicative
 import Control.Monad.Random
 
+import Crypto.Lol.Benchmarks
 import Crypto.Lol.Prelude
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types
@@ -41,6 +40,7 @@ tensorBenches1 ptmr pgen = benchGroup "Tensor" $ ($ ptmr) <$> [
   hideArgs "lift" bench_liftPow,
   hideArgs "error" (bench_errRounded 0.1) . addGen pgen
   ]
+
 {-# INLINABLE tensorBenches2 #-}
 tensorBenches2 :: (Monad rnd, _) => _ -> rnd Benchmark
 tensorBenches2 p = benchGroup "Tensor" $ ($ p) <$> [

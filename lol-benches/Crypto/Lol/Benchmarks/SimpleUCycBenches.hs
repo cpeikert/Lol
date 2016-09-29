@@ -20,7 +20,7 @@ import Crypto.Random.DRBG
 import Criterion
 
 {-# INLINE simpleUCycBenches1 #-}
-simpleUCycBenches1 :: _ => _ -> _ -> Benchmark
+simpleUCycBenches1 :: _ => _ -> _ -> IO Benchmark
 simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
   x1 :: UCyc t m P (r, r) <- getRandom
   let x1' = toDec x1
@@ -50,8 +50,9 @@ simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
     bench "lift"        $ nf lift x4,
     bench "error"       $ nf (evalRand (errorRounded (0.1 :: Double) :: Rand (CryptoRand gen) (UCyc t m D Int64))) gen
     ]
+
 {-# INLINE simpleUCycBenches2 #-}
-simpleUCycBenches2 :: _ => _ -> Benchmark
+simpleUCycBenches2 :: _ => _ -> IO Benchmark
 simpleUCycBenches2 (Proxy :: Proxy '(t,m',m,r)) = do
   x4 :: UCyc t m P r <- getRandom
   let x5 = toDec x4

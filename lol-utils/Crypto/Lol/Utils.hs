@@ -14,6 +14,7 @@
 
 module Crypto.Lol.Utils
 (Zq
+,(**)
 ,ArgType
 ,showType
 ,ShowType) where

@@ -14,15 +14,15 @@ module Crypto.Lol.Benchmarks.SimpleTensorBenches (simpleTensorBenches1, simpleTe
 import Control.Applicative
 import Control.Monad.Random
 
+import Criterion
+
 import Crypto.Lol.Prelude
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types
-import Crypto.Random.DRBG
-
-import Criterion
+import Crypto.Random
 
 {-# INLINE simpleTensorBenches1 #-}
-simpleTensorBenches1 :: _ => _ -> _ -> Benchmark
+simpleTensorBenches1 :: _ => _ -> _ -> IO Benchmark
 simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
   x1 :: t m (r, r) <- getRandom
   x2 :: t m r <- getRandom
@@ -51,8 +51,9 @@ simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
                              (0.1 :: Double) :: Rand (CryptoRand gen) (t m Double)))
                                :: CryptoRand gen -> t m Int64) gen
     ]
+
 {-# INLINE simpleTensorBenches2 #-}
-simpleTensorBenches2 :: _ => _ -> Benchmark
+simpleTensorBenches2 :: _ => _ -> IO Benchmark
 simpleTensorBenches2 (Proxy :: Proxy '(t,m',m,r)) = do
   x2 :: t m r <- getRandom
   x4 :: t m' r <- getRandom

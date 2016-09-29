@@ -108,7 +108,6 @@ library
     Crypto.Proto.RLWE.SampleRLWR
 
   other-modules:
-
     Crypto.Lol.PosBin
     Crypto.Lol.FactoredDefs
     Crypto.Lol.PosBinDefs
