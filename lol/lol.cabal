@@ -107,6 +107,10 @@ library
     Crypto.Proto.RLWE.SampleDisc
     Crypto.Proto.RLWE.SampleRLWR
 
+    Crypto.Lol.Utils.GenArgs
+    Crypto.Lol.Utils.GenArgs.Zq
+    Crypto.Lol.Utils.ShowType
+
   other-modules:
     Crypto.Lol.PosBin
     Crypto.Lol.FactoredDefs
@@ -153,29 +157,3 @@ library
     vector-th-unbox >= 0.2.1.0 && < 0.3
 
   other-extensions: TemplateHaskell
-
-test-suite test-lol
-  type:               exitcode-stdio-1.0
-  hs-source-dirs:     tests,utils
-  default-language:   Haskell2010
-  main-is:            Main.hs
-
-  ghc-options: -threaded -rtsopts
-
-  build-depends:
-    arithmoi,
-    base,
-    constraints,
-    deepseq,
-    DRBG,
-    lol,
-    MonadRandom,
-    mtl,
-    QuickCheck >= 2.8 && < 2.9,
-    random,
-    repa,
-    singletons,
-    test-framework >= 0.8 && < 0.9,
-    test-framework-quickcheck2 >= 0.3 && < 0.4,
-    vector
-

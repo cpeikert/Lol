@@ -1,4 +1,4 @@
-Changelog for lol project
+Changelog for lol-benches project
 ================================
 
 0.0.0.1

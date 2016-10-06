@@ -1,4 +1,4 @@
-name:                lol-benches
+name:                lol-tests
 -- The package version.  See the Haskell package versioning policy (PVP)
 -- for standards guiding when and how versions should be incremented.
 -- http://www.haskell.org/haskellwiki/Package_versioning_policy
@@ -6,7 +6,7 @@ name:                lol-benches
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
 version:             0.0.0.1
-synopsis:            A library for benchmarking <https://hackage.haskell.org/package/lol Λ ∘ λ>.
+synopsis:            A library for testing <https://hackage.haskell.org/package/lol Λ ∘ λ>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
 license:             GPL-2
@@ -20,49 +20,41 @@ build-type:          Simple
 extra-source-files:  README, CHANGES.md
 cabal-version:       >= 1.10
 description:
-    This library contains code to benchmark <https://hackage.haskell.org/package/lol Λ ∘ λ (Lol)>.
-    It is designed so that third-party tensors can be easily benchmarked using the same framework.
-    For examples of how to use this library, see benchmarks for <https://hackage.haskell.org/package/lol lol>.
+    This library contains code to test <https://hackage.haskell.org/package/lol Λ ∘ λ (Lol)>.
+    It is designed so that third-party tensors can be easily tested using the same framework.
+    For examples of how to use this library, see tests for <https://hackage.haskell.org/package/lol lol>.
 source-repository head
   type: git
   location: https://github.com/cpeikert/Lol
 
 library
   default-language: Haskell2010
-  ghc-options: -fwarn-dodgy-imports -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
-  -- ghc-options: -ddump-to-file -ddump-simpl
-  -- ghc-options: -dsuppress-coercions -dsuppress-type-applications -dsuppress-uniques -dsuppress-module-prefixes
+  ghc-options: -fwarn-dodgy-imports -O2
 
   exposed-modules:
-    Crypto.Lol.Benchmarks
-    Crypto.Lol.Benchmarks.CycBenches
-    Crypto.Lol.Benchmarks.TensorBenches
-    Crypto.Lol.Benchmarks.UCycBenches
-    Crypto.Lol.Utils.PrettyPrint
+    Crypto.Lol.Tests
+    Crypto.Lol.Tests.CycTests
+    Crypto.Lol.Tests.TensorTests
+    Crypto.Lol.Tests.ZqTests
 
   build-depends:
-    ansi-terminal,
     base,
-    containers,
-    criterion,
-    crypto-api,
-    deepseq,
     lol,
     MonadRandom,
-    statistics,
-    transformers
+    test-framework,
+    test-framework-quickcheck2
 
 -- EAC: This really belongs in lol.cabal, but due to a cabal/stack bug, it can't right now.
-Benchmark bench-lol
+test-suite test-lol
   type:               exitcode-stdio-1.0
   default-language:   Haskell2010
   main-is:            Main.hs
   hs-source-dirs:     exec
 
-  ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
+  ghc-options: -threaded -O2
 
   build-depends:
     base,
-    DRBG,
     lol,
-    lol-benches
+    lol-tests,
+    test-framework

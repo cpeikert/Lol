@@ -10,11 +10,13 @@
 module Crypto.Lol.Benchmarks.UCycBenches (ucycBenches1, ucycBenches2) where
 
 import Control.Applicative
-import Control.DeepSeq
 import Control.Monad.Random
 
+<<<<<<< HEAD:lol-benches/Crypto/Lol/Benchmarks/UCycBenches.hs
 import Crypto.Lol.Benchmarks
 import Crypto.Lol.CRTrans
+=======
+>>>>>>> master:lol/benchmarks/UCycBenches.hs
 import Crypto.Lol.Cyclotomic.Tensor (TElt)
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Prelude

@@ -1,10 +1,14 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, GADTs, MultiParamTypeClasses,
-             RebindableSyntax, ScopedTypeVariables,
-             UndecidableInstances #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
-module GenArgs.Zq where
+module Crypto.Lol.Utils.GenArgs.Zq where
 
-import GenArgs
+import Crypto.Lol.Utils.GenArgs
 
 import Control.Applicative
 import Control.Monad.Random

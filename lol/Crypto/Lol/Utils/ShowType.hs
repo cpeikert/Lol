@@ -12,23 +12,14 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-module Crypto.Lol.Utils
-(Zq
-,(**)
-,ArgType
+module Crypto.Lol.Utils.ShowType
+(ArgType
 ,showType
 ,ShowType) where
 
 import Crypto.Lol (Int64,Fact,valueFact,Mod(..), Proxy(..), proxy, TrivGad, BaseBGad)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.ZqBasic
-
-infixr 9 **
-data a ** b
-
-type family Zq (a :: k) :: * where
-  Zq (a ** b) = (Zq a, Zq b)
-  Zq q = (ZqBasic q Int64)
 
 -- a wrapper type for printing test/benchmark names
 data ArgType (a :: k) = AT
