@@ -1,27 +1,43 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, NoImplicitPrelude, PolyKinds,
-             ScopedTypeVariables, TypeOperators, TypeFamilies #-}
-module CycTests (cycTests) where
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE TypeFamilies          #-}
 
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
+module CycTests (cycTests1, cycTests2) where
+
+import Control.Applicative
 import Control.Monad (liftM2,join)
 
 import Crypto.Lol
-import Crypto.Lol.Types
 import Crypto.Lol.Types.ZPP
 
 import Utils
-import Apply.Cyc
 import Tests
 
 import qualified Test.Framework as TF
 
-cycTests :: [TF.Test]
-cycTests = [
-  testGroupM "mulGPow"   $ applyBasic allParams    $ hideArgs prop_mulgPow,
-  testGroupM "mulGDec"   $ applyBasic allParams    $ hideArgs prop_mulgDec,
-  testGroupM "mulGCRT"   $ applyBasic allParams    $ hideArgs prop_mulgCRT,
-  testGroupM "crtSet"    $ applyBasis basisParams  $ hideArgs prop_crtSet_pairs,
-  testGroupM "coeffsPow" $ applyTwoIdx basisParams $ hideArgs prop_coeffsBasis
-  ]
+cycTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> TF.Test
+cycTests1 _ _ =
+  let ptmr = Proxy :: Proxy '(t,m,r)
+  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
+      hideArgs "mulGPow" prop_mulgPow,
+      hideArgs "mulGDec" prop_mulgDec,
+      hideArgs "mulGCRT" prop_mulgCRT
+      ]
+
+cycTests2 :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> TF.Test
+cycTests2 _ _ =
+  let ptmr = Proxy :: Proxy '(t,m,m',r)
+  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
+      hideArgs "crtSet" prop_crtSet_pairs,
+      hideArgs "coeffsPow" prop_coeffsBasis
+      ]
 
 prop_mulgPow :: (CElt t r, Fact m, Eq r, IntegralDomain r) => Cyc t m r -> Test '(t,m,r)
 prop_mulgPow x =
@@ -53,33 +69,3 @@ prop_crtSet_pairs =
   let crtset = proxy crtSet (Proxy::Proxy m) :: [Cyc t m' r]
       pairs = join (liftM2 (,)) crtset
   in test $ and $ map (\(a,b) -> if a == b then a*b == a else a*b == zero) pairs
-
-type Tensors = '[CT,RT]
-type MRCombos =
-  '[ '(F7, Zq 29),
-     '(F7, Zq 32),
-     '(F12, Zq 2148249601),
-     '(F1, Zq 17),
-     '(F2, Zq 17),
-     '(F4, Zq 17),
-     '(F8, Zq 17),
-     '(F21, Zq 8191),
-     '(F42, Zq 8191),
-     '(F42, Zq 18869761),
-     '(F42, Zq 1024),
-     '(F42, Zq (18869761 ** 19393921)),
-     '(F89, Zq 179)
-    ]
-
-type MM'RCombos = '[
-  '(F1, F7, Zq PP8),
-  '(F1, F7, Zq PP2)
-  ]
-
-type AllParams = ( '(,) <$> Tensors) <*> MRCombos
-allParams :: Proxy AllParams
-allParams = Proxy
-
-type BasisParams = ( '(,) <$> Tensors) <*> MM'RCombos
-basisParams :: Proxy BasisParams
-basisParams = Proxy

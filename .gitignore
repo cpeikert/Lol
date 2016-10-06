@@ -1,8 +1,8 @@
 reprof.py
 .ghci
 ghci
-lol.sublime-project
-lol.sublime-workspace
+*.sublime-project
+*.sublime-workspace
 cabal.project
 cabal.project.local
 cabal.sandbox.config
