@@ -38,7 +38,7 @@ resolver: lts-7.0
 # will not be run. This is useful for tweaking upstream packages.
 
 packages:
-- apps/
+- lol-apps/
 - challenges/
 - lol/
 - lol-benches/
