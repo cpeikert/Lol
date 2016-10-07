@@ -53,20 +53,20 @@ simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
 
 {-# INLINE simpleUCycBenches2 #-}
 simpleUCycBenches2 :: _ => _ -> IO Benchmark
-simpleUCycBenches2 (Proxy :: Proxy '(t,m',m,r)) = do
-  x4 :: UCyc t m P r <- getRandom
+simpleUCycBenches2 (Proxy :: Proxy '(t,m,m',r)) = do
+  x4 :: UCyc t m' P r <- getRandom
   let x5 = toDec x4
-  (Right x6) :: UCycPC t m r <- getRandom
-  x7 :: UCyc t m' P r <- getRandom
+  (Right x6) :: UCycPC t m' r <- getRandom
+  x7 :: UCyc t m P r <- getRandom
   let x8 = toDec x7
-  (Right x9) :: UCycPC t m' r <- getRandom
+  (Right x9) :: UCycPC t m r <- getRandom
   return $ bgroup "SUCyc" [
-    bench "twacePow" $ nf (twacePow :: UCyc t m P r -> UCyc t m' P r) x4,
-    bench "twaceDec" $ nf (twaceDec :: UCyc t m D r -> UCyc t m' D r) x5,
-    bench "twaceCRT" $ nf (twaceCRTC :: UCyc t m C r -> UCycPC t m' r) x6,
-    bench "embedPow" $ nf (embedPow :: UCyc t m' P r -> UCyc t m P r) x7,
-    bench "embedDec" $ nf (embedDec :: UCyc t m' D r -> UCyc t m D r) x8,
-    bench "embedCRT" $ nf (embedCRTC :: UCyc t m' C r -> UCycPC t m r) x9
+    bench "twacePow" $ nf (twacePow :: UCyc t m' P r -> UCyc t m P r) x4,
+    bench "twaceDec" $ nf (twaceDec :: UCyc t m' D r -> UCyc t m D r) x5,
+    bench "twaceCRT" $ nf (twaceCRTC :: UCyc t m' C r -> UCycPC t m r) x6,
+    bench "embedPow" $ nf (embedPow :: UCyc t m P r -> UCyc t m' P r) x7,
+    bench "embedDec" $ nf (embedDec :: UCyc t m D r -> UCyc t m' D r) x8,
+    bench "embedCRT" $ nf (embedCRTC :: UCyc t m C r -> UCycPC t m' r) x9
     ]
 
 pcToEC :: UCycPC t m r -> UCycEC t m r

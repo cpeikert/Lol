@@ -34,6 +34,7 @@ library
   exposed-modules:
     Crypto.Lol.Tests
     Crypto.Lol.Tests.CycTests
+    Crypto.Lol.Tests.Standard
     Crypto.Lol.Tests.TensorTests
     Crypto.Lol.Tests.ZqTests
 

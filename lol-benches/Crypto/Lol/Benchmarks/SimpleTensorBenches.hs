@@ -21,7 +21,7 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types
 import Crypto.Random
 
-{-# INLINE simpleTensorBenches1 #-}
+{-# INLINABLE simpleTensorBenches1 #-}
 simpleTensorBenches1 :: _ => _ -> _ -> IO Benchmark
 simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
   x1 :: t m (r, r) <- getRandom
@@ -52,7 +52,7 @@ simpleTensorBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
                                :: CryptoRand gen -> t m Int64) gen
     ]
 
-{-# INLINE simpleTensorBenches2 #-}
+{-# INLINABLE simpleTensorBenches2 #-}
 simpleTensorBenches2 :: _ => _ -> IO Benchmark
 simpleTensorBenches2 (Proxy :: Proxy '(t,m',m,r)) = do
   x2 :: t m r <- getRandom
