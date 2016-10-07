@@ -27,10 +27,10 @@ import qualified Test.Framework as TF
 -- | Tests for 'ZqBasic'
 zqTests :: _ => Proxy r -> TF.Test
 zqTests p = testGroupM (showType p) $ ($ p) <$> [
-  hideArgs "(+)" prop_add,
-  hideArgs "(*)" prop_mul,
-  hideArgs "^-1" prop_recip,
-  hideArgs "extension ring (*)" prop_mul_ext
+  genTestArgs "(+)" prop_add,
+  genTestArgs "(*)" prop_mul,
+  genTestArgs "^-1" prop_recip,
+  genTestArgs "extension ring (*)" prop_mul_ext
   ]
 
 prop_add :: forall r . (Ring r, Eq r) => LiftedMod r -> LiftedMod r -> Test r

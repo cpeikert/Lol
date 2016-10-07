@@ -29,9 +29,9 @@ cycTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> TF.Test
 cycTests1 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,r)
   in testGroupM (showType ptmr) $ ($ ptmr) <$> [
-      hideArgs "mulGPow" prop_mulgPow,
-      hideArgs "mulGDec" prop_mulgDec,
-      hideArgs "mulGCRT" prop_mulgCRT
+      genTestArgs "mulGPow" prop_mulgPow,
+      genTestArgs "mulGDec" prop_mulgDec,
+      genTestArgs "mulGCRT" prop_mulgCRT
       ]
 
 -- | Tests for inter-ring operations. There must be a CRT basis for \(O_{m'}\) over @r@.
@@ -39,8 +39,8 @@ cycTests2 :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> TF.Test
 cycTests2 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)
   in testGroupM (showType ptmr) $ ($ ptmr) <$> [
-      hideArgs "crtSet" prop_crtSet_pairs,
-      hideArgs "coeffsPow" prop_coeffsBasis
+      genTestArgs "crtSet" prop_crtSet_pairs,
+      genTestArgs "coeffsPow" prop_coeffsBasis
       ]
 
 prop_mulgPow :: (CElt t r, Fact m, Eq r, IntegralDomain r) => Cyc t m r -> Test '(t,m,r)

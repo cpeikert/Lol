@@ -26,26 +26,26 @@ import Data.Maybe
 
 import qualified Test.Framework as TF
 
---testGroupM "GSqNormDec"       $ applyLift (Proxy::Proxy NormParams) $ hideArgs prop_gsqnorm,
+--testGroupM "GSqNormDec"       $ applyLift (Proxy::Proxy NormParams) $ genTestArgs prop_gsqnorm,
 
 -- | Tests for single-index operations. There must be a CRT basis for \(O_m\) over @r@.
 tensorTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> TF.Test
 tensorTests1 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,r)
   in testGroupM (showType ptmr) $ ($ ptmr) <$> [
-      hideArgs   "fmapT comparison" prop_fmapT,
-      hideArgs   "fmap comparison"  prop_fmap,
+      genTestArgs   "fmapT comparison" prop_fmapT,
+      genTestArgs   "fmap comparison"  prop_fmap,
       nestGroup  "GInv.G == id" [
-        hideArgs "Pow basis"        prop_ginv_pow,
-        hideArgs "Dec basis"        prop_ginv_dec,
-        hideArgs "CRT basis"        prop_ginv_crt],
-      hideArgs   "CRTInv.CRT == id" prop_crt_inv,
-      hideArgs   "LInv.L == id"     prop_l_inv,
-      hideArgs   "Scalar"           prop_scalar_crt,
+        genTestArgs "Pow basis"        prop_ginv_pow,
+        genTestArgs "Dec basis"        prop_ginv_dec,
+        genTestArgs "CRT basis"        prop_ginv_crt],
+      genTestArgs   "CRTInv.CRT == id" prop_crt_inv,
+      genTestArgs   "LInv.L == id"     prop_l_inv,
+      genTestArgs   "Scalar"           prop_scalar_crt,
       nestGroup  "G commutes with L" [
-        hideArgs "Dec basis"        prop_g_dec,
-        hideArgs "CRT basis"        prop_g_crt],
-      hideArgs "Tw and Em ID for equal indices" prop_twEmID
+        genTestArgs "Dec basis"        prop_g_dec,
+        genTestArgs "CRT basis"        prop_g_crt],
+      genTestArgs "Tw and Em ID for equal indices" prop_twEmID
       ]
 
 -- | Tests for inter-ring operations. There must be a CRT basis for \(O_{m'}\) over @r@.
@@ -54,21 +54,21 @@ tensorTests2 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)
   in testGroupM (showType ptmr) $ ($ ptmr) <$> [
       nestGroup  "Tw.Em == id" [
-        hideArgs "Pow basis"                      prop_trem_pow,
-        hideArgs "Dec basis"                      prop_trem_dec,
-        hideArgs "CRT basis"                      prop_trem_crt],
+        genTestArgs "Pow basis"                      prop_trem_pow,
+        genTestArgs "Dec basis"                      prop_trem_dec,
+        genTestArgs "CRT basis"                      prop_trem_crt],
       nestGroup  "Em commutes with L" [
-        hideArgs "Dec basis"                      prop_embed_dec,
-        hideArgs "CRT basis"                      prop_embed_crt],
+        genTestArgs "Dec basis"                      prop_embed_dec,
+        genTestArgs "CRT basis"                      prop_embed_crt],
       nestGroup  "Tw commutes with L" [
-        hideArgs "Dec basis"                      prop_twace_dec,
-        hideArgs "CRT basis"                      prop_twace_crt],
+        genTestArgs "Dec basis"                      prop_twace_dec,
+        genTestArgs "CRT basis"                      prop_twace_crt],
       nestGroup  "Twace invariants" [
-        hideArgs "Invar1 Pow basis"               prop_twace_invar1_pow,
-        hideArgs "Invar1 Dec basis"               prop_twace_invar1_dec,
-        hideArgs "Invar1 CRT basis"               prop_twace_invar1_crt,
-        hideArgs "Invar2 Pow/Dec basis"           prop_twace_invar2_powdec,
-        hideArgs "Invar2 CRT basis"               prop_twace_invar2_crt]
+        genTestArgs "Invar1 Pow basis"               prop_twace_invar1_pow,
+        genTestArgs "Invar1 Dec basis"               prop_twace_invar1_dec,
+        genTestArgs "Invar1 CRT basis"               prop_twace_invar1_crt,
+        genTestArgs "Invar2 Pow/Dec basis"           prop_twace_invar2_powdec,
+        genTestArgs "Invar2 CRT basis"               prop_twace_invar2_crt]
       ]
 
 prop_fmapT :: _ => t m r -> Test '(t,m,r)
