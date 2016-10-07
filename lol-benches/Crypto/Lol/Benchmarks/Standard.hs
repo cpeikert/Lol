@@ -9,6 +9,8 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
+-- | High-level benchmark groups and parameters, as reported in the paper.
+
 module Crypto.Lol.Benchmarks.Standard where
 
 import Crypto.Lol.Benchmarks
@@ -31,6 +33,8 @@ type Zq (q :: k) = ZqBasic q Int64
 instance Show (ArgType HashDRBG) where
   show _ = "HashDRBG"
 
+-- | Benchmark parameters reported in the paper. We suggest running these benchmarks
+-- to quickly compare performance on your system or with your 'Tensor' backend.
 {-# INLINABLE defaultBenches #-}
 defaultBenches :: _ => Proxy t -> IO [Benchmark]
 defaultBenches pt = liftM2 (++)
@@ -47,6 +51,7 @@ defaultBenches pt = liftM2 (++)
     twoIdxBenches (Proxy::Proxy '(F128,       F128*F7*F13,  Zq 23297))
     ])
 
+-- | Collection of all single-index operations at all levels of the library.
 {-# INLINABLE oneIdxBenches #-}
 oneIdxBenches :: forall t m r gen . _ => Proxy '(m,r) -> Proxy t -> Proxy gen -> IO Benchmark
 oneIdxBenches _ _ pgen =
@@ -59,6 +64,7 @@ oneIdxBenches _ _ pgen =
       cycBenches1
       ]
 
+-- | Collection of all inter-ring operations at all levels of the library.
 {-# INLINABLE twoIdxBenches #-}
 twoIdxBenches :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> IO Benchmark
 twoIdxBenches _ _ =

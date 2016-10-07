@@ -4,10 +4,10 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
+-- | Benchmarks for the 'Tensor' interface.
 
 module Crypto.Lol.Benchmarks.TensorBenches (tensorBenches1, tensorBenches2) where
 
@@ -20,36 +20,38 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types
 import Crypto.Random
 
+-- | Benchmarks for single-index operations. There must be a CRT basis for \(O_m\) over @r@.
 {-# INLINABLE tensorBenches1 #-}
-tensorBenches1 :: (Monad rnd, _) => _ -> _ -> rnd Benchmark
+tensorBenches1 :: (Monad rnd, _) => Proxy '(t,m,r) -> Proxy gen -> rnd Benchmark
 tensorBenches1 ptmr pgen = benchGroup "Tensor" $ ($ ptmr) <$> [
-  hideArgs "unzipPow" bench_unzip,
-  hideArgs "unzipDec" bench_unzip,
-  hideArgs "unzipCRT" bench_unzip,
-  hideArgs "zipWith (*)" bench_mul,
-  hideArgs "crt" bench_crt,
-  hideArgs "crtInv" bench_crtInv,
-  hideArgs "l" bench_l,
-  hideArgs "lInv" bench_lInv,
-  hideArgs "*g Pow" bench_mulgPow,
-  hideArgs "*g Dec" bench_mulgDec,
-  hideArgs "*g CRT" bench_mulgCRT,
-  hideArgs "divg Pow" bench_divgPow,
-  hideArgs "divg Dec" bench_divgDec,
-  hideArgs "divg CRT" bench_divgCRT,
-  hideArgs "lift" bench_liftPow,
-  hideArgs "error" (bench_errRounded 0.1) . addGen pgen
+  genBenchArgs "unzipPow" bench_unzip,
+  genBenchArgs "unzipDec" bench_unzip,
+  genBenchArgs "unzipCRT" bench_unzip,
+  genBenchArgs "zipWith (*)" bench_mul,
+  genBenchArgs "crt" bench_crt,
+  genBenchArgs "crtInv" bench_crtInv,
+  genBenchArgs "l" bench_l,
+  genBenchArgs "lInv" bench_lInv,
+  genBenchArgs "*g Pow" bench_mulgPow,
+  genBenchArgs "*g Dec" bench_mulgDec,
+  genBenchArgs "*g CRT" bench_mulgCRT,
+  genBenchArgs "divg Pow" bench_divgPow,
+  genBenchArgs "divg Dec" bench_divgDec,
+  genBenchArgs "divg CRT" bench_divgCRT,
+  genBenchArgs "lift" bench_liftPow,
+  genBenchArgs "error" (bench_errRounded 0.1) . addGen pgen
   ]
 
+-- | Benchmarks for inter-ring operations. There must be a CRT basis for \(O_{m'}\) over @r@.
 {-# INLINABLE tensorBenches2 #-}
-tensorBenches2 :: (Monad rnd, _) => _ -> rnd Benchmark
+tensorBenches2 :: (Monad rnd, _) => Proxy '(t,m,m',r) -> rnd Benchmark
 tensorBenches2 p = benchGroup "Tensor" $ ($ p) <$> [
-  hideArgs "twacePow" bench_twacePow,
-  hideArgs "twaceDec" bench_twacePow, -- yes, twacePow is correct here. It's the same function!
-  hideArgs "twaceCRT" bench_twaceCRT,
-  hideArgs "embedPow" bench_embedPow,
-  hideArgs "embedDec" bench_embedDec,
-  hideArgs "embedCRT" bench_embedCRT
+  genBenchArgs "twacePow" bench_twacePow,
+  genBenchArgs "twaceDec" bench_twacePow, -- yes, twacePow is correct here. It's the same function!
+  genBenchArgs "twaceCRT" bench_twaceCRT,
+  genBenchArgs "embedPow" bench_embedPow,
+  genBenchArgs "embedDec" bench_embedDec,
+  genBenchArgs "embedCRT" bench_embedCRT
   ]
 
 {-# INLINABLE bench_unzip #-}

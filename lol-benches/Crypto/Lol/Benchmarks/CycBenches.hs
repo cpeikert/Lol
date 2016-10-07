@@ -7,6 +7,8 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
+-- | Benchmarks for the 'Cyc' interface.
+
 module Crypto.Lol.Benchmarks.CycBenches (cycBenches1, cycBenches2) where
 
 import Control.Applicative
@@ -18,36 +20,38 @@ import Crypto.Lol.Cyclotomic.Tensor (TElt)
 import Crypto.Lol.Types
 import Crypto.Random
 
+-- | Benchmarks for single-index operations. There must be a CRT basis for \(O_m\) over @r@.
 {-# INLINABLE cycBenches1 #-}
-cycBenches1 :: (Monad rnd, _) => _ -> _ -> rnd Benchmark
+cycBenches1 :: (Monad rnd, _) => Proxy '(t,m,r) -> Proxy gen -> rnd Benchmark
 cycBenches1 ptmr pgen = benchGroup "Cyc" $ ($ ptmr) <$> [
-  hideArgs "unzipPow" bench_unzipCycPow,
-  hideArgs "unzipDec" bench_unzipCycDec,
-  hideArgs "unzipCRT" bench_unzipCycCRT,
-  hideArgs "zipWith (*)" bench_mul,
-  hideArgs "crt" bench_crt,
-  hideArgs "crtInv" bench_crtInv,
-  hideArgs "l" bench_l,
-  hideArgs "lInv" bench_lInv,
-  hideArgs "*g Pow" bench_mulgPow,
-  hideArgs "*g Dec" bench_mulgDec,
-  hideArgs "*g CRT" bench_mulgCRT,
-  hideArgs "divg Pow" bench_divgPow,
-  hideArgs "divg Dec" bench_divgDec,
-  hideArgs "divg CRT" bench_divgCRT,
-  hideArgs "lift" bench_liftPow,
-  hideArgs "error" (bench_errRounded 0.1) . addGen pgen
+  genBenchArgs "unzipPow" bench_unzipCycPow,
+  genBenchArgs "unzipDec" bench_unzipCycDec,
+  genBenchArgs "unzipCRT" bench_unzipCycCRT,
+  genBenchArgs "zipWith (*)" bench_mul,
+  genBenchArgs "crt" bench_crt,
+  genBenchArgs "crtInv" bench_crtInv,
+  genBenchArgs "l" bench_l,
+  genBenchArgs "lInv" bench_lInv,
+  genBenchArgs "*g Pow" bench_mulgPow,
+  genBenchArgs "*g Dec" bench_mulgDec,
+  genBenchArgs "*g CRT" bench_mulgCRT,
+  genBenchArgs "divg Pow" bench_divgPow,
+  genBenchArgs "divg Dec" bench_divgDec,
+  genBenchArgs "divg CRT" bench_divgCRT,
+  genBenchArgs "lift" bench_liftPow,
+  genBenchArgs "error" (bench_errRounded 0.1) . addGen pgen
   ]
 
+-- | Benchmarks for inter-ring operations. There must be a CRT basis for \(O_{m'}\) over @r@.
 {-# INLINABLE cycBenches2 #-}
-cycBenches2 :: (Monad rnd, _) => _ -> rnd Benchmark
+cycBenches2 :: (Monad rnd, _) => Proxy '(t,m,m',r) -> rnd Benchmark
 cycBenches2 p = benchGroup "Cyc" $ ($ p) <$> [
-  hideArgs "twacePow" bench_twacePow,
-  hideArgs "twaceDec" bench_twaceDec,
-  hideArgs "twaceCRT" bench_twaceCRT,
-  hideArgs "embedPow" bench_embedPow,
-  hideArgs "embedDec" bench_embedDec,
-  hideArgs "embedCRT" bench_embedCRT
+  genBenchArgs "twacePow" bench_twacePow,
+  genBenchArgs "twaceDec" bench_twaceDec,
+  genBenchArgs "twaceCRT" bench_twaceCRT,
+  genBenchArgs "embedPow" bench_embedPow,
+  genBenchArgs "embedDec" bench_embedDec,
+  genBenchArgs "embedCRT" bench_embedCRT
   ]
 
 {-# INLINE bench_unzipCycPow #-}

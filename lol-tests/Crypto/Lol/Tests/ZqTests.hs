@@ -24,6 +24,7 @@ import Control.Monad.Random
 
 import qualified Test.Framework as TF
 
+-- | Tests for 'ZqBasic'
 zqTests :: _ => Proxy r -> TF.Test
 zqTests p = testGroupM (showType p) $ ($ p) <$> [
   hideArgs "(+)" prop_add,

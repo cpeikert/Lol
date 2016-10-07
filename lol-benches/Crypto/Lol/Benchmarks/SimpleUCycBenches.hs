@@ -7,6 +7,9 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
+-- | Benchmarks for the 'UCyc' interface. These benchmarks do not use the
+-- benchmark harness, so they may perform differently than UCycBenches.hs.
+
 module Crypto.Lol.Benchmarks.SimpleUCycBenches (simpleUCycBenches1, simpleUCycBenches2) where
 
 import Control.Applicative
@@ -19,9 +22,11 @@ import Crypto.Random
 
 import Criterion
 
+-- | Benchmarks for single-index operations. There must be a CRT basis for \(O_m\) over @r@.
 {-# INLINE simpleUCycBenches1 #-}
-simpleUCycBenches1 :: _ => _ -> _ -> IO Benchmark
-simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
+simpleUCycBenches1 :: forall t m r (gen :: *) . _
+  => Proxy '(t,m,r) -> Proxy gen -> IO Benchmark
+simpleUCycBenches1 _ _ = do
   x1 :: UCyc t m P (r, r) <- getRandom
   let x1' = toDec x1
   (Right x2) :: UCycPC t m (r, r) <- getRandom
@@ -51,9 +56,10 @@ simpleUCycBenches1 (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
     bench "error"       $ nf (evalRand (errorRounded (0.1 :: Double) :: Rand (CryptoRand gen) (UCyc t m D Int64))) gen
     ]
 
+-- | Benchmarks for inter-ring operations. There must be a CRT basis for \(O_{m'}\) over @r@.
 {-# INLINE simpleUCycBenches2 #-}
-simpleUCycBenches2 :: _ => _ -> IO Benchmark
-simpleUCycBenches2 (Proxy :: Proxy '(t,m,m',r)) = do
+simpleUCycBenches2 :: forall t m m' r . _ => Proxy '(t,m,m',r) -> IO Benchmark
+simpleUCycBenches2 _ = do
   x4 :: UCyc t m' P r <- getRandom
   let x5 = toDec x4
   (Right x6) :: UCycPC t m' r <- getRandom

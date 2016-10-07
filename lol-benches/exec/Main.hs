@@ -1,17 +1,18 @@
-{-# LANGUAGE DataKinds     #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE DataKinds      #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE TypeOperators  #-}
 
 import Crypto.Lol.Benchmarks.Standard
 import Crypto.Lol.Factored
 import Crypto.Lol.Types
-import Crypto.Lol.Utils.PrettyPrint hiding (benches, layers)
+import Crypto.Lol.Utils.PrettyPrint
 import Crypto.Random.DRBG
 
 import Data.Proxy
 
 -- choose which layers of Lol to benchmark
-layers :: [String]
-layers = [
+ls :: [String]
+ls = [
   "STensor",
   "Tensor",
   "SUCyc",
@@ -19,8 +20,9 @@ layers = [
   "Cyc"
   ]
 
-benches :: [String]
-benches = [
+-- choose which operations to benchmark
+bs :: [String]
+bs = [
   "unzipPow",
   "unzipDec",
   "unzipCRT",
@@ -47,7 +49,7 @@ benches = [
 
 main :: IO ()
 main = do
-  let opts = defaultWidthOpts Progress layers benches
+  let opts = defaultOpts {benches=bs,layers=ls}
   b1 <- oneIdxBenches (Proxy::Proxy '(F64*F9*F25,   Zq 14401)) (Proxy::Proxy CT) (Proxy::Proxy HashDRBG)
   --b2 <- oneIdxBenches (Proxy::Proxy '(F9*F5*F7*F11, Zq 34651)) (Proxy::Proxy CT) (Proxy::Proxy HashDRBG)
   --g1 <- defaultBenches (Proxy::Proxy CT)

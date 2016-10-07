@@ -7,6 +7,9 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
+-- benchmarks at the lowest level, without harness. This may require some
+-- fiddling in exports of 'Tensor' instances to compile.
+
 module Crypto.Lol.Benchmarks.CTBenches (ctBenches) where
 
 import Control.Applicative
@@ -40,5 +43,4 @@ ctBenches (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
     bench "error"       $ nf (evalRand (fmapT (roundMult one) <$>
                            (CT <$> cDispatchGaussian
                              (0.1 :: Double) :: Rand (CryptoRand gen) (T M Double))) :: CryptoRand gen -> (t m Int64)) gen
-
     ]

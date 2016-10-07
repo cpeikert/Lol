@@ -22,7 +22,7 @@ cabal-version:       >= 1.10
 description:
     This library contains code to test <https://hackage.haskell.org/package/lol Λ ∘ λ (Lol)>.
     It is designed so that third-party tensors can be easily tested using the same framework.
-    For examples of how to use this library, see tests for <https://hackage.haskell.org/package/lol lol>.
+    For examples of how to use this library, see the tests for this package.
 source-repository head
   type: git
   location: https://github.com/cpeikert/Lol

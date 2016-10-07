@@ -1,11 +1,11 @@
 {-# LANGUAGE BangPatterns    #-}
 {-# LANGUAGE RecordWildCards #-}
 
+-- | Pretty-printing for benchmark results.
+
 module Crypto.Lol.Utils.PrettyPrint
 (prettyBenches
-,printTable
-,getReports
-,defaultWidthOpts
+,defaultOpts
 ,Opts(..)
 ,Verb(..)) where
 
@@ -30,18 +30,43 @@ import System.Console.ANSI
 import System.IO
 import Text.Printf
 
-data Verb = Progress | Abridged | Full deriving (Eq)
+-- | Verbosity of benchmark output.
+-- 'Progress'
+-- 'Abridged' prints
+data Verb = Progress  -- | prints a '.' when each benchmark completes
+          | Abridged  -- | prints a one-line summary for each benchmark
+          | Full      -- | prints full criterion output for each benchmark
+          deriving (Eq)
 
-data Opts = Opts {verb          :: Verb,
-                  layers        :: [String],
-                  benches       :: [String],
-                  redThreshold  :: Double,
-                  colWidth      :: Int,
-                  testNameWidth :: Int}
+-- | Options for printing benchmark summary
+data Opts = Opts {verb          :: Verb,     -- ^ Verbosity
+                  layers        :: [String], -- ^ Which levels of Lol to benchmark
+                  benches       :: [String], -- ^ Which operations to benchmark
+                  redThreshold  :: Double,   -- ^ How many times larger a benchmark
+                                             --   must be (compared to the minimum
+                                             --   benchmark for that parameter,
+                                             --   across all levels), to be printed in red
+                  colWidth      :: Int,      -- ^ Character width of data columns
+                  testNameWidth :: Int}      -- ^ Character width of row labels
 
-defaultWidthOpts :: Verb -> [String] -> [String] -> Opts
-defaultWidthOpts verb layers benches = Opts {colWidth = 15, testNameWidth=40, redThreshold = 1.1, ..}
+-- | Runs all benchmarks with verbosity 'Progress'.
+defaultOpts :: Opts
+defaultOpts =
+  Opts {verb = Progress,
+        layers = ["STensor", "Tensor", "SUCyc", "UCyc", "Cyc"],
+        benches = [
+          "unzipPow", "unzipDec", "unzipCRT", "zipWith (*)",
+          "crt", "crtInv", "l", "lInv",
+          "*g Pow", "*g Dec", "*g CRT", "divg Pow", "divg Dec", "divg CRT",
+          "lift", "error",
+          "twacePow", "twaceDec", "twaceCRT",
+          "embedPow", "embedDec", "embedCRT"],
+        redThreshold = 1.2,
+        colWidth = 15,
+        testNameWidth=40}
 
+-- | Takes benchmark options an a benchmark group nested as params/level/op,
+-- and prints a table comparing operations across all selected levels of Lol.
 prettyBenches :: Opts -> Benchmark-> IO ()
 prettyBenches o@Opts{..} bnch = do
   hSetBuffering stdout NoBuffering -- for better printing of progress

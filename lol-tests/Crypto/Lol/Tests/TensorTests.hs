@@ -10,6 +10,8 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
+-- | Tests for the 'Tensor' interface.
+
 module Crypto.Lol.Tests.TensorTests (tensorTests1, tensorTests2) where
 
 import Crypto.Lol.Tests
@@ -26,6 +28,7 @@ import qualified Test.Framework as TF
 
 --testGroupM "GSqNormDec"       $ applyLift (Proxy::Proxy NormParams) $ hideArgs prop_gsqnorm,
 
+-- | Tests for single-index operations. There must be a CRT basis for \(O_m\) over @r@.
 tensorTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> TF.Test
 tensorTests1 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,r)
@@ -45,6 +48,7 @@ tensorTests1 _ _ =
       hideArgs "Tw and Em ID for equal indices" prop_twEmID
       ]
 
+-- | Tests for inter-ring operations. There must be a CRT basis for \(O_{m'}\) over @r@.
 tensorTests2 :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> TF.Test
 tensorTests2 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)

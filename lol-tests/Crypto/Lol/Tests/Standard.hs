@@ -7,6 +7,9 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
+-- | High-level test groups and parameters,
+-- which can be used to verify a 'Tensor' implementation.
+
 module Crypto.Lol.Tests.Standard where
 
 import Crypto.Lol.Factored
@@ -27,6 +30,7 @@ type family Zq (a :: k) :: * where
   Zq (a ** b) = (Zq a, Zq b)
   Zq q = (ZqBasic q Int64)
 
+-- | Default parameters for 'ZqBasic' tests
 zqTs :: Test
 zqTs = testGroup "Zq Tests" $ [
   zqTests (Proxy::Proxy (Zq 3)),
@@ -34,8 +38,9 @@ zqTs = testGroup "Zq Tests" $ [
   zqTests (Proxy::Proxy (Zq (3 ** 5))),
   zqTests (Proxy::Proxy (Zq (3 ** 5 ** 7)))]
 
-mainT :: _ => Proxy t -> [Test]
-mainT pt = [
+-- | Default @m@/@r@ test parameters, for an arbitrary 'Tensor'.
+defaultTests :: _ => Proxy t -> [Test]
+defaultTests pt = [
   testGroup "Tensor Tests" $ ($ pt) <$> [
     tensorTests1 (Proxy::Proxy '(F7,  Zq 29)),
     tensorTests1 (Proxy::Proxy '(F12, SmoothZQ1)),

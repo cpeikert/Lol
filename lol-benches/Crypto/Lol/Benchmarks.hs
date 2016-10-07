@@ -7,47 +7,48 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
+-- | Infrastructure for benchmarking Lol.
+
 module Crypto.Lol.Benchmarks
 (Crypto.Lol.Benchmarks.bench
 ,benchIO
 ,benchGroup
-,hideArgs
+,genBenchArgs
 ,Bench(..)
 ,Benchmark
 ,NFData
 ,addGen) where
 
 import Criterion as C
-
+import Crypto.Lol.Utils.GenArgs
 import Control.DeepSeq
-
 import Data.Proxy
 
-import Crypto.Lol.Utils.GenArgs
-
+-- | Convenience function for benchmarks with an extra parameter.
 addGen :: Proxy gen -> Proxy '(t,m,r) -> Proxy '(t,m,r,gen)
 addGen _ _ = Proxy
 
+-- | Wrapper for criterion's 'nf'
 {-# INLINABLE bench #-}
--- wrapper for Criterion's `nf`
 bench :: NFData b => (a -> b) -> a -> Bench params
 bench f = Bench . nf f
 
--- wrapper for Criterion's `nfIO`
+-- | Wrapper for criterion's 'nfIO'
 benchIO :: NFData b => IO b -> Bench params
 benchIO = Bench . nfIO
 
 {-# INLINABLE benchGroup #-}
--- wrapper for Criterion's
+-- | Wrapper for criterion's 'bgroup'
 benchGroup :: (Monad rnd) => String -> [rnd Benchmark] -> rnd Benchmark
 benchGroup str = (bgroup str <$>) . sequence
 
--- normalizes any function resulting in a Benchmark to
--- one that takes a proxy for its arguments
-hideArgs :: (GenArgs rnd bnch, Monad rnd, ResultOf bnch ~ Bench a)
+-- | Converts a function mapping zero or more arguments to a 'Bench' @a@
+-- by generating random inputs to the function
+genBenchArgs :: (GenArgs rnd bnch, Monad rnd, ResultOf bnch ~ Bench a)
   => String -> bnch -> Proxy a -> rnd Benchmark
-hideArgs s f _ = (C.bench s . unbench) <$> genArgs f
+genBenchArgs s f _ = (C.bench s . unbench) <$> genArgs f
 
+-- | Wrapper around criterion's 'Benchmarkable', with phantom parameters.
 newtype Bench params = Bench {unbench :: Benchmarkable}
 
 instance (Monad rnd) => GenArgs rnd (Bench params) where
