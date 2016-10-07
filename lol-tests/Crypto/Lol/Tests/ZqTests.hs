@@ -17,7 +17,6 @@ module Crypto.Lol.Tests.ZqTests (zqTests) where
 import Crypto.Lol
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Tests
-import Crypto.Lol.Utils.GenArgs
 import Crypto.Lol.Utils.ShowType
 
 import Control.Applicative
@@ -52,30 +51,30 @@ prop_mul_ext (Invertible x) (Invertible y) = test $
 data LiftedMod r where
   LMod :: (ToInteger (ModRep r)) => ModRep r -> LiftedMod r
 
+instance (Mod r, Random (ModRep r), ToInteger (ModRep r))
+  => Random (LiftedMod r) where
+  random =
+    let q = proxy modulus (Proxy::Proxy r)
+    in \g -> let (x,g') = randomR (0,q-1) g in (LMod x, g')
+  randomR = error "randomR not defined for `LiftedMod`"
+
+
 data LiftedInvertible r where
   LInv :: (ToInteger (ModRep r)) => ModRep r -> LiftedInvertible r
 
+instance (Mod r, Random (ModRep r), PID (ModRep r), ToInteger (ModRep r))
+  => Random (LiftedInvertible r) where
+  random =
+    let q = proxy modulus (Proxy::Proxy r)
+    in \g -> let (x,g') = randomR (1,q-1) g
+             in if gcd x q == 1 then (LInv x, g') else random g'
+  randomR = error "randomR not defined for `LiftedInvertible`"
+
 newtype Invertible r = Invertible r
 
-instance (MonadRandom rnd, Mod r, Random (ModRep r), ToInteger (ModRep r))
-  => Generatable rnd (LiftedMod r) where
-  genArg =
-    let q = proxy modulus (Proxy::Proxy r)
-    in LMod <$> getRandomR (0,q-1)
-
-instance (MonadRandom rnd, Mod r, Random (ModRep r), PID (ModRep r), ToInteger (ModRep r))
-  => Generatable rnd (LiftedInvertible r) where
-  genArg =
-    let q = proxy modulus (Proxy::Proxy r)
-        go = do
-          x <- getRandomR (1,q-1)
-          if gcd x q == 1
-          then return $ LInv x
-          else go
-    in go
-
-instance (MonadRandom rnd, Generatable rnd (LiftedInvertible r), Ring r)
-  => Generatable rnd (Invertible r) where
-  genArg = do
-    (LInv x) :: LiftedInvertible r <- genArg
-    return $ Invertible $ fromIntegral x
+instance (Random (LiftedInvertible r), Ring r, ToInteger (ModRep r))
+  => Random (Invertible r) where
+  random g =
+    let (LInv x :: LiftedInvertible r, g') = random g
+    in (Invertible $ fromIntegral x, g')
+  randomR = error "randomR not defined for `Invertible`"
