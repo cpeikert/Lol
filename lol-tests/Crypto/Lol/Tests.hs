@@ -53,5 +53,4 @@ data Test params where
   TestM :: (forall m . MonadRandom m => m Bool) -> Test params
 
 instance (MonadRandom rnd) => GenArgs rnd (Test params) where
-  type ResultOf (Test params) = Test params
   genArgs = return

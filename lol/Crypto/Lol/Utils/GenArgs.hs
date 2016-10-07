@@ -10,21 +10,22 @@ module Crypto.Lol.Utils.GenArgs where
 
 import Control.Monad.Random
 
--- bnch represents a function whose arguments can be generated,
--- resulting in a "NFValue"
-class GenArgs rnd bnch where
-  type ResultOf bnch
-  genArgs :: bnch -> rnd (ResultOf bnch)
+type family ResultOf f where
+  ResultOf (a -> b) = ResultOf b
+  ResultOf a = a
+
+-- | Generalization of 'Testable' from QuickCheck: generates function inputs
+class GenArgs rnd fun where
+  genArgs :: fun -> rnd (ResultOf fun)
 
 instance (Generatable rnd a, GenArgs rnd b,
           Monad rnd, ResultOf b ~ ResultOf (a -> b))
   => GenArgs rnd (a -> b) where
-  type ResultOf (a -> b) = ResultOf b
   genArgs f = do
     x <- genArg
     genArgs $ f x
 
--- a parameter that can be generated using a particular monad
+-- | Similar to 'Arbitrary' from QuickCheck: generate 'arg' in monad 'rnd'
 class Generatable rnd arg where
   genArg :: rnd arg
 

@@ -52,3 +52,6 @@ Base ring layer:
   factored integers. It also supports "reifying" 'Int's at runtime as static
   types and "reflecting" those types as integers back to the code..
   'Factored' types are mainly used to represent cyclotomic indices.
+
+Tests and benchmarks can be found in the packages lol-tests and lol-benches,
+respectively.

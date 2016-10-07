@@ -51,5 +51,4 @@ hideArgs s f _ = (C.bench s . unbench) <$> genArgs f
 newtype Bench params = Bench {unbench :: Benchmarkable}
 
 instance (Monad rnd) => GenArgs rnd (Bench params) where
-  type ResultOf (Bench params) = Bench params
   genArgs = return

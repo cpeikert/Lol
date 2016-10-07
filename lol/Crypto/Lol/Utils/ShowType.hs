@@ -12,6 +12,8 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
+-- | Class for pretty-printing type parameters to tests and benchmarks
+
 module Crypto.Lol.Utils.ShowType
 (ArgType
 ,showType
@@ -21,12 +23,13 @@ import Crypto.Lol (Int64,Fact,valueFact,Mod(..), Proxy(..), proxy, TrivGad, Base
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.ZqBasic
 
--- a wrapper type for printing test/benchmark names
+-- | Wrapper type for printing test/benchmark names
 data ArgType (a :: k) = AT
 
--- allows automatic printing of test parameters
+-- | Constraint synonym for printing test parameters
 type ShowType a = Show (ArgType a)
 
+-- | Print a showable type argument
 showType :: forall a . (Show (ArgType a)) => Proxy a -> String
 showType _ = show (AT :: ArgType a)
 
