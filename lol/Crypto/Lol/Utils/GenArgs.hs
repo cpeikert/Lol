@@ -2,11 +2,13 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 
--- generates arguments to functions
+-- | Classes used to generate arguments for tests and benchmarks.
+-- This is analagous to 'Arbitrary' in quickcheck, except it can also be used
+-- with criterion.
+
 module Crypto.Lol.Utils.GenArgs where
 
 import Control.Monad.Random
-import Data.Proxy
 
 -- bnch represents a function whose arguments can be generated,
 -- resulting in a "NFValue"
@@ -28,6 +30,3 @@ class Generatable rnd arg where
 
 instance {-# Overlappable #-} (Random a, MonadRandom rnd) => Generatable rnd a where
   genArg = getRandom
-
-instance (Monad rnd) => Generatable rnd (Proxy a) where
-  genArg = return Proxy

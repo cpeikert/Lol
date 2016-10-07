@@ -35,7 +35,6 @@ import Data.Coerce
 import Data.Singletons
 import Data.Singletons.Prelude      hiding ((:.))
 import Data.Vector.Unboxed          as U (replicate, replicateM)
-import Test.QuickCheck
 
 -- always unboxed (manifest); intermediate calculations can use
 -- delayed arrays
@@ -97,10 +96,6 @@ instance (Unbox r, Random r, Fact m) => Random (Arr m r) where
   random = runRand $ replM (liftRand random)
 
   randomR = error "randomR nonsensical for Arr"
-
-instance (Arbitrary r, Unbox r, Fact m) => Arbitrary (Arr m r) where
-    arbitrary = replM arbitrary
-    shrink = shrinkNothing
 
 -- | For a factored index, tensors up any function defined for (and
 -- tagged by) any prime power

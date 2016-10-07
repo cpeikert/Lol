@@ -50,7 +50,6 @@ import Data.Vector.Storable.Mutable as SM hiding (replicate)
 
 import Foreign.Marshal.Utils (with)
 import Foreign.Ptr
-import Test.QuickCheck       hiding (generate)
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
@@ -66,6 +65,7 @@ import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
+import Crypto.Lol.Utils.ShowType
 
 import Crypto.Proto.RLWE.Kq
 import Crypto.Proto.RLWE.Rq
@@ -91,6 +91,9 @@ data CT (m :: Factored) r where
   ZV :: IZipVector m r -> CT m r
 
 deriving instance Show r => Show (CT m r)
+
+instance Show (ArgType CT) where
+  show _ = "CT"
 
 instance Eq r => Eq (CT m r) where
   (ZV x) == (ZV y) = x == y
@@ -420,13 +423,6 @@ cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   yin <- T.lift $ realGaussians (var * fromIntegral (mval `div` rad)) totm
   return $ unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdec ruptr) (CT' yin))
-
-instance (Arbitrary r, Fact m, Storable r) => Arbitrary (CT' m r) where
-  arbitrary = replM arbitrary
-  shrink = shrinkNothing
-
-instance (Storable r, Arbitrary (CT' m r)) => Arbitrary (CT m r) where
-  arbitrary = CT <$> arbitrary
 
 instance (Storable r, Random r, Fact m) => Random (CT' m r) where
   --{-# INLINABLE random #-}

@@ -15,7 +15,7 @@ import Control.Monad.Random
 import Crypto.Lol.Prelude
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Types
-import Crypto.Random.DRBG
+import Crypto.Random
 
 import Criterion
 

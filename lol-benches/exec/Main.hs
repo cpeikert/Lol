@@ -3,36 +3,34 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeOperators         #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 import Crypto.Lol
 import Crypto.Lol.Benchmarks
---import Crypto.Lol.Benchmarks.SimpleTensorBenches
+import Crypto.Lol.Benchmarks.SimpleTensorBenches
 import Crypto.Lol.Benchmarks.TensorBenches
---import Crypto.Lol.Benchmarks.SimpleUCycBenches
+import Crypto.Lol.Benchmarks.SimpleUCycBenches
 import Crypto.Lol.Benchmarks.UCycBenches
 import Crypto.Lol.Benchmarks.CycBenches
 import Crypto.Lol.Types
-import Crypto.Lol.Utils
+import Crypto.Lol.Utils.ShowType
 import Crypto.Lol.Utils.PrettyPrint hiding (benches, layers)
 
 import Crypto.Random.DRBG
 
-import Control.Applicative
-import Control.Monad (when, join)
+import Control.Monad (liftM2)
 
-import Data.List (transpose)
-
-import System.IO
 
 -- choose which layers of Lol to benchmark
 layers :: [String]
 layers = [
-  "STensor",
+  {-"STensor",
   "Tensor",
-  "SUCyc",
+  "SUCyc",-}
   "UCyc",
   "Cyc"
   ]
@@ -40,7 +38,7 @@ layers = [
 benches :: [String]
 benches = [
   "unzipPow",
-  "unzipDec",
+  "unzipDec",{-
   "unzipCRT",
   "zipWith (*)",
   "crt",
@@ -54,68 +52,65 @@ benches = [
   "divg Dec",
   "divg CRT",
   "lift",
-  "error",
+  "error",-}
   "twacePow",
-  "twaceDec",
+  "twaceDec"{-,
   "twaceCRT",
   "embedPow",
   "embedDec",
-  "embedCRT"
+  "embedCRT"-}
   ]
 
-type M = F64*F9*F25 --F9*F5*F7*F11
-type R = Zq 1065601 --Zq 34651
-type M' = M -- F3*F5*F11
-type T = CT
+type Zq (q :: k) = ZqBasic q Int64
 
 instance Show (ArgType HashDRBG) where
   show _ = "HashDRBG"
 
-instance Show (ArgType RT) where
-  show _ = "RT"
-
-instance Show (ArgType CT) where
-  show _ = "CT"
-
--- The random generator used in benchmarks
-type Gen = HashDRBG
-
-testParam :: Proxy '(T, M, R)
-testParam = Proxy
-
-twoIdxParam :: Proxy '(T, M', M, R)
-twoIdxParam = Proxy
-
 main :: IO ()
 main = do
-  hSetBuffering stdout NoBuffering -- for better printing of progress
   let opts = defaultWidthOpts Progress layers benches
-  reports <- join $ mapM (getReports opts) <$>
-    concat <$> transpose <$>
-      sequence [oneIdxBenches testParam (Proxy::Proxy Gen),
-                twoIdxBenches twoIdxParam]
+  benchGroups <- concat <$> sequence [defaultBenches (Proxy::Proxy CT),
+                                      defaultBenches (Proxy::Proxy RT)]
+  mapM_ (prettyBenches opts) benchGroups
 
-  when (verb opts == Progress) $ putStrLn ""
-  printTable opts $ group2 $ map reverse reports
+{-# INLINABLE defaultBenches #-}
+defaultBenches :: _ => Proxy t -> IO [Benchmark]
+defaultBenches pt = liftM2 (++)
+  (mapM (($ (Proxy::Proxy HashDRBG)) . ($ pt)) [
+    oneIdxBenches (Proxy::Proxy '(F64*F9*F25,   Zq 1065601)),
+    oneIdxBenches (Proxy::Proxy '(F9*F5*F7*F11, Zq 34651)),
+    oneIdxBenches (Proxy::Proxy '(F1024,        Zq 12289)),
+    oneIdxBenches (Proxy::Proxy '(F2048,        Zq 12289)),
+    oneIdxBenches (Proxy::Proxy '(F64*F27,      Zq 3457)),
+    oneIdxBenches (Proxy::Proxy '(F64*F81,      Zq 10369)),
+    oneIdxBenches (Proxy::Proxy '(F64*F9*F25,   Zq 14401))
+    ])
+  (mapM ($ pt) [
+    twoIdxBenches (Proxy::Proxy '(F8*F7*F13,  F32*F7*F13,   Zq 8737)),
+    twoIdxBenches (Proxy::Proxy '(F8*F7*F13,  F8*F5*F7*F13, Zq 145561)),
+    twoIdxBenches (Proxy::Proxy '(F128,       F128*F7*F13,  Zq 23297))
+    ])
 
-group2 :: [[a]] -> [[a]]
-group2 [] = []
-group2 (x:y:zs) = (x++y):(group2 zs)
-
---oneIdxBenches p :: IO [Benchmark]
 {-# INLINABLE oneIdxBenches #-}
-oneIdxBenches ptmr pgen = sequence $ (($ pgen) . ($ ptmr)) <$> [
-  --simpleTensorBenches1,
-  tensorBenches1,
-  --simpleUCycBenches1,
-  ucycBenches1,
-  cycBenches1
-  ]
+oneIdxBenches :: forall t m r gen . _ => Proxy '(m,r) -> Proxy t -> Proxy gen -> IO Benchmark
+oneIdxBenches _ _ pgen =
+  let ptmr = Proxy :: Proxy '(t,m,r)
+  in benchGroup (showType ptmr) $ (($ pgen) . ($ ptmr)) <$> [
+      simpleTensorBenches1,
+      tensorBenches1,
+      simpleUCycBenches1,
+      ucycBenches1,
+      cycBenches1
+      ]
+
 {-# INLINABLE twoIdxBenches #-}
-twoIdxBenches p = sequence $ ($ p) <$> [
-  --simpleTensorBenches2,
-  tensorBenches2,
-  --simpleUCycBenches2,
-  ucycBenches2,
-  cycBenches2
-  ]
+twoIdxBenches :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> IO Benchmark
+twoIdxBenches _ _ =
+  let ptmr = Proxy :: Proxy '(t,m,m',r)
+  in benchGroup (showType ptmr) $ ($ ptmr) <$> [
+      simpleTensorBenches2,
+      tensorBenches2,
+      simpleUCycBenches2,
+      ucycBenches2,
+      cycBenches2
+      ]

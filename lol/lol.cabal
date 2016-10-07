@@ -108,7 +108,6 @@ library
     Crypto.Proto.RLWE.SampleRLWR
 
     Crypto.Lol.Utils.GenArgs
-    Crypto.Lol.Utils.GenArgs.Zq
     Crypto.Lol.Utils.ShowType
 
   other-modules:
@@ -142,7 +141,6 @@ library
     MonadRandom >= 0.2 && < 0.5,
     mtl >= 2.2.1 && < 2.3,
     numeric-prelude >= 0.4.2 && < 0.5,
-    QuickCheck >= 2.8 && < 2.9,
     protocol-buffers,
     protocol-buffers-descriptor,
     random >= 1.1 && < 1.2,

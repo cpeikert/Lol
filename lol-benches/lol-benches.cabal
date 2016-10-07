@@ -36,6 +36,8 @@ library
   exposed-modules:
     Crypto.Lol.Benchmarks
     Crypto.Lol.Benchmarks.CycBenches
+    Crypto.Lol.Benchmarks.SimpleTensorBenches
+    Crypto.Lol.Benchmarks.SimpleUCycBenches
     Crypto.Lol.Benchmarks.TensorBenches
     Crypto.Lol.Benchmarks.UCycBenches
     Crypto.Lol.Utils.PrettyPrint
@@ -49,6 +51,7 @@ library
     deepseq,
     lol,
     MonadRandom,
+    split,
     statistics,
     transformers
 

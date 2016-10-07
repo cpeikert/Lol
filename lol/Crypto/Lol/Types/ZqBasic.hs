@@ -35,7 +35,6 @@ import Data.Coerce
 import Data.Maybe
 import NumericPrelude.Numeric as NP (round)
 import System.Random
-import Test.QuickCheck
 
 -- for the Unbox instances
 import qualified Data.Vector                 as V
@@ -309,14 +308,6 @@ instance (Reflects q z, ToInteger z, Random z) => Random (ZqBasic q z) where
 
   randomR _ = error "randomR non-sensical for Zq types"
   {-# INLINABLE random #-}
-
--- instance of Arbitrary
-instance (Reflects q z, ToInteger z, Random z) => Arbitrary (ZqBasic q z) where
-  arbitrary =
-    let qval :: z = proxy value (Proxy::Proxy q)
-    in fromIntegral <$> choose (0, qval-1)
-
-  shrink = shrinkNothing
 
 -- CJP: restored manual Unbox instances, until we have a better way
 -- (NewtypeDeriving or TH)

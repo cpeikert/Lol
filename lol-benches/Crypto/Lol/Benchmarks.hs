@@ -24,7 +24,6 @@ import Control.DeepSeq
 import Data.Proxy
 
 import Crypto.Lol.Utils.GenArgs
-import Crypto.Lol.Utils
 
 addGen :: Proxy gen -> Proxy '(t,m,r) -> Proxy '(t,m,r,gen)
 addGen _ _ = Proxy
@@ -45,10 +44,9 @@ benchGroup str = (bgroup str <$>) . sequence
 
 -- normalizes any function resulting in a Benchmark to
 -- one that takes a proxy for its arguments
-hideArgs :: (GenArgs rnd bnch, Monad rnd, ShowType a,
-             ResultOf bnch ~ Bench a)
+hideArgs :: (GenArgs rnd bnch, Monad rnd, ResultOf bnch ~ Bench a)
   => String -> bnch -> Proxy a -> rnd Benchmark
-hideArgs s f p = (C.bench (s ++ "/" ++ showType p) . unbench) <$> genArgs f
+hideArgs s f _ = (C.bench s . unbench) <$> genArgs f
 
 newtype Bench params = Bench {unbench :: Benchmarkable}
 

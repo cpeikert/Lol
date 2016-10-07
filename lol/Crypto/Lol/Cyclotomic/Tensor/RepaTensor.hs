@@ -23,6 +23,7 @@ import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
+import Crypto.Lol.Utils.ShowType
 
 import Crypto.Proto.RLWE.Kq
 import Crypto.Proto.RLWE.Rq
@@ -45,14 +46,15 @@ import Data.Traversable     as T
 import Data.Vector          as V hiding (force, (++))
 import Data.Vector.Unboxed  as U hiding (force, (++))
 
-import Test.QuickCheck
-
 -- | An implementation of 'Tensor' backed by repa.
 data RT (m :: Factored) r where
   RT :: Unbox r => !(Arr m r) -> RT m r
   ZV :: IZipVector m r -> RT m r
 
 deriving instance Show r => Show (RT m r)
+
+instance Show (ArgType RT) where
+  show _ = "RT"
 
 instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
   type ProtoType (RT m (ZqBasic q Int64)) = Rq
@@ -294,9 +296,6 @@ instance (Unbox r, Random (Arr m r)) => Random (RT m r) where
   random = runRand $ RT <$> liftRand random
 
   randomR = error "randomR nonsensical for RT"
-
-instance (Unbox r, Arbitrary (Arr m r)) => Arbitrary (RT m r) where
-  arbitrary = RT <$> arbitrary
 
 instance (NFData r) => NFData (RT m r) where
   rnf (RT v) = rnf v

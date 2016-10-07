@@ -72,7 +72,6 @@ import Control.Monad.Random
 import Data.Foldable          as F
 import Data.Maybe
 import Data.Traversable
-import Test.QuickCheck
 
 import Crypto.Lol.Types.Proto
 
@@ -677,16 +676,6 @@ instance (Random r, UCRTElt t r, Fact m)
                     in (cons v, g')
 
   randomR _ = error "randomR non-sensical for UCyc"
-
-instance (Arbitrary (t m r)) => Arbitrary (UCyc t m P r) where
-  arbitrary = Pow <$> arbitrary
-  shrink = shrinkNothing
-
-instance (Arbitrary (t m r)) => Arbitrary (UCyc t m D r) where
-  arbitrary = Dec <$> arbitrary
-  shrink = shrinkNothing
-
--- no Arbitrary for C or E due to invariant
 
 instance (Tensor t, Fact m, NFElt r, TElt t r, TElt t (CRTExt r))
          => NFData (UCyc t m rep r) where

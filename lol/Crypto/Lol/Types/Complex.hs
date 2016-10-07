@@ -33,12 +33,11 @@ import Data.Vector.Storable         (Storable)
 import Data.Vector.Unboxed          (Unbox)
 import Data.Vector.Unboxed.Deriving
 import System.Random
-import Test.QuickCheck
 
 -- | Newtype wrapper (with slightly different instances) for
 -- @Number.Complex@.
 newtype Complex a = Complex (C.T a)
-    deriving (Additive.C, Ring.C, ZeroTestable.C, Field.C, Storable, Eq, Show, Arbitrary)
+    deriving (Additive.C, Ring.C, ZeroTestable.C, Field.C, Storable, Eq, Show)
 
 derivingUnbox "Complex"
   [t| forall a . (Unbox a) => Complex a -> (a, a) |]
