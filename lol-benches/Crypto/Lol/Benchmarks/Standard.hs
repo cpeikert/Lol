@@ -24,7 +24,6 @@ import Crypto.Lol.Types
 import Crypto.Lol.Utils.ShowType
 import Crypto.Random.DRBG
 
-import Control.Monad (liftM2)
 import Data.Int
 import Data.Proxy
 
@@ -37,19 +36,18 @@ instance Show (ArgType HashDRBG) where
 -- to quickly compare performance on your system or with your 'Tensor' backend.
 {-# INLINABLE defaultBenches #-}
 defaultBenches :: _ => Proxy t -> IO [Benchmark]
-defaultBenches pt = liftM2 (++)
-  (mapM (($ (Proxy::Proxy HashDRBG)) . ($ pt)) [
+defaultBenches pt = sequence [
+  benchGroup "Single Index" $ (($ (Proxy::Proxy HashDRBG)) . ($ pt)) <$> [
     oneIdxBenches (Proxy::Proxy '(F1024,        Zq 12289)),
     oneIdxBenches (Proxy::Proxy '(F2048,        Zq 12289)),
     oneIdxBenches (Proxy::Proxy '(F64*F27,      Zq 3457)),
     oneIdxBenches (Proxy::Proxy '(F64*F81,      Zq 10369)),
-    oneIdxBenches (Proxy::Proxy '(F64*F9*F25,   Zq 14401))
-    ])
-  (mapM ($ pt) [
+    oneIdxBenches (Proxy::Proxy '(F64*F9*F25,   Zq 14401))],
+  benchGroup "Twace-Embed" $ ($ pt) <$> [
     twoIdxBenches (Proxy::Proxy '(F8*F7*F13,  F32*F7*F13,   Zq 8737)),
     twoIdxBenches (Proxy::Proxy '(F8*F7*F13,  F8*F5*F7*F13, Zq 14561)),
-    twoIdxBenches (Proxy::Proxy '(F128,       F128*F7*F13,  Zq 23297))
-    ])
+    twoIdxBenches (Proxy::Proxy '(F128,       F128*F7*F13,  Zq 23297))]
+    ]
 
 -- | Collection of all single-index operations at all levels of the library.
 {-# INLINABLE oneIdxBenches #-}

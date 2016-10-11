@@ -8,6 +8,8 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
 module SHEBenches (sheBenches, decBenches, rescaleBenches, tunnelBenches) where
 
 import Crypto.Lol.Benchmarks
@@ -15,6 +17,7 @@ import Crypto.Lol.Benchmarks
 import Control.Applicative
 import Control.Monad.Random
 import Control.Monad.State
+import Crypto.Lol.Utils.ShowType
 import Crypto.Random.DRBG
 
 import Crypto.Lol
@@ -29,10 +32,10 @@ addGen6 :: Proxy gad -> Proxy '(t,m,m',zp,zq,zq') -> Proxy '(t,m,m',zp,zq,zq',ga
 addGen6 _ _ = Proxy
 
 sheBenches :: forall t m m' zp zq gen rnd . (MonadRandom rnd, _)
-  => Proxy '(m,m',zp,zq) -> Proxy gen -> Proxy t -> [rnd Benchmark]
+  => Proxy '(m,m',zp,zq) -> Proxy gen -> Proxy t -> rnd Benchmark
 sheBenches _ pgen _ =
   let ptmr = Proxy :: Proxy '(t,m,m',zp,zq)
-  in ($ ptmr) <$> [
+  in benchGroup (showType ptmr ++ "/SHE") $ ($ ptmr) <$> [
     genBenchArgs "encrypt"   bench_enc . addGen5 pgen,
     genBenchArgs "*"         bench_mul,
     genBenchArgs "addPublic" bench_addPublic,
@@ -41,24 +44,25 @@ sheBenches _ pgen _ =
 
 -- zq must be Liftable
 decBenches :: forall t m m' zp zq rnd . (MonadRandom rnd, _)
-  => Proxy '(m,m',zp,zq) -> Proxy t -> [rnd Benchmark]
+  => Proxy '(m,m',zp,zq) -> Proxy t -> rnd Benchmark
 decBenches _ _ =
   let ptmr = Proxy::Proxy '(t,m,m',zp,zq)
-  in [genBenchArgs "decrypt" bench_dec ptmr]
+  in benchGroup (showType ptmr ++ "/SHE") [genBenchArgs "decrypt" bench_dec ptmr]
 
 -- must be able to round from zq' to zq
 rescaleBenches :: forall t m m' zp zq zq' gad rnd . (MonadRandom rnd, _)
-  => Proxy '(m,m',zp,zq,zq') -> Proxy gad -> Proxy t -> [rnd Benchmark]
+  => Proxy '(m,m',zp,zq,zq') -> Proxy gad -> Proxy t -> rnd Benchmark
 rescaleBenches _ pgad _ =
   let ptmr = Proxy :: Proxy '(t,m,m',zp,zq,zq')
-  in ($ ptmr) <$> [genBenchArgs "rescaleCT" bench_rescaleCT,
-                   genBenchArgs "keySwitch" bench_keySwQ . addGen6 pgad]
+  in benchGroup (showType ptmr ++ "/SHE") $ ($ ptmr) <$> [
+       genBenchArgs "rescaleCT" bench_rescaleCT,
+       genBenchArgs "keySwitch" bench_keySwQ . addGen6 pgad]
 
 tunnelBenches :: forall t r r' s s' zp zq gad rnd . (MonadRandom rnd, _)
-  => Proxy '(r,r',s,s',zp,zq) -> Proxy gad -> Proxy t -> [rnd Benchmark]
+  => Proxy '(r,r',s,s',zp,zq) -> Proxy gad -> Proxy t -> rnd Benchmark
 tunnelBenches _ _ _ =
   let ptmr = Proxy :: Proxy '(t,r,r',s,s',zp,zq,gad)
-  in [genBenchArgs "tunnel" bench_tunnel ptmr]
+  in benchGroup (showType ptmr ++ "/SHE") [genBenchArgs "tunnel" bench_tunnel ptmr]
 
 
 bench_enc :: forall t m m' z zp (zq :: *) (gen :: *) . (z ~ LiftOf zp,  _)
@@ -131,32 +135,3 @@ bench_tunnel pt skin skout = benchM $ do
       linf :: Linear t zp e r s = linearDec (take dim crts) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
   hints <- proxyT (tunnelCT linf skout skin) (Proxy::Proxy gad)
   return $ bench hints x
-
-
--- generates a secret key with scaled variance 1.0
-instance (GenSKCtx t m' z Double) => Random (SK (Cyc t m' z)) where
-  random = runRand $ genSK (1 :: Double)
-  randomR = error "randomR not defined for SK"
-
-
-{-
--- 3144961,5241601,7338241,9959041,10483201,11531521,12579841,15200641,18869761,19393921
-type TunnParams =
-  ( '(,) <$> Gadgets) <*>
-  (( '(,) <$> Tensors) <*>
-  (( '(,) <$> TunnRings) <*> TunnMods))
-tunnelParams :: Proxy TunnParams
-tunnelParams = Proxy
-
-type TunnRings = '[
-  {- H0 -> H1 -} '(F128, F128 * F7 * F13, F64 * F7, F64 * F7 * F13),
-  {- H1 -> H2 -} '(F64 * F7, F64 * F7 * F13, F32 * F7 * F13, F32 * F7 * F13),
-  {- H2 -> H3 -} '(F32 * F7 * F13, F32 * F7 * F13, F8 * F5 * F7 * F13, F8 * F5 * F7 *F13),
-  {- H3 -> H4 -} '(F8 * F5 * F7 * F13, F8 * F5 * F7 *F13, F4 * F3 * F5 * F7 * F13, F4 * F3 * F5 * F7 * F13),
-  {- H4 -> H5 -} '(F4 * F3 * F5 * F7 * F13, F4 * F3 * F5 * F7 *F13, F9 * F5 * F7 * F13, F9 * F5 * F7 * F13)
-    ]
-
-type TunnMods = '[
-  '(Zq PP32, Zq 3144961)
-  ]
--}

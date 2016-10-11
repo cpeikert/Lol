@@ -73,7 +73,7 @@ library
 
 test-suite test-apps
   type:             exitcode-stdio-1.0
-  hs-source-dirs:   tests,utils
+  hs-source-dirs:   tests
   default-language: Haskell2010
   main-is:          Main.hs
 
@@ -87,6 +87,7 @@ test-suite test-apps
     DRBG,
     lol,
     lol-apps,
+    lol-tests,
     MonadRandom,
     mtl,
     QuickCheck >= 2.8 && < 2.9,
@@ -99,7 +100,7 @@ test-suite test-apps
 
 Benchmark bench-apps
   type:             exitcode-stdio-1.0
-  hs-source-dirs:   benchmarks,utils
+  hs-source-dirs:   benchmarks
   default-language: Haskell2010
   main-is:          Main.hs
 
@@ -110,7 +111,6 @@ Benchmark bench-apps
 --  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   build-depends:
-    ansi-terminal,
     arithmoi,
     base,
     containers,
@@ -119,16 +119,16 @@ Benchmark bench-apps
     DRBG,
     lol,
     lol-apps,
+    lol-benches,
     MonadRandom,
     mtl,
     singletons,
-    statistics,
     transformers,
     vector,
     repa
 
 executable simpleSHE
-  hs-source-dirs:   examples/SymmSHE, utils
+  hs-source-dirs:   examples/SymmSHE
   default-language: Haskell2010
   main-is:          SimpleSHE.hs
 
