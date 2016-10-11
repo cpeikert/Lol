@@ -50,7 +50,6 @@ test-suite test-lol
   type:               exitcode-stdio-1.0
   default-language:   Haskell2010
   main-is:            Main.hs
-  hs-source-dirs:     exec
 
   ghc-options: -threaded -O2
 
