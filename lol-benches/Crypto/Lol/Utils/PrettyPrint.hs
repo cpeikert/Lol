@@ -10,7 +10,7 @@ module Crypto.Lol.Utils.PrettyPrint
 ,getRuntime
 ,col
 ,testName
-,Opts(..)
+,OptsInternal(..)
 ,Verb(..)) where
 
 import Control.Monad (foldM, when)
@@ -37,20 +37,21 @@ data Verb = Progress  -- | prints a '.' when each benchmark completes
           deriving (Eq)
 
 -- | Options for printing benchmark summary
-data Opts = Opts {verb          :: Verb,     -- ^ Verbosity
-                  levels        :: [String], -- ^ Which levels of Lol to benchmark
-                  benches       :: [String], -- ^ Which operations to benchmark
-                  params        :: [String], -- ^ Which parameters to benchmark
-                  redThreshold  :: Double,   -- ^ How many times larger a benchmark
-                                             --   must be (compared to the minimum
-                                             --   benchmark for that parameter,
-                                             --   across all levels), to be printed in red
-                  colWidth      :: Int,      -- ^ Character width of data columns
-                  testNameWidth :: Int}      -- ^ Character width of row labels
+data OptsInternal = OptsInternal
+  {verb          :: Verb,     -- ^ Verbosity
+   levels        :: [String], -- ^ Which levels of Lol to benchmark
+   benches       :: [String], -- ^ Which operations to benchmark
+   params        :: [String], -- ^ Which parameters to benchmark
+   redThreshold  :: Double,   -- ^ How many times larger a benchmark
+                              --   must be (compared to the minimum
+                              --   benchmark for that parameter,
+                              --   across all levels), to be printed in red
+   colWidth      :: Int,      -- ^ Character width of data columns
+   testNameWidth :: Int}      -- ^ Character width of row labels
 
-col, testName :: Opts -> String
-testName Opts{..} = "%-" ++ show testNameWidth ++ "s "
-col Opts{..} = "%-" ++ show colWidth ++ "s "
+col, testName :: OptsInternal -> String
+testName OptsInternal{..} = "%-" ++ show testNameWidth ++ "s "
+col OptsInternal{..} = "%-" ++ show colWidth ++ "s "
 
 parseBenchName :: String -> [String]
 parseBenchName = wordsBy (=='/')
@@ -67,16 +68,16 @@ getBenchLvl    = (!! 2) . parseBenchName
 getBenchFunc :: String -> String
 getBenchFunc   = (!! 3) . parseBenchName
 
-getReports :: Opts -> Benchmark -> IO [Report]
+getReports :: OptsInternal -> Benchmark -> IO [Report]
 getReports o = withConfig (config o) . runAndAnalyse o
 
-config :: Opts -> Config
-config Opts{..} = defaultConfig {verbosity = if verb == Full then Normal else Quiet}
+config :: OptsInternal -> Config
+config OptsInternal{..} = defaultConfig {verbosity = if verb == Full then Normal else Quiet}
 
 -- | Run, and analyse, one or more benchmarks.
 -- From Criterion.Internal
-runAndAnalyse :: Opts -> Benchmark -> Criterion [Report]
-runAndAnalyse o@Opts{..} bs = for o bs $ \idx desc bm -> do
+runAndAnalyse :: OptsInternal -> Benchmark -> Criterion [Report]
+runAndAnalyse o@OptsInternal{..} bs = for o bs $ \idx desc bm -> do
   when (verb == Abridged || verb == Full) $ liftIO $ putStr $ "benchmark " ++ desc
   when (verb == Full) $ liftIO $ putStrLn ""
   (Analysed rpt) <- runAndAnalyseOne idx desc bm
@@ -94,8 +95,8 @@ getRuntime Report{..} =
 
 -- | Iterate over benchmarks.
 -- From Criterion.Internal
-for :: MonadIO m => Opts -> Benchmark -> (Int -> String -> Benchmarkable -> m a) -> m [a]
-for Opts{..} bs0 handle = snd <$> go (0::Int, []) ("", bs0)
+for :: MonadIO m => OptsInternal -> Benchmark -> (Int -> String -> Benchmarkable -> m a) -> m [a]
+for OptsInternal{..} bs0 handle = snd <$> go (0::Int, []) ("", bs0)
   where
     select name =
       let param = getBenchParams name

@@ -6,7 +6,7 @@
 module Crypto.Lol.Utils.PrettyPrint.Diagnostic
 (prettyBenches
 ,defaultOpts
-,opts
+,Opts(..)
 ,Verb(..)) where
 
 --import Control.DeepSeq
@@ -24,29 +24,49 @@ import System.Console.ANSI
 import System.IO
 import Text.Printf
 
-opts :: Verb -> [String] -> [String] -> Double -> Int -> Int -> Opts
-opts verb levels benches redThreshold colWidth testNameWidth = Opts{params=[],..}
+data Opts = Opts
+  {verb          :: Verb,     -- ^ Verbosity
+   levels        :: [String], -- ^ Which levels of Lol to benchmark. The empty list means run all levels.
+   benches       :: [String], -- ^ Which operations to benchmark. The empty list means run all benchmarks.
+   redThreshold  :: Double,   -- ^ How many times larger a benchmark
+                              --   must be (compared to the minimum
+                              --   benchmark for that parameter,
+                              --   across all levels), to be printed in red
+   colWidth      :: Int,      -- ^ Character width of data columns
+   testNameWidth :: Int}      -- ^ Character width of row labels
 
 -- | Runs all benchmarks with verbosity 'Progress'.
-defaultOpts :: [String] -> [String] -> Opts
-defaultOpts levels benches =
+defaultOpts :: Opts
+defaultOpts =
   Opts {verb = Progress,
-        params = [], -- set by prettyBenches
+        levels = [],
+        benches = [],
         redThreshold = 1.2,
         colWidth = 15,
-        testNameWidth=40, ..}
+        testNameWidth=40}
+
+optsToInternal :: Opts -> Benchmark -> OptsInternal
+optsToInternal Opts{..} bnch =
+  OptsInternal{params=[getBenchParams $ head $ benchNames bnch],
+               levels=if null levels
+                      then nub $ map getBenchLvl $ benchNames bnch
+                      else levels,
+               benches=if null benches
+                       then nub $ map getBenchFunc $ benchNames bnch
+                       else benches,
+               ..}
 
 -- | Takes benchmark options an a benchmark group nested as params/level/op,
 -- and prints a table comparing operations across all selected levels of Lol.
 prettyBenches :: Opts -> Benchmark-> IO ()
-prettyBenches o@Opts{..} bnch = do
+prettyBenches o bnch = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
-  let o' = o{params=[getBenchParams $ head $ benchNames bnch]}
+  let o'@OptsInternal{..} = optsToInternal o bnch
   rpts <- getReports o' bnch
   when (verb == Progress) $ putStrLn ""
   printTable o' $ reverse rpts
 
-printTable :: Opts -> [Report] -> IO ()
+printTable :: OptsInternal -> [Report] -> IO ()
 printTable _ [] = return ()
 printTable o rpts = do
   let colLbls = nub $ map (getBenchLvl . reportName) rpts
@@ -58,8 +78,8 @@ printTable o rpts = do
   putStrLn ""
 
 -- See Criterion.Internal.analyseOne
-printRow :: Opts -> [Report] -> IO ()
-printRow o@Opts{..} xs@(rpt : _) = do
+printRow :: OptsInternal -> [Report] -> IO ()
+printRow o@OptsInternal{..} xs@(rpt : _) = do
   printf (testName o) $ getBenchFunc $ reportName rpt
   let times = map getRuntime xs
       minTime = minimum times

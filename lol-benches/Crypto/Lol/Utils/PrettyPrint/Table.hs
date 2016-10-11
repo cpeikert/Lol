@@ -6,7 +6,7 @@
 module Crypto.Lol.Utils.PrettyPrint.Table
 (prettyBenches
 ,defaultOpts
-,opts
+,Opts(..)
 ,Verb(..)) where
 
 import Control.Monad (forM_, when)
@@ -22,33 +22,47 @@ import Data.List (nub, groupBy, transpose)
 import System.IO
 import Text.Printf
 
--- leave params empty to run all parameters
-opts :: Verb -> String -> [String] -> [String] -> Int -> Int -> Opts
-opts verb lvl benches params colWidth testNameWidth = Opts{levels=[lvl],redThreshold=0,..}
+
+data Opts = Opts
+  {verb          :: Verb,     -- ^ Verbosity
+   level         :: String,   -- ^ Which level of Lol to benchmark
+   benches       :: [String], -- ^ Which operations to benchmark. The empty list means run all benchmarks.
+   params        :: [String], -- ^ Which parameters to benchmark. The empty list means run all parameters.
+   colWidth      :: Int,      -- ^ Character width of data columns
+   testNameWidth :: Int}      -- ^ Character width of row labels
+
+optsToInternal :: Opts -> Benchmark -> OptsInternal
+optsToInternal Opts{..} bnch =
+  OptsInternal{params=if null params
+                      then nub $ map getBenchParams $ benchNames bnch
+                      else params,
+               levels = [level],
+               benches=if null benches
+                       then nub $ map getBenchFunc $ benchNames bnch
+                       else benches,
+               redThreshold = 0,
+               ..}
 
 -- | Runs all benchmarks with verbosity 'Progress'.
-defaultOpts :: String -> [String] -> Opts
-defaultOpts lvl benches =
+defaultOpts :: String -> Opts
+defaultOpts level =
   Opts {verb = Progress,
-        levels = [lvl],
+        benches = [],
         params = [],
-        redThreshold = 1.2,
         colWidth = 30,
         testNameWidth=20, ..}
 
 -- | Takes benchmark options an a benchmark group nested as params/level/op,
 -- and prints a table comparing operations across all selected levels of Lol.
 prettyBenches :: Opts -> Benchmark-> IO ()
-prettyBenches o@Opts{..} bnch = do
+prettyBenches o bnch = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
-  let o' = if params == []
-           then o{params=nub $ map getBenchParams $ benchNames bnch}
-           else o
+  let o'@OptsInternal{..} = optsToInternal o bnch
   rpts <- getReports o' bnch
   when (verb == Progress) $ putStrLn ""
   printTable o' $ reverse rpts
 
-printTable :: Opts -> [Report] -> IO ()
+printTable :: OptsInternal -> [Report] -> IO ()
 printTable _ [] = return ()
 printTable o rpts = do
   let colLbls = nub $ map (getBenchParams . reportName) rpts
@@ -61,8 +75,8 @@ printTable o rpts = do
   putStrLn ""
 
 -- See Criterion.Internal.analyseOne
-printRow :: Opts -> [Report] -> IO ()
-printRow o@Opts{..} xs@(rpt : _) = do
+printRow :: OptsInternal -> [Report] -> IO ()
+printRow o@OptsInternal{..} xs@(rpt : _) = do
   printf (testName o) $ getBenchFunc $ reportName rpt
   let times = map (secs . getRuntime) xs
   forM_ times (printf (col o))

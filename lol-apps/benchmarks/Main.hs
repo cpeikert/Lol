@@ -40,12 +40,11 @@ bs = [
   "mulPublic",
   "rescaleCT",
   "keySwitch",
-  "tunnel"
-    ]
+  "tunnel"]
 
 main :: IO ()
 main = do
-  let o = defaultOpts "SHE" bs
+  let o = (defaultOpts "SHE"){benches=bs}
   benchGroups <- defaultBenches (Proxy::Proxy CT) (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG)
   mapM_ (prettyBenches o) benchGroups
 

@@ -54,14 +54,14 @@ main = diagnosticMain
 
 tableMain :: IO ()
 tableMain = do
-  let opts = T.defaultOpts "UCyc" bs
+  let opts = (T.defaultOpts "UCyc"){T.benches=bs}
   g1 <- defaultBenches (Proxy::Proxy CT)
   g2 <- defaultBenches (Proxy::Proxy RT)
   mapM_ (T.prettyBenches opts) $ g1 ++ g2
 
 diagnosticMain :: IO ()
 diagnosticMain = do
-  let opts = D.defaultOpts ls bs
+  let opts = D.defaultOpts{D.levels=ls, D.benches=bs}
   b1 <- benchGroup "Single Index"
           [oneIdxBenches (Proxy::Proxy '(F64*F9*F25, Zq 14401)) (Proxy::Proxy CT) (Proxy::Proxy HashDRBG)]
   b2 <- benchGroup "Twace-Embed"
