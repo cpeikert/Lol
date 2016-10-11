@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -11,17 +12,19 @@
 
 module Crypto.Lol.Benchmarks
 (Crypto.Lol.Benchmarks.bench
+,benchM
 ,benchIO
 ,benchGroup
 ,genBenchArgs
-,Bench(..)
+,Bench
 ,Benchmark
 ,NFData
 ,addGen) where
 
+import Control.DeepSeq
+import Control.Monad.Random
 import Criterion as C
 import Crypto.Lol.Utils.GenArgs
-import Control.DeepSeq
 import Data.Proxy
 
 -- | Convenience function for benchmarks with an extra parameter.
@@ -33,7 +36,12 @@ addGen _ _ = Proxy
 bench :: NFData b => (a -> b) -> a -> Bench params
 bench f = Bench . nf f
 
--- | Wrapper for criterion's 'nfIO'
+-- | Use when you need randomness /outside/ the benchmark.
+benchM :: (forall m . (MonadRandom m) => m (Bench a)) -> Bench a
+benchM = BenchM
+
+-- | Wrapper for criterion's 'nfIO'. Use when there is randomness /inside/ the
+-- benchmark.
 benchIO :: NFData b => IO b -> Bench params
 benchIO = Bench . nfIO
 
@@ -44,12 +52,19 @@ benchGroup str = (bgroup str <$>) . sequence
 
 -- | Converts a function mapping zero or more arguments to a 'Bench' @a@
 -- by generating random inputs to the function
-genBenchArgs :: (GenArgs rnd bnch, Monad rnd, ResultOf bnch ~ Bench a)
+genBenchArgs :: (GenArgs bnch, ResultOf bnch ~ Bench a, MonadRandom rnd)
   => String -> bnch -> Proxy a -> rnd Benchmark
 genBenchArgs s f _ = (C.bench s . unbench) <$> genArgs f
 
--- | Wrapper around criterion's 'Benchmarkable', with phantom parameters.
-newtype Bench params = Bench {unbench :: Benchmarkable}
+unbench :: Bench a -> Benchmarkable
+unbench (Bench x) = x
+unbench (BenchM _) = error "cannot unbench BenchM"
 
-instance (Monad rnd) => GenArgs rnd (Bench params) where
-  genArgs = return
+-- | Wrapper around criterion's 'Benchmarkable', with phantom parameters.
+data Bench params where
+  Bench :: Benchmarkable -> Bench a
+  BenchM :: (forall m . (MonadRandom m) => m (Bench a)) -> Bench a
+
+instance GenArgs (Bench params) where
+  genArgs x@(Bench _) = return x
+  genArgs (BenchM x) = x

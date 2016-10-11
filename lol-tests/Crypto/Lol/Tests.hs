@@ -42,7 +42,7 @@ testGroupM str = TF.buildTest . (TF.testGroup str <$>) . sequence
 
 -- | Converts a function mapping zero or more arguments to a 'Test' @a@
 -- by generating random inputs to the function
-genTestArgs :: (GenArgs rnd bnch, MonadRandom rnd, ResultOf bnch ~ Test a)
+genTestArgs :: (GenArgs bnch, ResultOf bnch ~ Test a, MonadRandom rnd)
   => String -> bnch -> proxy a -> rnd TF.Test
 genTestArgs s f _ = do
   res <- genArgs f
@@ -55,5 +55,6 @@ data Test params where
   Test :: Bool -> Test params
   TestM :: (forall m . MonadRandom m => m Bool) -> Test params
 
-instance (MonadRandom rnd) => GenArgs rnd (Test params) where
+instance (ResultOf (Test params) ~ Test params)
+  => GenArgs (Test params) where
   genArgs = return

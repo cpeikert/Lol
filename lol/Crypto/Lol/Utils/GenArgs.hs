@@ -10,24 +10,13 @@ module Crypto.Lol.Utils.GenArgs where
 
 import Control.Monad.Random
 
-type family ResultOf f where
+type family ResultOf a where
   ResultOf (a -> b) = ResultOf b
   ResultOf a = a
 
 -- | Generalization of 'Testable' from QuickCheck: generates function inputs
-class GenArgs rnd fun where
-  genArgs :: fun -> rnd (ResultOf fun)
+class GenArgs fun where
+  genArgs :: (MonadRandom rnd) => fun -> rnd (ResultOf fun)
 
-instance (Generatable rnd a, GenArgs rnd b,
-          Monad rnd, ResultOf b ~ ResultOf (a -> b))
-  => GenArgs rnd (a -> b) where
-  genArgs f = do
-    x <- genArg
-    genArgs $ f x
-
--- | Similar to 'Arbitrary' from QuickCheck: generate 'arg' in monad 'rnd'
-class Generatable rnd arg where
-  genArg :: rnd arg
-
-instance {-# Overlappable #-} (Random a, MonadRandom rnd) => Generatable rnd a where
-  genArg = getRandom
+instance (Random a, GenArgs b) => GenArgs (a -> b) where
+  genArgs f = getRandom >>= (genArgs . f)

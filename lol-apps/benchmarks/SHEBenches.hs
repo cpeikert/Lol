@@ -1,16 +1,16 @@
-{-# LANGUAGE DataKinds, FlexibleContexts,
-             PolyKinds, RebindableSyntax,
-             ScopedTypeVariables, TypeFamilies,
-             TypeOperators #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
-module SHEBenches (sheBenches) where
+module SHEBenches (sheBenches, decBenches, rescaleBenches, tunnelBenches) where
 
-import Apply.SHE
-import Benchmarks hiding (hideArgs)
-import GenArgs
-import GenArgs.SHE
-import Utils
-import Params.SHEParams
+import Crypto.Lol.Benchmarks
 
 import Control.Applicative
 import Control.Monad.Random
@@ -20,101 +20,126 @@ import Crypto.Random.DRBG
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Types hiding (CT)
-import qualified Crypto.Lol.Types as CT
+import Crypto.Lol.Types.ZPP
 
-import qualified Criterion as C
+addGen5 :: Proxy gen -> Proxy '(t,m,m',zp,zq) -> Proxy '(t,m,m',zp,zq,gen)
+addGen5 _ _ = Proxy
 
-hideArgs :: forall a rnd bnch .
-  (GenArgs (StateT (Maybe (SKOf a)) rnd) bnch, Monad rnd, ShowType a,
-   ResultOf bnch ~ Bench a)
-  => bnch -> Proxy a -> rnd Benchmark
-hideArgs f p = (C.bench (showType p) . unbench) <$>
-  (evalStateT (genArgs f) (Nothing :: Maybe (SKOf a)))
+addGen6 :: Proxy gad -> Proxy '(t,m,m',zp,zq,zq') -> Proxy '(t,m,m',zp,zq,zq',gad)
+addGen6 _ _ = Proxy
 
-sheBenches :: (MonadRandom m) => m Benchmark
-sheBenches = benchGroup "SHE" [
-  {-benchGroup "encrypt"   [hideArgs bench_enc enc_param],
-  benchGroup "decrypt"   [hideArgs bench_dec dec_param],
-  benchGroup "*"         [hideArgs bench_mul dec_param],
-  benchGroup "addPublic" [hideArgs bench_addPublic dec_param],
-  benchGroup "mulPublic" [hideArgs bench_mulPublic dec_param],
-  benchGroup "rescaleCT" [hideArgs bench_rescaleCT rescale_param],
-  benchGroup "keySwitch" [hideArgs bench_keySwQ ksw_param],-}
-  benchGroup "tunnel"    [hideArgs bench_tunnel tunn_param]
-  ]
+sheBenches :: forall t m m' zp zq gen rnd . (MonadRandom rnd, _)
+  => Proxy '(m,m',zp,zq) -> Proxy gen -> Proxy t -> [rnd Benchmark]
+sheBenches _ pgen _ =
+  let ptmr = Proxy :: Proxy '(t,m,m',zp,zq)
+  in ($ ptmr) <$> [
+    genBenchArgs "encrypt"   bench_enc . addGen5 pgen,
+    genBenchArgs "*"         bench_mul,
+    genBenchArgs "addPublic" bench_addPublic,
+    genBenchArgs "mulPublic" bench_mulPublic
+    ]
 
-bench_enc :: forall t m m' z zp zq gen . (EncryptCtx t m m' z zp zq, CryptoRandomGen gen, z ~ LiftOf zp, NFElt zp, NFElt zq)
+-- zq must be Liftable
+decBenches :: forall t m m' zp zq rnd . (MonadRandom rnd, _)
+  => Proxy '(m,m',zp,zq) -> Proxy t -> [rnd Benchmark]
+decBenches _ _ =
+  let ptmr = Proxy::Proxy '(t,m,m',zp,zq)
+  in [genBenchArgs "decrypt" bench_dec ptmr]
+
+-- must be able to round from zq' to zq
+rescaleBenches :: forall t m m' zp zq zq' gad rnd . (MonadRandom rnd, _)
+  => Proxy '(m,m',zp,zq,zq') -> Proxy gad -> Proxy t -> [rnd Benchmark]
+rescaleBenches _ pgad _ =
+  let ptmr = Proxy :: Proxy '(t,m,m',zp,zq,zq')
+  in ($ ptmr) <$> [genBenchArgs "rescaleCT" bench_rescaleCT,
+                   genBenchArgs "keySwitch" bench_keySwQ . addGen6 pgad]
+
+tunnelBenches :: forall t r r' s s' zp zq gad rnd . (MonadRandom rnd, _)
+  => Proxy '(r,r',s,s',zp,zq) -> Proxy gad -> Proxy t -> [rnd Benchmark]
+tunnelBenches _ _ _ =
+  let ptmr = Proxy :: Proxy '(t,r,r',s,s',zp,zq,gad)
+  in [genBenchArgs "tunnel" bench_tunnel ptmr]
+
+
+bench_enc :: forall t m m' z zp (zq :: *) (gen :: *) . (z ~ LiftOf zp,  _)
   => SK (Cyc t m' z) -> PT (Cyc t m zp) -> Bench '(t,m,m',zp,zq,gen)
 bench_enc sk pt = benchIO $ do
   gen <- newGenIO
   return $ evalRand (encrypt sk pt :: Rand (CryptoRand gen) (CT m zp (Cyc t m' zq))) gen
 
 -- requires zq to be Liftable
-bench_dec :: (DecryptCtx t m m' z zp zq, NFElt zp)
-  => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
-bench_dec sk ct = bench (decrypt sk) ct
+bench_dec :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
+  => PT (Cyc t m zp) -> SK (Cyc t m' z) -> Bench '(t,m,m',zp,zq)
+bench_dec pt sk = benchM $ do
+  ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
+  return $ bench (decrypt sk) ct
 
-bench_mul :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq)))
-  => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
-bench_mul a = bench (*a)
+bench_mul :: forall t m m' z zp zq . (z ~ LiftOf zp, LiftOf zp ~ ModRep zp, _)
+  => PT (Cyc t m zp) -> PT (Cyc t m zp) -> SK (Cyc t m' z) -> (Bench '(t,m,m',zp,zq))
+bench_mul pta ptb sk = benchM $ do
+  a :: CT m zp (Cyc t m' zq) <- encrypt sk pta
+  b <- encrypt sk ptb
+  return $ bench (*a) b
 
-bench_addPublic :: (AddPublicCtx t m m' zp zq, NFElt zp, NFElt zq) => Cyc t m zp -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
-bench_addPublic a ct = bench (addPublic a) ct
+bench_addPublic :: forall t m m' z zp zq . (z ~ LiftOf zq, _)
+  => Cyc t m zp -> PT (Cyc t m zp) -> SK (Cyc t m' z) -> Bench '(t,m,m',zp,zq)
+bench_addPublic a pt sk = benchM $ do
+  ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
+  return $ bench (addPublic a) ct
 
-bench_mulPublic :: (MulPublicCtx t m m' zp zq, NFElt zp, NFElt zq) => Cyc t m zp -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq)
-bench_mulPublic a ct = bench (mulPublic a) ct
+bench_mulPublic :: forall t m m' z zp zq . (z ~ LiftOf zq, _)
+  => Cyc t m zp -> PT (Cyc t m zp) -> SK (Cyc t m' z) -> Bench '(t,m,m',zp,zq)
+bench_mulPublic a pt sk = benchM $ do
+  ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
+  return $ bench (mulPublic a) ct
 
-bench_rescaleCT :: forall t m m' zp zq zq' .
-  (RescaleCyc (Cyc t) zq' zq, ToSDCtx t m' zp zq', NFData (CT m zp (Cyc t m' zq)))
-  => CT m zp (Cyc t m' zq') -> Bench '(t,m,m',zp,zq,zq')
-bench_rescaleCT = bench (rescaleLinearCT :: CT m zp (Cyc t m' zq') -> CT m zp (Cyc t m' zq))
+bench_rescaleCT :: forall t m m' z zp (zq :: *) (zq' :: *) . (z ~ LiftOf zq, _)
+  => PT (Cyc t m zp) -> SK (Cyc t m' z) -> Bench '(t,m,m',zp,zq,zq')
+bench_rescaleCT pt sk = benchM $ do
+  ct <- encrypt sk pt
+  return $ bench (rescaleLinearCT :: CT m zp (Cyc t m' zq') -> CT m zp (Cyc t m' zq)) ct
 
-bench_keySwQ :: (Ring (CT m zp (Cyc t m' zq)), NFData (CT m zp (Cyc t m' zq)))
-  => KSHint m zp t m' zq gad zq' -> CT m zp (Cyc t m' zq) -> Bench '(t,m,m',zp,zq,zq',gad)
-bench_keySwQ (KeySwitch kswq) x = bench kswq $ x*x
+bench_keySwQ :: forall t m m' z zp zq (zq' :: *) (gad :: *) . (z ~ LiftOf zp, _)
+  => PT (Cyc t m zp) -> SK (Cyc t m' z) -> Bench '(t,m,m',zp,zq,zq',gad)
+bench_keySwQ pt sk = benchM $ do
+  x :: CT m zp (Cyc t m' zq) <- encrypt sk pt
+  kswq <- proxyT (keySwitchQuadCirc sk) (Proxy::Proxy (gad,zq'))
+  let y = x*x
+  return $ bench kswq y
 
-bench_tunnel :: (NFData (CT s zp (Cyc t s' zq)))
-  => Tunnel t r r' s s' zp zq gad -> CT r zp (Cyc t r' zq) -> Bench '(t,r,r',s,s',zp,zq,gad)
-bench_tunnel (Tunnel f) x = bench f x
+-- possible bug: If I enable -XPartialTypeSigs and add a ",_" to the constraint list below, GHC
+-- can't figure out that `e `Divides` s`, even when it's explicitly listed!
+bench_tunnel :: forall t e e' r r' s s' z zp zq gad .
+  (z ~ LiftOf zp,
+   TunnelCtx t e r s e' r' s' z zp zq gad,
+   e ~ FGCD r s,
+   ZPP zp, Mod zp,
+   z ~ ModRep zp,
+   r `Divides` r',
+   Fact e,
+   NFData zp,
+   CElt t (ZpOf zp))
+  => PT (Cyc t r zp) -> SK (Cyc t r' z) -> SK (Cyc t s' z) -> Bench '(t,r,r',s,s',zp,zq,gad)
+bench_tunnel pt skin skout = benchM $ do
+  x :: CT r zp (Cyc t r' zq) <- encrypt skin pt
+  let crts :: [Cyc t s zp] = proxy crtSet (Proxy::Proxy e) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
+      r = proxy totientFact (Proxy::Proxy r)
+      e = proxy totientFact (Proxy::Proxy e)
+      dim = r `div` e
+      -- only take as many crts as we need
+      -- otherwise linearDec fails
+      linf :: Linear t zp e r s = linearDec (take dim crts) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
+  hints <- proxyT (tunnelCT linf skout skin) (Proxy::Proxy gad)
+  return $ bench hints x
+
+
+-- generates a secret key with scaled variance 1.0
+instance (GenSKCtx t m' z Double) => Random (SK (Cyc t m' z)) where
+  random = runRand $ genSK (1 :: Double)
+  randomR = error "randomR not defined for SK"
+
+
 {-
-type Gens    = '[HashDRBG]
-type Gadgets = '[TrivGad, BaseBGad 2]
-type Tensors = '[CT.CT,RT]
-type MM'PQCombos =
-  '[ '(F4, F128, Zq 64, Zq 257),
-     '(F4, F128, Zq 64, Zq (257 ** 641)),
-     '(F12, F32 * F9, Zq 64, Zq 577),
-     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153)),
-     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017)),
-     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017 ** 2593)),
-     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169)),
-     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457)),
-     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337)),
-     '(F12, F32 * F9, Zq 64, Zq (577 ** 1153 ** 2017 ** 2593 ** 3169 ** 3457 ** 6337 ** 7489)),
-     '(F12, F32 * F9 * F25, Zq 64, Zq 14401),
-     '(F12, F32 * F9 * F25, Zq 64, Zq (14401 ** 21601))
-    ]
-
-type CTParams  = ( '(,) <$> Tensors) <*> MM'PQCombos
-ctParams :: Proxy CTParams
-ctParams = Proxy
-
-type DecParams = ( '(,) <$> Tensors) <*> (Nub (Filter Liftable MM'PQCombos))
-decParams :: Proxy DecParams
-decParams = Proxy
-
-type RescaleParams = ( '(,) <$> Tensors) <*> (Map AddZq (Filter NonLiftable MM'PQCombos))
-rescaleParams :: Proxy RescaleParams
-rescaleParams = Proxy
-
-type KSQParams = ( '(,) <$> Gadgets) <*> RescaleParams
-ksqParams :: Proxy KSQParams
-ksqParams = Proxy
-
-type EncParams = ( '(,) <$> Gens) <*> CTParams
-encParams :: Proxy EncParams
-encParams = Proxy
-
 -- 3144961,5241601,7338241,9959041,10483201,11531521,12579841,15200641,18869761,19393921
 type TunnParams =
   ( '(,) <$> Gadgets) <*>
