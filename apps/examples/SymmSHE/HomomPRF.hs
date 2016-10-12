@@ -83,7 +83,6 @@ treeA p@(Params a0 a1 t) x = do
           rparams = Params a0 a1 right `asTypeOf` p
           atl = treeA lparams lx
           atr = treeA rparams rx
-          -- EAC: double check next two lines
           gInvAtr = proxy (mapM decompose atr) (Proxy::Proxy gad)
       in map (sum . zipWith (*) atl . map reduce) gInvAtr
 
@@ -106,8 +105,7 @@ prop_keyHomom size = testIO $ do
       prf3' = prf1+prf2 :: [Cyc t m zp]
   return $ prf3 == prf3'
 
-
-
+-- +/-1 in every coefficient of the rounding basis
 
 
 
