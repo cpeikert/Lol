@@ -6,15 +6,16 @@ module Common where
 
 import Beacon
 
-import qualified Crypto.Lol               as Lol
-import qualified Crypto.Lol.Types.RRq     as RRq
-import           Crypto.Lol.Types.ZqBasic
+import           Crypto.Lol.Types     hiding (RRq)
+import qualified Crypto.Lol.Types.RRq as RRq
 
 import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.InstanceCont
 import Crypto.Proto.RLWE.Challenges.InstanceDisc
 import Crypto.Proto.RLWE.Challenges.InstanceRLWR
 import Crypto.Proto.RLWE.Challenges.Secret
+
+import Crypto.Random.DRBG
 
 import Control.Monad.Except
 
@@ -36,6 +37,10 @@ import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 
 type ChallengeID = Int32
 type InstanceID = Int32
+type InstDRBG = GenBuffered CtrDRBG
+
+-- | Tensor type used to generate and verify instances
+type T = CT
 
 data ChallengeU = CU !Challenge ![InstanceU]
 
@@ -82,10 +87,10 @@ readProtoType file = do
 -- | Parse the beacon time/offset used to reveal a challenge.
 parseBeaconAddr :: (MonadError String m) => Challenge -> m BeaconAddr
 parseBeaconAddr Challenge{..} = do
+  let ba = BA beaconEpoch beaconOffset
   -- validate the time and offset
-  throwErrorUnless (validBeaconAddr $ BA beaconEpoch beaconOffset)
-    "Invalid beacon address."
-  return $ BA beaconEpoch beaconOffset
+  throwErrorUnless (validBeaconAddr ba) $ "Invalid beacon address: " ++ show ba
+  return ba
 
 -- | Yield the ID of the suppressed secret for a challenge, given a
 -- beacon record and a byte offset.
@@ -146,16 +151,21 @@ maybeThrowError m str = do
   return $ fromJust m
 
 -- | Pretty printing of error messages.
-printPassFail :: (MonadIO m)
-                 => String -> String -> ExceptT String m a -> m (Maybe a)
-printPassFail str pass e = do
+printPassFailGeneric :: (MonadIO m)
+                 => Color -> String -> String -> ExceptT String m a -> m (Maybe a)
+printPassFailGeneric failColor str pass e = do
   liftIO $ putStr str
   res <- runExceptT e
   case res of
-    (Left st) -> do printANSI Red st
+    (Left st) -> do printANSI failColor st
                     return Nothing
     (Right a) -> do printANSI Green pass
                     return $ Just a
+
+printPassFail, printPassWarn :: (MonadIO m)
+  => String -> String -> ExceptT String m a -> m (Maybe a)
+printPassFail = printPassFailGeneric Red
+printPassWarn = printPassFailGeneric Yellow
 
 printANSI :: (MonadIO m) => Color -> String -> m ()
 printANSI sgr str = liftIO $ do

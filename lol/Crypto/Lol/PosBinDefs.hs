@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, CPP, DataKinds, GADTs, InstanceSigs,
-             KindSignatures, NoImplicitPrelude, PolyKinds, RankNTypes,
+             KindSignatures, PolyKinds, RankNTypes,
              RebindableSyntax, ScopedTypeVariables, TemplateHaskell,
              TypeFamilies, UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-duplicate-exports #-}
@@ -12,15 +12,13 @@
 
 module Crypto.Lol.PosBinDefs
 ( -- * Positive naturals in Peano representation
-  Pos(..), Sing(SO, SS), SPos, PosC
-, posToInt, addPos, sAddPos, AddPos, subPos, sSubPos, SubPos
-, reifyPos, reifyPosI
-, posType, posDec
+  Pos(..), Sing(SO, SS), SPos, PosC, posType, posDec
+, reifyPos, reifyPosI, posToInt, intToPos
+, addPos, sAddPos, AddPos, subPos, sSubPos, SubPos
 , OSym0, SSym0, SSym1, AddPosSym0, AddPosSym1, SubPosSym0, SubPosSym1
   -- * Positive naturals in binary representation
-, Bin(..), Sing(SB1, SD0, SD1), SBin, BinC
-, reifyBin, reifyBinI
-, binToInt, binType, binDec
+, Bin(..), Sing(SB1, SD0, SD1), SBin, BinC, binType, binDec
+, reifyBin, reifyBinI, binToInt, intToBin
 , B1Sym0, D0Sym0, D0Sym1, D1Sym0, D1Sym1
   -- * Miscellaneous
 , intDec, primes, prime
@@ -91,12 +89,26 @@ singletons [d|
 
            |]
 
+-- | Convert an integral type to a 'Pos'.
+intToPos :: ToInteger.C z => z -> Pos
+intToPos 1 = O
+intToPos x | x > 0 = S $ intToPos $ x-1
+intToPos _ = error "cannot convert non-positive value to a Pos"
+
 -- | Convert a 'Bin' to an integral type.
 {-# INLINABLE binToInt #-}
 binToInt :: ToInteger.C z => Bin -> z
 binToInt B1 = one
 binToInt (D0 a) = 2 * binToInt a
 binToInt (D1 a) = 1 + 2 * binToInt a
+
+-- | Convert an integral type to a 'Bin'.
+intToBin :: ToInteger.C z => z -> Bin
+intToBin 1 = B1
+intToBin x | x > 0 =
+  case even x of
+    True -> D0 $ intToBin $ x `div` 2
+    False -> D1 $ intToBin $ x `div` 2
 
 -- | Kind-restricted synonym for 'SingI'.
 type PosC (p :: Pos) = SingI p

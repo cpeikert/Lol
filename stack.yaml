@@ -16,7 +16,7 @@
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
 
-resolver: lts-5.15
+resolver: lts-7.0
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -50,13 +50,8 @@ extra-deps:
 
 # - aeson-0.11.2.0  # CJP: 'stack init' added this, but builds fine without
 
-- arithmoi-0.4.1.3
-- distributive-0.4.4
-- nist-beacon-0.2.0.0
 - non-negative-0.1.1
 - numeric-prelude-0.4.2
-- semigroupoids-4.3
-- storable-record-0.0.3.1
 - tagged-transformer-0.8
 
 # Override default flag values for local packages and extra-deps
@@ -80,4 +75,3 @@ extra-package-dbs: []
 # extra-lib-dirs: [/path/to/dir]
 #
 # Allow a newer minor version of GHC than the snapshot specifies
-# compiler-check: newer-minor

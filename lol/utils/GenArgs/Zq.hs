@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleContexts, FlexibleInstances, GADTs, MultiParamTypeClasses,
-             NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables,
+             RebindableSyntax, ScopedTypeVariables,
              UndecidableInstances #-}
 
 module GenArgs.Zq where

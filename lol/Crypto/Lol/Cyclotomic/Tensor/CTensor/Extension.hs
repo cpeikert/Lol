@@ -2,7 +2,6 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -13,7 +12,7 @@
 
 module Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
 ( embedPow', embedDec', embedCRT'
-, twacePowDec' -- , twaceCRT'
+, twacePowDec', twaceCRT'
 , coeffs', powBasisPow'
 , crtSetDec'
 , backpermute'
@@ -32,8 +31,7 @@ import Control.Monad.Trans (lift)
 import           Data.Maybe
 import           Data.Reflection      (reify)
 import qualified Data.Vector          as V
-import           Data.Vector.Generic  as G (Vector, generate, length, (!))
-import qualified Data.Vector.Storable as SV
+import           Data.Vector.Storable as SV
 import qualified Data.Vector.Unboxed  as U
 
 
@@ -42,19 +40,21 @@ import qualified Data.Vector.Unboxed  as U
 -- often much more efficient.
 --
 -- > backpermute <a,b,c,d> <0,3,2,3,1,0> = <a,d,c,d,b,a>
-backpermute' :: (Vector v a)
-             => U.Vector Int -- ^ @is@ index vector (of length @n@)
-             -> v a   -- ^ @xs@ value vector
-             -> v a
---{-# INLINE backpermute' #-}
-backpermute' is v = generate (G.length is) (\i -> v ! (is ! i))
+backpermute' :: (Storable a) =>
+             U.Vector Int -- ^ @is@ index vector (of length @n@)
+             -> Vector a   -- ^ @xs@ value vector
+             -> Vector a
+{-# INLINABLE backpermute' #-}
+backpermute' is v = generate (U.length is) (\i -> v ! (is U.! i))
 
-embedPow', embedDec' :: (Additive r, Vector v r, m `Divides` m')
-                     => Tagged '(m, m') (v r -> v r)
+embedPow', embedDec' :: (Additive r, Storable r, m `Divides` m')
+                     => Tagged '(m, m') (Vector r -> Vector r)
+{-# INLINABLE embedPow' #-}
+{-# INLINABLE embedDec' #-}
 -- | Embeds an vector in the powerful basis of the the mth cyclotomic ring
 -- to an vector in the powerful basis of the m'th cyclotomic ring when @m | m'@
 embedPow' = (\indices arr -> generate (U.length indices) $ \idx ->
-  let (j0,j1) = indices ! idx
+  let (j0,j1) = indices U.! idx
   in if j0 == 0
      then arr ! j1
      else zero) <$> baseIndicesPow
@@ -67,8 +67,8 @@ embedDec' = (\indices arr -> generate (U.length indices)
 
 -- | Embeds an vector in the CRT basis of the the mth cyclotomic ring
 -- to an vector in the CRT basis of the m'th cyclotomic ring when @m | m'@
-embedCRT' :: forall mon m m' v r . (CRTrans mon r, Vector v r, m `Divides` m')
-          => TaggedT '(m, m') mon (v r -> v r)
+embedCRT' :: forall mon m m' r . (CRTrans mon r, Storable r, m `Divides` m')
+          => TaggedT '(m, m') mon (Vector r -> Vector r)
 embedCRT' =
   (lift (proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r))) >>
   (pureT $ backpermute' <$> baseIndicesCRT)
@@ -76,21 +76,46 @@ embedCRT' =
 -- | maps a vector in the powerful/decoding basis, representing an
 -- O_m' element, to a vector of arrays representing O_m elements in
 -- the same type of basis
-coeffs' :: (Vector v r, m `Divides` m')
-        => Tagged '(m, m') (v r -> [v r])
+coeffs' :: (Storable r, m `Divides` m')
+        => Tagged '(m, m') (Vector r -> [Vector r])
 coeffs' = flip (\x -> V.toList . V.map (`backpermute'` x))
           <$> extIndicesCoeffs
 
 -- | The "tweaked trace" function in either the powerful or decoding
 -- basis of the m'th cyclotomic ring to the mth cyclotomic ring when
 -- @m | m'@.
-twacePowDec' :: forall m m' r v . (Vector v r, m `Divides` m')
-             => Tagged '(m, m') (v r -> v r)
+twacePowDec' :: forall m m' r . (Storable r, m `Divides` m')
+             => Tagged '(m, m') (Vector r -> Vector r)
+{-# INLINABLE twacePowDec' #-}
 twacePowDec' = backpermute' <$> extIndicesPowDec
 
+kronToVec :: forall mon m r . (Monad mon, Fact m, Ring r, Storable r)
+  => TaggedT m mon (Kron r) -> TaggedT m mon (Vector r)
+kronToVec v = do
+  vmat <- v
+  let n = proxy totientFact (Proxy::Proxy m)
+  return $ generate n (flip (indexK vmat) 0)
 
--- EAC: twaceCRT is defined in CTensor because it needs access to C-backend functions
-
+twaceCRT' :: forall mon m m' r .
+             (Storable r, CRTrans mon r, m `Divides` m')
+             => TaggedT '(m, m') mon (Vector r -> Vector r)
+{-# INLINE twaceCRT' #-}
+twaceCRT' = tagT $ do
+  g' <- proxyT (kronToVec gCRTK) (Proxy::Proxy m')
+  gInv <- proxyT (kronToVec gInvCRTK) (Proxy::Proxy m)
+  embed <- proxyT embedCRT' (Proxy::Proxy '(m,m'))
+  indices <- pure $ proxy extIndicesCRT (Proxy::Proxy '(m,m'))
+  (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m')
+  let phi = proxy totientFact (Proxy::Proxy m)
+      phi' = proxy totientFact (Proxy::Proxy m')
+      mhat = fromIntegral $ proxy valueHatFact (Proxy::Proxy m)
+      hatRatioInv = m'hatinv * mhat
+      reltot = phi' `div` phi
+      -- tweak = mhat * g' / (m'hat * g)
+      tweak = SV.map (* hatRatioInv) $ SV.zipWith (*) (embed gInv) g'
+  return $ \ arr -> -- take true trace after mul-by-tweak
+    let v = backpermute' indices (SV.zipWith (*) tweak arr)
+    in generate phi $ \i -> foldl1' (+) $ SV.unsafeSlice (i*reltot) reltot v
 
 -- | The powerful extension basis, wrt the powerful basis.
 -- Outputs a list of vectors in O_m' that are an O_m basis for O_m'
@@ -125,4 +150,4 @@ crtSetDec' =
       cosets <- partitionCosets p
       return $ LP.map (\is -> generate phi
                           (\j -> hinv * trace'
-                                      (sum $ LP.map (elt j) is))) cosets
+                                      (LP.sum $ LP.map (elt j) is))) cosets

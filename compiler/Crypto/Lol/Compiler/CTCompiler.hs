@@ -1,6 +1,6 @@
-{-# LANGUAGE NoImplicitPrelude, RebindableSyntax, FlexibleContexts, 
+{-# LANGUAGE RebindableSyntax, FlexibleContexts,
              FlexibleInstances, DataKinds, GADTs, KindSignatures, MultiParamTypeClasses,
-             ConstraintKinds, ScopedTypeVariables, RankNTypes, UndecidableInstances, 
+             ConstraintKinds, ScopedTypeVariables, RankNTypes, UndecidableInstances,
              TypeFamilies, DeriveDataTypeable, StandaloneDeriving, TypeOperators #-}
 
 -- A module to compile an AST containing CTDummy nodes to an evaluatable AST
@@ -45,7 +45,7 @@ import Data.Maybe
 import Language.Syntactic
 import Language.Syntactic.Functional hiding (Let)
 
--- this module passes over an AST and decorates 
+-- this module passes over an AST and decorates
 -- it with abstract key IDs representing the
 -- decryption key for a particular node
 
@@ -56,13 +56,13 @@ instance NFData1 IDDecor where
   rnf1 (ID p) = rnf p
 
 type InferDoms sym = (
-  CTDummyOps :<: sym, CTOps :<: sym, RING :<: sym, 
+  CTDummyOps :<: sym, CTOps :<: sym, RING :<: sym,
   ADDITIVE :<: sym, BindingT :<: sym, Let :<: sym)
 
 showIDDecor :: IDDecor a -> String
 showIDDecor (ID a) = show a
 
--- | Decorates AST nodes with a (KeyID,Int) where the KeyID maps to the dynamic key that decrypts that node 
+-- | Decorates AST nodes with a (KeyID,Int) where the KeyID maps to the dynamic key that decrypts that node
 -- and the Int is degree of the ciphertext in the key
 -- Fails if KeySwQDummy nodes don't have degree 2, and assumes that all VarT nodes have degree 1
 
@@ -99,9 +99,9 @@ genKeys' v node Nil
   | Just (VarT name) <- prj node = do
     env <- get
     case lookup name env of
-     Just (Hidden (Proxy::Proxy (sim (CT m zp (Cyc t m' zq)), sim' (CT m zp (Cyc t m' zq)))) dict) -> 
+     Just (Hidden (Proxy::Proxy (sim (CT m zp (Cyc t m' zq)), sim' (CT m zp (Cyc t m' zq)))) dict) ->
       case eqT of
-       Just (Refl :: (Proxy (sim (CT m zp (Cyc t m' zq)), sim' (CT m zp (Cyc t m' zq))) :~: (Proxy ((Typed sym) (CT m zp (Cyc t m' zq)), (Typed sym :&: IDDecor) (CT m zp (Cyc t m' zq)))))) -> 
+       Just (Refl :: (Proxy (sim (CT m zp (Cyc t m' zq)), sim' (CT m zp (Cyc t m' zq))) :~: (Proxy ((Typed sym) (CT m zp (Cyc t m' zq)), (Typed sym :&: IDDecor) (CT m zp (Cyc t m' zq)))))) ->
         case dict of
          Dict -> do
           kid <- lift $ genKeyIfNotExists (Proxy::Proxy (Cyc t m' (LiftOf zp))) v
@@ -120,7 +120,7 @@ genKeys' _ node (arg :* _ :* Nil)
 
 
 
-genKeyIfNotExists :: forall t c m z v mon . 
+genKeyIfNotExists :: forall t c m z v mon .
   (MonadState (Map TypeRep (Int, Dynamic)) mon, Typeable (Cyc t m z), Fact m,
    MonadRandom mon, ToRational v, NFData v, CElt t z, ToInteger z, CElt t Double)
   => Proxy (Cyc t m z) -> v -> mon KeyID
@@ -152,46 +152,46 @@ getNextID = do
 -- We assume that there is exactly one key for each plaintext type, and each plaintext
 -- is encrypted as a linear ciphertext, since we assume that all VarT nodes are linear
 -- ciphertexts
-encryptInput :: forall t m zp m' zq mon z . 
+encryptInput :: forall t m zp m' zq mon z .
   (EncryptCtx t m m' z zp zq, MonadRandom mon, z ~ LiftOf zp, Typeable (Cyc t m' z))
   => Map TypeRep (Int,Dynamic) -> Cyc t m zp -> mon (CT m zp (Cyc t m' zq), SK (Cyc t m' z))
-encryptInput keyMap pt = 
+encryptInput keyMap pt =
   let sk :: SK (Cyc t m' z) = fromMaybe (error "key not found!") $ fromDynamic . snd =<< lookup (typeRep (Proxy::Proxy (Cyc t m' z))) keyMap
   in liftM (\z -> (z,sk)) $ encrypt sk pt
 
 -- | returns the decryption key corresponding to the ciphertext, raised to the appropriate power
 getDecryptKey :: forall sym r zp t r' zq s zp' s' zq' z .
-  (CElt t z, Fact s', Typeable (Cyc t s' z), z ~ LiftOf zp') 
-  => Map KeyID Dynamic 
-     -> ASTF (sym :&: IDDecor) (CT r zp (Cyc t r' zq) -> CT s zp' (Cyc t s' zq')) 
+  (CElt t z, Fact s', Typeable (Cyc t s' z), z ~ LiftOf zp')
+  => Map KeyID Dynamic
+     -> ASTF (sym :&: IDDecor) (CT r zp (Cyc t r' zq) -> CT s zp' (Cyc t s' zq'))
      -> SK (Cyc t s' z)
-getDecryptKey keyMap node = 
+getDecryptKey keyMap node =
   let (kid,pow) = unKeyID $ getDecor node
       s :: SK (Cyc t s' z) = fromMaybe (error "key not found!") $ fromDynamic =<< lookup kid keyMap
   in if pow == 1 then s else error "only linear decryption keys supported in Compiler"
 
 type HintEnv = Map ((KeyID, Int), (KeyID,Int)) Dynamic
 
-hintLookup :: (MonadState HintEnv m, Typeable gad, Typeable zq, 
-               Typeable (CT r zp ((c :: Factored -> * -> *) r' zq)), Typeable (CT s zp (c s' zq))) 
-  => (KeyID, Int) -> (KeyID, Int) 
+hintLookup :: (MonadState HintEnv m, Typeable gad, Typeable zq,
+               Typeable (CT r zp ((c :: Factored -> * -> *) r' zq)), Typeable (CT s zp (c s' zq)))
+  => (KeyID, Int) -> (KeyID, Int)
      -> m (Maybe (Tagged gad (CT r zp (c r' zq) -> CT s zp (c s' zq))))
 hintLookup kids1 kids2 = liftM (fromDynamic <=< lookup (kids1, kids2)) get
 
 
 -- | The main component of the compiler. Generates auxillary information necessary to convert CTDummy
 -- nodes to evaulatable CT nodes.
-genHints :: forall v sym a m . 
-  (CTOps :<: sym, MonadRandom m, CTDummyOps :<: sym) 
+genHints :: forall v sym a m .
+  (CTOps :<: sym, MonadRandom m, CTDummyOps :<: sym)
   => Map KeyID Dynamic -> ASTF (Typed sym :&: IDDecor) a -> m (ASTF (Typed sym :&: IDDecor) a)
-genHints keyMap = flip evalStateT (M.empty :: HintEnv) . bottomUpMapM (genHints' keyMap) 
+genHints keyMap = flip evalStateT (M.empty :: HintEnv) . bottomUpMapM (genHints' keyMap)
 
-genHints' :: 
+genHints' ::
   (CTDummyOps :<: sym, CTOps :<: sym,
    MonadRandom mon, MonadState HintEnv mon)
   => Map KeyID Dynamic
-     -> (Typed sym :&: IDDecor) sig 
-     -> Args (AST (Typed sym :&: IDDecor)) sig 
+     -> (Typed sym :&: IDDecor) sig
+     -> Args (AST (Typed sym :&: IDDecor)) sig
      -> mon ((Typed sym :&: IDDecor) sig)
 genHints' keyMap (node :&: info) _
   | Just (KeySwQDummy (_ :: p gad) (_ :: p zq')) <- prj node,
@@ -215,7 +215,7 @@ swapTag = liftM tag . untagT
 
 -- a helper function that either returns a hint from the environment if available,
 -- or generates a new hint otherwise.
-maybeGenQuadHint :: forall mon gad zq' m zp t m' zq z . 
+maybeGenQuadHint :: forall mon gad zq' m zp t m' zq z .
   (MonadState HintEnv mon,
    MonadRandom mon,
    z ~ LiftOf zp,
@@ -223,10 +223,10 @@ maybeGenQuadHint :: forall mon gad zq' m zp t m' zq z .
    KeySwitchCtx gad t m' zp zq zq',
    KSHintCtx gad t m' z zq',
    NFData zq',
-   Typeable (Cyc t m' z), 
-   Typeable (CT m zp (Cyc t m' zq)), 
-   Typeable gad, Typeable zq') 
-  => Map KeyID Dynamic 
+   Typeable (Cyc t m' z),
+   Typeable (CT m zp (Cyc t m' zq)),
+   Typeable gad, Typeable zq')
+  => Map KeyID Dynamic
      -> KeyID
      -> mon (Tagged (gad,zq') (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)))
 maybeGenQuadHint keyMap kid = do
@@ -240,7 +240,7 @@ maybeGenQuadHint keyMap kid = do
       return h
 
 
-maybeGenLinHint :: forall mon gad r s zp t r' s' zq z e e' . 
+maybeGenLinHint :: forall mon gad r s zp t r' s' zq z e e' .
   (MonadState HintEnv mon,
    MonadRandom mon,
    z ~ LiftOf zp,
@@ -251,10 +251,10 @@ maybeGenLinHint :: forall mon gad r s zp t r' s' zq z e e' .
    CElt t (ZpOf zp),
    Typeable (Cyc t r' z),
    Typeable (Cyc t s' z),
-   Typeable (CT r zp (Cyc t r' zq)), 
-   Typeable (CT s zp (Cyc t s' zq)), 
-   Typeable gad, Typeable zq) 
-  => Map KeyID Dynamic 
+   Typeable (CT r zp (Cyc t r' zq)),
+   Typeable (CT s zp (Cyc t s' zq)),
+   Typeable gad, Typeable zq)
+  => Map KeyID Dynamic
      -> KeyID
      -> KeyID
      -> mon (Tagged gad (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)))
@@ -357,10 +357,10 @@ type family UnType dom where
   UnType (Typed dom) = dom
   UnType dom = dom
 
-instance (InferDoms (UnType sym), sym ~ Typed s, Typeable sym, Typeable sym', BUTCtx (CT m zp (Cyc t m' zq))) 
+instance (InferDoms (UnType sym), sym ~ Typed s, Typeable sym, Typeable sym', BUTCtx (CT m zp (Cyc t m' zq)))
   => BUT sym sym' (CT m zp (Cyc t m' zq)) where
 
-  type BUTCtx (CT m zp (Cyc t m' zq)) = 
+  type BUTCtx (CT m zp (Cyc t m' zq)) =
     (Fact m, Fact m', CElt t (LiftOf zp), ToInteger (LiftOf zp),
      Typeable (Cyc t m' (LiftOf zp)), CElt t Double)
 
@@ -382,7 +382,7 @@ instance (InferDoms (UnType sym), sym ~ Typed s, Typeable sym, Typeable sym', BU
         Just _ -> return ()
         -- insert a new variable into the environment
         Nothing -> modify $ insert v
-          (Hidden (Proxy::Proxy (sym  (CT m zp (Cyc t m' zq)), 
+          (Hidden (Proxy::Proxy (sym  (CT m zp (Cyc t m' zq)),
                                  sym' (CT m zp (Cyc t m' zq)))) Dict)
       f node Nil
   bottomUpMapM'' f ((Sym node) :$ bind :$ (lam@(lamt :$ _)))
@@ -407,7 +407,7 @@ instance (InferDoms (UnType sym), sym ~ Typed s, Typeable sym, Typeable sym', BU
            bind' <- bottomUpMapM'' f bind
            f node (bind' :* lam' :* Nil)
 
-instance (InferDoms (UnType sym), sym ~ Typed s, Typeable sym, Typeable sym', BUT sym sym' b) 
+instance (InferDoms (UnType sym), sym ~ Typed s, Typeable sym, Typeable sym', BUT sym sym' b)
   => BUT sym sym' (a -> b) where
 
   type BUTCtx (a -> b) = BUTCtx b
@@ -415,24 +415,24 @@ instance (InferDoms (UnType sym), sym ~ Typed s, Typeable sym, Typeable sym', BU
   bottomUpMapM'' f ((Sym node) :$ arg)
     | Just (LamT _) <- prj node = oneArgBU f node arg
 
-oneArgBU :: (BUT sym sym' b, BUTCtx a, MonadState Env m) 
+oneArgBU :: (BUT sym sym' b, BUTCtx a, MonadState Env m)
     => ( forall d sig . (BUTCtx d, d ~ DenResult sig) =>
             sym sig -> Args (AST sym') sig -> m (ASTF sym' d)
         )
-       -> sym (b :-> Full a) 
-       -> ASTF sym b 
+       -> sym (b :-> Full a)
+       -> ASTF sym b
        -> m (ASTF sym' a)
 oneArgBU f node arg = do
   arg' <- bottomUpMapM'' f arg
   f node (arg' :* Nil)
 
-twoArgBU :: (BUT sym sym' b, BUT sym sym' c, BUTCtx a, MonadState Env m) 
+twoArgBU :: (BUT sym sym' b, BUT sym sym' c, BUTCtx a, MonadState Env m)
     => ( forall d sig . (BUTCtx d, d ~ DenResult sig) =>
             sym sig -> Args (AST sym') sig -> m (ASTF sym' d)
         )
-       -> sym (c :-> b :-> Full a) 
+       -> sym (c :-> b :-> Full a)
        -> ASTF sym c
-       -> ASTF sym b 
+       -> ASTF sym b
        -> m (ASTF sym' a)
 twoArgBU f node arg1 arg2 = do
   arg1' <- bottomUpMapM'' f arg1

@@ -98,7 +98,7 @@ beaconoutput=$( getValue outputValue $rec )
 
 ## Now turn the signature into the output value: again SHA512
 ## echo "SHA512 of the signature"
-hashofsig=$( getValue signatureValue $rec | xxd -r -p | openssl sha512 -binary | xxd -p -u -c 128 )
+hashofsig=$( getValue signatureValue $rec | xxd -r -p | openssl dgst -sha512 -binary | xxd -p -u -c 128 )
 
 if [ "$beaconoutput" != "$hashofsig" ]; then
   cleanup

@@ -1,5 +1,5 @@
-{-# LANGUAGE KindSignatures, NoImplicitPrelude, PolyKinds, DataKinds, FlexibleInstances, RankNTypes,
-             TypeOperators, ConstraintKinds, FlexibleContexts, ScopedTypeVariables, 
+{-# LANGUAGE KindSignatures, PolyKinds, DataKinds, FlexibleInstances, RankNTypes,
+             TypeOperators, ConstraintKinds, FlexibleContexts, ScopedTypeVariables,
              MultiParamTypeClasses, TemplateHaskell, TypeFamilies, RebindableSyntax #-}
 
 module Types (
@@ -118,12 +118,12 @@ genHopRngs r lasts (s:ss) = do
   else Nothing
 
 test = genRingHopInfo 5 (2^31)
-  [128,64,32,8,4,1] 
+  [128,64,32,8,4,1]
   [1,7,7*13,5*7*13,3*5*7*13,9*5*7*13]
   [7*13,1, 1,1,1,1]
 
 genRingHopInfo :: Int -> Int -> [Int] -> [Int] -> [Int] -> IO ()
-genRingHopInfo numMods lbd rs ss pads 
+genRingHopInfo numMods lbd rs ss pads
   | length rs == length ss && length ss == length pads = do
     let hs = zipWith (*) rs ss
         listToPairs [x] = []
@@ -158,8 +158,8 @@ genRingHopInfo numMods lbd rs ss pads
     return ()
 
 printFactors :: [Int] -> IO ()
-printFactors xs = 
-  printList $ 
+printFactors xs =
+  printList $
     map ((map (\(p,e) -> fromInteger (p^(fromIntegral e)) :: Int)) . factorise . fromIntegral) xs
 
 printList :: (Show a) => [a] -> IO ()
@@ -186,7 +186,7 @@ goodQs m lower = checkVal (lower + ((m-lower) `mod` m) + 1)
                      else checkVal (v+m)
 
 totientInt :: Int -> Int
-totientInt = 
+totientInt =
   let totpp (p'',e) = let p' = fromInteger p'' in (p'-1)*p'^(fromIntegral $ e-1) :: Int
   in product . map totpp . factorise . fromIntegral
 
@@ -205,9 +205,9 @@ printType :: (Int -> String) -> (Int, [(Integer,Int)]) -> String
 printType pre (i,factors) = "type " ++ (pre i) ++ " = " ++ (printF factors)
 
 printMod :: (Int, Int) -> String
-printMod (i,q) = 
-  "data Q" ++ (show q) ++ 
-  " deriving (Typeable)\ninstance (ToInteger i) => Reflects Q" ++ 
+printMod (i,q) =
+  "data Q" ++ (show q) ++
+  " deriving (Typeable)\ninstance (ToInteger i) => Reflects Q" ++
   (show q) ++ " i where value = return " ++ (show q) ++ "\n" ++ (printZq i q)
 
 printZq :: Int -> Int -> String
@@ -223,7 +223,7 @@ twoFree :: Int -> Int
 twoFree k = head $ dropWhile (\x -> (x `mod` 2) == 0) $ iterate (\x -> x `div` 2) k
 
 crtSetSize :: Int -> Int -> Int
-crtSetSize m m' = 
+crtSetSize m m' =
   let p = 2 :: Int
       mbar = twoFree m
       m'bar = twoFree m'

@@ -5,7 +5,6 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RebindableSyntax      #-}
@@ -33,14 +32,14 @@
 module Crypto.Lol.Cyclotomic.UCyc
 (
 -- * Data types and constraints
-  UCyc, P, D, C, E, UCycEC, UCRTElt, NFElt
+  UCyc, P, D, C, E, UCycEC, UCycPC, UCRTElt, NFElt
 -- * Changing representation
 , toPow, toDec, toCRT, fmapPow, fmapDec
 , unzipPow, unzipDec, unzipCRTC, unzipCRTE
 -- * Scalars
 , scalarPow, scalarCRT
 -- * Basic operations
-, mulG, divG, gSqNorm
+, mulG, divGPow, divGDec, divGCRTC, gSqNorm
 -- * Error sampling
 , tGaussian, errorRounded, errorCoset
 -- * Inter-ring operations and values
@@ -49,14 +48,13 @@ module Crypto.Lol.Cyclotomic.UCyc
 , coeffsPow, coeffsDec, powBasis, crtSet
 ) where
 
-import Crypto.Lol.Cyclotomic.Tensor hiding (embedCRT, embedDec, embedPow,
-                                     scalarCRT, scalarPow, twaceCRT)
+import Crypto.Lol.Cyclotomic.Tensor hiding (divGDec, divGPow, embedCRT,
+                                     embedDec, embedPow, scalarCRT,
+                                     scalarPow, twaceCRT)
 
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CRTSentinel
 import qualified Crypto.Lol.Cyclotomic.Tensor      as T
-import           Crypto.Lol.Cyclotomic.Tensor.CTensor (CT)
-import           Crypto.Lol.Cyclotomic.Tensor.RepaTensor (RT)
 import           Crypto.Lol.Prelude                as LP
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.ZPP
@@ -69,7 +67,7 @@ import qualified Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative    as A
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity
+import Control.Monad.Identity (Identity(..))
 import Control.Monad.Random
 import Data.Foldable          as F
 import Data.Maybe
@@ -92,6 +90,9 @@ data E
 
 -- | Convenient synonym for either CRT representation.
 type UCycEC t m r = Either (UCyc t m E r) (UCyc t m C r)
+
+-- | Convenient synonym for random sampling.
+type UCycPC t m r = Either (UCyc t m P r) (UCyc t m C r)
 
 -- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
 -- \(\Z_q[\zeta_m]\), and \(\Q(\zeta_m)\) in an explicit
@@ -331,6 +332,7 @@ unzipCRTC :: (Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
              => UCyc t m C (a,b)
              -> (Either (UCyc t m P a) (UCyc t m C a),
                  Either (UCyc t m P b) (UCyc t m C b))
+{-# INLINABLE unzipCRTC #-}
 unzipCRTC (CRTC s v)
   = let (ac,bc) = unzipT v
         (ap,bp) = Pow *** Pow $ unzipT $ crtInvCS s v
@@ -344,6 +346,7 @@ unzipCRTE :: (Fact m, UCRTElt t (a,b), UCRTElt t a, UCRTElt t b)
              => UCyc t m E (a,b)
              -> (Either (UCyc t m P a) (UCyc t m E a),
                  Either (UCyc t m P b) (UCyc t m E b))
+{-# INLINABLE unzipCRTE #-}
 unzipCRTE (CRTE _ v)
   = let (ae,be) = unzipT v
         (a',b') = unzipT $ fmapT fromExt $ runIdentity crtInv v
@@ -354,23 +357,36 @@ unzipCRTE (CRTE _ v)
 
 -- | Multiply by the special element \(g_m\).
 mulG :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
-{-# INLINABLE mulG #-}
+{-# INLINE mulG #-}
 mulG (Pow v) = Pow $ mulGPow v
 mulG (Dec v) = Dec $ mulGDec v
 mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
 mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 
+-- Note: We do not implement divGCRTE because we can't tell whether
+-- the element is actually divisible by g when using the CRT extension
+-- basis.
+
 -- | Divide by the special element \(g_m\).
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
-divG :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
-        => UCyc t m rep r -> Maybe (UCyc t m rep r)
-{-# INLINABLE divG #-}
-divG (Pow v) = Pow <$> divGPow v
-divG (Dec v) = Dec <$> divGDec v
-divG (CRTC s v) = Just $ CRTC s $ divGCRTCS s v
-divG (CRTE s v) = Just $ CRTE s $ runIdentity divGCRT v
+divGPow :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
+        => UCyc t m P r -> Maybe (UCyc t m P r)
+{-# INLINABLE divGPow #-}
+divGPow (Pow v) = Pow <$> T.divGPow v
+
+-- | Similar to 'divGPow'.
+divGDec :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
+        => UCyc t m D r -> Maybe (UCyc t m D r)
+{-# INLINABLE divGDec #-}
+divGDec (Dec v) = Dec <$> T.divGDec v
+
+-- | Similar to 'divGPow'.
+divGCRTC :: (Fact m, UCRTElt t r)
+        => UCyc t m C r -> UCyc t m C r
+{-# INLINE divGCRTC #-}
+divGCRTC (CRTC s v) = CRTC s $ divGCRTCS s v
 
 -- | Yield the scaled squared norm of \(g_m \cdot e\) under
 -- the canonical embedding, namely,
@@ -469,8 +485,8 @@ twaceDec (Dec v) = Dec $ twacePowDec v
 -- | Twace into a subring, for the CRT basis.  (The output is an
 -- 'Either' because the subring might not support 'C'.)
 twaceCRTC :: (m `Divides` m', UCRTElt t r)
-             => UCyc t m' C r -> Either (UCyc t m P r) (UCyc t m C r)
-{-# INLINABLE twaceCRTC #-}
+             => UCyc t m' C r -> UCycPC t m r
+{-# INLINE twaceCRTC #-}
 twaceCRTC x@(CRTC s' v) =
   case crtSentinel of
     -- go to CRTC if valid for target, else go to Pow
@@ -534,9 +550,7 @@ crtSet =
 
 
 --------- Conversion methods ------------------
--- Used to be a problem in #12068. Now we can write the rules, but do they fire?
-{-# SPECIALIZE toPow :: (Fact m, UCRTElt CT r) => UCyc CT m rep r -> UCyc CT m P r #-}
-{-# SPECIALIZE toPow :: (Fact m, UCRTElt RT r) => UCyc RT m rep r -> UCyc RT m P r #-}
+
 -- | Convert to powerful-basis representation.
 toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
 {-# INLINABLE toPow #-}
@@ -653,7 +667,7 @@ instance (Random r, UCRTElt t r, Fact m) => Random (UCyc t m D r) where
   randomR _ = error "randomR non-sensical for UCyc"
 
 instance (Random r, UCRTElt t r, Fact m)
-         => Random (Either (UCyc t m P r) (UCyc t m C r)) where
+         => Random (UCycPC t m r) where
 
   -- create in CRTC basis if possible, otherwise in powerful
   random = let cons = case crtSentinel of

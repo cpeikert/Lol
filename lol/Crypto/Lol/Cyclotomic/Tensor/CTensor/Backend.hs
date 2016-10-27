@@ -31,10 +31,8 @@ module Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
 , withArray, withPtrArray
 ) where
 
-import Control.Applicative
-
 import Crypto.Lol.Prelude       as LP (Complex, PP, Proxy (..), Tagged,
-                                       map, mapM_, proxy, tag, (++))
+                                       map, mapM_, proxy, tag)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.RRq
 import Crypto.Lol.Types.ZqBasic
@@ -49,7 +47,6 @@ import           Foreign.Marshal.Array   (withArray)
 import           Foreign.Marshal.Utils   (with)
 import           Foreign.Ptr             (Ptr, castPtr, plusPtr)
 import           Foreign.Storable        (Storable (..))
-import qualified Foreign.Storable.Record as Store
 
 #if __GLASGOW_HASKELL__ >= 800
 import GHC.TypeLits -- for error message
@@ -57,7 +54,7 @@ import GHC.TypeLits -- for error message
 
 -- | Convert a list of prime powers to a suitable C representation.
 marshalFactors :: [PP] -> Vector CPP
-marshalFactors = SV.fromList . LP.map (\(p,e) -> CPP (fromIntegral p) (fromIntegral e))
+marshalFactors = SV.fromList . LP.map (\(p,e) -> (fromIntegral p, fromIntegral e))
 
 -- http://stackoverflow.com/questions/6517387/vector-vector-foo-ptr-ptr-foo-io-a-io-a
 -- | Evaluates a C function that takes an "a** ptr" on a list of Vectors.
@@ -69,24 +66,9 @@ withPtrArray v f = do
   LP.mapM_ (\(fp,_) -> touchForeignPtr fp) vs
   return res
 
+-- Note: These types need to be the same, otherwise something goes wrong on the C end...
 -- | C representation of a prime power.
-data CPP = CPP {p' :: !Int32, e' :: !Int16}
--- stolen from http://hackage.haskell.org/packages/archive/numeric-prelude/0.4.0.3/doc/html/src/Number-Complex.html#T
--- the NumericPrelude Storable instance for complex numbers
-instance Storable CPP where
-   sizeOf    = Store.sizeOf store
-   alignment = Store.alignment store
-   peek      = Store.peek store
-   poke      = Store.poke store
-
-store :: Store.Dictionary CPP
-store = Store.run $
-   liftA2 CPP
-      (Store.element p')
-      (Store.element e')
-
-instance Show CPP where
-    show (CPP p e) = "(" LP.++ show p LP.++ "," LP.++ show e LP.++ ")"
+type CPP = (Int16, Int16)
 
 instance (Storable a, Storable b)
   => Storable (a,b) where
@@ -99,10 +81,6 @@ instance (Storable a, Storable b)
   poke p (a,b) = do
     poke (castPtr p :: Ptr a) a
     poke (castPtr (plusPtr p (sizeOf a)) :: Ptr b) b
-
-
-
-
 
 data ZqB64D -- for type safety purposes
 data ComplexD
@@ -188,9 +166,9 @@ class (repr ~ CTypeOf r) => Dispatch' repr r where
   -- | Equivalent to 'Tensor's @mulGDec@.
   dmulgdec  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
   -- | Equivalent to 'Tensor's @divGPow@.
-  dginvpow  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  dginvpow  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO Int16
   -- | Equivalent to 'Tensor's @divGDec@.
-  dginvdec  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
+  dginvdec  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO Int16
   -- | Equivalent to @zipWith (*)@
   dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
 
@@ -337,12 +315,12 @@ foreign import ccall unsafe "tensorGPowC" tensorGPowC ::         Int16 -> Ptr (C
 foreign import ccall unsafe "tensorGDecR" tensorGDecR ::         Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorGDecRq" tensorGDecRq ::       Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO ()
 foreign import ccall unsafe "tensorGDecC" tensorGDecC ::         Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorGInvPowR" tensorGInvPowR ::   Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorGInvPowRq" tensorGInvPowRq :: Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO ()
-foreign import ccall unsafe "tensorGInvPowC" tensorGInvPowC ::   Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorGInvDecR" tensorGInvDecR ::   Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorGInvDecRq" tensorGInvDecRq :: Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO ()
-foreign import ccall unsafe "tensorGInvDecC" tensorGInvDecC ::   Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorGInvPowR" tensorGInvPowR ::   Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO Int16
+foreign import ccall unsafe "tensorGInvPowRq" tensorGInvPowRq :: Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO Int16
+foreign import ccall unsafe "tensorGInvPowC" tensorGInvPowC ::   Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO Int16
+foreign import ccall unsafe "tensorGInvDecR" tensorGInvDecR ::   Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO Int16
+foreign import ccall unsafe "tensorGInvDecRq" tensorGInvDecRq :: Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO Int16
+foreign import ccall unsafe "tensorGInvDecC" tensorGInvDecC ::   Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO Int16
 
 foreign import ccall unsafe "tensorCRTRq" tensorCRTRq ::         Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (ZqBasic q Int64)) -> Ptr Int64 -> IO ()
 foreign import ccall unsafe "tensorCRTC" tensorCRTC ::           Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) -> IO ()

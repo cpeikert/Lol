@@ -1,4 +1,4 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, NoImplicitPrelude,
+{-# LANGUAGE ConstraintKinds, FlexibleContexts,
              RebindableSyntax, ScopedTypeVariables #-}
 
 -- | Linear transforms and operations related to the decoding basis.

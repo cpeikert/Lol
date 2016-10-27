@@ -28,7 +28,7 @@ class Reflects a i where
   -- | Reflect the value assiated with the type @a@.
   value :: Tagged a i
 
-instance (KnownNat a, ToInteger.C i) => Reflects (a :: TL.Nat) i where
+instance (KnownNat a, Ring.C i) => Reflects (a :: TL.Nat) i where
   value = tag $ fromIntegral $ natVal (Proxy::Proxy a)
 
 {-

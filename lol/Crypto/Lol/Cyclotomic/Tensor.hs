@@ -33,7 +33,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 , Kron, indexK, gCRTK, gInvCRTK, twCRTs
 -- * Tensor indexing
 , zmsToIndexFact
-, indexInfo
+, toIndexPair, fromIndexPair, indexInfo
 , extIndicesPowDec, extIndicesCRT, extIndicesCoeffs
 , baseIndicesPow, baseIndicesDec, baseIndicesCRT
 , digitRev
@@ -174,9 +174,6 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor t where
 
   -- | Potentially optimized version of 'fmap' for types that satisfy 'TElt'.
   fmapT :: (Fact m, TElt t a, TElt t b) => (a -> b) -> t m a -> t m b
-  -- | Potentially optimized monadic 'fmap'.
-  fmapTM :: (Monad mon, Fact m, TElt t a, TElt t b)
-             => (a -> mon b) -> t m a -> mon (t m b)
 
   -- | Potentially optimized zipWith for types that satisfy 'TElt'.
   zipWithT :: (Fact m, TElt t a, TElt t b, TElt t c)
@@ -185,12 +182,6 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor t where
   -- | Potentially optimized unzip for types that satisfy 'TElt'.
   unzipT :: (Fact m, TElt t (a,b), TElt t a, TElt t b)
             => t m (a,b) -> (t m a, t m b)
-
-  {- CJP: suppressed, apparently not needed
-
-  -- | Unzip for arbitrary types.
-  unzipTUnrestricted :: (Fact m) => t m (a,b) -> (t m a, t m b)
-  -}
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
 hasCRTFuncs :: forall t m mon r . (CRTrans mon r, Tensor t, Fact m, TElt t r)
@@ -211,7 +202,7 @@ mulGCRT, divGCRT, crt, crtInv ::
 {-# INLINABLE mulGCRT #-}
 {-# INLINABLE divGCRT #-}
 {-# INLINABLE crt #-}
-{-# INLINABLE crtInv #-}
+{-# INLINE crtInv #-}
 
 -- | Multiply by \(g_m\) in the CRT basis. (This function is simply an
 -- appropriate entry from 'crtFuncs'.)
@@ -232,6 +223,7 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
 twaceCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t, m `Divides` m', TElt t r)
             => mon (t m' r -> t m r)
+{-# INLINABLE twaceCRT #-}
 twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
            (fst <$> crtExtFuncs)
@@ -379,11 +371,12 @@ zmsToIndexPP (p,_) i = let (i1,i0) = i `divMod` p
 
 -- Index correspondences for ring extensions
 
--- | Correspondences between the linear indexes into a basis of
--- \(\O_{m'}\), and pair indices into (extension basis) \(\otimes\)
--- (basis of \(\O_m\)). The work the same for Pow, Dec, and CRT bases
--- because all these bases have that factorization. The first argument is the
--- list of \((\varphi(m),\varphi(m'))\) pairs for the (merged) prime powers
+-- | Correspondences between the one-dim indexes into a basis of
+-- \(\O_{m'}\), and pair indices into [extension basis of \(
+-- \O_{m'}/\O_m \)] \(\otimes\) [basis of \(\O_m\)]. The
+-- correspondences are the same for Pow, Dec, and CRT bases because
+-- they all have such a factorization. The first argument is the list
+-- of \((\varphi(m),\varphi(m'))\) pairs for the (merged) prime powers
 -- of \(m\),\(m'\).
 toIndexPair :: [(Int,Int)] -> Int -> (Int,Int)
 fromIndexPair :: [(Int,Int)] -> (Int,Int) -> Int
@@ -413,8 +406,8 @@ indexInfo :: forall m m' . (m `Divides` m')
 indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
                 pps' = proxy ppsFact (Proxy::Proxy m')
                 mpps = mergePPs pps pps'
-                phi = totientPPs pps
-                phi' = totientPPs pps'
+                phi = proxy totientFact (Proxy::Proxy m)
+                phi' = proxy totientFact (Proxy::Proxy m')
                 tots = totients mpps
             in tag (mpps, phi, phi', tots)
 
@@ -422,6 +415,7 @@ indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
 -- the index into the powerful\/decoding basis of \(\O_{m'}\) of the
 -- \(i\)th entry of the powerful/decoding basis of \(\O_m\).
 extIndicesPowDec :: (m `Divides` m') => Tagged '(m, m') (U.Vector Int)
+{-# INLINABLE extIndicesPowDec #-}
 extIndicesPowDec = do
   (_, phi, _, tots) <- indexInfo
   return $ U.generate phi (fromIndexPair tots . (0,))
@@ -447,23 +441,22 @@ baseWrapper f = do
 -- | A lookup table for 'toIndexPair' applied to indices \([\varphi(m')]\).
 baseIndicesPow :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector (Int,Int))
+baseIndicesPow = baseWrapper (toIndexPair . totients)
+{-# INLINABLE baseIndicesPow #-}
+
 -- | A lookup table for 'baseIndexDec' applied to indices \([\varphi(m')]\).
 baseIndicesDec :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector (Maybe (Int,Bool)))
+-- this one is more complicated; requires the prime powers
+baseIndicesDec = baseWrapper baseIndexDec
+{-# INLINABLE baseIndicesDec #-}
 
 -- | Same as 'baseIndicesPow', but only includes the second component
 -- of each pair.
 baseIndicesCRT :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector Int)
-
-baseIndicesPow = baseWrapper (toIndexPair . totients)
-
--- this one is more complicated; requires the prime powers
-baseIndicesDec = baseWrapper baseIndexDec
-
 baseIndicesCRT =
   baseWrapper (\pps -> snd . toIndexPair (totients pps))
-
 
 -- | The \(i_0\)th entry of the \(i_1\)th vector is
 -- 'fromIndexPair' \((i_1,i_0)\).

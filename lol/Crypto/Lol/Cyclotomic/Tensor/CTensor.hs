@@ -6,23 +6,21 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RebindableSyntax           #-}
+{-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE RoleAnnotations            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE TypeSynonymInstances       #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
 -- | Wrapper for a C++ implementation of the 'Tensor' interface.
 
-module Crypto.Lol.Cyclotomic.Tensor.CTensor
-( CT ) where
+module Crypto.Lol.Cyclotomic.Tensor.CTensor (CT) where
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Module       as Module (C)
@@ -43,10 +41,10 @@ import Data.Maybe
 import Data.Traversable             as T
 import Data.Vector.Generic          as V (fromList, toList, unzip)
 import Data.Vector.Storable         as SV (Vector, convert, foldl',
-                                           foldl1', fromList, generate,
-                                           length, map, mapM, replicate,
+                                           fromList, generate,
+                                           length, map, replicate,
                                            replicateM, thaw, thaw, toList,
-                                           unsafeFreeze, unsafeSlice,
+                                           unsafeFreeze,
                                            unsafeWith, zipWith, (!))
 import Data.Vector.Storable.Mutable as SM hiding (replicate)
 
@@ -103,48 +101,50 @@ instance Eq r => Eq (CT m r) where
 instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
   type ProtoType (CT m (ZqBasic q Int64)) = Rq
 
-  toProto (CT (CT' xs)) =
+  toProto (CT (CT' xs')) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-        q = proxy value (Proxy::Proxy q) :: Int64
-    in Rq m (fromIntegral q) $ S.fromList $ SV.toList $ SV.map LP.lift xs
+        q = fromIntegral (proxy value (Proxy::Proxy q) :: Int64)
+        xs = S.fromList $ SV.toList $ SV.map LP.lift xs'
+    in Rq{..}
   toProto x@(ZV _) = toProto $ toCT x
 
-  fromProto (Rq m' q' xs) =
-    let m = proxy valueFact (Proxy::Proxy m) :: Int
-        q = proxy value (Proxy::Proxy q) :: Int64
+  fromProto Rq{..} =
+    let m' = proxy valueFact (Proxy::Proxy m) :: Int
+        q' = proxy value (Proxy::Proxy q) :: Int64
         n = proxy totientFact (Proxy::Proxy m)
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
-    in if m == fromIntegral m' && len == n && fromIntegral q == q'
+    in if m' == fromIntegral m && len == n && fromIntegral q' == q
        then return $ CT $ CT' $ SV.map reduce xs'
        else throwError $
             "An error occurred while reading the proto type for CT.\n\
-            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-            \Expected q=" ++ show q ++ ", got " ++ show q' ++ "."
+            \Expected m=" ++ show m' ++ ", got " ++ show m   ++ "\n\
+            \Expected n=" ++ show n  ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show q' ++ ", got " ++ show q   ++ "."
 
 instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
   type ProtoType (CT m (RRq q Double)) = Kq
 
-  toProto (CT (CT' xs)) =
+  toProto (CT (CT' xs')) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-        q = proxy value (Proxy::Proxy q) :: Double
-    in Kq m q $ S.fromList $ SV.toList $ SV.map LP.lift xs
+        q = round (proxy value (Proxy::Proxy q) :: Double)
+        xs = S.fromList $ SV.toList $ SV.map LP.lift xs'
+    in Kq{..}
   toProto x@(ZV _) = toProto $ toCT x
 
-  fromProto (Kq m' q' xs) =
-    let m = proxy valueFact (Proxy::Proxy m) :: Int
-        q = proxy value (Proxy::Proxy q) :: Double
+  fromProto Kq{..} =
+    let m' = proxy valueFact (Proxy::Proxy m) :: Int
+        q' = round (proxy value (Proxy::Proxy q) :: Double)
         n = proxy totientFact (Proxy::Proxy m)
         xs' = SV.fromList $ F.toList xs
         len = F.length xs
-    in if m == fromIntegral m' && len == n && q == q'
+    in if m' == fromIntegral m && len == n && q' == q
        then return $ CT $ CT' $ SV.map reduce xs'
        else throwError $
             "An error occurred while reading the proto type for CT.\n\
-            \Expected m=" ++ show m ++ ", got " ++ show m' ++ "\n\
-            \Expected n=" ++ show n ++ ", got " ++ show len ++ "\n\
-            \Expected q=" ++ show (round q :: Int64) ++ ", got " ++ show q' ++ "."
+            \Expected m=" ++ show m' ++ ", got " ++ show m   ++ "\n\
+            \Expected n=" ++ show n  ++ ", got " ++ show len ++ "\n\
+            \Expected q=" ++ show q' ++ ", got " ++ show q   ++ "."
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
@@ -158,12 +158,14 @@ toZV v@(ZV _) = v
 zvToCT' :: forall m r . (Storable r) => IZipVector m r -> CT' m r
 zvToCT' v = coerce (convert $ unIZipVector v :: Vector r)
 
-wrap :: (Storable r) => (CT' l r -> CT' m r) -> (CT l r -> CT m r)
+wrap :: (Storable s, Storable r) => (CT' l s -> CT' m r) -> (CT l s -> CT m r)
+{-# INLINABLE wrap #-}
 wrap f (CT v) = CT $ f v
 wrap f (ZV v) = CT $ f $ zvToCT' v
 
-wrapM :: (Storable r, Monad mon) => (CT' l r -> mon (CT' m r))
-         -> (CT l r -> mon (CT m r))
+wrapM :: (Storable s, Storable r, Monad mon) => (CT' l s -> mon (CT' m r))
+         -> (CT l s -> mon (CT m r))
+{-# INLINABLE wrapM #-}
 wrapM f (CT v) = CT <$> f v
 wrapM f (ZV v) = CT <$> f (zvToCT' v)
 
@@ -247,15 +249,14 @@ instance Tensor CT where
 
   scalarPow = CT . scalarPow' -- Vector code
 
-  l = wrap $ untag $ basicDispatch dl
-  lInv = wrap $ untag $ basicDispatch dlinv
+  l = wrap $ basicDispatch dl
+  lInv = wrap $ basicDispatch dlinv
 
-  mulGPow = wrap mulGPow'
-  mulGDec = wrap $ untag $ basicDispatch dmulgdec
+  mulGPow = wrap $ basicDispatch dmulgpow
+  mulGDec = wrap $ basicDispatch dmulgdec
 
-  divGPow = wrapM divGPow'
-  -- we divide by p in the C code (for divGDec only(?)), do NOT call checkDiv!
-  divGDec = wrapM $ Just . untag (basicDispatch dginvdec)
+  divGPow = wrapM $ dispatchGInv dginvpow
+  divGDec = wrapM $ dispatchGInv dginvdec
 
   crtFuncs = (,,,,) <$>
     return (CT . repl) <*>
@@ -284,17 +285,16 @@ instance Tensor CT where
 
   crtSetDec = (CT <$>) <$> coerceBasis crtSetDec'
 
-  fmapT f (CT v) = CT $ coerce (SV.map f) v
-  fmapT f v@(ZV _) = fmapT f $ toCT v
+  fmapT f = wrap $ coerce (SV.map f)
 
-  fmapTM f (CT (CT' v)) = (CT . CT') <$> SV.mapM f v
-  fmapTM f v@(ZV _) = fmapTM f $ toCT v
+  zipWithT f v1' v2' =
+    let (CT (CT' v1)) = toCT v1'
+        (CT (CT' v2)) = toCT v2'
+    in CT $ CT' $ SV.zipWith f v1 v2
 
-  zipWithT f (CT (CT' v1)) (CT (CT' v2)) = CT $ CT' $ SV.zipWith f v1 v2
-  zipWithT f v1 v2 = zipWithT f (toCT v1) (toCT v2)
-
-  unzipT (CT (CT' v)) = (CT . CT') *** (CT . CT') $ unzip v
-  unzipT v = unzipT $ toCT v
+  unzipT v =
+    let (CT (CT' x)) = toCT v
+    in (CT . CT') *** (CT . CT') $ unzip x
 
   {-# INLINABLE entailIndexT #-}
   {-# INLINABLE entailEqT #-}
@@ -315,15 +315,13 @@ instance Tensor CT where
   {-# INLINABLE embedDec #-}
   {-# INLINABLE tGaussianDec #-}
   {-# INLINABLE gSqNormDec #-}
-  {-# INLINABLE crtExtFuncs #-}
+  {-# INLINE crtExtFuncs #-}
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
   {-# INLINABLE crtSetDec #-}
   {-# INLINABLE fmapT #-}
-  {-# INLINABLE fmapTM #-}
-  {-# INLINABLE zipWithT #-}
-  {-# INLINABLE unzipT #-}
-
+  {-# INLINE zipWithT #-}
+  {-# INLINE unzipT #-}
 
 coerceTw :: (Functor mon) => TaggedT '(m, m') mon (Vector r -> Vector r) -> mon (CT' m' r -> CT' m r)
 coerceTw = (coerce <$>) . untagT
@@ -341,12 +339,21 @@ coerceCoeffs = coerce
 coerceBasis :: Tagged '(m,m') [Vector r] -> Tagged m [CT' m' r]
 coerceBasis = coerce
 
-mulGPow' :: (TElt CT r, Fact m) => CT' m r -> CT' m r
-mulGPow' = untag $ basicDispatch dmulgpow
-
-divGPow' :: (TElt CT r, Fact m, IntegralDomain r, ZeroTestable r)
-            => CT' m r -> Maybe (CT' m r)
-divGPow' = untag $ checkDiv $ basicDispatch dginvpow
+dispatchGInv :: forall m r . (Storable r, Fact m)
+             => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO Int16)
+                 -> CT' m r -> Maybe (CT' m r)
+dispatchGInv f =
+  let factors = proxy (marshalFactors <$> ppsFact) (Proxy::Proxy m)
+      totm = proxy (fromIntegral <$> totientFact) (Proxy::Proxy m)
+      numFacts = fromIntegral $ SV.length factors
+  in \(CT' x) -> unsafePerformIO $ do
+    yout <- SV.thaw x
+    ret <- SM.unsafeWith yout (\pout ->
+             SV.unsafeWith factors (\pfac ->
+               f pout totm pfac numFacts))
+    if ret /= 0
+    then Just . CT' <$> unsafeFreeze yout
+    else return Nothing
 
 withBasicArgs :: forall m r . (Fact m, Storable r)
   => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
@@ -364,8 +371,8 @@ withBasicArgs f =
 
 basicDispatch :: (Storable r, Fact m)
                  => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
-                     -> Tagged m (CT' m r -> CT' m r)
-basicDispatch f = return $ unsafePerformIO . withBasicArgs f
+                     -> CT' m r -> CT' m r
+basicDispatch f = unsafePerformIO . withBasicArgs f
 
 gSqNormDec' :: (Storable r, Fact m, Dispatch r)
                => Tagged m (CT' m r -> r)
@@ -387,19 +394,6 @@ ctCRTInv = do
   return $ \x -> unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinv ruptr))
 
-checkDiv :: (Storable r, IntegralDomain r, ZeroTestable r, Fact m)
-    => Tagged m (CT' m r -> CT' m r) -> Tagged m (CT' m r -> Maybe (CT' m r))
-checkDiv f = do
-  f' <- f
-  oddRad' <- fromIntegral <$> oddRadicalFact
-  return $ \x ->
-    let (CT' y) = f' x
-    in CT' <$> SV.mapM (`divIfDivis` oddRad') y
-
-divIfDivis :: (IntegralDomain r, ZeroTestable r) => r -> r -> Maybe r
-divIfDivis num den = let (q,r) = num `divMod` den
-                     in if isZero r then Just q else Nothing
-
 cZipDispatch :: (Storable r, Fact m)
   => (Ptr r -> Ptr r -> Int64 -> IO ())
      -> Tagged m (CT' m r -> CT' m r -> CT' m r)
@@ -418,11 +412,12 @@ cDispatchGaussian :: forall m r var rnd .
          => var -> rnd (CT' m r)
 cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   -- get rus for (Complex r)
-  ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) ruInv
+  -- takes ru (not ruInv) to match RT
+  ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) ru
   totm <- pureT totientFact
-  m <- pureT valueFact
+  mval <- pureT valueFact
   rad <- pureT radicalFact
-  yin <- T.lift $ realGaussians (var * fromIntegral (m `div` rad)) totm
+  yin <- T.lift $ realGaussians (var * fromIntegral (mval `div` rad)) totm
   return $ unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdec ruptr) (CT' yin))
 
@@ -497,25 +492,3 @@ gCRT, gInvCRT :: (Storable r, CRTrans mon r, Fact m)
                  => mon (CT' m r)
 gCRT = wrapVector gCRTK
 gInvCRT = wrapVector gInvCRTK
-
--- we can't put this in Extension with the rest of the twace/embed
--- functions because it needs access to the C backend
-twaceCRT' :: forall mon m m' r .
-             (TElt CT r, CRTrans mon r, m `Divides` m')
-             => TaggedT '(m, m') mon (Vector r -> Vector r)
-twaceCRT' = tagT $ do
-  (CT' g') :: CT' m' r <- gCRT
-  (CT' gInv) :: CT' m r <- gInvCRT
-  embed <- proxyT embedCRT' (Proxy::Proxy '(m,m'))
-  indices <- pure $ proxy extIndicesCRT (Proxy::Proxy '(m,m'))
-  (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m')
-  let phi = proxy totientFact (Proxy::Proxy m)
-      phi' = proxy totientFact (Proxy::Proxy m')
-      mhat = fromIntegral $ proxy valueHatFact (Proxy::Proxy m)
-      hatRatioInv = m'hatinv * mhat
-      reltot = phi' `div` phi
-      -- tweak = mhat * g' / (m'hat * g)
-      tweak = SV.map (* hatRatioInv) $ SV.zipWith (*) (embed gInv) g'
-  return $ \ arr -> -- take true trace after mul-by-tweak
-    let v = backpermute' indices (SV.zipWith (*) tweak arr)
-    in generate phi $ \i -> foldl1' (+) $ SV.unsafeSlice (i*reltot) reltot v

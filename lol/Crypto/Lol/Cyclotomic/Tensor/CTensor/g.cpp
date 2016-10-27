@@ -99,12 +99,11 @@ template <typename ring> void gInvDec (ring* y, hShort_t tupSize, hDim_t lts, hD
       }
       ring rp;
       rp = p;
-      ring acc = lastOut / rp;
-      ASSERT ((acc * rp) == lastOut);  // this line asserts that lastOut % p == 0, without calling % operator
+      ring acc = lastOut;
       for (i = p-2; i > 0; --i) {
         hDim_t idx = tensorOffset + i*rts;
         ring tmp = acc;
-        acc -= y[idx*tupSize]; // we already divided acc by p, do not multiply y[idx] by p
+        acc -= y[idx*tupSize]*rp;
         y[idx*tupSize] = tmp;
       }
       y[tensorOffset*tupSize] = acc;
@@ -144,34 +143,120 @@ extern "C" void tensorGDecC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExp
   tensorFuserPrime (y, tupSize, gDec, totm, peArr, sizeOfPE, (hInt_t*)0);
 }
 
-extern "C" void tensorGInvPowR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
-{
-  tensorFuserPrime (y, tupSize, gInvPow, totm, peArr, sizeOfPE, (hInt_t*)0);
+hInt_t oddRad(PrimeExponent* peArr, hShort_t sizeOfPE) {
+  hInt_t oddrad;
+  oddrad = 1;
+  for(int i = 0; i < sizeOfPE; i++) {
+    hShort_t p = peArr[i].prime;
+    if (p != 2) {
+      oddrad *= peArr[i].prime;
+    }
+  }
+  return oddrad;
 }
 
-extern "C" void tensorGInvPowRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
+extern "C" hShort_t tensorGInvPowR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+{
+  tensorFuserPrime (y, tupSize, gInvPow, totm, peArr, sizeOfPE, (hInt_t*)0);
+
+  hInt_t oddrad = oddRad(peArr, sizeOfPE);
+
+  for(int i = 0; i < tupSize*totm; i++) {
+    if (y[i] % oddrad) {
+      y[i] /= oddrad;
+    }
+    else {
+      return 0;
+    }
+  }
+  return 1;
+}
+
+extern "C" hShort_t tensorGInvPowRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
   tensorFuserPrime (y, tupSize, gInvPow, totm, peArr, sizeOfPE, qs);
+
+  hInt_t oddrad = oddRad(peArr, sizeOfPE);
+
+  for(int i = 0; i < tupSize; i++) {
+    Zq::q = qs[i]; // global update
+    hInt_t ori = reciprocal(Zq::q, oddrad);
+    Zq oddradInv;
+    oddradInv = ori;
+    if (ori == 0) {
+      return 0; // error condition
+    }
+    for(hDim_t j = 0; j < totm; j++) {
+      y[j*tupSize+i] *= oddradInv;
+    }
+  }
+
   canonicalizeZq(y,tupSize,totm,qs);
+  return 1;
 }
 
-extern "C" void tensorGInvPowC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" hShort_t tensorGInvPowC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
   tensorFuserPrime (y, tupSize, gInvPow, totm, peArr, sizeOfPE, (hInt_t*)0);
+
+  hInt_t oddrad = oddRad(peArr, sizeOfPE);
+  Complex oddradInv;
+  oddradInv = 1 / oddrad;
+  for(int i = 0; i < tupSize*totm; i++) {
+    y[i] *= oddradInv;
+  }
+  return 1;
 }
 
-extern "C" void tensorGInvDecR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" hShort_t tensorGInvDecR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
   tensorFuserPrime (y, tupSize, gInvDec, totm, peArr, sizeOfPE, (hInt_t*)0);
+
+  hInt_t oddrad = oddRad(peArr, sizeOfPE);
+
+  for(int i = 0; i < tupSize*totm; i++) {
+    if (y[i] % oddrad) {
+      y[i] /= oddrad;
+    }
+    else {
+      return 0;
+    }
+  }
+  return 1;
 }
 
-extern "C" void tensorGInvDecRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
+extern "C" hShort_t tensorGInvDecRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
 {
   tensorFuserPrime (y, tupSize, gInvDec, totm, peArr, sizeOfPE, qs);
+
+  hInt_t oddrad = oddRad(peArr, sizeOfPE);
+
+  for(int i = 0; i < tupSize; i++) {
+    Zq::q = qs[i]; // global update
+    hInt_t ori = reciprocal(Zq::q, oddrad);
+    Zq oddradInv;
+    oddradInv = ori;
+    if (ori == 0) {
+      return 0; // error condition
+    }
+    for(hDim_t j = 0; j < totm; j++) {
+      y[j*tupSize+i] *= oddradInv;
+    }
+  }
+
   canonicalizeZq(y,tupSize,totm,qs);
+  return 1;
 }
 
-extern "C" void tensorGInvDecC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" hShort_t tensorGInvDecC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
   tensorFuserPrime (y, tupSize, gInvDec, totm, peArr, sizeOfPE, (hInt_t*)0);
+
+  hInt_t oddrad = oddRad(peArr, sizeOfPE);
+  Complex oddradInv;
+  oddradInv = 1 / oddrad;
+  for(int i = 0; i < tupSize*totm; i++) {
+    y[i] *= oddradInv;
+  }
+  return 1;
 }

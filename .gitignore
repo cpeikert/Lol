@@ -1,10 +1,13 @@
 reprof.py
 .ghci
 ghci
-lol.sublime-project
-lol.sublime-workspace
+*.sublime-project
+*.sublime-workspace
+cabal.project
+cabal.project.local
 cabal.sandbox.config
 dist
+dist-newstyle
 sandbox-init
 sandbox-reset
 rebuild-proto
@@ -15,7 +18,7 @@ rebuild-proto
 **/configure
 **/.stack-work
 **/dist
-**/rlwe-challenges
+**/challenges
 **/rlwe-secrets.tar.gz
 **/rlwe-challenges.*
 
@@ -29,3 +32,4 @@ blockchaintest*
 test*
 metriculator.sh
 clean-benches.sh
+params

@@ -1,5 +1,5 @@
 {-# LANGUAGE ConstraintKinds, FlexibleContexts, MultiParamTypeClasses,
-             NoImplicitPrelude, RebindableSyntax, ScopedTypeVariables #-}
+             RebindableSyntax, ScopedTypeVariables #-}
 
 -- | Functions and types for working with discretized ring-LWE samples.
 
@@ -39,7 +39,7 @@ errorTerm s = let s' = adviseCRT s
 
 -- | The 'gSqNorm' of the error term of an RLWE sample, given the
 -- purported secret.
-errorGSqNorm :: (RLWECtx t m zq, Ring (LiftOf zq))
+errorGSqNorm :: (RLWECtx t m zq)
                 => Cyc t m zq -> Sample t m zq -> LiftOf zq
 {-# INLINABLE errorGSqNorm #-}
 errorGSqNorm s = gSqNorm . errorTerm s
