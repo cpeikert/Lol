@@ -9,23 +9,22 @@
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad.Random hiding (fromList)
-import Control.Monad.State
+import Control.Monad.State hiding (state)
 
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Types
 
-import Data.Int
-
 import MathObj.Matrix hiding (zipWith)
 
 type Zq q = ZqBasic q Int64
 type Cyclo m q = Cyc CT m (Zq q)
+type Gad = BaseBGad 2
 
 main :: IO ()
 main = do
-  family :: PRFFamily (BaseBGad 2) (Cyclo F32 257) (Cyclo F32 32) <- randomFamily 10 -- works on 10-bit input
+  family :: PRFFamily Gad (Cyclo F32 257) (Cyclo F32 32) <- randomFamily 10 -- works on 10-bit input
   s <- getRandom
   let state = prfState family Nothing --initialize with input 0
       prf = ringPRFM s
@@ -40,7 +39,7 @@ main2 = do
       gadLen = 9
   a0 <- fromList n (n*gadLen) <$> take (gadLen*n*n) <$> getRandoms
   a1 <- fromList n (n*gadLen) <$> take (gadLen*n) <$> getRandoms
-  let family = makeFamily a0 a1 t :: PRFFamily (BaseBGad 2) (Zq 257) (Zq 32)
+  let family = makeFamily a0 a1 t :: PRFFamily Gad (Zq 257) (Zq 32)
   s <- fromList 1 n <$> take n <$> getRandoms
   let state = prfState family Nothing -- initialize with input 0
       prf x = latticePRFM s x

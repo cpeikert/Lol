@@ -17,7 +17,7 @@ import MathObj.Matrix
 
 import Tests
 import qualified Test.Framework as TF
-
+{-
 sheTests :: forall t m zp zq gad rnd . (MonadRandom rnd, _)
   => Proxy '(m,zp,zq,gad) -> Proxy t -> [rnd TF.Test]
 sheTests _ _ =
@@ -25,11 +25,11 @@ sheTests _ _ =
   in ($ ptmr) <$> [
    genTestArgs "PRF_3bits" (prop_KeyHomom 3),
    genTestArgs "PRF_5bits" (prop_KeyHomom 5)]
-
+-}
 -- +/-1 in every coefficient of the rounding basis
-prop_KeyHomom :: forall t m zp zq gad . (Fact m, CElt t zq, CElt t zp, _)
+prop_keyHomom :: forall t m zp zq gad . (Fact m, CElt t zq, CElt t zp, _)
   => Int -> Test '(t,m,zp,zq,gad)
-prop_KeyHomom size = testIO $ do
+prop_keyHomom size = testIO $ do
   family :: PRFFamily gad (Cyc t m zq) (Cyc t m zp) <- randomFamily size
   s1 <- getRandom
   s2 <- getRandom
