@@ -116,27 +116,27 @@ evalTree y (PRFState gad a0 a1 t) =
 -- | Equation (2.3) in [BP14]
 latticePRF :: (Rescale zq zp)
   => Matrix zq -> Int -> PRFState zq zp -> (Matrix zp, PRFState zq zp)
-latticePRF s x state@(PRFState _ a0 _ _)
+latticePRF s x state1@(PRFState _ a0 _ _)
   | numRows s /= 1 = error "Secret key must have one row."
   | numColumns s /= numRows a0 = error $ "Secret key has " ++
      show (numColumns s) ++ " columns, but a0 has " ++ show (numRows a0) ++ " rows."
-  | otherwise = let (res,state') = evalTree x state
-                in (rescale <$> s*res, state')
+  | otherwise = let (res,state2) = evalTree x state1
+                in (rescale <$> s*res, state2)
 
-latticePRFM :: (Monad mon, Rescale zq zp)
-  => Matrix zq -> Int -> StateT (PRFState zq zp) mon (Matrix zp)
-latticePRFM s x = StateT $ return . latticePRF s x
+latticePRFM :: (MonadState (PRFState zq zp) mon, Rescale zq zp)
+  => Matrix zq -> Int -> mon (Matrix zp)
+latticePRFM s x = state $ latticePRF s x
 
 -- | Equation (2.10) in [BP14].
 ringPRF :: (Fact m, RescaleCyc (Cyc t) zq zp, Ring rq, rq ~ Cyc t m zq, rp ~ Cyc t m zp)
     => rq -> Int -> PRFState rq rp -> (Matrix rp, PRFState rq rp)
-ringPRF s x state =
-  let (res,state') = evalTree x state
-  in ((rescalePow . (s*)) <$> res, state')
+ringPRF s x state1 =
+  let (res,state2) = evalTree x state1
+  in ((rescalePow . (s*)) <$> res, state2)
 
-ringPRFM :: (Monad mon, Fact m, RescaleCyc (Cyc t) zq zp, Ring rq, rq ~ Cyc t m zq, rp ~ Cyc t m zp)
-  => rq -> Int -> StateT (PRFState rq rp) mon (Matrix rp)
-ringPRFM s x = StateT $ return . ringPRF s x
+ringPRFM :: (MonadState (PRFState rq rp) mon, Fact m, RescaleCyc (Cyc t) zq zp, Ring rq, rq ~ Cyc t m zq, rp ~ Cyc t m zp)
+  => rq -> Int -> mon (Matrix rp)
+ringPRFM s x = state $ ringPRF s x
 
 -- | Multiply two matrices as given in the
 -- | "otherwise" case of Equation (2.9) in [BP14].
