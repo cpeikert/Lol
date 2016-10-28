@@ -17,6 +17,7 @@ module Crypto.Lol.Applications.KeyHomomorphicPRF
 
 import Control.Applicative ((<$>))
 import Control.Monad.Random hiding (fromList)
+import Control.Monad.State
 
 import Crypto.Lol
 
@@ -124,7 +125,7 @@ latticePRF s x state@(PRFState _ a0 _ _)
 
 latticePRFM :: (Monad mon, Rescale zq zp)
   => Matrix zq -> Int -> StateT (PRFState zq zp) mon (Matrix zp)
-latticePRFM s x = StateT $ return . ringPRF s x
+latticePRFM s x = StateT $ return . latticePRF s x
 
 -- | Equation (2.10) in [BP14].
 ringPRF :: (Fact m, RescaleCyc (Cyc t) zq zp, Ring rq, rq ~ Cyc t m zq, rp ~ Cyc t m zp)
