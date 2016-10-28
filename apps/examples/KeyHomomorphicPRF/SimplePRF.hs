@@ -1,47 +1,48 @@
-{-# LANGUAGE DataKinds, NoImplicitPrelude #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+
+import Control.Applicative
+import Control.DeepSeq
+import Control.Monad.Random hiding (fromList)
+import Control.Monad.State
 
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
+import Crypto.Lol.Cyclotomic.UCyc
+import Crypto.Lol.Types
 
-import MathObj.Matrix
+import Data.Int
+
+import MathObj.Matrix hiding (zipWith)
+
+type Zq q = ZqBasic q Int64
+type Cyclo m q = Cyc CT m (Zq q)
 
 main :: IO ()
 main = do
-  let (actual1, actual2) = untag $ testComputePRF
-      expected1 = fromList 1 4 (fmap fromInteger [2,2,4,2])
-      expected2 = fromList 1 4 (fmap fromInteger [2,2,2,2])
+  family :: PRFFamily (BaseBGad 2) (Cyclo F32 257) (Cyclo F32 32) <- randomFamily 10 -- works on 10-bit input
+  s <- getRandom
+  let state = prfState family Nothing --initialize with input 0
+      prf = ringPRFM s
+      res = map rows $ flip evalState state $ mapM prf [0,1,3,2,6,7,5,4] -- grey code
+  res `deepseq` print "done"
 
-  print $ "Test1: " ++ (show $ actual1 == expected1)
-  print $ "Test2: " ++ (show $ actual2 == expected2)
-
--- | Returns a tagged tuple of matrices.
--- | The first matrix is the result of computePRF after the initial augmentation.
--- | The second matrix is the result of computePRF after flipping a bit.
-testComputePRF :: Tagged (BaseBGad 2)
-  (Matrix (ZqBasic 5 Int), (Matrix (ZqBasic 5 Int)))
-testComputePRF = do
-      -- Define the base vectors and the desired ring.
-      -- The compiler will infer the ring after it is defined once.
-  let a0 = fromList 1 4 (fmap fromInteger [7,12,3,7] :: [ZqBasic 13 Int])
-      a1 = fromList 1 4 (fmap fromInteger [2,11,6,10])
-      -- Define the topology of the full tree.
-      -- Note that, in this case, |t| = 4.
-      t = Internal 3 1 ()
-            (Internal 1 2 ()
-              (Leaf () ())
-              (Internal 1 1 ()
-                (Leaf () ())
-                (Leaf () ())
-              )
-            )
-            (Leaf () ())
-      -- Define a bitstring of length |t|.
-      bits = [False, False, True, False]
-      -- Define the secret s.
-      s = fromInteger 9
-  -- Augment the tree with bits and then the base vectors.
-  at <- augmentVector a0 a1 $ augmentBS t bits
-  -- Flip the bit of a leaf on the tree and recalculate
-  -- the vectors of the affected nodes.
-  ft <- flipBit a0 a1 2 at
-  return $ (computePRF at s, computePRF ft s)
+main2 :: IO ()
+main2 = do
+  let n = 3 -- 3 rows/matrix
+      k = 10 -- 10 bit input
+      t = balancedTree k
+      gadLen = 9
+  a0 <- fromList n (n*gadLen) <$> take (gadLen*n*n) <$> getRandoms
+  a1 <- fromList n (n*gadLen) <$> take (gadLen*n) <$> getRandoms
+  let family = makeFamily a0 a1 t :: PRFFamily (BaseBGad 2) (Zq 257) (Zq 32)
+  s <- fromList 1 n <$> take n <$> getRandoms
+  let state = prfState family Nothing -- initialize with input 0
+      prf x = latticePRFM s x
+      res = map rows $ flip evalState state $ mapM prf [0,1,3,2,6,7,5,4] -- grey code
+  print res
