@@ -13,6 +13,7 @@ module Crypto.Lol.Applications.KeyHomomorphicPRF
 ,PRFState, prfState
 ,latticePRF, latticePRFM
 ,ringPRF, ringPRFM
+,evalTree
 ) where
 
 import Control.Applicative ((<$>))
