@@ -6,6 +6,8 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
 
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
 import Control.DeepSeq
 import Control.Monad.Random
 import Control.Monad.Reader

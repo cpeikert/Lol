@@ -69,7 +69,7 @@ prfState p@(Params a0 a1 t) initInput =
       inputGuard = input >= 0 && input < 2^treelen
       pgad = Proxy::Proxy gad
   in if inputGuard
-     then PRFState pgad a0 a1 $ snd $ buildDecTree pgad input p
+     then PRFState pgad a0 a1 $ buildDecTree pgad input p
      else
        error $ "prfState: Input tree has " ++ show treelen ++
          " leaves, but input " ++ show input ++ " has " ++
@@ -86,7 +86,7 @@ combineNodes go pgad x ltree rtree numRightLeaves =
 
 -- given validated parameters, constructs a decorated tree with the given input
 buildDecTree :: (Decompose gad rq)
-  => Proxy gad -> Int -> PRFFamily gad rq rp -> (Matrix rq, DecoratedTree rq)
+  => Proxy gad -> Int -> PRFFamily gad rq rp -> DecoratedTree rq
 buildDecTree pgad y (Params a0 a1 t) =
   let getNumLeaves L = 1
       getNumLeaves (I i _ _) = i
@@ -95,7 +95,7 @@ buildDecTree pgad y (Params a0 a1 t) =
       go i (I numLeaves ltree rtree) =
         let (val, ltree', rtree') = combineNodes go pgad i ltree rtree (getNumLeaves rtree)
         in (val, DI numLeaves i val ltree' rtree')
-  in go y t
+  in snd $ go y t
 
 -- EAC: an optional time-space tradeoff: store the decomposed right tree
 -- so that if only the left tree changes, we don't have to re-decompose

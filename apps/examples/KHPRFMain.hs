@@ -25,10 +25,10 @@ type Gad = BaseBGad 2
 main :: IO ()
 main = do
   family :: PRFFamily Gad (Cyclo F32 257) (Cyclo F32 32) <- randomFamily 10 -- works on 10-bit input
-  s <- getRandom
-  let state = prfState family Nothing --initialize with input 0
+  s <- getRandom                                                            -- prf seed
+  let state = prfState family Nothing                                       -- initialize with input 0
       prf = ringPRFM s
-      res = map rows $ flip evalState state $ mapM prf [0,1,3,2,6,7,5,4] -- grey code
+      res = map rows $ flip evalState state $ mapM prf [0,1,3,2,6,7,5,4]    -- grey code
   res `deepseq` print "done"
 
 main2 :: IO ()
