@@ -26,6 +26,11 @@ import Test.Framework
 infixr 9 **
 data a ** b
 
+defaultTestMain :: Proxy t -> IO ()
+defaultTestMain =
+  flip defaultMainWithArgs
+    ["--threads=1","--maximum-generated-tests=100"] . defaultTests
+
 type family Zq (a :: k) :: * where
   Zq (a ** b) = (Zq a, Zq b)
   Zq q = (ZqBasic q Int64)

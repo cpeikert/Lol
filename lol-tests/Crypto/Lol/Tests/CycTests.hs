@@ -11,7 +11,7 @@
 
 -- | Tests for the 'Cyc' interface.
 
-module Crypto.Lol.Tests.CycTests (cycTests1, cycTests2) where
+module Crypto.Lol.Tests.CycTests where
 
 import Control.Applicative
 import Control.Monad (liftM2,join)

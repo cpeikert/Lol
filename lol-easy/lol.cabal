@@ -1,4 +1,4 @@
-name:                lol-core
+name:                lol
 -- The package version.  See the Haskell package versioning policy (PVP)
 -- for standards guiding when and how versions should be incremented.
 -- http://www.haskell.org/haskellwiki/Package_versioning_policy
@@ -126,3 +126,24 @@ library
     vector-th-unbox >= 0.2.1.0 && < 0.3
 
   other-extensions: TemplateHaskell
+
+Benchmark bench-lol-cpp
+  type:               exitcode-stdio-1.0
+  default-language:   Haskell2010
+  main-is:            Main.hs
+  hs-source-dirs:     benchmarks
+
+  ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
+
+  build-depends:
+    lol-benches
+
+test-suite test-lol-cpp
+  type:               exitcode-stdio-1.0
+  default-language:   Haskell2010
+  main-is:            Main.hs
+  hs-source-dirs:     tests
+  ghc-options:        -threaded -O2
+
+  build-depends:
+    lol-tests

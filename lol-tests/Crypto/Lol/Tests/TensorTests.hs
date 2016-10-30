@@ -12,7 +12,7 @@
 
 -- | Tests for the 'Tensor' interface.
 
-module Crypto.Lol.Tests.TensorTests (tensorTests1, tensorTests2) where
+module Crypto.Lol.Tests.TensorTests where
 
 import Crypto.Lol.Tests
 import Crypto.Lol.Utils.ShowType

@@ -12,7 +12,7 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.ZqTests (zqTests) where
+module Crypto.Lol.Tests.ZqTests where
 
 import Crypto.Lol
 import Crypto.Lol.CRTrans
