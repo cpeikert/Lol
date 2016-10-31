@@ -64,6 +64,6 @@ diagnosticMain = do
   let opts = D.defaultOpts{D.levels=ls, D.benches=bs}
   b1 <- benchGroup "Single Index"
           [oneIdxBenches (Proxy::Proxy '(F64*F9*F25, Zq 14401)) (Proxy::Proxy RT) (Proxy::Proxy HashDRBG)]
-  --b2 <- benchGroup "Twace-Embed"
-  --        [twoIdxBenches (Proxy::Proxy '(F64*F9*F25, F64*F9*F25, Zq 14401)) (Proxy::Proxy RT)]
+  b2 <- benchGroup "Twace-Embed"
+          [twoIdxBenches (Proxy::Proxy '(F64*F9*F25, F64*F9*F25, Zq 14401)) (Proxy::Proxy RT)]
   mapM_ (D.prettyBenches opts) [b1]

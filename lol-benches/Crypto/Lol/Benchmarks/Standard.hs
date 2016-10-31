@@ -56,10 +56,10 @@ oneIdxBenches _ _ pgen =
   let ptmr = Proxy :: Proxy '(t,m,r)
   in benchGroup (showType ptmr) $ (($ pgen) . ($ ptmr)) <$> [
       simpleTensorBenches1,
-      tensorBenches1{-,
+      tensorBenches1,
       simpleUCycBenches1,
       ucycBenches1,
-      cycBenches1-}
+      cycBenches1
       ]
 
 -- | Collection of all inter-ring operations at all levels of the library.
