@@ -1,4 +1,4 @@
-name:                lol-core
+name:                lol
 -- The package version.  See the Haskell package versioning policy (PVP)
 -- for standards guiding when and how versions should be incremented.
 -- http://www.haskell.org/haskellwiki/Package_versioning_policy
@@ -71,11 +71,15 @@ library
     Crypto.Lol.RLWE.RLWR
 
     Crypto.Lol.Cyclotomic.Tensor
-    Crypto.Lol.Types.Random
+    Crypto.Lol.GaussRandom
+    Crypto.Lol.Types.Complex
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
+    Crypto.Lol.Types.IZipVector
     Crypto.Lol.Types.Proto
+    Crypto.Lol.Types.Random
     Crypto.Lol.Types.RRq
+    Crypto.Lol.Types.ZmStar
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.ZqBasic
 
@@ -90,22 +94,16 @@ library
     Crypto.Lol.Utils.ShowType
 
   other-modules:
-    Crypto.Lol.PosBin
-    Crypto.Lol.FactoredDefs
-    Crypto.Lol.PosBinDefs
-    Crypto.Lol.GaussRandom
-    Crypto.Lol.Types.ZmStar
-    Crypto.Lol.Types.Complex
-    Crypto.Lol.Types.Numeric
-    Crypto.Lol.Types.IZipVector
     Crypto.Lol.Cyclotomic.CRTSentinel
+    Crypto.Lol.FactoredDefs
+    Crypto.Lol.Types.Numeric
+    Crypto.Lol.PosBin
+    Crypto.Lol.PosBinDefs
 
   build-depends:
     arithmoi >= 0.4.1.3 && <0.5,
     base>=4.8 && <5,
-    bytestring,
     constraints,
-    containers >= 0.5.6.2 && < 0.6,
     crypto-api,
     data-default >= 0.3.0 && < 0.8,
     deepseq >= 1.4.1.1 && <1.5,
@@ -113,16 +111,15 @@ library
     MonadRandom >= 0.2 && < 0.5,
     mtl >= 2.2.1 && < 2.3,
     numeric-prelude >= 0.4.2 && < 0.5,
-    protocol-buffers,
-    protocol-buffers-descriptor,
     random >= 1.1 && < 1.2,
     reflection >= 1.5.1 && < 2.2,
     singletons >= 1.1.2.1 && < 2.3,
-    th-desugar >= 1.5.4 && < 1.7,
     tagged-transformer >= 0.7 && < 0.9,
     template-haskell  >=  2.2.0.0,
-    transformers >= 0.4.2.0 && < 0.6,
     vector==0.11.*,
-    vector-th-unbox >= 0.2.1.0 && < 0.3
-
-  other-extensions: TemplateHaskell
+    vector-th-unbox >= 0.2.1.0 && < 0.3,
+    -- EAC: can we move these instances to rlwe-challenges?
+    protocol-buffers,
+    protocol-buffers-descriptor,
+    bytestring,
+    containers >= 0.5.6.2 && < 0.6

@@ -7,7 +7,7 @@
 
 -- | Functions to support the chinese remainder transform on Repa arrays
 
-module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
+module Crypto.Lol.Cyclotomic.Tensor.Repa.CRT
 ( scalarCRT'
 , fCRT, fCRTInv
 , mulGCRT', divGCRT'
@@ -16,7 +16,7 @@ module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
+import Crypto.Lol.Cyclotomic.Tensor.Repa.RTCommon as RT
 import Crypto.Lol.Prelude                               as LP
 
 import Control.Applicative

@@ -10,7 +10,7 @@
 
 -- | CT-specific functions for embedding/twacing in various bases
 
-module Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
+module Crypto.Lol.Cyclotomic.Tensor.CPP.Extension
 ( embedPow', embedDec', embedCRT'
 , twacePowDec', twaceCRT'
 , coeffs', powBasisPow'

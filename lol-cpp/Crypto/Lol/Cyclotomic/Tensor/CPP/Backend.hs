@@ -17,7 +17,7 @@
 -- C counterpart, and to transform polymorphic Haskell functions into C funtion
 -- calls in a type-safe way.
 
-module Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
+module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 ( Dispatch
 , dcrt, dcrtinv
 , dgaussdec

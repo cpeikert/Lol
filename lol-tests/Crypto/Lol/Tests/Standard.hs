@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
@@ -26,7 +26,7 @@ import Test.Framework
 infixr 9 **
 data a ** b
 
-defaultTestMain :: Proxy t -> IO ()
+defaultTestMain :: _ => Proxy t -> IO ()
 defaultTestMain =
   flip defaultMainWithArgs
     ["--threads=1","--maximum-generated-tests=100"] . defaultTests

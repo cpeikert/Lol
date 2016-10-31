@@ -1,13 +1,22 @@
-{-# LANGUAGE BangPatterns, ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, GeneralizedNewtypeDeriving,
-             KindSignatures, MultiParamTypeClasses,
-             RankNTypes, RebindableSyntax, RoleAnnotations,
-             ScopedTypeVariables, TypeOperators #-}
+{-# LANGUAGE BangPatterns               #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE RebindableSyntax           #-}
+{-# LANGUAGE RoleAnnotations            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeOperators              #-}
 
 -- | A simple DSL for tensoring Repa arrays and other common functionality
 -- on Repa arrays
 
-module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon
+module Crypto.Lol.Cyclotomic.Tensor.Repa.RTCommon
 ( module R
 , module Data.Array.Repa.Eval
 , module Data.Array.Repa.Repr.Unboxed

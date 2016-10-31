@@ -20,7 +20,7 @@
 
 -- | Wrapper for a C++ implementation of the 'Tensor' interface.
 
-module Crypto.Lol.Cyclotomic.Tensor.CTensor (CT) where
+module Crypto.Lol.Cyclotomic.Tensor.CPP (CT) where
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Module       as Module (C)
@@ -53,8 +53,9 @@ import Foreign.Ptr
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
-import Crypto.Lol.Cyclotomic.Tensor.CTensor.Backend
-import Crypto.Lol.Cyclotomic.Tensor.CTensor.Extension
+import Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
+import Crypto.Lol.Cyclotomic.Tensor.CPP.Extension
+import Crypto.Lol.Cyclotomic.Tensor.CPP.Instances ()
 import Crypto.Lol.GaussRandom
 import Crypto.Lol.Prelude                             as LP hiding
                                                              (replicate,

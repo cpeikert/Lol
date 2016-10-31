@@ -38,10 +38,12 @@ resolver: lts-7.0
 # will not be run. This is useful for tweaking upstream packages.
 
 packages:
-- lol-apps/
 - challenges/
 - lol/
+- lol-apps/
 - lol-benches/
+- lol-cpp/
+- lol-repa/
 - lol-tests/
 
 # CJP: add compiler/ when ready

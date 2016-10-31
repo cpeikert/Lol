@@ -1,5 +1,4 @@
 {-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -7,13 +6,12 @@
 {-# LANGUAGE RebindableSyntax           #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
-{-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 
 -- | Data type, functions, and instances for complex numbers.
 
 module Crypto.Lol.Types.Complex (
-  Complex
+  Complex(..)
 , roundComplex
 , cis, real, imag, fromReal
 ) where
@@ -28,21 +26,13 @@ import qualified Number.Complex         as C hiding (exp, signum)
 import Crypto.Lol.Types.Numeric as LP
 
 import Control.DeepSeq
-import Data.Array.Repa.Eval         as R
-import Data.Vector.Storable         (Storable)
-import Data.Vector.Unboxed          (Unbox)
-import Data.Vector.Unboxed.Deriving
+
 import System.Random
 
 -- | Newtype wrapper (with slightly different instances) for
 -- @Number.Complex@.
 newtype Complex a = Complex (C.T a)
-    deriving (Additive.C, Ring.C, ZeroTestable.C, Field.C, Storable, Eq, Show)
-
-derivingUnbox "Complex"
-  [t| forall a . (Unbox a) => Complex a -> (a, a) |]
-  [| \ (Complex x) -> (C.real x, C.imag x) |]
-  [| \ (r, i) -> Complex $ r C.+: i |]
+    deriving (Additive.C, Ring.C, ZeroTestable.C, Field.C, Eq, Show)
 
 -- | Custom instance replacing the one provided by numeric prelude: it
 -- always returns 0 as the remainder of a division.  (The NP instance
@@ -64,13 +54,6 @@ instance (Random a) => Random (Complex a) where
                in (Complex $ a C.+: b, g'')
 
     randomR = error "randomR not defined for (Complex t)"
-
-instance (R.Elt a) => R.Elt (Complex a) where
-    touch (Complex c) = do
-        touch $ C.real c
-        touch $ C.imag c
-    zero = Complex $ R.zero C.+: R.zero
-    one = Complex $ R.one C.+: R.zero
 
 -- | Rounds the real and imaginary components to the nearest integer.
 roundComplex :: (RealRing a, ToInteger b) => Complex a -> (b,b)

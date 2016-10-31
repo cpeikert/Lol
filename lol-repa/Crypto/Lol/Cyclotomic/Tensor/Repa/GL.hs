@@ -1,14 +1,19 @@
-{-# LANGUAGE BangPatterns, ConstraintKinds, FlexibleContexts, GADTs,
-             MultiParamTypeClasses, RankNTypes,
-             RebindableSyntax, ScopedTypeVariables #-}
+{-# LANGUAGE BangPatterns          #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 -- | The @G@ and @L@ transforms for Repa arrays.
 
-module Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
+module Crypto.Lol.Cyclotomic.Tensor.Repa.GL
 ( fL, fLInv, fGPow, fGDec, fGInvPow, fGInvDec
 ) where
 
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon as RT
+import Crypto.Lol.Cyclotomic.Tensor.Repa.RTCommon as RT
 import Crypto.Lol.Prelude                               as LP
 import Data.Coerce
 

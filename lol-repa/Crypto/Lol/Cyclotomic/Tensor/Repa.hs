@@ -1,20 +1,31 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             FlexibleInstances, GADTs, MultiParamTypeClasses,
-             PolyKinds, RebindableSyntax, RecordWildCards,
-             RoleAnnotations, ScopedTypeVariables, StandaloneDeriving,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE RoleAnnotations       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 -- | A pure, repa-based implementation of the 'Tensor' interface.
 
-module Crypto.Lol.Cyclotomic.Tensor.RepaTensor
+module Crypto.Lol.Cyclotomic.Tensor.Repa
 ( RT ) where
 
 import Crypto.Lol.Cyclotomic.Tensor                      as T
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.CRT
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Dec
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.Extension
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.GL
-import Crypto.Lol.Cyclotomic.Tensor.RepaTensor.RTCommon  as RT hiding
+import Crypto.Lol.Cyclotomic.Tensor.Repa.CRT
+import Crypto.Lol.Cyclotomic.Tensor.Repa.Dec
+import Crypto.Lol.Cyclotomic.Tensor.Repa.Extension
+import Crypto.Lol.Cyclotomic.Tensor.Repa.GL
+import Crypto.Lol.Cyclotomic.Tensor.Repa.Instances
+import Crypto.Lol.Cyclotomic.Tensor.Repa.RTCommon  as RT hiding
                                                                 ((++))
 import Crypto.Lol.Prelude                                as LP
 import Crypto.Lol.Reflects
