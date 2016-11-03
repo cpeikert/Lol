@@ -40,6 +40,8 @@ import Data.Promotion.Prelude.List
 
 import GHC.TypeLits hiding (type (*))
 
+import MathObj.Matrix (columns)
+
 type ZqUp zq zqs = NextListElt zq (Reverse zqs)
 type ZqDown zq zqs = NextListElt zq zqs
 
@@ -60,7 +62,7 @@ data EvalHints t rngs z zp zq zqs gad v = Hints
   (TunnelHints gad v t rngs z zp (ZqUp zq zqs) zqs)
   (RoundHints (Fst (Last rngs)) z zp t (Snd (Last rngs)) (ZqDown zq zqs) zqs gad)
 
-homomPRFM :: --forall gad v t rngs z zp zq r r' s s' mon e .
+homomPRFM ::
   (MonadReader (EvalHints t rngs z zp zq zqs gad v) mon,
    MonadState (PRFState (Cyc t r zp) (Cyc t s (TwoOf zp))) mon,
    MulPublicCtx t r r' zp zq,
@@ -68,11 +70,10 @@ homomPRFM :: --forall gad v t rngs z zp zq r r' s s' mon e .
    PTRound t s s' e zp (ZqDown zq zqs) z gad zqs)
   => CT r zp (Cyc t r' zq)   -- encryption of PRF secret
      -> Int                  -- PRF input
-     -> mon (Matrix (CT s (TwoOf zp) (Cyc t s' (ZqResult e (ZqDown zq zqs) zqs))))
+     -> mon (CT s (TwoOf zp) (Cyc t s' (ZqResult e (ZqDown zq zqs) zqs)))
 homomPRFM ct x = do
   hints <- ask
-  state $ homomPRF hints ct x
-
+  state $ homomPRF' hints ct x
 
 homomPRF :: (MulPublicCtx t r r' zp zq,
              MultiTunnelCtx rngs r r' s s' t z zp zq v gad zqs,
@@ -81,16 +82,23 @@ homomPRF :: (MulPublicCtx t r r' zp zq,
        -> CT r zp (Cyc t r' zq)
        -> Int
        -> PRFState (Cyc t r zp) (Cyc t s (TwoOf zp))
-       -> (Matrix (CT s (TwoOf zp) (Cyc t s' (ZqResult e (ZqDown zq zqs) zqs))), PRFState (Cyc t r zp) (Cyc t s (TwoOf zp)))
-homomPRF (Hints tHints rHints) ct x st =
+       -> CT s (TwoOf zp) (Cyc t s' (ZqResult e (ZqDown zq zqs) zqs))
+homomPRF hs ct x = fst . homomPRF' hs ct x
+
+homomPRF' :: (MulPublicCtx t r r' zp zq,
+             MultiTunnelCtx rngs r r' s s' t z zp zq v gad zqs,
+             PTRound t s s' e zp (ZqDown zq zqs) z gad zqs)
+    => EvalHints t rngs z zp zq zqs gad v
+       -> CT r zp (Cyc t r' zq)
+       -> Int
+       -> PRFState (Cyc t r zp) (Cyc t s (TwoOf zp))
+       -> (CT s (TwoOf zp) (Cyc t s' (ZqResult e (ZqDown zq zqs) zqs)), PRFState (Cyc t r zp) (Cyc t s (TwoOf zp)))
+homomPRF' (Hints tHints rHints) ct x st =
   let (atx,st') = evalTree x st
-      ctMatrix1 = flip mulPublic ct <$> atx
-      ctMatrix2 = tunnel tHints <$> ctMatrix1
-  in (ptRound rHints <$> ctMatrix2, st')
-
-
-
-
+      firstElt = head $ head $ columns atx
+      ctMatrix1 = mulPublic firstElt ct
+      ctMatrix2 = tunnel tHints ctMatrix1
+  in (ptRound rHints ctMatrix2, st')
 
 type family TwoOf (a :: k) :: k
 --type instance TwoOf (a :: Nat) = 2

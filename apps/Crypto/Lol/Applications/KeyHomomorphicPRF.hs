@@ -1,4 +1,3 @@
-{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE NoImplicitPrelude   #-}
@@ -7,13 +6,12 @@
 -- | Key-homomorphic PRF from [BP14].
 
 module Crypto.Lol.Applications.KeyHomomorphicPRF
-(FullBinTree(..)
+(FullBinTree(..), evalTree
 ,randomTree, balancedTree, leftSpineTree, rightSpineTree
 ,PRFFamily, makeFamily, randomFamily
 ,PRFState, prfState
 ,latticePRF, latticePRFM
 ,ringPRF, ringPRFM
-,evalTree
 ) where
 
 import Control.Applicative ((<$>))
@@ -49,8 +47,11 @@ makeFamily a0 a1
   | otherwise = Params a0 a1
 
 -- not exported,
-data DecoratedTree r = DL Int (Matrix r) -- | input bit, output
-                     | DI Int Int (Matrix r) (DecoratedTree r) (DecoratedTree r) -- | numleaves, input value, output, left subtree, right subtree
+data DecoratedTree r =
+  -- input bit, output
+  DL Int (Matrix r)
+  -- numleaves, input value, output, left subtree, decomposed result of right subtree, right subtree
+  | DI Int Int (Matrix r) (DecoratedTree r) (Matrix r) (DecoratedTree r)
 
 -- | State of the PRF computation. This permits incremental computation.
 data PRFState rq rp where
@@ -75,81 +76,86 @@ prfState p@(Params a0 a1 t) initInput =
          " leaves, but input " ++ show input ++ " has " ++
          show (logBase 2 (fromIntegral input) :: Double) ++ " bits."
 
-combineNodes :: (Decompose gad rq) => (Int -> a -> (Matrix rq, b)) -> Proxy gad -> Int -> a -> a -> Int -> (Matrix rq, b, b)
-combineNodes go pgad x ltree rtree numRightLeaves =
-  let rbits = x .&. ((2^numRightLeaves)-1) -- mask high bits
-      lbits = shift x (-numRightLeaves)    -- negate to shift right
-      (lval, ltree') = go lbits ltree
-      (rval, rtree') = go rbits rtree
-      val' = proxy (combineVectors lval rval) pgad
-  in (val', ltree', rtree')
-
 -- given validated parameters, constructs a decorated tree with the given input
 buildDecTree :: (Decompose gad rq)
   => Proxy gad -> Int -> PRFFamily gad rq rp -> DecoratedTree rq
 buildDecTree pgad y (Params a0 a1 t) =
   let getNumLeaves L = 1
-      getNumLeaves (I i _ _) = i
+      getNumLeaves (I x _ _) = x
       go 0 L = (a0, DL 0 a0)
       go 1 L = (a1, DL 1 a1)
-      go i (I numLeaves ltree rtree) =
-        let (val, ltree', rtree') = combineNodes go pgad i ltree rtree (getNumLeaves rtree)
-        in (val, DI numLeaves i val ltree' rtree')
+      go x (I numLeaves ltree rtree) =
+        let numRightLeaves = getNumLeaves rtree
+            rbits = x .&. ((2^numRightLeaves)-1) -- mask high bits
+            lbits = shift x (-numRightLeaves)    -- negate to shift right
+            (lval, ltree') = go lbits ltree
+            (rval, rtree') = go rbits rtree
+            decompr = fmap reduce $ proxy (decomposeMatrix rval) pgad
+            val = lval * decompr
+        in (val, DI numLeaves x val ltree' decompr rtree')
   in snd $ go y t
 
--- EAC: an optional time-space tradeoff: store the decomposed right tree
--- so that if only the left tree changes, we don't have to re-decompose
--- the right tree.
 -- | Evaluates the tree at the new input, reusing as much prior work as possible.
 evalTree :: Int -> PRFState rq rp -> (Matrix rq, PRFState rq rp)
-evalTree y (PRFState gad a0 a1 t) =
+evalTree y (PRFState pgad a0 a1 t) =
   let getNumLeaves (DL _ _) = 1
-      getNumLeaves (DI i _ _ _ _) = i
-      go 0 (DL _ _) = (a0, DL 0 a0)
-      go 1 (DL _ _) = (a1, DL 1 a1)
-      go i n@(DI numLeaves x val ltree rtree) | i == x = (val,n)
-                                              | otherwise =
-        let (val', ltree', rtree') = combineNodes go gad i ltree rtree (getNumLeaves rtree)
-        in (val', DI numLeaves i val' ltree' rtree')
-      (res, t') = go y t
-  in (res, PRFState gad a0 a1 t')
+      getNumLeaves (DI i _ _ _ _ _) = i
+      -- outputs result, new state, and flag indicating whether the state changed
+      go 0 (DL _ _) = (a0, DL 0 a0, False)
+      go 1 (DL _ _) = (a1, DL 1 a1, False)
+      go i n@(DI numLeaves x val ltree decompr rtree)
+        | i == x = (val,n, False)
+        | otherwise =
+            let numRightLeaves = getNumLeaves rtree
+                rbits = x .&. ((2^numRightLeaves)-1) -- mask high bits
+                lbits = shift x (-numRightLeaves)    -- negate to shift right
+                (lval, ltree', _) = go lbits ltree
+                (rval, rtree', changed) = go rbits rtree
+                decompr' = if changed
+                           then fmap reduce $ proxy (decomposeMatrix rval) pgad
+                           else decompr
+                val' = lval * decompr'
+            in (val', DI numLeaves i val' ltree' decompr' rtree', True)
+      (res, t', _) = go y t
+  in (res, PRFState pgad a0 a1 t')
 
 -- | Equation (2.3) in [BP14]
-latticePRF :: (Rescale zq zp)
+latticePRF' :: (Rescale zq zp)
   => Matrix zq -> Int -> PRFState zq zp -> (Matrix zp, PRFState zq zp)
-latticePRF s x state1@(PRFState _ a0 _ _)
+latticePRF' s x state1@(PRFState _ a0 _ _)
   | numRows s /= 1 = error "Secret key must have one row."
   | numColumns s /= numRows a0 = error $ "Secret key has " ++
-     show (numColumns s) ++ " columns, but a0 has " ++ show (numRows a0) ++ " rows."
+     show (numColumns s) ++ " columns, but a0 has " ++
+     show (numRows a0) ++ " rows."
   | otherwise = let (res,state2) = evalTree x state1
                 in (rescale <$> s*res, state2)
 
+latticePRF :: (Rescale zq zp)
+  => Matrix zq -> Int -> PRFState zq zp -> Matrix zp
+latticePRF s x = fst. latticePRF' s x
+
 latticePRFM :: (MonadState (PRFState zq zp) mon, Rescale zq zp)
   => Matrix zq -> Int -> mon (Matrix zp)
-latticePRFM s x = state $ latticePRF s x
+latticePRFM s x = state $ latticePRF' s x
 
 -- | Equation (2.10) in [BP14].
-ringPRF :: (Fact m, RescaleCyc (Cyc t) zq zp, Ring rq, rq ~ Cyc t m zq, rp ~ Cyc t m zp)
+ringPRF' :: (Fact m, RescaleCyc (Cyc t) zq zp, Ring rq,
+            rq ~ Cyc t m zq, rp ~ Cyc t m zp)
     => rq -> Int -> PRFState rq rp -> (Matrix rp, PRFState rq rp)
-ringPRF s x state1 =
+ringPRF' s x state1 =
   let (res,state2) = evalTree x state1
-  in ((rescalePow . (s*)) <$> res, state2)
+  in ((rescaleDec . (s*)) <$> res, state2)
 
-ringPRFM :: (MonadState (PRFState rq rp) mon, Fact m, RescaleCyc (Cyc t) zq zp, Ring rq, rq ~ Cyc t m zq, rp ~ Cyc t m zp)
+ringPRF :: (Fact m, RescaleCyc (Cyc t) zq zp, Ring rq,
+            rq ~ Cyc t m zq, rp ~ Cyc t m zp)
+    => rq -> Int -> PRFState rq rp -> Matrix rp
+ringPRF s x = fst . ringPRF' s x
+
+ringPRFM :: (MonadState (PRFState rq rp) mon, Fact m,
+             RescaleCyc (Cyc t) zq zp, Ring rq,
+             rq ~ Cyc t m zq, rp ~ Cyc t m zp)
   => rq -> Int -> mon (Matrix rp)
-ringPRFM s x = state $ ringPRF s x
-
--- | Multiply two matrices as given in the
--- | "otherwise" case of Equation (2.9) in [BP14].
-combineVectors :: (Decompose gad r) =>
-                  Matrix r ->
-                  Matrix r ->
-                  Tagged gad (Matrix r)
-combineVectors l r = do
-  dr <- decomposeMatrix r
-  return $ l * fmap reduce dr
-
-
+ringPRFM s x = state $ ringPRF' s x
 
 -- convenience functions
 
@@ -172,8 +178,8 @@ rightSpineTree :: Int -> FullBinTree
 rightSpineTree 1 = L
 rightSpineTree i = I i L (rightSpineTree $ i-1)
 
--- | Given the desired number of leaves, produces a full binary tree which is complete,
--- except possibly for the last level, which is left-biased.
+-- | Given the desired number of leaves, produces a full binary tree
+-- which is complete, except possibly for the last level, which is left-biased.
 balancedTree :: Int -> FullBinTree
 balancedTree 1 = L
 balancedTree i =

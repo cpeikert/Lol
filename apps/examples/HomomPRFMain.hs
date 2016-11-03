@@ -20,8 +20,6 @@ import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Types hiding (CT)
 import qualified Crypto.Lol.Types as Lol (CT)
 
-import MathObj.Matrix
-
 type H0 = F128
 type H1 = F64 * F7
 type H2 = F32 * F7 * F13
@@ -66,6 +64,6 @@ main = do
   let st = prfState family Nothing --initialize with input 0
   ct <- encrypt sk s
   let prf = homomPRFM ct
-      encprfs = concat $ concat $ rows <$> (flip runReader hints $ flip evalStateT st $ mapM prf [0,1,3,2,6,7,5,4])
+      encprfs = flip runReader hints $ flip evalStateT st $ mapM prf [0,1,3,2,6,7,5,4]
       decprfs = decrypt skout <$> encprfs
   decprfs `deepseq` return ()
