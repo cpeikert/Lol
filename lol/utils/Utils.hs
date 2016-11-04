@@ -22,6 +22,8 @@ import Crypto.Random.DRBG
 
 import Data.Promotion.Prelude.List
 
+import GHC.TypeLits
+
 infixr 9 **
 data a ** b
 
@@ -59,6 +61,9 @@ showType _ = show (AT :: ArgType a)
 
 instance Show (ArgType HashDRBG) where
   show _ = "HashDRBG"
+
+instance (KnownNat n) => Show (ArgType n) where
+  show _ = show $ natVal (Proxy::Proxy n)
 
 instance (Fact m) => Show (ArgType m) where
   show _ = "F" ++ show (proxy valueFact (Proxy::Proxy m))

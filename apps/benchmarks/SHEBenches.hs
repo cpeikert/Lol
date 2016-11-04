@@ -5,7 +5,6 @@
 
 module SHEBenches (sheBenches) where
 
-import Apply.SHE
 import Benchmarks hiding (hideArgs)
 import GenArgs
 import GenArgs.SHE
@@ -20,7 +19,6 @@ import Crypto.Random.DRBG
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Types hiding (CT)
-import qualified Crypto.Lol.Types as CT
 
 import qualified Criterion as C
 
@@ -33,13 +31,13 @@ hideArgs f p = (C.bench (showType p) . unbench) <$>
 
 sheBenches :: (MonadRandom m) => m Benchmark
 sheBenches = benchGroup "SHE" [
-  {-benchGroup "encrypt"   [hideArgs bench_enc enc_param],
+  benchGroup "encrypt"   [hideArgs bench_enc enc_param],
   benchGroup "decrypt"   [hideArgs bench_dec dec_param],
   benchGroup "*"         [hideArgs bench_mul dec_param],
   benchGroup "addPublic" [hideArgs bench_addPublic dec_param],
   benchGroup "mulPublic" [hideArgs bench_mulPublic dec_param],
   benchGroup "rescaleCT" [hideArgs bench_rescaleCT rescale_param],
-  benchGroup "keySwitch" [hideArgs bench_keySwQ ksw_param],-}
+  benchGroup "keySwitch" [hideArgs bench_keySwQ ksw_param],
   benchGroup "tunnel"    [hideArgs bench_tunnel tunn_param]
   ]
 

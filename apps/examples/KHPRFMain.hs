@@ -39,7 +39,7 @@ main2 = do
       t = balancedTree k
       gadLen = 9
   a0 <- fromList n (n*gadLen) <$> take (gadLen*n*n) <$> getRandoms
-  a1 <- fromList n (n*gadLen) <$> take (gadLen*n) <$> getRandoms
+  a1 <- fromList n (n*gadLen) <$> take (gadLen*n*n) <$> getRandoms
   let family = makeFamily a0 a1 t :: PRFFamily Gad (Zq 257) (Zq 32)
   s <- fromList 1 n <$> take n <$> getRandoms
   let state = prfState family Nothing -- initialize with input 0

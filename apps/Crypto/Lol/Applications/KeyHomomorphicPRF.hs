@@ -9,6 +9,7 @@ module Crypto.Lol.Applications.KeyHomomorphicPRF
 (FullBinTree(..), evalTree
 ,randomTree, balancedTree, leftSpineTree, rightSpineTree
 ,PRFFamily, makeFamily, randomFamily
+,grayCode
 ,PRFState, prfState
 ,latticePRF, latticePRFM
 ,ringPRF, ringPRFM
@@ -197,3 +198,12 @@ randomFamily size = do -- in rnd
   a0 <- fromList 1 len <$> take len <$> getRandoms
   a1 <- fromList 1 len <$> take len <$> getRandoms
   return $ makeFamily a0 a1 t
+
+-- | Constructs an n-bit Gray code, useful for efficiently evaluating the PRF
+grayCode :: Int -> [Int]
+grayCode 1 = [0,1]
+grayCode n =
+  let gc' = grayCode (n-1)
+      pow2 = 2^(n-1)
+      rightHalf = map (+pow2) $ reverse gc'
+  in gc' ++ rightHalf

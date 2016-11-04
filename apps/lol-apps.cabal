@@ -127,6 +127,7 @@ Benchmark bench-apps
     lol-apps,
     MonadRandom,
     mtl,
+    numeric-prelude,
     singletons,
     statistics,
     transformers,
