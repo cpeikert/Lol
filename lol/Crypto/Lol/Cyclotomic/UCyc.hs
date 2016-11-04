@@ -688,3 +688,16 @@ instance (Protoable (t m r)) => Protoable (UCyc t m D r) where
   type ProtoType (UCyc t m D r) = ProtoType (t m r)
   toProto (Dec t) = toProto t
   fromProto t = Dec <$> fromProto t
+
+instance (Show r, Fact m, TElt t r, Tensor t) => Show (UCyc t m P r) where
+  show (Pow x) = "UPow " ++ show x \\ witness entailShowT x
+
+instance (Show r, Fact m, TElt t r, Tensor t) => Show (UCyc t m D r) where
+  show (Dec x) = "UDec " ++ show x \\ witness entailShowT x
+
+instance (Show r, Fact m, TElt t r, Tensor t) => Show (UCyc t m C r) where
+  show (CRTC _ x) = "UCRTC " ++ show x \\ witness entailShowT x
+
+instance (Show (CRTExt r), Fact m, TElt t (CRTExt r), Tensor t)
+  => Show (UCyc t m E r) where
+  show (CRTE _ x) = "UCRTE " ++ show x \\ witness entailShowT x

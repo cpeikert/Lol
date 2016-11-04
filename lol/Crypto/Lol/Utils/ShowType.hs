@@ -23,6 +23,31 @@ import Crypto.Lol (Int64,Fact,valueFact,Mod(..), Proxy(..), proxy, TrivGad, Base
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.ZqBasic
 
+import Data.Promotion.Prelude.List
+
+import GHC.TypeLits
+
+infixr 9 **
+data a ** b
+
+type family Zq (a :: k) :: * where
+  Zq (a ** b) = (Zq a, Zq b)
+  Zq q = (ZqBasic q Int64)
+
+
+type family (f :: (k1 -> k2)) <$>  (xs :: [k1]) where
+  f <$> '[] = '[]
+  f <$> (x ': xs) = (f x) ': (f <$> xs)
+
+type family (fs :: [k1 -> k2]) <*> (xs :: [k1]) where
+  fs <*> xs = Go fs xs xs
+
+type family Go (fs :: [k1 -> k2]) (xs :: [k1]) (ys :: [k1]) where
+  Go '[] xs ys = '[]
+  Go (f ': fs) '[] ys = Go fs ys ys
+  Go (f ': fs) (x ': xs) ys = (f x) ': (Go (f ': fs) xs ys)
+
+
 -- | Wrapper type for printing test/benchmark names
 data ArgType (a :: k) = AT
 
@@ -33,8 +58,28 @@ type ShowType a = Show (ArgType a)
 showType :: forall a . (Show (ArgType a)) => Proxy a -> String
 showType _ = show (AT :: ArgType a)
 
+instance Show (ArgType HashDRBG) where
+  show _ = "HashDRBG"
+
+instance (KnownNat n) => Show (ArgType n) where
+  show _ = show $ natVal (Proxy::Proxy n)
+
 instance (Fact m) => Show (ArgType m) where
   show _ = "F" ++ show (proxy valueFact (Proxy::Proxy m))
+
+instance (Show (ArgType a), Show (ArgType b)) => Show (ArgType '(a,b)) where
+  show _ = "(" ++ show (AT :: ArgType a) ++ "," ++ show (AT :: ArgType b) ++ ")"
+
+data InternalList a
+
+instance (Show (ArgType (InternalList xs))) => Show (ArgType (xs :: [k])) where
+  show _ = "[" ++ show (AT :: ArgType (InternalList xs)) ++ "]"
+
+instance (Show (ArgType a), Show (ArgType (InternalList as))) => Show (ArgType (InternalList (a ': as))) where
+  show _ = show (AT :: ArgType a) ++ "," ++ show (AT :: ArgType (InternalList as))
+
+instance Show (ArgType (InternalList '[])) where
+  show _ = ""
 
 instance (Mod (ZqBasic q i), Show i) => Show (ArgType (ZqBasic q i)) where
   show _ = "Q" ++ show (proxy modulus (Proxy::Proxy (ZqBasic q i)))
@@ -51,12 +96,6 @@ instance (Reflects b Integer) => Show (ArgType (BaseBGad (b :: k))) where
 -- for RNS-style moduli
 instance (Show (ArgType a), Show (ArgType b)) => Show (ArgType (a,b)) where
   show _ = show (AT :: ArgType a) ++ "*" ++ show (AT :: ArgType b)
-
--- we use tuples rather than lists because types in a list must have the same kind,
--- but tuples permit different kinds
-instance (Show (ArgType a), Show (ArgType b))
-  => Show (ArgType '(a,b)) where
-  show _ = show (AT :: ArgType a) ++ " " ++ show (AT :: ArgType b)
 
 instance (Show (ArgType a), Show (ArgType '(b,c)))
   => Show (ArgType '(a,b,c)) where

@@ -615,3 +615,12 @@ instance (Fact m, CElt t r, Protoable (UCyc t m D r))
   toProto (Dec uc) = toProto uc
   toProto x = toProto $ toDec' x
   fromProto x = Dec <$> fromProto x
+
+instance (Show r, Show (CRTExt r), Fact m, TElt t r, TElt t (CRTExt r), Tensor t)
+  => Show (Cyc t m r) where
+  show (Pow x) = "Pow " ++ show x
+  show (Dec x) = "Dec " ++ show x
+  show (CRT (Left x)) = "CRT " ++ show x
+  show (CRT (Right x)) = "CRT " ++ show x
+  show (Scalar x) = "Scalar " ++ show x
+  show (Sub x) = "Sub " ++ show x

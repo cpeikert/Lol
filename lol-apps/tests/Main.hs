@@ -20,6 +20,8 @@ import Crypto.Lol.Types
 import Data.Int
 import Data.Proxy
 
+import HomomPRFTests
+import KHPRFTests
 import SHETests
 import Test.Framework
 

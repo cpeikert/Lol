@@ -3,3 +3,13 @@ Overview of applications:
 * SymmSHE.hs gives an implementation of a symmetric-key,
   somewhat-homomorphic encryption scheme that is essentially
   equivalent to the one from the toolkit paper [LPR'13].
+
+* KeyHomomorphicPRF.hs gives an implementation of the
+  key-homomorphic pseudo-random function from Banerjee
+  and Peikert in Crypto 2014 ([BP14]).
+
+* HomomPRF provides an interface for the homomorphic evaluation of the [BP14]
+  PRF.
+
+Note that an example using each application can be found in the 'examples'
+directory.

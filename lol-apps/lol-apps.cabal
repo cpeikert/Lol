@@ -53,6 +53,8 @@ library
     ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   exposed-modules:
+    Crypto.Lol.Applications.HomomPRF
+    Crypto.Lol.Applications.KeyHomomorphicPRF
     Crypto.Lol.Applications.SymmSHE
 
   build-depends:
@@ -60,7 +62,10 @@ library
     deepseq >= 1.4.1.1 && <1.5,
     lol >= 0.3,
     MonadRandom >= 0.2 && < 0.5,
-    numeric-prelude >= 0.4.2 && < 0.5
+    mtl,
+    numeric-prelude >= 0.4.2 && < 0.5,
+    singletons,
+    split
 
 test-suite test-apps
   type:             exitcode-stdio-1.0
@@ -81,6 +86,7 @@ test-suite test-apps
     lol-tests,
     MonadRandom,
     mtl,
+    numeric-prelude,
     QuickCheck >= 2.8 && < 2.9,
     random,
     repa,
@@ -113,15 +119,50 @@ Benchmark bench-apps
     lol-benches,
     MonadRandom,
     mtl,
+    numeric-prelude,
     singletons,
     transformers,
     vector,
     repa
 
-executable simpleSHE
-  hs-source-dirs:   examples/SymmSHE
+executable homomprf
+  hs-source-dirs: examples
   default-language: Haskell2010
-  main-is:          SimpleSHE.hs
+  main-is: HomomPRFMain.hs
+
+  ghc-options: -threaded -rtsopts
+
+  build-depends:
+    arithmoi,
+    base,
+    deepseq,
+    lol,
+    lol-apps,
+    MonadRandom,
+    mtl,
+    numeric-prelude
+
+executable khprf
+  hs-source-dirs: examples
+  default-language: Haskell2010
+  main-is: KHPRFMain.hs
+
+  ghc-options: -threaded -rtsopts
+
+  build-depends:
+    arithmoi,
+    base,
+    deepseq,
+    lol,
+    lol-apps,
+    MonadRandom,
+    mtl,
+    numeric-prelude
+
+executable symmshe
+  hs-source-dirs:   examples
+  default-language: Haskell2010
+  main-is:          SHEMain.hs
 
   ghc-options: -threaded -rtsopts
 
