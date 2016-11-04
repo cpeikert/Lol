@@ -21,9 +21,7 @@ module Crypto.Lol.Utils.ShowType
 
 import Crypto.Lol (Int64,Fact,valueFact,Mod(..), Proxy(..), proxy, TrivGad, BaseBGad)
 import Crypto.Lol.Reflects
-import Crypto.Lol.Types.ZqBasic
-
-import Data.Promotion.Prelude.List
+import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
 import GHC.TypeLits
 
@@ -57,9 +55,6 @@ type ShowType a = Show (ArgType a)
 -- | Print a showable type argument
 showType :: forall a . (Show (ArgType a)) => Proxy a -> String
 showType _ = show (AT :: ArgType a)
-
-instance Show (ArgType HashDRBG) where
-  show _ = "HashDRBG"
 
 instance (KnownNat n) => Show (ArgType n) where
   show _ = show $ natVal (Proxy::Proxy n)

@@ -1,4 +1,6 @@
-{-# LANGUAGE DataKinds, TemplateHaskell, TupleSections #-}
+{-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TupleSections   #-}
 
 -- | \( \def\lcm{\text{lcm}} \)
 --

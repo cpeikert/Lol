@@ -1,4 +1,5 @@
-{-# LANGUAGE RebindableSyntax, ScopedTypeVariables #-}
+{-# LANGUAGE RebindableSyntax    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 -- | Functions for sampling from a continuous Gaussian distribution
 

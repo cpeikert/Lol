@@ -1,6 +1,9 @@
-{-# LANGUAGE FlexibleInstances, PolyKinds,
-             RebindableSyntax, ScopedTypeVariables, TypeFamilies,
-             UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE PolyKinds            #-}
+{-# LANGUAGE RebindableSyntax     #-}
+{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE TypeFamilies         #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 -- | Orphan instance of 'IrreduciblePoly' for characteristic-2 fields.
 

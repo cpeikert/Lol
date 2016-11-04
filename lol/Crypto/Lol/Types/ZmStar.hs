@@ -1,7 +1,13 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts,
-             MultiParamTypeClasses, PolyKinds,
-             RebindableSyntax, ScopedTypeVariables, TypeFamilies,
-             TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 -- | \( \def\Z{\mathbb{Z}} \)
 -- A collection of helper functions for working with \(\Z_m^*\).
@@ -13,7 +19,7 @@ module Crypto.Lol.Types.ZmStar
 import Crypto.Lol.Factored
 import Crypto.Lol.Prelude       as LP hiding (null)
 import Crypto.Lol.Reflects
-import Crypto.Lol.Types.ZqBasic
+import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
 import Data.List as L (foldl', transpose)
 import Data.Map  (Map, elems, empty, insertWith')

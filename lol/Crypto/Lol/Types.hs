@@ -10,8 +10,8 @@
 
 module Crypto.Lol.Types ( module X ) where
 
-import Crypto.Lol.Types.Complex          as X
+import Crypto.Lol.Types.Unsafe.Complex   as X hiding (Complex')
 import Crypto.Lol.Types.IrreducibleChar2 as X ()
 import Crypto.Lol.Types.Random           as X
-import Crypto.Lol.Types.RRq              as X
-import Crypto.Lol.Types.ZqBasic          as X
+import Crypto.Lol.Types.Unsafe.RRq       as X hiding (RRq')
+import Crypto.Lol.Types.Unsafe.ZqBasic   as X hiding (ZqB)

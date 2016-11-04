@@ -35,7 +35,7 @@ module Crypto.Lol.Prelude
 -- * Numeric
 , module Crypto.Lol.Types.Numeric
 -- * Complex
-, module Crypto.Lol.Types.Complex
+, module Crypto.Lol.Types.Unsafe.Complex
 -- * Factored
 , module Crypto.Lol.Factored
 -- * Miscellaneous
@@ -46,7 +46,7 @@ module Crypto.Lol.Prelude
 ) where
 
 import Crypto.Lol.Factored
-import Crypto.Lol.Types.Complex
+import Crypto.Lol.Types.Unsafe.Complex hiding (Complex')
 import Crypto.Lol.Types.Numeric
 
 import Algebra.Field          as Field (C)
