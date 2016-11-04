@@ -89,16 +89,16 @@ prop_keyHomom :: forall v t e r r' s s' rngs z zp zq zqs prfgad ksgad ptrngs .
    '(s,s') ~ Last rngs,
    z ~ LiftOf zp,
 
-   Random (Cyc t r zp),                                 -- randomFamily
-   Decompose (prfgad :: *) (Cyc t r zp),                -- prfState
-   RescaleCyc (Cyc t) zp (TwoOf zp),                    -- ringPRF
-   PTTunnel t ptrngs (TwoOf zp),                        -- tunnel
-   GenSKCtx t r' z v,                                   -- genSK
-   Tunnel rngs t z zp (ZqUp zq zqs) v ksgad,            -- tunnelHints
-   PTRound t s s' e zp (ZqDown zq zqs) z ksgad zqs,     -- roundHints
-   EncryptCtx t r r' z zp zq,                           -- encrypt
-   MulPublicCtx t r r' zp zq,                           -- homomPRF
-   MultiTunnelCtx rngs r r' s s' t z zp zq v ksgad zqs, -- homomPRF
+   Random (Cyc t r zp),                               -- randomFamily
+   Decompose (prfgad :: *) (Cyc t r zp),              -- prfState
+   RescaleCyc (Cyc t) zp (TwoOf zp),                  -- ringPRF
+   PTTunnel t ptrngs (TwoOf zp),                      -- tunnel
+   GenSKCtx t r' z v,                                 -- genSK
+   Tunnel rngs t z zp (ZqUp zq zqs) ksgad,            -- tunnelHints
+   PTRound t s s' e zp (ZqDown zq zqs) z ksgad zqs,   -- roundHints
+   EncryptCtx t r r' z zp zq,                         -- encrypt
+   MulPublicCtx t r r' zp zq,                         -- homomPRF
+   MultiTunnelCtx rngs r r' s s' t z zp zq ksgad zqs, -- homomPRF
    DecryptCtx t s s' z (TwoOf zp) (ZqResult e (ZqDown zq zqs) zqs), -- decrypt
    Eq (Cyc t s (TwoOf zp))                              -- ==
    )
@@ -111,9 +111,9 @@ prop_keyHomom size v = testIO $ do
       prfclear = head $ head $ columns $ ringPRF s x st -- homomPRF only computes first elt
       hoppedClear = tunnel (Proxy::Proxy ptrngs) prfclear
   sk <- genSK v
-  (tHints, skout) <- tunnelHints v sk
+  (tHints, skout) <- tunnelHints sk
   rHints <- roundHints skout
-  let hints = Hints tHints rHints :: EvalHints t rngs z zp zq zqs ksgad v
+  let hints = Hints tHints rHints :: EvalHints t rngs z zp zq zqs ksgad
   ct <- encrypt sk s
   let encPRF = homomPRF hints ct x st
       decPRF = decrypt skout encPRF

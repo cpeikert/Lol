@@ -59,15 +59,15 @@ type family NextListElt (x :: k) (xs :: [k]) :: k where
   NextListElt x '[] = TypeError ('Text "Could not find type " ':<>: 'ShowType x ':<>: 'Text " in the list." ':$$:
                                  'Text "You must use parameters that are in the type lists!")
 
-data EvalHints t rngs z zp zq zqs gad v = Hints
-  (TunnelHints gad v t rngs z zp (ZqUp zq zqs) zqs)
+data EvalHints t rngs z zp zq zqs gad = Hints
+  (TunnelHints gad t rngs z zp (ZqUp zq zqs) zqs)
   (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad)
 
 homomPRFM ::
-  (MonadReader (EvalHints t rngs z zp zq zqs gad v) mon,
+  (MonadReader (EvalHints t rngs z zp zq zqs gad) mon,
    MonadState (PRFState (Cyc t r zp) (Cyc t r (TwoOf zp))) mon,
    MulPublicCtx t r r' zp zq,
-   MultiTunnelCtx rngs r r' s s' t z zp zq v gad zqs,
+   MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs,
    PTRound t s s' e zp (ZqDown zq zqs) z gad zqs)
   => CT r zp (Cyc t r' zq)   -- encryption of PRF secret
      -> Int                  -- PRF input
@@ -77,9 +77,9 @@ homomPRFM ct x = do
   state $ homomPRF' hints ct x
 
 homomPRF :: (MulPublicCtx t r r' zp zq,
-             MultiTunnelCtx rngs r r' s s' t z zp zq v gad zqs,
+             MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs,
              PTRound t s s' e zp (ZqDown zq zqs) z gad zqs)
-    => EvalHints t rngs z zp zq zqs gad v
+    => EvalHints t rngs z zp zq zqs gad
        -> CT r zp (Cyc t r' zq)
        -> Int
        -> PRFState (Cyc t r zp) (Cyc t r (TwoOf zp))
@@ -87,9 +87,9 @@ homomPRF :: (MulPublicCtx t r r' zp zq,
 homomPRF hs ct x = fst . homomPRF' hs ct x
 
 homomPRF' :: (MulPublicCtx t r r' zp zq,
-             MultiTunnelCtx rngs r r' s s' t z zp zq v gad zqs,
+             MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs,
              PTRound t s s' e zp (ZqDown zq zqs) z gad zqs)
-    => EvalHints t rngs z zp zq zqs gad v
+    => EvalHints t rngs z zp zq zqs gad
        -> CT r zp (Cyc t r' zq)
        -> Int
        -> PRFState (Cyc t r zp) (Cyc t r (TwoOf zp))
@@ -174,36 +174,35 @@ instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
 
 -- For tunneling
 
-data TunnelHints gad v t rngs z zp zq zqs where
-  TNil :: TunnelHints gad v t '[ '(m,m') ] z zp zq zqs
+data TunnelHints gad t rngs z zp zq zqs where
+  TNil :: TunnelHints gad t '[ '(m,m') ] z zp zq zqs
   TCons :: (Head rngs ~ '(r,r'), Head (Tail rngs) ~ '(s,s'))
         => (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq))
-           -> TunnelHints gad v t (Tail rngs) z zp zq zqs
-           -> TunnelHints gad v t rngs z zp zq zqs
+           -> TunnelHints gad t (Tail rngs) z zp zq zqs
+           -> TunnelHints gad t rngs z zp zq zqs
 
-class Tunnel xs t z zp zq v gad where
+class Tunnel xs t z zp zq gad where
 
   tunnelHints :: (MonadRandom rnd, Head xs ~ '(r,r'), Last xs ~ '(s,s'))
-              => v -> SK (Cyc t r' z) -> rnd (TunnelHints gad v t xs z zp zq zqs, SK (Cyc t s' z))
+              => SK (Cyc t r' z) -> rnd (TunnelHints gad t xs z zp zq zqs, SK (Cyc t s' z))
 
   tunnelInternal :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
-    TunnelHints gad v t xs z zp zq zqs -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
+    TunnelHints gad t xs z zp zq zqs -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
 
-instance Tunnel '[ '(m,m') ] t z zp zq v gad where
+instance Tunnel '[ '(m,m') ] t z zp zq gad where
 
-  tunnelHints _ sk = return (TNil,sk)
+  tunnelHints sk = return (TNil,sk)
 
   tunnelInternal _ = id
 
 instance (TunnelCtx t e r s e' r' s' z zp zq gad,                  -- tunnelCT
           e ~ FGCD r s, e `Divides` r, e `Divides` s,              -- linearDec
           ZPP zp, TElt t (ZpOf zp),                                -- crtSet
-          GenSKCtx t s' z v,                                       -- genSK
-          Tunnel ('(s,s') ': rngs) t z zp zq v gad)
-  => Tunnel ('(r,r') ': '(s,s') ': rngs) t z zp zq v gad where
+          Tunnel ('(s,s') ': rngs) t z zp zq gad)
+  => Tunnel ('(r,r') ': '(s,s') ': rngs) t z zp zq gad where
 
-  tunnelHints v sk = do
-    skout <- genSK v
+  tunnelHints sk = do
+    skout <- genSKWithVar sk
     let crts = proxy crtSet (Proxy::Proxy e)
         r = proxy totientFact (Proxy::Proxy r)
         e = proxy totientFact (Proxy::Proxy e)
@@ -212,7 +211,7 @@ instance (TunnelCtx t e r s e' r' s' z zp zq gad,                  -- tunnelCT
         -- otherwise linearDec fails
         linf = linearDec (take dim crts) :: Linear t zp e r s
     tunn :: CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq) <- proxyT (tunnelCT linf skout sk) (Proxy::Proxy gad)
-    (rest,sk') <- tunnelHints v skout
+    (rest,sk') <- tunnelHints skout
     return (TCons tunn rest, sk')
 
   tunnelInternal (TCons tunn rest) = tunnelInternal rest . tunn
@@ -226,15 +225,15 @@ roundCTDown :: (RescaleCyc (Cyc t) zq (ZqDown zq zqs), ToSDCtx t m' zp zq)
   => Proxy zqs -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' (ZqDown zq zqs))
 roundCTDown _ = rescaleLinearCT
 
-type MultiTunnelCtx rngs r r' s s' t z zp zq v gad zqs =
-  (Head rngs ~ '(r,r'), Last rngs ~ '(s,s'), Tunnel rngs t z zp (ZqUp zq zqs) v gad, ZqDown (ZqUp zq zqs) zqs ~ zq,
+type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
+  (Head rngs ~ '(r,r'), Last rngs ~ '(s,s'), Tunnel rngs t z zp (ZqUp zq zqs) gad, ZqDown (ZqUp zq zqs) zqs ~ zq,
    RescaleCyc (Cyc t) zq (ZqUp zq zqs), RescaleCyc (Cyc t) (ZqUp zq zqs) zq, RescaleCyc (Cyc t) zq (ZqDown zq zqs),
    ToSDCtx t r' zp zq, ToSDCtx t s' zp (ZqUp zq zqs))
 
 -- EAC: why round down twice? We bump the modulus up to begin with to handle
 -- the key switches, so we knock thatt off, then another for accumulated noise
-tunnel :: forall rngs r r' s s' t z zp zq v gad zqs . (MultiTunnelCtx rngs r r' s s' t z zp zq v gad zqs)
-  => TunnelHints gad v t rngs z zp (ZqUp zq zqs) zqs -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
+tunnel :: forall rngs r r' s s' t z zp zq gad zqs . (MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs)
+  => TunnelHints gad t rngs z zp (ZqUp zq zqs) zqs -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
 tunnel hints x =
   let pzqs = Proxy::Proxy zqs
       y = tunnelInternal hints $ roundCTUp pzqs x
