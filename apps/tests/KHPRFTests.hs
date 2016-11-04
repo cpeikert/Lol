@@ -4,6 +4,8 @@
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
 module KHPRFTests where
 
 import Control.Applicative
@@ -16,7 +18,7 @@ import Crypto.Lol.Cyclotomic.UCyc
 import MathObj.Matrix
 
 import Tests
-import qualified Test.Framework as TF
+--import qualified Test.Framework as TF
 {-
 sheTests :: forall t m zp zq gad rnd . (MonadRandom rnd, _)
   => Proxy '(m,zp,zq,gad) -> Proxy t -> [rnd TF.Test]
@@ -36,9 +38,9 @@ prop_keyHomom size = testIO $ do
   x <- ((`mod` (2^size)) . abs) <$> getRandom
   let s3 = s1+s2
       state = prfState family Nothing
-      prf1 = fst $ ringPRF s1 x state
-      prf2 = fst $ ringPRF s2 x state
-      prf3 = fst $ ringPRF s3 x state
+      prf1 = ringPRF s1 x state
+      prf2 = ringPRF s2 x state
+      prf3 = ringPRF s3 x state
       prf3' = prf1+prf2 :: Matrix (Cyc t m zp)
       a = uncycPow <$> prf3
       b = uncycPow <$> prf3'

@@ -63,6 +63,20 @@ instance Show (ArgType HashDRBG) where
 instance (Fact m) => Show (ArgType m) where
   show _ = "F" ++ show (proxy valueFact (Proxy::Proxy m))
 
+instance (Show (ArgType a), Show (ArgType b)) => Show (ArgType '(a,b)) where
+  show _ = "(" ++ show (AT :: ArgType a) ++ "," ++ show (AT :: ArgType b) ++ ")"
+
+data InternalList a
+
+instance (Show (ArgType (InternalList xs))) => Show (ArgType (xs :: [k])) where
+  show _ = "[" ++ show (AT :: ArgType (InternalList xs)) ++ "]"
+
+instance (Show (ArgType a), Show (ArgType (InternalList as))) => Show (ArgType (InternalList (a ': as))) where
+  show _ = show (AT :: ArgType a) ++ "," ++ show (AT :: ArgType (InternalList as))
+
+instance Show (ArgType (InternalList '[])) where
+  show _ = ""
+
 instance (Mod (ZqBasic q i), Show i) => Show (ArgType (ZqBasic q i)) where
   show _ = "Q" ++ show (proxy modulus (Proxy::Proxy (ZqBasic q i)))
 
@@ -84,12 +98,6 @@ instance (Reflects b Integer) => Show (ArgType (BaseBGad (b :: k))) where
 -- for RNS-style moduli
 instance (Show (ArgType a), Show (ArgType b)) => Show (ArgType (a,b)) where
   show _ = show (AT :: ArgType a) ++ "*" ++ show (AT :: ArgType b)
-
--- we use tuples rather than lists because types in a list must have the same kind,
--- but tuples permit different kinds
-instance (Show (ArgType a), Show (ArgType b))
-  => Show (ArgType '(a,b)) where
-  show _ = show (AT :: ArgType a) ++ " " ++ show (AT :: ArgType b)
 
 instance (Show (ArgType a), Show (ArgType '(b,c)))
   => Show (ArgType '(a,b,c)) where

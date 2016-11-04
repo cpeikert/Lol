@@ -94,6 +94,7 @@ test-suite test-apps
     lol-apps,
     MonadRandom,
     mtl,
+    numeric-prelude,
     QuickCheck >= 2.8 && < 2.9,
     random,
     repa,

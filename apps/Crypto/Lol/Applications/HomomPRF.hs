@@ -18,9 +18,10 @@ module Crypto.Lol.Applications.HomomPRF
 ,RoundHints(..), roundHints
 ,TunnelHints(..), tunnelHints
 ,EvalHints(..)
-,MultiTunnelCtx, ZqUp, ZqDown) where
+,MultiTunnelCtx, ZqUp, ZqDown
+,TwoOf
+,Tunnel, Fst, Snd, PTRound, ZqResult) where
 
-import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
 import Control.Monad.Reader
@@ -60,11 +61,11 @@ type family NextListElt (x :: k) (xs :: [k]) :: k where
 
 data EvalHints t rngs z zp zq zqs gad v = Hints
   (TunnelHints gad v t rngs z zp (ZqUp zq zqs) zqs)
-  (RoundHints (Fst (Last rngs)) z zp t (Snd (Last rngs)) (ZqDown zq zqs) zqs gad)
+  (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad)
 
 homomPRFM ::
   (MonadReader (EvalHints t rngs z zp zq zqs gad v) mon,
-   MonadState (PRFState (Cyc t r zp) (Cyc t s (TwoOf zp))) mon,
+   MonadState (PRFState (Cyc t r zp) (Cyc t r (TwoOf zp))) mon,
    MulPublicCtx t r r' zp zq,
    MultiTunnelCtx rngs r r' s s' t z zp zq v gad zqs,
    PTRound t s s' e zp (ZqDown zq zqs) z gad zqs)
@@ -81,7 +82,7 @@ homomPRF :: (MulPublicCtx t r r' zp zq,
     => EvalHints t rngs z zp zq zqs gad v
        -> CT r zp (Cyc t r' zq)
        -> Int
-       -> PRFState (Cyc t r zp) (Cyc t s (TwoOf zp))
+       -> PRFState (Cyc t r zp) (Cyc t r (TwoOf zp))
        -> CT s (TwoOf zp) (Cyc t s' (ZqResult e (ZqDown zq zqs) zqs))
 homomPRF hs ct x = fst . homomPRF' hs ct x
 
@@ -91,8 +92,9 @@ homomPRF' :: (MulPublicCtx t r r' zp zq,
     => EvalHints t rngs z zp zq zqs gad v
        -> CT r zp (Cyc t r' zq)
        -> Int
-       -> PRFState (Cyc t r zp) (Cyc t s (TwoOf zp))
-       -> (CT s (TwoOf zp) (Cyc t s' (ZqResult e (ZqDown zq zqs) zqs)), PRFState (Cyc t r zp) (Cyc t s (TwoOf zp)))
+       -> PRFState (Cyc t r zp) (Cyc t r (TwoOf zp))
+       -> (CT s (TwoOf zp) (Cyc t s' (ZqResult e (ZqDown zq zqs) zqs)),
+           PRFState (Cyc t r zp) (Cyc t r (TwoOf zp)))
 homomPRF' (Hints tHints rHints) ct x st =
   let (atx,st') = evalTree x st
       firstElt = head $ head $ columns atx
@@ -111,24 +113,24 @@ type family Div2 (a :: k) :: k
 type instance Div2 (ZqBasic q i) = ZqBasic (Div2 q) i
 type instance Div2 (pp :: PrimePower) = Head (UnF (PpToF pp / F2))
 
-data RoundHints m z zp t m' zq zqs gad where
-  Root :: RoundHints m z zp t m' zq zqs gad
+data RoundHints t m m' z zp zq zqs gad where
+  Root :: RoundHints t m m' z zp zq zqs gad
   Internal :: (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
-              -> RoundHints m z (Div2 zp) t m' (ZqDown zq zqs) zqs gad
-              -> RoundHints m z zp t m' zq zqs gad
+              -> RoundHints t m m' z (Div2 zp) (ZqDown zq zqs) zqs gad
+              -> RoundHints t m m' z zp zq zqs gad
 
 class (UnPP (CharOf zp) ~ '(Prime2,e)) => PTRound t m m' e zp zq z gad zqs where
   type ZqResult e zq (zqs :: [*])
 
   roundHints :: (MonadRandom rnd)
-             => SK (Cyc t m' z) -> rnd (RoundHints m z zp t m' zq zqs gad)
+             => SK (Cyc t m' z) -> rnd (RoundHints t m m' z zp zq zqs gad)
 
   -- round coeffs near 0 to 0 and near q/2 to 1
   -- round(q/p*x) (with "towards infinity tiebreaking")
   -- = msb(x+q/4) = floor((x+q/4)/(q/2))
-  ptRound :: RoundHints m z zp t m' zq zqs gad -> CT m zp (Cyc t m' zq) -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
+  ptRound :: RoundHints t m m' z zp zq zqs gad -> CT m zp (Cyc t m' zq) -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
 
-  ptRoundInternal :: RoundHints m z zp t m' zq zqs gad -> [CT m zp (Cyc t m' zq)] -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
+  ptRoundInternal :: RoundHints t m m' z zp zq zqs gad -> [CT m zp (Cyc t m' zq)] -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
 
 instance (UnPP p ~ '(Prime2, 'S e),                                                      -- superclass constraint
           zqup ~ ZqUp zq zqs, zq' ~ ZqDown zq zqs, zp ~ ZqBasic p i, zp' ~ Div2 zp,      -- convenience synonyms
