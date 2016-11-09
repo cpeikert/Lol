@@ -24,7 +24,7 @@ import Crypto.Lol.Cyclotomic.Tensor.Repa.CRT
 import Crypto.Lol.Cyclotomic.Tensor.Repa.Dec
 import Crypto.Lol.Cyclotomic.Tensor.Repa.Extension
 import Crypto.Lol.Cyclotomic.Tensor.Repa.GL
-import Crypto.Lol.Cyclotomic.Tensor.Repa.Instances
+import Crypto.Lol.Cyclotomic.Tensor.Repa.Instances ()
 import Crypto.Lol.Cyclotomic.Tensor.Repa.RTCommon  as RT hiding
                                                                 ((++))
 import Crypto.Lol.Prelude                                as LP
@@ -32,8 +32,8 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.RRq
-import Crypto.Lol.Types.ZqBasic
+import Crypto.Lol.Types.Unsafe.RRq     hiding (RRq')
+import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 import Crypto.Lol.Utils.ShowType
 
 import Crypto.Proto.RLWE.Kq

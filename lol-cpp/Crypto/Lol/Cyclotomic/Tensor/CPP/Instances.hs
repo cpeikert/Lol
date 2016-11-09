@@ -6,9 +6,9 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Instances where
 
 -- EAC: Do not import Crypto.Lol.Types, because it exports an IrreduciblePoly
 -- instance which screw with GHC. Probably #10338.
-import Crypto.Lol.Types.Complex
-import Crypto.Lol.Types.RRq
-import Crypto.Lol.Types.ZqBasic
+import Crypto.Lol.Types.Unsafe.Complex
+import Crypto.Lol.Types.Unsafe.RRq
+import Crypto.Lol.Types.Unsafe.ZqBasic
 
 import Foreign.Storable
 

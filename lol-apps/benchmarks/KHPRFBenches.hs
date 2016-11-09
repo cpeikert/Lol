@@ -19,10 +19,9 @@ import Control.Monad.State hiding (state)
 
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
+import Crypto.Lol.Benchmarks
 import Crypto.Lol.Types
-
-import GenArgs
-import Benchmarks
+import Crypto.Lol.Utils.GenArgs
 
 import GHC.TypeLits
 

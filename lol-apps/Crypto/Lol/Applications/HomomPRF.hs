@@ -30,7 +30,7 @@ import Control.Monad.State
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Reflects
-import Crypto.Lol.Types hiding (CT)
+import Crypto.Lol.Types
 
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Types.ZPP

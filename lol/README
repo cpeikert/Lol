@@ -1,10 +1,19 @@
 
+This package is primarily a library providing interfaces for lattice cryptography
+primitives. There are two main interfaces: 'Cyclotomic' and 'Tensor'. The
+Cyclotomic interface is the outward-facing API that is used to build cryptographic
+applications like pseudo-random functions, encryption, etc. The Tensor allows
+multiple backends to implement the functionality used by the Cyclotomic interface.
+Unless you are writing a new backend implementation, you shouldn't need to
+understand the Tensor interface. However, you *will* need an implementation of the
+Tensor interface in order to test, benchmark, and run applications.
+
 Most of the functionality in Lol is exported by two modules:
 
 * 'Crypto.Lol' exports the primary *interfaces* of Lol
 
 * 'Crypto.Lol.Types' exports concrete types that would be used by most
-  instantiations including tensors, base rings, and cryptographic
+  instantiations including base rings.
 
 For a brief introduction to relevant mathematical notation, see 'Crypto.Lol'.
 
@@ -27,12 +36,10 @@ Tensor layer:
   \( R \)- and \( R_q \)-elements, e.g., the CRT transform, converting between
   the powerful and decoding bases, generating error terms, etc.
 
-* 'Crypto.Lol.Cyclotomic.Tensor.RepaTensor', which gives an
-  implementation of the 'Tensor' class based on the "repa"
-  package, a highly optimized and parallelizable array library.
-
-* 'Crypto.Lol.Cyclotomic.Tensor.CTensor', which gives an
-  implementation of the 'Tensor' class using a C++ backend via Haskell's FFI.
+* You will need an implementation of the 'Tensor' interface in order to use Lol.
+  Existing implementations include
+  <https://hackage.haskell.org/package/lol-cpp lol-cpp>
+  and <https://hackage.haskell.org/package/lol-repa lol-repa>.
 
 
 Base ring layer:
@@ -45,7 +52,7 @@ Base ring layer:
   If you need to use an unsupported finite field,  define your own
   instance of 'IrreduciblePoly' and do **not** import 'IrreducibleChar2'.
 
-* 'Crypto.Lol.Types.ZqBasic', which is a basic implementation of
+* 'Crypto.Lol.Types.Unsafe.ZqBasic', which is a basic implementation of
   \( \Z_q=\Z/q\Z \) arithmetic.
 
 * 'Crypto.Lol.Factored', which contains type-level support code for

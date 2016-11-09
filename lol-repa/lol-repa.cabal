@@ -6,7 +6,7 @@ name:                lol-repa
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
 version:             0.0.0.1
-synopsis:            A library for lattice cryptography.
+synopsis:            A repa backend for <https://hackage.haskell.org/package/lol Λ ∘ λ>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
 license:             GPL-2
@@ -21,9 +21,8 @@ extra-source-files:  README, CHANGES.md
 cabal-version:       >= 1.10
 description:
     Λ ∘ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
-    For a detailed description of interfaces and functionality, see
-    <https://eprint.iacr.org/2015/1134 Λ ∘ λ: Functional Lattice Cryptography>.
-    For example cryptographic applications, see <https://hackage.haskell.org/package/lol-apps lol-apps>.
+    This package provides a pure Haskell implementation of Lol's Tensor interface
+    using the repa library for parallel arrays..
 source-repository head
   type: git
   location: https://github.com/cpeikert/Lol
@@ -99,6 +98,7 @@ Benchmark bench-lol-repa
   hs-source-dirs:     benchmarks
 
   ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
+  ghc-options: -ddump-simpl-stats -fsimpl-tick-factor=102
 
   build-depends:
     base,

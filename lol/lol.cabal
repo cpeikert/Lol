@@ -23,7 +23,10 @@ description:
     Λ ∘ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
     For a detailed description of interfaces and functionality, see
     <https://eprint.iacr.org/2015/1134 Λ ∘ λ: Functional Lattice Cryptography>.
+    Backends for the library include <https://hackage.haskell.org/package/lol-cpp lol-cpp>
+    and <https://hackage.haskell.org/package/lol-repa lol-repa>.
     For example cryptographic applications, see <https://hackage.haskell.org/package/lol-apps lol-apps>.
+
 source-repository head
   type: git
   location: https://github.com/cpeikert/Lol
@@ -72,16 +75,16 @@ library
 
     Crypto.Lol.Cyclotomic.Tensor
     Crypto.Lol.GaussRandom
-    Crypto.Lol.Types.Complex
+    Crypto.Lol.Types.Unsafe.Complex
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
     Crypto.Lol.Types.IZipVector
     Crypto.Lol.Types.Proto
     Crypto.Lol.Types.Random
-    Crypto.Lol.Types.RRq
+    Crypto.Lol.Types.Unsafe.RRq
     Crypto.Lol.Types.ZmStar
     Crypto.Lol.Types.ZPP
-    Crypto.Lol.Types.ZqBasic
+    Crypto.Lol.Types.Unsafe.ZqBasic
 
     Crypto.Proto.RLWE
     Crypto.Proto.RLWE.Rq
@@ -103,7 +106,9 @@ library
   build-depends:
     arithmoi >= 0.4.1.3 && <0.5,
     base>=4.8 && <5,
+    bytestring,
     constraints,
+    containers >= 0.5.6.2 && < 0.6,
     crypto-api,
     data-default >= 0.3.0 && < 0.8,
     deepseq >= 1.4.1.1 && <1.5,
@@ -111,15 +116,26 @@ library
     MonadRandom >= 0.2 && < 0.5,
     mtl >= 2.2.1 && < 2.3,
     numeric-prelude >= 0.4.2 && < 0.5,
+    protocol-buffers,
+    protocol-buffers-descriptor,
     random >= 1.1 && < 1.2,
     reflection >= 1.5.1 && < 2.2,
     singletons >= 1.1.2.1 && < 2.3,
     tagged-transformer >= 0.7 && < 0.9,
     template-haskell  >=  2.2.0.0,
     vector==0.11.*,
-    vector-th-unbox >= 0.2.1.0 && < 0.3,
-    -- EAC: can we move these instances to rlwe-challenges?
-    protocol-buffers,
-    protocol-buffers-descriptor,
-    bytestring,
-    containers >= 0.5.6.2 && < 0.6
+    vector-th-unbox >= 0.2.1.0 && < 0.3
+
+Benchmark bench-lol
+  type:               exitcode-stdio-1.0
+  default-language:   Haskell2010
+  main-is:            Main.hs
+  hs-source-dirs:     exec
+
+  ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
+
+  build-depends:
+    base,
+    DRBG,
+    lol,
+    lol-benches

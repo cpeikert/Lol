@@ -6,7 +6,6 @@ import Crypto.Lol.Benchmarks
 import Crypto.Lol.Benchmarks.Standard
 import Crypto.Lol.Cyclotomic.Tensor.Repa
 import Crypto.Lol.Factored
-import Crypto.Lol.Types
 import qualified Crypto.Lol.Utils.PrettyPrint.Diagnostic as D
 import qualified Crypto.Lol.Utils.PrettyPrint.Table as T
 import Crypto.Random.DRBG
@@ -26,7 +25,7 @@ ls = [
 -- choose which operations to benchmark
 bs :: [String]
 bs = [
-  "unzipPow",
+  {-"unzipPow",
   "unzipDec",
   "unzipCRT",
   "zipWith (*)",
@@ -47,7 +46,7 @@ bs = [
   "twaceCRT",
   "embedPow",
   "embedDec",
-  "embedCRT"
+  "embedCRT"-}
   ]
 
 main :: IO ()
@@ -66,4 +65,4 @@ diagnosticMain = do
           [oneIdxBenches (Proxy::Proxy '(F64*F9*F25, Zq 14401)) (Proxy::Proxy RT) (Proxy::Proxy HashDRBG)]
   b2 <- benchGroup "Twace-Embed"
           [twoIdxBenches (Proxy::Proxy '(F64*F9*F25, F64*F9*F25, Zq 14401)) (Proxy::Proxy RT)]
-  mapM_ (D.prettyBenches opts) [b1]
+  mapM_ (D.prettyBenches opts) [b1,b2]

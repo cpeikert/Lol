@@ -64,8 +64,8 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.RRq
-import Crypto.Lol.Types.ZqBasic
+import Crypto.Lol.Types.Unsafe.RRq hiding (RRq')
+import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 import Crypto.Lol.Utils.ShowType
 
 import Crypto.Proto.RLWE.Kq

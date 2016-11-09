@@ -1,10 +1,10 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
@@ -17,8 +17,8 @@ import Crypto.Lol
 import Crypto.Lol.Applications.HomomPRF
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Types hiding (CT)
-import qualified Crypto.Lol.Types as Lol (CT)
+import Crypto.Lol.Types
+import Crypto.Lol.Cyclotomic.Tensor.CPP as CPP
 
 type H0 = F128
 type H1 = F64 * F7
@@ -54,16 +54,17 @@ type PRFGad = BaseBGad 2
 
 main :: IO ()
 main = do
-  let v = 1.0
+  let v = 1.0 :: Double
   sk <- genSK v
-  (tHints, skout) <- tunnelHints v sk
+  (tHints, skout) <- tunnelHints sk
   rHints <- roundHints skout
-  let hints = Hints tHints rHints :: EvalHints Lol.CT RngList Int64 ZP8 ZQ4 ZQSeq KSGad Double
+  let hints = Hints tHints rHints :: EvalHints CPP.CT RngList Int64 ZP8 ZQ4 ZQSeq KSGad
   family :: PRFFamily PRFGad _ _ <- randomFamily 10 -- works on 10-bit input
   s <- getRandom
   let st = prfState family Nothing --initialize with input 0
   ct <- encrypt sk s
   let prf = homomPRFM ct
-      encprfs = flip runReader hints $ flip evalStateT st $ mapM prf [0,1,3,2,6,7,5,4]
+      xs = grayCode 3
+      encprfs = flip runReader hints $ flip evalStateT st $ mapM prf xs
       decprfs = decrypt skout <$> encprfs
   decprfs `deepseq` return ()

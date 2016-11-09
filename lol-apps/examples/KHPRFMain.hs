@@ -1,10 +1,10 @@
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE FlexibleContexts    #-}
-{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 import Control.Applicative
 import Control.DeepSeq
@@ -13,7 +13,7 @@ import Control.Monad.State hiding (state)
 
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
-import Crypto.Lol.Cyclotomic.UCyc
+import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
 import MathObj.Matrix hiding (zipWith)
@@ -29,7 +29,8 @@ main = do
   s <- getRandom                                                            -- prf seed
   let state = prfState family Nothing                                       -- initialize with input 0
       prf = ringPRFM s
-      res = map rows $ flip evalState state $ mapM prf [0,1,3,2,6,7,5,4]    -- grey code
+      xs = grayCode 3
+      res = map rows $ flip evalState state $ mapM prf xs
   res `deepseq` print "done"
 
 main2 :: IO ()
@@ -44,5 +45,6 @@ main2 = do
   s <- fromList 1 n <$> take n <$> getRandoms
   let state = prfState family Nothing -- initialize with input 0
       prf x = latticePRFM s x
-      res = map rows $ flip evalState state $ mapM prf [0,1,3,2,6,7,5,4] -- grey code
+      xs = grayCode 3
+      res = map rows $ flip evalState state $ mapM prf xs
   print res

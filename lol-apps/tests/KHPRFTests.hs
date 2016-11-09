@@ -6,7 +6,7 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module KHPRFTests where
+module KHPRFTests (khprfTests) where
 
 import Control.Applicative
 import Control.Monad.Random
@@ -14,20 +14,20 @@ import Control.Monad.Random
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Cyclotomic.UCyc
+import Crypto.Lol.Tests
 
 import MathObj.Matrix
 
-import Tests
---import qualified Test.Framework as TF
-{-
-sheTests :: forall t m zp zq gad rnd . (MonadRandom rnd, _)
+import qualified Test.Framework as TF
+
+khprfTests :: forall t m zp zq gad rnd . (MonadRandom rnd, _)
   => Proxy '(m,zp,zq,gad) -> Proxy t -> [rnd TF.Test]
-sheTests _ _ =
+khprfTests _ _ =
   let ptmr = Proxy::Proxy '(t,m,zp,zq,gad)
   in ($ ptmr) <$> [
-   genTestArgs "PRF_3bits" (prop_KeyHomom 3),
-   genTestArgs "PRF_5bits" (prop_KeyHomom 5)]
--}
+   genTestArgs "PRF_3bits" (prop_keyHomom 3),
+   genTestArgs "PRF_5bits" (prop_keyHomom 5)]
+
 -- +/-1 in every coefficient of the rounding basis
 prop_keyHomom :: forall t m zp zq gad . (Fact m, CElt t zq, CElt t zp, _)
   => Int -> Test '(t,m,zp,zq,gad)

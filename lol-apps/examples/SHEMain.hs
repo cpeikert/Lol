@@ -6,8 +6,8 @@
 
 import           Crypto.Lol hiding ((^))
 import           Crypto.Lol.Applications.SymmSHE -- exports *ciphertext* 'CT'
-import           Crypto.Lol.Types hiding (CT)
-import qualified Crypto.Lol.Types as C -- the *tensor* 'CT'
+import           Crypto.Lol.Types
+import qualified Crypto.Lol.Cyclotomic.Tensor.CPP as C -- the *tensor* 'CT'
 
 import Algebra.Ring ((^))
 

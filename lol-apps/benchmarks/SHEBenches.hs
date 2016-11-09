@@ -22,7 +22,7 @@ import Crypto.Random.DRBG
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Types hiding (CT)
+import Crypto.Lol.Types
 import Crypto.Lol.Types.ZPP
 
 addGen5 :: Proxy gen -> Proxy '(t,m,m',zp,zq) -> Proxy '(t,m,m',zp,zq,gen)

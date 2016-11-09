@@ -1,17 +1,16 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE CPP #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE UndecidableInstances #-}
-#if __GLASGOW_HASKELL__ >= 800
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
+
+
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
-#endif
 
 -- | This module contains the functions to transform Haskell types into their
 -- C counterpart, and to transform polymorphic Haskell functions into C funtion
@@ -34,8 +33,8 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 import Crypto.Lol.Prelude       as LP (Complex, PP, Proxy (..), Tagged,
                                        map, mapM_, proxy, tag)
 import Crypto.Lol.Reflects
-import Crypto.Lol.Types.RRq
-import Crypto.Lol.Types.ZqBasic
+import Crypto.Lol.Types.Unsafe.RRq
+import Crypto.Lol.Types.Unsafe.ZqBasic
 
 import Data.Int
 import Data.Vector.Storable          as SV (Vector, fromList,
@@ -48,9 +47,7 @@ import           Foreign.Marshal.Utils   (with)
 import           Foreign.Ptr             (Ptr, castPtr, plusPtr)
 import           Foreign.Storable        (Storable (..))
 
-#if __GLASGOW_HASKELL__ >= 800
 import GHC.TypeLits -- for error message
-#endif
 
 -- | Convert a list of prime powers to a suitable C representation.
 marshalFactors :: [PP] -> Vector CPP
@@ -95,24 +92,21 @@ type family CTypeOf x where
   CTypeOf Int64 = Int64D
   CTypeOf (Complex Double) = ComplexD
   CTypeOf (RRq (q :: k) Double) = RRqD
-#if __GLASGOW_HASKELL__ >= 800
+
   -- EAC: See #12237 and #11990
   CTypeOf (ZqBasic (q :: k) i) = TypeError (Text "Unsupported C type: " :<>: ShowType (ZqBasic q i) :$$: Text "Use Int64 as the base ring")
   CTypeOf (Complex i) = TypeError (Text "Unsupported C type: " :<>: ShowType (Complex i) :$$: Text "Use Double as the base ring")
   CTypeOf (RRq (q :: k) i) = TypeError (Text "Unsupported C type: " :<>: ShowType (RRq q i) :$$: Text "Use Double as the base ring")
   CTypeOf a = TypeError (Text "Unsupported C type: " :<>: ShowType a)
-#endif
 
 type family EqCType a b c d where
   EqCType a b ZqB64D ZqB64D = ZqB64D
   EqCType a b RRqD RRqD = RRqD
   EqCType a b ComplexD ComplexD = ComplexD
-#if __GLASGOW_HASKELL__ >= 800
   EqCType a b c c = TypeError (Text "Cannot call C code on a tuple of type " :<>: ShowType a)
   EqCType a b c d = TypeError (Text "You are trying to use CTensor on a tuple," :<>:
                            Text " but the tuple contains two different C types: " :$$:
                            ShowType a :<>: Text " and " :<>: ShowType b)
-#endif
 
 -- returns the modulus as a nested list of moduli
 class (Tuple a) => ZqTuple a where

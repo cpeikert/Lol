@@ -22,7 +22,8 @@ cabal-version:       >= 1.10
 description:
     This library contains code to benchmark <https://hackage.haskell.org/package/lol Λ ∘ λ (Lol)>.
     It is designed so that third-party tensors can be easily benchmarked using the same framework.
-    For examples of how to use this library, see the benchmarks for this package.
+    For examples of how to use this library, see the benchmarks for
+    <https://hackage.haskell.org/package/lol-cpp lol-cpp>.
 source-repository head
   type: git
   location: https://github.com/cpeikert/Lol
