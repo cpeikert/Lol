@@ -13,6 +13,7 @@ sandbox-reset
 rebuild-proto
 *.prof
 **/TypeCheck.hs
+libctensor
 
 **/TAGS
 **/configure

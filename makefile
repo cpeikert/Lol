@@ -4,8 +4,8 @@ CXX      ?= g++
 AR       ?= ar
 CXXFLAGS ?= -Wall -O3 -std=c++11 -fPIC
 
-CSRCPATH = Crypto/Lol/Cyclotomic/Tensor/CTensor
-OBJPATH = dist/build/ctensor
+CSRCPATH = lol-cpp/Crypto/Lol/Cyclotomic/Tensor/CPP
+OBJPATH = ../libctensor
 # if you change (LIBPATH) or LIBNAME, you must update Setup.hs.
 LIBPATH = $(OBJPATH)
 LIBNAME = libctensor
