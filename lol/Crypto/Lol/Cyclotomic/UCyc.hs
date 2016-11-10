@@ -45,7 +45,8 @@ module Crypto.Lol.Cyclotomic.UCyc
 -- * Inter-ring operations and values
 , embedPow, embedDec, embedCRTC, embedCRTE
 , twacePow, twaceDec, twaceCRTC, twaceCRTE
-, coeffsPow, coeffsDec, powBasis, crtSet
+, coeffsPow, coeffsDec, coeffsCRTSet
+, powBasis, crtSet, crtSetDual
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor hiding (divGDec, divGPow, embedCRT,
@@ -460,7 +461,7 @@ embedCRTC x@(CRTC s v) =
 
 -- | Similar to 'embedCRTC'.  (The output is an 'Either' because the
 -- extension ring might support 'C', in which case we never use 'E'.)
-embedCRTE :: forall m m' t r . (m `Divides` m', UCRTElt t r)
+embedCRTE :: (m `Divides` m', UCRTElt t r)
              => UCyc t m E r -> Either (UCyc t m' P r) (UCyc t m' E r)
 {-# INLINABLE embedCRTE #-}
 embedCRTE x@(CRTE _ v) =
@@ -483,8 +484,7 @@ twaceDec (Dec v) = Dec $ twacePowDec v
 
 -- | Twace into a subring, for the CRT basis.  (The output is an
 -- 'Either' because the subring might not support 'C'.)
-twaceCRTC :: (m `Divides` m', UCRTElt t r)
-             => UCyc t m' C r -> UCycPC t m r
+twaceCRTC :: (m `Divides` m', UCRTElt t r) => UCyc t m' C r -> UCycPC t m r
 {-# INLINE twaceCRTC #-}
 twaceCRTC x@(CRTC s' v) =
   case crtSentinel of
@@ -517,6 +517,20 @@ coeffsDec :: (Ring r, Tensor t, m `Divides` m', TElt t r)
 {-# INLINABLE coeffsDec #-}
 coeffsDec (Dec v) = LP.map Dec $ coeffs v
 
+coeffsCRTSet :: forall t m m' r p mbar m'bar .
+  (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r),
+   mbar ~ PFree p m, m'bar ~ PFree p m',
+   UCRTElt t r, TElt t (ZpOf r), ZeroTestable r,
+   IntegralDomain r)
+  => UCycEC t m' r -> [UCycEC t m r]
+coeffsCRTSet x =
+  let csetd = proxy crtSetDual (Proxy::Proxy m)
+      xcoeffs = map (x*) csetd :: [UCycEC t m' r]
+      twaceCRTEC = either
+        (either toCRT Left . twaceCRTE)
+        (either toCRT Right . twaceCRTC)
+  in map twaceCRTEC xcoeffs
+
 -- | The relative powerful basis of \(\O_{m'} / \O_m\).
 powBasis :: (Ring r, Tensor t, m `Divides` m', TElt t r)
             => Tagged m [UCyc t m' P r]
@@ -524,13 +538,13 @@ powBasis :: (Ring r, Tensor t, m `Divides` m', TElt t r)
 powBasis = (Pow <$>) <$> powBasisPow
 
 -- | The relative mod-\(r\) CRT set of \(\O_{m'} / \O_m\),
--- represented with respect to the powerful basis (which seems to be
+-- represented with respect to the CRT basis (which seems to be
 -- the best choice for typical use cases).
 crtSet :: forall t m m' r p mbar m'bar .
            (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r),
             mbar ~ PFree p m, m'bar ~ PFree p m',
             UCRTElt t r, TElt t (ZpOf r))
-           => Tagged m [UCyc t m' P r]
+           => Tagged m [UCycEC t m' r]
 {-# INLINABLE crtSet #-}
 crtSet =
   -- CJP: consider using traceEvent or traceMarker
@@ -541,11 +555,35 @@ crtSet =
       pp = Proxy::Proxy p
       pm = Proxy::Proxy m
       pm' = Proxy::Proxy m'
-  in retag (fmap (embedPow .
-                  (if e > 1 then toPowCE . (^(p^(e-1))) . toCRT else toPow) .
+      embedCRTEC = either
+        (either toCRT Left . embedCRTE)
+        (either toCRT Right . embedCRTC)
+          \\ pSplitTheorems pp pm' :: UCycEC t m'bar r -> UCycEC t m' r
+  in retag (fmap (embedCRTEC .
+                  (if e > 1 then (^(p^(e-1))) . toCRT else toCRT) .
                   Dec . fmapT liftZp) <$>
             (crtSetDec :: Tagged mbar [t m'bar (ZpOf r)]))
-     \\ pFreeDivides pp pm pm' \\ pSplitTheorems pp pm \\ pSplitTheorems pp pm'
+      \\ pFreeDivides pp pm pm' \\ pSplitTheorems pp pm  \\ pSplitTheorems pp pm'
+
+-- | The dual of the relative mod-\(r\) CRT set of \(\O_{m'} / \O_m\),
+-- represented with respect to the powerful basis.
+crtSetDual :: forall t m m' r p mbar m'bar .
+           (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r),
+            mbar ~ PFree p m, m'bar ~ PFree p m',
+            UCRTElt t r, TElt t (ZpOf r), ZeroTestable r,
+            IntegralDomain r)
+           => Tagged m [UCycEC t m' r]
+{-# INLINABLE crtSetDual #-}
+crtSetDual = do
+  mhat <- valueHatFact
+  let m'hat = proxy valueHatFact (Proxy::Proxy m')
+      scalar = fromIntegral $ m'hat `div` mhat
+      -- EAC: must go to Pow here because we need to call divG, which we don't
+      -- support in extension basis. however, in this case we know the division
+      -- will succeed, and we could use that knowledge to avoid a round-trip CRT.
+      gm = mulG $ toPowCE scalar :: UCyc t m P r
+      mult = toCRT $ fromJust' "divGPow crtSetDual" $ divGPow $ embedPow gm
+  (map (mult*)) <$> crtSet
 
 
 --------- Conversion methods ------------------

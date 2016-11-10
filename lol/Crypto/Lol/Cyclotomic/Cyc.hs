@@ -50,7 +50,9 @@ module Crypto.Lol.Cyclotomic.Cyc
 -- * Error sampling
 , tGaussian, errorRounded, errorCoset
 -- * Sub/extension rings
-, embed, twace, coeffsCyc, coeffsPow, coeffsDec, powBasis, crtSet
+, embed, twace
+, coeffsPow, coeffsDec, coeffsCRTSet
+, powBasis, crtSet, crtSetDual
 ) where
 
 import qualified Algebra.Additive     as Additive (C)
@@ -58,9 +60,9 @@ import qualified Algebra.Module       as Module (C)
 import qualified Algebra.Ring         as Ring (C)
 import qualified Algebra.ZeroTestable as ZeroTestable (C)
 
-import Crypto.Lol.Cyclotomic.UCyc hiding (coeffsDec, coeffsPow, crtSet,
-                                   errorCoset, errorRounded, gSqNorm, mulG,
-                                   powBasis, tGaussian)
+import Crypto.Lol.Cyclotomic.UCyc hiding (coeffsDec, coeffsPow, coeffsCRTSet,
+                                          powBasis, crtSet, crtSetDual, gSqNorm,
+                                          errorCoset, errorRounded, mulG, tGaussian)
 
 import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.RescaleCyc as R
@@ -410,22 +412,22 @@ twace (Scalar u) = Scalar u
 twace (Sub (c :: Cyc t l r)) = Sub (twace c :: Cyc t (FGCD l m) r)
                                \\ gcdDivides (Proxy::Proxy l) (Proxy::Proxy m)
 
--- | Return the given element's coefficient vector with respect to
--- the (relative) powerful/decoding basis of the cyclotomic
--- extension \(\O_{m'} / \O_m\).
--- See also 'coeffsPow', 'coeffsDec'.
-coeffsCyc :: (m `Divides` m', CElt t r) => R.Basis -> Cyc t m' r -> [Cyc t m r]
-{-# INLINABLE coeffsCyc #-}
-coeffsCyc R.Pow c' = Pow <$> U.coeffsPow (uncycPow c')
-coeffsCyc R.Dec c' = Dec <$> U.coeffsDec (uncycDec c')
-
 coeffsPow, coeffsDec :: (m `Divides` m', CElt t r) => Cyc t m' r -> [Cyc t m r]
 {-# INLINABLE coeffsPow #-}
 {-# INLINABLE coeffsDec #-}
--- | Specialized version of 'coeffsCyc' for powerful basis.
-coeffsPow = coeffsCyc R.Pow
--- | Specialized version of 'coeffsCyc' for decoding basis.
-coeffsDec = coeffsCyc R.Dec
+-- | Return the given element's coefficient vector with respect to
+-- the (relative) powerful basis of the cyclotomic
+-- extension \(\O_{m'} / \O_m\).
+coeffsPow = (Pow <$>) .  U.coeffsPow . uncycPow
+-- | Return the given element's coefficient vector with respect to
+-- the (relative) decoding basis of the cyclotomic
+-- extension \(\O_{m'} / \O_m\).
+coeffsDec = (Dec <$>) .  U.coeffsDec . uncycDec
+
+coeffsCRTSet :: (m `Divides` m', CElt t r, ZPP r, TElt t (ZpOf r), IntegralDomain r)
+             => Cyc t m' r -> [Cyc t m r]
+{-# INLINABLE coeffsCRTSet #-}
+coeffsCRTSet = (CRT <$>) . U.coeffsCRTSet . uncycCRT
 
 -- | The relative powerful basis of \(\O_{m'} / \O_m\).
 powBasis :: (m `Divides` m', CElt t r) => Tagged m [Cyc t m' r]
@@ -435,8 +437,14 @@ powBasis = (Pow <$>) <$> U.powBasis
 -- | The relative mod-@r@ CRT set of the extension.
 crtSet :: (m `Divides` m', ZPP r, CElt t r, TElt t (ZpOf r))
           => Tagged m [Cyc t m' r]
-crtSet = (Pow <$>) <$> U.crtSet
+crtSet = (CRT <$>) <$> U.crtSet
 {-# INLINABLE crtSet #-}
+
+-- | The dual of the relative mod-@r@ CRT set of the extension.
+crtSetDual :: (m `Divides` m', ZPP r, CElt t r, TElt t (ZpOf r),
+               IntegralDomain r)
+           => Tagged m [Cyc t m' r]
+crtSetDual = (CRT <$>) <$> U.crtSetDual
 
 
 ---------- Lattice operations and instances ----------

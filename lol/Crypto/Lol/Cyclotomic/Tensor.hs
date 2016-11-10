@@ -159,6 +159,9 @@ class (TElt t Double, TElt t (Complex Double)) => Tensor t where
   -- | Map a tensor in the powerful\/decoding\/CRT basis, representing
   -- an \(\O_{m'}\) element, to a vector of tensors representing
   -- \(\O_m\) elements in the same kind of basis.
+  -- 'Crypto.Lol.Cyclotomic.UCyc.coeffsCRTSet' gets the coefficients
+  -- with respect to a CRT /set/, even when a full CRT extension basis
+  -- does not exist.
   coeffs :: (Ring r, m `Divides` m', TElt t r) => t m' r -> [t m r]
 
   -- | The powerful extension basis w.r.t. the powerful basis.
