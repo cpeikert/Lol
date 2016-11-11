@@ -190,7 +190,7 @@ trace' e = let (p,d) = witness sizePP e
 -- polynomials of desired degrees.  (An instance of this class is
 -- defined in "Crypto.Lol.Types.IrreducibleChar2" and exported from
 -- "Crypto.Lol.Types".)
-class Field fp => IrreduciblePoly fp where
+class (Field fp) => IrreduciblePoly fp where
   irreduciblePoly :: (Reflects d Int) => Tagged d (Polynomial fp)
 
 -- | Convenience data type for writing 'IrreduciblePoly' instances.

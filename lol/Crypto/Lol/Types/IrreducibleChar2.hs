@@ -28,7 +28,7 @@ instance (Show i, ToInteger i, PID i) => IrreduciblePoly (ZqBasic Prime2 i) wher
       error $
         "The IrreduciblePoly instance for N2 included with the library " ++
         "(and exported by Crypto.Lol) only contains irreducible polynomials " ++
-        "for characteristic-2 fields up to GF(2^^32). You need a polynomial " ++
+        "for characteristic-2 fields up to GF(2^^128). You need a polynomial " ++
         "for GF(2^^" ++ show n ++ "). Define your own instance of " ++
         "IrreduciblePoly and do not import Crypto.Lol."
 
