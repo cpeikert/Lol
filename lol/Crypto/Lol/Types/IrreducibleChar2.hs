@@ -20,7 +20,7 @@ instance (CharOf a ~ Prime2, Field a) => IrreduciblePoly a where
       error $
         "The IrreduciblePoly instance for N2 included with the library " ++
         "(and exported by Crypto.Lol) only contains irreducible polynomials " ++
-        "for characteristic-2 fields up to GF(2^^32). You need a polynomial " ++
+        "for characteristic-2 fields up to GF(2^^128). You need a polynomial " ++
         "for GF(2^^" ++ show n ++ "). Define your own instance of " ++
         "IrreduciblePoly and do not import Crypto.Lol."
 
@@ -38,7 +38,7 @@ coeffsToPoly xs = (sum $ map (X^^) xs) + 1
 --   [a,b,c,d] is the irreducible pentanomial X^a + X^b + X^c + X^d + 1
 coeffs :: [[Int]]
 coeffs = [
-  [1,1],
+  [1,0],
   [2,1],
   [3,1],
   [4,1],
