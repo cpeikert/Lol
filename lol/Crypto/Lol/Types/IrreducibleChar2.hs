@@ -46,7 +46,7 @@ coeffsToPoly xs = (sum $ map (X^^) xs) + 1
 --   [a,b,c,d] is the irreducible pentanomial X^a + X^b + X^c + X^d + 1
 coeffs :: [[Int]]
 coeffs = [
-  [1,1],
+  [1,0],
   [2,1],
   [3,1],
   [4,1],
