@@ -9,7 +9,6 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 
 -- | This module contains the functions to transform Haskell types into their

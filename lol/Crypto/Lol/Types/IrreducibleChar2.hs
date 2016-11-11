@@ -12,11 +12,16 @@ module Crypto.Lol.Types.IrreducibleChar2 () where
 import Crypto.Lol.Prelude hiding (lookup)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField hiding (fromList)
+import Crypto.Lol.Types.Unsafe.ZqBasic
 
 import Data.Map hiding (map)
 import Data.Maybe (fromMaybe)
 
-instance (CharOf a ~ Prime2, Field a) => IrreduciblePoly a where
+-- With a generic instance head, this gives an extrememly confusing error
+-- message when no instance is available. By using `ZqBasic Prime2`, we
+-- lose little generality, get much better error messages, and make it
+-- easier for other users to make new instances for different primes.
+instance (Show i, ToInteger i, PID i) => IrreduciblePoly (ZqBasic Prime2 i) where
   irreduciblePoly = do
     n <- value
     return $ flip fromMaybe (lookup n polyMap) $

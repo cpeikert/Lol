@@ -11,8 +11,9 @@
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-{-# OPTIONS_GHC -fno-warn-unused-binds          #-}
-{-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
+{-# OPTIONS_GHC -fno-warn-unused-binds                   #-}
+{-# OPTIONS_GHC -fno-warn-redundant-constraints          #-}
+{-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 
 -- | This sub-module exists only because we can't define and use
 -- template Haskell splices in the same module.
@@ -56,15 +57,14 @@ module Crypto.Lol.FactoredDefs
 ) where
 
 import Crypto.Lol.PosBin
-
 import Control.Arrow
 import Data.Constraint           hiding ((***), (&&&))
 import Data.Functor.Trans.Tagged
 import Data.List                 hiding ((\\))
 import Data.Singletons.Prelude   hiding ((:-))
 import Data.Singletons.TH
+import GHC.TypeLits              hiding (type (*)) -- for error message
 import Language.Haskell.TH
-
 import Unsafe.Coerce
 
 singletons [d|
@@ -263,7 +263,11 @@ reifyFactI pps k =
   reifyFact pps $ (\(m::SFactored m) -> withSingI m $ k (Proxy::Proxy m))
 
 -- | Constraint synonym for divisibility of 'Factored' types.
-type Divides m m' = (Fact m, Fact m', FDivides m m' ~ 'True)
+type Divides m m' = (Fact m, Fact m', DoesDivide m m' (FDivides m m'))
+
+type family DoesDivide m m' result :: Constraint where
+  DoesDivide m m' 'True = ()
+  DoesDivide m m' 'False = TypeError (ShowType m :<>: Text " does not divide " :<>: ShowType m')
 
 -- | Constraint synonym for coprimality of 'Factored' types.
 type Coprime m m' = (FGCD m m' ~ F1)

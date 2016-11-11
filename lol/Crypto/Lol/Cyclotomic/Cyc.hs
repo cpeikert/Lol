@@ -424,7 +424,8 @@ coeffsPow = (Pow <$>) .  U.coeffsPow . uncycPow
 -- extension \(\O_{m'} / \O_m\).
 coeffsDec = (Dec <$>) .  U.coeffsDec . uncycDec
 
-coeffsCRTSet :: (m `Divides` m', CElt t r, ZPP r, TElt t (ZpOf r), IntegralDomain r)
+coeffsCRTSet :: (m `Divides` m', CElt t r, ZPP r, TElt t (ZpOf r),
+                 IntegralDomain r)
              => Cyc t m' r -> [Cyc t m r]
 {-# INLINABLE coeffsCRTSet #-}
 coeffsCRTSet = (CRT <$>) . U.coeffsCRTSet . uncycCRT

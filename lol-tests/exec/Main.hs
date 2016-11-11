@@ -1,8 +1,8 @@
 
+import Crypto.Lol.Cyclotomic.Tensor.CPP
+import Crypto.Lol.Cyclotomic.Tensor.Repa
 import Crypto.Lol.Tests.Standard
-import Crypto.Lol.Types
 import Data.Proxy
-
 import Test.Framework
 
 main :: IO ()

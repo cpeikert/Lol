@@ -517,11 +517,9 @@ coeffsDec :: (Ring r, Tensor t, m `Divides` m', TElt t r)
 {-# INLINABLE coeffsDec #-}
 coeffsDec (Dec v) = LP.map Dec $ coeffs v
 
-coeffsCRTSet :: forall t m m' r p mbar m'bar .
-  (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r),
-   mbar ~ PFree p m, m'bar ~ PFree p m',
-   UCRTElt t r, TElt t (ZpOf r), ZeroTestable r,
-   IntegralDomain r)
+coeffsCRTSet :: forall t m m' r .
+  (m `Divides` m', ZPP r, UCRTElt t r, TElt t (ZpOf r),
+   ZeroTestable r, IntegralDomain r)
   => UCycEC t m' r -> [UCycEC t m r]
 coeffsCRTSet x =
   let csetd = proxy crtSetDual (Proxy::Proxy m)
@@ -567,11 +565,9 @@ crtSet =
 
 -- | The dual of the relative mod-\(r\) CRT set of \(\O_{m'} / \O_m\),
 -- represented with respect to the powerful basis.
-crtSetDual :: forall t m m' r p mbar m'bar .
-           (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r),
-            mbar ~ PFree p m, m'bar ~ PFree p m',
-            UCRTElt t r, TElt t (ZpOf r), ZeroTestable r,
-            IntegralDomain r)
+crtSetDual :: forall t m m' r .
+           (m `Divides` m', ZPP r, UCRTElt t r, TElt t (ZpOf r),
+            ZeroTestable r, IntegralDomain r)
            => Tagged m [UCycEC t m' r]
 {-# INLINABLE crtSetDual #-}
 crtSetDual = do
@@ -581,10 +577,9 @@ crtSetDual = do
       -- EAC: must go to Pow here because we need to call divG, which we don't
       -- support in extension basis. however, in this case we know the division
       -- will succeed, and we could use that knowledge to avoid a round-trip CRT.
-      gm = mulG $ toPowCE scalar :: UCyc t m P r
-      mult = toCRT $ fromJust' "divGPow crtSetDual" $ divGPow $ embedPow gm
-  (map (mult*)) <$> crtSet
-
+      gm = mulG $ toPowCE one :: UCyc t m P r
+      mult = scalar * (toCRT $ fromJust' "divGPow crtSetDual" $ divGPow $ embedPow gm)
+  map ((mult*) . toCRT . toPowCE) <$> crtSet
 
 --------- Conversion methods ------------------
 
