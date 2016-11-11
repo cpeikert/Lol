@@ -24,13 +24,12 @@ import Data.Maybe (fromMaybe)
 instance (Show i, ToInteger i, PID i) => IrreduciblePoly (ZqBasic Prime2 i) where
   irreduciblePoly = do
     n <- value
-    return $ flip fromMaybe (lookup n polyMap) $
-      error $
-        "The IrreduciblePoly instance for N2 included with the library " ++
-        "(and exported by Crypto.Lol) only contains irreducible polynomials " ++
-        "for characteristic-2 fields up to GF(2^^128). You need a polynomial " ++
-        "for GF(2^^" ++ show n ++ "). Define your own instance of " ++
-        "IrreduciblePoly and do not import Crypto.Lol."
+    return $ flip fromMaybe (lookup n polyMap) $ error $
+      "The IrreduciblePoly instance for N2 included with the library " ++
+      "(and exported by Crypto.Lol) only contains irreducible polynomials " ++
+      "for characteristic-2 fields up to GF(2^^128). You need a polynomial " ++
+      "for GF(2^^" ++ show n ++ "). Define your own instance of " ++
+      "IrreduciblePoly and do not import Crypto.Lol."
 
 polyMap :: (Ring fp) => Map Int (Polynomial fp)
 polyMap = fromList $ map (\xs -> (head xs, coeffsToPoly xs)) coeffs
