@@ -14,5 +14,3 @@ hDim_t ipow(hDim_t base, hShort_t exp)
   }
   return result;
 }
-
-

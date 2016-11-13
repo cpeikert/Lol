@@ -43,3 +43,12 @@ You can run unit tests with `stack test lol-apps`. You can run
 benchmarks with `stack bench lol-apps`. An example of how to use each
 application is included and is built automatically when you install
 lol-apps.
+
+Developing in the lol ecosystem:
+
+stack exec ./ghci -- path/to/file
+
+This command builds the C++ library for lol-cpp and the loads
+all imported files from lol* packages from source. You may
+need to run 'stack bench lol-cpp' or similar first to install
+the necessary dependencies.

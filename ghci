@@ -1,0 +1,5 @@
+#!/bin/bash
+cd lol-cpp
+make
+cd ..
+/usr/local/bin/ghci lol-cpp/lib/*.so $@

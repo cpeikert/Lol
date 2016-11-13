@@ -6,7 +6,6 @@ import Crypto.Lol.Benchmarks
 import Crypto.Lol.Benchmarks.Standard
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Factored
-import Crypto.Lol.Types
 import qualified Crypto.Lol.Utils.PrettyPrint.Diagnostic as D
 import qualified Crypto.Lol.Utils.PrettyPrint.Table as T
 import Crypto.Random.DRBG
