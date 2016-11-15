@@ -46,7 +46,7 @@ lol-apps.
 
 Developing in the lol ecosystem:
 
-stack exec ./ghci -- path/to/file
+./ghci path/to/file
 
 This command builds the C++ library for lol-cpp and the loads
 all imported files from lol* packages from source. You may
