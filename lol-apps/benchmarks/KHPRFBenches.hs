@@ -20,71 +20,47 @@ import Control.Monad.State hiding (state)
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Benchmarks
-import Crypto.Lol.Types
-import Crypto.Lol.Utils.GenArgs
-
-import GHC.TypeLits
 
 import MathObj.Matrix hiding (zipWith)
 
-type Gad = BaseBGad 2
-type Zq q = ZqBasic q Int64
+import HomomPRFParams
 
-ringParams :: Proxy '(CT, F128, Zq 8, Zq 2, Gad)
-ringParams = Proxy
+instance (NFData a) => NFData (T a) where rnf = rnf . rows
 
-lweParams :: Proxy '(Zq 8, Zq 2, 10, Gad)
-lweParams = Proxy
+khPRFBenches :: forall rnd t m zq zp gad . (MonadRandom rnd, _)
+  => Int -> Proxy t -> Proxy m -> Proxy '(zq,zp,gad) -> (Int -> FullBinTree) -> [rnd Benchmark]
+khPRFBenches n _ _ plwe t =
+  let pcyc = Proxy::Proxy '(t,m,zq,zp,gad)
+  in [
+      genBenchArgs "ring-startup" (benchRingPRF n t [0]) pcyc,
+      genBenchArgs "ring-amortized" (benchRingPRF n t (grayCode n)) pcyc,
+      genBenchArgs "lwe-startup" (benchLatticePRF n 3 t [0]) plwe,
+      genBenchArgs "lwe-amortized" (benchLatticePRF n 3 t (grayCode n)) plwe
+      ]
 
-instance (NFData a) => NFData (T a) where
-  rnf = rnf . rows
-
-khPRFBenches :: (MonadRandom m) => Int -> m Benchmark
-khPRFBenches n = benchGroup "KHPRF" [
-  hideArgs "ring-startup-left" (benchRingPRF n leftSpineTree [0]) ringParams,
-  hideArgs "ring-startup-right" (benchRingPRF n rightSpineTree [0]) ringParams,
-  hideArgs "ring-startup-balanced" (benchRingPRF n balancedTree [0]) ringParams,
-  hideArgs "ring-amortized-left" (benchRingPRF n leftSpineTree (grayCode n)) ringParams,
-  hideArgs "ring-amortized-right" (benchRingPRF n rightSpineTree (grayCode n)) ringParams,
-  hideArgs "ring-amortized-balanced" (benchRingPRF n balancedTree (grayCode n)) ringParams,
-  hideArgs "lwe-startup-left" (benchLatticePRF n leftSpineTree [0]) lweParams,
-  hideArgs "lwe-startup-right" (benchLatticePRF n rightSpineTree [0]) lweParams,
-  hideArgs "lwe-startup-balanced" (benchLatticePRF n balancedTree [0]) lweParams,
-  hideArgs "lwe-amortized-left" (benchLatticePRF n leftSpineTree (grayCode n)) lweParams,
-  hideArgs "lwe-amortized-right" (benchLatticePRF n rightSpineTree (grayCode n)) lweParams,
-  hideArgs "lwe-amortized-balanced" (benchLatticePRF n balancedTree (grayCode n)) lweParams
-  ]
-
-data As n gad rq = As (Matrix rq) (Matrix rq)
-
-instance (Gadget gad rq, Random rq, MonadRandom rnd, KnownNat n)
-  => Generatable rnd (As n gad rq) where
-  genArg = do
-    let gadLen = length $ untag (gadget :: Tagged gad [rq])
-        n = fromInteger $ natVal (Proxy::Proxy n)
-    a0 <- fromList n (n*gadLen) <$> take (gadLen*n*n) <$> getRandoms
-    a1 <- fromList n (n*gadLen) <$> take (gadLen*n*n) <$> getRandoms
-    return $ As a0 a1
-
+-- benchmarks time to run the PRF on each input, including the time
+-- it takes to initialize the state with input 0.
 benchRingPRF :: forall t m zq (zp :: *) (gad :: *) . (_)
-  => Int -> (Int -> FullBinTree) -> [Int] -> As 1 gad (Cyc t m zq) -> Cyc t m zq -> Bench '(t,m,zq,zp,gad)
-benchRingPRF size t xs (As a0 a1) s =
+  => Int -> (Int -> FullBinTree) -> [Int] -> Cyc t m zq -> Bench '(t,m,zq,zp,gad)
+benchRingPRF size t xs s = benchM $ do
+  let gadLen = length $ untag (gadget :: Tagged gad [Cyc t m zq])
+  a0 <- fromList 1 gadLen <$> take gadLen <$> getRandoms
+  a1 <- fromList 1 gadLen <$> take gadLen <$> getRandoms
   let family = makeFamily a0 a1 (t size) :: PRFFamily gad (Cyc t m zq) (Cyc t m zp)
-      st = prfState family Nothing -- initialize with input 0
-  in bench (flip evalState st . mapM (ringPRFM s)) xs
+  return $ bench
+    (let st = prfState family Nothing -- initialize with input 0
+     in (flip evalState st . mapM (ringPRFM s))) xs
 
-data Mat m n zq = Mat (Matrix zq)
-
-instance (Random zq, MonadRandom rnd, KnownNat m, KnownNat n) => Generatable rnd (Mat m n zq) where
-  genArg = do
-    let m = fromInteger $ natVal (Proxy::Proxy m)
-        n = fromInteger $ natVal (Proxy::Proxy n)
-    Mat <$> fromList m n <$> take (m*n) <$> getRandoms
-
-
-benchLatticePRF :: forall (zp :: *) zq n (gad :: *) . (_)
-  => Int -> (Int -> FullBinTree) -> [Int] -> As n gad zq -> Mat 1 n zq -> Bench '(zq,zp,n,gad)
-benchLatticePRF size t xs (As a0 a1) (Mat s) =
+-- benchmarks time to run the PRF on each input, including the time
+-- it takes to initialize the state with input 0.
+benchLatticePRF :: forall (zp :: *) (zq :: *) (gad :: *) . (_)
+  => Int -> Int -> (Int -> FullBinTree) -> [Int] -> Bench '(zq,zp,gad)
+benchLatticePRF size n t xs = benchM $ do
+  let gadLen = length $ untag (gadget :: Tagged gad [zq])
+  a0 :: Matrix zq <- fromList n (n*gadLen) <$> take (gadLen*n*n) <$> getRandoms
+  a1 :: Matrix zq <- fromList n (n*gadLen) <$> take (gadLen*n*n) <$> getRandoms
+  s :: Matrix zq <- fromList 1 n <$> take n <$> getRandoms
   let family = makeFamily a0 a1 (t size) :: PRFFamily gad zq zp
-      state = prfState family Nothing -- initialize with input 0
-  in bench (flip evalState state . mapM (latticePRFM s)) xs
+  return $ bench
+    (let state = prfState family Nothing -- initialize with input 0
+     in (flip evalState state . mapM (latticePRFM s))) xs

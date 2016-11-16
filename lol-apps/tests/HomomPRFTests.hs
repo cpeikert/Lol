@@ -11,6 +11,8 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
 module HomomPRFTests (homomPRFTests) where
 
 import Control.Applicative

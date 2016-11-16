@@ -3,6 +3,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
@@ -23,9 +24,11 @@ import Crypto.Random.DRBG
 import Data.Int
 import Data.Proxy
 
---import HomomPRFBenches
+import HomomPRFBenches
+import HomomPRFParams hiding (type Zq)
 import KHPRFBenches
 import SHEBenches
+import Crypto.Lol.Applications.KeyHomomorphicPRF
 
 infixr 9 **
 data a ** b
@@ -48,11 +51,14 @@ bs = [
 main :: IO ()
 main = do
   let o = (defaultOpts "SHE"){benches=bs}
-  benchGroups <- defaultBenches (Proxy::Proxy CT) (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG)
-  mapM_ (prettyBenches o) benchGroups
+      pct = Proxy::Proxy CT
+  sheBs <- sheBenches' pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG)
+  khprfBs <- khprfBenches pct (Proxy::Proxy PRFGad)
+  homomprfBs <- homomprfBenches pct (Proxy::Proxy PRFGad)
+  mapM_ (prettyBenches o) [sheBs, khprfBs, homomprfBs]
 
-defaultBenches :: _ => Proxy t -> Proxy gad -> Proxy gen -> rnd [Benchmark]
-defaultBenches pt pgad pgen  = sequence [
+sheBenches' :: _ => Proxy t -> Proxy gad -> Proxy gen -> rnd Benchmark
+sheBenches' pt pgad pgen  = benchGroup "SHE" [
   benchGroup "SHE" $ ($ pt) <$>
     [sheBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)) pgen,
      sheBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857)) pgen],
@@ -93,38 +99,19 @@ defaultBenches pt pgad pgen  = sequence [
                                                   Zq PP32,
                                                   Zq 3144961)) pgad]]
 
--- types for homomprf
-type H0 = F128
-type H1 = F64 * F7
-type H2 = F32 * F7 * F13
-type H3 = F8 * F5 * F7 * F13
-type H4 = F4 * F3 * F5 * F7 * F13
-type H5 = F9 * F5 * F7 * F13
-type H0' = H0 * F7 * F13
-type H1' = H1 * F13
-type H2' = H2
-type H3' = H3
-type H4' = H4
-type H5' = H5
-type RngList = '[ '(H0,H0'), '(H1,H1'), '(H2,H2'), '(H3,H3'), '(H4,H4'), '(H5,H5') ]
 
-type Zq (q :: k) = ZqBasic q Int64
--- three 24-bit moduli, enough to handle rounding for p=32 (depth-4 circuit at ~17 bits per mul)
-type ZQ1 = Zq 18869761
-type ZQ2 = (Zq 19393921, ZQ1)
-type ZQ3 = (Zq 19918081, ZQ2)
--- a 31-bit modulus, for rounding off after the last four hops
-type ZQ4 = (Zq 2149056001, ZQ3)
--- for rounding off after the first hop
-type ZQ5 = (Zq 3144961, ZQ4)
-type ZQ6 = (Zq 7338241, ZQ5)
-type ZQSeq = '[ZQ6, ZQ5, ZQ4, ZQ3, ZQ2, ZQ1]
+khprfBenches :: forall t gad rnd . (_) => Proxy t -> Proxy gad -> rnd Benchmark
+khprfBenches pt _ = benchGroup "KHPRF"
+  [benchGroup "left"     $ benches' leftSpineTree,
+   benchGroup "balanced" $ benches' balancedTree,
+   benchGroup "right"    $ benches' rightSpineTree]
+  where
+    benches' = khPRFBenches 5 pt (Proxy::Proxy F128) (Proxy::Proxy '(Zq 8, Zq 2, gad))
 
-type ZP8 = Zq PP8
-
--- these need not be the same
-type KSGad = BaseBGad 2
-type PRFGad = BaseBGad 2
+homomprfBenches :: _ => Proxy t -> Proxy prfgad -> rnd Benchmark
+homomprfBenches pt pgad = benchGroup "HomomPRF"
+  [benchGroup "balanced-startup"   [benchHomomPRF 5 balancedTree [0] pt pgad],
+   benchGroup "balanced-amortized" [benchHomomPRF 5 balancedTree (grayCode 5) pt pgad]]
 
 -- EAC: is there a simple way to parameterize the variance?
 -- generates a secret key with scaled variance 1.0

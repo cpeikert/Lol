@@ -10,8 +10,7 @@
 
 module HomomPRFBenches where
 
-import Control.DeepSeq
-import Control.Monad.Random
+import Control.Monad.Random hiding (fromList)
 import Control.Monad.Reader
 import Control.Monad.State
 
@@ -19,22 +18,31 @@ import Crypto.Lol
 import Crypto.Lol.Applications.HomomPRF
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Types hiding (CT)
-import qualified Crypto.Lol.Types as Lol (CT)
+import Crypto.Lol.Cyclotomic.Tensor.CPP as Lol
 
-benchHomomPRF :: forall t m zq (zp :: *) (gad :: *) . (_)
-  => Int -> (Int -> FullBinTree) -> [Int] -> As 1 gad (Cyc t m zq) -> CT r zp (Cyc t r' zq) -> Bench '(t,m,zq,zp,gad)
-benchHomomPRF size t xs (As a0 a1) ct
+import Data.Promotion.Prelude.List
 
-main :: IO ()
-main = do
-  let v = 1.0
+import Criterion
+import MathObj.Matrix
+import HomomPRFParams
+
+benchHomomPRF :: forall t m zp rp (prfgad :: *) rnd .
+  (m ~ Fst (Head RngList), zp ~ ZP8, rp ~ Cyc t m zp,
+   CElt t zp, Decompose prfgad zp, MonadRandom rnd)
+  => Int -> (Int -> FullBinTree) -> [Int] -> Proxy t -> Proxy prfgad -> rnd Benchmark
+benchHomomPRF size t xs _ _ = do
+  let v = 1.0 :: Double
   sk <- genSK v
-  (tHints, skout) <- tunnelHints v sk
+  (tHints, skout) <- tunnelHints sk
   rHints <- roundHints skout
-  let hints = Hints tHints rHints :: EvalHints Lol.CT RngList Int64 ZP8 ZQ4 ZQSeq KSGad Double
-      family = makeFamily a0 a1 (t size) :: PRFFamily gad (Cyc t m zq) (Cyc t m zp)
-      st = prfState family Nothing --initialize with input 0
-      encprfs = flip runReader hints $ flip evalStateT st $ mapM (homomPRFM ct) xs
-      decprfs = decrypt skout <$> encprfs
-  decprfs `deepseq` return ()
+  let gadLen = length $ untag (gadget :: Tagged prfgad [rp])
+  a0 <- fromList 1 gadLen <$> take gadLen <$> getRandoms
+  a1 <- fromList 1 gadLen <$> take gadLen <$> getRandoms
+  let hints = Hints tHints rHints :: EvalHints Lol.CT RngList Int64 zp ZQ4 ZQSeq KSGad
+      family = makeFamily a0 a1 (t size) :: PRFFamily prfgad _ _
+  s <- getRandom
+  ct <- encrypt sk s
+  return $ (bench "homomprf" $ nf
+    (let st = prfState family Nothing --initialize with input 0
+         encprfs = flip runReader hints . flip evalStateT st . mapM (homomPRFM ct)
+     in map (decrypt skout) . encprfs) xs :: Benchmark)
