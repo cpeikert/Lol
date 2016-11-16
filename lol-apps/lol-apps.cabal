@@ -143,6 +143,7 @@ executable homomprf
     deepseq,
     lol,
     lol-apps,
+    lol-cpp,
     MonadRandom,
     mtl,
     numeric-prelude
