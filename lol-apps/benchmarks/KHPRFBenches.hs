@@ -23,8 +23,6 @@ import Crypto.Lol.Benchmarks
 
 import MathObj.Matrix hiding (zipWith)
 
-import HomomPRFParams
-
 instance (NFData a) => NFData (T a) where rnf = rnf . rows
 
 khPRFBenches :: forall rnd t m zq zp gad . (MonadRandom rnd, _)
