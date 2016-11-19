@@ -3,9 +3,9 @@
              DataKinds, TypeFamilies, RankNTypes, ConstraintKinds,
              ScopedTypeVariables, StandaloneDeriving, DeriveDataTypeable #-}
 
--- | This module contains several application-independent AST operations 
+-- | This module contains several application-independent AST operations
 
-module Crypto.Lol.Compiler.AST 
+module Crypto.Lol.Compiler.AST
 (eval
 ,Literal(..)
 ,ADDITIVE(..)
@@ -42,7 +42,7 @@ instance (Render a) => Equality a where
 eval :: (Syntactic a, EvalEnv (Domain a) RunEnv) => a -> Internal a
 eval = evalClosed . desugar
 
--- | deep embedding for 
+-- | deep embedding for
 data Literal a where
   IntLit :: (ToInteger i, Show i, Ring a, NFData i) => i -> Literal (Full a)
   Const :: (Show a, NFData a) => a -> Literal (Full a)
@@ -68,8 +68,8 @@ instance Eval Literal where
   evalSym (Const a) = a
 
 -- | shallow embedding for Const
-constant :: (Literal :<: Domain a, Syntactic a, 
-             Show (Internal a), NFData (Internal a)) 
+constant :: (Literal :<: Domain a, Syntactic a,
+             Show (Internal a), NFData (Internal a))
          => Internal a -> a
 constant = sugarSym . Const
 
@@ -95,7 +95,7 @@ instance Eval ADDITIVE where
   evalSym Add = (+)
   evalSym Sub = (-)
 
-instance (Literal :<: dom, Ring a, ADDITIVE :<: dom, Show  a, Typeable a) 
+instance (Literal :<: dom, Ring a, ADDITIVE :<: dom, Typeable a)
   => Additive.C (AST (Typed dom) (Full a)) where
   zero = sugarSymTyped $ IntLit (zero :: Integer)
   (+) = sugarSymTyped Add
@@ -120,7 +120,7 @@ instance Eval RING where
   evalSym Mul = (*)
 
 instance (Literal :<: dom, RING :<: dom,
-          ADDITIVE :<: dom, Ring a, Show a, Typeable a) 
+          ADDITIVE :<: dom, Ring a, Typeable a)
   => Ring.C (AST (Typed dom) (Full a)) where
     one = sugarSymTyped $ IntLit (one :: Integer)
     (*) = sugarSymTyped Mul
@@ -135,8 +135,8 @@ instance Render Let where
   renderSym Let = "letBind"
 
 instance StringTree Let where
-  stringTreeSym [a, Node lam [body]] Let
-    | ("Lam",v) <- splitAt 3 lam = Node ("Let" ++ v) [a,body]
+  stringTreeSym [a, Node lam' [body]] Let
+    | ("Lam",v) <- splitAt 3 lam' = Node ("Let" ++ v) [a,body]
   stringTreeSym [a,f] Let = Node "Let" [a,f]
 
 instance Eval Let where
@@ -150,11 +150,11 @@ instance Symbol Let where
 
 -- | shallow embedding for sharing computation in an AST
 share :: (Let :<: sup,
-          Syntactic (a -> b),
+          --Syntactic (a -> b),
           sig ~ (Internal a :-> (Internal a -> Internal b) :-> Full (Internal b)),
           fi ~ SmartFun (Typed sup) sig,
-          sig ~ SmartSig fi,
-          Typed sup ~ SmartSym fi,
+          --sig ~ SmartSig fi,
+          --Typed sup ~ SmartSym fi,
           Typeable (DenResult sig),
           SyntacticN (a -> (a -> b) -> b) fi) -- requires AllowAmbiguousTypes
       => a -> (a -> b) -> b
@@ -162,7 +162,7 @@ share = sugarSymTyped Let
 
 -- | useful traversals and helper functions
 bottomUpMapM :: forall sym sym' a m .
-  (Monad m) => ( forall sig . 
+  (Monad m) => ( forall sig .
                   sym sig -> Args (AST sym') sig -> m (sym' sig)
                )
                -> ASTF sym a

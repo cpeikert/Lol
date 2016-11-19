@@ -14,17 +14,18 @@ module Types (
 import Algebra.Ring
 
 import Control.Monad
-import Control.Monad.Random
+--import Control.Monad.Random
 
-import Crypto.Lol.Reflects
+--import Crypto.Lol.Reflects
 import Crypto.Lol hiding (primes, (^))
+import Crypto.Lol.Types
 
-import Data.List (foldl1')
-import Data.Type.Natural
-import Data.Maybe hiding (fromJust)
+--import Data.List (foldl1')
+--import Data.Type.Natural
+--import Data.Maybe hiding (fromJust)
 
-import Math.NumberTheory.Primes.Testing (isPrime)
-import Math.NumberTheory.Primes.Factorisation (factorise)
+--import Math.NumberTheory.Primes.Testing (isPrime)
+--import Math.NumberTheory.Primes.Factorisation (factorise)
 
 import Data.Time.Clock
 import System.IO
@@ -77,10 +78,10 @@ type Zq (q :: k) = ZqBasic q Z
 type Z = Int64
 
 type ZP2 = Zq PP2
-type ZP3 = Zq PP3
+--type ZP3 = Zq PP3
 type ZP4 = Zq PP4
 type ZP8 = Zq PP8
-
+{-
 -- odd primes < 20
 primes = [3,5,7,11,13,17,19]
 
@@ -97,9 +98,9 @@ genGoodSeqs r len = do
       goodEs = map getEs goodSeqs
       crtSizes = zipWith (\es hs -> zipWith crtSetSize es hs) goodEs (map tail goodSeqs) :: [[Int]]
 
-  mapM printFactors goodSeqs
-  mapM printList crtSizes
-  mapM printList $ map ((map (order2 . twoFree)) . tail) goodSeqs
+  mapM_ printFactors goodSeqs
+  mapM_ printList crtSizes
+  mapM_ printList $ map ((map (order2 . twoFree)) . tail) goodSeqs
   putStrLn "done"
 
 
@@ -233,7 +234,7 @@ crtSetSize m m' =
       ord2m = order2 mbar
       ord2m' = order2 m'bar
   in (totm' * ord2m) `div` (totm * ord2m')
-
+-}
 
 
 
@@ -267,4 +268,4 @@ printTimes _ wallStart iters = do
 
 
 instance NFData Dynamic where
-  rnf x = ()
+  rnf _ = ()

@@ -39,6 +39,7 @@ resolver: lts-7.0
 
 packages:
 - challenges/
+- compiler/
 - lol/
 - lol-apps/
 - lol-benches/
@@ -57,6 +58,14 @@ extra-deps:
 - non-negative-0.1.1
 - numeric-prelude-0.4.2
 - tagged-transformer-0.8
+- syntactic-3.6.2
+- type-natural-0.7.1.1
+- equational-reasoning-0.4.1.1
+- ghc-typelits-presburger-0.1.1.0
+- monomorphic-0.0.3.3
+- tree-view-0.5
+- ghc-typelits-natnormalise-0.4.6
+
 
 # Override default flag values for local packages and extra-deps
 
