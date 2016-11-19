@@ -65,6 +65,7 @@ extra-deps:
 - monomorphic-0.0.3.3
 - tree-view-0.5
 - ghc-typelits-natnormalise-0.4.6
+- nist-beacon-0.2.0.0
 
 
 # Override default flag values for local packages and extra-deps
