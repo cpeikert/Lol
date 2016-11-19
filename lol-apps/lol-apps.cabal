@@ -161,6 +161,7 @@ executable khprf
     deepseq,
     lol,
     lol-apps,
+    lol-cpp,
     MonadRandom,
     mtl,
     numeric-prelude
@@ -177,5 +178,6 @@ executable symmshe
     base,
     lol,
     lol-apps,
+    lol-cpp,
     MonadRandom,
     numeric-prelude
