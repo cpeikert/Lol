@@ -46,7 +46,7 @@ module Crypto.Lol.Prelude
 ) where
 
 import Crypto.Lol.Factored
-import Crypto.Lol.Types.Unsafe.Complex hiding (Complex)
+import Crypto.Lol.Types.Unsafe.Complex (Complex(), roundComplex, cis, real, imag, fromReal)
 import Crypto.Lol.Types.Numeric
 
 import Algebra.Field          as Field (C)
