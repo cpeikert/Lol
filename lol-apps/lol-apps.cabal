@@ -18,10 +18,6 @@ category:            Crypto
 stability:           experimental
 build-type:          Simple
 extra-source-files:  README, CHANGES.md,
-                     benchmarks/SHEBenches.hs,
-                     benchmarks/HomomPRFBenches.hs,
-                     benchmarks/KHPRFBenches.hs,
-                     examples/HomomPRFParams.hs
                      tests/SHETests.hs,
                      tests/HomomPRFTests.hs,
                      tests/KHPRFTests.hs
@@ -88,6 +84,7 @@ test-suite test-apps
     DRBG,
     lol,
     lol-apps,
+    lol-cpp,
     lol-tests,
     MonadRandom,
     mtl,
@@ -105,6 +102,7 @@ Benchmark bench-apps
   hs-source-dirs:   benchmarks, examples
   default-language: Haskell2010
   main-is:          Main.hs
+  other-modules:    HomomPRFBenches, HomomPRFParams, KHPRFBenches, SHEBenches
 
 --  if flag(llvm)
 --    ghc-options: -fllvm -optlo-O3
@@ -122,6 +120,8 @@ Benchmark bench-apps
     lol,
     lol-apps,
     lol-benches,
+    lol-cpp,
+    lol-repa,
     MonadRandom,
     mtl,
     numeric-prelude,
@@ -134,6 +134,7 @@ executable homomprf
   hs-source-dirs: examples
   default-language: Haskell2010
   main-is: HomomPRFMain.hs
+  other-modules: HomomPRFParams
 
   ghc-options: -threaded -rtsopts
 

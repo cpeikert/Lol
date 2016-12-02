@@ -46,16 +46,19 @@ bs = [
   "mulPublic",
   "rescaleCT",
   "keySwitch",
-  "tunnel"]
+  "tunnel",
+  "balanced-startup"]
 
 main :: IO ()
 main = do
-  let o = (defaultOpts "SHE"){benches=bs}
+  let o = (defaultOpts "HomomPRF"){benches=[]]}
       pct = Proxy::Proxy CT
-  sheBs <- sheBenches' pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG)
-  khprfBs <- khprfBenches pct (Proxy::Proxy PRFGad)
-  homomprfBs <- homomprfBenches pct (Proxy::Proxy PRFGad)
-  mapM_ (prettyBenches o) [sheBs, khprfBs, homomprfBs]
+  --sheBs <- sheBenches' pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG)
+  --khprfBs <- khprfBenches pct (Proxy::Proxy PRFGad)
+  bs <- sequence [
+          homomprfBenches pct (Proxy::Proxy PRFGad)
+          ]
+  mapM_ (prettyBenches o) bs
 
 sheBenches' :: _ => Proxy t -> Proxy gad -> Proxy gen -> rnd Benchmark
 sheBenches' pt pgad pgen  = benchGroup "SHE" [
@@ -110,8 +113,7 @@ khprfBenches pt _ = benchGroup "KHPRF"
 
 homomprfBenches :: _ => Proxy t -> Proxy prfgad -> rnd Benchmark
 homomprfBenches pt pgad = benchGroup "HomomPRF"
-  [benchGroup "balanced-startup"   [benchHomomPRF 5 balancedTree [0] pt pgad],
-   benchGroup "balanced-amortized" [benchHomomPRF 5 balancedTree (grayCode 5) pt pgad]]
+  [benchGroup "balanced-startup"   [benchHomomPRF 5 balancedTree [0] pt pgad]]
 
 -- EAC: is there a simple way to parameterize the variance?
 -- generates a secret key with scaled variance 1.0

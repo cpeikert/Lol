@@ -33,7 +33,7 @@ type ZQ5 = (Zq 3144961, ZQ4)
 type ZQ6 = (Zq 7338241, ZQ5)
 type ZQSeq = '[ZQ6, ZQ5, ZQ4, ZQ3, ZQ2, ZQ1]
 
-type ZP8 = Zq PP8
+type ZP = Zq PP32
 
 -- these need not be the same
 type KSGad = BaseBGad 2

@@ -8,7 +8,6 @@
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -132,15 +131,15 @@ class (UnPP (CharOf zp) ~ '(Prime2,e)) => PTRound t m m' e zp zq z gad zqs where
 
   ptRoundInternal :: RoundHints t m m' z zp zq zqs gad -> [CT m zp (Cyc t m' zq)] -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
 
-instance (UnPP p ~ '(Prime2, 'S e),                                                      -- superclass constraint
-          zqup ~ ZqUp zq zqs, zq' ~ ZqDown zq zqs, zp ~ ZqBasic p i, zp' ~ Div2 zp,      -- convenience synonyms
-          AddPublicCtx t m m' zp zq, AddPublicCtx t m m' zp zq',                         -- addPublic
-          KeySwitchCtx gad t m' zp zq (ZqUp zq zqs), KSHintCtx gad t m' z (ZqUp zq zqs), -- for quadratic key switch
-          Reflects p Int,                                                                -- value
-          Ring (CT m zp (Cyc t m' zq)),                                                  -- (*)
-          RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq,                                 -- rescaleLinearCT
-          ModSwitchPTCtx t m' zp zp' zq',                                                -- modSwitchPT
-          PTRound t m m' e zp' zq' z gad zqs)                                            -- recursive call
+instance (UnPP p ~ '(Prime2, 'S e),                                                 -- superclass constraint
+          zqup ~ ZqUp zq zqs, zq' ~ ZqDown zq zqs, zp ~ ZqBasic p i, zp' ~ Div2 zp, -- convenience synonyms
+          AddPublicCtx t m m' zp zq, AddPublicCtx t m m' zp zq',                    -- addPublic
+          KeySwitchCtx gad t m' zp zq zqup, KSHintCtx gad t m' z zqup,              -- for quadratic key switch
+          Reflects p Int,                                                           -- value
+          Ring (CT m zp (Cyc t m' zq)),                                             -- (*)
+          RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq,                            -- rescaleLinearCT
+          ModSwitchPTCtx t m' zp zp' zq',                                           -- modSwitchPT
+          PTRound t m m' e zp' zq' z gad zqs)                                       -- recursive call
   => PTRound t m m' ('S e) (ZqBasic p i) (zq :: *) z gad zqs where
   type ZqResult ('S e) zq zqs = ZqResult e (ZqDown zq zqs) zqs
 
