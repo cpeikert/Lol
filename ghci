@@ -2,4 +2,4 @@
 cd lol-cpp
 make
 cd ..
-stack exec /usr/local/bin/ghci lol-cpp/lib/*.so -- $@
+stack exec /opt/ghc/bin/ghci lol-cpp/lib/*.so -- $@

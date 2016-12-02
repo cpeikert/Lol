@@ -16,10 +16,8 @@ import Crypto.Lol.Applications.SymmSHE hiding (CT)
 import Crypto.Lol.Benchmarks
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Factored
-import Crypto.Lol.Gadget
 import Crypto.Lol.Utils.PrettyPrint.Table
 import Crypto.Lol.Types
-import Crypto.Random.DRBG
 
 import Data.Int
 import Data.Proxy
@@ -37,8 +35,8 @@ type family Zq (a :: k) :: * where
   Zq (a ** b) = (Zq a, Zq b)
   Zq q = (ZqBasic q Int64)
 
-bs :: [String]
-bs = [
+benchNames :: [String]
+benchNames = [
   "encrypt",
   "decrypt",
   "*",
@@ -51,7 +49,7 @@ bs = [
 
 main :: IO ()
 main = do
-  let o = (defaultOpts "HomomPRF"){benches=[]]}
+  let o = (defaultOpts "HomomPRF"){benches=[]}
       pct = Proxy::Proxy CT
   --sheBs <- sheBenches' pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG)
   --khprfBs <- khprfBenches pct (Proxy::Proxy PRFGad)

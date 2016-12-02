@@ -26,12 +26,13 @@ type Zq (q :: k) = ZqBasic q Int64
 type ZQ1 = Zq 18869761
 type ZQ2 = (Zq 19393921, ZQ1)
 type ZQ3 = (Zq 19918081, ZQ2)
+type ZQ4 = (Zq 25159681, ZQ3)
 -- a 31-bit modulus, for rounding off after the last four hops
-type ZQ4 = (Zq 2149056001, ZQ3)
+type ZQ5 = (Zq 2149056001, ZQ4)
 -- for rounding off after the first hop
-type ZQ5 = (Zq 3144961, ZQ4)
-type ZQ6 = (Zq 7338241, ZQ5)
-type ZQSeq = '[ZQ6, ZQ5, ZQ4, ZQ3, ZQ2, ZQ1]
+type ZQ6 = (Zq 3144961, ZQ5)
+type ZQ7 = (Zq 7338241, ZQ6)
+type ZQSeq = '[ZQ7, ZQ6, ZQ5, ZQ4, ZQ3, ZQ2, ZQ1]
 
 type ZP = Zq PP32
 
