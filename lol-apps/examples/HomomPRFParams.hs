@@ -2,7 +2,7 @@
 {-# LANGUAGE PolyKinds     #-}
 {-# LANGUAGE TypeOperators #-}
 
-module HomomPRFParams where
+module HomomPRFParams (RngList, Zq, ZQSeq, ZP, ZQ, KSGad, PRFGad) where
 
 import Crypto.Lol
 import Crypto.Lol.Types
@@ -35,6 +35,7 @@ type ZQ7 = (Zq 7338241, ZQ6)
 type ZQSeq = '[ZQ7, ZQ6, ZQ5, ZQ4, ZQ3, ZQ2, ZQ1]
 
 type ZP = Zq PP32
+type ZQ = ZQ6 -- if p=2^k, choose ZQ[k+1]
 
 -- these need not be the same
 type KSGad = BaseBGad 2

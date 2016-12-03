@@ -97,7 +97,7 @@ defaultTests pt pgad  =
     khprfTests (Proxy::Proxy '(F32, Zq 2, Zq 8, TrivGad)),
     khprfTests (Proxy::Proxy '(F32, Zq 32, Zq 257, BaseBGad 2))],
   testGroupM "HomomPRF" $ concat $ ($ pt) <$> [
-    homomPRFTests 5 (Proxy::Proxy '(RngList, ZP, ZQ6, ZQSeq, PRFGad, KSGad))]
+    homomPRFTests 5 (Proxy::Proxy '(RngList, ZP, ZQ, ZQSeq, PRFGad, KSGad))]
   ]
 
 -- EAC: is there a simple way to parameterize the variance?
