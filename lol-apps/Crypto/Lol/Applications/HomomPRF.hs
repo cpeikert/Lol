@@ -59,7 +59,7 @@ type family NextListElt (x :: k) (xs :: [k]) :: k where
                                  'Text "You must use parameters that are in the type lists!")
 
 data EvalHints t rngs z zp zq zqs gad = Hints
-  (HTunnelHints gad t rngs (ZqUp zq zqs))
+  (HTunnelHints gad t rngs zp (ZqUp zq zqs))
   (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad)
 
 homomPRFM ::
@@ -85,25 +85,24 @@ homomPRF :: (MulPublicCtx t r r' zp zq,
        -> CT s (TwoOf zp) (Cyc t s' (ZqResult e (ZqDown zq zqs) zqs))
 homomPRF hs ct x = fst . homomPRF' hs ct x
 
-homomPRF' :: (MulPublicCtx t r r' zp zq,
-             MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs,
-             PTRound t s s' e zp (ZqDown zq zqs) z gad zqs)
-    => EvalHints t rngs z zp zq zqs gad
-       -> CT r zp (Cyc t r' zq)
-       -> Int
-       -> PRFState (Cyc t r zp) (Cyc t r (TwoOf zp))
-       -> (CT s (TwoOf zp) (Cyc t s' (ZqResult e (ZqDown zq zqs) zqs)),
-           PRFState (Cyc t r zp) (Cyc t r (TwoOf zp)))
+homomPRF' :: forall t e r s r' s' rngs z zp zq zqs gad .
+  (MulPublicCtx t r r' zp zq,
+   MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs,
+   PTRound t s s' e zp (ZqDown zq zqs) z gad zqs)
+  => EvalHints t rngs z zp zq zqs gad
+  -> CT r zp (Cyc t r' zq)
+  -> Int
+  -> PRFState (Cyc t r zp) (Cyc t r (TwoOf zp))
+  -> (CT s (TwoOf zp) (Cyc t s' (ZqResult e (ZqDown zq zqs) zqs)),
+      PRFState (Cyc t r zp) (Cyc t r (TwoOf zp)))
 homomPRF' (Hints tHints rHints) ct x st =
   let (atx,st') = evalTree x st
       firstElt = head $ head $ columns atx
       ctMatrix1 = mulPublic firstElt ct
-      ctMatrix2 = tunnel tHints ctMatrix1
+      ctMatrix2 = tunnel (Proxy::Proxy zqs) tHints ctMatrix1
   in (ptRound rHints ctMatrix2, st')
 
 type family TwoOf (a :: k) :: k
---type instance TwoOf (a :: Nat) = 2
---type instance TwoOf (a :: PrimeBin) = Prime2
 type instance TwoOf (a :: PrimePower) = PP2
 type instance TwoOf (ZqBasic q i) = ZqBasic (TwoOf q) i
 
@@ -173,34 +172,55 @@ instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
 
 -- For tunneling
 
-data HTunnelHints gad t rngs zq where
-  TNil :: HTunnelHints gad t '[ '(m,m') ] zq
+data HTunnelHints gad t rngs zp zq where
+  TNil :: HTunnelHints gad t '[ '(m,m') ] zp zq
   TCons :: (Head rngs ~ '(r,r'), Head (Tail rngs) ~ '(s,s'),
             e' `Divides` r', e' `Divides` s')
-        => TunnelHints gad t e' r' s' zq
-           -> HTunnelHints gad t (Tail rngs) zq
-           -> HTunnelHints gad t rngs zq
+        => TunnelHints gad t e' r' s' zp zq
+           -> HTunnelHints gad t (Tail rngs) zp zq
+           -> HTunnelHints gad t rngs zp zq
 
-class Tunnel xs t z zp zq gad where
+class Tunnel xs t zp zq gad where
 
-  tunnelHints :: (MonadRandom rnd, Head xs ~ '(r,r'), Last xs ~ '(s,s'))
-              => SK (Cyc t r' z) -> rnd (HTunnelHints gad t xs zq, SK (Cyc t s' z))
+  tunnelHints :: (MonadRandom rnd, Head xs ~ '(r,r'), Last xs ~ '(s,s'),
+                  Lift zp z, CElt t z, ToInteger z, Reduce z zq) -- constraints involving 'z' from GenTunnelHintCtx
+              => SK (Cyc t r' z) -> rnd (HTunnelHints gad t xs zp zq, SK (Cyc t s' z))
 
   tunnelInternal :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
-    HTunnelHints gad t xs zq -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
+    HTunnelHints gad t xs zp zq -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
 
-instance Tunnel '[ '(m,m') ] t z zp zq gad where
+instance Tunnel '[ '(m,m') ] t zp zq gad where
 
   tunnelHints sk = return (TNil,sk)
 
   tunnelInternal _ = id
 
-instance (GenTunnelHintCtx t e r s e' r' s' z zp zq gad, -- genTunnelHints
-          TunnelCtx t r s e' r' s' z zp zq gad,          -- tunnelCT
+-- EAC: I expand the GenTunnelHintCtx synonym here to remove all occurrences of 'z',
+-- which instead only occur in the context of tunnelHints. This is because 'z' is
+-- not relevant for tunnelInternal nor HTunnelHints, so we would have to pass
+-- a proxy for 'z'. This is a problem I have had many times, and still don't have a
+-- good solution for: the class exists only to match on the type list, all of
+-- of the other class params exist only so I can write constrints involving the changing
+-- params (here, the cyc indices) and the static params (here, the moduli/base rings).
+-- One solution is to split the class in two: one with a 'z' param, and one without.
+-- Another option is to pass in a meaningless proxy for 'z' to functions that don't need it.
+-- Neither of these are good solutions, so instead I took a third approach: factor 'z'
+-- out of the constraint synonyms. This requires explicitly listing the remaining
+-- constraints, which is also ugly.
+-- The root of this problem seems to be that the functions hold constant some
+-- parameters, but change others, while the constraint synonyms refer to all of
+-- them, even though some are orthogonal constraints.
+instance (ExtendLinIdx e r s e' r' s', -- genTunnelHints
+          e' ~ (e * (r' / r)),         -- genTunnelHints
+          e' `Divides` r',             -- genTunnelHints
+          CElt t zp, Ring zq, Random zq, CElt t zq, -- genTunnelHints
+          Reduce (DecompOf zq) zq, Gadget gad zq,            -- genTunnelHints
+          NFElt zq, CElt t (DecompOf zq),                    -- genTunnelHints
+          TunnelCtx t r s e' r' s' zp zq gad,          -- tunnelCT
           e ~ FGCD r s, e `Divides` r, e `Divides` s,    -- linearDec
           ZPP zp, TElt t (ZpOf zp),                      -- crtSet
-          Tunnel ('(s,s') ': rngs) t z zp zq gad)
-  => Tunnel ('(r,r') ': '(s,s') ': rngs) t z zp zq gad where
+          Tunnel ('(s,s') ': rngs) t zp zq gad)
+  => Tunnel ('(r,r') ': '(s,s') ': rngs) t zp zq gad where
 
   tunnelHints sk = do
     skout <- genSKWithVar sk
@@ -211,7 +231,7 @@ instance (GenTunnelHintCtx t e r s e' r' s' z zp zq gad, -- genTunnelHints
         -- only take as many crts as we need
         -- otherwise linearDec fails
         linf = linearDec (take dim crts) :: Linear t zp e r s
-    thint :: TunnelHints gad t e' r' s' zq <- genTunnelHints linf skout sk
+    thint :: TunnelHints gad t e' r' s' zp zq <- genTunnelHints linf skout sk
     (rest,sk') <- tunnelHints skout
     return (TCons thint rest, sk')
 
@@ -227,15 +247,14 @@ roundCTDown :: (RescaleCyc (Cyc t) zq (ZqDown zq zqs), ToSDCtx t m' zp zq)
 roundCTDown _ = rescaleLinearCT
 
 type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
-  (Head rngs ~ '(r,r'), Last rngs ~ '(s,s'), Tunnel rngs t z zp (ZqUp zq zqs) gad, ZqDown (ZqUp zq zqs) zqs ~ zq,
+  (Head rngs ~ '(r,r'), Last rngs ~ '(s,s'), Tunnel rngs t zp (ZqUp zq zqs) gad, ZqDown (ZqUp zq zqs) zqs ~ zq,
    RescaleCyc (Cyc t) zq (ZqUp zq zqs), RescaleCyc (Cyc t) (ZqUp zq zqs) zq, RescaleCyc (Cyc t) zq (ZqDown zq zqs),
    ToSDCtx t r' zp zq, ToSDCtx t s' zp (ZqUp zq zqs))
 
 -- EAC: why round down twice? We bump the modulus up to begin with to handle
 -- the key switches, so we knock thatt off, then another for accumulated noise
 tunnel :: forall rngs r r' s s' t z zp zq gad zqs . (MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs)
-  => HTunnelHints gad t rngs z zp (ZqUp zq zqs) zqs -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
-tunnel hints x =
-  let pzqs = Proxy::Proxy zqs
-      y = tunnelInternal hints $ roundCTUp pzqs x
+  => Proxy zqs -> HTunnelHints gad t rngs zp (ZqUp zq zqs) -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
+tunnel pzqs hints x =
+  let y = tunnelInternal hints $ roundCTUp pzqs x
   in roundCTDown pzqs $ roundCTDown pzqs y

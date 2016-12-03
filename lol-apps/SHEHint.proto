@@ -19,14 +19,12 @@ message KSQuadCircHint {
   required string gad        = 2;
 }
 
-message TunnelHint {
+message TunnelHints {
   required LinearRq coeffs   = 1;
   repeated KSLinearHint hint = 2;
 }
 
-
-
 message TunnelHintChain {
-  repeated
+  repeated TunnelHints = 1;
 
 }

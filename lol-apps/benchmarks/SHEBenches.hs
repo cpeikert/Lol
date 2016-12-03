@@ -116,7 +116,7 @@ bench_keySwQ pt sk = benchM $ do
 bench_tunnel :: forall t e e' r r' s s' z zp zq gad .
   (z ~ LiftOf zp,
    GenTunnelHintCtx t e r s e' r' s' z zp zq gad,
-   TunnelCtx t r s e' r' s' z zp zq gad,
+   TunnelCtx t r s e' r' s' zp zq gad,
    e ~ FGCD r s,
    ZPP zp, Mod zp,
    z ~ ModRep zp,
@@ -134,5 +134,5 @@ bench_tunnel pt skin skout = benchM $ do
       -- only take as many crts as we need
       -- otherwise linearDec fails
       linf :: Linear t zp e r s = linearDec (take dim crts) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
-  hints :: TunnelHints gad t e' r' s' zq <- genTunnelHints linf skout skin
+  hints :: TunnelHints gad t e' r' s' zp zq <- genTunnelHints linf skout skin
   return $ bench (tunnelCT hints :: CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)) x

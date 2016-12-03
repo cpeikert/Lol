@@ -51,7 +51,8 @@ type C t e r r' s s' rngs z zp zq zqs prfgad ksgad ptrngs =
    Decompose (prfgad :: *) (Cyc t r zp),              -- prfState
    RescaleCyc (Cyc t) zp (TwoOf zp),                  -- ringPRF
    PTTunnel t ptrngs (TwoOf zp),                      -- tunnel
-   Tunnel rngs t z zp (ZqUp zq zqs) ksgad,            -- tunnelHints
+   Tunnel rngs t zp (ZqUp zq zqs) ksgad,              -- tunnelHints
+   Lift zp z, CElt t z, ToInteger z, Reduce z (ZqUp zq zqs),     -- tunnelHints
    PTRound t s s' e zp (ZqDown zq zqs) z ksgad zqs,   -- roundHints
    EncryptCtx t r r' z zp zq,                         -- encrypt
    MulPublicCtx t r r' zp zq,                         -- homomPRF

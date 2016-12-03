@@ -466,7 +466,7 @@ twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 
 
 
-data TunnelHints gad t e' r' s' zq = THints (Linear t zq e' r' s') [Tagged gad [Polynomial (Cyc t s' zq)]]
+data TunnelHints gad t e' r' s' zp zq = THints (Linear t zq e' r' s') [Tagged gad [Polynomial (Cyc t s' zq)]]
 
 -- EAC: `e' ~ (e * ...) is not needed in this module, but it is needed as use sites...
 type GenTunnelHintCtx t e r s e' r' s' z zp zq gad =
@@ -481,7 +481,7 @@ genTunnelHints :: forall gad t e r s e' r' s' z zp zq rnd .
   => Linear t zp e r s
   -> SK (Cyc t s' z)
   -> SK (Cyc t r' z)
-  -> rnd (TunnelHints gad t e' r' s' zq)
+  -> rnd (TunnelHints gad t e' r' s' zp zq)
 genTunnelHints f skout (SK _ sin) = -- generate hints
   (let f' = extendLin $ lift f :: Linear t z e' r' s'
        f'q = reduce f' :: Linear t zq e' r' s'
@@ -492,7 +492,7 @@ genTunnelHints f skout (SK _ sin) = -- generate hints
     \\ lcmDivides (Proxy::Proxy r) (Proxy::Proxy e')
 
 -- | Constraint synonym for ring tunneling.
-type TunnelCtx t r s e' r' s' z zp zq gad =
+type TunnelCtx t r s e' r' s' zp zq gad =
   (Fact r, Fact s, e' `Divides` r', e' `Divides` s', CElt t zp, -- evalLin
    ToSDCtx t r' zp zq,                                          -- toMSD
    AbsorbGCtx t r' zp zq,                                       -- absorbGFactors
@@ -501,9 +501,9 @@ type TunnelCtx t r s e' r' s' z zp zq gad =
 -- | Homomorphically apply the \( E \)-linear function that maps the
 -- elements of the decoding basis of \( R/E \) to the corresponding
 -- \( S \)-elements in the input array.
-tunnelCT :: forall gad t r s e' r' s' z zp zq .
-  (TunnelCtx t r s e' r' s' z zp zq gad)
-  => TunnelHints gad t e' r' s' zq
+tunnelCT :: forall gad t r s e' r' s' zp zq .
+  (TunnelCtx t r s e' r' s' zp zq gad)
+  => TunnelHints gad t e' r' s' zp zq
   -> CT r zp (Cyc t r' zq)
   -> CT s zp (Cyc t s' zq)
 tunnelCT (THints f'q hints) ct =

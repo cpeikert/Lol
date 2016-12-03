@@ -62,16 +62,16 @@ main = do
       pt1 = decrypt sk ct1
   print $ "Test1: " ++ (show $ 2*plaintext == pt1)
 
-  kswq <- proxyT (keySwitchQuadCirc sk) (Proxy::Proxy (KSGad, CTZq2))
-  let ct2 = kswq $ ciphertext*ciphertext
+  hint :: KSQuadCircHint KSGad (Cyc T CTIndex CTZq2) <- genKSQuadCircHint sk
+  let ct2 = keySwitchQuadCirc hint $ ciphertext*ciphertext
       pt2 = decrypt sk ct2
   -- note: this requires a *LARGE* CT modulus to succeed
   print $ "Test2: " ++ (show $ plaintext*plaintext == pt2)
 
   -- so we support using *several* small moduli:
-  kswq' <- proxyT (keySwitchQuadCirc sk) (Proxy::Proxy (KSGad, CTZq3))
+  hint' :: KSQuadCircHint KSGad (Cyc T CTIndex CTZq3) <- genKSQuadCircHint sk
   ciphertext' :: CTRing2 <- encrypt sk plaintext
-  let ct3 = kswq' $ ciphertext' * ciphertext'
+  let ct3 = keySwitchQuadCirc hint' $ ciphertext' * ciphertext'
       -- the CT modulus of ct3 is a ring product, which can't be lifted to a fixed size repr
       -- so use decryptUnrestricted instead
       pt3 = decryptUnrestricted sk ct3
