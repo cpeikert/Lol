@@ -167,8 +167,8 @@ prop_ksLin :: forall t m m' z zp (zq :: *) (zq' :: *) (gad :: *) . (z ~ LiftOf z
   => PT (Cyc t m zp) -> SK (Cyc t m' z) -> SK (Cyc t m' z) -> Test '(t,m,m',zp,zq,zq',gad)
 prop_ksLin pt skin skout = testIO $ do
   ct <- encrypt skin pt
-  kslin <- proxyT (keySwitchLinear skout skin) (Proxy::Proxy (gad,zq'))
-  let ct' = kslin ct :: CT m zp (Cyc t m' zq)
+  kslHint :: KSLinearHint gad (Cyc t m' zq') <- genKSLinearHint skout skin
+  let ct' = keySwitchLinear kslHint ct :: CT m zp (Cyc t m' zq)
       pt' = decryptUnrestricted skout ct'
   return $ pt == pt'
 
@@ -177,8 +177,8 @@ prop_ksQuad :: forall t m m' z zp zq (zq' :: *) (gad :: *) . (z ~ LiftOf zp, _)
 prop_ksQuad pt1 pt2 sk = testIO $ do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 <- encrypt sk pt2
-  ksq <- proxyT (keySwitchQuadCirc sk) (Proxy::Proxy (gad,zq'))
-  let ct' = ksq $ ct1*ct2
+  ksqHint :: KSQuadCircHint gad (Cyc t m' zq') <- genKSQuadCircHint sk
+  let ct' = keySwitchQuadCirc ksqHint $ ct1*ct2
       ptProd = pt1*pt2
       pt' = decryptUnrestricted sk ct'
   return $ ptProd == pt'
@@ -201,7 +201,8 @@ prop_cttwace pt sk = testIO $ do
   return $ twace pt == pt'
 
 prop_ringTunnel :: forall t e r s e' r' s' z zp zq gad .
-  (TunnelCtx t e r s e' r' s' z zp zq gad,
+  (GenTunnelHintCtx t e r s e' r' s' z zp zq gad,
+   TunnelCtx t r s e' r' s' z zp zq gad,
    EncryptCtx t r r' z zp zq,
    DecryptUCtx t s s' z zp zq,
    Random zp, Eq zp,
@@ -216,7 +217,7 @@ prop_ringTunnel x skin skout = testIO $ do
   let f = linearDec bs \\ (gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)) :: Linear t zp e r s
       expected = evalLin f x \\ (gcdDivides (Proxy::Proxy r) (Proxy::Proxy s))
   y :: CT r zp (Cyc t r' zq) <- encrypt skin x
-  tunn <- proxyT (tunnelCT f skout skin) (Proxy::Proxy gad)
-  let y' = tunn y :: CT s zp (Cyc t s' zq)
+  hints :: TunnelHints gad t e' r' s' zq <- genTunnelHints f skout skin
+  let y' = tunnelCT hints y :: CT s zp (Cyc t s' zq)
       actual = decryptUnrestricted skout y' :: Cyc t s zp
   return $ expected == actual

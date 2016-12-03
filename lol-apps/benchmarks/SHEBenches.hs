@@ -107,15 +107,16 @@ bench_keySwQ :: forall t m m' z zp zq (zq' :: *) (gad :: *) . (z ~ LiftOf zp, _)
   => PT (Cyc t m zp) -> SK (Cyc t m' z) -> Bench '(t,m,m',zp,zq,zq',gad)
 bench_keySwQ pt sk = benchM $ do
   x :: CT m zp (Cyc t m' zq) <- encrypt sk pt
-  kswq <- proxyT (keySwitchQuadCirc sk) (Proxy::Proxy (gad,zq'))
+  ksqHint :: KSQuadCircHint gad (Cyc t m' zq') <- genKSQuadCircHint sk
   let y = x*x
-  return $ bench kswq y
+  return $ bench (keySwitchQuadCirc ksqHint) y
 
 -- possible bug: If I enable -XPartialTypeSigs and add a ",_" to the constraint list below, GHC
 -- can't figure out that `e `Divides` s`, even when it's explicitly listed!
 bench_tunnel :: forall t e e' r r' s s' z zp zq gad .
   (z ~ LiftOf zp,
-   TunnelCtx t e r s e' r' s' z zp zq gad,
+   GenTunnelHintCtx t e r s e' r' s' z zp zq gad,
+   TunnelCtx t r s e' r' s' z zp zq gad,
    e ~ FGCD r s,
    ZPP zp, Mod zp,
    z ~ ModRep zp,
@@ -125,7 +126,7 @@ bench_tunnel :: forall t e e' r r' s s' z zp zq gad .
    CElt t (ZpOf zp))
   => PT (Cyc t r zp) -> SK (Cyc t r' z) -> SK (Cyc t s' z) -> Bench '(t,r,r',s,s',zp,zq,gad)
 bench_tunnel pt skin skout = benchM $ do
-  x :: CT r zp (Cyc t r' zq) <- encrypt skin pt
+  x <- encrypt skin pt
   let crts :: [Cyc t s zp] = proxy crtSet (Proxy::Proxy e) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
       r = proxy totientFact (Proxy::Proxy r)
       e = proxy totientFact (Proxy::Proxy e)
@@ -133,5 +134,5 @@ bench_tunnel pt skin skout = benchM $ do
       -- only take as many crts as we need
       -- otherwise linearDec fails
       linf :: Linear t zp e r s = linearDec (take dim crts) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
-  hints <- proxyT (tunnelCT linf skout skin) (Proxy::Proxy gad)
-  return $ bench hints x
+  hints :: TunnelHints gad t e' r' s' zq <- genTunnelHints linf skout skin
+  return $ bench (tunnelCT hints :: CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)) x

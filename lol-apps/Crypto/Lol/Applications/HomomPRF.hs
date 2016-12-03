@@ -15,7 +15,7 @@
 module Crypto.Lol.Applications.HomomPRF
 (homomPRF, homomPRFM
 ,RoundHints(..), roundHints
-,TunnelHints(..), tunnelHints
+,HTunnelHints(..), tunnelHints
 ,EvalHints(..)
 ,MultiTunnelCtx, ZqUp, ZqDown
 ,TwoOf
@@ -59,7 +59,7 @@ type family NextListElt (x :: k) (xs :: [k]) :: k where
                                  'Text "You must use parameters that are in the type lists!")
 
 data EvalHints t rngs z zp zq zqs gad = Hints
-  (TunnelHints gad t rngs z zp (ZqUp zq zqs) zqs)
+  (HTunnelHints gad t rngs z zp (ZqUp zq zqs) zqs)
   (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad)
 
 homomPRFM ::
@@ -114,7 +114,7 @@ type instance Div2 (pp :: PrimePower) = Head (UnF (PpToF pp / F2))
 
 data RoundHints t m m' z zp zq zqs gad where
   Root :: RoundHints t m m' z zp zq zqs gad
-  Internal :: (CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq))
+  Internal :: KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))
               -> RoundHints t m m' z (Div2 zp) (ZqDown zq zqs) zqs gad
               -> RoundHints t m m' z zp zq zqs gad
 
@@ -144,20 +144,20 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
   type ZqResult ('S e) zq zqs = ZqResult e (ZqDown zq zqs) zqs
 
   roundHints sk = do
-    ksq <- proxyT (keySwitchQuadCirc sk) (Proxy::Proxy (gad, zqup))
+    ksq <- genKSQuadCircHint sk
     rest <- roundHints sk
     return $ Internal ksq rest
 
-  ptRound (Internal ksq rest) x =
+  ptRound (Internal ksqHint rest) x =
     let x' = addPublic one x
-        xprod = rescaleLinearCT $ ksq $ x*x'
+        xprod = rescaleLinearCT $ keySwitchQuadCirc ksqHint $ x*x'
         p = proxy value (Proxy::Proxy p)
         xs = map (\y->modSwitchPT $ addPublic (fromInteger $ y*(-y+1)) xprod) [1..] :: [CT m zp' (Cyc t m' zq')]
     in ptRoundInternal rest $ take (p `div` 4) xs
 
-  ptRoundInternal (Internal ksq rest) (xs :: [CT m (ZqBasic p i) (Cyc t m' zq)]) =
+  ptRoundInternal (Internal ksqHint rest) (xs :: [CT m (ZqBasic p i) (Cyc t m' zq)]) =
     let pairs = chunksOf 2 xs
-        go [a,b] = modSwitchPT $ rescaleLinearCT $ ksq $ a*b :: CT m zp' (Cyc t m' zq')
+        go [a,b] = modSwitchPT $ rescaleLinearCT $ keySwitchQuadCirc ksqHint $ a*b :: CT m zp' (Cyc t m' zq')
     in ptRoundInternal rest (map go pairs)
 
 instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
@@ -173,20 +173,21 @@ instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
 
 -- For tunneling
 
-data TunnelHints gad t rngs z zp zq zqs where
-  TNil :: TunnelHints gad t '[ '(m,m') ] z zp zq zqs
-  TCons :: (Head rngs ~ '(r,r'), Head (Tail rngs) ~ '(s,s'))
-        => (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq))
-           -> TunnelHints gad t (Tail rngs) z zp zq zqs
-           -> TunnelHints gad t rngs z zp zq zqs
+data HTunnelHints gad t rngs z zp zq zqs where
+  TNil :: HTunnelHints gad t '[ '(m,m') ] z zp zq zqs
+  TCons :: (Head rngs ~ '(r,r'), Head (Tail rngs) ~ '(s,s'),
+            e' `Divides` r', e' `Divides` s')
+        => TunnelHints gad t e' r' s' zq
+           -> HTunnelHints gad t (Tail rngs) z zp zq zqs
+           -> HTunnelHints gad t rngs z zp zq zqs
 
 class Tunnel xs t z zp zq gad where
 
   tunnelHints :: (MonadRandom rnd, Head xs ~ '(r,r'), Last xs ~ '(s,s'))
-              => SK (Cyc t r' z) -> rnd (TunnelHints gad t xs z zp zq zqs, SK (Cyc t s' z))
+              => SK (Cyc t r' z) -> rnd (HTunnelHints gad t xs z zp zq zqs, SK (Cyc t s' z))
 
   tunnelInternal :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
-    TunnelHints gad t xs z zp zq zqs -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
+    HTunnelHints gad t xs z zp zq zqs -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
 
 instance Tunnel '[ '(m,m') ] t z zp zq gad where
 
@@ -194,9 +195,10 @@ instance Tunnel '[ '(m,m') ] t z zp zq gad where
 
   tunnelInternal _ = id
 
-instance (TunnelCtx t e r s e' r' s' z zp zq gad,                  -- tunnelCT
-          e ~ FGCD r s, e `Divides` r, e `Divides` s,              -- linearDec
-          ZPP zp, TElt t (ZpOf zp),                                -- crtSet
+instance (GenTunnelHintCtx t e r s e' r' s' z zp zq gad, -- genTunnelHints
+          TunnelCtx t r s e' r' s' z zp zq gad,          -- tunnelCT
+          e ~ FGCD r s, e `Divides` r, e `Divides` s,    -- linearDec
+          ZPP zp, TElt t (ZpOf zp),                      -- crtSet
           Tunnel ('(s,s') ': rngs) t z zp zq gad)
   => Tunnel ('(r,r') ': '(s,s') ': rngs) t z zp zq gad where
 
@@ -209,11 +211,11 @@ instance (TunnelCtx t e r s e' r' s' z zp zq gad,                  -- tunnelCT
         -- only take as many crts as we need
         -- otherwise linearDec fails
         linf = linearDec (take dim crts) :: Linear t zp e r s
-    tunn :: CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq) <- proxyT (tunnelCT linf skout sk) (Proxy::Proxy gad)
+    thint :: TunnelHints gad t e' r' s' zq <- genTunnelHints linf skout sk
     (rest,sk') <- tunnelHints skout
-    return (TCons tunn rest, sk')
+    return (TCons thint rest, sk')
 
-  tunnelInternal (TCons tunn rest) = tunnelInternal rest . tunn
+  tunnelInternal (TCons thint rest) = tunnelInternal rest . tunnelCT thint
 
 -- EAC: Invalid warning on these functions reported as #12700
 roundCTUp :: (RescaleCyc (Cyc t) zq (ZqUp zq zqs), ToSDCtx t m' zp zq)
@@ -232,7 +234,7 @@ type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
 -- EAC: why round down twice? We bump the modulus up to begin with to handle
 -- the key switches, so we knock thatt off, then another for accumulated noise
 tunnel :: forall rngs r r' s s' t z zp zq gad zqs . (MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs)
-  => TunnelHints gad t rngs z zp (ZqUp zq zqs) zqs -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
+  => HTunnelHints gad t rngs z zp (ZqUp zq zqs) zqs -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
 tunnel hints x =
   let pzqs = Proxy::Proxy zqs
       y = tunnelInternal hints $ roundCTUp pzqs x
