@@ -4,6 +4,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TemplateHaskell     #-}
 
+module SHEMain where
+
 import           Crypto.Lol hiding ((^))
 import           Crypto.Lol.Applications.SymmSHE -- exports *ciphertext* 'CT'
 import           Crypto.Lol.Types

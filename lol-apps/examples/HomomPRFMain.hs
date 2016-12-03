@@ -8,6 +8,8 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
+module HomomPRFMain where
+
 import Control.DeepSeq
 import Control.Monad.Random
 import Control.Monad.Reader
@@ -27,7 +29,7 @@ main = do
   sk <- genSK v
   (tHints, skout) <- tunnelHints sk
   rHints <- roundHints skout
-  let hints = Hints tHints rHints :: EvalHints CPP.CT RngList Int64 ZP8 ZQ4 ZQSeq KSGad
+  let hints = Hints tHints rHints :: EvalHints CPP.CT RngList Int64 ZP ZQ ZQSeq KSGad
   family :: PRFFamily PRFGad _ _ <- randomFamily 10 -- works on 10-bit input
   s <- getRandom
   let st = prfState family Nothing --initialize with input 0

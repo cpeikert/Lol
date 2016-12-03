@@ -2,12 +2,14 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TypeOperators  #-}
 
+module BenchRepaMain where
+
 import Crypto.Lol.Benchmarks
 import Crypto.Lol.Benchmarks.Standard
 import Crypto.Lol.Cyclotomic.Tensor.Repa
 import Crypto.Lol.Factored
 import qualified Crypto.Lol.Utils.PrettyPrint.Diagnostic as D
-import qualified Crypto.Lol.Utils.PrettyPrint.Table as T
+--import qualified Crypto.Lol.Utils.PrettyPrint.Table as T
 import Crypto.Random.DRBG
 
 import Data.Proxy

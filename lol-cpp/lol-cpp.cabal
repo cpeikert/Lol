@@ -106,10 +106,11 @@ library
   other-extensions: TemplateHaskell
 
 Benchmark bench-lol-cpp
-  type:               exitcode-stdio-1.0
-  default-language:   Haskell2010
-  main-is:            Main.hs
-  hs-source-dirs:     benchmarks
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+  main-is:          BenchCPPMain.hs
+  ghc-options:      -main-is BenchCPPMain
+  hs-source-dirs:   benchmarks
 
   ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
 
@@ -121,11 +122,12 @@ Benchmark bench-lol-cpp
     lol-cpp
 
 test-suite test-lol-cpp
-  type:               exitcode-stdio-1.0
-  default-language:   Haskell2010
-  main-is:            Main.hs
-  hs-source-dirs:     tests
-  ghc-options:        -threaded -O2
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+  main-is:          TestCPPMain.hs
+  ghc-options:      -main-is TestCPPMain
+  hs-source-dirs:   tests
+  ghc-options:      -threaded -O2
 
   build-depends:
     base,

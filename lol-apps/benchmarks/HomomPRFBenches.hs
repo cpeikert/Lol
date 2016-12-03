@@ -39,7 +39,7 @@ benchHomomPRF size t xs _ _ = benchGroup "HomomPRF" $ (:[]) $ do
   let gadLen = length $ untag (gadget :: Tagged prfgad [rp])
   a0 <- fromList 1 gadLen <$> take gadLen <$> getRandoms
   a1 <- fromList 1 gadLen <$> take gadLen <$> getRandoms
-  let hints = Hints tHints rHints :: EvalHints Lol.CT RngList Int64 zp ZQ6 ZQSeq KSGad
+  let hints = Hints tHints rHints :: EvalHints Lol.CT RngList Int64 ZP ZQ ZQSeq KSGad
       family = makeFamily a0 a1 (t size) :: PRFFamily prfgad _ _
   s <- getRandom
   ct <- encrypt sk s
