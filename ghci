@@ -3,3 +3,7 @@ cd lol-cpp
 make
 cd ..
 stack exec /opt/ghc/bin/ghci lol-cpp/lib/*.so -- $@
+
+# change history so that :r is the "last" ghci command
+# without this, :q is always the most recent command in the history
+sed -i "1s/.*/:r/" ~/.ghc/ghci_history
