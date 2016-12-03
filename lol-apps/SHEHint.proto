@@ -1,0 +1,32 @@
+
+message RqPolynomial {
+  repeated Rq coeffs = 1;
+}
+
+message LinearRq {
+  required uint32 e  = 1;
+  required uint32 r  = 2;
+  repeated Rq coeffs = 3;
+}
+
+message KSLinearHint {
+  required RqPolynomial hint = 1;
+  required string gad        = 2;
+}
+
+message KSQuadCircHint {
+  required RqPolynomial hint = 1;
+  required string gad        = 2;
+}
+
+message TunnelHint {
+  required LinearRq coeffs   = 1;
+  repeated KSLinearHint hint = 2;
+}
+
+
+
+message TunnelHintChain {
+  repeated
+
+}

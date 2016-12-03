@@ -32,3 +32,6 @@ message Kq {
   repeated double xs = 3;
 }
 
+message LinearRq {
+  repeated Kq coeffs = 1;
+}

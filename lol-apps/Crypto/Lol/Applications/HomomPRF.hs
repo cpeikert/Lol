@@ -59,7 +59,7 @@ type family NextListElt (x :: k) (xs :: [k]) :: k where
                                  'Text "You must use parameters that are in the type lists!")
 
 data EvalHints t rngs z zp zq zqs gad = Hints
-  (HTunnelHints gad t rngs z zp (ZqUp zq zqs) zqs)
+  (HTunnelHints gad t rngs (ZqUp zq zqs))
   (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad)
 
 homomPRFM ::
@@ -173,21 +173,21 @@ instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
 
 -- For tunneling
 
-data HTunnelHints gad t rngs z zp zq zqs where
-  TNil :: HTunnelHints gad t '[ '(m,m') ] z zp zq zqs
+data HTunnelHints gad t rngs zq where
+  TNil :: HTunnelHints gad t '[ '(m,m') ] zq
   TCons :: (Head rngs ~ '(r,r'), Head (Tail rngs) ~ '(s,s'),
             e' `Divides` r', e' `Divides` s')
         => TunnelHints gad t e' r' s' zq
-           -> HTunnelHints gad t (Tail rngs) z zp zq zqs
-           -> HTunnelHints gad t rngs z zp zq zqs
+           -> HTunnelHints gad t (Tail rngs) zq
+           -> HTunnelHints gad t rngs zq
 
 class Tunnel xs t z zp zq gad where
 
   tunnelHints :: (MonadRandom rnd, Head xs ~ '(r,r'), Last xs ~ '(s,s'))
-              => SK (Cyc t r' z) -> rnd (HTunnelHints gad t xs z zp zq zqs, SK (Cyc t s' z))
+              => SK (Cyc t r' z) -> rnd (HTunnelHints gad t xs zq, SK (Cyc t s' z))
 
   tunnelInternal :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
-    HTunnelHints gad t xs z zp zq zqs -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
+    HTunnelHints gad t xs zq -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
 
 instance Tunnel '[ '(m,m') ] t z zp zq gad where
 
