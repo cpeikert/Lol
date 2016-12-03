@@ -2,7 +2,7 @@
 
 -- | Main module for the rlwe-challenges executable.
 
-module Main where
+module RLWEChallengesMain where
 
 import Control.Monad         (when)
 import Data.Time.Clock.POSIX

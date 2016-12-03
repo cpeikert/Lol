@@ -6,8 +6,9 @@ module Common where
 
 import Beacon
 
+import           Crypto.Lol.Cyclotomic.Tensor.CPP
 import           Crypto.Lol.Types     hiding (RRq)
-import qualified Crypto.Lol.Types.RRq as RRq
+import qualified Crypto.Lol.Types as RRq
 
 import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.InstanceCont

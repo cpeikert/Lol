@@ -9,6 +9,8 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
+module BenchAppsMain where
+
 import Control.Monad.Random
 
 import Crypto.Lol (Cyc)

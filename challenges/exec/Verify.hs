@@ -6,6 +6,8 @@
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
 module Verify where
 
 import Beacon

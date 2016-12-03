@@ -6,6 +6,8 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
+module KHPRFMain where
+
 import Control.Applicative
 import Control.DeepSeq
 import Control.Monad.Random hiding (fromList)
@@ -23,9 +25,11 @@ type Cyclo m q = Cyc CT m (Zq q)
 type Gad = BaseBGad 2
 type M = F128
 
+type Cyclo' q = Cyclo M q
+
 main :: IO ()
 main = do
-  family :: PRFFamily Gad (Cyclo M 257) (Cyclo M 32) <- randomFamily 10 -- works on 10-bit input
+  family :: PRFFamily Gad (Cyclo' 257) (Cyclo M 32) <- randomFamily 10 -- works on 10-bit input
   s <- getRandom                                                            -- prf seed
   let state = prfState family Nothing                                       -- initialize with input 0
       prf = ringPRFM s

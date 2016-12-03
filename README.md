@@ -1,3 +1,10 @@
+This branch is a fork of master. Relative to master, it modularizes the library
+into many fine-grained packages including Tensor backends, code for tests/benchmarks,
+and the core library. Although it is the acting master branch (where all commits happen),
+we have not yet merged it to master due to performance degredation of microbenchmarks.
+
+--------------------------------------------------------------------------------
+
 This repository contains several Haskell libraries:
 
   * The `lol` directory contains the Haskell library Λ ○ λ (Lol),
@@ -52,3 +59,5 @@ This command builds the C++ library for lol-cpp and the loads
 all imported files from lol* packages from source. You may
 need to run 'stack bench lol-cpp' or similar first to install
 the necessary dependencies.
+
+You can load all top-level executables with ./ghci AllMain.hs

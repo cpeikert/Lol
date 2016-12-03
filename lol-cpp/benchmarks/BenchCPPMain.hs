@@ -2,6 +2,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TypeOperators  #-}
 
+module BenchCPPMain where
+
 import Crypto.Lol.Benchmarks
 import Crypto.Lol.Benchmarks.Standard
 import Crypto.Lol.Cyclotomic.Tensor.CPP
