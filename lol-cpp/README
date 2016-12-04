@@ -1,0 +1,6 @@
+
+This package contains a fast C++ implementation of the 'Tensor' interface for
+Lol, via Haskell's FFI.
+
+You can test this package by running `stack test lol-cpp`, and benchmark by
+running `stack bench lol-cpp`.

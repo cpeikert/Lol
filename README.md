@@ -1,6 +1,7 @@
-This branch (fast-microbenchmarks) used to be 'master'. This branch has fast
-microbenchmarks (unlike the current master branch), so it exists as a point of
-comparison for microbenchmarks.
+This branch (master) was previously known as 'split-packages'. The main problem
+preventing us from creating a new Hackage release based on this branch is that
+microbenchmark performance is severely degraded relative to the fast-microbenechmarks
+branch.
 
 --------------------------------------------------------------------------------
 
@@ -49,3 +50,14 @@ You can run unit tests with `stack test lol-apps`. You can run
 benchmarks with `stack bench lol-apps`. An example of how to use each
 application is included and is built automatically when you install
 lol-apps.
+
+Developing in the lol ecosystem:
+
+./ghci path/to/file
+
+This command builds the C++ library for lol-cpp and the loads
+all imported files from lol* packages from source. You may
+need to run 'stack bench lol-cpp' or similar first to install
+the necessary dependencies.
+
+You can load all top-level executables with ./ghci AllMain.hs

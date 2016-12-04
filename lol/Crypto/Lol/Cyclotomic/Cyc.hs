@@ -81,8 +81,6 @@ import Control.Monad.Random
 import Data.Coerce
 import Data.Traversable
 
-import Test.QuickCheck
-
 -- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
 -- \(\Z_q[\zeta_m]\), and \(\Q[\zeta_m]\) in an explicit
 -- representation: @t@ is the
@@ -610,10 +608,6 @@ instance (Random r, Tensor t, Fact m, UCRTElt t r) => Random (Cyc t m r) where
   {-# INLINABLE random #-}
 
   randomR _ = error "randomR non-sensical for Cyc"
-
-instance (Arbitrary (UCyc t m P r)) => Arbitrary (Cyc t m r) where
-  arbitrary = Pow <$> arbitrary
-  shrink = shrinkNothing
 
 instance (Fact m, CElt t r, Protoable (UCyc t m D r))
          => Protoable (Cyc t m r) where

@@ -1,4 +1,5 @@
-{-# LANGUAGE DataKinds, TemplateHaskell #-}
+{-# LANGUAGE DataKinds       #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- | Positive naturals in Peano and binary representations,
 -- singletonized and promoted to the type level.  This module relies

@@ -1,7 +1,14 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, DeriveTraversable,
-             FlexibleContexts, GeneralizedNewtypeDeriving, KindSignatures,
-             MultiParamTypeClasses, RoleAnnotations, ScopedTypeVariables,
-             TypeFamilies, UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveTraversable          #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE RoleAnnotations            #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 -- | Provides applicative-like functions for indexed vectors
 

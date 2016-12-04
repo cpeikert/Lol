@@ -1,7 +1,7 @@
 {-# LANGUAGE RebindableSyntax, FlexibleContexts,
              FlexibleInstances, DataKinds, GADTs, KindSignatures, MultiParamTypeClasses,
              ConstraintKinds, ScopedTypeVariables, RankNTypes, UndecidableInstances,
-             TypeFamilies, DeriveDataTypeable, StandaloneDeriving, TypeOperators #-}
+             TypeFamilies, DeriveDataTypeable, StandaloneDeriving, TypeOperators, UndecidableSuperClasses #-}
 
 -- A module to compile an AST containing CTDummy nodes to an evaluatable AST
 -- containing CT nodes.

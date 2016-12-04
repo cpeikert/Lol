@@ -1,0 +1,6 @@
+
+This package contains a pure Haskell implementation of the 'Tensor' interface for
+Lol, using the highly optimized and parallelizable array library Repa.
+
+You can test this package by running `stack test lol-repa`, and benchmark by
+running `stack bench lol-repa`.

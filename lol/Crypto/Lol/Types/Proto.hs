@@ -1,5 +1,8 @@
-{-# LANGUAGE FlexibleContexts, FlexibleInstances, PolyKinds,
-             ScopedTypeVariables, TypeFamilies #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE PolyKinds           #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 -- | Convenient interfaces for serialization with protocol buffers.
 

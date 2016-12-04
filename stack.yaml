@@ -38,9 +38,14 @@ resolver: lts-7.0
 # will not be run. This is useful for tweaking upstream packages.
 
 packages:
-- lol/
-- apps/
 - challenges/
+- compiler/
+- lol/
+- lol-apps/
+- lol-benches/
+- lol-cpp/
+- lol-repa/
+- lol-tests/
 
 # CJP: add compiler/ when ready
 
@@ -53,6 +58,17 @@ extra-deps:
 - non-negative-0.1.1
 - numeric-prelude-0.4.2
 - tagged-transformer-0.8
+- syntactic-3.6.2
+- type-natural-0.7.1.1
+- equational-reasoning-0.4.1.1
+- ghc-typelits-presburger-0.1.1.0
+- monomorphic-0.0.3.3
+- tree-view-0.5
+- ghc-typelits-natnormalise-0.4.6
+- nist-beacon-0.2.0.0
+- http-conduit-2.2.3
+- http-client-0.5.4
+- http-client-tls-0.3.3
 
 # Override default flag values for local packages and extra-deps
 

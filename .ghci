@@ -1,0 +1,34 @@
+:set -ichallenges:challenges/exec
+:set -icompiler
+:set -ilol
+:set -ilol-apps:lol-apps/benchmarks:lol-apps/examples:lol-apps/tests
+:set -ilol-benches:lol-benches/exec
+:set -ilol-cpp:lol-cpp/benchmarks:lol-cpp/tests
+:set -ilol-repa:lol-repa/benchmarks:lol-repa/tests
+:set -ilol-tests:lol-tests/exec
+
+:set -fprint-explicit-kinds
+:set -freduction-depth=200
+:set -Wall
+:set -Wall-missed-specialisations
+:set -hide-package cryptonite
+
+:set -Wno-orphans
+:set -Wno-incomplete-patterns
+:set -Wno-implicit-prelude
+:set -Wno-missing-import-lists
+:set -Wno-safe
+:set -Wno-unsafe
+:set -Wno-incomplete-uni-patterns
+:set -Wno-missing-local-signatures
+:set -Wno-monomorphism-restriction
+:set -Wno-missing-monadfail-instances
+:set -Wno-unused-type-patterns
+:set -Wno-deriving-typeable
+
+
+--https://www.youtube.com/channel/UCQMkHY8U6B9tefTQdPkpY7A
+let ghciEscapeShellArg arg = "'" ++ concatMap (\c -> if c == '\'' then "'\"'\"'" else [c]) arg ++ "'"
+:def! search return . (":! hoogle --color " ++) . ghciEscapeShellArg
+:def! doc return . (":! hoogle --info " ++) . ghciEscapeShellArg
+:def! grep return . (":! grep -nr --include=*.hs " ++) . ghciEscapeShellArg
