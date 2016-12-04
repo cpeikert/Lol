@@ -1,3 +1,12 @@
+This branch (decomp-crt) is a fork of split-pacakges. Relative to split-pacakges,
+it attempts to implement crtSetDual and coeffsCRTSet. This would allow us to, e.g.,
+"hop back" when homomorphically evaluating a PRF. Unfortunately, the math turned
+out to be more complicated than we first calculated, so this branch is stalled
+until we figure out how to use a "full extension basis". Relevant email subject
+is "Dual set of CRT set".
+
+--------------------------------------------------------------------------------
+
 This repository contains several Haskell libraries:
 
   * The `lol` directory contains the Haskell library Λ ○ λ (Lol),
