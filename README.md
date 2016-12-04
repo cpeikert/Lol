@@ -1,3 +1,10 @@
+This branch (fast-microbenchmarks) used to be master. It is no longer under active
+development, but it has very fast microbenchmarks at all levels of Lol (save for
+Cyc.embed and possibly one or two others). We are keeping this branch so that we
+know what is possible in terms of microbenchmark performance.
+
+--------------------------------------------------------------------------------
+
 This repository contains several Haskell libraries:
 
   * The `lol` directory contains the Haskell library Λ ○ λ (Lol),
