@@ -1,4 +1,4 @@
-This branch is a fork of master. Relative to master, it modularizes the library
+This branch (split-packages) is a fork of master. Relative to master, it modularizes the library
 into many fine-grained packages including Tensor backends, code for tests/benchmarks,
 and the core library. Although it is the acting master branch (where all commits happen),
 we have not yet merged it to master due to performance degredation of microbenchmarks.
