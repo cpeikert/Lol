@@ -22,7 +22,8 @@ module Crypto.Lol.Applications.HomomPRF
 ,Tunnel, Fst, Snd, PTRound, ZqResult) where
 
 import Control.Monad
-import Control.Monad.Random
+import Control.Monad.Except
+import Control.Monad.Random hiding (fromList)
 import Control.Monad.Reader
 import Control.Monad.State
 
@@ -34,6 +35,10 @@ import Crypto.Lol.Types
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Types.ZPP
 import Crypto.Lol.Cyclotomic.Tensor
+import Crypto.Lol.Types.Proto
+import qualified Crypto.Proto.SHEHint.KSQuadCircHint as P
+import qualified Crypto.Proto.SHEHint.TunnelHints as P
+import qualified Crypto.Proto.SHEHint.TunnelHintChain as P
 
 import Data.List.Split (chunksOf)
 import Data.Promotion.Prelude.List
@@ -41,6 +46,9 @@ import Data.Promotion.Prelude.List
 import GHC.TypeLits hiding (type (*))
 
 import MathObj.Matrix (columns)
+
+import Data.Foldable (toList)
+import Data.Sequence (fromList)
 
 type ZqUp zq zqs = NextListElt zq (Reverse zqs)
 type ZqDown zq zqs = NextListElt zq zqs
@@ -130,6 +138,10 @@ class (UnPP (CharOf zp) ~ '(Prime2,e)) => PTRound t m m' e zp zq z gad zqs where
 
   ptRoundInternal :: RoundHints t m m' z zp zq zqs gad -> [CT m zp (Cyc t m' zq)] -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
 
+  toProtoRHints :: RoundHints t m m' z zp zq zqs gad -> [P.KSQuadCircHint]
+
+  fromProtoRHints :: (MonadError String mon) => [P.KSQuadCircHint] -> mon (RoundHints t m m' z zp zq zqs gad)
+
 instance (UnPP p ~ '(Prime2, 'S e),                                                 -- superclass constraint
           zqup ~ ZqUp zq zqs, zq' ~ ZqDown zq zqs, zp ~ ZqBasic p i, zp' ~ Div2 zp, -- convenience synonyms
           AddPublicCtx t m m' zp zq, AddPublicCtx t m m' zp zq',                    -- addPublic
@@ -138,7 +150,8 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
           Ring (CT m zp (Cyc t m' zq)),                                             -- (*)
           RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq,                            -- rescaleLinearCT
           ModSwitchPTCtx t m' zp zp' zq',                                           -- modSwitchPT
-          PTRound t m m' e zp' zq' z gad zqs)                                       -- recursive call
+          PTRound t m m' e zp' zq' z gad zqs,                                       -- recursive call
+          Protoable (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))))                  -- toProto
   => PTRound t m m' ('S e) (ZqBasic p i) (zq :: *) z gad zqs where
   type ZqResult ('S e) zq zqs = ZqResult e (ZqDown zq zqs) zqs
 
@@ -159,6 +172,13 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
         go [a,b] = modSwitchPT $ rescaleLinearCT $ keySwitchQuadCirc ksqHint $ a*b :: CT m zp' (Cyc t m' zq')
     in ptRoundInternal rest (map go pairs)
 
+  toProtoRHints (Internal h rest) = (toProto h) : (toProtoRHints rest)
+
+  fromProtoRHints (x:xs) = do
+    y <- fromProto x
+    ys <- fromProtoRHints xs
+    return $ Internal y ys
+
 instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
   type ZqResult P1 zq zqs = zq
 
@@ -168,17 +188,19 @@ instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
 
   ptRoundInternal Root [x] = x
 
+  toProtoRHints _ = []
+
+  fromProtoRHints [] = return Root
 
 
 -- For tunneling
 
-data HTunnelHints gad t rngs zp zq where
+data HTunnelHints gad t xs zp zq where
   TNil :: HTunnelHints gad t '[ '(m,m') ] zp zq
-  TCons :: (Head rngs ~ '(r,r'), Head (Tail rngs) ~ '(s,s'),
-            e' `Divides` r', e' `Divides` s')
+  TCons :: (xs ~ ('(r,r') ': '(s,s') ': rngs), e' ~ (e * (r' / r)), e ~ FGCD r s)
         => TunnelHints gad t e' r' s' zp zq
-           -> HTunnelHints gad t (Tail rngs) zp zq
-           -> HTunnelHints gad t rngs zp zq
+           -> HTunnelHints gad t (Tail xs) zp zq
+           -> HTunnelHints gad t xs zp zq
 
 class Tunnel xs t zp zq gad where
 
@@ -189,11 +211,19 @@ class Tunnel xs t zp zq gad where
   tunnelInternal :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
     HTunnelHints gad t xs zp zq -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
 
+  toProtoTHints :: HTunnelHints gad t xs zp zq -> [P.TunnelHints]
+
+  fromProtoTHints :: (MonadError String m) => [P.TunnelHints] -> m (HTunnelHints gad t xs zp zq)
+
 instance Tunnel '[ '(m,m') ] t zp zq gad where
 
   tunnelHints sk = return (TNil,sk)
 
   tunnelInternal _ = id
+
+  toProtoTHints _ = []
+
+  fromProtoTHints [] = return TNil
 
 -- EAC: I expand the GenTunnelHintCtx synonym here to remove all occurrences of 'z',
 -- which instead only occur in the context of tunnelHints. This is because 'z' is
@@ -219,7 +249,8 @@ instance (ExtendLinIdx e r s e' r' s', -- genTunnelHints
           TunnelCtx t r s e' r' s' zp zq gad,          -- tunnelCT
           e ~ FGCD r s, e `Divides` r, e `Divides` s,    -- linearDec
           ZPP zp, TElt t (ZpOf zp),                      -- crtSet
-          Tunnel ('(s,s') ': rngs) t zp zq gad)
+          Tunnel ('(s,s') ': rngs) t zp zq gad,         -- recursive call
+          Protoable (TunnelHints gad t e' r' s' zp zq), ProtoType (TunnelHints gad t e' r' s' zp zq) ~ P.TunnelHints) -- toProto
   => Tunnel ('(r,r') ': '(s,s') ': rngs) t zp zq gad where
 
   tunnelHints sk = do
@@ -236,6 +267,13 @@ instance (ExtendLinIdx e r s e' r' s', -- genTunnelHints
     return (TCons thint rest, sk')
 
   tunnelInternal (TCons thint rest) = tunnelInternal rest . tunnelCT thint
+
+  toProtoTHints (TCons hint rest) = (toProto hint) : toProtoTHints rest
+
+  fromProtoTHints (x:xs) = do
+    y <- fromProto x
+    ys <- fromProtoTHints xs
+    return $ TCons y ys
 
 -- EAC: Invalid warning on these functions reported as #12700
 roundCTUp :: (RescaleCyc (Cyc t) zq (ZqUp zq zqs), ToSDCtx t m' zp zq)
@@ -258,3 +296,8 @@ tunnel :: forall rngs r r' s s' t z zp zq gad zqs . (MultiTunnelCtx rngs r r' s 
 tunnel pzqs hints x =
   let y = tunnelInternal hints $ roundCTUp pzqs x
   in roundCTDown pzqs $ roundCTDown pzqs y
+
+instance (Tunnel xs t zp zq gad) => Protoable (HTunnelHints gad t xs zp zq) where
+  type ProtoType (HTunnelHints gad t xs zp zq) = P.TunnelHintChain
+  toProto = P.TunnelHintChain . fromList . toProtoTHints
+  fromProto (P.TunnelHintChain xs) = fromProtoTHints $ toList xs

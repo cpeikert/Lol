@@ -6,7 +6,10 @@
 
 -- | Convenient interfaces for serialization with protocol buffers.
 
-module Crypto.Lol.Types.Proto where
+module Crypto.Lol.Types.Proto
+(Protoable(..)
+,msgPut, msgGet
+,uToString, uFromString) where
 
 import Control.Monad.Except
 import Data.ByteString.Lazy hiding (map)
@@ -14,6 +17,7 @@ import Data.Foldable (toList)
 import Data.Sequence (fromList)
 
 import Text.ProtocolBuffers        (messageGet, messagePut)
+import Text.ProtocolBuffers.Basic  (uToString, uFromString)
 import Text.ProtocolBuffers.Header
 
 -- | Conversion between Haskell types and their protocol buffer representations.

@@ -47,6 +47,12 @@ import qualified Algebra.Ring     as Ring (C)
 
 import Crypto.Lol as LP hiding (sin)
 import Crypto.Lol.Cyclotomic.UCyc   (D, UCyc)
+import Crypto.Lol.Types.Proto
+import Crypto.Proto.RLWE.Rq (Rq)
+import qualified Crypto.Proto.SHEHint.KSLinearHint as P
+import qualified Crypto.Proto.SHEHint.KSQuadCircHint as P
+import qualified Crypto.Proto.SHEHint.RqPolynomial as P
+import qualified Crypto.Proto.SHEHint.TunnelHints as P
 
 import Control.Applicative  hiding ((*>))
 import Control.DeepSeq
@@ -54,6 +60,7 @@ import Control.Monad        as CM
 import Control.Monad.Random
 import Data.Maybe
 import Data.Traversable     as DT
+import Data.Typeable
 
 import MathObj.Polynomial as P
 
@@ -523,3 +530,57 @@ tunnelCT (THints f'q hints) ct =
        c1' = sum c1s'
    in CT MSD 0 s $ P.const c0' + c1')
     \\ lcmDivides (Proxy::Proxy r) (Proxy::Proxy e')
+
+instance (Protoable rq, ProtoType rq ~ Rq) => Protoable (Polynomial rq) where
+  type ProtoType (Polynomial rq) = P.RqPolynomial
+  toProto = P.RqPolynomial . toProto . coeffs
+  fromProto (P.RqPolynomial x) = fromCoeffs <$> fromProto x
+
+instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ Rq)
+  => Protoable (KSLinearHint gad r'q') where
+  type ProtoType (KSLinearHint gad r'q') = P.KSLinearHint
+  toProto (LinHint cs) =
+    P.KSLinearHint
+      (toProto $ proxy cs (Proxy::Proxy gad))
+      (uFromString $ show $ typeRep (Proxy::Proxy gad))
+  fromProto (P.KSLinearHint poly grepr) = do
+    let gadrepr' = show $ typeRep (Proxy::Proxy gad)
+        gadrepr = uToString grepr
+    if gadrepr == gadrepr'
+    then (LinHint . tag) <$> fromProto poly
+    else error $ "Expected gadget " ++ gadrepr' ++ ", but serialized object is w.r.t. " ++ gadrepr
+
+instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ Rq)
+  => Protoable (KSQuadCircHint gad r'q') where
+  type ProtoType (KSQuadCircHint gad r'q') = P.KSQuadCircHint
+  toProto (QuadHint cs) =
+    P.KSQuadCircHint
+      (toProto $ proxy cs (Proxy::Proxy gad))
+      (uFromString $ show $ typeRep (Proxy::Proxy gad))
+  fromProto (P.KSQuadCircHint poly grepr) = do
+    let gadrepr' = show $ typeRep (Proxy::Proxy gad)
+        gadrepr = uToString grepr
+    if gadrepr == gadrepr'
+    then (QuadHint . tag) <$> fromProto poly
+    else error $ "Expected gadget " ++ gadrepr' ++ ", but serialized object is w.r.t. " ++ gadrepr
+
+instance (Mod zp, Typeable gad, Protoable (Linear t zq e' r' s'), Protoable (KSLinearHint gad (Cyc t s' zq)))
+  => Protoable (TunnelHints gad t e' r' s' zp zq) where
+  type ProtoType (TunnelHints gad t e' r' s' zp zq) = P.TunnelHints
+  toProto (THints linf hints) =
+    P.TunnelHints
+      (toProto linf)
+      (toProto $ LinHint <$> hints)
+      (fromIntegral $ proxy modulus (Proxy::Proxy zp))
+      (uFromString $ show $ typeRep (Proxy::Proxy gad))
+  fromProto (P.TunnelHints linf hints p grepr) =
+    let gadrepr' = show $ typeRep (Proxy::Proxy gad)
+        gadrepr = uToString grepr
+        p' = fromIntegral p
+        pval = proxy modulus (Proxy::Proxy zp)
+    in if p' == pval && gadrepr' == gadrepr
+       then do
+         linf' <- fromProto linf
+         hs <- (map (\(LinHint x) -> x)) <$> fromProto hints
+         return $ THints linf' hs
+      else error $ "fail"

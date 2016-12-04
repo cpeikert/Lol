@@ -24,11 +24,17 @@ module Crypto.Lol.Cyclotomic.Linear
 
 import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Prelude
+import Crypto.Lol.Reflects
+import Crypto.Lol.Types.Proto
+import Crypto.Proto.RLWE.Rq (Rq)
+import Crypto.Proto.SHEHint.LinearRq (LinearRq(LinearRq))
 
 import Algebra.Additive as Additive (C)
 
 import Control.Applicative
 import Control.DeepSeq
+
+import Data.Word
 
 -- | An \(E\)-linear function from \(R\) to \(S\).
 
@@ -99,3 +105,17 @@ extendLin :: (ExtendLinIdx e r s e' r' s')
 -- relax the constraint on E then we'd have to change the
 -- implementation to something more difficult.
 extendLin (RD ys) = RD (embed <$> ys)
+
+instance (Reflects e Word32, Reflects r Word32, Protoable (Cyc t s zq), ProtoType (t s zq) ~ Rq)
+  => Protoable (Linear t zq e r s) where
+  type ProtoType (Linear t zq e r s) = LinearRq
+  toProto (RD cs) = LinearRq (proxy value (Proxy::Proxy e)) (proxy value (Proxy::Proxy r)) $ toProto cs
+  fromProto (LinearRq e r cs) =
+    let e' = proxy value (Proxy::Proxy e)
+        r' = proxy value (Proxy::Proxy r)
+    in if e == e' && r == r'
+       then RD <$> fromProto cs
+       else error $ "Could not deserialize Linear: types imply e=" ++
+              show e' ++ " and r=" ++ show r' ++
+              ", but serializd object is for e=" ++
+              show e ++ " and r=" ++ show r

@@ -1,7 +1,8 @@
+import "RLWE.proto";
 
-message RqPolynomial {
-  repeated Rq coeffs = 1;
-}
+// run this:
+
+// hprotoc -I . -I ../lol -a RLWE.proto=Crypto.Proto -p Crypto.Proto SHEHint.proto
 
 message LinearRq {
   required uint32 e  = 1;
@@ -9,22 +10,31 @@ message LinearRq {
   repeated Rq coeffs = 3;
 }
 
+message RqPolynomial {
+  repeated Rq coeffs = 1;
+}
+
 message KSLinearHint {
-  required RqPolynomial hint = 1;
+  repeated RqPolynomial hint = 1;
   required string gad        = 2;
 }
 
 message KSQuadCircHint {
-  required RqPolynomial hint = 1;
+  repeated RqPolynomial hint = 1;
   required string gad        = 2;
 }
 
 message TunnelHints {
   required LinearRq coeffs   = 1;
   repeated KSLinearHint hint = 2;
+  required uint64 p          = 3;
+  required string gad        = 4;
 }
 
 message TunnelHintChain {
-  repeated TunnelHints = 1;
+  repeated TunnelHints hints = 1;
+}
 
+message RoundHintChain {
+  repeated KSQuadCircHint hints = 1;
 }
