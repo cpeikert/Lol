@@ -1,3 +1,9 @@
+This branch (fast-microbenchmarks) used to be 'master'. This branch has fast
+microbenchmarks (unlike the current master branch), so it exists as a point of
+comparison for microbenchmarks.
+
+--------------------------------------------------------------------------------
+
 This repository contains several Haskell libraries:
 
   * The `lol` directory contains the Haskell library Λ ○ λ (Lol),
