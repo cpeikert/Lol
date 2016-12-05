@@ -72,7 +72,7 @@ getReports :: OptsInternal -> Benchmark -> IO [Report]
 getReports o = withConfig (config o) . runAndAnalyse o
 
 config :: OptsInternal -> Config
-config OptsInternal{..} = defaultConfig {verbosity = if verb == Full then Normal else Quiet}
+config OptsInternal{..} = defaultConfig {verbosity = if verb == Full then Normal else Quiet, timeLimit=300}
 
 -- | Run, and analyse, one or more benchmarks.
 -- From Criterion.Internal
