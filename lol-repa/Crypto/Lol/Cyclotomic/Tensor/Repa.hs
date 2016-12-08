@@ -37,7 +37,9 @@ import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 import Crypto.Lol.Utils.ShowType
 
 import Crypto.Proto.RLWE.Kq
+import Crypto.Proto.RLWE.KqProduct
 import Crypto.Proto.RLWE.Rq
+import Crypto.Proto.RLWE.RqProduct
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Module       as Module (C)
@@ -91,6 +93,28 @@ instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
             \Expected n=" ++ show n  ++ ", got " ++ show len ++ "\n\
             \Expected q=" ++ show q' ++ ", got " ++ show q   ++ "."
 
+instance (Fact m, Reflects q1 Int64, Reflects q2 Int64)
+  => Protoable (RT m (ZqBasic q1 Int64, ZqBasic q2 Int64)) where
+  type ProtoType (RT m (ZqBasic q1 Int64, ZqBasic q2 Int64)) = RqProduct
+  toProto = toProtoTuple RqProduct
+  fromProto = fromProtoTuple rqlist
+
+instance (Fact m, Reflects q Int64, TElt RT (ZqBasic q Int64, (a,b)),
+          TElt RT (a,b), TElt RT (ZqBasic q Int64),
+          Protoable (RT m (a,b)), ProtoType (RT m (a,b)) ~ RqProduct)
+  => Protoable (RT m (ZqBasic q Int64, (a,b))) where
+  type ProtoType (RT m (ZqBasic q Int64, (a,b))) = RqProduct
+  toProto = toProtoNestRight RqProduct rqlist
+  fromProto = fromProtoNestRight RqProduct rqlist
+
+instance (Fact m, Reflects q Int64, TElt RT ((a,b), ZqBasic q Int64),
+          TElt RT (a,b), TElt RT (ZqBasic q Int64),
+          Protoable (RT m (a,b)), ProtoType (RT m (a,b)) ~ RqProduct)
+  => Protoable (RT m ((a,b), ZqBasic q Int64)) where
+  type ProtoType (RT m ((a,b), ZqBasic q Int64)) = RqProduct
+  toProto = toProtoNestLeft RqProduct rqlist
+  fromProto = fromProtoNestLeft RqProduct rqlist
+
 instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
   type ProtoType (RT m (RRq q Double)) = Kq
 
@@ -114,6 +138,29 @@ instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
             \Expected m=" ++ show m' ++ ", got " ++ show m   ++ "\n\
             \Expected n=" ++ show n  ++ ", got " ++ show len ++ "\n\
             \Expected q=" ++ show q' ++ ", got " ++ show q   ++ "."
+
+instance (Fact m, Reflects q1 Double, Reflects q2 Double)
+  => Protoable (RT m (RRq q1 Double, RRq q2 Double)) where
+  type ProtoType (RT m (RRq q1 Double, RRq q2 Double)) = KqProduct
+  toProto = toProtoTuple KqProduct
+  fromProto = fromProtoTuple kqlist
+
+instance (Fact m, Reflects q Double, TElt RT (RRq q Double, (a,b)),
+          TElt RT (a,b), TElt RT (RRq q Double),
+          Protoable (RT m (a,b)), ProtoType (RT m (a,b)) ~ KqProduct)
+  => Protoable (RT m (RRq q Double, (a,b))) where
+  type ProtoType (RT m (RRq q Double, (a,b))) = KqProduct
+  toProto = toProtoNestRight KqProduct kqlist
+  fromProto = fromProtoNestRight KqProduct kqlist
+
+instance (Fact m, Reflects q Double, TElt RT ((a,b), RRq q Double),
+          TElt RT (a,b), TElt RT (RRq q Double),
+          Protoable (RT m (a,b)), ProtoType (RT m (a,b)) ~ KqProduct)
+  => Protoable (RT m ((a,b), RRq q Double)) where
+  type ProtoType (RT m ((a,b), RRq q Double)) = KqProduct
+  toProto = toProtoNestLeft KqProduct kqlist
+  fromProto = fromProtoNestLeft KqProduct kqlist
+
 
 instance Eq r => Eq (RT m r) where
   (ZV a) == (ZV b) = a == b

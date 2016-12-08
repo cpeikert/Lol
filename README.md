@@ -1,7 +1,4 @@
-This branch (master) was previously known as 'split-packages'. The main problem
-preventing us from creating a new Hackage release based on this branch is that
-microbenchmark performance is severely degraded relative to the fast-microbenechmarks
-branch.
+This branch (prototuples2) is another attempt to serialize ring products, by defining an instance of tensors for tuple types.
 
 --------------------------------------------------------------------------------
 

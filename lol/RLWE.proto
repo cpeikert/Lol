@@ -32,3 +32,10 @@ message Kq {
   repeated double xs = 3;
 }
 
+message RqProduct {
+  repeated Rq rqlist = 1;
+}
+
+message KqProduct {
+  repeated Kq kqlist = 1;
+}
