@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -10,6 +11,7 @@
 
 module HomomPRFMain where
 
+import Control.Applicative
 import Control.DeepSeq
 import Control.Monad.Except
 import Control.Monad.Random
@@ -21,7 +23,6 @@ import Crypto.Lol.Applications.HomomPRF
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Cyclotomic.Tensor.CPP as CPP
-import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
 
 import Data.Promotion.Prelude.List
@@ -33,8 +34,9 @@ type T = CPP.CT
 type Z = Int64
 
 protoDir :: Int -> String -> String
-protoDir p = (("~" </> "Desktop" </> "Lol" </> ("p" ++ (show p))) </>)
+protoDir p = (("~" </> "Desktop" </> "Lol" </> ("p" ++ show p)) </>)
 
+thintPath, rhintPath, tskPath, rskPath :: Int -> String
 thintPath p = protoDir p "tunnel.hint"
 rhintPath p = protoDir p "round.hint"
 tskPath   p = protoDir p "encKey.secret"
@@ -55,13 +57,13 @@ main = do
   decprfs `deepseq` return ()
 
 readHints :: forall mon t rngs z zp zq zqs gad r' s' .
-  (MonadIO mon, MonadError String mon, Reflects zp Int,
+  (MonadIO mon, MonadError String mon, Mod zp,
    ProtoReadable (HTunnelHints gad t rngs zp (ZqUp zq zqs)),
    ProtoReadable (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad),
    ProtoReadable (SK (Cyc t r' z)), ProtoReadable (SK (Cyc t s' z)))
   => mon (EvalHints t rngs z zp zq zqs gad, SK (Cyc t r' z), SK (Cyc t s' z))
 readHints = do
-  let p = proxy value (Proxy::Proxy zp) :: Int
+  let p = fromIntegral $ proxy modulus (Proxy::Proxy zp)
   tHints <- parseProtoFile $ thintPath p
   rHints <- parseProtoFile $ rhintPath p
   tsk    <- parseProtoFile $ tskPath p

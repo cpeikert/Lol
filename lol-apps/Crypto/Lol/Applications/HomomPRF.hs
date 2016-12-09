@@ -37,6 +37,7 @@ import Crypto.Lol.Types.ZPP
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types.Proto
 import qualified Crypto.Proto.SHEHint.KSQuadCircHint as P
+import qualified Crypto.Proto.SHEHint.RoundHintChain as P
 import qualified Crypto.Proto.SHEHint.TunnelHints as P
 import qualified Crypto.Proto.SHEHint.TunnelHintChain as P
 
@@ -124,6 +125,13 @@ data RoundHints t m m' z zp zq zqs gad where
   Internal :: KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))
               -> RoundHints t m m' z (Div2 zp) (ZqDown zq zqs) zqs gad
               -> RoundHints t m m' z zp zq zqs gad
+
+instance (PTRound t m m' e zp zq z gad zqs)
+  => Protoable (RoundHints t m m' z zp zq zqs gad) where
+  type ProtoType (RoundHints t m m' z zp zq zqs gad) = P.RoundHintChain
+  toProto = P.RoundHintChain . fromList . toProtoRHints
+  fromProto (P.RoundHintChain xs) = fromProtoRHints $ toList xs
+
 
 class (UnPP (CharOf zp) ~ '(Prime2,e)) => PTRound t m m' e zp zq z gad zqs where
   type ZqResult e zq (zqs :: [*])
