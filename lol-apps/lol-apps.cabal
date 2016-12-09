@@ -158,6 +158,7 @@ executable homomprf
     arithmoi,
     base,
     deepseq,
+    DRBG,
     filepath,
     lol,
     lol-apps,
@@ -165,7 +166,8 @@ executable homomprf
     MonadRandom,
     mtl,
     numeric-prelude,
-    singletons
+    singletons,
+    time
 
 executable khprf
   hs-source-dirs: examples
