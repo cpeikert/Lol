@@ -61,6 +61,7 @@ library
     Crypto.Proto.SHEHint.KSQuadCircHint
     Crypto.Proto.SHEHint.RoundHintChain
     Crypto.Proto.SHEHint.RqPolynomial
+    Crypto.Proto.SHEHint.SecretKey
     Crypto.Proto.SHEHint.TunnelHintChain
     Crypto.Proto.SHEHint.TunnelHints
     Crypto.Proto.SHEHint
@@ -157,12 +158,14 @@ executable homomprf
     arithmoi,
     base,
     deepseq,
+    filepath,
     lol,
     lol-apps,
     lol-cpp,
     MonadRandom,
     mtl,
-    numeric-prelude
+    numeric-prelude,
+    singletons
 
 executable khprf
   hs-source-dirs: examples
