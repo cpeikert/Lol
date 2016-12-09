@@ -168,10 +168,6 @@ writeInstanceU path challName iu = do
     (IR _ inst) -> writeProtoType instFN inst
   writeProtoType secretFN s
 
--- | Writes any auto-gen'd proto object to path/filename.
-writeProtoType :: (ReflectDescriptor a, Wire a) => FilePath -> a -> IO ()
-writeProtoType fileName obj = BS.writeFile fileName $ messagePut obj
-
 -- | Generate a continuous RLWE instance along with its (uniformly
 -- random) secret, using the given scaled variance and number of
 -- desired samples.

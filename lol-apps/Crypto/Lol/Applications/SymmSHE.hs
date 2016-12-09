@@ -1,14 +1,15 @@
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NoImplicitPrelude     #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 -- | Symmetric-key somewhat homomorphic encryption.  See Section 4 of
 -- http://eprint.iacr.org/2015/1134 for mathematical description.
@@ -304,8 +305,8 @@ type KeySwitchCtx gad t m' zp zq zq' =
   (RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
    ToSDCtx t m' zp zq, SwitchCtx gad t m' zq')
 
-data KSLinearHint gad r'q' = LinHint (Tagged gad [Polynomial r'q'])
-data KSQuadCircHint gad r'q' = QuadHint (Tagged gad [Polynomial r'q'])
+newtype KSLinearHint gad r'q' = LinHint (Tagged gad [Polynomial r'q']) deriving (NFData)
+newtype KSQuadCircHint gad r'q' = QuadHint (Tagged gad [Polynomial r'q']) deriving (NFData)
 
 genKSLinearHint :: (KSHintCtx gad t m' z zq', MonadRandom rnd)
   => SK (Cyc t m' z) -- sout
@@ -476,6 +477,10 @@ twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 
 
 data TunnelHints gad t e' r' s' zp zq = THints (Linear t zq e' r' s') [Tagged gad [Polynomial (Cyc t s' zq)]]
+
+instance (NFData (Linear t zq e' r' s'), NFData (Cyc t s' zq))
+  => NFData (TunnelHints gad t e' r' s' zp zq) where
+  rnf (THints l t) = rnf l `seq` rnf t
 
 -- EAC: `e' ~ (e * ...) is not needed in this module, but it is needed as use sites...
 type GenTunnelHintCtx t e r s e' r' s' z zp zq gad =

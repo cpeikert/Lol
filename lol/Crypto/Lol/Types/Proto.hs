@@ -12,6 +12,7 @@ module Crypto.Lol.Types.Proto
 ,toProtoProduct, fromProtoNestLeft, fromProtoNestRight
 ,uToString, uFromString
 ,readProtoType, parseProtoFile
+,writeProtoType, writeProtoFile
 ,ProtoReadable
 ) where
 
@@ -95,7 +96,7 @@ fromProtoNestLeft ::
 fromProtoNestLeft box unbox xs = do
   let ys = unbox xs
   unless (length ys >= 2) $ throwError $
-    "Expected list of length >= 2, received list of length " ++ (show $ length ys)
+    "Expected list of length >= 2, received list of length " ++ show (length ys)
   let (as :> b) = viewr ys
   as' <- fromProto $ box as
   b' <- fromProto $ box $ singleton b
@@ -114,7 +115,7 @@ fromProtoNestRight ::
 fromProtoNestRight box unbox xs = do
   let ys = unbox xs
   unless (length ys >= 2) $ throwError $
-    "Expected list of length >= 2, received list of length " ++ (show $ length ys)
+    "Expected list of length >= 2, received list of length " ++ show (length ys)
   let (a :< bs) = viewl ys
   a' <- fromProto $ box $ singleton a
   bs' <- fromProto $ box bs
@@ -132,10 +133,17 @@ readProtoType file = do
     (Left str) -> throwError $
       "Error when reading from protocol buffer. Got string " ++ str
     (Right (a,bs')) -> do
-      unless (BS.null bs') $ throwError $
+      unless (BS.null bs') $ throwError
         "Error when reading from protocol buffer. There were leftover bits!"
       return a
+
+-- | Writes any auto-gen'd proto object to path/filename.
+writeProtoType :: (ReflectDescriptor a, Wire a) => FilePath -> a -> IO ()
+writeProtoType fileName obj = BS.writeFile fileName $ messagePut obj
 
 parseProtoFile :: (ProtoReadable a, MonadIO m, MonadError String m)
   => FilePath -> m a
 parseProtoFile file = fromProto =<< readProtoType file
+
+writeProtoFile :: (ProtoReadable a, MonadIO m) => FilePath -> a -> m ()
+writeProtoFile file = liftIO . writeProtoType file . toProto

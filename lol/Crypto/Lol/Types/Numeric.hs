@@ -150,6 +150,9 @@ instance Algebra.IntegralDomain.C Double where
 instance (NFData r) => NFData (Polynomial r) where
   rnf = rnf . coeffs
 
+instance (NFData r) => NFData (Matrix r) where
+  rnf = rnf . rows
+
 -- | Our custom exponentiation, overriding NP's version that
 -- requires 'Integer' exponent.
 -- Copied from http://hackage.haskell.org/package/base-4.7.0.0/docs/src/GHC-Real.html#%5E

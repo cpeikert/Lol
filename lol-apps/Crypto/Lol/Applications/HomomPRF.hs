@@ -21,6 +21,7 @@ module Crypto.Lol.Applications.HomomPRF
 ,TwoOf
 ,Tunnel, Fst, Snd, PTRound, ZqResult) where
 
+import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Except
 import Control.Monad.Random hiding (fromList)
@@ -70,6 +71,11 @@ type family NextListElt (x :: k) (xs :: [k]) :: k where
 data EvalHints t rngs z zp zq zqs gad = Hints
   (HTunnelHints gad t rngs zp (ZqUp zq zqs))
   (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad)
+
+instance (NFData (HTunnelHints gad t rngs zp (ZqUp zq zqs)),
+          NFData (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad))
+  => NFData (EvalHints t rngs z zp zq zqs gad) where
+  rnf (Hints t r) = rnf t `seq` rnf r
 
 homomPRFM ::
   (MonadReader (EvalHints t rngs z zp zq zqs gad) mon,
@@ -122,9 +128,14 @@ type instance Div2 (pp :: PrimePower) = Head (UnF (PpToF pp / F2))
 
 data RoundHints t m m' z zp zq zqs gad where
   Root :: RoundHints t m m' z zp zq zqs gad
-  Internal :: KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))
-              -> RoundHints t m m' z (Div2 zp) (ZqDown zq zqs) zqs gad
-              -> RoundHints t m m' z zp zq zqs gad
+  Internal :: (NFData (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))))
+           => KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))
+           -> RoundHints t m m' z (Div2 zp) (ZqDown zq zqs) zqs gad
+           -> RoundHints t m m' z zp zq zqs gad
+
+instance NFData (RoundHints t m m' z zp zq zqs gad) where
+  rnf Root = ()
+  rnf (Internal h hs) = rnf h `seq` rnf hs
 
 instance (PTRound t m m' e zp zq z gad zqs)
   => Protoable (RoundHints t m m' z zp zq zqs gad) where
@@ -205,10 +216,16 @@ instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
 
 data HTunnelHints gad t xs zp zq where
   TNil :: HTunnelHints gad t '[ '(m,m') ] zp zq
-  TCons :: (xs ~ ('(r,r') ': '(s,s') ': rngs), e' ~ (e * (r' / r)), e ~ FGCD r s)
+  TCons :: (xs ~ ('(r,r') ': '(s,s') ': rngs), e' ~ (e * (r' / r)), e ~ FGCD r s,
+            NFData (TunnelHints gad t e' r' s' zp zq))
         => TunnelHints gad t e' r' s' zp zq
-           -> HTunnelHints gad t (Tail xs) zp zq
-           -> HTunnelHints gad t xs zp zq
+        -> HTunnelHints gad t (Tail xs) zp zq
+        -> HTunnelHints gad t xs zp zq
+
+instance NFData (HTunnelHints gad t xs zp zq) where
+  rnf TNil = ()
+  rnf (TCons t ts) = rnf t `seq` rnf ts
+
 
 class Tunnel xs t zp zq gad where
 

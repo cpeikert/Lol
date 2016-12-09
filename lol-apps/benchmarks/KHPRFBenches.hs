@@ -13,7 +13,6 @@
 module KHPRFBenches (khPRFBenches) where
 
 import Control.Applicative
-import Control.DeepSeq
 import Control.Monad.Random hiding (fromList)
 import Control.Monad.State hiding (state)
 
@@ -22,8 +21,6 @@ import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Benchmarks
 
 import MathObj.Matrix hiding (zipWith)
-
-instance (NFData a) => NFData (T a) where rnf = rnf . rows
 
 khPRFBenches :: forall rnd t m zq zp gad . (MonadRandom rnd, _)
   => Int -> Proxy t -> Proxy m -> Proxy '(zq,zp,gad) -> (Int -> FullBinTree) -> [rnd Benchmark]
