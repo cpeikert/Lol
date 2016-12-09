@@ -38,6 +38,7 @@ import Crypto.Lol.Utils.ShowType
 
 import Crypto.Proto.RLWE.Kq
 import Crypto.Proto.RLWE.KqProduct
+import Crypto.Proto.RLWE.R
 import Crypto.Proto.RLWE.Rq
 import Crypto.Proto.RLWE.RqProduct
 
@@ -69,6 +70,28 @@ deriving instance Show r => Show (RT m r)
 
 instance Show (ArgType RT) where
   show _ = "RT"
+
+instance (Fact m) => Protoable (RT m Int64) where
+  type ProtoType (RT m Int64) = R
+
+  toProto (RT (Arr xs')) =
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+        xs = S.fromList $ RT.toList xs'
+    in R{..}
+  toProto x@(ZV _) = toProto $ toRT x
+
+  fromProto R{..} = do
+    let m' = proxy valueFact (Proxy::Proxy m) :: Int
+        n = proxy totientFact (Proxy::Proxy m)
+        ys' = RT.fromList (Z:.n) $ F.toList xs
+        len = F.length xs
+    unless (m' == fromIntegral m) $ throwError $
+      "An error occurred while reading the proto type for CT.\n\
+      \Expected m=" ++ show m' ++ ", got " ++ show m
+    unless (len == n) $ throwError $
+      "An error occurred while reading the proto type for CT.\n\
+      \Expected n=" ++ show n  ++ ", got " ++ show len
+    return $ RT $ Arr ys'
 
 instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
   type ProtoType (RT m (ZqBasic q Int64)) = RqProduct

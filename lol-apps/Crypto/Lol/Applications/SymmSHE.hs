@@ -48,10 +48,12 @@ import qualified Algebra.Ring     as Ring (C)
 import Crypto.Lol as LP hiding (sin)
 import Crypto.Lol.Cyclotomic.UCyc   (D, UCyc)
 import Crypto.Lol.Types.Proto
+import Crypto.Proto.RLWE.R (R)
 import Crypto.Proto.RLWE.RqProduct (RqProduct)
 import qualified Crypto.Proto.SHEHint.KSLinearHint as P
 import qualified Crypto.Proto.SHEHint.KSQuadCircHint as P
 import qualified Crypto.Proto.SHEHint.RqPolynomial as P
+import qualified Crypto.Proto.SHEHint.SecretKey as P
 import qualified Crypto.Proto.SHEHint.TunnelHints as P
 
 import Control.Applicative  hiding ((*>))
@@ -530,6 +532,12 @@ tunnelCT (THints f'q hints) ct =
        c1' = sum c1s'
    in CT MSD 0 s $ P.const c0' + c1')
     \\ lcmDivides (Proxy::Proxy r) (Proxy::Proxy e')
+
+instance (Protoable r, ProtoType r ~ R) => Protoable (SK r) where
+  type ProtoType (SK r) = P.SecretKey
+  toProto (SK v r) = P.SecretKey (toProto r) (realToField v)
+  fromProto (P.SecretKey r v) = (SK v) <$> fromProto r
+
 
 instance (Protoable rq, ProtoType rq ~ RqProduct) => Protoable (Polynomial rq) where
   type ProtoType (Polynomial rq) = P.RqPolynomial

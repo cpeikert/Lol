@@ -4,6 +4,11 @@ import "RLWE.proto";
 
 // hprotoc -I . -I ../lol -a RLWE.proto=Crypto.Proto -p Crypto.Proto SHEHint.proto
 
+message SecretKey {
+  required R sk = 1;
+  required double v = 2;
+}
+
 message RqPolynomial {
   repeated RqProduct coeffs = 1;
 }
