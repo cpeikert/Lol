@@ -13,12 +13,6 @@ module Crypto.Lol.Types.Proto
 
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Factored
-import Crypto.Lol.Types
-
-import Crypto.Proto.RLWE.Kq (Kq)
-import Crypto.Proto.RLWE.KqProduct (KqProduct)
-import Crypto.Proto.RLWE.Rq (Rq)
-import Crypto.Proto.RLWE.RqProduct (RqProduct)
 
 import Control.Monad.Except
 import Data.ByteString.Lazy ()--  hiding (map)
