@@ -8,8 +8,7 @@
 
 module Crypto.Lol.Types.Proto
 (Protoable(..), msgPut, msgGet
-,toProtoTuple, toProtoNestLeft, toProtoNestRight
-,fromProtoTuple, fromProtoNestLeft, fromProtoNestRight
+,toProtoProduct, fromProtoNestLeft, fromProtoNestRight
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor
@@ -24,14 +23,16 @@ import Crypto.Proto.RLWE.RqProduct (RqProduct)
 import Control.Monad.Except
 import Data.ByteString.Lazy ()--  hiding (map)
 import Data.Foldable (toList)
-import Data.Sequence (fromList, (<|), (|>))
+import Data.Sequence
+
+import Prelude hiding (length)
 
 import Text.ProtocolBuffers        (messageGet, messagePut)
 import Text.ProtocolBuffers.Header
 
 -- | Conversion between Haskell types and their protocol buffer representations.
 class Protoable a where
-  -- | The protocol buffer type for @a@.
+
   type ProtoType a
 
   -- | Convert from a type to its protocol buffer representation.
@@ -65,115 +66,54 @@ msgGet bs = do
   p <- fromProto msg
   return (p, bs')
 
-type family ProdType a where
-  ProdType (ZqBasic q i) = RqProduct
-  ProdType (RRq q i) = KqProduct
-
-type family SingleType a where
-  SingleType (ZqBasic q i) = Rq
-  SingleType (RRq q i) = Kq
-
-toProtoTuple ::
+toProtoProduct ::
   (Protoable (t m a), Protoable (t m b),
-   ProtoType (t m a) ~ SingleType a,
    ProtoType (t m a) ~ ProtoType (t m b),
    Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
-  => (Seq (SingleType a) -> ProdType a)
+  => (Seq c -> ProtoType (t m a))
+  -> (ProtoType (t m a) -> Seq c)
   -> t m (a,b)
-  -> ProdType a
-toProtoTuple box xs =
+  -> ProtoType (t m a)
+toProtoProduct box unbox xs =
   let (as,bs) = unzipT xs
-      as' = toProto as
-      bs' = toProto bs
-  in box $ fromList $ [as', bs']
+      as' = unbox $ toProto as
+      bs' = unbox $ toProto bs
+  in box $ as' >< bs'
 
-fromProtoTuple ::
-  (MonadError String mon,
-   Protoable (t m a), Protoable (t m b),
-   ProtoType (t m a) ~ SingleType a,
-   ProtoType (t m a) ~ ProtoType (t m b),
-   Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
-  => (ProdType a -> Seq (SingleType a))
-  -> ProdType a
-  -> mon (t m (a,b))
-fromProtoTuple unbox xs =
-  let ys = toList $ unbox xs
-  in case ys of
-    [as,bs] -> do
-      as' <- fromProto as
-      bs' <- fromProto bs
-      return $ zipWithT (,) as' bs'
-    _ -> throwError $ "Expected list of length 2, received list of length " ++
-           (show $ length ys)
-
-toProtoNestLeft ::
-  (Protoable (t m a), Protoable (t m b),
-   ProtoType (t m a) ~ ProdType b,
-   ProtoType (t m b) ~ SingleType b,
-   Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
-  => (Seq (SingleType b) -> ProdType b)
-  -> (ProdType b -> Seq (SingleType b))
-  -> t m (a,b)
-  -> ProdType b
-toProtoNestLeft box unbox xs =
-    let (as,bs) = unzipT xs
-        as' = unbox $ toProto as
-        bs' = toProto bs
-    in box $ as' |> bs'
-
+-- for tuples like ((a, b), c)
 fromProtoNestLeft ::
   (MonadError String mon,
    Protoable (t m a), Protoable (t m b),
-   ProtoType (t m b) ~ SingleType b,
-   ProtoType (t m a) ~ ProdType b,
+   ProtoType (t m a) ~ ProtoType (t m b),
    Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
-  => (Seq (SingleType b) -> ProdType b)
-  -> (ProdType b -> Seq (SingleType b))
-  -> ProdType b
+  => (Seq c -> ProtoType (t m a))
+  -> (ProtoType (t m a)-> Seq c)
+  -> ProtoType (t m a)
   -> mon (t m (a,b))
-fromProtoNestLeft box unbox xs =
-  let ys = toList $ unbox xs
-  in if length ys >= 3
-     then do
-       as' <- fromProto $ box $ fromList $ init ys
-       bs' <- fromProto $ last ys
-       return $ zipWithT (,) as' bs'
-      else throwError $
-             "Expected list of length >= 3, received list of length " ++
-             (show $ length ys)
+fromProtoNestLeft box unbox xs = do
+  let ys = unbox xs
+  unless (length ys >= 2) $ throwError $
+    "Expected list of length >= 2, received list of length " ++ (show $ length ys)
+  let (as :> b) = viewr ys
+  as' <- fromProto $ box as
+  b' <- fromProto $ box $ singleton b
+  return $ zipWithT (,) as' b'
 
-toProtoNestRight ::
-  (Protoable (t m a), Protoable (t m b),
-   ProtoType (t m a) ~ SingleType a,
-   ProtoType (t m b) ~ ProdType a,
-   Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
-  => (Seq (SingleType a) -> ProdType a)
-  -> (ProdType a -> Seq (SingleType a))
-  -> t m (a,b)
-  -> ProdType a
-toProtoNestRight box unbox xs =
-    let (as,bs) = unzipT xs
-        as' = toProto as
-        bs' = unbox $ toProto bs
-    in box $ as' <| bs'
-
+-- for tuples like (a, (b, c))
 fromProtoNestRight ::
   (MonadError String mon,
    Protoable (t m a), Protoable (t m b),
-   ProtoType (t m a) ~ SingleType a,
-   ProtoType (t m b) ~ ProdType a,
+   ProtoType (t m a) ~ ProtoType (t m b),
    Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
-  => (Seq (SingleType a) -> ProdType a)
-  -> (ProdType a -> Seq (SingleType a))
-  -> ProdType a
+  => (Seq c -> ProtoType (t m a))
+  -> (ProtoType (t m a)-> Seq c)
+  -> ProtoType (t m a)
   -> mon (t m (a,b))
-fromProtoNestRight box unbox xs =
-  let ys = toList $ unbox xs
-  in if length ys >= 3
-     then do
-       as' <- fromProto $ head ys
-       bs' <- fromProto $ box $ fromList $ tail ys
-       return $ zipWithT (,) as' bs'
-      else throwError $
-             "Expected list of length >= 3, received list of length " ++
-             (show $ length ys)
+fromProtoNestRight box unbox xs = do
+  let ys = unbox xs
+  unless (length ys >= 2) $ throwError $
+    "Expected list of length >= 2, received list of length " ++ (show $ length ys)
+  let (a :< bs) = viewl ys
+  a' <- fromProto $ box $ singleton a
+  bs' <- fromProto $ box bs
+  return $ zipWithT (,) a' bs'

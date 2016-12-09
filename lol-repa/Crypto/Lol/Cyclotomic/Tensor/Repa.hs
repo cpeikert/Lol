@@ -48,13 +48,14 @@ import Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative  hiding ((*>))
 import Control.Arrow        hiding (arr)
 import Control.DeepSeq      (NFData (rnf))
+import Control.Monad        (unless)
 import Control.Monad.Except (throwError)
 import Control.Monad.Random
 import Data.Coerce
 import Data.Constraint      hiding ((***))
 import Data.Foldable        as F
 import Data.Maybe
-import Data.Sequence        as S (fromList)
+import Data.Sequence        as S (fromList, singleton)
 import Data.Traversable     as T
 import Data.Vector          as V hiding (force, (++))
 import Data.Vector.Unboxed  as U hiding (force, (++))
@@ -70,96 +71,88 @@ instance Show (ArgType RT) where
   show _ = "RT"
 
 instance (Fact m, Reflects q Int64) => Protoable (RT m (ZqBasic q Int64)) where
-  type ProtoType (RT m (ZqBasic q Int64)) = Rq
+  type ProtoType (RT m (ZqBasic q Int64)) = RqProduct
 
   toProto (RT (Arr xs')) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = fromIntegral (proxy value (Proxy::Proxy q) :: Int64)
         xs = S.fromList $ RT.toList $ RT.map lift xs'
-    in Rq{..}
+    in RqProduct $ S.singleton Rq{..}
   toProto x@(ZV _) = toProto $ toRT x
 
-  fromProto Rq{..} =
-    let m' = proxy valueFact (Proxy::Proxy m) :: Int
+  fromProto (RqProduct xs') = do
+    let rqlist = F.toList xs'
+        m' = proxy valueFact (Proxy::Proxy m) :: Int
         q' = proxy value (Proxy::Proxy q) :: Int64
         n = proxy totientFact (Proxy::Proxy m)
-        xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
+    unless (F.length rqlist == 1) $ throwError $
+      "An error occurred while reading the proto type for RT.\n\
+      \Expected a list of one Rq, but list has length " ++ show (F.length rqlist)
+    let [Rq{..}] = rqlist
+        ys' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
         len = F.length xs
-    in if m' == fromIntegral m && len == n && fromIntegral q' == q
-       then return $ RT $ Arr xs'
-       else throwError $
-            "An error occurred while reading the proto type for RT.\n\
-            \Expected m=" ++ show m' ++ ", got " ++ show m   ++ "\n\
-            \Expected n=" ++ show n  ++ ", got " ++ show len ++ "\n\
-            \Expected q=" ++ show q' ++ ", got " ++ show q   ++ "."
+    unless (m' == fromIntegral m) $ throwError $
+      "An error occurred while reading the proto type for RT.\n\
+      \Expected m=" ++ show m' ++ ", got " ++ show m
+    unless (len == n) $ throwError $
+      "An error occurred while reading the proto type for RT.\n\
+      \Expected n=" ++ show n  ++ ", got " ++ show len
+    unless (fromIntegral q' == q) $ throwError $
+      "An error occurred while reading the proto type for RT.\n\
+      \Expected q=" ++ show q' ++ ", got " ++ show q
+    return $ RT $ Arr ys'
 
-instance (Fact m, Reflects q1 Int64, Reflects q2 Int64)
-  => Protoable (RT m (ZqBasic q1 Int64, ZqBasic q2 Int64)) where
-  type ProtoType (RT m (ZqBasic q1 Int64, ZqBasic q2 Int64)) = RqProduct
-  toProto = toProtoTuple RqProduct
-  fromProto = fromProtoTuple rqlist
+instance (Protoable (RT m (ZqBasic q Int64)),
+          ProtoType (RT m (ZqBasic q Int64)) ~ RqProduct,
+          Protoable (RT m b), ProtoType (RT m b) ~ RqProduct,
+          Fact m, Reflects q Int64, TElt RT b, TElt RT (ZqBasic q Int64, b))
+  => Protoable (RT m (ZqBasic q Int64,b)) where
+  type ProtoType (RT m (ZqBasic q Int64, b)) = RqProduct
 
-instance (Fact m, Reflects q Int64, TElt RT (ZqBasic q Int64, (a,b)),
-          TElt RT (a,b), TElt RT (ZqBasic q Int64),
-          Protoable (RT m (a,b)), ProtoType (RT m (a,b)) ~ RqProduct)
-  => Protoable (RT m (ZqBasic q Int64, (a,b))) where
-  type ProtoType (RT m (ZqBasic q Int64, (a,b))) = RqProduct
-  toProto = toProtoNestRight RqProduct rqlist
+  toProto = toProtoProduct RqProduct rqlist
   fromProto = fromProtoNestRight RqProduct rqlist
 
-instance (Fact m, Reflects q Int64, TElt RT ((a,b), ZqBasic q Int64),
-          TElt RT (a,b), TElt RT (ZqBasic q Int64),
-          Protoable (RT m (a,b)), ProtoType (RT m (a,b)) ~ RqProduct)
-  => Protoable (RT m ((a,b), ZqBasic q Int64)) where
-  type ProtoType (RT m ((a,b), ZqBasic q Int64)) = RqProduct
-  toProto = toProtoNestLeft RqProduct rqlist
-  fromProto = fromProtoNestLeft RqProduct rqlist
-
 instance (Fact m, Reflects q Double) => Protoable (RT m (RRq q Double)) where
-  type ProtoType (RT m (RRq q Double)) = Kq
+  type ProtoType (RT m (RRq q Double)) = KqProduct
 
   toProto (RT (Arr xs')) =
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = round (proxy value (Proxy::Proxy q) :: Double)
         xs = S.fromList $ RT.toList $ RT.map lift xs'
-    in Kq{..}
+    in KqProduct $ S.singleton Kq{..}
   toProto x@(ZV _) = toProto $ toRT x
 
-  fromProto Kq{..} =
-    let m' = proxy valueFact (Proxy::Proxy m) :: Int
+  fromProto (KqProduct xs') = do
+    let rqlist = F.toList xs'
+        m' = proxy valueFact (Proxy::Proxy m) :: Int
         q' = round (proxy value (Proxy::Proxy q) :: Double)
         n = proxy totientFact (Proxy::Proxy m)
-        xs' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
+    unless (F.length rqlist == 1) $ throwError $
+      "An error occurred while reading the proto type for RT.\n\
+      \Expected a list of one Rq, but list has length " ++ show (F.length rqlist)
+    let [Kq{..}] = rqlist
+        ys' = RT.fromList (Z:.n) $ LP.map reduce $ F.toList xs
         len = F.length xs
-    in if m' == fromIntegral m && len == n && q' == q
-       then return $ RT $ Arr xs'
-       else throwError $
-            "An error occurred while reading the proto type for RT.\n\
-            \Expected m=" ++ show m' ++ ", got " ++ show m   ++ "\n\
-            \Expected n=" ++ show n  ++ ", got " ++ show len ++ "\n\
-            \Expected q=" ++ show q' ++ ", got " ++ show q   ++ "."
+    unless (m' == fromIntegral m) $ throwError $
+      "An error occurred while reading the proto type for RT.\n\
+      \Expected m=" ++ show m' ++ ", got " ++ show m
+    unless (len == n) $ throwError $
+      "An error occurred while reading the proto type for RT.\n\
+      \Expected n=" ++ show n  ++ ", got " ++ show len
+    unless (q' == q) $ throwError $
+      "An error occurred while reading the proto type for RT.\n\
+      \Expected q=" ++ show q' ++ ", got " ++ show q
+    return $ RT $ Arr ys'
 
-instance (Fact m, Reflects q1 Double, Reflects q2 Double)
-  => Protoable (RT m (RRq q1 Double, RRq q2 Double)) where
-  type ProtoType (RT m (RRq q1 Double, RRq q2 Double)) = KqProduct
-  toProto = toProtoTuple KqProduct
-  fromProto = fromProtoTuple kqlist
+instance (Protoable (RT m (RRq q Double)),
+          ProtoType (RT m (RRq q Double)) ~ KqProduct,
+          Protoable (RT m b), ProtoType (RT m b) ~ KqProduct,
+          Fact m, Reflects q Double, TElt RT b, TElt RT (RRq q Double, b))
+  => Protoable (RT m (RRq q Double,b)) where
+  type ProtoType (RT m (RRq q Double, b)) = KqProduct
 
-instance (Fact m, Reflects q Double, TElt RT (RRq q Double, (a,b)),
-          TElt RT (a,b), TElt RT (RRq q Double),
-          Protoable (RT m (a,b)), ProtoType (RT m (a,b)) ~ KqProduct)
-  => Protoable (RT m (RRq q Double, (a,b))) where
-  type ProtoType (RT m (RRq q Double, (a,b))) = KqProduct
-  toProto = toProtoNestRight KqProduct kqlist
+  toProto = toProtoProduct KqProduct kqlist
   fromProto = fromProtoNestRight KqProduct kqlist
-
-instance (Fact m, Reflects q Double, TElt RT ((a,b), RRq q Double),
-          TElt RT (a,b), TElt RT (RRq q Double),
-          Protoable (RT m (a,b)), ProtoType (RT m (a,b)) ~ KqProduct)
-  => Protoable (RT m ((a,b), RRq q Double)) where
-  type ProtoType (RT m ((a,b), RRq q Double)) = KqProduct
-  toProto = toProtoNestLeft KqProduct kqlist
-  fromProto = fromProtoNestLeft KqProduct kqlist
 
 
 instance Eq r => Eq (RT m r) where
