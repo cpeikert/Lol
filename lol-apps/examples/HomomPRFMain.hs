@@ -11,7 +11,6 @@
 
 module HomomPRFMain where
 
-import Control.Applicative
 import Control.DeepSeq
 import Control.Monad.Except
 import Control.Monad.Random
@@ -39,7 +38,7 @@ type T = CPP.CT
 type Z = Int64
 
 protoDir :: Int -> String -> String
-protoDir p = (("~" </> "Desktop" </> "Lol" </> ("p" ++ show p)) </>)
+protoDir p = (("~" </> "Desktop" </> "Lol" </> ("p" ++ show p ++ "-")) ++)
 
 thintPath, rhintPath, tskPath, rskPath :: Int -> String
 thintPath p = protoDir p "tunnel.hint"
@@ -59,18 +58,16 @@ evalHashDRBG = evalCryptoRandIO
 main :: IO ()
 main = do
   putStrLn $ "Starting homomorphic PRF evaluation with tensor " ++ show (typeRep (Proxy::Proxy T))
-  (hints, decKey, family, ct) <- time "Generating random inputs..." =<< (evalHashDRBG $ do
+  (hints, decKey, family, ct) <- time "Generating random inputs..." =<< evalHashDRBG (do
     (h, encKey, d) <- readOrGenHints
     f :: PRFFamily PRFGad _ _ <- randomFamily 10 -- works on 10-bit input
     s <- getRandom
     ct <- encrypt encKey s
     return (h,d,f,ct))
-  let st = prfState family Nothing --initialize with input 0
-      prf = homomPRFM ct
-      xs = grayCode 3
-      encprfs = flip runReader hints $ flip evalStateT st $ mapM prf xs
-      decprfs = decrypt decKey <$> encprfs
-  decprfs `deepseq` return ()
+  st <- time "Initializing PRF state..." $ prfState family Nothing --initialize with input 0
+  encprf <- time "Evaluating PRF..." $ flip runReader hints $ flip evalStateT st $ homomPRFM ct 0
+  _ <- time "Decrypting PRF output..." $ decrypt decKey encprf
+  return ()
 
 readHints :: forall mon t rngs z zp zq zqs gad r' s' .
   (MonadIO mon, MonadError String mon, Mod zp,
@@ -93,7 +90,7 @@ readOrGenHints = do
   case res of
     (Left st) -> do
       liftIO $ putStrLn $ "Could not read precomputed data. Error was: " ++ st
-      (hints, sk, skout) <- (time "Generating hints...") =<< do
+      (hints, sk, skout) <- do
         let v = 1.0 :: Double
         sk <- genSK v
         (tHints, skout) <- tunnelHints sk
