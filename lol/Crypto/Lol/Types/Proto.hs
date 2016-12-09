@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE PolyKinds           #-}
@@ -10,21 +11,26 @@ module Crypto.Lol.Types.Proto
 (Protoable(..), msgPut, msgGet
 ,toProtoProduct, fromProtoNestLeft, fromProtoNestRight
 ,uToString, uFromString
+,readProtoType, parseProtoFile
+,ProtoReadable
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Factored
 
 import Control.Monad.Except
-import Data.ByteString.Lazy ()--  hiding (map)
+import qualified Data.ByteString.Lazy as BS
 import Data.Foldable (toList)
 import Data.Sequence
 
 import Prelude hiding (length)
+import System.Directory
 
 import Text.ProtocolBuffers        (messageGet, messagePut)
 import Text.ProtocolBuffers.Basic  (uToString, uFromString)
 import Text.ProtocolBuffers.Header
+
+type ProtoReadable a = (Protoable a, Wire (ProtoType a), ReflectDescriptor (ProtoType a))
 
 -- | Conversion between Haskell types and their protocol buffer representations.
 class Protoable a where
@@ -113,3 +119,23 @@ fromProtoNestRight box unbox xs = do
   a' <- fromProto $ box $ singleton a
   bs' <- fromProto $ box bs
   return $ zipWithT (,) a' bs'
+
+-- | Read a serialized protobuffer from a file.
+readProtoType :: (ReflectDescriptor a, Wire a, MonadIO m, MonadError String m)
+                 => FilePath -> m a
+readProtoType file = do
+  fileExists <- liftIO $ doesFileExist file
+  unless fileExists $ throwError $
+    "Error reading " ++ file ++ ": file does not exist."
+  bs <- liftIO $ BS.readFile file
+  case messageGet bs of
+    (Left str) -> throwError $
+      "Error when reading from protocol buffer. Got string " ++ str
+    (Right (a,bs')) -> do
+      unless (BS.null bs') $ throwError $
+        "Error when reading from protocol buffer. There were leftover bits!"
+      return a
+
+parseProtoFile :: (ProtoReadable a, MonadIO m, MonadError String m)
+  => FilePath -> m a
+parseProtoFile file = fromProto =<< readProtoType file

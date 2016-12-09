@@ -71,20 +71,6 @@ checkFileExists file = do
   throwErrorUnless fileExists $
     "Error reading " ++ file ++ ": file does not exist."
 
--- | Read a serialized protobuffer from a file.
-readProtoType :: (ReflectDescriptor a, Wire a, MonadIO m, MonadError String m)
-                 => FilePath -> m a
-readProtoType file = do
-  checkFileExists file
-  bs <- liftIO $ BS.readFile file
-  case messageGet bs of
-    (Left str) -> throwError $
-      "Error when reading from protocol buffer. Got string " ++ str
-    (Right (a,bs')) -> do
-      throwErrorUnless (BS.null bs')
-        "Error when reading from protocol buffer. There were leftover bits!"
-      return a
-
 -- | Parse the beacon time/offset used to reveal a challenge.
 parseBeaconAddr :: (MonadError String m) => Challenge -> m BeaconAddr
 parseBeaconAddr Challenge{..} = do
