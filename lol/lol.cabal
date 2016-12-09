@@ -87,8 +87,11 @@ library
     Crypto.Lol.Types.Unsafe.ZqBasic
 
     Crypto.Proto.RLWE
+    Crypto.Proto.RLWE.LinearRq
     Crypto.Proto.RLWE.Rq
+    Crypto.Proto.RLWE.RqProduct
     Crypto.Proto.RLWE.Kq
+    Crypto.Proto.RLWE.KqProduct
     Crypto.Proto.RLWE.SampleCont
     Crypto.Proto.RLWE.SampleDisc
     Crypto.Proto.RLWE.SampleRLWR

@@ -26,7 +26,7 @@ import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
-import Crypto.Proto.RLWE.Rq (Rq)
+import Crypto.Proto.RLWE.RqProduct (RqProduct)
 import Crypto.Proto.RLWE.LinearRq (LinearRq(LinearRq))
 
 import Algebra.Additive as Additive (C)
@@ -106,7 +106,8 @@ extendLin :: (ExtendLinIdx e r s e' r' s')
 -- implementation to something more difficult.
 extendLin (RD ys) = RD (embed <$> ys)
 
-instance (Reflects e Word32, Reflects r Word32, Protoable (Cyc t s zq), ProtoType (t s zq) ~ Rq)
+instance (Reflects e Word32, Reflects r Word32,
+          Protoable (Cyc t s zq), ProtoType (t s zq) ~ RqProduct)
   => Protoable (Linear t zq e r s) where
   type ProtoType (Linear t zq e r s) = LinearRq
   toProto (RD cs) = LinearRq (proxy value (Proxy::Proxy e)) (proxy value (Proxy::Proxy r)) $ toProto cs

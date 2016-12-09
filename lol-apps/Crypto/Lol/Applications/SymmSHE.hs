@@ -48,7 +48,7 @@ import qualified Algebra.Ring     as Ring (C)
 import Crypto.Lol as LP hiding (sin)
 import Crypto.Lol.Cyclotomic.UCyc   (D, UCyc)
 import Crypto.Lol.Types.Proto
-import Crypto.Proto.RLWE.Rq (Rq)
+import Crypto.Proto.RLWE.RqProduct (RqProduct)
 import qualified Crypto.Proto.SHEHint.KSLinearHint as P
 import qualified Crypto.Proto.SHEHint.KSQuadCircHint as P
 import qualified Crypto.Proto.SHEHint.RqPolynomial as P
@@ -531,12 +531,12 @@ tunnelCT (THints f'q hints) ct =
    in CT MSD 0 s $ P.const c0' + c1')
     \\ lcmDivides (Proxy::Proxy r) (Proxy::Proxy e')
 
-instance (Protoable rq, ProtoType rq ~ Rq) => Protoable (Polynomial rq) where
+instance (Protoable rq, ProtoType rq ~ RqProduct) => Protoable (Polynomial rq) where
   type ProtoType (Polynomial rq) = P.RqPolynomial
   toProto = P.RqPolynomial . toProto . coeffs
   fromProto (P.RqPolynomial x) = fromCoeffs <$> fromProto x
 
-instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ Rq)
+instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ RqProduct)
   => Protoable (KSLinearHint gad r'q') where
   type ProtoType (KSLinearHint gad r'q') = P.KSLinearHint
   toProto (LinHint cs) =
@@ -550,7 +550,7 @@ instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ Rq)
     then (LinHint . tag) <$> fromProto poly
     else error $ "Expected gadget " ++ gadrepr' ++ ", but serialized object is w.r.t. " ++ gadrepr
 
-instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ Rq)
+instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ RqProduct)
   => Protoable (KSQuadCircHint gad r'q') where
   type ProtoType (KSQuadCircHint gad r'q') = P.KSQuadCircHint
   toProto (QuadHint cs) =

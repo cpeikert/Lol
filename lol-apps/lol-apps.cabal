@@ -57,14 +57,24 @@ library
     Crypto.Lol.Applications.HomomPRF
     Crypto.Lol.Applications.KeyHomomorphicPRF
     Crypto.Lol.Applications.SymmSHE
+    Crypto.Proto.SHEHint.KSLinearHint
+    Crypto.Proto.SHEHint.KSQuadCircHint
+    Crypto.Proto.SHEHint.RoundHintChain
+    Crypto.Proto.SHEHint.RqPolynomial
+    Crypto.Proto.SHEHint.TunnelHintChain
+    Crypto.Proto.SHEHint.TunnelHints
+    Crypto.Proto.SHEHint
 
   build-depends:
     base>=4.8 && <5,
+    containers,
     deepseq >= 1.4.1.1 && <1.5,
     lol >= 0.3,
     MonadRandom >= 0.2 && < 0.5,
     mtl,
     numeric-prelude >= 0.4.2 && < 0.5,
+    protocol-buffers,
+    protocol-buffers-descriptor,
     singletons,
     split
 

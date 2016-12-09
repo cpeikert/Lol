@@ -5,7 +5,7 @@ import HomomPRFMain ()
 import TestAppsMain ()
 import BenchAppsMain ()
 
-import RLWEChallengesMain ()
+--import RLWEChallengesMain ()
 
 import BenchCPPMain ()
 import TestCPPMain ()

@@ -35,7 +35,7 @@ message Kq {
 message LinearRq {
   required uint32 e  = 1;
   required uint32 r  = 2;
-  repeated Rq coeffs = 3;
+  repeated RqProduct coeffs = 3;
 }
 
 message RqProduct {

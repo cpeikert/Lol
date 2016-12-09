@@ -5,7 +5,7 @@ import "RLWE.proto";
 // hprotoc -I . -I ../lol -a RLWE.proto=Crypto.Proto -p Crypto.Proto SHEHint.proto
 
 message RqPolynomial {
-  repeated Rq coeffs = 1;
+  repeated RqProduct coeffs = 1;
 }
 
 message KSLinearHint {
