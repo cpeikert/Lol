@@ -103,25 +103,13 @@ for OptsInternal{..} bs0 handle = snd <$> go (0::Int, []) ("", bs0)
           lvl   = getBenchLvl    name
           func  = getBenchFunc   name
       in (lvl `elem` levels) && (func `elem` benches) && (param `elem` params)
-    {-go (!idx,drs) (pfx, Environment mkenv mkbench)
-      | shouldRun pfx mkbench = do
-        e <- liftIO $ do
-          ee <- mkenv
-          evaluate (rnf ee)
-          return ee
-        go (idx,drs) (pfx, mkbench e)
-      | otherwise = return (idx,drs)-}
     go (!idx, drs) (pfx, Benchmark desc b)
       | select desc' = do
           x <- handle idx desc' b;
           return (idx + 1, x:drs)
-      | otherwise = --do
-          --liftIO $ putStrLn desc'
+      | otherwise = do
+          liftIO $ putStrLn desc'
           return (idx, drs)
       where desc' = addPrefix pfx desc
     go (!idx,drs) (pfx, BenchGroup desc bs) =
       foldM go (idx,drs) [(addPrefix pfx desc, b) | b <- bs]
-
-    --shouldRun pfx mkbench =
-    --  any (select . addPrefix pfx) . benchNames . mkbench $
-    --  error "Criterion.env could not determine the list of your benchmarks since they force the environment (see the documentation for details)"

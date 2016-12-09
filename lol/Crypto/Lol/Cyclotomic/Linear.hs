@@ -27,7 +27,7 @@ import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
 import Crypto.Proto.RLWE.Rq (Rq)
-import Crypto.Proto.SHEHint.LinearRq (LinearRq(LinearRq))
+import Crypto.Proto.RLWE.LinearRq (LinearRq(LinearRq))
 
 import Algebra.Additive as Additive (C)
 

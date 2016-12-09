@@ -74,6 +74,8 @@ test-suite test-apps
   default-language: Haskell2010
   main-is:          TestAppsMain.hs
   ghc-options:      -main-is TestAppsMain
+  other-modules:    HomomPRFParams, HomomPRFTests, KHPRFTests, SHETests
+
   ghc-options:      -threaded -rtsopts
 
   build-depends:

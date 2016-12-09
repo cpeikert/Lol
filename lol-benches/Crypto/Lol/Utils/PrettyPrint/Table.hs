@@ -36,7 +36,9 @@ optsToInternal Opts{..} bnch =
   OptsInternal{params=if null params
                       then nub $ map getBenchParams $ benchNames bnch
                       else params,
-               levels = [level],
+               levels=if null level
+                      then nub $ map getBenchLvl $ benchNames bnch
+                      else [level],
                benches=if null benches
                        then nub $ map getBenchFunc $ benchNames bnch
                        else benches,
@@ -44,13 +46,17 @@ optsToInternal Opts{..} bnch =
                ..}
 
 -- | Runs all benchmarks with verbosity 'Progress'.
-defaultOpts :: String -> Opts
-defaultOpts level =
-  Opts {verb = Progress,
-        benches = [],
-        params = [],
-        colWidth = 30,
-        testNameWidth=20, ..}
+defaultOpts :: Maybe String -> Opts
+defaultOpts lvl =
+  case lvl of
+    Nothing -> go ""
+    (Just l) -> go l
+  where go level =
+          Opts {verb = Progress,
+                benches = [],
+                params = [],
+                colWidth = 30,
+                testNameWidth=20, ..}
 
 -- | Takes benchmark options an a benchmark group nested as params/level/op,
 -- and prints a table comparing operations across all selected levels of Lol.

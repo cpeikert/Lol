@@ -33,5 +33,15 @@ message Kq {
 }
 
 message LinearRq {
-  repeated Kq coeffs = 1;
+  required uint32 e  = 1;
+  required uint32 r  = 2;
+  repeated Rq coeffs = 3;
+}
+
+message RqProduct {
+  repeated Rq rqlist = 1;
+}
+
+message KqProduct {
+  repeated Kq kqlist = 1;
 }

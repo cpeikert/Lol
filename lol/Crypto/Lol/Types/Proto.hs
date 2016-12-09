@@ -7,14 +7,26 @@
 -- | Convenient interfaces for serialization with protocol buffers.
 
 module Crypto.Lol.Types.Proto
-(Protoable(..)
-,msgPut, msgGet
-,uToString, uFromString) where
+(Protoable(..), msgPut, msgGet
+,toProtoProduct, fromProtoNestLeft, fromProtoNestRight
+,uToString, uFromString
+) where
+
+import Crypto.Lol.Cyclotomic.Tensor
+import Crypto.Lol.Factored
+import Crypto.Lol.Types
+
+import Crypto.Proto.RLWE.Kq (Kq)
+import Crypto.Proto.RLWE.KqProduct (KqProduct)
+import Crypto.Proto.RLWE.Rq (Rq)
+import Crypto.Proto.RLWE.RqProduct (RqProduct)
 
 import Control.Monad.Except
-import Data.ByteString.Lazy hiding (map)
+import Data.ByteString.Lazy ()--  hiding (map)
 import Data.Foldable (toList)
-import Data.Sequence (fromList)
+import Data.Sequence
+
+import Prelude hiding (length)
 
 import Text.ProtocolBuffers        (messageGet, messagePut)
 import Text.ProtocolBuffers.Basic  (uToString, uFromString)
@@ -22,7 +34,7 @@ import Text.ProtocolBuffers.Header
 
 -- | Conversion between Haskell types and their protocol buffer representations.
 class Protoable a where
-  -- | The protocol buffer type for @a@.
+
   type ProtoType a
 
   -- | Convert from a type to its protocol buffer representation.
@@ -55,3 +67,55 @@ msgGet bs = do
   (msg, bs') <- messageGet bs
   p <- fromProto msg
   return (p, bs')
+
+toProtoProduct ::
+  (Protoable (t m a), Protoable (t m b),
+   ProtoType (t m a) ~ ProtoType (t m b),
+   Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
+  => (Seq c -> ProtoType (t m a))
+  -> (ProtoType (t m a) -> Seq c)
+  -> t m (a,b)
+  -> ProtoType (t m a)
+toProtoProduct box unbox xs =
+  let (as,bs) = unzipT xs
+      as' = unbox $ toProto as
+      bs' = unbox $ toProto bs
+  in box $ as' >< bs'
+
+-- for tuples like ((a, b), c)
+fromProtoNestLeft ::
+  (MonadError String mon,
+   Protoable (t m a), Protoable (t m b),
+   ProtoType (t m a) ~ ProtoType (t m b),
+   Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
+  => (Seq c -> ProtoType (t m a))
+  -> (ProtoType (t m a)-> Seq c)
+  -> ProtoType (t m a)
+  -> mon (t m (a,b))
+fromProtoNestLeft box unbox xs = do
+  let ys = unbox xs
+  unless (length ys >= 2) $ throwError $
+    "Expected list of length >= 2, received list of length " ++ (show $ length ys)
+  let (as :> b) = viewr ys
+  as' <- fromProto $ box as
+  b' <- fromProto $ box $ singleton b
+  return $ zipWithT (,) as' b'
+
+-- for tuples like (a, (b, c))
+fromProtoNestRight ::
+  (MonadError String mon,
+   Protoable (t m a), Protoable (t m b),
+   ProtoType (t m a) ~ ProtoType (t m b),
+   Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
+  => (Seq c -> ProtoType (t m a))
+  -> (ProtoType (t m a)-> Seq c)
+  -> ProtoType (t m a)
+  -> mon (t m (a,b))
+fromProtoNestRight box unbox xs = do
+  let ys = unbox xs
+  unless (length ys >= 2) $ throwError $
+    "Expected list of length >= 2, received list of length " ++ (show $ length ys)
+  let (a :< bs) = viewl ys
+  a' <- fromProto $ box $ singleton a
+  bs' <- fromProto $ box bs
+  return $ zipWithT (,) a' bs'

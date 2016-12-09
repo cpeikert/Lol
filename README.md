@@ -1,9 +1,6 @@
-This branch (cached-hints) is a fork of split-packages. Relative to split-packages, this
-branch separates key-switch hints from the function that applies them in SHE,
+This branch (cached-hints) is a fork of split-packages. Relative to split-packages,
+this branch separates key-switch hints from the function that applies them in SHE,
 which allows us to serialize the hints for reuse of precomputation.
-
-This branch is currently blocked until we can merge in the 'prototuples' branch
-(since we need to serialize cyc elts over product rings).
 
 --------------------------------------------------------------------------------
 

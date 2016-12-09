@@ -4,12 +4,6 @@ import "RLWE.proto";
 
 // hprotoc -I . -I ../lol -a RLWE.proto=Crypto.Proto -p Crypto.Proto SHEHint.proto
 
-message LinearRq {
-  required uint32 e  = 1;
-  required uint32 r  = 2;
-  repeated Rq coeffs = 3;
-}
-
 message RqPolynomial {
   repeated Rq coeffs = 1;
 }

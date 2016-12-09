@@ -35,7 +35,7 @@ sheBenches :: forall t m m' zp zq gen rnd . (MonadRandom rnd, _)
   => Proxy '(m,m',zp,zq) -> Proxy gen -> Proxy t -> rnd Benchmark
 sheBenches _ pgen _ =
   let ptmr = Proxy :: Proxy '(t,m,m',zp,zq)
-  in benchGroup (showType ptmr ++ "/SHE") $ ($ ptmr) <$> [
+  in benchGroup (showType ptmr ++ "/SymmSHE") $ ($ ptmr) <$> [
     genBenchArgs "encrypt"   bench_enc . addGen5 pgen,
     genBenchArgs "*"         bench_mul,
     genBenchArgs "addPublic" bench_addPublic,
@@ -47,14 +47,14 @@ decBenches :: forall t m m' zp zq rnd . (MonadRandom rnd, _)
   => Proxy '(m,m',zp,zq) -> Proxy t -> rnd Benchmark
 decBenches _ _ =
   let ptmr = Proxy::Proxy '(t,m,m',zp,zq)
-  in benchGroup (showType ptmr ++ "/SHE") [genBenchArgs "decrypt" bench_dec ptmr]
+  in benchGroup (showType ptmr ++ "/SymmSHE") [genBenchArgs "decrypt" bench_dec ptmr]
 
 -- must be able to round from zq' to zq
 rescaleBenches :: forall t m m' zp zq zq' gad rnd . (MonadRandom rnd, _)
   => Proxy '(m,m',zp,zq,zq') -> Proxy gad -> Proxy t -> rnd Benchmark
 rescaleBenches _ pgad _ =
   let ptmr = Proxy :: Proxy '(t,m,m',zp,zq,zq')
-  in benchGroup (showType ptmr ++ "/SHE") $ ($ ptmr) <$> [
+  in benchGroup (showType ptmr ++ "/SymmSHE") $ ($ ptmr) <$> [
        genBenchArgs "rescaleCT" bench_rescaleCT,
        genBenchArgs "keySwitch" bench_keySwQ . addGen6 pgad]
 
@@ -62,7 +62,7 @@ tunnelBenches :: forall t r r' s s' zp zq gad rnd . (MonadRandom rnd, _)
   => Proxy '(r,r',s,s',zp,zq) -> Proxy gad -> Proxy t -> rnd Benchmark
 tunnelBenches _ _ _ =
   let ptmr = Proxy :: Proxy '(t,r,r',s,s',zp,zq,gad)
-  in benchGroup (showType ptmr ++ "/SHE") [genBenchArgs "tunnel" bench_tunnel ptmr]
+  in benchGroup (showType ptmr ++ "/SymmSHE") [genBenchArgs "tunnel" bench_tunnel ptmr]
 
 
 bench_enc :: forall t m m' z zp (zq :: *) (gen :: *) . (z ~ LiftOf zp,  _)
