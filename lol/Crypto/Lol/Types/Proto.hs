@@ -139,7 +139,7 @@ readProtoType file = do
 
 -- | Writes any auto-gen'd proto object to path/filename.
 writeProtoType :: (ReflectDescriptor a, Wire a) => FilePath -> a -> IO ()
-writeProtoType fileName obj = BS.writeFile fileName $ messagePut obj
+writeProtoType fileName = BS.writeFile fileName . messagePut
 
 parseProtoFile :: (ProtoReadable a, MonadIO m, MonadError String m)
   => FilePath -> m a

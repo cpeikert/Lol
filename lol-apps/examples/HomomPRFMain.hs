@@ -29,7 +29,7 @@ import Crypto.Random.DRBG
 import Data.Promotion.Prelude.List
 import Data.Time.Clock
 import Data.Typeable
-import System.FilePath     ((</>))
+import System.FilePath     ((</>), pathSeparator)
 import System.IO
 
 import HomomPRFParams
@@ -38,7 +38,7 @@ type T = CPP.CT
 type Z = Int64
 
 protoDir :: Int -> String -> String
-protoDir p = (("~" </> "Desktop" </> "Lol" </> ("p" ++ show p ++ "-")) ++)
+protoDir p = (((pathSeparator : "home") </> "eric" </> "Desktop" </> "Lol" </> ("p" ++ show p ++ "-")) ++)
 
 thintPath, rhintPath, tskPath, rskPath :: Int -> String
 thintPath p = protoDir p "tunnel.hint"
