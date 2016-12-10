@@ -19,7 +19,8 @@ module Crypto.Lol.Applications.HomomPRF
 ,EvalHints(..)
 ,MultiTunnelCtx, ZqUp, ZqDown
 ,TwoOf
-,Tunnel, Fst, Snd, PTRound, ZqResult) where
+,Tunnel, Fst, Snd, PTRound, ZqResult
+,PTRings, PTTunnel(..), TunnelFuncs(..)) where
 
 import Control.DeepSeq
 import Control.Monad
@@ -37,10 +38,11 @@ import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Types.ZPP
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types.Proto
-import qualified Crypto.Proto.SHEHint.KSQuadCircHint as P
+import qualified Crypto.Proto.RLWE.RqProduct as P
+import qualified Crypto.Proto.SHEHint.LinearFuncChain as P
 import qualified Crypto.Proto.SHEHint.RoundHintChain as P
-import qualified Crypto.Proto.SHEHint.TunnelHints as P
-import qualified Crypto.Proto.SHEHint.TunnelHintChain as P
+import qualified Crypto.Proto.SHEHint.HTunnelHints as P
+import qualified Crypto.Proto.SHEHint.HTunnelHintChain as P
 
 import Data.List.Split (chunksOf)
 import Data.Promotion.Prelude.List
@@ -49,8 +51,7 @@ import GHC.TypeLits hiding (type (*))
 
 import MathObj.Matrix (columns)
 
-import Data.Foldable (toList)
-import Data.Sequence (fromList)
+import Data.Sequence (empty, (<|), ViewL(..), viewl)
 
 type ZqUp zq zqs = NextListElt zq (Reverse zqs)
 type ZqDown zq zqs = NextListElt zq zqs
@@ -68,12 +69,15 @@ type family NextListElt (x :: k) (xs :: [k]) :: k where
   NextListElt x '[] = TypeError ('Text "Could not find type " ':<>: 'ShowType x ':<>: 'Text " in the list." ':$$:
                                  'Text "You must use parameters that are in the type lists!")
 
-data EvalHints t rngs z zp zq zqs gad = Hints
-  (HTunnelHints gad t rngs zp (ZqUp zq zqs))
-  (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad)
+data EvalHints t rngs z zp zq zqs gad where
+  Hints :: (UnPP (CharOf zp) ~ '(Prime2, e))
+        => HTunnelHints gad t rngs zp (ZqUp zq zqs)
+        -> RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z e zp (ZqDown zq zqs) zqs gad
+        -> EvalHints t rngs z zp zq zqs gad
 
-instance (NFData (HTunnelHints gad t rngs zp (ZqUp zq zqs)),
-          NFData (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad))
+instance (UnPP (CharOf zp) ~ '(Prime2, e),
+          NFData (HTunnelHints gad t rngs zp (ZqUp zq zqs)),
+          NFData (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z e zp (ZqDown zq zqs) zqs gad))
   => NFData (EvalHints t rngs z zp zq zqs gad) where
   rnf (Hints t r) = rnf t `seq` rnf r
 
@@ -126,40 +130,91 @@ type family Div2 (a :: k) :: k
 type instance Div2 (ZqBasic q i) = ZqBasic (Div2 q) i
 type instance Div2 (pp :: PrimePower) = Head (UnF (PpToF pp / F2))
 
-data RoundHints t m m' z zp zq zqs gad where
-  Root :: RoundHints t m m' z zp zq zqs gad
-  Internal :: (NFData (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))))
-           => KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))
-           -> RoundHints t m m' z (Div2 zp) (ZqDown zq zqs) zqs gad
-           -> RoundHints t m m' z zp zq zqs gad
+-- EAC: Invalid warning on these functions reported as #12700
+roundCTUp :: (RescaleCyc (Cyc t) zq (ZqUp zq zqs), ToSDCtx t m' zp zq)
+  => Proxy zqs -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' (ZqUp zq zqs))
+roundCTUp _ = rescaleLinearCT
 
-instance NFData (RoundHints t m m' z zp zq zqs gad) where
-  rnf Root = ()
-  rnf (Internal h hs) = rnf h `seq` rnf hs
+roundCTDown :: (RescaleCyc (Cyc t) zq (ZqDown zq zqs), ToSDCtx t m' zp zq)
+  => Proxy zqs -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' (ZqDown zq zqs))
+roundCTDown _ = rescaleLinearCT
 
-instance (PTRound t m m' e zp zq z gad zqs)
-  => Protoable (RoundHints t m m' z zp zq zqs gad) where
-  type ProtoType (RoundHints t m m' z zp zq zqs gad) = P.RoundHintChain
-  toProto = P.RoundHintChain . fromList . toProtoRHints
-  fromProto (P.RoundHintChain xs) = fromProtoRHints $ toList xs
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+data RoundHints t m m' z e zp zq zqs gad where
+  RHNil :: RoundHints t m m' z e zp zq zqs gad
+  RHCons :: KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))
+           -> RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad
+           -> RoundHints t m m' z ('S e) zp zq zqs gad
+
+instance NFData (RoundHints t m m' z P1 zp zq zqs gad) where
+  rnf RHNil = ()
+
+instance (NFData (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))),
+          NFData (RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad))
+  => NFData (RoundHints t m m' z ('S e) zp zq zqs gad) where
+  rnf (RHCons h hs) = rnf h `seq` rnf hs
+
+instance Protoable (RoundHints t m m' z P1 zp zq zqs gad) where
+  type ProtoType (RoundHints t m  m' z P1 zp zq zqs gad) = P.RoundHintChain
+  toProto RHNil = P.RoundHintChain empty
+  fromProto (P.RoundHintChain xs) | xs == empty = return RHNil
+  fromProto _ = throwError $ "Got non-empty chain on fromProto for RoundHints"
+
+
+instance (Protoable (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))),
+          Protoable (RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad),
+          ProtoType (RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad) ~ P.RoundHintChain)
+  => Protoable (RoundHints t m m' z ('S e) zp zq zqs gad) where
+  type ProtoType (RoundHints t m m' z ('S e) zp zq zqs gad) = P.RoundHintChain
+  toProto (RHCons f fs) =
+    let f' = toProto f
+        (P.RoundHintChain fs') = toProto fs
+    in P.RoundHintChain $ f' <| fs'
+  fromProto (P.RoundHintChain fs) = do
+    unless (length fs >= 2) $ throwError "fromProto RoundHints: expected at least two list elements"
+    let (a :< as) = viewl fs
+    b <- fromProto a
+    bs <- fromProto $ P.RoundHintChain as
+    return $ RHCons b bs
 
 class (UnPP (CharOf zp) ~ '(Prime2,e)) => PTRound t m m' e zp zq z gad zqs where
   type ZqResult e zq (zqs :: [*])
 
   roundHints :: (MonadRandom rnd)
-             => SK (Cyc t m' z) -> rnd (RoundHints t m m' z zp zq zqs gad)
+             => SK (Cyc t m' z) -> rnd (RoundHints t m m' z e zp zq zqs gad)
 
   -- round coeffs near 0 to 0 and near q/2 to 1
   -- round(q/p*x) (with "towards infinity tiebreaking")
   -- = msb(x+q/4) = floor((x+q/4)/(q/2))
-  ptRound :: RoundHints t m m' z zp zq zqs gad -> CT m zp (Cyc t m' zq) -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
+  ptRound :: RoundHints t m m' z e zp zq zqs gad -> CT m zp (Cyc t m' zq) -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
 
-  ptRoundInternal :: RoundHints t m m' z zp zq zqs gad -> [CT m zp (Cyc t m' zq)] -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
+  ptRoundRHCons :: RoundHints t m m' z e zp zq zqs gad -> [CT m zp (Cyc t m' zq)] -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
 
-  toProtoRHints :: RoundHints t m m' z zp zq zqs gad -> [P.KSQuadCircHint]
+instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
+  type ZqResult P1 zq zqs = zq
 
-  fromProtoRHints :: (MonadError String mon) => [P.KSQuadCircHint] -> mon (RoundHints t m m' z zp zq zqs gad)
+  roundHints _ = return RHNil
+
+  ptRound RHNil x = x
+
+  ptRoundRHCons RHNil [x] = x
 
 instance (UnPP p ~ '(Prime2, 'S e),                                                 -- superclass constraint
           zqup ~ ZqUp zq zqs, zq' ~ ZqDown zq zqs, zp ~ ZqBasic p i, zp' ~ Div2 zp, -- convenience synonyms
@@ -177,82 +232,118 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
   roundHints sk = do
     ksq <- genKSQuadCircHint sk
     rest <- roundHints sk
-    return $ Internal ksq rest
+    return $ RHCons ksq rest
 
-  ptRound (Internal ksqHint rest) x =
+  ptRound (RHCons ksqHint rest) x =
     let x' = addPublic one x
         xprod = rescaleLinearCT $ keySwitchQuadCirc ksqHint $ x*x'
         p = proxy value (Proxy::Proxy p)
         xs = map (\y->modSwitchPT $ addPublic (fromInteger $ y*(-y+1)) xprod) [1..] :: [CT m zp' (Cyc t m' zq')]
-    in ptRoundInternal rest $ take (p `div` 4) xs
+    in ptRoundRHCons rest $ take (p `div` 4) xs
 
-  ptRoundInternal (Internal ksqHint rest) (xs :: [CT m (ZqBasic p i) (Cyc t m' zq)]) =
+  ptRoundRHCons (RHCons ksqHint rest) (xs :: [CT m (ZqBasic p i) (Cyc t m' zq)]) =
     let pairs = chunksOf 2 xs
         go [a,b] = modSwitchPT $ rescaleLinearCT $ keySwitchQuadCirc ksqHint $ a*b :: CT m zp' (Cyc t m' zq')
-    in ptRoundInternal rest (map go pairs)
-
-  toProtoRHints (Internal h rest) = (toProto h) : (toProtoRHints rest)
-
-  fromProtoRHints (x:xs) = do
-    y <- fromProto x
-    ys <- fromProtoRHints xs
-    return $ Internal y ys
-
-instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
-  type ZqResult P1 zq zqs = zq
-
-  roundHints _ = return Root
-
-  ptRound Root x = x
-
-  ptRoundInternal Root [x] = x
-
-  toProtoRHints _ = []
-
-  fromProtoRHints [] = return Root
+    in ptRoundRHCons rest (map go pairs)
 
 
--- For tunneling
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- For (homomorphic) tunneling
 
 data HTunnelHints gad t xs zp zq where
-  TNil :: HTunnelHints gad t '[ '(m,m') ] zp zq
-  TCons :: (xs ~ ('(r,r') ': '(s,s') ': rngs), e' ~ (e * (r' / r)), e ~ FGCD r s,
-            NFData (TunnelHints gad t e' r' s' zp zq))
-        => TunnelHints gad t e' r' s' zp zq
-        -> HTunnelHints gad t (Tail xs) zp zq
-        -> HTunnelHints gad t xs zp zq
+  HTNil :: HTunnelHints gad t '[ '(m,m') ] zp zq
+  HTCons :: (xs ~ ('(r,r') ': '(s,s') ': rngs), e' ~ (e * (r' / r)), e ~ FGCD r s)
+         => TunnelHints gad t e' r' s' zp zq
+         -> HTunnelHints gad t (Tail xs) zp zq
+         -> HTunnelHints gad t xs zp zq
 
-instance NFData (HTunnelHints gad t xs zp zq) where
-  rnf TNil = ()
-  rnf (TCons t ts) = rnf t `seq` rnf ts
+instance NFData (HTunnelHints gad t '[ '(m,m') ] zp zq) where
+  rnf HTNil = ()
 
+instance (e' ~ (e * (r' / r)), e ~ FGCD r s,
+          NFData (TunnelHints gad t e' r' s' zp zq),
+          NFData (HTunnelHints gad t ('(s,s') ': rngs) zp zq))
+  => NFData (HTunnelHints gad t ('(r,r') ': '(s,s') ': rngs) zp zq) where
+  rnf (HTCons t ts) = rnf t `seq` rnf ts
+
+instance Protoable (HTunnelHints gad t '[ '(m,m') ] zp zq) where
+  type ProtoType (HTunnelHints gad t '[ '(m,m') ] zp zq) = P.HTunnelHintChain
+  toProto HTNil = P.HTunnelHintChain empty
+  fromProto (P.HTunnelHintChain xs) | xs == empty = return HTNil
+  fromProto _ = throwError $ "Got non-empty chain on fromProto for HTunnelHints"
+
+instance (e' ~ (e * (r' / r)), e ~ FGCD r s,
+          Protoable (TunnelHints gad t e' r' s' zp zq),
+          Protoable (HTunnelHints gad t ('(s,s') ': rngs) zp zq),
+          ProtoType (HTunnelHints gad t ('(s,s') ': rngs) zp zq) ~ P.HTunnelHintChain)
+  => Protoable (HTunnelHints gad t ('(r,r') ': '(s,s') ': rngs) zp zq) where
+  type ProtoType (HTunnelHints gad t ('(r,r') ': '(s,s') ': rngs) zp zq) = P.HTunnelHintChain
+  toProto (HTCons hint rest) =
+    let h' = toProto hint
+        (P.HTunnelHintChain hs') = toProto rest
+    in P.HTunnelHintChain $ h' <| hs'
+
+  fromProto (P.HTunnelHintChain zs) = do
+    unless (length zs >= 2) $ throwError "fromProto HTunnelHints: expected at least two list elements"
+    let (x :< xs) = viewl zs
+    y <- fromProto x
+    ys <- fromProto $ P.HTunnelHintChain xs
+    return $ HTCons y ys
 
 class Tunnel xs t zp zq gad where
 
   tunnelHints :: (MonadRandom rnd, Head xs ~ '(r,r'), Last xs ~ '(s,s'),
                   Lift zp z, CElt t z, ToInteger z, Reduce z zq) -- constraints involving 'z' from GenTunnelHintCtx
-              => SK (Cyc t r' z) -> rnd (HTunnelHints gad t xs zp zq, SK (Cyc t s' z))
+              => SK (Cyc t r' z) -> rnd (HTunnelHints gad t xs zp zq, SK (Cyc t s' z)) -- , TunnelFuncs t (PTRings xs) zp
 
-  tunnelInternal :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
+  tunnelRHCons :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
     HTunnelHints gad t xs zp zq -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
-
-  toProtoTHints :: HTunnelHints gad t xs zp zq -> [P.TunnelHints]
-
-  fromProtoTHints :: (MonadError String m) => [P.TunnelHints] -> m (HTunnelHints gad t xs zp zq)
 
 instance Tunnel '[ '(m,m') ] t zp zq gad where
 
-  tunnelHints sk = return (TNil,sk)
+  tunnelHints sk = return (HTNil,sk)
 
-  tunnelInternal _ = id
-
-  toProtoTHints _ = []
-
-  fromProtoTHints [] = return TNil
+  tunnelRHCons _ = id
 
 -- EAC: I expand the GenTunnelHintCtx synonym here to remove all occurrences of 'z',
 -- which instead only occur in the context of tunnelHints. This is because 'z' is
--- not relevant for tunnelInternal nor HTunnelHints, so we would have to pass
+-- not relevant for tunnelRHCons nor HTunnelHints, so we would have to pass
 -- a proxy for 'z'. This is a problem I have had many times, and still don't have a
 -- good solution for: the class exists only to match on the type list, all of
 -- of the other class params exist only so I can write constrints involving the changing
@@ -268,14 +359,14 @@ instance Tunnel '[ '(m,m') ] t zp zq gad where
 instance (ExtendLinIdx e r s e' r' s', -- genTunnelHints
           e' ~ (e * (r' / r)),         -- genTunnelHints
           e' `Divides` r',             -- genTunnelHints
-          CElt t zp, Ring zq, Random zq, CElt t zq, -- genTunnelHints
-          Reduce (DecompOf zq) zq, Gadget gad zq,            -- genTunnelHints
-          NFElt zq, CElt t (DecompOf zq),                    -- genTunnelHints
-          TunnelCtx t r s e' r' s' zp zq gad,          -- tunnelCT
-          e ~ FGCD r s, e `Divides` r, e `Divides` s,    -- linearDec
-          ZPP zp, TElt t (ZpOf zp),                      -- crtSet
-          Tunnel ('(s,s') ': rngs) t zp zq gad,         -- recursive call
-          Protoable (TunnelHints gad t e' r' s' zp zq), ProtoType (TunnelHints gad t e' r' s' zp zq) ~ P.TunnelHints) -- toProto
+          CElt t zp, Ring zq, Random zq, CElt t zq,   -- genTunnelHints
+          Reduce (DecompOf zq) zq, Gadget gad zq,     -- genTunnelHints
+          NFElt zq, CElt t (DecompOf zq),             -- genTunnelHints
+          TunnelCtx t r s e' r' s' zp zq gad,         -- tunnelCT
+          e ~ FGCD r s, e `Divides` r, e `Divides` s, -- linearDec
+          ZPP zp, TElt t (ZpOf zp),                   -- crtSet
+          Tunnel ('(s,s') ': rngs) t zp zq gad,       -- recursive call
+          Protoable (TunnelHints gad t e' r' s' zp zq), ProtoType (TunnelHints gad t e' r' s' zp zq) ~ P.HTunnelHints) -- toProto
   => Tunnel ('(r,r') ': '(s,s') ': rngs) t zp zq gad where
 
   tunnelHints sk = do
@@ -288,26 +379,10 @@ instance (ExtendLinIdx e r s e' r' s', -- genTunnelHints
         -- otherwise linearDec fails
         linf = linearDec (take dim crts) :: Linear t zp e r s
     thint :: TunnelHints gad t e' r' s' zp zq <- genTunnelHints linf skout sk
-    (rest,sk') <- tunnelHints skout
-    return (TCons thint rest, sk')
+    (thints,sk') <- tunnelHints skout
+    return (HTCons thint thints, sk')
 
-  tunnelInternal (TCons thint rest) = tunnelInternal rest . tunnelCT thint
-
-  toProtoTHints (TCons hint rest) = (toProto hint) : toProtoTHints rest
-
-  fromProtoTHints (x:xs) = do
-    y <- fromProto x
-    ys <- fromProtoTHints xs
-    return $ TCons y ys
-
--- EAC: Invalid warning on these functions reported as #12700
-roundCTUp :: (RescaleCyc (Cyc t) zq (ZqUp zq zqs), ToSDCtx t m' zp zq)
-  => Proxy zqs -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' (ZqUp zq zqs))
-roundCTUp _ = rescaleLinearCT
-
-roundCTDown :: (RescaleCyc (Cyc t) zq (ZqDown zq zqs), ToSDCtx t m' zp zq)
-  => Proxy zqs -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' (ZqDown zq zqs))
-roundCTDown _ = rescaleLinearCT
+  tunnelRHCons (HTCons thint rest) = tunnelRHCons rest . tunnelCT thint
 
 type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
   (Head rngs ~ '(r,r'), Last rngs ~ '(s,s'), Tunnel rngs t zp (ZqUp zq zqs) gad, ZqDown (ZqUp zq zqs) zqs ~ zq,
@@ -319,10 +394,100 @@ type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
 tunnel :: forall rngs r r' s s' t z zp zq gad zqs . (MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs)
   => Proxy zqs -> HTunnelHints gad t rngs zp (ZqUp zq zqs) -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
 tunnel pzqs hints x =
-  let y = tunnelInternal hints $ roundCTUp pzqs x
+  let y = tunnelRHCons hints $ roundCTUp pzqs x
   in roundCTDown pzqs $ roundCTDown pzqs y
 
-instance (Tunnel xs t zp zq gad) => Protoable (HTunnelHints gad t xs zp zq) where
-  type ProtoType (HTunnelHints gad t xs zp zq) = P.TunnelHintChain
-  toProto = P.TunnelHintChain . fromList . toProtoTHints
-  fromProto (P.TunnelHintChain xs) = fromProtoTHints $ toList xs
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+-- | Linear functions used for in-the-clear tunneling
+data TunnelFuncs t xs zp where
+  TFNil :: TunnelFuncs t '[m] zp
+  TFCons :: (xs ~ (r ': s ': rngs))
+    => Linear t zp (FGCD r s) r s
+    -> TunnelFuncs t (Tail xs) zp
+    -> TunnelFuncs t xs zp
+
+instance NFData (TunnelFuncs t '[m] zp) where
+  rnf TFNil = ()
+
+instance (NFData (Linear t zp (FGCD r s) r s), NFData (TunnelFuncs t (s ': xs) zp))
+  => NFData (TunnelFuncs t (r ': s ': xs) zp) where
+  rnf (TFCons f fs) = rnf f `seq` rnf fs
+
+instance Protoable (TunnelFuncs t '[m] zp) where
+  type ProtoType (TunnelFuncs t '[m] zp) = P.LinearFuncChain
+  toProto TFNil = P.LinearFuncChain empty
+  fromProto (P.LinearFuncChain s) | s == empty = return TFNil
+  fromProto _ = throwError $ "Got non-empty chain on fromProto for TunnelFuncs"
+
+instance (ProtoType (t s zp) ~ P.RqProduct,
+          Protoable (Linear t zp e r s),
+          Protoable (TunnelFuncs t (s ': rngs) zp),
+          ProtoType (TunnelFuncs t (s ': rngs) zp) ~ P.LinearFuncChain,
+          Tensor t, e ~ FGCD r s, Fact e, Fact r, Fact s)
+  => Protoable (TunnelFuncs t (r ': s ': rngs) zp) where
+  type ProtoType (TunnelFuncs t (r ': s ': rngs) zp) = P.LinearFuncChain
+  toProto (TFCons f fs) =
+    let f' = toProto f
+        (P.LinearFuncChain fs') = toProto fs
+    in P.LinearFuncChain $ f' <| fs'
+  fromProto (P.LinearFuncChain fs) = do
+    unless (length fs >= 2) $ throwError "fromProto TunnelFuncs: expected at least two list elements"
+    let (a :< as) = viewl fs
+    b <- fromProto a
+    bs <- fromProto $ P.LinearFuncChain as
+    return $ TFCons b bs
+
+type family PTRings xs where
+  PTRings '[] = '[]
+  PTRings ( '(a,b) ': rest ) = a ': (PTRings rest)
+
+class PTTunnel t xs zp where
+  ptTunnelHints :: TunnelFuncs t xs zp
+  ptTunnel :: (Head xs ~ r, Last xs ~ s) => TunnelFuncs t xs zp -> Cyc t r zp -> Cyc t s zp
+
+instance PTTunnel t '[r] z where
+  ptTunnelHints = TFNil
+  ptTunnel TFNil = id
+
+instance (e ~ FGCD r s, e `Divides` r, e `Divides` s, PTTunnel t (s ': rngs) zp,
+          CElt t zp,  -- evalLin
+          ZPP zp, TElt t (ZpOf zp) -- crtSet
+          )
+  => PTTunnel t (r ': s ': rngs) zp where
+  ptTunnelHints =
+    let crts = proxy crtSet (Proxy::Proxy e)
+        r = proxy totientFact (Proxy::Proxy r)
+        e = proxy totientFact (Proxy::Proxy e)
+        dim = r `div` e
+        -- only take as many crts as we need
+        -- otherwise linearDec fails
+        linf = linearDec (take dim crts) :: Linear t zp e r s
+        linfs = ptTunnelHints
+    in TFCons linf linfs
+  ptTunnel (TFCons linf fs) = ptTunnel fs . evalLin linf

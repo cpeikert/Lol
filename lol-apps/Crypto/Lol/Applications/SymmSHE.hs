@@ -55,7 +55,7 @@ import qualified Crypto.Proto.SHEHint.KSLinearHint as P
 import qualified Crypto.Proto.SHEHint.KSQuadCircHint as P
 import qualified Crypto.Proto.SHEHint.RqPolynomial as P
 import qualified Crypto.Proto.SHEHint.SecretKey as P
-import qualified Crypto.Proto.SHEHint.TunnelHints as P
+import qualified Crypto.Proto.SHEHint.HTunnelHints as P
 
 import Control.Applicative  hiding ((*>))
 import Control.DeepSeq
@@ -579,14 +579,14 @@ instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ RqProduct)
 
 instance (Mod zp, Typeable gad, Protoable (Linear t zq e' r' s'), Protoable (KSLinearHint gad (Cyc t s' zq)))
   => Protoable (TunnelHints gad t e' r' s' zp zq) where
-  type ProtoType (TunnelHints gad t e' r' s' zp zq) = P.TunnelHints
+  type ProtoType (TunnelHints gad t e' r' s' zp zq) = P.HTunnelHints
   toProto (THints linf hints) =
-    P.TunnelHints
+    P.HTunnelHints
       (toProto linf)
       (toProto $ LinHint <$> hints)
       (fromIntegral $ proxy modulus (Proxy::Proxy zp))
       (uFromString $ show $ typeRep (Proxy::Proxy gad))
-  fromProto (P.TunnelHints linf hints p grepr) =
+  fromProto (P.HTunnelHints linf hints p grepr) =
     let gadrepr' = show $ typeRep (Proxy::Proxy gad)
         gadrepr = uToString grepr
         p' = fromIntegral p

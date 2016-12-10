@@ -23,9 +23,7 @@ import Crypto.Lol
 import Crypto.Lol.Applications.HomomPRF
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Tests
-import Crypto.Lol.Types.ZPP
 
 import Data.Promotion.Prelude.List
 
@@ -71,7 +69,7 @@ prop_keyHomom size s sk = testIO $ do
   x <- ((`mod` (2^size)) . abs) <$> getRandom
   let st = prfState family Nothing
       prfclear = head $ head $ columns $ ringPRF s x st -- homomPRF only computes first elt
-      hoppedClear = tunnel (Proxy::Proxy ptrngs) prfclear
+      hoppedClear = ptTunnel (Proxy::Proxy ptrngs) prfclear
   (tHints, skout) <- tunnelHints sk
   rHints <- roundHints skout
   let hints = Hints tHints rHints :: EvalHints t rngs z zp zq zqs ksgad
@@ -79,28 +77,3 @@ prop_keyHomom size s sk = testIO $ do
   let encPRF = homomPRF hints ct x st
       decPRF = decrypt skout encPRF
   return $ decPRF == hoppedClear
-
-type family PTRings xs where
-  PTRings '[] = '[]
-  PTRings ( '(a,b) ': rest ) = a ': (PTRings rest)
-
-class PTTunnel t xs zp where
-  tunnel :: (Head xs ~ r, Last xs ~ s) => Proxy xs -> Cyc t r zp -> Cyc t s zp
-
-instance PTTunnel t '[r] z where
-  tunnel _ = id
-
-instance (e ~ FGCD r s, e `Divides` r, e `Divides` s, PTTunnel t (s ': rngs) zp,
-          CElt t zp,  -- evalLin
-          ZPP zp, TElt t (ZpOf zp) -- crtSet
-          )
-  => PTTunnel t (r ': s ': rngs) zp where
-  tunnel _ =
-    let crts = proxy crtSet (Proxy::Proxy e)
-        r = proxy totientFact (Proxy::Proxy r)
-        e = proxy totientFact (Proxy::Proxy e)
-        dim = r `div` e
-        -- only take as many crts as we need
-        -- otherwise linearDec fails
-        linf = linearDec (take dim crts) :: Linear t zp e r s
-    in tunnel (Proxy::Proxy (s ': rngs)) . evalLin linf

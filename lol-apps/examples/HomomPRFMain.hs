@@ -29,7 +29,8 @@ import Crypto.Random.DRBG
 import Data.Promotion.Prelude.List
 import Data.Time.Clock
 import Data.Typeable
-import System.FilePath     ((</>), pathSeparator)
+import MathObj.Matrix  (columns)
+import System.FilePath ((</>), pathSeparator)
 import System.IO
 
 import HomomPRFParams
@@ -40,49 +41,71 @@ type Z = Int64
 protoDir :: Int -> String -> String
 protoDir p = (((pathSeparator : "home") </> "eric" </> "Desktop" </> "Lol" </> ("p" ++ show p ++ "-")) ++)
 
-thintPath, rhintPath, tskPath, rskPath :: Int -> String
+lfuncPath, thintPath, rhintPath, tskPath, rskPath :: Int -> String
 thintPath p = protoDir p "tunnel.hint"
 rhintPath p = protoDir p "round.hint"
+lfuncPath p = protoDir p "tunnelfuncs.lfuns"
 -- | The key used as the input to tunneling; also used for encryption
 tskPath   p = protoDir p "encKey.secret"
 -- | The output key of tunneling, used for rounding; also for decryption
 rskPath   p = protoDir p "decKey.secret"
 
--- This function serves the dual purpose of specifying the random generator
--- and keeping all of the code in the IO monad, which helps write clean code below
--- No sequencing occurs between separate calls to this function, but it would be hard
--- to get timing any other way.
-evalHashDRBG :: RandT (CryptoRand HashDRBG) IO a -> IO a
-evalHashDRBG = evalCryptoRandIO
-
 main :: IO ()
 main = do
   putStrLn $ "Starting homomorphic PRF evaluation with tensor " ++ show (typeRep (Proxy::Proxy T))
-  (hints, decKey, family, ct) <- time "Generating random inputs..." =<< evalHashDRBG (do
-    (h, encKey, d) <- readOrGenHints
-    f :: PRFFamily PRFGad _ _ <- randomFamily 10 -- works on 10-bit input
+  hints' <- runExceptT readHints
+  (lfuns, hints :: EvalHints T RngList Z ZP ZQ ZQSeq KSGad, encKey, decKey) <- case hints' of
+    (Right a) -> do
+      putStrLn "Using precomputed hints."
+      return a
+    (Left st) -> do
+      putStrLn $ "Could not read precomputed hints: " ++ st
+      gen :: CryptoRand HashDRBG <- liftIO newGenIO -- uses system entropy
+      (lfuns, hints, encKey, decKey) <- time "Generating hints..." $ flip evalRand gen $ do
+        let v = 1.0 :: Double
+        encKey <- genSK v
+        (tHints, decKey) <- tunnelHints encKey
+        let lfuns = ptTunnelHints
+        rHints <- roundHints decKey
+        let hints = Hints tHints rHints
+        return (lfuns, hints, encKey, decKey)
+      writeHints lfuns hints encKey decKey
+      return (lfuns, hints, encKey, decKey)
+  gen :: CryptoRand HashDRBG <- liftIO newGenIO -- uses system entropy
+  (family, s, ct) <- time "Generating random inputs..." $ flip evalRand gen $ do
+    family :: PRFFamily PRFGad _ _ <- randomFamily 10 -- works on 10-bit input
     s <- getRandom
     ct <- encrypt encKey s
-    return (h,d,f,ct))
+    return (family, s, ct)
   st <- time "Initializing PRF state..." $ prfState family Nothing --initialize with input 0
   encprf <- time "Evaluating PRF..." $ flip runReader hints $ flip evalStateT st $ homomPRFM ct 0
-  _ <- time "Decrypting PRF output..." $ decrypt decKey encprf
-  return ()
+  hprf :: Cyc T _ (TwoOf ZP) <- time "Decrypting PRF output..." $ decrypt decKey encprf
 
-readHints :: forall mon t rngs z zp zq zqs gad r' s' .
-  (MonadIO mon, MonadError String mon, Mod zp,
+  -- test
+  clearPRF :: Cyc T _ (TwoOf ZP) <- time "clear prf" $ head $ head $ columns $ ringPRF s 0 st -- homomPRF only computes first elt
+  clearPRF' <- time "clear tunnel" $ ptTunnel lfuns clearPRF
+  if clearPRF' == hprf
+  then putStrLn "Homomorphic output matches in-the-clear."
+  else putStrLn "TEST FAILED"
+
+readHints :: forall mon t rngs z e zp zq zqs gad r' s' .
+  (MonadIO mon, MonadError String mon, Mod zp, UnPP (CharOf zp) ~ '(Prime2, e),
+   ProtoReadable (TunnelFuncs t (PTRings rngs) (TwoOf zp)),
    ProtoReadable (HTunnelHints gad t rngs zp (ZqUp zq zqs)),
-   ProtoReadable (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad),
+   ProtoReadable (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z e zp (ZqDown zq zqs) zqs gad),
    ProtoReadable (SK (Cyc t r' z)), ProtoReadable (SK (Cyc t s' z)))
-  => mon (EvalHints t rngs z zp zq zqs gad, SK (Cyc t r' z), SK (Cyc t s' z))
+  => mon (TunnelFuncs t (PTRings rngs) (TwoOf zp),
+          EvalHints t rngs z zp zq zqs gad,
+          SK (Cyc t r' z), SK (Cyc t s' z))
 readHints = do
   let p = fromIntegral $ proxy modulus (Proxy::Proxy zp)
+  lfuns  <- parseProtoFile $ lfuncPath p
   tHints <- parseProtoFile $ thintPath p
   rHints <- parseProtoFile $ rhintPath p
   tsk    <- parseProtoFile $ tskPath p
   rsk    <- parseProtoFile $ rskPath p
-  return (Hints tHints rHints, tsk, rsk)
-
+  return (lfuns, Hints tHints rHints, tsk, rsk)
+{-
 readOrGenHints :: (MonadIO mon, MonadRandom mon, Head RngList ~ '(r,r'), Last RngList ~ '(s,s'))
   => mon (EvalHints T RngList Z ZP ZQ ZQSeq KSGad, SK (Cyc T r' Z), SK (Cyc T s' Z))
 readOrGenHints = do
@@ -91,30 +114,28 @@ readOrGenHints = do
     (Left st) -> do
       liftIO $ putStrLn $ "Could not read precomputed data. Error was: " ++ st
       (hints, sk, skout) <- do
-        let v = 1.0 :: Double
-        sk <- genSK v
-        (tHints, skout) <- tunnelHints sk
-        rHints <- roundHints skout
-        let hints = Hints tHints rHints
-        return (hints, sk, skout)
+
       liftIO $ putStrLn "Writing hints to disk..."
       writeHints hints sk skout
       return (hints, sk, skout)
     (Right a) -> do
       liftIO $ putStrLn "Precomputed hints found."
       return a
-
-writeHints :: forall mon t rngs z zp zq zqs gad r' s' .
-  (MonadIO mon, Mod zp,
+-}
+writeHints :: forall mon t rngs z e zp zq zqs gad r' s' .
+  (MonadIO mon, Mod zp, UnPP (CharOf zp) ~ '(Prime2, e),
+   ProtoReadable (TunnelFuncs t (PTRings rngs) (TwoOf zp)),
    ProtoReadable (HTunnelHints gad t rngs zp (ZqUp zq zqs)),
-   ProtoReadable (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z zp (ZqDown zq zqs) zqs gad),
+   ProtoReadable (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z e zp (ZqDown zq zqs) zqs gad),
    ProtoReadable (SK (Cyc t r' z)), ProtoReadable (SK (Cyc t s' z)))
-  => EvalHints t rngs z zp zq zqs gad
+  => TunnelFuncs t (PTRings rngs) (TwoOf zp)
+  -> EvalHints t rngs z zp zq zqs gad
   -> SK (Cyc t r' z)
   -> SK (Cyc t s' z)
   -> mon ()
-writeHints (Hints tHints rHints) encKey decKey = do
+writeHints lfuns (Hints tHints rHints) encKey decKey = do
   let p = fromIntegral $ proxy modulus (Proxy::Proxy zp)
+  writeProtoFile (lfuncPath p) lfuns
   writeProtoFile (thintPath p) tHints
   writeProtoFile (rhintPath p) rHints
   writeProtoFile (tskPath p) encKey
@@ -122,8 +143,8 @@ writeHints (Hints tHints rHints) encKey decKey = do
 
 
 -- timing functionality
-time :: (NFData a, MonadIO m) => String -> a -> m a
-time s m = liftIO $ do
+time :: (NFData a) => String -> a -> IO a
+time s m = do
   putStr' s
   wallStart <- getCurrentTime
   m `deepseq` printTimes Nothing wallStart 1
@@ -132,7 +153,7 @@ time s m = liftIO $ do
 -- flushes the print buffer
 putStr' :: String -> IO ()
 putStr' str = do
-  putStrLn str
+  putStr str
   hFlush stdout
 
 --rounds to precision, for pretty printing

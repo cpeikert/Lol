@@ -23,8 +23,6 @@ import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Utils.PrettyPrint.Table
 import Crypto.Lol.Types
 
-import HomomPRFBenches
-import HomomPRFParams hiding (Zq)
 import KHPRFBenches
 import SHEBenches
 import Crypto.Random.DRBG
@@ -54,9 +52,7 @@ main = do
       pct = Proxy::Proxy CT
   bs <- sequence $
           sheBenches' pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG) ++
-          [khprfBenches pct (Proxy::Proxy PRFGad),
-           homomprfBenches pct (Proxy::Proxy PRFGad)
-          ]
+          [khprfBenches pct (Proxy::Proxy (BaseBGad 2))]
   mapM_ (prettyBenches o) bs
 
 sheBenches' :: _ => Proxy t -> Proxy gad -> Proxy gen -> [rnd Benchmark]
@@ -108,9 +104,6 @@ khprfBenches pt _ = benchGroup "KHPRF Table"
    benchGroup "right/KHPRF"    $ benches' rightSpineTree]
   where
     benches' = khPRFBenches 5 pt (Proxy::Proxy F128) (Proxy::Proxy '(Zq 8, Zq 2, gad))
-
-homomprfBenches :: _ => Proxy t -> Proxy prfgad -> rnd Benchmark
-homomprfBenches pt pgad = benchGroup "HPRF Table/balanced-startup"   [benchHomomPRF 5 balancedTree [0] pt pgad]
 
 -- EAC: is there a simple way to parameterize the variance?
 -- generates a secret key with scaled variance 1.0

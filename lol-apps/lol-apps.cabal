@@ -57,13 +57,14 @@ library
     Crypto.Lol.Applications.HomomPRF
     Crypto.Lol.Applications.KeyHomomorphicPRF
     Crypto.Lol.Applications.SymmSHE
+    Crypto.Proto.SHEHint.HTunnelHintChain
+    Crypto.Proto.SHEHint.HTunnelHints
+    Crypto.Proto.SHEHint.LinearFuncChain
     Crypto.Proto.SHEHint.KSLinearHint
     Crypto.Proto.SHEHint.KSQuadCircHint
     Crypto.Proto.SHEHint.RoundHintChain
     Crypto.Proto.SHEHint.RqPolynomial
     Crypto.Proto.SHEHint.SecretKey
-    Crypto.Proto.SHEHint.TunnelHintChain
-    Crypto.Proto.SHEHint.TunnelHints
     Crypto.Proto.SHEHint
 
   build-depends:
@@ -117,7 +118,7 @@ Benchmark bench-apps
   default-language: Haskell2010
   main-is:          BenchAppsMain.hs
   ghc-options:      -main-is BenchAppsMain
-  other-modules:    HomomPRFBenches, HomomPRFParams, KHPRFBenches, SHEBenches
+  other-modules:    KHPRFBenches, SHEBenches
 
 --  if flag(llvm)
 --    ghc-options: -fllvm -optlo-O3
