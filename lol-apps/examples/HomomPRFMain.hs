@@ -32,6 +32,7 @@ import Data.Typeable
 import MathObj.Matrix  (columns)
 import System.FilePath ((</>), pathSeparator)
 import System.IO
+import Text.Printf
 
 import HomomPRFParams
 
@@ -79,13 +80,13 @@ main = do
     return (family, s, ct)
   st <- time "Initializing PRF state..." $ prfState family Nothing --initialize with input 0
   encprf <- time "Evaluating PRF..." $ flip runReader hints $ flip evalStateT st $ homomPRFM ct 0
-  hprf :: Cyc T _ (TwoOf ZP) <- time "Decrypting PRF output..." $ decrypt decKey encprf
+  hprf <- time "Decrypting PRF output..." $ decrypt decKey encprf
 
   -- test
-  clearPRF :: Cyc T _ (TwoOf ZP) <- time "clear prf" $ head $ head $ columns $ ringPRF s 0 st -- homomPRF only computes first elt
-  clearPRF' <- time "clear tunnel" $ ptTunnel lfuns clearPRF
+  clearPRF <- time "In-the-clear PRF..." $ head $ head $ columns $ ringPRF s 0 st -- homomPRF only computes first elt
+  clearPRF' <- time "In-the-clear tunnel..." $ ptTunnel lfuns clearPRF
   if clearPRF' == hprf
-  then putStrLn "Homomorphic output matches in-the-clear."
+  then putStrLn "PASS: Homomorphic output matches in-the-clear."
   else putStrLn "TEST FAILED"
 
 readHints :: forall mon t rngs z e zp zq zqs gad r' s' .
@@ -141,13 +142,12 @@ writeHints lfuns (Hints tHints rHints) encKey decKey = do
   writeProtoFile (tskPath p) encKey
   writeProtoFile (rskPath p) decKey
 
-
 -- timing functionality
 time :: (NFData a) => String -> a -> IO a
 time s m = do
   putStr' s
   wallStart <- getCurrentTime
-  m `deepseq` printTimes Nothing wallStart 1
+  m `deepseq` printTimes wallStart 1
   return m
 
 -- flushes the print buffer
@@ -156,15 +156,11 @@ putStr' str = do
   putStr str
   hFlush stdout
 
---rounds to precision, for pretty printing
-toPrecision :: (Field a, RealRing a) => Integer -> a -> a
-toPrecision n x = fromInteger $ round $ x * (10^n) / (10.0^n)
-
-printTimes :: Maybe Bool -> UTCTime -> Int -> IO ()
-printTimes _ wallStart iters = do
+printTimes :: UTCTime -> Int -> IO ()
+printTimes wallStart iters = do
     wallEnd <- getCurrentTime
     let wallTime = realToFrac $ diffUTCTime wallEnd wallStart :: Double
-    putStr $ "Wall time: " ++ show (toPrecision 2 wallTime) ++ "s"
+    printf "Wall time: %0.3fs" wallTime
     if iters == 1
     then putStr "\n\n"
-    else putStr $ "\tAverage wall time: " ++ show (toPrecision 2 $ wallTime / fromIntegral iters) ++ "s\n\n"
+    else printf "\tAverage wall time: %0.3fs\n\n" $ wallTime / fromIntegral iters

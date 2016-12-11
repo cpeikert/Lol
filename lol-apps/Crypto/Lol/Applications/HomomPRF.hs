@@ -177,7 +177,6 @@ instance Protoable (RoundHints t m m' z P1 zp zq zqs gad) where
   fromProto (P.RoundHintChain xs) | xs == empty = return RHNil
   fromProto _ = throwError $ "Got non-empty chain on fromProto for RoundHints"
 
-
 instance (Protoable (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))),
           Protoable (RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad),
           ProtoType (RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad) ~ P.RoundHintChain)
