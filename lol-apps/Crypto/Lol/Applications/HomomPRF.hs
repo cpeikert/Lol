@@ -188,7 +188,7 @@ instance (Protoable (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))),
         (P.RoundHintChain fs') = toProto fs
     in P.RoundHintChain $ f' <| fs'
   fromProto (P.RoundHintChain fs) = do
-    unless (length fs >= 2) $ throwError "fromProto RoundHints: expected at least two list elements"
+    when (fs == empty) $ throwError "fromProto RoundHints: expected at least one element"
     let (a :< as) = viewl fs
     b <- fromProto a
     bs <- fromProto $ P.RoundHintChain as
@@ -320,7 +320,7 @@ instance (e' ~ (e * (r' / r)), e ~ FGCD r s,
     in P.HTunnelHintChain $ h' <| hs'
 
   fromProto (P.HTunnelHintChain zs) = do
-    unless (length zs >= 2) $ throwError "fromProto HTunnelHints: expected at least two list elements"
+    when (zs == empty) $ throwError "fromProto HTunnelHints: expected at least one element"
     let (x :< xs) = viewl zs
     y <- fromProto x
     ys <- fromProto $ P.HTunnelHintChain xs
@@ -457,7 +457,7 @@ instance (ProtoType (t s zp) ~ P.RqProduct,
         (P.LinearFuncChain fs') = toProto fs
     in P.LinearFuncChain $ f' <| fs'
   fromProto (P.LinearFuncChain fs) = do
-    unless (length fs >= 2) $ throwError "fromProto TunnelFuncs: expected at least two list elements"
+    when (fs == empty) $ throwError "fromProto TunnelFuncs: expected at least one element"
     let (a :< as) = viewl fs
     b <- fromProto a
     bs <- fromProto $ P.LinearFuncChain as
