@@ -44,8 +44,6 @@ import qualified Data.Tagged          as T
 import System.Directory (createDirectoryIfMissing)
 
 import Text.Printf
-import Text.ProtocolBuffers        (messagePut)
-import Text.ProtocolBuffers.Header hiding (ByteString, pack)
 
 -- | Generate and serialize challenges given the path to the root of the tree
 -- and an initial beacon address.

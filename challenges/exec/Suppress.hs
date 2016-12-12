@@ -9,6 +9,7 @@ import Control.Exception (try)
 import Control.Monad.Except
 import Control.Monad.State
 
+import Crypto.Lol.Types.Proto
 import Crypto.Proto.RLWE.Challenges.Challenge
 
 import Data.ByteString.Lazy (writeFile)

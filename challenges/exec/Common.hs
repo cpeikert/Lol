@@ -20,10 +20,9 @@ import Crypto.Random.DRBG
 
 import Control.Monad.Except
 
-import           Data.ByteString.Lazy (unpack)
-import qualified Data.ByteString.Lazy as BS
-import           Data.Int
-import           Data.Maybe
+import Data.ByteString.Lazy (unpack)
+import Data.Int
+import Data.Maybe
 
 import Net.Beacon
 
@@ -33,8 +32,6 @@ import System.Directory    (doesDirectoryExist, doesFileExist,
 import System.FilePath     ((</>))
 
 import Text.Printf
-import Text.ProtocolBuffers        (messageGet)
-import Text.ProtocolBuffers.Header (ReflectDescriptor, Wire)
 
 type ChallengeID = Int32
 type InstanceID = Int32
