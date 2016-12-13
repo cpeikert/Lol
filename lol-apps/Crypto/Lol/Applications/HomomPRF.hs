@@ -204,7 +204,7 @@ class (UnPP (CharOf zp) ~ '(Prime2,e)) => PTRound t m m' e zp zq z gad zqs where
   -- = msb(x+q/4) = floor((x+q/4)/(q/2))
   ptRound :: RoundHints t m m' z e zp zq zqs gad -> CT m zp (Cyc t m' zq) -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
 
-  ptRoundRHCons :: RoundHints t m m' z e zp zq zqs gad -> [CT m zp (Cyc t m' zq)] -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
+  ptRoundInternal :: RoundHints t m m' z e zp zq zqs gad -> [CT m zp (Cyc t m' zq)] -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
 
 instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
   type ZqResult P1 zq zqs = zq
@@ -213,7 +213,7 @@ instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
 
   ptRound RHNil x = x
 
-  ptRoundRHCons RHNil [x] = x
+  ptRoundInternal RHNil [x] = x
 
 instance (UnPP p ~ '(Prime2, 'S e),                                                 -- superclass constraint
           zqup ~ ZqUp zq zqs, zq' ~ ZqDown zq zqs, zp ~ ZqBasic p i, zp' ~ Div2 zp, -- convenience synonyms
@@ -238,12 +238,12 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
         xprod = rescaleLinearCT $ keySwitchQuadCirc ksqHint $ x*x'
         p = proxy value (Proxy::Proxy p)
         xs = map (\y->modSwitchPT $ addPublic (fromInteger $ y*(-y+1)) xprod) [1..] :: [CT m zp' (Cyc t m' zq')]
-    in ptRoundRHCons rest $ take (p `div` 4) xs
+    in ptRoundInternal rest $ take (p `div` 4) xs
 
-  ptRoundRHCons (RHCons ksqHint rest) (xs :: [CT m (ZqBasic p i) (Cyc t m' zq)]) =
+  ptRoundInternal (RHCons ksqHint rest) (xs :: [CT m (ZqBasic p i) (Cyc t m' zq)]) =
     let pairs = chunksOf 2 xs
         go [a,b] = modSwitchPT $ rescaleLinearCT $ keySwitchQuadCirc ksqHint $ a*b :: CT m zp' (Cyc t m' zq')
-    in ptRoundRHCons rest (map go pairs)
+    in ptRoundInternal rest (map go pairs)
 
 
 
@@ -331,18 +331,18 @@ class Tunnel xs t zp zq gad where
                   Lift zp z, CElt t z, ToInteger z, Reduce z zq) -- constraints involving 'z' from GenTunnelHintCtx
               => SK (Cyc t r' z) -> rnd (HTunnelHints gad t xs zp zq, SK (Cyc t s' z)) -- , TunnelFuncs t (PTRings xs) zp
 
-  tunnelRHCons :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
+  tunnelInternal :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
     HTunnelHints gad t xs zp zq -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
 
 instance Tunnel '[ '(m,m') ] t zp zq gad where
 
   tunnelHints sk = return (HTNil,sk)
 
-  tunnelRHCons _ = id
+  tunnelInternal _ = id
 
 -- EAC: I expand the GenTunnelHintCtx synonym here to remove all occurrences of 'z',
 -- which instead only occur in the context of tunnelHints. This is because 'z' is
--- not relevant for tunnelRHCons nor HTunnelHints, so we would have to pass
+-- not relevant for tunnelInternal nor HTunnelHints, so we would have to pass
 -- a proxy for 'z'. This is a problem I have had many times, and still don't have a
 -- good solution for: the class exists only to match on the type list, all of
 -- of the other class params exist only so I can write constrints involving the changing
@@ -381,7 +381,7 @@ instance (ExtendLinIdx e r s e' r' s', -- genTunnelHints
     (thints,sk') <- tunnelHints skout
     return (HTCons thint thints, sk')
 
-  tunnelRHCons (HTCons thint rest) = tunnelRHCons rest . tunnelCT thint
+  tunnelInternal (HTCons thint rest) = tunnelInternal rest . tunnelCT thint
 
 type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
   (Head rngs ~ '(r,r'), Last rngs ~ '(s,s'), Tunnel rngs t zp (ZqUp zq zqs) gad, ZqDown (ZqUp zq zqs) zqs ~ zq,
@@ -393,7 +393,7 @@ type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
 tunnel :: forall rngs r r' s s' t z zp zq gad zqs . (MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs)
   => Proxy zqs -> HTunnelHints gad t rngs zp (ZqUp zq zqs) -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
 tunnel pzqs hints x =
-  let y = tunnelRHCons hints $ roundCTUp pzqs x
+  let y = tunnelInternal hints $ roundCTUp pzqs x
   in roundCTDown pzqs $ roundCTDown pzqs y
 
 
