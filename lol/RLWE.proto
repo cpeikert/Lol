@@ -2,6 +2,21 @@
 
 // hprotoc -p Crypto.Proto RLWE.proto
 
+message SampleContLegacy {
+  required Rq a      = 1;
+  required Kq b      = 2;
+}
+
+message SampleDiscLegacy {
+  required Rq a      = 1;
+  required Rq b      = 2;
+}
+
+message SampleRLWRLegacy {
+  required Rq a      = 1;
+  required Rq b      = 2;  // for some modulus p < q
+}
+
 message SampleCont {
   required RqProduct a = 1;
   required KqProduct b = 2;
@@ -37,6 +52,7 @@ message Kq {
   repeated double xs = 3;
 }
 
+// coeffs contains the function output corresponding to the decoding basis in R
 message LinearRq {
   required uint32 e  = 1;
   required uint32 r  = 2;

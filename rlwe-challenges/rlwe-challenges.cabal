@@ -46,6 +46,10 @@ library
     Crypto.Proto.RLWE.Challenges.InstanceDisc
     Crypto.Proto.RLWE.Challenges.InstanceRLWR
     Crypto.Proto.RLWE.Challenges.Secret
+    Crypto.Proto.RLWE.Challenges.InstanceContLegacy
+    Crypto.Proto.RLWE.Challenges.InstanceDiscLegacy
+    Crypto.Proto.RLWE.Challenges.InstanceRLWRLegacy
+    Crypto.Proto.RLWE.Challenges.SecretLegacy
 
   build-depends: base < 5,
                  lol >= 0.5.0.0,

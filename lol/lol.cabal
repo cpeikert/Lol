@@ -96,6 +96,9 @@ library
     Crypto.Proto.RLWE.SampleCont
     Crypto.Proto.RLWE.SampleDisc
     Crypto.Proto.RLWE.SampleRLWR
+    Crypto.Proto.RLWE.SampleContLegacy
+    Crypto.Proto.RLWE.SampleDiscLegacy
+    Crypto.Proto.RLWE.SampleRLWRLegacy
 
     Crypto.Lol.Utils.GenArgs
     Crypto.Lol.Utils.ShowType

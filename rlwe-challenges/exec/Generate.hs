@@ -4,6 +4,8 @@
 {-# LANGUAGE RecordWildCards       #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
+-- | Generates challenges in non-legacy proto format.
+
 module Generate (generateMain, instanceCont, instanceDisc, instanceRLWR) where
 
 import Beacon
