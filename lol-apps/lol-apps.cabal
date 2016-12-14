@@ -57,15 +57,15 @@ library
     Crypto.Lol.Applications.HomomPRF
     Crypto.Lol.Applications.KeyHomomorphicPRF
     Crypto.Lol.Applications.SymmSHE
-    Crypto.Proto.SHEHint.HTunnelHintChain
-    Crypto.Proto.SHEHint.HTunnelHints
+    Crypto.Proto.SHEHint
     Crypto.Proto.SHEHint.LinearFuncChain
     Crypto.Proto.SHEHint.KSLinearHint
     Crypto.Proto.SHEHint.KSQuadCircHint
     Crypto.Proto.SHEHint.RoundHintChain
     Crypto.Proto.SHEHint.RqPolynomial
     Crypto.Proto.SHEHint.SecretKey
-    Crypto.Proto.SHEHint
+    Crypto.Proto.SHEHint.TunnelHint
+    Crypto.Proto.SHEHint.TunnelHintChain
 
   build-depends:
     base>=4.8 && <5,

@@ -32,7 +32,7 @@ SK, PT, CT -- don't export constructors!
 , keySwitchLinear, keySwitchQuadCirc
 -- * Ring switching
 , embedSK, embedCT, twaceCT
-, TunnelHints, genTunnelHints
+, TunnelHint, genTunnelHint
 , tunnelCT
 -- * Constraint synonyms
 , GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx
@@ -55,7 +55,7 @@ import qualified Crypto.Proto.SHEHint.KSLinearHint as P
 import qualified Crypto.Proto.SHEHint.KSQuadCircHint as P
 import qualified Crypto.Proto.SHEHint.RqPolynomial as P
 import qualified Crypto.Proto.SHEHint.SecretKey as P
-import qualified Crypto.Proto.SHEHint.HTunnelHints as P
+import qualified Crypto.Proto.SHEHint.TunnelHint as P
 
 import Control.Applicative  hiding ((*>))
 import Control.DeepSeq
@@ -476,10 +476,10 @@ twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 
 
 
-data TunnelHints gad t e' r' s' zp zq = THints (Linear t zq e' r' s') [Tagged gad [Polynomial (Cyc t s' zq)]]
+data TunnelHint gad t e' r' s' zp zq = THints (Linear t zq e' r' s') [Tagged gad [Polynomial (Cyc t s' zq)]]
 
 instance (NFData (Linear t zq e' r' s'), NFData (Cyc t s' zq))
-  => NFData (TunnelHints gad t e' r' s' zp zq) where
+  => NFData (TunnelHint gad t e' r' s' zp zq) where
   rnf (THints l t) = rnf l `seq` rnf t
 
 -- EAC: `e' ~ (e * ...) is not needed in this module, but it is needed as use sites...
@@ -490,13 +490,13 @@ type GenTunnelHintCtx t e r s e' r' s' z zp zq gad =
    Lift zp z, CElt t zp,        -- liftLin
    CElt t z, e' `Divides` r')   -- powBasis
 
-genTunnelHints :: forall gad t e r s e' r' s' z zp zq rnd .
+genTunnelHint :: forall gad t e r s e' r' s' z zp zq rnd .
   (MonadRandom rnd, GenTunnelHintCtx t e r s e' r' s' z zp zq gad)
   => Linear t zp e r s
   -> SK (Cyc t s' z)
   -> SK (Cyc t r' z)
-  -> rnd (TunnelHints gad t e' r' s' zp zq)
-genTunnelHints f skout (SK _ sin) = -- generate hints
+  -> rnd (TunnelHint gad t e' r' s' zp zq)
+genTunnelHint f skout (SK _ sin) = -- generate hints
   (let f' = extendLin $ lift f :: Linear t z e' r' s'
        f'q = reduce f' :: Linear t zq e' r' s'
        -- choice of basis here must match coeffs* basis below
@@ -517,7 +517,7 @@ type TunnelCtx t r s e' r' s' zp zq gad =
 -- \( S \)-elements in the input array.
 tunnelCT :: forall gad t r s e' r' s' zp zq .
   (TunnelCtx t r s e' r' s' zp zq gad)
-  => TunnelHints gad t e' r' s' zp zq
+  => TunnelHint gad t e' r' s' zp zq
   -> CT r zp (Cyc t r' zq)
   -> CT s zp (Cyc t s' zq)
 tunnelCT (THints f'q hints) ct =
@@ -578,15 +578,15 @@ instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ RqProduct)
     else error $ "Expected gadget " ++ gadrepr' ++ ", but serialized object is w.r.t. " ++ gadrepr
 
 instance (Mod zp, Typeable gad, Protoable (Linear t zq e' r' s'), Protoable (KSLinearHint gad (Cyc t s' zq)))
-  => Protoable (TunnelHints gad t e' r' s' zp zq) where
-  type ProtoType (TunnelHints gad t e' r' s' zp zq) = P.HTunnelHints
+  => Protoable (TunnelHint gad t e' r' s' zp zq) where
+  type ProtoType (TunnelHint gad t e' r' s' zp zq) = P.TunnelHint
   toProto (THints linf hints) =
-    P.HTunnelHints
+    P.TunnelHint
       (toProto linf)
       (toProto $ LinHint <$> hints)
       (fromIntegral $ proxy modulus (Proxy::Proxy zp))
       (uFromString $ show $ typeRep (Proxy::Proxy gad))
-  fromProto (P.HTunnelHints linf hints p grepr) =
+  fromProto (P.TunnelHint linf hints p grepr) =
     let gadrepr' = show $ typeRep (Proxy::Proxy gad)
         gadrepr = uToString grepr
         p' = fromIntegral p

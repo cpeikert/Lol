@@ -217,7 +217,7 @@ prop_ringTunnel x skin skout = testIO $ do
   let f = linearDec bs \\ (gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)) :: Linear t zp e r s
       expected = evalLin f x \\ (gcdDivides (Proxy::Proxy r) (Proxy::Proxy s))
   y :: CT r zp (Cyc t r' zq) <- encrypt skin x
-  hints :: TunnelHints gad t e' r' s' zp zq <- genTunnelHints f skout skin
+  hints :: TunnelHint gad t e' r' s' zp zq <- genTunnelHint f skout skin
   let y' = tunnelCT hints y :: CT s zp (Cyc t s' zq)
       actual = decryptUnrestricted skout y' :: Cyc t s zp
   return $ expected == actual

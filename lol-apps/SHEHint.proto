@@ -27,15 +27,15 @@ message LinearFuncChain {
   repeated LinearRq funcs    = 1;
 }
 
-message HTunnelHints {
+message TunnelHint {
   required LinearRq func     = 1;
   repeated KSLinearHint hint = 2;
   required uint64 p          = 3;
   required string gad        = 4;
 }
 
-message HTunnelHintChain {
-  repeated HTunnelHints hints = 1;
+message TunnelHintChain {
+  repeated TunnelHint hints = 1;
 }
 
 message RoundHintChain {

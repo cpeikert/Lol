@@ -134,5 +134,5 @@ bench_tunnel pt skin skout = benchM $ do
       -- only take as many crts as we need
       -- otherwise linearDec fails
       linf :: Linear t zp e r s = linearDec (take dim crts) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
-  hints :: TunnelHints gad t e' r' s' zp zq <- genTunnelHints linf skout skin
+  hints :: TunnelHint gad t e' r' s' zp zq <- genTunnelHint linf skout skin
   return $ bench (tunnelCT hints :: CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)) x

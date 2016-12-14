@@ -14,8 +14,8 @@
 
 module Crypto.Lol.Applications.HomomPRF
 (homomPRF, homomPRFM
-,RoundHints(..), roundHints
-,HTunnelHints(..), tunnelHints
+,RoundHints(..), genRoundHints
+,TunnelHintChain(..), genTunnelHints
 ,EvalHints(..)
 ,MultiTunnelCtx, ZqUp, ZqDown
 ,TwoOf
@@ -41,8 +41,8 @@ import Crypto.Lol.Types.Proto
 import qualified Crypto.Proto.RLWE.RqProduct as P
 import qualified Crypto.Proto.SHEHint.LinearFuncChain as P
 import qualified Crypto.Proto.SHEHint.RoundHintChain as P
-import qualified Crypto.Proto.SHEHint.HTunnelHints as P
-import qualified Crypto.Proto.SHEHint.HTunnelHintChain as P
+import qualified Crypto.Proto.SHEHint.TunnelHint as P
+import qualified Crypto.Proto.SHEHint.TunnelHintChain as P
 
 import Data.List.Split (chunksOf)
 import Data.Promotion.Prelude.List
@@ -71,12 +71,12 @@ type family NextListElt (x :: k) (xs :: [k]) :: k where
 
 data EvalHints t rngs z zp zq zqs gad where
   Hints :: (UnPP (CharOf zp) ~ '(Prime2, e))
-        => HTunnelHints gad t rngs zp (ZqUp zq zqs)
+        => TunnelHintChain gad t rngs zp (ZqUp zq zqs)
         -> RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z e zp (ZqDown zq zqs) zqs gad
         -> EvalHints t rngs z zp zq zqs gad
 
 instance (UnPP (CharOf zp) ~ '(Prime2, e),
-          NFData (HTunnelHints gad t rngs zp (ZqUp zq zqs)),
+          NFData (TunnelHintChain gad t rngs zp (ZqUp zq zqs)),
           NFData (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z e zp (ZqDown zq zqs) zqs gad))
   => NFData (EvalHints t rngs z zp zq zqs gad) where
   rnf (Hints t r) = rnf t `seq` rnf r
@@ -130,7 +130,6 @@ type family Div2 (a :: k) :: k
 type instance Div2 (ZqBasic q i) = ZqBasic (Div2 q) i
 type instance Div2 (pp :: PrimePower) = Head (UnF (PpToF pp / F2))
 
--- EAC: Invalid warning on these functions reported as #12700
 roundCTUp :: (RescaleCyc (Cyc t) zq (ZqUp zq zqs), ToSDCtx t m' zp zq)
   => Proxy zqs -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' (ZqUp zq zqs))
 roundCTUp _ = rescaleLinearCT
@@ -196,7 +195,7 @@ instance (Protoable (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))),
 class (UnPP (CharOf zp) ~ '(Prime2,e)) => PTRound t m m' e zp zq z gad zqs where
   type ZqResult e zq (zqs :: [*])
 
-  roundHints :: (MonadRandom rnd)
+  genRoundHints :: (MonadRandom rnd)
              => SK (Cyc t m' z) -> rnd (RoundHints t m m' z e zp zq zqs gad)
 
   -- round coeffs near 0 to 0 and near q/2 to 1
@@ -209,7 +208,7 @@ class (UnPP (CharOf zp) ~ '(Prime2,e)) => PTRound t m m' e zp zq z gad zqs where
 instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
   type ZqResult P1 zq zqs = zq
 
-  roundHints _ = return RHNil
+  genRoundHints _ = return RHNil
 
   ptRound RHNil x = x
 
@@ -228,9 +227,9 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
   => PTRound t m m' ('S e) (ZqBasic p i) (zq :: *) z gad zqs where
   type ZqResult ('S e) zq zqs = ZqResult e (ZqDown zq zqs) zqs
 
-  roundHints sk = do
+  genRoundHints sk = do
     ksq <- genKSQuadCircHint sk
-    rest <- roundHints sk
+    rest <- genRoundHints sk
     return $ RHCons ksq rest
 
   ptRound (RHCons ksqHint rest) x =
@@ -285,64 +284,64 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
 
 -- For (homomorphic) tunneling
 
-data HTunnelHints gad t xs zp zq where
-  HTNil :: HTunnelHints gad t '[ '(m,m') ] zp zq
-  HTCons :: (xs ~ ('(r,r') ': '(s,s') ': rngs), e' ~ (e * (r' / r)), e ~ FGCD r s)
-         => TunnelHints gad t e' r' s' zp zq
-         -> HTunnelHints gad t (Tail xs) zp zq
-         -> HTunnelHints gad t xs zp zq
+data TunnelHintChain gad t xs zp zq where
+  THNil :: TunnelHintChain gad t '[ '(m,m') ] zp zq
+  THCons :: (xs ~ ('(r,r') ': '(s,s') ': rngs), e' ~ (e * (r' / r)), e ~ FGCD r s)
+         => TunnelHint gad t e' r' s' zp zq
+         -> TunnelHintChain gad t (Tail xs) zp zq
+         -> TunnelHintChain gad t xs zp zq
 
-instance NFData (HTunnelHints gad t '[ '(m,m') ] zp zq) where
-  rnf HTNil = ()
-
-instance (e' ~ (e * (r' / r)), e ~ FGCD r s,
-          NFData (TunnelHints gad t e' r' s' zp zq),
-          NFData (HTunnelHints gad t ('(s,s') ': rngs) zp zq))
-  => NFData (HTunnelHints gad t ('(r,r') ': '(s,s') ': rngs) zp zq) where
-  rnf (HTCons t ts) = rnf t `seq` rnf ts
-
-instance Protoable (HTunnelHints gad t '[ '(m,m') ] zp zq) where
-  type ProtoType (HTunnelHints gad t '[ '(m,m') ] zp zq) = P.HTunnelHintChain
-  toProto HTNil = P.HTunnelHintChain empty
-  fromProto (P.HTunnelHintChain xs) | xs == empty = return HTNil
-  fromProto _ = throwError $ "Got non-empty chain on fromProto for HTunnelHints"
+instance NFData (TunnelHintChain gad t '[ '(m,m') ] zp zq) where
+  rnf THNil = ()
 
 instance (e' ~ (e * (r' / r)), e ~ FGCD r s,
-          Protoable (TunnelHints gad t e' r' s' zp zq),
-          Protoable (HTunnelHints gad t ('(s,s') ': rngs) zp zq),
-          ProtoType (HTunnelHints gad t ('(s,s') ': rngs) zp zq) ~ P.HTunnelHintChain)
-  => Protoable (HTunnelHints gad t ('(r,r') ': '(s,s') ': rngs) zp zq) where
-  type ProtoType (HTunnelHints gad t ('(r,r') ': '(s,s') ': rngs) zp zq) = P.HTunnelHintChain
-  toProto (HTCons hint rest) =
+          NFData (TunnelHint gad t e' r' s' zp zq),
+          NFData (TunnelHintChain gad t ('(s,s') ': rngs) zp zq))
+  => NFData (TunnelHintChain gad t ('(r,r') ': '(s,s') ': rngs) zp zq) where
+  rnf (THCons t ts) = rnf t `seq` rnf ts
+
+instance Protoable (TunnelHintChain gad t '[ '(m,m') ] zp zq) where
+  type ProtoType (TunnelHintChain gad t '[ '(m,m') ] zp zq) = P.TunnelHintChain
+  toProto THNil = P.TunnelHintChain empty
+  fromProto (P.TunnelHintChain xs) | xs == empty = return THNil
+  fromProto _ = throwError $ "Got non-empty chain on fromProto for TunnelHintChain"
+
+instance (e' ~ (e * (r' / r)), e ~ FGCD r s,
+          Protoable (TunnelHint gad t e' r' s' zp zq),
+          Protoable (TunnelHintChain gad t ('(s,s') ': rngs) zp zq),
+          ProtoType (TunnelHintChain gad t ('(s,s') ': rngs) zp zq) ~ P.TunnelHintChain)
+  => Protoable (TunnelHintChain gad t ('(r,r') ': '(s,s') ': rngs) zp zq) where
+  type ProtoType (TunnelHintChain gad t ('(r,r') ': '(s,s') ': rngs) zp zq) = P.TunnelHintChain
+  toProto (THCons hint rest) =
     let h' = toProto hint
-        (P.HTunnelHintChain hs') = toProto rest
-    in P.HTunnelHintChain $ h' <| hs'
+        (P.TunnelHintChain hs') = toProto rest
+    in P.TunnelHintChain $ h' <| hs'
 
-  fromProto (P.HTunnelHintChain zs) = do
-    when (zs == empty) $ throwError "fromProto HTunnelHints: expected at least one element"
+  fromProto (P.TunnelHintChain zs) = do
+    when (zs == empty) $ throwError "fromProto TunnelHint: expected at least one element"
     let (x :< xs) = viewl zs
     y <- fromProto x
-    ys <- fromProto $ P.HTunnelHintChain xs
-    return $ HTCons y ys
+    ys <- fromProto $ P.TunnelHintChain xs
+    return $ THCons y ys
 
 class Tunnel xs t zp zq gad where
 
-  tunnelHints :: (MonadRandom rnd, Head xs ~ '(r,r'), Last xs ~ '(s,s'),
+  genTunnelHints :: (MonadRandom rnd, Head xs ~ '(r,r'), Last xs ~ '(s,s'),
                   Lift zp z, CElt t z, ToInteger z, Reduce z zq) -- constraints involving 'z' from GenTunnelHintCtx
-              => SK (Cyc t r' z) -> rnd (HTunnelHints gad t xs zp zq, SK (Cyc t s' z)) -- , TunnelFuncs t (PTRings xs) zp
+              => SK (Cyc t r' z) -> rnd (TunnelHintChain gad t xs zp zq, SK (Cyc t s' z)) -- , TunnelFuncs t (PTRings xs) zp
 
   tunnelInternal :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
-    HTunnelHints gad t xs zp zq -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
+    TunnelHintChain gad t xs zp zq -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
 
 instance Tunnel '[ '(m,m') ] t zp zq gad where
 
-  tunnelHints sk = return (HTNil,sk)
+  genTunnelHints sk = return (THNil,sk)
 
   tunnelInternal _ = id
 
 -- EAC: I expand the GenTunnelHintCtx synonym here to remove all occurrences of 'z',
--- which instead only occur in the context of tunnelHints. This is because 'z' is
--- not relevant for tunnelInternal nor HTunnelHints, so we would have to pass
+-- which instead only occur in the context of genTunnelHints. This is because 'z' is
+-- not relevant for tunnelInternal nor TunnelHintChain, so we would have to pass
 -- a proxy for 'z'. This is a problem I have had many times, and still don't have a
 -- good solution for: the class exists only to match on the type list, all of
 -- of the other class params exist only so I can write constrints involving the changing
@@ -365,10 +364,10 @@ instance (ExtendLinIdx e r s e' r' s', -- genTunnelHints
           e ~ FGCD r s, e `Divides` r, e `Divides` s, -- linearDec
           ZPP zp, TElt t (ZpOf zp),                   -- crtSet
           Tunnel ('(s,s') ': rngs) t zp zq gad,       -- recursive call
-          Protoable (TunnelHints gad t e' r' s' zp zq), ProtoType (TunnelHints gad t e' r' s' zp zq) ~ P.HTunnelHints) -- toProto
+          Protoable (TunnelHint gad t e' r' s' zp zq), ProtoType (TunnelHint gad t e' r' s' zp zq) ~ P.TunnelHint) -- toProto
   => Tunnel ('(r,r') ': '(s,s') ': rngs) t zp zq gad where
 
-  tunnelHints sk = do
+  genTunnelHints sk = do
     skout <- genSKWithVar sk
     let crts = proxy crtSet (Proxy::Proxy e)
         r = proxy totientFact (Proxy::Proxy r)
@@ -377,11 +376,11 @@ instance (ExtendLinIdx e r s e' r' s', -- genTunnelHints
         -- only take as many crts as we need
         -- otherwise linearDec fails
         linf = linearDec (take dim crts) :: Linear t zp e r s
-    thint :: TunnelHints gad t e' r' s' zp zq <- genTunnelHints linf skout sk
-    (thints,sk') <- tunnelHints skout
-    return (HTCons thint thints, sk')
+    thint :: TunnelHint gad t e' r' s' zp zq <- genTunnelHint linf skout sk
+    (thints,sk') <- genTunnelHints skout
+    return (THCons thint thints, sk')
 
-  tunnelInternal (HTCons thint rest) = tunnelInternal rest . tunnelCT thint
+  tunnelInternal (THCons thint rest) = tunnelInternal rest . tunnelCT thint
 
 type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
   (Head rngs ~ '(r,r'), Last rngs ~ '(s,s'), Tunnel rngs t zp (ZqUp zq zqs) gad, ZqDown (ZqUp zq zqs) zqs ~ zq,
@@ -391,7 +390,7 @@ type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
 -- EAC: why round down twice? We bump the modulus up to begin with to handle
 -- the key switches, so we knock thatt off, then another for accumulated noise
 tunnel :: forall rngs r r' s s' t z zp zq gad zqs . (MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs)
-  => Proxy zqs -> HTunnelHints gad t rngs zp (ZqUp zq zqs) -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
+  => Proxy zqs -> TunnelHintChain gad t rngs zp (ZqUp zq zqs) -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
 tunnel pzqs hints x =
   let y = tunnelInternal hints $ roundCTUp pzqs x
   in roundCTDown pzqs $ roundCTDown pzqs y

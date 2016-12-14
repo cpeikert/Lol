@@ -1,4 +1,4 @@
-This branch (cached-hints) is a fork of split-packages. Relative to split-packages,
+This branch (cached-hints) is a fork of master. Relative to master,
 this branch separates key-switch hints from the function that applies them in SHE,
 which allows us to serialize the hints for reuse of precomputation.
 
