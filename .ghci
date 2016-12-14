@@ -1,4 +1,4 @@
-:set -ichallenges:challenges/exec
+:set -irlwe-challenges:rlwe-challenges/exec
 :set -icompiler
 :set -ilol
 :set -ilol-apps:lol-apps/benchmarks:lol-apps/examples:lol-apps/tests
