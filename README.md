@@ -1,6 +1,4 @@
-This branch (cached-hints) is a fork of master. Relative to master,
-this branch separates key-switch hints from the function that applies them in SHE,
-which allows us to serialize the hints for reuse of precomputation.
+This branch (master) was previously known as 'split-packages'. The main problem preventing us from creating a new Hackage release based on this branch is that microbenchmark performance is severely degraded relative to the fast-microbenechmarks branch.
 
 --------------------------------------------------------------------------------
 
