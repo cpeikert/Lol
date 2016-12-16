@@ -1,0 +1,28 @@
+import "Lol.proto";
+
+// run this:
+
+// hprotoc -I ../lol -a Lol.proto=Crypto.Proto -p Crypto.Proto SHE.proto
+
+message SecretKey {
+  required R sk = 1;
+  required double v = 2;
+}
+
+message RqPolynomial {
+  repeated RqProduct coeffs = 1;
+}
+
+message KSHint {
+  repeated RqPolynomial hint = 1;
+  required TypeRep gad        = 2;
+}
+
+message TunnelInfo {
+  required LinearRq func     = 1;
+  repeated KSHint hint       = 2;
+  required uint32 e          = 3;
+  required uint32 r          = 4;
+  required uint32 s          = 5;
+  required uint64 p          = 6;
+}

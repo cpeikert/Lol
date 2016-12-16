@@ -27,19 +27,19 @@ SK, PT, CT -- don't export constructors!
 -- * Modulus switching
 , rescaleLinearCT, modSwitchPT
 -- * Key switching
-, KSLinearHint, KSQuadCircHint
-, genKSLinearHint, genKSQuadCircHint
+, KSHint
+, ksLinearHint, ksQuadCircHint
 , keySwitchLinear, keySwitchQuadCirc
 -- * Ring switching
 , embedSK, embedCT, twaceCT
-, TunnelHint, genTunnelHint
+, TunnelInfo, tunnelInfo
 , tunnelCT
 -- * Constraint synonyms
 , GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx
 , DecryptCtx, DecryptUCtx
 , AddScalarCtx, AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
 , KeySwitchCtx, KSHintCtx
-, GenTunnelHintCtx, TunnelCtx
+, GenTunnelInfoCtx, TunnelCtx
 , SwitchCtx, LWECtx -- these are internal, but exported for better docs
 ) where
 
@@ -48,14 +48,14 @@ import qualified Algebra.Ring     as Ring (C)
 
 import Crypto.Lol as LP hiding (sin)
 import Crypto.Lol.Cyclotomic.UCyc   (D, UCyc)
+import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
-import Crypto.Proto.RLWE.R (R)
-import Crypto.Proto.RLWE.RqProduct (RqProduct)
-import qualified Crypto.Proto.SHEHint.KSLinearHint as P
-import qualified Crypto.Proto.SHEHint.KSQuadCircHint as P
-import qualified Crypto.Proto.SHEHint.RqPolynomial as P
-import qualified Crypto.Proto.SHEHint.SecretKey as P
-import qualified Crypto.Proto.SHEHint.TunnelHint as P
+import Crypto.Proto.Lol.R (R)
+import Crypto.Proto.Lol.RqProduct (RqProduct)
+import qualified Crypto.Proto.SHE.KSHint as P
+import qualified Crypto.Proto.SHE.RqPolynomial as P
+import qualified Crypto.Proto.SHE.SecretKey as P
+import qualified Crypto.Proto.SHE.TunnelInfo as P
 
 import Control.Applicative  hiding ((*>))
 import Control.DeepSeq
@@ -305,35 +305,35 @@ type KeySwitchCtx gad t m' zp zq zq' =
   (RescaleCyc (Cyc t) zq' zq, RescaleCyc (Cyc t) zq zq',
    ToSDCtx t m' zp zq, SwitchCtx gad t m' zq')
 
-newtype KSLinearHint gad r'q' = LinHint (Tagged gad [Polynomial r'q']) deriving (NFData)
-newtype KSQuadCircHint gad r'q' = QuadHint (Tagged gad [Polynomial r'q']) deriving (NFData)
+newtype KSHint gad r'q' = KSHint (Tagged gad [Polynomial r'q']) deriving (NFData)
 
-genKSLinearHint :: (KSHintCtx gad t m' z zq', MonadRandom rnd)
+-- | A hint to switch a linear ciphertext under \( s_{\text{in}} \) to a linear
+-- one under \( s_{\text{out}} \).
+ksLinearHint :: (KSHintCtx gad t m' z zq', MonadRandom rnd)
   => SK (Cyc t m' z) -- sout
   -> SK (Cyc t m' z) -- sin
-  -> rnd (KSLinearHint gad (Cyc t m' zq'))
-genKSLinearHint skout (SK _ sin) = LinHint <$> ksHint skout sin
+  -> rnd (KSHint gad (Cyc t m' zq'))
+ksLinearHint skout (SK _ sin) = KSHint <$> ksHint skout sin
 
--- | Switch a linear ciphertext under \( s_{\text{in}} \) to a linear
--- one under \( s_{\text{out}} \).
+-- | Switch a linear ciphertext using the supplied hint.
 keySwitchLinear :: (KeySwitchCtx gad t m' zp zq zq')
-  => KSLinearHint gad (Cyc t m' zq') -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
-keySwitchLinear (LinHint hint) ct =
+  => KSHint gad (Cyc t m' zq') -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
+keySwitchLinear (KSHint hint) ct =
   let CT MSD k l c = toMSD ct
       [c0,c1] = coeffs c
       c1' = rescalePow c1
   in CT MSD k l $ P.const c0 + rescaleLinearMSD (switch hint c1')
 
-genKSQuadCircHint :: (KSHintCtx gad t m' z zq', MonadRandom rnd)
+ksQuadCircHint :: (KSHintCtx gad t m' z zq', MonadRandom rnd)
   => SK (Cyc t m' z)
-  -> rnd (KSQuadCircHint gad (Cyc t m' zq'))
-genKSQuadCircHint sk@(SK _ s) = QuadHint <$> ksHint sk (s*s)
+  -> rnd (KSHint gad (Cyc t m' zq'))
+ksQuadCircHint sk@(SK _ s) = KSHint <$> ksHint sk (s*s)
 
 -- | Switch a quadratic ciphertext (i.e., one with three components)
 -- to a linear one under the /same/ key.
 keySwitchQuadCirc :: (KeySwitchCtx gad t m' zp zq zq')
-  => KSQuadCircHint gad (Cyc t m' zq') -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
-keySwitchQuadCirc (QuadHint hint) ct =
+  => KSHint gad (Cyc t m' zq') -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
+keySwitchQuadCirc (KSHint hint) ct =
   let CT MSD k l c = toMSD ct
       [c0,c1,c2] = coeffs c
       c2' = rescalePow c2
@@ -475,34 +475,34 @@ twaceCT (CT d 0 l c) = CT d 0 l (twace <$> c)
 twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 
 
-
-data TunnelHint gad t e' r' s' zp zq = THints (Linear t zq e' r' s') [Tagged gad [Polynomial (Cyc t s' zq)]]
+data TunnelInfo gad t (e :: Factored) (r :: Factored) (s :: Factored) e' r' s' zp zq =
+  TInfo (Linear t zq e' r' s') [Tagged gad [Polynomial (Cyc t s' zq)]]
 
 instance (NFData (Linear t zq e' r' s'), NFData (Cyc t s' zq))
-  => NFData (TunnelHint gad t e' r' s' zp zq) where
-  rnf (THints l t) = rnf l `seq` rnf t
+  => NFData (TunnelInfo gad t e r s e' r' s' zp zq) where
+  rnf (TInfo l t) = rnf l `seq` rnf t
 
 -- EAC: `e' ~ (e * ...) is not needed in this module, but it is needed as use sites...
-type GenTunnelHintCtx t e r s e' r' s' z zp zq gad =
+type GenTunnelInfoCtx t e r s e' r' s' z zp zq gad =
   (ExtendLinIdx e r s e' r' s', -- extendLin
    e' ~ (e * (r' / r)),         -- convenience; implied by prev constraint
    KSHintCtx gad t r' z zq,     -- ksHint
    Lift zp z, CElt t zp,        -- liftLin
    CElt t z, e' `Divides` r')   -- powBasis
 
-genTunnelHint :: forall gad t e r s e' r' s' z zp zq rnd .
-  (MonadRandom rnd, GenTunnelHintCtx t e r s e' r' s' z zp zq gad)
+tunnelInfo :: forall gad t e r s e' r' s' z zp zq rnd .
+  (MonadRandom rnd, GenTunnelInfoCtx t e r s e' r' s' z zp zq gad)
   => Linear t zp e r s
   -> SK (Cyc t s' z)
   -> SK (Cyc t r' z)
-  -> rnd (TunnelHint gad t e' r' s' zp zq)
-genTunnelHint f skout (SK _ sin) = -- generate hints
+  -> rnd (TunnelInfo gad t e r s e' r' s' zp zq)
+tunnelInfo f skout (SK _ sin) = -- generate hints
   (let f' = extendLin $ lift f :: Linear t z e' r' s'
        f'q = reduce f' :: Linear t zq e' r' s'
        -- choice of basis here must match coeffs* basis below
        ps = proxy powBasis (Proxy::Proxy e')
        comps = (evalLin f' . (adviseCRT sin *)) <$> ps
-   in THints f'q <$> CM.mapM (ksHint skout) comps)
+   in TInfo f'q <$> CM.mapM (ksHint skout) comps)
     \\ lcmDivides (Proxy::Proxy r) (Proxy::Proxy e')
 
 -- | Constraint synonym for ring tunneling.
@@ -515,12 +515,12 @@ type TunnelCtx t r s e' r' s' zp zq gad =
 -- | Homomorphically apply the \( E \)-linear function that maps the
 -- elements of the decoding basis of \( R/E \) to the corresponding
 -- \( S \)-elements in the input array.
-tunnelCT :: forall gad t r s e' r' s' zp zq .
-  (TunnelCtx t r s e' r' s' zp zq gad)
-  => TunnelHint gad t e' r' s' zp zq
+tunnelCT :: forall gad t e r s e' r' s' zp zq .
+  (TunnelCtx t r s e' r' s' zp zq gad, e ~ FGCD r s)
+  => TunnelInfo gad t e r s e' r' s' zp zq
   -> CT r zp (Cyc t r' zq)
   -> CT s zp (Cyc t s' zq)
-tunnelCT (THints f'q hints) ct =
+tunnelCT (TInfo f'q hints) ct =
   (let CT MSD 0 s c = toMSD $ absorbGFactors ct
        [c0,c1] = coeffs c
        -- apply E-linear function to constant term c0
@@ -543,57 +543,49 @@ instance (Protoable r, ProtoType r ~ R) => Protoable (SK r) where
   toProto (SK v r) = P.SecretKey (toProto r) (realToField v)
   fromProto (P.SecretKey r v) = (SK v) <$> fromProto r
 
-
 instance (Protoable rq, ProtoType rq ~ RqProduct) => Protoable (Polynomial rq) where
   type ProtoType (Polynomial rq) = P.RqPolynomial
   toProto = P.RqPolynomial . toProto . coeffs
   fromProto (P.RqPolynomial x) = fromCoeffs <$> fromProto x
 
 instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ RqProduct)
-  => Protoable (KSLinearHint gad r'q') where
-  type ProtoType (KSLinearHint gad r'q') = P.KSLinearHint
-  toProto (LinHint cs) =
-    P.KSLinearHint
+  => Protoable (KSHint gad r'q') where
+  type ProtoType (KSHint gad r'q') = P.KSHint
+  toProto (KSHint cs) =
+    P.KSHint
       (toProto $ proxy cs (Proxy::Proxy gad))
-      (uFromString $ show $ typeRep (Proxy::Proxy gad))
-  fromProto (P.KSLinearHint poly grepr) = do
-    let gadrepr' = show $ typeRep (Proxy::Proxy gad)
-        gadrepr = uToString grepr
+      (toProto $ typeRepFingerprint $ typeRep (Proxy::Proxy gad))
+  fromProto (P.KSHint poly gadrepr') = do
+    let gadrepr = toProto $ typeRepFingerprint $ typeRep (Proxy::Proxy gad)
     if gadrepr == gadrepr'
-    then (LinHint . tag) <$> fromProto poly
-    else error $ "Expected gadget " ++ gadrepr' ++ ", but serialized object is w.r.t. " ++ gadrepr
+    then (KSHint . tag) <$> fromProto poly
+    else error $ "Expected gadget " ++ (show $ typeRep (Proxy::Proxy gad))
 
-instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ RqProduct)
-  => Protoable (KSQuadCircHint gad r'q') where
-  type ProtoType (KSQuadCircHint gad r'q') = P.KSQuadCircHint
-  toProto (QuadHint cs) =
-    P.KSQuadCircHint
-      (toProto $ proxy cs (Proxy::Proxy gad))
-      (uFromString $ show $ typeRep (Proxy::Proxy gad))
-  fromProto (P.KSQuadCircHint poly grepr) = do
-    let gadrepr' = show $ typeRep (Proxy::Proxy gad)
-        gadrepr = uToString grepr
-    if gadrepr == gadrepr'
-    then (QuadHint . tag) <$> fromProto poly
-    else error $ "Expected gadget " ++ gadrepr' ++ ", but serialized object is w.r.t. " ++ gadrepr
-
-instance (Mod zp, Typeable gad, Protoable (Linear t zq e' r' s'), Protoable (KSLinearHint gad (Cyc t s' zq)))
-  => Protoable (TunnelHint gad t e' r' s' zp zq) where
-  type ProtoType (TunnelHint gad t e' r' s' zp zq) = P.TunnelHint
-  toProto (THints linf hints) =
-    P.TunnelHint
+instance (Mod zp, Typeable gad,
+          Protoable (Linear t zq e' r' s'),
+          Protoable (KSHint gad (Cyc t s' zq)), Reflects s Int, Reflects r Int, Reflects e Int)
+  => Protoable (TunnelInfo gad t e r s e' r' s' zp zq) where
+  type ProtoType (TunnelInfo gad t e r s e' r' s' zp zq) = P.TunnelInfo
+  toProto (TInfo linf hints) =
+    P.TunnelInfo
       (toProto linf)
-      (toProto $ LinHint <$> hints)
+      (toProto $ KSHint <$> hints)
+      (fromIntegral (proxy value (Proxy::Proxy e) :: Int))
+      (fromIntegral (proxy value (Proxy::Proxy r) :: Int))
+      (fromIntegral (proxy value (Proxy::Proxy s) :: Int))
       (fromIntegral $ proxy modulus (Proxy::Proxy zp))
-      (uFromString $ show $ typeRep (Proxy::Proxy gad))
-  fromProto (P.TunnelHint linf hints p grepr) =
-    let gadrepr' = show $ typeRep (Proxy::Proxy gad)
-        gadrepr = uToString grepr
-        p' = fromIntegral p
-        pval = proxy modulus (Proxy::Proxy zp)
-    in if p' == pval && gadrepr' == gadrepr
+  fromProto (P.TunnelInfo linf hints e r s p) =
+    let e' = fromIntegral $ (proxy value (Proxy::Proxy e) :: Int)
+        r' = fromIntegral $ (proxy value (Proxy::Proxy r) :: Int)
+        s' = fromIntegral $ (proxy value (Proxy::Proxy s) :: Int)
+        p' = fromIntegral $ proxy modulus (Proxy::Proxy zp)
+    in if p' == p && e' == e && r' == r && s' == s
        then do
          linf' <- fromProto linf
-         hs <- (map (\(LinHint x) -> x)) <$> fromProto hints
-         return $ THints linf' hs
-      else error $ "fail"
+         hs <- (map (\(KSHint x) -> x)) <$> fromProto hints
+         return $ TInfo linf' hs
+       else error $ "Error reading TunnelInfo proto data:" ++
+              "\nexpected p=" ++ show p' ++ ", got " ++ show p ++
+              "\nexpected e=" ++ show e' ++ ", got " ++ show e ++
+              "\nexpected r=" ++ show r' ++ ", got " ++ show r ++
+              "\nexpected s=" ++ show s' ++ ", got " ++ show s

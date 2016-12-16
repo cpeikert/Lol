@@ -56,7 +56,7 @@ rescaleBenches _ pgad _ =
   let ptmr = Proxy :: Proxy '(t,m,m',zp,zq,zq')
   in benchGroup (showType ptmr ++ "/SymmSHE") $ ($ ptmr) <$> [
        genBenchArgs "rescaleCT" bench_rescaleCT,
-       genBenchArgs "keySwitch" bench_keySwQ . addGen6 pgad]
+       genBenchArgs "keySwitchQuadCirc" bench_keySwQ . addGen6 pgad]
 
 tunnelBenches :: forall t r r' s s' zp zq gad rnd . (MonadRandom rnd, _)
   => Proxy '(r,r',s,s',zp,zq) -> Proxy gad -> Proxy t -> rnd Benchmark
@@ -107,7 +107,7 @@ bench_keySwQ :: forall t m m' z zp zq (zq' :: *) (gad :: *) . (z ~ LiftOf zp, _)
   => PT (Cyc t m zp) -> SK (Cyc t m' z) -> Bench '(t,m,m',zp,zq,zq',gad)
 bench_keySwQ pt sk = benchM $ do
   x :: CT m zp (Cyc t m' zq) <- encrypt sk pt
-  ksqHint :: KSQuadCircHint gad (Cyc t m' zq') <- genKSQuadCircHint sk
+  ksqHint :: KSHint gad (Cyc t m' zq') <- ksQuadCircHint sk
   let y = x*x
   return $ bench (keySwitchQuadCirc ksqHint) y
 
@@ -115,7 +115,7 @@ bench_keySwQ pt sk = benchM $ do
 -- can't figure out that `e `Divides` s`, even when it's explicitly listed!
 bench_tunnel :: forall t e e' r r' s s' z zp zq gad .
   (z ~ LiftOf zp,
-   GenTunnelHintCtx t e r s e' r' s' z zp zq gad,
+   GenTunnelInfoCtx t e r s e' r' s' z zp zq gad,
    TunnelCtx t r s e' r' s' zp zq gad,
    e ~ FGCD r s,
    ZPP zp, Mod zp,
@@ -134,5 +134,5 @@ bench_tunnel pt skin skout = benchM $ do
       -- only take as many crts as we need
       -- otherwise linearDec fails
       linf :: Linear t zp e r s = linearDec (take dim crts) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
-  hints :: TunnelHint gad t e' r' s' zp zq <- genTunnelHint linf skout skin
+  hints :: TunnelInfo gad t e r s e' r' s' zp zq <- tunnelInfo linf skout skin
   return $ bench (tunnelCT hints :: CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)) x

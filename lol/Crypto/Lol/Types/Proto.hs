@@ -18,11 +18,13 @@ module Crypto.Lol.Types.Proto
 
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Factored
+import Crypto.Proto.Lol.TypeRep
 
 import Control.Monad.Except
 import qualified Data.ByteString.Lazy as BS
 import Data.Foldable (toList)
 import Data.Sequence
+import GHC.Fingerprint
 
 import Prelude hiding (length)
 import System.Directory
@@ -147,3 +149,8 @@ parseProtoFile file = fromProto =<< readProtoType file
 
 writeProtoFile :: (ProtoReadable a, MonadIO m) => FilePath -> a -> m ()
 writeProtoFile file = liftIO . writeProtoType file . toProto
+
+instance Protoable Fingerprint where
+  type ProtoType Fingerprint = TypeRep
+  toProto (Fingerprint a b) = TypeRep a b
+  fromProto (TypeRep a b) = return $ Fingerprint a b

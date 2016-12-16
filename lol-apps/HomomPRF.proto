@@ -1,0 +1,18 @@
+import "Lol.proto";
+import "SHE.proto";
+
+// run this:
+
+// hprotoc -I ../lol -a Lol.proto=Crypto.Proto -a SHE.proto=Crypto.Proto -p Crypto.Proto HomomPRF.proto
+
+message LinearFuncChain {
+  repeated LinearRq funcs    = 1;
+}
+
+message TunnelInfoChain {
+  repeated TunnelInfo hints = 1;
+}
+
+message RoundHintChain {
+  repeated KSHint hints = 1;
+}

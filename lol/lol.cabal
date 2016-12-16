@@ -86,19 +86,21 @@ library
     Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.Unsafe.ZqBasic
 
+    Crypto.Proto.Lol
+    Crypto.Proto.Lol.LinearRq
+    Crypto.Proto.Lol.R
+    Crypto.Proto.Lol.Rq1
+    Crypto.Proto.Lol.RqProduct
+    Crypto.Proto.Lol.Kq1
+    Crypto.Proto.Lol.KqProduct
+    Crypto.Proto.Lol.TypeRep
     Crypto.Proto.RLWE
-    Crypto.Proto.RLWE.LinearRq
-    Crypto.Proto.RLWE.R
-    Crypto.Proto.RLWE.Rq
-    Crypto.Proto.RLWE.RqProduct
-    Crypto.Proto.RLWE.Kq
-    Crypto.Proto.RLWE.KqProduct
     Crypto.Proto.RLWE.SampleCont
     Crypto.Proto.RLWE.SampleDisc
     Crypto.Proto.RLWE.SampleRLWR
-    Crypto.Proto.RLWE.SampleContLegacy
-    Crypto.Proto.RLWE.SampleDiscLegacy
-    Crypto.Proto.RLWE.SampleRLWRLegacy
+    Crypto.Proto.RLWE.SampleCont1
+    Crypto.Proto.RLWE.SampleDisc1
+    Crypto.Proto.RLWE.SampleRLWR1
 
     Crypto.Lol.Utils.GenArgs
     Crypto.Lol.Utils.ShowType

@@ -2,7 +2,7 @@
 This package is primarily a library providing interfaces for lattice cryptography
 primitives. There are two main interfaces: 'Cyclotomic' and 'Tensor'. The
 Cyclotomic interface is the outward-facing API that is used to build cryptographic
-applications like pseudo-random functions, encryption, etc. The Tensor allows
+applications like pseudo-random functions, encryption, etc. The Tensor interface allows
 multiple backends to implement the functionality used by the Cyclotomic interface.
 Unless you are writing a new backend implementation, you shouldn't need to
 understand the Tensor interface. However, you *will* need an implementation of the

@@ -1,0 +1,45 @@
+// Proto messages for cyclotomic rings and other basic types in Lol
+
+// run this:
+
+// hprotoc -p Crypto.Proto Lol.proto
+
+// coeffs contains the function output corresponding to the decoding basis in R
+message LinearRq {
+  required uint32 e  = 1;
+  required uint32 r  = 2;
+  repeated RqProduct coeffs = 3;
+}
+
+// For each of the following, the "xs" array is with respect to the
+// decoding basis.
+
+message R {
+  required uint32 m  = 1;
+  repeated sint64 xs = 2;
+}
+
+message Rq1 {
+  required uint32 m  = 1;
+  required uint64 q  = 2;
+  repeated sint64 xs = 3;
+}
+
+message Kq1 {
+  required uint32 m  = 1;
+  required uint64 q  = 2;
+  repeated double xs = 3;
+}
+
+message RqProduct {
+  repeated Rq1 rqlist = 1;
+}
+
+message KqProduct {
+  repeated Kq1 kqlist = 1;
+}
+
+message TypeRep {
+  required uint64 a = 1;
+  required uint64 b = 2;
+}

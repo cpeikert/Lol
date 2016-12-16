@@ -17,9 +17,9 @@ import Generate
 
 import           Crypto.Lol
 import           Crypto.Lol.Cyclotomic.UCyc
+import qualified Crypto.Lol.RLWE.RLWR        as R
 import qualified Crypto.Lol.RLWE.Continuous as C
 import qualified Crypto.Lol.RLWE.Discrete   as D
-import qualified Crypto.Lol.RLWE.RLWR       as R
 import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.Random
 
@@ -30,18 +30,18 @@ import Crypto.Proto.RLWE.Challenges.DiscParams
 import Crypto.Proto.RLWE.Challenges.InstanceCont
 import Crypto.Proto.RLWE.Challenges.InstanceDisc
 import Crypto.Proto.RLWE.Challenges.InstanceRLWR
-import Crypto.Proto.RLWE.Challenges.InstanceContLegacy
-import Crypto.Proto.RLWE.Challenges.InstanceDiscLegacy
-import Crypto.Proto.RLWE.Challenges.InstanceRLWRLegacy
+import Crypto.Proto.RLWE.Challenges.InstanceCont1
+import Crypto.Proto.RLWE.Challenges.InstanceDisc1
+import Crypto.Proto.RLWE.Challenges.InstanceRLWR1
 import Crypto.Proto.RLWE.Challenges.RLWRParams
 import Crypto.Proto.RLWE.Challenges.Secret
-import Crypto.Proto.RLWE.Challenges.SecretLegacy
+import Crypto.Proto.RLWE.Challenges.Secret1
 
-import Crypto.Proto.RLWE.KqProduct
-import Crypto.Proto.RLWE.RqProduct
-import Crypto.Proto.RLWE.SampleContLegacy
-import Crypto.Proto.RLWE.SampleDiscLegacy
-import Crypto.Proto.RLWE.SampleRLWRLegacy
+import Crypto.Proto.Lol.KqProduct
+import Crypto.Proto.Lol.RqProduct
+import Crypto.Proto.RLWE.SampleCont1
+import Crypto.Proto.RLWE.SampleDisc1
+import Crypto.Proto.RLWE.SampleRLWR1
 import Crypto.Proto.RLWE.SampleCont
 import Crypto.Proto.RLWE.SampleDisc
 import Crypto.Proto.RLWE.SampleRLWR
@@ -184,13 +184,13 @@ readInstanceU :: (MonadIO m, MonadError String m)
 readInstanceU params' path challName cid iid = do
   let secFile = secretFilePath path challName iid
   s <- catchError
-         (readProtoType secFile >>= \SecretLegacy{..} -> return Secret{s=RqProduct $ singleton s,..})
+         (readProtoType secFile >>= \Secret1{..} -> return Secret{s=RqProduct $ singleton s,..})
          (\_->readProtoType secFile)
   let instFile = instFilePath path challName iid
   case params' of
     (Cparams ContParams{..}) -> do
       inst@(InstanceCont cid' iid' iparams _) <- catchError
-        (readProtoType instFile >>= \InstanceContLegacy{..} ->
+        (readProtoType instFile >>= \InstanceCont1{..} ->
           return $ InstanceCont{samples=updateLegacySampleCont<$>samples,..})
         (\_->readProtoType instFile)
       validateSecret secFile cid iid m q s
@@ -198,7 +198,7 @@ readInstanceU params' path challName cid iid = do
       return $ IC s inst
     (Dparams DiscParams{..}) -> do
       inst@(InstanceDisc cid' iid' iparams _) <- catchError
-        (readProtoType instFile >>= \InstanceDiscLegacy{..} ->
+        (readProtoType instFile >>= \InstanceDisc1{..} ->
           return InstanceDisc{samples=updateLegacySampleDisc<$>samples,..})
         (\_->readProtoType instFile)
       validateSecret secFile cid iid m q s
@@ -206,21 +206,21 @@ readInstanceU params' path challName cid iid = do
       return $ ID s inst
     (Rparams RLWRParams{..}) -> do
       inst@(InstanceRLWR cid' iid' iparams _) <- catchError
-        (readProtoType instFile >>= \InstanceRLWRLegacy{..} ->
+        (readProtoType instFile >>= \InstanceRLWR1{..} ->
           return InstanceRLWR{samples=updateLegacySampleRLWR<$>samples,..})
         (\_->readProtoType instFile)
       validateSecret secFile cid iid m q s
       validateInstance instFile cid iid params' cid' iid' (Rparams iparams)
       return $ IR s inst
 
-updateLegacySampleCont :: SampleContLegacy -> SampleCont
-updateLegacySampleCont SampleContLegacy{..} = SampleCont{a = RqProduct $ singleton a, b = KqProduct $ singleton b}
+updateLegacySampleCont :: SampleCont1 -> SampleCont
+updateLegacySampleCont SampleCont1{..} = SampleCont{a = RqProduct $ singleton a, b = KqProduct $ singleton b}
 
-updateLegacySampleDisc :: SampleDiscLegacy -> SampleDisc
-updateLegacySampleDisc SampleDiscLegacy{..} = SampleDisc{a = RqProduct $ singleton a, b = RqProduct $ singleton b}
+updateLegacySampleDisc :: SampleDisc1 -> SampleDisc
+updateLegacySampleDisc SampleDisc1{..} = SampleDisc{a = RqProduct $ singleton a, b = RqProduct $ singleton b}
 
-updateLegacySampleRLWR :: SampleRLWRLegacy -> SampleRLWR
-updateLegacySampleRLWR SampleRLWRLegacy{..} = SampleRLWR{a = RqProduct $ singleton a, b = RqProduct $ singleton b}
+updateLegacySampleRLWR :: SampleRLWR1 -> SampleRLWR
+updateLegacySampleRLWR SampleRLWR1{..} = SampleRLWR{a = RqProduct $ singleton a, b = RqProduct $ singleton b}
 
 checkParamsEq :: (MonadError String m, Show a, Eq a)
   => String -> String -> a -> a -> m ()

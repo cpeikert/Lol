@@ -68,11 +68,11 @@ import Crypto.Lol.Types.Unsafe.RRq hiding (RRq')
 import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 import Crypto.Lol.Utils.ShowType
 
-import Crypto.Proto.RLWE.Kq
-import Crypto.Proto.RLWE.KqProduct
-import Crypto.Proto.RLWE.R
-import Crypto.Proto.RLWE.Rq
-import Crypto.Proto.RLWE.RqProduct
+import Crypto.Proto.Lol.Kq1
+import Crypto.Proto.Lol.KqProduct
+import Crypto.Proto.Lol.R
+import Crypto.Proto.Lol.Rq1
+import Crypto.Proto.Lol.RqProduct
 
 import Data.Foldable as F
 import qualified Data.Sequence as S (fromList, singleton)
@@ -134,7 +134,7 @@ instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = fromIntegral (proxy value (Proxy::Proxy q) :: Int64)
         xs = S.fromList $ SV.toList $ SV.map LP.lift xs'
-    in RqProduct $ S.singleton Rq{..}
+    in RqProduct $ S.singleton Rq1{..}
   toProto x@(ZV _) = toProto $ toCT x
 
   fromProto (RqProduct xs') = do
@@ -145,7 +145,7 @@ instance (Fact m, Reflects q Int64) => Protoable (CT m (ZqBasic q Int64)) where
     unless (F.length rqlist == 1) $ throwError $
       "An error occurred while reading the proto type for CT.\n\
       \Expected a list of one Rq, but list has length " ++ show (F.length rqlist)
-    let [Rq{..}] = rqlist
+    let [Rq1{..}] = rqlist
         ys' = SV.fromList $ F.toList xs
         len = F.length xs
     unless (m' == fromIntegral m) $ throwError $
@@ -176,7 +176,7 @@ instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = round (proxy value (Proxy::Proxy q) :: Double)
         xs = S.fromList $ SV.toList $ SV.map LP.lift xs'
-    in KqProduct $ S.singleton Kq{..}
+    in KqProduct $ S.singleton Kq1{..}
   toProto x@(ZV _) = toProto $ toCT x
 
   fromProto (KqProduct xs') = do
@@ -187,7 +187,7 @@ instance (Fact m, Reflects q Double) => Protoable (CT m (RRq q Double)) where
     unless (F.length rqlist == 1) $ throwError $
       "An error occurred while reading the proto type for CT.\n\
       \Expected a list of one Rq, but list has length " ++ show (F.length rqlist)
-    let [Kq{..}] = rqlist
+    let [Kq1{..}] = rqlist
         ys' = SV.fromList $ F.toList xs
         len = F.length xs
     unless (m' == fromIntegral m) $ throwError $

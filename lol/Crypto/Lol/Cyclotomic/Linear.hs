@@ -26,8 +26,8 @@ import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
-import Crypto.Proto.RLWE.RqProduct (RqProduct)
-import Crypto.Proto.RLWE.LinearRq (LinearRq(LinearRq))
+import Crypto.Proto.Lol.RqProduct (RqProduct)
+import Crypto.Proto.Lol.LinearRq (LinearRq(LinearRq))
 
 import Algebra.Additive as Additive (C)
 
