@@ -1,3 +1,5 @@
+// proto messages for the RLWE/RLWR problems
+
 import "Lol.proto";
 
 // Proto messages for RLWE/RLWR samples
@@ -6,6 +8,8 @@ import "Lol.proto";
 
 // hprotoc -a Lol.proto=Crypto.Proto -p Crypto.Proto RLWE.proto
 
+// the Sample*1 messages were used to serialize RLWE/RLWR samples in the
+// RLWE/RLWR challenges, and only support cyclotomic rings mod a single modulus
 message SampleCont1 {
   required Rq1 a      = 1;
   required Kq1 b      = 2;
@@ -21,16 +25,19 @@ message SampleRLWR1 {
   required Rq1 b      = 2;  // for some modulus p < q
 }
 
+// continuous RLWE sample, possibly with mutliple moduli
 message SampleCont {
   required RqProduct a = 1;
   required KqProduct b = 2;
 }
 
+// discrete RLWE sample, possibly with multiple moduli
 message SampleDisc {
   required RqProduct a = 1;
   required RqProduct b = 2;
 }
 
+// RLWR sample, possibly with multiple moduli
 message SampleRLWR {
   required RqProduct a = 1;
   required RqProduct b = 2;  // for some modulus p < q

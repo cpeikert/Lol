@@ -17,7 +17,7 @@ copyright:           Eric Crockett, Chris Peikert
 category:            Crypto
 stability:           experimental
 build-type:          Simple
-extra-source-files:  README, CHANGES.md
+extra-source-files:  README, CHANGES.md, Challenges.proto
 cabal-version:       >= 1.10
 description:
     Contains a library for reading serialized challenges

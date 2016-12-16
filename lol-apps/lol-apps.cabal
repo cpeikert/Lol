@@ -17,10 +17,7 @@ copyright:           Eric Crockett, Chris Peikert
 category:            Crypto
 stability:           experimental
 build-type:          Simple
-extra-source-files:  README, CHANGES.md,
-                     tests/SHETests.hs,
-                     tests/HomomPRFTests.hs,
-                     tests/KHPRFTests.hs
+extra-source-files:  README, CHANGES.md, SHE.proto, HomomPRF.proto
 cabal-version:       >= 1.10
 description:
     This library contains example cryptographic applications built using

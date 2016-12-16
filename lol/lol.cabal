@@ -17,7 +17,7 @@ copyright:           Eric Crockett, Chris Peikert
 category:            Crypto
 stability:           experimental
 build-type:          Simple
-extra-source-files:  README, CHANGES.md
+extra-source-files:  README, CHANGES.md, Lol.proto, RLWE.proto
 cabal-version:       >= 1.10
 description:
     Λ ∘ λ (Lol) is a general-purpose library for ring-based lattice cryptography.

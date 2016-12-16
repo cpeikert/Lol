@@ -1,3 +1,6 @@
+// proto messages for precomputation step of homomorphic PRF
+// evaluation and testing
+
 import "Lol.proto";
 import "SHE.proto";
 

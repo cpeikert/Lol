@@ -1,3 +1,5 @@
+// proto messages for key switch hints and secret keys from SymmSHE
+
 import "Lol.proto";
 
 // run this:
