@@ -9,6 +9,8 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
+-- | Example, test, and macro-benchmark for homomorphic evaluation of a PRF.
+
 module HomomPRFMain where
 
 import Control.DeepSeq
@@ -26,7 +28,7 @@ import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Random
 import Crypto.Random.DRBG
 
-import Data.Promotion.Prelude.List
+import Data.Promotion.Prelude
 import Data.Time.Clock
 import Data.Typeable
 import MathObj.Matrix  (columns)
@@ -51,6 +53,12 @@ tskPath   p = protoDir p "encKey.secret"
 -- | The output key of tunneling, used for rounding; also for decryption
 rskPath   p = protoDir p "decKey.secret"
 
+-- R' - ... - S'
+-- |  -  |  - |
+-- R  - ... - S
+-- PRF evaluation usually goes from R' to R. Homomorphic evaluation
+-- goes from R' to S, via S'. To test, we run the computation in the clear
+-- from R' to R, then tunnel in the clear to S.
 main :: IO ()
 main = do
   putStrLn $ "Starting homomorphic PRF evaluation with tensor " ++ show (typeRep (Proxy::Proxy T))

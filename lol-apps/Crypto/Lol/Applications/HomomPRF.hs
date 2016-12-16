@@ -12,6 +12,9 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
+-- | \( \def\Z{\mathbb{Z}} \)
+-- Homomorphic evaluation of the PRF from [BP14].
+
 module Crypto.Lol.Applications.HomomPRF
 (homomPRF, homomPRFM
 ,RoundHints(..), roundHints
@@ -19,7 +22,7 @@ module Crypto.Lol.Applications.HomomPRF
 ,EvalHints(..)
 ,MultiTunnelCtx, ZqUp, ZqDown
 ,TwoOf
-,Tunnel, Fst, Snd, PTRound, ZqResult
+,Tunnel, PTRound, ZqResult
 ,PTRings, PTTunnel(..), TunnelFuncs(..)) where
 
 import Control.DeepSeq
@@ -45,7 +48,7 @@ import qualified Crypto.Proto.Lol.RqProduct as P
 import qualified Crypto.Proto.SHE.TunnelInfo as P
 
 import Data.List.Split (chunksOf)
-import Data.Promotion.Prelude.List
+import Data.Promotion.Prelude
 
 import GHC.TypeLits hiding (type (*))
 
@@ -53,13 +56,10 @@ import MathObj.Matrix (columns)
 
 import Data.Sequence (empty, (<|), ViewL(..), viewl)
 
+-- | The element before @zq@ in type list @zqs@.
 type ZqUp zq zqs = NextListElt zq (Reverse zqs)
+-- | The element after @zq@ in type list @zqs@.
 type ZqDown zq zqs = NextListElt zq zqs
-
-type family Fst (a :: (k1,k2)) :: k1 where
-  Fst '(a,b) = a
-type family Snd (a :: (k1,k2)) :: k2 where
-  Snd '(a,b) = b
 
 type family NextListElt (x :: k) (xs :: [k]) :: k where
   NextListElt x (x ': y ': ys) = y
@@ -69,6 +69,7 @@ type family NextListElt (x :: k) (xs :: [k]) :: k where
   NextListElt x '[] = TypeError ('Text "Could not find type " ':<>: 'ShowType x ':<>: 'Text " in the list." ':$$:
                                  'Text "You must use parameters that are in the type lists!")
 
+-- | The offline data needed for homomorphic PRF evaluation.
 data EvalHints t rngs z zp zq zqs gad where
   Hints :: (UnPP (CharOf zp) ~ '(Prime2, e))
         => TunnelInfoChain gad t rngs zp (ZqUp zq zqs)
@@ -81,6 +82,7 @@ instance (UnPP (CharOf zp) ~ '(Prime2, e),
   => NFData (EvalHints t rngs z zp zq zqs gad) where
   rnf (Hints t r) = rnf t `seq` rnf r
 
+-- | Monadic version of 'homomPRF'
 homomPRFM ::
   (MonadReader (EvalHints t rngs z zp zq zqs gad) mon,
    MonadState (PRFState (Cyc t r zp) (Cyc t r (TwoOf zp))) mon,
@@ -94,6 +96,10 @@ homomPRFM ct x = do
   hints <- ask
   state $ homomPRF' hints ct x
 
+-- | Evaluates the PRF family indexed by the encrypted secret on the input,
+-- relative to some PRF state. Note that the algorithm in [BP14] outputs a
+-- /vector/; this function only outputs the encryption of the first coefficient
+-- of that vector.
 homomPRF :: (MulPublicCtx t r r' zp zq,
              MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs,
              PTRound t s s' e zp (ZqDown zq zqs) z gad zqs)
@@ -121,15 +127,16 @@ homomPRF' (Hints tHints rHints) ct x st =
       ctMatrix2 = tunnel (Proxy::Proxy zqs) tHints ctMatrix1
   in (ptRound rHints ctMatrix2, st')
 
+-- | \(\Z_2\) for ZqBasic with a 'PrimePower' modulus
 type family TwoOf (a :: k) :: k
-type instance TwoOf (a :: PrimePower) = PP2
-type instance TwoOf (ZqBasic q i) = ZqBasic (TwoOf q) i
+type instance TwoOf (ZqBasic (q :: PrimePower) i) = ZqBasic PP2 i
 
--- For Rounding
+-- For rounding
 type family Div2 (a :: k) :: k
 type instance Div2 (ZqBasic q i) = ZqBasic (Div2 q) i
 type instance Div2 (pp :: PrimePower) = Head (UnF (PpToF pp / F2))
 
+-- type-restricted versions of rescaleLinearCT
 roundCTUp :: (RescaleCyc (Cyc t) zq (ZqUp zq zqs), ToSDCtx t m' zp zq)
   => Proxy zqs -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' (ZqUp zq zqs))
 roundCTUp _ = rescaleLinearCT
@@ -155,7 +162,7 @@ roundCTDown _ = rescaleLinearCT
 
 
 
-
+-- | Quadratic key switch hints for the rounding phase of PRF evaluation.
 data RoundHints t m m' z e zp zq zqs gad where
   RHNil :: RoundHints t m m' z e zp zq zqs gad
   RHCons :: KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))
@@ -192,17 +199,21 @@ instance (Protoable (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))),
     bs <- fromProto $ P.RoundHintChain as
     return $ RHCons b bs
 
+-- | Functions related to homomorphically rounding from 2^k to 2
 class (UnPP (CharOf zp) ~ '(Prime2,e)) => PTRound t m m' e zp zq z gad zqs where
   type ZqResult e zq (zqs :: [*])
 
+  -- | Generate hints for rounding from \(R_p=R_{2^k}\) to \(R_2\)
   roundHints :: (MonadRandom rnd)
              => SK (Cyc t m' z) -> rnd (RoundHints t m m' z e zp zq zqs gad)
 
-  -- round coeffs near 0 to 0 and near q/2 to 1
   -- round(q/p*x) (with "towards infinity tiebreaking")
   -- = msb(x+q/4) = floor((x+q/4)/(q/2))
+  -- | Round coeffs in CRT slots near 0 to 0 and near q/2 to 1, with a short-cut
+  -- on the first level of the rounding tree.
   ptRound :: RoundHints t m m' z e zp zq zqs gad -> CT m zp (Cyc t m' zq) -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
 
+  -- | All levels other than the first level of the rounding tree.
   ptRoundInternal :: RoundHints t m m' z e zp zq zqs gad -> [CT m zp (Cyc t m' zq)] -> CT m (TwoOf zp) (Cyc t m' (ZqResult e zq zqs))
 
 instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
@@ -284,6 +295,7 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
 
 -- For (homomorphic) tunneling
 
+-- | Sequence of 'TunnelInfo' for consecutive ring tunnels.
 data TunnelInfoChain gad t xs zp zq where
   THNil :: TunnelInfoChain gad t '[ '(m,m') ] zp zq
   THCons :: (xs ~ ('(r,r') ': '(s,s') ': rngs), e' ~ (e * (r' / r)), e ~ FGCD r s)
@@ -324,12 +336,15 @@ instance (e' ~ (e * (r' / r)), e ~ FGCD r s,
     ys <- fromProto $ P.TunnelInfoChain xs
     return $ THCons y ys
 
+-- | Functions related to homomorphic ring tunneling.
 class Tunnel xs t zp zq gad where
 
+  -- | Generates 'TunnelInfo' for each tunnel step from @Head xs@ to @Last xs@.
   tunnelInfoChain :: (MonadRandom rnd, Head xs ~ '(r,r'), Last xs ~ '(s,s'),
                   Lift zp z, CElt t z, ToInteger z, Reduce z zq) -- constraints involving 'z' from GenTunnelInfoCtx
               => SK (Cyc t r' z) -> rnd (TunnelInfoChain gad t xs zp zq, SK (Cyc t s' z)) -- , TunnelFuncs t (PTRings xs) zp
 
+  -- | Tunnel from @Head xs@ to @Last xs@.
   tunnelInternal :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
     TunnelInfoChain gad t xs zp zq -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
 
@@ -383,6 +398,7 @@ instance (ExtendLinIdx e r s e' r' s', -- tunnelInfoChain
 
   tunnelInternal (THCons thint rest) = tunnelInternal rest . tunnelCT thint
 
+-- | Context for multi-step homomorphic tunneling.
 type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
   (Head rngs ~ '(r,r'), Last rngs ~ '(s,s'), Tunnel rngs t zp (ZqUp zq zqs) gad, ZqDown (ZqUp zq zqs) zqs ~ zq,
    RescaleCyc (Cyc t) zq (ZqUp zq zqs), RescaleCyc (Cyc t) (ZqUp zq zqs) zq, RescaleCyc (Cyc t) zq (ZqDown zq zqs),
@@ -390,6 +406,10 @@ type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
 
 -- EAC: why round down twice? We bump the modulus up to begin with to handle
 -- the key switches, so we knock thatt off, then another for accumulated noise
+-- | End-to-end multi-step homomorphic tunneling. First add a modulus to the
+-- ciphertext for the key switches, then 'tunnelInternal', then round down twice:
+-- once to remove the key switch modulus, and once to dampen the noise incurred
+-- while tunneling.
 tunnel :: forall rngs r r' s s' t z zp zq gad zqs . (MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs)
   => Proxy zqs -> TunnelInfoChain gad t rngs zp (ZqUp zq zqs) -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
 tunnel pzqs hints x =
@@ -462,12 +482,17 @@ instance (ProtoType (t s zp) ~ P.RqProduct,
     bs <- fromProto $ P.LinearFuncChain as
     return $ TFCons b bs
 
+-- | The plaintext rings for a list of plaintext/ciphertext ring pairs.
 type family PTRings xs where
   PTRings '[] = '[]
   PTRings ( '(a,b) ': rest ) = a ': (PTRings rest)
 
+-- | Functions for in-the-clear tunneling, needed to test the correctness of
+-- homomorphic PRF evaluation.
 class PTTunnel t xs zp where
+  -- | Generate the linear functions to apply when tunneling from @Head xs@ to @Last xs@.
   ptTunnelFuncs :: TunnelFuncs t xs zp
+  -- | Tunnel a ring element from @Head xs@ to @Last xs@.
   ptTunnel :: (Head xs ~ r, Last xs ~ s) => TunnelFuncs t xs zp -> Cyc t r zp -> Cyc t s zp
 
 instance PTTunnel t '[r] z where
