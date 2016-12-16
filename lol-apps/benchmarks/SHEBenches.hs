@@ -107,7 +107,7 @@ bench_keySwQ :: forall t m m' z zp zq (zq' :: *) (gad :: *) . (z ~ LiftOf zp, _)
   => PT (Cyc t m zp) -> SK (Cyc t m' z) -> Bench '(t,m,m',zp,zq,zq',gad)
 bench_keySwQ pt sk = benchM $ do
   x :: CT m zp (Cyc t m' zq) <- encrypt sk pt
-  ksqHint :: KSHint gad (Cyc t m' zq') <- ksQuadCircHint sk
+  ksqHint :: KSQuadCircHint gad (Cyc t m' zq') <- ksQuadCircHint sk
   let y = x*x
   return $ bench (keySwitchQuadCirc ksqHint) y
 

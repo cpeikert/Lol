@@ -167,7 +167,7 @@ prop_ksLin :: forall t m m' z zp (zq :: *) (zq' :: *) (gad :: *) . (z ~ LiftOf z
   => PT (Cyc t m zp) -> SK (Cyc t m' z) -> SK (Cyc t m' z) -> Test '(t,m,m',zp,zq,zq',gad)
 prop_ksLin pt skin skout = testIO $ do
   ct <- encrypt skin pt
-  kslHint :: KSHint gad (Cyc t m' zq') <- ksLinearHint skout skin
+  kslHint :: KSLinearHint gad (Cyc t m' zq') <- ksLinearHint skout skin
   let ct' = keySwitchLinear kslHint ct :: CT m zp (Cyc t m' zq)
       pt' = decryptUnrestricted skout ct'
   return $ pt == pt'
@@ -177,7 +177,7 @@ prop_ksQuad :: forall t m m' z zp zq (zq' :: *) (gad :: *) . (z ~ LiftOf zp, _)
 prop_ksQuad pt1 pt2 sk = testIO $ do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 <- encrypt sk pt2
-  ksqHint :: KSHint gad (Cyc t m' zq') <- ksQuadCircHint sk
+  ksqHint :: KSQuadCircHint gad (Cyc t m' zq') <- ksQuadCircHint sk
   let ct' = keySwitchQuadCirc ksqHint $ ct1*ct2
       ptProd = pt1*pt2
       pt' = decryptUnrestricted sk ct'

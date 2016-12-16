@@ -158,14 +158,14 @@ roundCTDown _ = rescaleLinearCT
 
 data RoundHints t m m' z e zp zq zqs gad where
   RHNil :: RoundHints t m m' z e zp zq zqs gad
-  RHCons :: KSHint gad (Cyc t m' (ZqUp zq zqs))
+  RHCons :: KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))
            -> RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad
            -> RoundHints t m m' z ('S e) zp zq zqs gad
 
 instance NFData (RoundHints t m m' z P1 zp zq zqs gad) where
   rnf RHNil = ()
 
-instance (NFData (KSHint gad (Cyc t m' (ZqUp zq zqs))),
+instance (NFData (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))),
           NFData (RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad))
   => NFData (RoundHints t m m' z ('S e) zp zq zqs gad) where
   rnf (RHCons h hs) = rnf h `seq` rnf hs
@@ -176,7 +176,7 @@ instance Protoable (RoundHints t m m' z P1 zp zq zqs gad) where
   fromProto (P.RoundHintChain xs) | xs == empty = return RHNil
   fromProto _ = throwError $ "Got non-empty chain on fromProto for RoundHints"
 
-instance (Protoable (KSHint gad (Cyc t m' (ZqUp zq zqs))),
+instance (Protoable (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))),
           Protoable (RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad),
           ProtoType (RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad) ~ P.RoundHintChain)
   => Protoable (RoundHints t m m' z ('S e) zp zq zqs gad) where
@@ -223,7 +223,7 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
           RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq,                            -- rescaleLinearCT
           ModSwitchPTCtx t m' zp zp' zq',                                           -- modSwitchPT
           PTRound t m m' e zp' zq' z gad zqs,                                       -- recursive call
-          Protoable (KSHint gad (Cyc t m' (ZqUp zq zqs))))                  -- toProto
+          Protoable (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))))                  -- toProto
   => PTRound t m m' ('S e) (ZqBasic p i) (zq :: *) z gad zqs where
   type ZqResult ('S e) zq zqs = ZqResult e (ZqDown zq zqs) zqs
 

@@ -62,14 +62,14 @@ main = do
       pt1 = decrypt sk ct1
   print $ "Test1: " ++ (show $ 2*plaintext == pt1)
 
-  hint :: KSHint KSGad (Cyc T CTIndex CTZq2) <- ksQuadCircHint sk
+  hint :: KSQuadCircHint KSGad (Cyc T CTIndex CTZq2) <- ksQuadCircHint sk
   let ct2 = keySwitchQuadCirc hint $ ciphertext*ciphertext
       pt2 = decrypt sk ct2
   -- note: this requires a *LARGE* CT modulus to succeed
   print $ "Test2: " ++ (show $ plaintext*plaintext == pt2)
 
   -- so we support using *several* small moduli:
-  hint' :: KSHint KSGad (Cyc T CTIndex CTZq3) <- ksQuadCircHint sk
+  hint' :: KSQuadCircHint KSGad (Cyc T CTIndex CTZq3) <- ksQuadCircHint sk
   ciphertext' :: CTRing2 <- encrypt sk plaintext
   let ct3 = keySwitchQuadCirc hint' $ ciphertext' * ciphertext'
       -- the CT modulus of ct3 is a ring product, which can't be lifted to a fixed size repr
