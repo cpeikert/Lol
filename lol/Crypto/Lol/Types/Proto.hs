@@ -18,7 +18,7 @@ module Crypto.Lol.Types.Proto
 
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Factored
-import Crypto.Proto.Lol.TypeRep
+import Crypto.Proto.Lol.TypeRep (TypeRep(TypeRep))
 
 import Control.Monad.Except
 import qualified Data.ByteString.Lazy as BS
