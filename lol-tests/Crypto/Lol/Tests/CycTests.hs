@@ -17,7 +17,6 @@ import Control.Applicative
 import Control.Monad (liftM2,join)
 
 import Crypto.Lol
-import Crypto.Lol.Types.ZPP
 
 import Crypto.Lol.Utils.ShowType
 import Crypto.Lol.Tests
@@ -43,22 +42,22 @@ cycTests2 _ _ =
       genTestArgs "coeffsPow" prop_coeffsBasis
       ]
 
-prop_mulgPow :: (CElt t r, Fact m, Eq r, IntegralDomain r) => Cyc t m r -> Test '(t,m,r)
+prop_mulgPow :: _ => Cyc t m r -> Test '(t,m,r)
 prop_mulgPow x =
   let y = advisePow x
   in test $ y == (fromJust' "prop_mulgPow failed divisibility!" $ divG $ mulG y)
 
-prop_mulgDec :: (CElt t r, Fact m, Eq r, IntegralDomain r) => Cyc t m r -> Test '(t,m,r)
+prop_mulgDec :: _ => Cyc t m r -> Test '(t,m,r)
 prop_mulgDec x =
   let y = adviseDec x
   in test $ y == (fromJust' "prop_mulgDec failed divisibility!" $ divG $ mulG y)
 
-prop_mulgCRT :: (CElt t r, Fact m, Eq r, IntegralDomain r) => Cyc t m r -> Test '(t,m,r)
+prop_mulgCRT :: _ => Cyc t m r -> Test '(t,m,r)
 prop_mulgCRT x =
   let y = adviseCRT x
   in test $ y == (fromJust' "prop_mulgCRT failed divisibility!" $ divG $ mulG y)
 
-prop_coeffsBasis :: forall t m m' r . (m `Divides` m', CElt t r, Eq r)
+prop_coeffsBasis :: forall t m m' r . _
   => Cyc t m' r -> Test '(t,m,m',r)
 prop_coeffsBasis x =
   let xs = map embed (coeffsCyc Pow x :: [Cyc t m r])
@@ -67,7 +66,7 @@ prop_coeffsBasis x =
 
 -- verifies that CRT set elements satisfy c_i * c_j = delta_ij * c_i
 -- necessary (but not sufficient) condition
-prop_crtSet_pairs :: forall t m m' r . (m `Divides` m', ZPP r, Eq r, CElt t r, CElt t (ZpOf r))
+prop_crtSet_pairs :: forall t m m' r . (CElt t r, Fact m', _)
   => Test '(t,m,m',r)
 prop_crtSet_pairs =
   let crtset = proxy crtSet (Proxy::Proxy m) :: [Cyc t m' r]
