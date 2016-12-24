@@ -396,6 +396,9 @@ mulGCT (CT enc k l c) = CT enc (k+1) l $ mulG <$> c
 
 ---------- NumericPrelude instances ----------
 
+-- CJP: should really try to remove Eq zp constraint here: it's only
+-- used to throw error in (+), and causes downstream complications.
+
 instance (Eq zp, m `Divides` m', ToSDCtx t m' zp zq)
          => Additive.C (CT m zp (Cyc t m' zq)) where
 
