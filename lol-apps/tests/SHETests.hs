@@ -29,9 +29,11 @@ sheTests _ _ =
   in ($ ptmr) <$> [
    genTestArgs "DecU . Enc" prop_encDecU,
    genTestArgs "AddPub"     prop_addPub,
+   genTestArgs "MulScal"    prop_mulScal,
    genTestArgs "MulPub"     prop_mulPub,
    genTestArgs "ScalarPub"  prop_addScalar,
    genTestArgs "CTAdd"      prop_ctadd,
+   genTestArgs "CTAdd2"     prop_ctadd2,
    genTestArgs "CTMul"      prop_ctmul,
    genTestArgs "CT zero"    prop_ctzero,
    genTestArgs "CT one"     prop_ctone]
@@ -89,6 +91,17 @@ prop_addPub a pt sk = testIO $ do
       pt' = decryptUnrestricted sk ct'
   return $ pt' == (a+pt)
 
+prop_mulScal :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
+  => zp
+     -> PT (Cyc t m zp)
+     -> SK (Cyc t m' z)
+     -> Test '(t,m,m',zp,zq)
+prop_mulScal a pt sk = testIO $ do
+  ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
+  let ct' = mulScalar a ct
+      pt' = decryptUnrestricted sk ct'
+  return $ pt' == ((scalarCyc a) * pt)
+
 prop_mulPub :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
   => Cyc t m zp
      -> PT (Cyc t m zp)
@@ -117,6 +130,20 @@ prop_ctadd pt1 pt2 sk = testIO $ do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
   let ct' = ct1 + ct2
+      pt' = decryptUnrestricted sk ct'
+  return $ pt1+pt2 == pt'
+
+-- tests adding with different scale values
+prop_ctadd2 :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
+  => PT (Cyc t m zp)
+     -> PT (Cyc t m zp)
+     -> SK (Cyc t m' z)
+     -> Test '(t,m,m',zp,zq)
+prop_ctadd2 pt1 pt2 sk = testIO $ do
+  ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
+  ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
+  -- no-op to induce unequal scale values
+  let ct' = ct1 + (modSwitchPT ct2)
       pt' = decryptUnrestricted sk ct'
   return $ pt1+pt2 == pt'
 
