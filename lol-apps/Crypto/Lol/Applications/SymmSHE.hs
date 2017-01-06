@@ -373,7 +373,7 @@ addPublic b ct = let CT LSD k l c = toLSD ct in
       b' :: Cyc t m zq = reduce $ liftPow $ linv * (iterate mulG b !! k)
   in CT LSD k l $ c + P.const (embed b')
 
--- | Constraint synonym for multiplying a public scalar vlaue with
+-- | Constraint synonym for multiplying a public scalar value with
 -- an encrypted value.
 type MulScalarCtx t m' zp zq =
   (Lift' zp, Reduce (LiftOf zp) zq, Fact m', CElt t zq)
@@ -406,7 +406,7 @@ mulGCT (CT enc k l c) = CT enc (k+1) l $ mulG <$> c
 
 ---------- NumericPrelude instances ----------
 
-instance (Eq zp, AddScalarCtx t m' zp zq, m `Divides` m', ToSDCtx t m' zp zq)
+instance (Eq zp, MulScalarCtx t m' zp zq, m `Divides` m', ToSDCtx t m' zp zq)
          => Additive.C (CT m zp (Cyc t m' zq)) where
 
   zero = CT LSD 0 one zero
