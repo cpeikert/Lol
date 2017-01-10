@@ -15,16 +15,17 @@ import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Tests
+import Crypto.Lol.Utils.ShowType
 
 import MathObj.Matrix
 
 import qualified Test.Framework as TF
 
-khprfTests :: forall t m zp zq gad rnd . (MonadRandom rnd, _)
-  => Proxy '(m,zp,zq,gad) -> Proxy t -> [rnd TF.Test]
+khprfTests :: forall t m zp zq gad . (_)
+  => Proxy '(m,zp,zq,gad) -> Proxy t -> TF.Test
 khprfTests _ _ =
   let ptmr = Proxy::Proxy '(t,m,zp,zq,gad)
-  in ($ ptmr) <$> [
+  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
    genTestArgs "PRF_3bits" (prop_keyHomom 3),
    genTestArgs "PRF_5bits" (prop_keyHomom 5)]
 

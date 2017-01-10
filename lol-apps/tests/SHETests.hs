@@ -11,22 +11,22 @@
 
 module SHETests (sheTests, decTest, modSwPTTest, ksTests, twemTests, tunnelTests) where
 
-import Crypto.Lol.Tests
-
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
+import Crypto.Lol.Tests
+import Crypto.Lol.Utils.ShowType
 
 import qualified Test.Framework as TF
 
-sheTests :: forall t m m' zp zq rnd . (MonadRandom rnd, _)
-  => Proxy '(m,m',zp,zq) -> Proxy t -> [rnd TF.Test]
+sheTests :: forall t m m' zp zq . (_)
+  => Proxy '(m,m',zp,zq) -> Proxy t -> TF.Test
 sheTests _ _ =
   let ptmr = Proxy::Proxy '(t,m,m',zp,zq)
-  in ($ ptmr) <$> [
+  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
    genTestArgs "DecU . Enc" prop_encDecU,
    genTestArgs "AddPub"     prop_addPub,
    genTestArgs "MulScal"    prop_mulScal,
@@ -39,35 +39,42 @@ sheTests _ _ =
    genTestArgs "CT one"     prop_ctone]
 
 -- zq must be liftable
-decTest :: forall t m m' zp zq rnd . (MonadRandom rnd, _)
-  => Proxy '(m,m',zp,zq) -> Proxy t -> [rnd TF.Test]
+decTest :: forall t m m' zp zq . (_)
+  => Proxy '(m,m',zp,zq) -> Proxy t -> TF.Test
 decTest _ _ =
-  [genTestArgs "Dec . Enc" prop_encDec (Proxy::Proxy '(t,m,m',zp,zq))]
+  let ptmr = Proxy::Proxy '(t,m,m',zp,zq)
+  in testGroupM (showType ptmr)
+       [genTestArgs "Dec . Enc" prop_encDec ptmr]
 
-modSwPTTest :: forall t m m' zp zp' zq rnd . (MonadRandom rnd, _)
-  => Proxy '(m,m',zp,zp',zq) -> Proxy t -> [rnd TF.Test]
+modSwPTTest :: forall t m m' zp zp' zq . (_)
+  => Proxy '(m,m',zp,zp',zq) -> Proxy t -> TF.Test
 modSwPTTest _ _ =
-  [genTestArgs "ModSwitch PT" prop_modSwPT (Proxy::Proxy '(t,m,m',zp,zp',zq))]
+  let ptmr = Proxy::Proxy '(t,m,m',zp,zp',zq)
+  in testGroupM (showType ptmr)
+       [genTestArgs "ModSwitch PT" prop_modSwPT ptmr]
 
-ksTests :: forall t m m' zp zq zq' gad rnd . (MonadRandom rnd, _)
-  => Proxy '(m,m',zp,zq,zq') -> Proxy gad -> Proxy t -> [rnd TF.Test]
+ksTests :: forall t m m' zp zq zq' gad . (_)
+  => Proxy '(m,m',zp,zq,zq') -> Proxy gad -> Proxy t -> TF.Test
 ksTests _ _ _ =
   let ptmr = Proxy::Proxy '(t,m,m',zp,zq,zq',gad)
-  in ($ ptmr) <$> [
+  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
     genTestArgs "KSLin" prop_ksLin,
     genTestArgs "KSQuad" prop_ksQuad]
 
-twemTests :: forall t r r' s s' zp zq rnd . (MonadRandom rnd, _)
-  => Proxy '(r,r',s,s',zp,zq) -> Proxy t -> [rnd TF.Test]
+twemTests :: forall t r r' s s' zp zq . (_)
+  => Proxy '(r,r',s,s',zp,zq) -> Proxy t -> TF.Test
 twemTests _ _ =
   let ptmr = Proxy::Proxy '(t,r,r',s,s',zp,zq)
-  in [genTestArgs "Embed" prop_ctembed ptmr,
+  in testGroupM (showType ptmr) [
+      genTestArgs "Embed" prop_ctembed ptmr,
       genTestArgs "Twace" prop_cttwace ptmr]
 
-tunnelTests :: forall t r r' s s' zp zq gad rnd . (MonadRandom rnd, _)
-  => Proxy '(r,r',s,s',zp,zq) -> Proxy gad -> Proxy t -> [rnd TF.Test]
+tunnelTests :: forall t r r' s s' zp zq gad . (_)
+  => Proxy '(r,r',s,s',zp,zq) -> Proxy gad -> Proxy t -> TF.Test
 tunnelTests _ _ _ =
-  [genTestArgs "Tunnel" prop_ringTunnel (Proxy::Proxy '(t,r,r',s,s',zp,zq,gad))]
+  let ptmr = Proxy::Proxy '(t,r,r',s,s',zp,zq,gad)
+  in testGroupM (showType ptmr)
+       [genTestArgs "Tunnel" prop_ringTunnel ptmr]
 
 
 
