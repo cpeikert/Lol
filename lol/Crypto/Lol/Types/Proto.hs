@@ -9,15 +9,12 @@
 
 module Crypto.Lol.Types.Proto
 (Protoable(..), msgPut, msgGet
-,toProtoProduct, fromProtoNestLeft, fromProtoNestRight
 ,uToString, uFromString
 ,readProtoType, parseProtoFile
 ,writeProtoType, writeProtoFile
 ,ProtoReadable
 ) where
 
-import Crypto.Lol.Cyclotomic.Tensor
-import Crypto.Lol.Factored
 import Crypto.Proto.Lol.TypeRep (TypeRep(TypeRep))
 
 import Control.Monad.Except
@@ -70,58 +67,6 @@ msgGet bs = do
   (msg, bs') <- messageGet bs
   p <- fromProto msg
   return (p, bs')
-
-toProtoProduct ::
-  (Protoable (t m a), Protoable (t m b),
-   ProtoType (t m a) ~ ProtoType (t m b),
-   Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
-  => (Seq c -> ProtoType (t m a))
-  -> (ProtoType (t m a) -> Seq c)
-  -> t m (a,b)
-  -> ProtoType (t m a)
-toProtoProduct box unbox xs =
-  let (as,bs) = unzipT xs
-      as' = unbox $ toProto as
-      bs' = unbox $ toProto bs
-  in box $ as' >< bs'
-
--- for tuples like ((a, b), c)
-fromProtoNestLeft ::
-  (MonadError String mon,
-   Protoable (t m a), Protoable (t m b),
-   ProtoType (t m a) ~ ProtoType (t m b),
-   Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
-  => (Seq c -> ProtoType (t m a))
-  -> (ProtoType (t m a)-> Seq c)
-  -> ProtoType (t m a)
-  -> mon (t m (a,b))
-fromProtoNestLeft box unbox xs = do
-  let ys = unbox xs
-  unless (length ys >= 2) $ throwError $
-    "Expected list of length >= 2, received list of length " ++ show (length ys)
-  let (as :> b) = viewr ys
-  as' <- fromProto $ box as
-  b' <- fromProto $ box $ singleton b
-  return $ zipWithT (,) as' b'
-
--- for tuples like (a, (b, c))
-fromProtoNestRight ::
-  (MonadError String mon,
-   Protoable (t m a), Protoable (t m b),
-   ProtoType (t m a) ~ ProtoType (t m b),
-   Tensor t, TElt t (a,b), TElt t a, TElt t b, Fact m)
-  => (Seq c -> ProtoType (t m a))
-  -> (ProtoType (t m a)-> Seq c)
-  -> ProtoType (t m a)
-  -> mon (t m (a,b))
-fromProtoNestRight box unbox xs = do
-  let ys = unbox xs
-  unless (length ys >= 2) $ throwError $
-    "Expected list of length >= 2, received list of length " ++ show (length ys)
-  let (a :< bs) = viewl ys
-  a' <- fromProto $ box $ singleton a
-  bs' <- fromProto $ box bs
-  return $ zipWithT (,) a' bs'
 
 -- | Read a serialized protobuffer from a file.
 readProtoType :: (ReflectDescriptor a, Wire a, MonadIO m, MonadError String m)
