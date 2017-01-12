@@ -26,7 +26,7 @@ sheTests :: forall t m m' zp zq . (_)
   => Proxy '(m,m',zp,zq) -> Proxy t -> TF.Test
 sheTests _ _ =
   let ptmr = Proxy::Proxy '(t,m,m',zp,zq)
-  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
+  in testGroup (showType ptmr) $ ($ ptmr) <$> [
    genTestArgs "DecU . Enc" prop_encDecU,
    genTestArgs "AddPub"     prop_addPub,
    genTestArgs "MulScal"    prop_mulScal,
@@ -43,21 +43,21 @@ decTest :: forall t m m' zp zq . (_)
   => Proxy '(m,m',zp,zq) -> Proxy t -> TF.Test
 decTest _ _ =
   let ptmr = Proxy::Proxy '(t,m,m',zp,zq)
-  in testGroupM (showType ptmr)
+  in testGroup (showType ptmr)
        [genTestArgs "Dec . Enc" prop_encDec ptmr]
 
 modSwPTTest :: forall t m m' zp zp' zq . (_)
   => Proxy '(m,m',zp,zp',zq) -> Proxy t -> TF.Test
 modSwPTTest _ _ =
   let ptmr = Proxy::Proxy '(t,m,m',zp,zp',zq)
-  in testGroupM (showType ptmr)
+  in testGroup (showType ptmr)
        [genTestArgs "ModSwitch PT" prop_modSwPT ptmr]
 
 ksTests :: forall t m m' zp zq zq' gad . (_)
   => Proxy '(m,m',zp,zq,zq') -> Proxy gad -> Proxy t -> TF.Test
 ksTests _ _ _ =
   let ptmr = Proxy::Proxy '(t,m,m',zp,zq,zq',gad)
-  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
+  in testGroup (showType ptmr) $ ($ ptmr) <$> [
     genTestArgs "KSLin" prop_ksLin,
     genTestArgs "KSQuad" prop_ksQuad]
 
@@ -65,7 +65,7 @@ twemTests :: forall t r r' s s' zp zq . (_)
   => Proxy '(r,r',s,s',zp,zq) -> Proxy t -> TF.Test
 twemTests _ _ =
   let ptmr = Proxy::Proxy '(t,r,r',s,s',zp,zq)
-  in testGroupM (showType ptmr) [
+  in testGroup (showType ptmr) [
       genTestArgs "Embed" prop_ctembed ptmr,
       genTestArgs "Twace" prop_cttwace ptmr]
 
@@ -73,7 +73,7 @@ tunnelTests :: forall t r r' s s' zp zq gad . (_)
   => Proxy '(r,r',s,s',zp,zq) -> Proxy gad -> Proxy t -> TF.Test
 tunnelTests _ _ _ =
   let ptmr = Proxy::Proxy '(t,r,r',s,s',zp,zq,gad)
-  in testGroupM (showType ptmr)
+  in testGroup (showType ptmr)
        [genTestArgs "Tunnel" prop_ringTunnel ptmr]
 
 

@@ -32,7 +32,7 @@ import qualified Test.Framework as TF
 tensorTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> TF.Test
 tensorTests1 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,r)
-  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
+  in testGroup (showType ptmr) $ ($ ptmr) <$> [
       genTestArgs   "fmapT comparison" prop_fmapT,
       genTestArgs   "fmap comparison"  prop_fmap,
       nestGroup  "GInv.G == id" [
@@ -52,7 +52,7 @@ tensorTests1 _ _ =
 tensorTests2 :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> TF.Test
 tensorTests2 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)
-  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
+  in testGroup (showType ptmr) $ ($ ptmr) <$> [
       nestGroup  "Tw.Em == id" [
         genTestArgs "Pow basis"                      prop_trem_pow,
         genTestArgs "Dec basis"                      prop_trem_dec,

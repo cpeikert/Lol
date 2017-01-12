@@ -27,7 +27,7 @@ import qualified Test.Framework as TF
 cycTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> TF.Test
 cycTests1 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,r)
-  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
+  in testGroup (showType ptmr) $ ($ ptmr) <$> [
       genTestArgs "mulGPow" prop_mulgPow,
       genTestArgs "mulGDec" prop_mulgDec,
       genTestArgs "mulGCRT" prop_mulgCRT
@@ -37,7 +37,7 @@ cycTests1 _ _ =
 cycTests2 :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> TF.Test
 cycTests2 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)
-  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
+  in testGroup (showType ptmr) $ ($ ptmr) <$> [
       genTestArgs "crtSet" prop_crtSet_pairs,
       genTestArgs "coeffsPow" prop_coeffsBasis
       ]

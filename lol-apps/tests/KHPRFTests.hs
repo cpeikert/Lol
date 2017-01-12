@@ -25,7 +25,7 @@ khprfTests :: forall t m zp zq gad . (_)
   => Proxy '(m,zp,zq,gad) -> Proxy t -> TF.Test
 khprfTests _ _ =
   let ptmr = Proxy::Proxy '(t,m,zp,zq,gad)
-  in testGroupM (showType ptmr) $ ($ ptmr) <$> [
+  in testGroup (showType ptmr) $ ($ ptmr) <$> [
    genTestArgs "PRF_3bits" (prop_keyHomom 3),
    genTestArgs "PRF_5bits" (prop_keyHomom 5)]
 

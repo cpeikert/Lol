@@ -44,7 +44,8 @@ library
     lol,
     MonadRandom,
     test-framework,
-    test-framework-quickcheck2
+    test-framework-quickcheck2,
+    QuickCheck
 
 -- EAC: This really belongs in lol.cabal, but due to a cabal/stack bug, it can't right now.
 test-suite test-lol

@@ -26,7 +26,7 @@ import qualified Test.Framework as TF
 
 -- | Tests for 'ZqBasic'
 zqTests :: _ => Proxy r -> TF.Test
-zqTests p = testGroupM (showType p) $ ($ p) <$> [
+zqTests p = testGroup (showType p) $ ($ p) <$> [
   genTestArgs "(+)" prop_add,
   genTestArgs "(*)" prop_mul,
   genTestArgs "^-1" prop_recip,
