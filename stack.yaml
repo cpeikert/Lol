@@ -16,7 +16,8 @@
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
 
-resolver: lts-7.0
+resolver: lts-7.15
+compiler-check: newer-minor
 
 # User packages to be built.
 # Various formats can be used as shown in the example below.
@@ -46,6 +47,7 @@ packages:
 - lol-repa/
 - lol-tests/
 - rlwe-challenges/
+- lol-easy/
 
 # CJP: add compiler/ when ready
 
