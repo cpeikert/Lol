@@ -61,4 +61,5 @@ Base ring layer:
   'Factored' types are mainly used to represent cyclotomic indices.
 
 Tests and benchmarks can be found in the packages lol-tests and lol-benches,
-respectively.
+respectively, though they are instantiated in individual tensors like lol-cpp
+and lol-repa.
