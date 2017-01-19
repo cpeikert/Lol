@@ -12,12 +12,12 @@ import System.Console.ANSI
 import System.Exit
 import System.IO
 
-import Beacon
-import Common   (InstanceID, printANSI)
-import Generate
-import Params
-import Suppress
-import Verify
+import Crypto.RLWE.Challenges.Beacon
+import Crypto.RLWE.Challenges.Common   (InstanceID, printANSI)
+import Crypto.RLWE.Challenges.Generate
+import Crypto.RLWE.Challenges.Params
+import Crypto.RLWE.Challenges.Suppress
+import Crypto.RLWE.Challenges.Verify
 
 data MainOpts =
   MainOpts

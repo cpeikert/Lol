@@ -2,9 +2,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards       #-}
 
-module Common where
+module Crypto.RLWE.Challenges.Common where
 
-import Beacon
+import Crypto.RLWE.Challenges.Beacon
 
 import           Crypto.Lol.Cyclotomic.Tensor.CPP
 import           Crypto.Lol.Types     hiding (RRq)

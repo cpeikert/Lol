@@ -4,7 +4,7 @@
 -- <http://www.nist.gov/itl/csd/ct/nist_beacon.cfm NIST Randomness
 -- Beacon>.
 
-module Beacon where
+module Crypto.RLWE.Challenges.Beacon where
 
 import Data.Int
 import Data.Time.Calendar    (fromGregorian)

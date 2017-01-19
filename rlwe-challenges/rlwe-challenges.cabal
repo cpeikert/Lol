@@ -51,11 +51,33 @@ library
     Crypto.Proto.RLWE.Challenges.InstanceRLWR1
     Crypto.Proto.RLWE.Challenges.Secret1
 
-  build-depends: base < 5,
+    Crypto.RLWE.Challenges.Beacon
+    Crypto.RLWE.Challenges.Common
+    Crypto.RLWE.Challenges.Generate
+    Crypto.RLWE.Challenges.Params
+    Crypto.RLWE.Challenges.Suppress
+    Crypto.RLWE.Challenges.Verify
+
+  build-depends: ansi-terminal,
+                 base < 5,
+                 bytestring,
+                 containers,
+                 directory,
+                 DRBG,
+                 filepath,
+                 http-client >= 0.5,
+                 http-conduit,
                  lol >= 0.5.0.0,
+                 lol-cpp,
                  MonadRandom,
+                 mtl,
+                 nist-beacon,
+                 parsec,
                  protocol-buffers,
-                 protocol-buffers-descriptor
+                 protocol-buffers-descriptor,
+                 reflection,
+                 tagged,
+                 time
 
 executable rlwe-challenges
   default-language: Haskell2010
@@ -65,33 +87,12 @@ executable rlwe-challenges
 
   ghc-options: -threaded -rtsopts -O2 -auto-all -caf-all -fno-warn-partial-type-signatures
 
-  other-modules:
-    Beacon
-    Common
-    Generate
-    Params
-    Suppress
-    Verify
-
   build-depends: ansi-terminal,
                  base,
-                 bytestring,
-                 containers,
-                 directory,
-                 DRBG,
-                 filepath,
-                 http-client >= 0.5,
-                 http-conduit,
                  lol >= 0.6.0.0,
-                 lol-cpp,
                  MonadRandom,
-                 mtl,
                  options,
-                 nist-beacon,
-                 parsec,
                  protocol-buffers,
-                 reflection,
                  rlwe-challenges,
-                 tagged,
                  time,
                  transformers

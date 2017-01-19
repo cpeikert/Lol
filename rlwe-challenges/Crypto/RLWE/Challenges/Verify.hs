@@ -9,11 +9,11 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Verify where
+module Crypto.RLWE.Challenges.Verify where
 
-import Beacon
-import Common
-import Generate
+import Crypto.RLWE.Challenges.Beacon
+import Crypto.RLWE.Challenges.Common
+import Crypto.RLWE.Challenges.Generate
 
 import           Crypto.Lol
 import           Crypto.Lol.Cyclotomic.UCyc

@@ -1,9 +1,9 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Suppress (suppressMain) where
+module Crypto.RLWE.Challenges.Suppress (suppressMain) where
 
-import Beacon
-import Common
+import Crypto.RLWE.Challenges.Beacon
+import Crypto.RLWE.Challenges.Common
 
 import Control.Exception (try)
 import Control.Monad.Except

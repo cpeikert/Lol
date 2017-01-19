@@ -6,11 +6,11 @@
 
 -- | Generates challenges in non-legacy proto format.
 
-module Generate (generateMain, instanceCont, instanceDisc, instanceRLWR) where
+module Crypto.RLWE.Challenges.Generate (generateMain, instanceCont, instanceDisc, instanceRLWR) where
 
-import Beacon
-import Common
-import Params as P
+import Crypto.RLWE.Challenges.Beacon
+import Crypto.RLWE.Challenges.Common
+import Crypto.RLWE.Challenges.Params as P
 
 import Crypto.Lol                 hiding (lift)
 import Crypto.Lol.RLWE.Continuous as C

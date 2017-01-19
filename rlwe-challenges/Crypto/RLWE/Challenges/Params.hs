@@ -2,9 +2,9 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards       #-}
 
-module Params where
+module Crypto.RLWE.Challenges.Params where
 
-import Common (ChallengeID, InstanceID)
+import Crypto.RLWE.Challenges.Common (ChallengeID, InstanceID)
 
 import Control.Applicative  hiding ((<|>))
 import Control.Monad.Except
