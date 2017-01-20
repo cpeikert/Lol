@@ -47,7 +47,6 @@ packages:
 - lol-repa/
 - lol-tests/
 - rlwe-challenges/
-- lol-easy/
 
 # CJP: add compiler/ when ready
 
