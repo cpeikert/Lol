@@ -1,3 +1,14 @@
+/*
+Module      : mul.cpp
+Description : zipWith (*).
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+*/
+
 #include "types.h"
 
 template <typename ring> void zipWithStar (ring* a, ring* b, hShort_t tupSize, hDim_t totm, hInt_t* qs)

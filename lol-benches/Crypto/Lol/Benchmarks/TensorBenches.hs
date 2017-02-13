@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Benchmarks.TensorBenches
+Description : Benchmarks for the 'Tensor' interface.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Benchmarks for the 'Tensor' interface.
+-}
+
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
@@ -6,8 +19,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
-
--- | Benchmarks for the 'Tensor' interface.
 
 module Crypto.Lol.Benchmarks.TensorBenches (tensorBenches1, tensorBenches2) where
 

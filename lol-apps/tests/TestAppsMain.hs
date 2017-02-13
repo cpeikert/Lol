@@ -1,3 +1,16 @@
+{-|
+Module      : TestAppsMain
+Description : Main driver for lol-apps tests.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Main driver for lol-apps tests.
+-}
+
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}

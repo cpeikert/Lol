@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Tests.TensorTests
+Description : Tests for the 'Tensor' interface.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Tests for the 'Tensor' interface.
+-}
+
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -9,8 +22,6 @@
 {-# LANGUAGE UndecidableInstances  #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
-
--- | Tests for the 'Tensor' interface.
 
 module Crypto.Lol.Tests.TensorTests where
 

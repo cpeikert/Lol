@@ -1,3 +1,16 @@
+{-|
+Module      : KHPRFMain
+Description : Example using KeyHomomorphicPRF.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Example using KeyHomomorphicPRF.
+-}
+
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE NoImplicitPrelude     #-}

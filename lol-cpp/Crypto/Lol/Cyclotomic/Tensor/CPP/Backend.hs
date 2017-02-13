@@ -1,3 +1,18 @@
+{-|
+Module      : Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
+Description : Transforms Haskell types into C counterparts.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+This module contains the functions to transform Haskell types into their
+C counterpart, and to transform polymorphic Haskell functions into C funtion
+calls in a type-safe way.
+-}
+
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -9,12 +24,7 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
-
--- | This module contains the functions to transform Haskell types into their
--- C counterpart, and to transform polymorphic Haskell functions into C funtion
--- calls in a type-safe way.
 
 module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 ( Dispatch

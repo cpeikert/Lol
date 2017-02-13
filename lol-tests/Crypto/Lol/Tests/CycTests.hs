@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Tests.CycTests
+Description : Tests for the 'Cyc' interface.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Tests for the 'Cyc' interface.
+-}
+
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
@@ -8,8 +21,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
-
--- | Tests for the 'Cyc' interface.
 
 module Crypto.Lol.Tests.CycTests where
 

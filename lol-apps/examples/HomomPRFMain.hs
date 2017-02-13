@@ -1,3 +1,16 @@
+{-|
+Module      : HomomPRFMain
+Description : Example, test, and macro-benchmark for homomorphic evaluation of a PRF.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Example, test, and macro-benchmark for homomorphic evaluation of a PRF.
+-}
+
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
@@ -8,8 +21,6 @@
 {-# LANGUAGE TypeOperators         #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
-
--- | Example, test, and macro-benchmark for homomorphic evaluation of a PRF.
 
 module HomomPRFMain where
 

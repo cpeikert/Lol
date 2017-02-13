@@ -1,7 +1,18 @@
+{-|
+Module      : Crypto.Lol.Utils.PrettyPrint.Diagnostic
+Description : Pretty-printing for benchmark results across levels of the Lol stack.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Pretty-printing for benchmark results across levels of the Lol stack.
+-}
+
 {-# LANGUAGE BangPatterns    #-}
 {-# LANGUAGE RecordWildCards #-}
-
--- | Pretty-printing for benchmark results.
 
 module Crypto.Lol.Utils.PrettyPrint.Diagnostic
 (prettyBenches

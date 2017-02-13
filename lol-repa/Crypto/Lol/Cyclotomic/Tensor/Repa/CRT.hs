@@ -1,11 +1,22 @@
+{-|
+Module      : Crypto.Lol.Cyclotomic.Tensor.Repa.CRT
+Description : Functions to support the chinese remainder transform on Repa arrays.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Functions to support the chinese remainder transform on Repa arrays.
+-}
+
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-
--- | Functions to support the chinese remainder transform on Repa arrays
 
 module Crypto.Lol.Cyclotomic.Tensor.Repa.CRT
 ( scalarCRT'

@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Cyclotomic.Tensor.CPP
+Description : Wrapper for a C++ implementation of the 'Tensor' interface.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Wrapper for a C++ implementation of the 'Tensor' interface.
+-}
+
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -16,8 +29,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
-
--- | Wrapper for a C++ implementation of the 'Tensor' interface.
 
 module Crypto.Lol.Cyclotomic.Tensor.CPP (CT) where
 

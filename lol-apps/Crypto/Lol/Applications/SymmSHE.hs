@@ -1,3 +1,17 @@
+{-|
+Module      : Crypto.Lol.Applications.SymmSHE
+Description : Symmetric-key homomorphic encryption.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Symmetric-key somewhat homomorphic encryption.  See Section 4 of
+http://eprint.iacr.org/2015/1134 for mathematical description.
+-}
+
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -10,9 +24,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
-
--- | Symmetric-key somewhat homomorphic encryption.  See Section 4 of
--- http://eprint.iacr.org/2015/1134 for mathematical description.
 
 module Crypto.Lol.Applications.SymmSHE
 (

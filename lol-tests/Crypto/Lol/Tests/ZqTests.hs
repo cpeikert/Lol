@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Tests.ZqTests
+Description : Tests for modular arithmetic.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Tests for modular arithmetic.
+-}
+
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE FlexibleContexts      #-}

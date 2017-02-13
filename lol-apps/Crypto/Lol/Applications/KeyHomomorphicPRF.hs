@@ -1,9 +1,20 @@
+{-|
+Module      : Crypto.Lol.Applications.KeyHomomorphicPRF
+Description : Key-homomorphic PRF from [BP14].
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Key-homomorphic PRF from [BP14].
+-}
+
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE NoImplicitPrelude   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
--- | Key-homomorphic PRF from [BP14].
 
 module Crypto.Lol.Applications.KeyHomomorphicPRF
 (FullBinTree(..), evalTree
