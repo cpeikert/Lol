@@ -1,3 +1,18 @@
+{-|
+Module      : Crypto.Lol.Types.Numeric
+Description : Modifications to NumericPrelude for Lol.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+This module imports NumericPrelude and defines constraint
+synonyms for NumericPrelude classes to help with code readability,
+and defines saner versions of some NumericPrelude functions.
+-}
+
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -10,10 +25,6 @@
 -- we have some orphan instances here for instances of
 -- package classes with Prelude data types
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-
--- | This module imports NumericPrelude and defines constraint
--- synonyms for NumericPrelude classes to help with code readability,
--- and defines saner versions of some NumericPrelude functions
 
 module Crypto.Lol.Types.Numeric
 ( module Crypto.Lol.Types.Numeric -- everything we define here

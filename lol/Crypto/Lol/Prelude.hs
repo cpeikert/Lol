@@ -1,3 +1,22 @@
+{-|
+Module      : Crypto.Lol.Prelude
+Description : Alternate Prelude.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+\( \def\Z{\mathbb{Z}} \)
+\( \def\C{\mathbb{C}} \)
+
+A substitute for the Prelude that is more suitable for Lol.  This
+module exports most of the Numeric Prelude and other frequently
+used modules, plus some low-level classes, missing instances, and
+assorted utility functions.
+-}
+
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
@@ -15,14 +34,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
-
--- | \( \def\Z{\mathbb{Z}} \)
---   \( \def\C{\mathbb{C}} \)
---
--- A substitute for the Prelude that is more suitable for Lol.  This
--- module exports most of the Numeric Prelude and other frequently
--- used modules, plus some low-level classes, missing instances, and
--- assorted utility functions.
 
 module Crypto.Lol.Prelude
 (

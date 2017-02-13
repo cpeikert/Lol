@@ -1,12 +1,23 @@
+{-|
+Module      : Crypto.Lol.RLWE.Continuous
+Description : Functions and types for working with continuous ring-LWE samples.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+\( \def\Z{\mathbb{Z}} \)
+\( \def\R{\mathbb{R}} \)
+Functions and types for working with continuous ring-LWE samples.
+-}
+
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-
--- | \( \def\Z{\mathbb{Z}} \)
---   \( \def\R{\mathbb{R}} \)
--- Functions and types for working with continuous ring-LWE samples.
 
 module Crypto.Lol.RLWE.Continuous where
 

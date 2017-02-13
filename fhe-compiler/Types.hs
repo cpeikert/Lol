@@ -1,3 +1,16 @@
+{-|
+Module      : Types
+Description : Concrete types for the homomorphic operations.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Currently unmaintained.
+-}
+
 {-# LANGUAGE KindSignatures, PolyKinds, DataKinds, FlexibleInstances, RankNTypes,
              TypeOperators, ConstraintKinds, FlexibleContexts, ScopedTypeVariables,
              MultiParamTypeClasses, TemplateHaskell, TypeFamilies, RebindableSyntax #-}

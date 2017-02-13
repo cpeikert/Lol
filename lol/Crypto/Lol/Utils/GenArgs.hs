@@ -1,10 +1,23 @@
+{-|
+Module      : Crypto.Lol.Utils.GenArgs
+Description : Generate arguments for tests and benchmarks.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+\( \def\C{\mathbb{C}} \)
+
+Classes used to generate arguments for tests and benchmarks.
+This is analagous to 'Arbitrary' in quickcheck, except it can also be used
+with criterion.
+-}
+
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
-
--- | Classes used to generate arguments for tests and benchmarks.
--- This is analagous to 'Arbitrary' in quickcheck, except it can also be used
--- with criterion.
 
 module Crypto.Lol.Utils.GenArgs where
 

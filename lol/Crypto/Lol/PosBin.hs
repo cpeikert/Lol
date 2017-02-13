@@ -1,10 +1,23 @@
+{-|
+Module      : Crypto.Lol.PosBin
+Description : Type-level positive naturals in Peano and binary.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Positive naturals in Peano and binary representations,
+singletonized and promoted to the type level.  This module relies
+on Template Haskell, so parts of the documentation may be difficult
+to read.  See source-level comments for further details.
+-}
+
 {-# LANGUAGE DataKinds       #-}
 {-# LANGUAGE TemplateHaskell #-}
 
--- | Positive naturals in Peano and binary representations,
--- singletonized and promoted to the type level.  This module relies
--- on Template Haskell, so parts of the documentation may be difficult
--- to read.  See source-level comments for further details.
+
 
 module Crypto.Lol.PosBin
 ( module Crypto.Lol.PosBinDefs

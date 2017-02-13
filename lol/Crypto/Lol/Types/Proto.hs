@@ -1,11 +1,22 @@
+{-|
+Module      : Crypto.Lol.Types.Proto
+Description : Convenient interfaces for serialization with protocol buffers.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Convenient interfaces for serialization with protocol buffers.
+-}
+
 {-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE FlexibleInstances   #-}
 {-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies        #-}
-
--- | Convenient interfaces for serialization with protocol buffers.
 
 module Crypto.Lol.Types.Proto
 (Protoable(..), msgPut, msgGet

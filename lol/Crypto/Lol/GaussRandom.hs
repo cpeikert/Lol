@@ -1,7 +1,18 @@
+{-|
+Module      : Crypto.Lol.GaussRandom
+Description : Gaussian sampling.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Functions for sampling from a continuous Gaussian distribution.
+-}
+
 {-# LANGUAGE RebindableSyntax    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
--- | Functions for sampling from a continuous Gaussian distribution
 
 module Crypto.Lol.GaussRandom
 ( realGaussian, realGaussians ) where

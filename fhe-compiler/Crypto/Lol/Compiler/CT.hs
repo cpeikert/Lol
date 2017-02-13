@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Compiler.CT
+Description : Basic ciphertext AST.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Currently unmaintained.
+-}
+
 {-# LANGUAGE TypeOperators, RankNTypes, KindSignatures,
              DataKinds, TypeFamilies, GADTs, FlexibleContexts,
              ScopedTypeVariables, FlexibleInstances,

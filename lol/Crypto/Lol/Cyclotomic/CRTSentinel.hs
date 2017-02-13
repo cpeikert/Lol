@@ -1,13 +1,26 @@
+{-|
+Module      : Crypto.Lol.Cyclotomic.CRTSentinel
+Description : Safely exposes a "sentinel" indicating usage of either CRT basis
+              over a base ring, or over its extension ring.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Safely exposes a "sentinel" indicating usage of either CRT basis
+over a base ring, or over its extension ring.  Exactly one of
+'CSentinel' or 'ESentinel' has an externally exposed value.
+-}
+
+{-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-
--- | Safely exposes a "sentinel" indicating usage of either CRT basis
--- over a base ring, or over its extension ring.  Exactly one of
--- 'CSentinel' or 'ESentinel' has an externally exposed value.
 
 module Crypto.Lol.Cyclotomic.CRTSentinel
 ( CSentinel, ESentinel

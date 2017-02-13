@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Types.IZipVector
+Description : Provides applicative-like functions for indexed vectors.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Provides applicative-like functions for indexed vectors.
+-}
+
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveTraversable          #-}
@@ -13,8 +26,6 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
-
--- | Provides applicative-like functions for indexed vectors
 
 module Crypto.Lol.Types.IZipVector
 ( IZipVector, iZipVector, unIZipVector, unzipIZV

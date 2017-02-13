@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Compiler.CTCompiler
+Description : Compiles plaintext AST to ciphertext AST.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Currently unmaintained.
+-}
+
 {-# LANGUAGE RebindableSyntax, FlexibleContexts,
              FlexibleInstances, DataKinds, GADTs, KindSignatures, MultiParamTypeClasses,
              ConstraintKinds, ScopedTypeVariables, RankNTypes, UndecidableInstances,

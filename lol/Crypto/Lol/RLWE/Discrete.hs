@@ -1,10 +1,21 @@
+{-|
+Module      : Crypto.Lol.RLWE.Discrete
+Description : Functions and types for working with discretized ring-LWE samples.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Functions and types for working with discretized ring-LWE samples.
+-}
+
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-
--- | Functions and types for working with discretized ring-LWE samples.
 
 module Crypto.Lol.RLWE.Discrete where
 
