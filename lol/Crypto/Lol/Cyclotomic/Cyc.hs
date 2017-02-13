@@ -9,12 +9,12 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\Z{\mathbb{Z}} \)
-\( \def\F{\mathbb{F}} \)
-\( \def\Q{\mathbb{Q}} \)
-\( \def\Tw{\text{Tw}} \)
-\( \def\Tr{\text{Tr}} \)
-\( \def\O{\mathcal{O}} \)
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\F{\mathbb{F}} \)
+  \( \def\Q{\mathbb{Q}} \)
+  \( \def\Tw{\text{Tw}} \)
+  \( \def\Tr{\text{Tr}} \)
+  \( \def\O{\mathcal{O}} \)
 
 An implementation of cyclotomic rings that hides the
 internal representations of ring elements (e.g., the choice of
@@ -46,6 +46,8 @@ the internal linear transforms and other operations it performs.
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+
+
 
 module Crypto.Lol.Cyclotomic.Cyc
 (

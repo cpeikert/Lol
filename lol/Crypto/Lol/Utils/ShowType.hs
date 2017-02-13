@@ -8,7 +8,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\C{\mathbb{C}} \)
+  \( \def\C{\mathbb{C}} \)
 
 Class for pretty-printing type parameters to tests and benchmarks
 -}

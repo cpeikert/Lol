@@ -8,7 +8,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\C{\mathbb{C}} \)
+  \( \def\C{\mathbb{C}} \)
 
 Classes and helper methods for the Chinese remainder transform
 and ring extensions.

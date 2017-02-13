@@ -9,11 +9,11 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\Z{\mathbb{Z}} \)
-\( \def\Tw{\text{Tw}} \)
-\( \def\Tr{\text{Tr}} \)
-\( \def\CRT{\text{CRT}} \)
-\( \def\O{\mathcal{O}} \)
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\Tw{\text{Tw}} \)
+  \( \def\Tr{\text{Tr}} \)
+  \( \def\CRT{\text{CRT}} \)
+  \( \def\O{\mathcal{O}} \)
 
 Interface for cyclotomic tensors, and helper functions for tensor
 indexing.

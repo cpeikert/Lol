@@ -151,16 +151,17 @@ type Polynomial a = MathObj.Polynomial.T a
 -- | Sane synonym for 'MathObj.Matrix.T'.
 type Matrix a = MathObj.Matrix.T a
 
--- 'IntegralDomain' instance for 'Double'
+-- | 'IntegralDomain' instance for 'Double'
 instance Algebra.IntegralDomain.C Double where
     _ `div` 0 = error "cannot divide Double by 0\n"
     a `div` b = a / b
     _ `mod` _ = 0
 
--- 'NFData' instance for 'Polynomial', missing from NP
+-- | 'NFData' instance for 'Polynomial', missing from NP
 instance (NFData r) => NFData (Polynomial r) where
   rnf = rnf . coeffs
 
+-- | 'NFData' instance for 'Matrix', missing from NP
 instance (NFData r) => NFData (Matrix r) where
   rnf = rnf . rows
 

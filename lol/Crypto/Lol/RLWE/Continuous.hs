@@ -8,8 +8,9 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\Z{\mathbb{Z}} \)
-\( \def\R{\mathbb{R}} \)
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\R{\mathbb{R}} \)
+
 Functions and types for working with continuous ring-LWE samples.
 -}
 

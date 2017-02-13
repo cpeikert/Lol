@@ -8,7 +8,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\Z{\mathbb{Z}} \)
+  \( \def\Z{\mathbb{Z}} \)
 
 A class and helper functions for rescaling cycltomic ring elements.
 -}

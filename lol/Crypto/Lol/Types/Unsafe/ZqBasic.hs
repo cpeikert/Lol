@@ -8,8 +8,9 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\Z{\mathbb{Z}} \)
-\( \def\C{\mathbb{C}} \)
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\C{\mathbb{C}} \)
+
 An implementation of the quotient ring \(\Z_q = \Z/(q\Z)\).
 This module is "unsafe" because it exports the 'ZqBasic' constructor.
 This module should only be used to make tensor-specific instances for 'ZqBasic'.

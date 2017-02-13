@@ -21,8 +21,6 @@ Generic interface for reflecting types to values.
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
--- |
-
 module Crypto.Lol.Reflects
 ( Reflects(..),
 ) where

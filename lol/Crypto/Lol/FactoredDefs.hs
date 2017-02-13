@@ -436,7 +436,7 @@ radicalPP (p,_) = p
 -- | The odd radical of a prime power.
 oddRadicalPP (2,_) = 1
 oddRadicalPP (p,_) = p
-
+-- | Value of a 'PrimeBin'.
 valueP :: PrimeBin -> Int
 valueP (P p) = binToInt p
 
@@ -489,6 +489,7 @@ ppDec pp@(p,e) = tySynD (mkName $ "PP" ++ show (p^e)) [] $ ppType pp
 fDec :: Int -> DecQ
 fDec n = tySynD (mkName $ 'F' : show n) [] $ fType n
 
+-- | Converts input to its data-level 'Factored' representation.
 intToFact :: Int -> Factored
 intToFact m =
   let fcts = factorize m

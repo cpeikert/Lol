@@ -8,8 +8,8 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\Z{\mathbb{Z}} \)
-\( \def\C{\mathbb{C}} \)
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\C{\mathbb{C}} \)
 
 This sub-module exists only because we can't define and use
 template Haskell splices in the same module.

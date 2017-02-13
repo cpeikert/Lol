@@ -8,7 +8,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\lcm{\text{lcm}} \)
+  \( \def\lcm{\text{lcm}} \)
 
 This module defines types and operations for type-level
 representation and manipulation of natural numbers, as represented

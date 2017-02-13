@@ -8,12 +8,12 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\Z{\mathbb{Z}} \)
-\( \def\C{\mathbb{C}} \)
-\( \def\Q{\mathbb{Q}} \)
-\( \def\R{\mathbb{R}} \)
-\( \def\F{\mathbb{F}} \)
-\( \def\O{\mathcal{O}} \)
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\C{\mathbb{C}} \)
+  \( \def\Q{\mathbb{Q}} \)
+  \( \def\R{\mathbb{R}} \)
+  \( \def\F{\mathbb{F}} \)
+  \( \def\O{\mathcal{O}} \)
 
 This module re-exports primary interfaces, and should be the only import
 needed for most cryptographic application implmenetations. To instantiate an

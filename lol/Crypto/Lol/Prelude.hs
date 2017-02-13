@@ -8,8 +8,8 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\Z{\mathbb{Z}} \)
-\( \def\C{\mathbb{C}} \)
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\C{\mathbb{C}} \)
 
 A substitute for the Prelude that is more suitable for Lol.  This
 module exports most of the Numeric Prelude and other frequently

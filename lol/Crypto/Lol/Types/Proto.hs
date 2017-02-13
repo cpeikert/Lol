@@ -41,6 +41,7 @@ import Text.ProtocolBuffers        (messageGet, messagePut)
 import Text.ProtocolBuffers.Basic  (uToString, uFromString)
 import Text.ProtocolBuffers.Header
 
+-- | Constraint synonym for end-to-end reading/parsing/writing of 'Protoable' types.
 type ProtoReadable a = (Protoable a, Wire (ProtoType a), ReflectDescriptor (ProtoType a))
 
 -- | Conversion between Haskell types and their protocol buffer representations.
@@ -99,10 +100,13 @@ readProtoType file = do
 writeProtoType :: (ReflectDescriptor a, Wire a) => FilePath -> a -> IO ()
 writeProtoType fileName = BS.writeFile fileName . messagePut
 
+-- | Read a protocol buffer stream at the given path and convert it to typed
+-- Haskell data.
 parseProtoFile :: (ProtoReadable a, MonadIO m, MonadError String m)
   => FilePath -> m a
 parseProtoFile file = fromProto =<< readProtoType file
 
+-- | Write a protocol buffer stream for Haskell data to the given path.
 writeProtoFile :: (ProtoReadable a, MonadIO m) => FilePath -> a -> m ()
 writeProtoFile file = liftIO . writeProtoType file . toProto
 

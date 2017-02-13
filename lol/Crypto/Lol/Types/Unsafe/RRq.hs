@@ -8,8 +8,9 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\Z{\mathbb{Z}} \)
-\( \def\R{\mathbb{R}} \)
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\R{\mathbb{R}} \)
+
 An implementation of the additive quotient group \(\R/(q\Z)\).
 This module is "unsafe" because it exports the 'RRq' constructor.
 This module should only be used to make tensor-specific instances for 'RRq'.

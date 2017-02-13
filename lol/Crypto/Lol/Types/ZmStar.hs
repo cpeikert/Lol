@@ -8,7 +8,8 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\Z{\mathbb{Z}} \)
+  \( \def\Z{\mathbb{Z}} \)
+
 A collection of helper functions for working with \(\Z_m^*\).
 -}
 

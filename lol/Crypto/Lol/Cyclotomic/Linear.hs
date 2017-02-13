@@ -9,7 +9,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\lcm{\text{lcm}} \)
+  \( \def\lcm{\text{lcm}} \)
 
 Functions from one cyclotomic ring to another that are linear
 over a common subring.

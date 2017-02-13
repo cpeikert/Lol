@@ -8,7 +8,8 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\F{\mathbb{F}} \)
+  \( \def\F{\mathbb{F}} \)
+
 Basic (unoptimized) finite field arithmetic.
 -}
 

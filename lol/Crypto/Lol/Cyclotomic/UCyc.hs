@@ -8,10 +8,10 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-\( \def\Z{\mathbb{Z}} \)
-\( \def\F{\mathbb{F}} \)
-\( \def\Q{\mathbb{Q}} \)
-\( \def\O{\mathcal{O}} \)
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\F{\mathbb{F}} \)
+  \( \def\Q{\mathbb{Q}} \)
+  \( \def\O{\mathcal{O}} \)
 
 A low-level implementation of cyclotomic rings that allows (and
 requires) the programmer to control the underlying representation
