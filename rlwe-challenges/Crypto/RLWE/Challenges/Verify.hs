@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.RLWE.Challenges.Verify
+Description : Verify generated challenges.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Verify RLWE/RLWR challenges to ensure that challenges are generated faithfully.
+-}
+
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -9,7 +22,10 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.RLWE.Challenges.Verify where
+module Crypto.RLWE.Challenges.Verify
+(verifyMain, verifyInstanceU
+,readChallenge, regenChallenge
+,beaconAvailable, readBeacon) where
 
 import Crypto.RLWE.Challenges.Beacon
 import Crypto.RLWE.Challenges.Common

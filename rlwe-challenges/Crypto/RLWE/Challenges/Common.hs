@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.RLWE.Challenges.Common
+Description : Utility functions for handling exceptions and creating file paths.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Utility functions for handling exceptions and creating file paths.
+-}
+
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards       #-}
@@ -37,17 +50,20 @@ type ChallengeID = Int32
 type InstanceID = Int32
 type InstDRBG = GenBuffered CtrDRBG
 
--- | Tensor type used to generate and verify instances
+-- | Concrete Tensor type used to generate and verify instances.
 type T = CT
 
+-- | Holds an (untyped) proto-buf Ring-LWE/LWR challenge.
 data ChallengeU = CU !Challenge ![InstanceU]
 
+-- | Holds an (untyped) proto-buf Ring-LWE/LWR instance.
 data InstanceU = IC {secret :: !Secret, instc :: !InstanceCont}
                | ID {secret :: !Secret, instd :: !InstanceDisc}
                | IR {secret :: !Secret, instr :: !InstanceRLWR}
 
--- Types used to generate and verify instances
+-- | Concrete type used to generate and verify instances
 type Zq q = ZqBasic q Int64
+-- | Concrete type used to generate and verify instances
 type RRq q = RRq.RRq q Double
 
 -- | Yield a list of challenge names by getting all directory contents
@@ -62,13 +78,14 @@ challengeList path = liftIO $ do
   when (null names) $ error "No challenges found."
   return names
 
+-- | Do nothing if the file exists, otherwise throw an exception in the monad.
 checkFileExists :: (MonadIO m, MonadError String m) => FilePath -> m ()
 checkFileExists file = do
   fileExists <- liftIO $ doesFileExist file
   throwErrorUnless fileExists $
     "Error reading " ++ file ++ ": file does not exist."
 
--- | Parse the beacon time/offset used to reveal a challenge.
+-- | Parse the beacon time/offset used to reveal a challenge from a proto-buf stream.
 parseBeaconAddr :: (MonadError String m) => Challenge -> m BeaconAddr
 parseBeaconAddr Challenge{..} = do
   let ba = BA beaconEpoch beaconOffset
@@ -115,6 +132,7 @@ beaconFilePath path t = path </> "epoch-" ++ show t ++ ".xml"
 certFilePath :: FilePath -> FilePath
 certFilePath path = path </> "beacon.cer"
 
+-- | Hex representation of the instance ID.
 instIDString :: InstanceID -> String
 instIDString = printf "%02X"
 
@@ -136,7 +154,11 @@ maybeThrowError m str = do
 
 -- | Pretty printing of error messages.
 printPassFailGeneric :: (MonadIO m)
-                 => Color -> String -> String -> ExceptT String m a -> m (Maybe a)
+                 => Color              -- ^ Color to print failure message.
+                 -> String             -- ^ String to print if computation succeeds.
+                 -> String             -- ^ String to print if computation fails.
+                 -> ExceptT String m a -- ^ Computation to test.
+                 -> m (Maybe a)
 printPassFailGeneric failColor str pass e = do
   liftIO $ putStr str
   res <- runExceptT e
@@ -148,9 +170,12 @@ printPassFailGeneric failColor str pass e = do
 
 printPassFail, printPassWarn :: (MonadIO m)
   => String -> String -> ExceptT String m a -> m (Maybe a)
+-- | Specialized version of 'printPassFailGeneric' that fails in red.
 printPassFail = printPassFailGeneric Red
+-- | Specialized version of 'printPassFailGeneric' that fails in yellow.
 printPassWarn = printPassFailGeneric Yellow
 
+-- | Print the input string in the specified color.
 printANSI :: (MonadIO m) => Color -> String -> m ()
 printANSI sgr str = liftIO $ do
   setSGR [SetColor Foreground Vivid sgr]

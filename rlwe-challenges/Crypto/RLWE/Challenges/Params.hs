@@ -1,8 +1,24 @@
+{-|
+Module      : Crypto.RLWE.Challenges.Params
+Description : Parser for a list of challenge parameters.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Parser for a list of challenge parameters.
+-}
+
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards       #-}
 
-module Crypto.RLWE.Challenges.Params where
+module Crypto.RLWE.Challenges.Params
+(ChallengeParams(..)
+,epsDef
+,parseChallParams) where
 
 import Crypto.RLWE.Challenges.Common (ChallengeID, InstanceID)
 
@@ -15,12 +31,29 @@ import Text.Parsec.Token
 
 -- | Information to generate a challenge.
 data ChallengeParams =
-    C { challID :: ChallengeID, m :: Int32, q :: Int64, svar :: Double, numSamples :: Int32,
-        numInstances :: InstanceID, eps :: Double, annotation :: String }
-  | D { challID :: ChallengeID, m :: Int32, q :: Int64, svar :: Double, numSamples :: Int32,
-        numInstances :: InstanceID, eps :: Double, annotation :: String }
-  | R { challID :: ChallengeID, m :: Int32, q :: Int64, p :: Int64, numSamples :: Int32,
-        numInstances :: InstanceID, annotation :: String }
+    C { challID :: ChallengeID,     -- ^ Challenge ID
+        m :: Int32,                 -- ^ Cyclotomic index of the challenge
+        q :: Int64,                 -- ^ Modulus of the challenge
+        svar :: Double,             -- ^ Scaled variance used to generate the error term.
+        numSamples :: Int32,        -- ^ Number of RLWE samples per instance.
+        numInstances :: InstanceID, -- ^ Number of RLWE instances per challenge.
+        eps :: Double,              -- ^ \(\epsilon\) used to comput the error bound.
+        annotation :: String }      -- ^ String associated with this challenge.
+  | D { challID :: ChallengeID,     -- ^ Challenge ID
+        m :: Int32,                 -- ^ Cyclotomic index of the challenge
+        q :: Int64,                 -- ^ Modulus of the challenge
+        svar :: Double,             -- ^ Scaled variance used to generate the error term.
+        numSamples :: Int32,        -- ^ Number of RLWE samples per instance.
+        numInstances :: InstanceID, -- ^ Number of RLWE instances per challenge.
+        eps :: Double,              -- ^ \(\epsilon\) used to comput the error bound.
+        annotation :: String }      -- ^ String associated with this challenge.
+  | R { challID :: ChallengeID,     -- ^ Challenge ID
+        m :: Int32,                 -- ^ Cyclotomic index of the challenge
+        q :: Int64,                 -- ^ Initial modulus
+        p :: Int64,                 -- ^ Rounding modulus
+        numSamples :: Int32,        -- ^ Number of RLWR samples per instance.
+        numInstances :: InstanceID, -- ^ Number of RLWR instances per challenge.
+        annotation :: String }      -- ^ String associated with this challenge.
   deriving (Show)
 
 contLineID, discLineID, rlwrLineID :: String
@@ -28,7 +61,7 @@ contLineID = "Cont"
 discLineID = "Disc"
 rlwrLineID = "RLWR"
 
--- default probability eps to use
+-- | Default probability \(\epsilon\) to use, for computing the RLWE error bound.
 epsDef :: Double
 epsDef = 2 ** (-25)
 

@@ -22,8 +22,6 @@ and ring extensions.
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-
-
 module Crypto.Lol.CRTrans
 ( CRTrans(..), CRTEmbed(..)
 , CRTInfo

@@ -1,6 +1,20 @@
+{-|
+Module      : Crypto.RLWE.Challenges.Suppress
+Description : Suppress a secret from a challenge.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Suppresses the instance secret for the official challenge instance.
+-}
+
 {-# LANGUAGE FlexibleContexts #-}
 
-module Crypto.RLWE.Challenges.Suppress (suppressMain) where
+module Crypto.RLWE.Challenges.Suppress
+(suppressMain, getNistCert, writeBeaconXML, suppressChallenge) where
 
 import Crypto.RLWE.Challenges.Beacon
 import Crypto.RLWE.Challenges.Common
