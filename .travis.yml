@@ -21,11 +21,9 @@ cache:
 
 # Ensure necessary system libraries are present
 addons:
-  packages:
-    - libgmp-dev
-#    - gcc-4.8
-#    - g++-4.8
-#    - libusb-1.0-0-dev
+  apt:
+    packages:
+      - libgmp-dev
 
 before_install:
 # Download and unpack the stack executable
@@ -35,7 +33,6 @@ before_install:
 
 install:
 # Build dependencies
-- g++ --version
 - stack --no-terminal --install-ghc test --only-dependencies
 
 script:
