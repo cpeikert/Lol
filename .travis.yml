@@ -13,20 +13,25 @@ sudo: required
 
 # Do not choose a language; we provide our own build tools.
 language: generic
+dist: trusty
 
 # Caching so the next build will be fast too.
 cache:
   directories:
   - $HOME/.stack
 
+# EAC: By default, TravisCI has gcc/g++-4.6.3, which is too old for lol-cpp.
+# We add a source repo (ubuntu-toolchain-r-test) and two packages,
+# then remake the symlinks for cpp,gcc,g++,and nm.
+
 # Ensure necessary system libraries are present
 addons:
   apt:
-    sources:
-      - ubuntu-toolchain-r-test
+#    sources:
+#      - ubuntu-toolchain-r-test
     packages:
-      - gcc-4.9
-      - g++-4.9
+#      - gcc-4.9
+#      - g++-4.9
       - libgmp-dev
 
 before_install:
@@ -37,15 +42,15 @@ before_install:
 
 install:
 # Build dependencies
-- g++-4.9 --version
-- g++ --version
-- ld --version
-- sudo unlink /usr/bin/cpp && sudo ln -s /usr/bin/cpp-4.9 /usr/bin/cpp
-- sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-4.9 /usr/bin/gcc
+#- g++-4.9 --version
+#- g++ --version
+#- ld --version
+#- sudo unlink /usr/bin/cpp && sudo ln -s /usr/bin/cpp-4.9 /usr/bin/cpp
+#- sudo unlink /usr/bin/gcc && sudo ln -s /usr/bin/gcc-4.9 /usr/bin/gcc
 #- sudo unlink /usr/bin/ar && sudo ln -s /usr/bin/gcc-ar-4.9 /usr/bin/ar
-- sudo unlink /usr/bin/nm && sudo ln -s /usr/bin/gcc-nm-4.9 /usr/bin/nm
-- sudo unlink /usr/bin/ranlib && sudo ln -s /usr/bin/gcc-ranlib-4.9 /usr/bin/ranlib
-- sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-4.9 /usr/bin/g++
+#- sudo unlink /usr/bin/nm && sudo ln -s /usr/bin/gcc-nm-4.9 /usr/bin/nm
+#- sudo unlink /usr/bin/ranlib && sudo ln -s /usr/bin/gcc-ranlib-4.9 /usr/bin/ranlib
+#- sudo unlink /usr/bin/g++ && sudo ln -s /usr/bin/g++-4.9 /usr/bin/g++
 - g++ --version
 - stack --no-terminal --install-ghc test --only-dependencies
 
