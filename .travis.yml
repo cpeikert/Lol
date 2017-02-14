@@ -21,9 +21,13 @@ cache:
 
 # Ensure necessary system libraries are present
 addons:
-  apt:
+  apt:sources:
+    - ubuntu-toolchain-r-test
     packages:
-      - libgmp-dev
+    - gcc-4.8
+    - g++-4.8
+    - libusb-1.0-0-dev
+    - libgmp-dev
 
 before_install:
 # Download and unpack the stack executable
