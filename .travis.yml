@@ -21,8 +21,6 @@ cache:
 
 # Ensure necessary system libraries are present
 addons:
-  apt:sources:
-    - ubuntu-toolchain-r-test
   packages:
     - libgmp-dev
 #    - gcc-4.8
