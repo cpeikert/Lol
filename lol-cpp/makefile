@@ -3,7 +3,7 @@
 
 CXX      ?= g++
 AR       ?= ar
-CXXFLAGS ?= -Wall -O3 -std=c++0x -fPIC
+CXXFLAGS ?= -Wall -O3 -std=c++11 -fPIC
 
 CSRCPATH = Crypto/Lol/Cyclotomic/Tensor/CPP
 OBJPATH = lib
