@@ -40,6 +40,8 @@ install:
 # Build dependencies
 - g++-4.8 --version
 - g++ --version
+- $CXX --version
+- export CXX="g++-4.8"
 - stack --no-terminal --install-ghc test --only-dependencies
 
 script:
