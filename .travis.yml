@@ -21,8 +21,9 @@ cache:
   - $HOME/.stack
 
 # EAC: By default, TravisCI has gcc/g++-4.6.3, which is too old for lol-cpp.
-# We add a source repo (ubuntu-toolchain-r-test) and two packages,
-# then remake the symlinks for cpp,gcc,g++,and nm.
+# I tried explicitly using gcc-4.9, but couldn't install unix-2.7.0 with that
+# (linking errors). Instead, I'm using "dist:trusty", which has a newer version
+# of gcc by default.
 
 # Ensure necessary system libraries are present
 addons:

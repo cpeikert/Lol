@@ -21,9 +21,6 @@ harness (for performance comparison).
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
--- | Benchmarks for the 'UCyc' interface. These benchmarks do not use the
--- benchmark harness, so they may perform differently than UCycBenches.hs.
-
 module Crypto.Lol.Benchmarks.SimpleUCycBenches (simpleUCycBenches1, simpleUCycBenches2) where
 
 import Control.Applicative

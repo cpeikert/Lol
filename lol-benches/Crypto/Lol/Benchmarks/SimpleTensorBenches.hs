@@ -21,9 +21,6 @@ harness (for performance comparison).
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
--- | Benchmarks for the 'Tensor' interface. These benchmarks do not use the
--- benchmark harness, so they may perform differently than TensorBenches.hs.
-
 module Crypto.Lol.Benchmarks.SimpleTensorBenches (simpleTensorBenches1, simpleTensorBenches2) where
 
 import Control.Applicative
