@@ -22,7 +22,12 @@ cache:
 # Ensure necessary system libraries are present
 addons:
   apt:
+    sources:
+      - ubuntu-toolchain-r-test
     packages:
+      - gcc-4.8
+      - g++-4.8
+      - libusb-1.0-0-dev
       - libgmp-dev
 
 before_install:
@@ -33,6 +38,7 @@ before_install:
 
 install:
 # Build dependencies
+- g++-4.8 --version
 - stack --no-terminal --install-ghc test --only-dependencies
 
 script:
