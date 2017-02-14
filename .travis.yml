@@ -25,7 +25,7 @@ addons:
     sources: &apt_sources
     packages: &apt_packages
       - libgmp-dev
-      - g++-4.8
+      - g++-4.9
 
 before_install:
 # Download and unpack the stack executable
