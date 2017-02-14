@@ -8,8 +8,10 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
+  \( \def\O{\mathcal{O}} \)
+
 Symmetric-key somewhat homomorphic encryption.  See Section 4 of
-http://eprint.iacr.org/2015/1134 for mathematical description.
+<http://eprint.iacr.org/2015/1134> for mathematical description.
 -}
 
 {-# LANGUAGE ConstraintKinds            #-}
@@ -257,7 +259,7 @@ modSwitchPT ct = let CT MSD k l c = toMSD ct in
 
 ---------- Key switching ----------
 
--- | Constraint synonym for generating an LWE sample.
+-- | Constraint synonym for generating a ring-LWE sample.
 type LWECtx t m' z zq =
   (ToInteger z, Reduce z zq, Ring zq, Random zq, Fact m', CElt t z, CElt t zq)
 
@@ -453,6 +455,7 @@ instance (ToSDCtx t m' zp zq, Additive (CT m zp (Cyc t m' zq)))
 
 ---------- Ring switching ----------
 
+-- | Constraint synonym for 'absorbGFactors'.
 type AbsorbGCtx t m' zp zq =
   (Lift' zp, IntegralDomain zp, Reduce (LiftOf zp) zq, Ring zq,
    Fact m', CElt t (LiftOf zp), CElt t zp, CElt t zq)
@@ -501,7 +504,7 @@ twaceCT :: (CElt t zq, r `Divides` r', s' `Divides` r',
 twaceCT (CT d 0 l c) = CT d 0 l (twace <$> c)
 twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 
-
+-- | Auxilliary data needed to tunnel from \(\O_{r'}\) to \(\O_{s'}\).
 data TunnelInfo gad t (e :: Factored) (r :: Factored) (s :: Factored) e' r' s' zp zq =
   TInfo (Linear t zq e' r' s') [Tagged gad [Polynomial (Cyc t s' zq)]]
 
@@ -510,6 +513,7 @@ instance (NFData (Linear t zq e' r' s'), NFData (Cyc t s' zq))
   rnf (TInfo l t) = rnf l `seq` rnf t
 
 -- EAC: `e' ~ (e * ...) is not needed in this module, but it is needed as use sites...
+-- | Constraint synonym for generating 'TunnelInfo'.
 type GenTunnelInfoCtx t e r s e' r' s' z zp zq gad =
   (ExtendLinIdx e r s e' r' s', -- extendLin
    e' ~ (e * (r' / r)),         -- convenience; implied by prev constraint
@@ -517,6 +521,7 @@ type GenTunnelInfoCtx t e r s e' r' s' z zp zq gad =
    Lift zp z, CElt t zp,        -- liftLin
    CElt t z, e' `Divides` r')   -- powBasis
 
+-- | Generates auxilliary data needed to tunnel from \(\O_{r'}\) to \(\O_{s'}\).
 tunnelInfo :: forall gad t e r s e' r' s' z zp zq rnd .
   (MonadRandom rnd, GenTunnelInfoCtx t e r s e' r' s' z zp zq gad)
   => Linear t zp e r s

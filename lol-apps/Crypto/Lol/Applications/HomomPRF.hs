@@ -1,6 +1,6 @@
 {-|
 Module      : Crypto.Lol.Applications.HomomPRF
-Description : Homomorphic evaluation of the PRF from [BP14].
+Description : Homomorphic evaluation of the PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [BP14]>.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-2
@@ -10,7 +10,7 @@ Portability : POSIX
 
   \( \def\Z{\mathbb{Z}} \)
 
-Homomorphic evaluation of the PRF from [BP14].
+Homomorphic evaluation of the PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [BP14]>.
 -}
 
 {-# LANGUAGE ConstraintKinds       #-}
@@ -109,7 +109,8 @@ homomPRFM ct x = do
   state $ homomPRF' hints ct x
 
 -- | Evaluates the PRF family indexed by the encrypted secret on the input,
--- relative to some PRF state. Note that the algorithm in [BP14] outputs a
+-- relative to some PRF state. Note that the algorithm in
+-- <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [BP14]> outputs a
 -- /vector/; this function only outputs the encryption of the first coefficient
 -- of that vector.
 homomPRF :: (MulPublicCtx t r r' zp zq,

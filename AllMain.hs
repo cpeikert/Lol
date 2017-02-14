@@ -17,6 +17,7 @@ import KHPRFMain ()
 import HomomPRFMain ()
 import TestAppsMain ()
 import BenchAppsMain ()
+import LolTestsMain ()
 
 import RLWEChallengesMain ()
 

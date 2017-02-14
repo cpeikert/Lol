@@ -9,7 +9,6 @@ Stability   : experimental
 Portability : POSIX
 */
 
-
 #ifndef TENSORTYPES_H_
 #define TENSORTYPES_H_
 
