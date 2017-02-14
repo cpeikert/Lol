@@ -44,7 +44,7 @@ Flag opt
 library
   default-language:   Haskell2010
   ghc-options: -fwarn-dodgy-imports
-  cc-options: -std=c++11
+  cc-options: -std=c++0x
   Include-dirs: Crypto/Lol/Cyclotomic/Tensor/CPP
   -- Due to #12152, the file containing the definition of `Zq::q` must be linked first,
   -- otherwise dynamic linking (`cabal repl` or `stack ghci`) results in the error:
