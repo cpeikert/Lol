@@ -22,10 +22,8 @@ cache:
 # Ensure necessary system libraries are present
 addons:
   apt:
-    sources: &apt_sources
-    packages: &apt_packages
+    packages:
       - libgmp-dev
-      - g++-4.9
 
 before_install:
 # Download and unpack the stack executable
