@@ -22,7 +22,7 @@ cache:
 # Ensure necessary system libraries are present
 addons:
   apt:
-    packages:
+    packages: &apt_packages
       - libgmp-dev
       - g++-4.8
 
