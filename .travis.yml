@@ -35,6 +35,7 @@ before_install:
 
 install:
 # Build dependencies
+- g++ --version
 - stack --no-terminal --install-ghc test --only-dependencies
 
 script:
