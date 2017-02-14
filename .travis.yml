@@ -39,7 +39,7 @@ before_install:
 install:
 # Build dependencies
 - g++-4.8 --version
-- g++-4.8 --version
+- g++ --version
 - stack --no-terminal --install-ghc test --only-dependencies
 
 script:
