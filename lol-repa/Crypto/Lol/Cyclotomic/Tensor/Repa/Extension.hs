@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Cyclotomic.Tensor.Repa.Extension
+Description : RT-specific functions for embedding/twacing in various bases.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+RT-specific functions for embedding/twacing in various bases.
+-}
+
 {-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
@@ -10,8 +23,6 @@
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-
--- | RT-specific functions for embedding/twacing in various bases
 
 module Crypto.Lol.Cyclotomic.Tensor.Repa.Extension
 ( twacePowDec', twaceCRT', embedPow', embedDec', embedCRT'

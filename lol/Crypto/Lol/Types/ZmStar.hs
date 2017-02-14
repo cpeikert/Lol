@@ -1,3 +1,18 @@
+{-|
+Module      : Crypto.Lol.Types.ZmStar
+Description : Multiplicative groups mod q.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+  \( \def\Z{\mathbb{Z}} \)
+
+A collection of helper functions for working with \(\Z_m^*\).
+-}
+
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -8,9 +23,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-
--- | \( \def\Z{\mathbb{Z}} \)
--- A collection of helper functions for working with \(\Z_m^*\).
 
 module Crypto.Lol.Types.ZmStar
 ( order, partitionCosets

@@ -1,8 +1,19 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-|
+Module      : Crypto.Lol.Cyclotomic.RescaleCyc
+Description : A class and helper functions for rescaling cycltomic ring elements.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
 
--- | \( \def\Z{\mathbb{Z}} \)
---
--- A class and helper functions for rescaling cycltomic ring elements.
+  \( \def\Z{\mathbb{Z}} \)
+
+A class and helper functions for rescaling cycltomic ring elements.
+-}
+
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Crypto.Lol.Cyclotomic.RescaleCyc where
 

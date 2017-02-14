@@ -1,8 +1,21 @@
+/*
+Module      : crt.cpp
+Description : Chinese remainder transform.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+*/
+
 #include "types.h"
 #include "tensor.h"
 #include "common.h"
 
-// there should be a special cases that do NOT require temp space to be allocated for all primes *smaller* than DFTP_GENERIC_SIZE
+// If this macro is modified, make sure to update all functions below with
+// cascading if/else statments so that temp space is allocated when necessary
+// (i.e., for all primes >= DFTP_GENERIC_SIZE)
 #define DFTP_GENERIC_SIZE 11
 
 hDim_t bitrev (PrimeExponent pe, hDim_t j) {

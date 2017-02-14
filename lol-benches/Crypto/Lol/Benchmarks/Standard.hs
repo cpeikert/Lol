@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Benchmarks.Standard
+Description : Default high-level benchmarks for Tensor implementations.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Default high-level benchmarks for Tensor implementations.
+-}
+
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -8,8 +21,6 @@
 {-# LANGUAGE TypeOperators         #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
-
--- | High-level benchmark groups and parameters, as reported in the paper.
 
 module Crypto.Lol.Benchmarks.Standard where
 

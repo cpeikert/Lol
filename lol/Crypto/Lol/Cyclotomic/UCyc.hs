@@ -1,3 +1,30 @@
+{-|
+Module      : Crypto.Lol.Cyclotomic.UCyc
+Description : A low-level implementation of cyclotomic rings.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\F{\mathbb{F}} \)
+  \( \def\Q{\mathbb{Q}} \)
+  \( \def\O{\mathcal{O}} \)
+
+A low-level implementation of cyclotomic rings that allows (and
+requires) the programmer to control the underlying representation
+of ring elements, i.e., powerful, decoding, or CRT basis.
+
+__WARNING:__ as with all fixed-point arithmetic, the functions
+associated with 'UCyc' may result in overflow (and thereby
+incorrect answers and potential security flaws) if the input
+arguments are too close to the bounds imposed by the base type.
+The acceptable range of inputs for each function is determined by
+the internal linear transforms and other operations it performs.
+-}
+
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -12,22 +39,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-
--- | \( \def\Z{\mathbb{Z}} \)
---   \( \def\F{\mathbb{F}} \)
---   \( \def\Q{\mathbb{Q}} \)
---   \( \def\O{\mathcal{O}} \)
---
--- A low-level implementation of cyclotomic rings that allows (and
--- requires) the programmer to control the underlying representation
--- of ring elements, i.e., powerful, decoding, or CRT basis.
---
--- __WARNING:__ as with all fixed-point arithmetic, the functions
--- associated with 'UCyc' may result in overflow (and thereby
--- incorrect answers and potential security flaws) if the input
--- arguments are too close to the bounds imposed by the base type.
--- The acceptable range of inputs for each function is determined by
--- the internal linear transforms and other operations it performs.
 
 module Crypto.Lol.Cyclotomic.UCyc
 (

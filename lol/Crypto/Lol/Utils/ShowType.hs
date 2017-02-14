@@ -1,3 +1,18 @@
+{-|
+Module      : Crypto.Lol.Utils.ShowType
+Description : Pretty print type parameters.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+  \( \def\C{\mathbb{C}} \)
+
+Class for pretty-printing type parameters to tests and benchmarks
+-}
+
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -11,8 +26,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
-
--- | Class for pretty-printing type parameters to tests and benchmarks
 
 module Crypto.Lol.Utils.ShowType
 (ArgType

@@ -1,3 +1,13 @@
+/*
+Module      : types.h
+Description : C++ types and function declarations.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+*/
 
 #ifndef TENSORTYPES_H_
 #define TENSORTYPES_H_

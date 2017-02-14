@@ -1,9 +1,20 @@
+{-|
+Module      : Crypto.Lol.Applications.KeyHomomorphicPRF
+Description : Key-homomorphic PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [BP14]>.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Key-homomorphic PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [BP14]>.
+-}
+
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE GADTs               #-}
 {-# LANGUAGE NoImplicitPrelude   #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
--- | Key-homomorphic PRF from [BP14].
 
 module Crypto.Lol.Applications.KeyHomomorphicPRF
 (FullBinTree(..), evalTree
@@ -36,7 +47,11 @@ instance NFData FullBinTree where
   rnf (I i t1 t2) = rnf i `seq` rnf t1 `seq` rnf t2
 
 -- | Parameters for PRF
-data PRFFamily gad rq rp = Params (Matrix rq) (Matrix rq) FullBinTree -- | a0, a1, tree
+data PRFFamily gad rq rp =
+  Params
+  (Matrix rq) -- a0
+  (Matrix rq) -- a1
+  FullBinTree -- tree
 
 instance (NFData rq) => NFData (PRFFamily gad rq rp) where
   rnf (Params m1 m2 t) = rnf m1 `seq` rnf m2 `seq` rnf t
@@ -135,7 +150,7 @@ evalTree y (PRFState pgad a0 a1 t) =
       (res, t', _) = go y t
   in (res, PRFState pgad a0 a1 t')
 
--- | Equation (2.3) in [BP14]
+-- | Equation (2.3) in <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [BP14]>.
 latticePRF' :: (Rescale zq zp)
   => Matrix zq -> Int -> PRFState zq zp -> (Matrix zp, PRFState zq zp)
 latticePRF' s x state1@(PRFState _ a0 _ _)
@@ -146,15 +161,17 @@ latticePRF' s x state1@(PRFState _ a0 _ _)
   | otherwise = let (res,state2) = evalTree x state1
                 in (rescale <$> s*res, state2)
 
+-- | Single-ouptut lattice PRF.
 latticePRF :: (Rescale zq zp)
   => Matrix zq -> Int -> PRFState zq zp -> Matrix zp
 latticePRF s x = fst. latticePRF' s x
 
+-- | Multi-output lattice PRF with monadic memoized internal state.
 latticePRFM :: (MonadState (PRFState zq zp) mon, Rescale zq zp)
   => Matrix zq -> Int -> mon (Matrix zp)
 latticePRFM s x = state $ latticePRF' s x
 
--- | Equation (2.10) in [BP14].
+-- | Equation (2.10) in <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [BP14]>.
 ringPRF' :: (Fact m, RescaleCyc (Cyc t) zq zp, Ring rq,
             rq ~ Cyc t m zq, rp ~ Cyc t m zp)
     => rq -> Int -> PRFState rq rp -> (Matrix rp, PRFState rq rp)
@@ -162,11 +179,13 @@ ringPRF' s x state1 =
   let (res,state2) = evalTree x state1
   in ((rescaleDec . (s*)) <$> res, state2)
 
+-- | Single-output ring PRF.
 ringPRF :: (Fact m, RescaleCyc (Cyc t) zq zp, Ring rq,
             rq ~ Cyc t m zq, rp ~ Cyc t m zp)
     => rq -> Int -> PRFState rq rp -> Matrix rp
 ringPRF s x = fst . ringPRF' s x
 
+-- | Multi-output ring PRF with monadic memoized internal state.
 ringPRFM :: (MonadState (PRFState rq rp) mon, Fact m,
              RescaleCyc (Cyc t) zq zp, Ring rq,
              rq ~ Cyc t m zq, rp ~ Cyc t m zp)
@@ -214,7 +233,7 @@ randomFamily size = do -- in rnd
   a1 <- fromList 1 len <$> take len <$> getRandoms
   return $ makeFamily a0 a1 t
 
--- | Constructs an n-bit Gray code, useful for efficiently evaluating the PRF
+-- | Constructs an n-bit Gray code, useful for efficiently evaluating the PRF.
 grayCode :: Int -> [Int]
 grayCode 1 = [0,1]
 grayCode n =

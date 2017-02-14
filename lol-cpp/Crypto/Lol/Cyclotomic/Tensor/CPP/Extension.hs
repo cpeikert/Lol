@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Cyclotomic.Tensor.CPP.Extension
+Description : Embedding/twacing in various bases for CPP.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+CPP Tensor-specific functions for embedding/twacing in various bases.
+-}
+
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -7,8 +20,6 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
-
--- | CT-specific functions for embedding/twacing in various bases
 
 module Crypto.Lol.Cyclotomic.Tensor.CPP.Extension
 ( embedPow', embedDec', embedCRT'

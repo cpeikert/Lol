@@ -1,3 +1,19 @@
+{-|
+Module      : Crypto.Lol.CRTrans
+Description : Functions related to the Chinese Remainder Transform.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+  \( \def\C{\mathbb{C}} \)
+
+Classes and helper methods for the Chinese remainder transform
+and ring extensions.
+-}
+
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -6,10 +22,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
--- | \( \def\C{\mathbb{C}} \)
---
--- Classes and helper methods for the Chinese remainder transform
--- and ring extensions.
+
 
 module Crypto.Lol.CRTrans
 ( CRTrans(..), CRTEmbed(..)

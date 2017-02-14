@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Benchmarks
+Description : Infrastructure for benchmarking Lol.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Infrastructure for benchmarking Lol.
+-}
+
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -7,8 +20,6 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
-
--- | Infrastructure for benchmarking Lol.
 
 module Crypto.Lol.Benchmarks
 (Crypto.Lol.Benchmarks.bench

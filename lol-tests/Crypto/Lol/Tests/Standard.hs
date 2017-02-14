@@ -1,3 +1,17 @@
+{-|
+Module      : Crypto.Lol.Tests.Standard
+Description : High-level tensor tests.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+High-level test groups and parameters,
+which can be used to verify a 'Tensor' implementation.
+-}
+
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
@@ -6,9 +20,6 @@
 {-# LANGUAGE TypeOperators         #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
-
--- | High-level test groups and parameters,
--- which can be used to verify a 'Tensor' implementation.
 
 module Crypto.Lol.Tests.Standard where
 

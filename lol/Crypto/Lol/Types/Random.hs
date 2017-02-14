@@ -1,10 +1,21 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-|
+Module      : Crypto.Lol.Types.Random
+Description : Types for using crypto-api with MonadCryptoRandom.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
 
--- | Defines a newtype wrapper 'CryptoRand' for crypto-api's
--- 'CryptoRandomGen', and a corresponding 'RandomGen' wrapper
--- instance.  These are needed because 'CryptoRandomGen' generators
--- can only be used to get "Data.ByteString"s; the 'RandomGen' wrapper
--- instance allows them to be used to generate any 'Random' type.
+Defines a newtype wrapper 'CryptoRand' for crypto-api's
+'CryptoRandomGen', and a corresponding 'RandomGen' wrapper
+instance.  These are needed because 'CryptoRandomGen' generators
+can only be used to get "Data.ByteString"s; the 'RandomGen' wrapper
+instance allows them to be used to generate any 'Random' type.
+-}
+
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 
 module Crypto.Lol.Types.Random (CryptoRand, evalCryptoRandIO) where
 

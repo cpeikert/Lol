@@ -61,18 +61,3 @@ library
     split,
     statistics,
     transformers
-
--- EAC: This really belongs in lol.cabal, but due to a cabal/stack bug, it can't right now.
-Benchmark bench-lol
-  type:               exitcode-stdio-1.0
-  default-language:   Haskell2010
-  main-is:            Main.hs
-  hs-source-dirs:     exec
-
-  ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
-
-  build-depends:
-    base,
-    DRBG,
-    lol,
-    lol-benches

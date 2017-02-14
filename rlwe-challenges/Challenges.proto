@@ -43,25 +43,25 @@ message Challenge {
   }
 }
 
-message InstanceCont1 {             // continuous RLWE instance
-  required int32 challengeID        = 1;  // challenge this instance belongs to
-  required int32 instanceID         = 2;  // instance within the challenge
-  required ContParams params        = 3;  // problem params (self-containment)
-  repeated SampleCont1 samples = 4;  // the samples
+message InstanceCont1 {                  // continuous RLWE instance
+  required int32 challengeID       = 1;  // challenge this instance belongs to
+  required int32 instanceID        = 2;  // instance within the challenge
+  required ContParams params       = 3;  // problem params (self-containment)
+  repeated SampleCont1 samples     = 4;  // the samples
 }
 
-message InstanceDisc1 {             // discrete RLWE instance
-  required int32 challengeID        = 1;
-  required int32 instanceID         = 2;
-  required DiscParams params        = 3;
-  repeated SampleDisc1 samples = 4;
+message InstanceDisc1 {                  // discrete RLWE instance
+  required int32 challengeID       = 1;
+  required int32 instanceID        = 2;
+  required DiscParams params       = 3;
+  repeated SampleDisc1 samples     = 4;
 }
 
-message InstanceRLWR1 {             // RLWR instance
-  required int32 challengeID        = 1;
-  required int32 instanceID         = 2;
-  required RLWRParams params        = 3;
-  repeated SampleRLWR1 samples = 4;
+message InstanceRLWR1 {                  // RLWR instance
+  required int32 challengeID       = 1;
+  required int32 instanceID        = 2;
+  required RLWRParams params       = 3;
+  repeated SampleRLWR1 samples     = 4;
 }
 
 message InstanceCont {                   // continuous RLWE instance

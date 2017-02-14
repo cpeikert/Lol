@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Tests
+Description : Infrastructure for testing Lol.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Infrastructure for testing Lol.
+-}
+
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
@@ -6,8 +19,6 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
-
--- | Infrastructure for testing Lol.
 
 module Crypto.Lol.Tests
 (test

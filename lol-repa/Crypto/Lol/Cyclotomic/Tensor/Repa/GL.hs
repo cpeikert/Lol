@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Cyclotomic.Tensor.Repa.GL
+Description : The @G@ and @L@ transforms for Repa arrays.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+The @G@ and @L@ transforms for Repa arrays.
+-}
+
 {-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -6,8 +19,6 @@
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-
--- | The @G@ and @L@ transforms for Repa arrays.
 
 module Crypto.Lol.Cyclotomic.Tensor.Repa.GL
 ( fL, fLInv, fGPow, fGDec, fGInvPow, fGInvDec

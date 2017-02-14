@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Benchmarks.ZqBenches
+Description : Benchmarks for modular arithmetic.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Benchmarks for modular arithmetic.
+-}
+
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}

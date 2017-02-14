@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Benchmarks.UCycBenches
+Description : Benchmarks for the 'UCyc' interface.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Benchmarks for the 'UCyc' interface.
+-}
+
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
@@ -6,8 +19,6 @@
 {-# LANGUAGE TypeFamilies          #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
-
--- | Benchmarks for the 'UCyc' interface.
 
 module Crypto.Lol.Benchmarks.UCycBenches (ucycBenches1, ucycBenches2) where
 

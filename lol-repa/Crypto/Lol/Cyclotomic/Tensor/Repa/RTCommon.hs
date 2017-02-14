@@ -1,3 +1,17 @@
+{-|
+Module      : Crypto.Lol.Cyclotomic.Tensor.Repa.Common
+Description : A simple DSL for tensoring Repa arrays.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+A simple DSL for tensoring Repa arrays and other common functionality
+on Repa arrays.
+-}
+
 {-# LANGUAGE BangPatterns               #-}
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
@@ -12,9 +26,6 @@
 {-# LANGUAGE RoleAnnotations            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeOperators              #-}
-
--- | A simple DSL for tensoring Repa arrays and other common functionality
--- on Repa arrays
 
 module Crypto.Lol.Cyclotomic.Tensor.Repa.RTCommon
 ( module R

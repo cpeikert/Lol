@@ -1,3 +1,20 @@
+{-|
+Module      : Crypto.Lol.Cyclotomic.Linear
+Description : Functions from one cyclotomic ring to another that are linear
+              over a common subring.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+  \( \def\lcm{\text{lcm}} \)
+
+Functions from one cyclotomic ring to another that are linear
+over a common subring.
+-}
+
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -11,11 +28,6 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
-
--- | \( \def\lcm{\text{lcm}} \)
---
--- Functions from one cyclotomic ring to another that are linear
--- over a common subring.
 
 module Crypto.Lol.Cyclotomic.Linear
 ( Linear, ExtendLinIdx

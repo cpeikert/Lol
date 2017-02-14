@@ -1,3 +1,20 @@
+{-|
+Module      : Crypto.Lol.PosBinDefs
+Description : Internal module.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\C{\mathbb{C}} \)
+
+This sub-module exists only because we can't define and use
+template Haskell splices in the same module.
+-}
+
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE GADTs                #-}
@@ -13,9 +30,6 @@
 
 {-# OPTIONS_GHC -fno-warn-duplicate-exports     #-}
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
-
--- | This sub-module exists only because we can't define and use
--- template Haskell splices in the same module.
 
 module Crypto.Lol.PosBinDefs
 ( -- * Positive naturals in Peano representation

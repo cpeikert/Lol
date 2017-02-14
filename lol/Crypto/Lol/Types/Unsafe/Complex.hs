@@ -1,3 +1,19 @@
+{-|
+Module      : Crypto.Lol.Types.Unsafe.Complex
+Description : Data type, functions, and instances for complex numbers.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Data type, functions, and instances for complex numbers.
+This module is "unsafe" because it exports the 'Complex' constructor.
+This module should only be used to make tensor-specific instances for 'Complex'.
+The safe way to use this type is to import "Crypto.Lol.Types".
+-}
+
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -7,11 +23,6 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeFamilies               #-}
-
--- | Data type, functions, and instances for complex numbers.
--- This module is "unsafe" because it exports the 'Complex' constructor.
--- This module should only be used to make tensor-specific instances for 'Complex'.
--- The safe way to use this type is to import "Crypto.Lol.Types".
 
 module Crypto.Lol.Types.Unsafe.Complex (
   Complex(..)

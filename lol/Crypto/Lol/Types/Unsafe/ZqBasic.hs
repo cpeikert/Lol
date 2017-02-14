@@ -1,3 +1,27 @@
+{-|
+Module      : Crypto.Lol.Types.Unsafe.ZqBasic
+Description : An implementation of modular arithmetic over the integers.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\C{\mathbb{C}} \)
+
+An implementation of the quotient ring \(\Z_q = \Z/(q\Z)\).
+This module is "unsafe" because it exports the 'ZqBasic' constructor.
+This module should only be used to make tensor-specific instances for 'ZqBasic'.
+The safe way to use this type is to import "Crypto.Lol.Types".
+
+EAC: It may help GHC do specialization at higher levels of the library
+if we "simplify" constraints in this module. For example, replace the
+(Additive (ZqBasic q z)) constraint on the Reduce instance with
+(Additive z)
+-}
+
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -10,18 +34,6 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
-
--- | \( \def\Z{\mathbb{Z}} \)
---   \( \def\C{\mathbb{C}} \)
--- An implementation of the quotient ring \(\Z_q = \Z/(q\Z)\).
--- This module is "unsafe" because it exports the 'ZqBasic' constructor.
--- This module should only be used to make tensor-specific instances for 'ZqBasic'.
--- The safe way to use this type is to import "Crypto.Lol.Types".
-
--- EAC: It may help GHC do specialization at higher levels of the library
--- if we "simplify" constraints in this module. For example, replace the
--- (Additive (ZqBasic q z)) constraint on the Reduce instance with
--- (Additive z)
 
 module Crypto.Lol.Types.Unsafe.ZqBasic
 ( ZqBasic(..) -- export the type, but not the constructor (for safety)

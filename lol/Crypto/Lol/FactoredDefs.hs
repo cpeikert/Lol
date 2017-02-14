@@ -1,3 +1,17 @@
+{-|
+Module      : Crypto.Lol.FactoredDefs
+Description : Internal module.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+This sub-module exists only because we can't define and use
+template Haskell splices in the same module.
+-}
+
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE GADTs                #-}
@@ -13,9 +27,6 @@
 
 {-# OPTIONS_GHC -fno-warn-unused-binds          #-}
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
-
--- | This sub-module exists only because we can't define and use
--- template Haskell splices in the same module.
 
 module Crypto.Lol.FactoredDefs
 (
@@ -425,7 +436,7 @@ radicalPP (p,_) = p
 -- | The odd radical of a prime power.
 oddRadicalPP (2,_) = 1
 oddRadicalPP (p,_) = p
-
+-- | Value of a 'PrimeBin'.
 valueP :: PrimeBin -> Int
 valueP (P p) = binToInt p
 
@@ -478,6 +489,7 @@ ppDec pp@(p,e) = tySynD (mkName $ "PP" ++ show (p^e)) [] $ ppType pp
 fDec :: Int -> DecQ
 fDec n = tySynD (mkName $ 'F' : show n) [] $ fType n
 
+-- | Converts input to its data-level 'Factored' representation.
 intToFact :: Int -> Factored
 intToFact m =
   let fcts = factorize m

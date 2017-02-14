@@ -1,9 +1,20 @@
+{-|
+Module      : Crypto.Lol.Cyclotomic.Tensor.Repa.Dec
+Description : Linear transforms and operations related to the decoding basis.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Linear transforms and operations related to the decoding basis.
+-}
+
 {-# LANGUAGE ConstraintKinds     #-}
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE RebindableSyntax    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-
--- | Linear transforms and operations related to the decoding basis.
 
 module Crypto.Lol.Cyclotomic.Tensor.Repa.Dec
 ( tGaussianDec', gSqNormDec' ) where

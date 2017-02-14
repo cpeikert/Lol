@@ -1,11 +1,22 @@
+{-|
+Module      : Crypto.Lol.Types.IrreducibleChar2
+Description : Orphan instance of 'IrreduciblePoly' for characteristic-2 fields.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Orphan instance of 'IrreduciblePoly' for characteristic-2 fields.
+-}
+
 {-# LANGUAGE FlexibleInstances    #-}
 {-# LANGUAGE PolyKinds            #-}
 {-# LANGUAGE RebindableSyntax     #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
-
--- | Orphan instance of 'IrreduciblePoly' for characteristic-2 fields.
 
 module Crypto.Lol.Types.IrreducibleChar2 () where
 

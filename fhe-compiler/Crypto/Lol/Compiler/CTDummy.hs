@@ -1,3 +1,16 @@
+{-|
+Module      : Crypto.Lol.Compiler.CTDummy
+Description : Dummy ciphertext AST.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Currently unmaintained.
+-}
+
 {-# LANGUAGE RebindableSyntax, RankNTypes, TypeOperators,
              ScopedTypeVariables, GADTs, KindSignatures, FlexibleInstances,
              MultiParamTypeClasses, UndecidableInstances, FlexibleContexts,

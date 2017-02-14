@@ -1,3 +1,22 @@
+{-|
+Module      : Crypto.Lol.Types.Unsafe.RRq
+Description : An implementation of modular arithmetic over the reals.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+  \( \def\Z{\mathbb{Z}} \)
+  \( \def\R{\mathbb{R}} \)
+
+An implementation of the additive quotient group \(\R/(q\Z)\).
+This module is "unsafe" because it exports the 'RRq' constructor.
+This module should only be used to make tensor-specific instances for 'RRq'.
+The safe way to use this type is to import "Crypto.Lol.Types".
+-}
+
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -8,13 +27,6 @@
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
-
--- | \( \def\Z{\mathbb{Z}} \)
---   \( \def\R{\mathbb{R}} \)
--- An implementation of the additive quotient group \(\R/(q\Z)\).
--- This module is "unsafe" because it exports the 'RRq' constructor.
--- This module should only be used to make tensor-specific instances for 'RRq'.
--- The safe way to use this type is to import "Crypto.Lol.Types".
 
 module Crypto.Lol.Types.Unsafe.RRq
 ( RRq(..)

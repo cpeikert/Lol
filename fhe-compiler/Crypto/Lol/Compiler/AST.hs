@@ -1,3 +1,16 @@
+{-|
+Module      : Crytpo.Lol.Compiler.AST
+Description : Basic plaintext AST.
+Copyright   : (c) Eric Crockett, 2011-2017
+                  Chris Peikert, 2011-2017
+License     : GPL-2
+Maintainer  : ecrockett0@email.com
+Stability   : experimental
+Portability : POSIX
+
+Currently unmaintained.
+-}
+
 {-# LANGUAGE NoImplicitPrelude, GADTs, TypeOperators, AllowAmbiguousTypes, KindSignatures,
              FlexibleContexts, FlexibleInstances, MultiParamTypeClasses, UndecidableInstances,
              DataKinds, TypeFamilies, RankNTypes, ConstraintKinds,

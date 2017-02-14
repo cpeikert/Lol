@@ -39,7 +39,7 @@ compiler-check: newer-minor
 # will not be run. This is useful for tweaking upstream packages.
 
 packages:
-- compiler/
+#- fhe-compiler/
 - lol/
 - lol-apps/
 - lol-benches/
