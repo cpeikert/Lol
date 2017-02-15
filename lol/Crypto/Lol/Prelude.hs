@@ -18,7 +18,6 @@ assorted utility functions.
 -}
 
 {-# LANGUAGE ConstraintKinds            #-}
-{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -80,9 +79,6 @@ import Data.Singletons
 import qualified Data.Vector.Unboxed          as U
 import           Data.Vector.Unboxed.Deriving
 
-#if __GLASGOW_HASKELL__ < 800
-instance NFData (Proxy (a :: k)) where rnf Proxy = ()
-#endif
 deriving instance NFData (m a) => NFData (TaggedT s m a)
 deriving instance (MonadRandom m) => MonadRandom (TaggedT (tag :: k) m)
 

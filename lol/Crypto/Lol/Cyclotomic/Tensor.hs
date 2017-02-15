@@ -42,7 +42,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 , Kron, indexK, gCRTK, gInvCRTK, twCRTs
 -- * Tensor indexing
 , zmsToIndexFact
-, toIndexPair, fromIndexPair, indexInfo
+, indexInfo
 , extIndicesPowDec, extIndicesCRT, extIndicesCoeffs
 , baseIndicesPow, baseIndicesDec, baseIndicesCRT
 , digitRev
