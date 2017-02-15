@@ -13,7 +13,7 @@ Most of the functionality in Lol is exported by two modules:
 * 'Crypto.Lol' exports the primary *interfaces* of Lol
 
 * 'Crypto.Lol.Types' exports concrete types that would be used by most
-  instantiations including base rings.
+  instantiations.
 
 For a brief introduction to relevant mathematical notation, see 'Crypto.Lol'.
 
@@ -37,7 +37,7 @@ Tensor layer:
   the powerful and decoding bases, generating error terms, etc.
 
 * You will need an implementation of the 'Tensor' interface in order to use Lol.
-  Existing implementations include
+  Two implementations can be found at
   <https://hackage.haskell.org/package/lol-cpp lol-cpp>
   and <https://hackage.haskell.org/package/lol-repa lol-repa>.
 
@@ -60,6 +60,5 @@ Base ring layer:
   types and "reflecting" those types as integers back to the code..
   'Factored' types are mainly used to represent cyclotomic indices.
 
-Tests and benchmarks can be found in the packages lol-tests and lol-benches,
-respectively, though they are instantiated in individual tensors like lol-cpp
-and lol-repa.
+Tests and benchmarks can be found in the packages <https://hackage.haskell.org/package/lol-tests lol-tests> and <https://hackage.haskell.org/package/lol-benches lol-benches>,
+respectively, though they are instantiated in individual tensors.
