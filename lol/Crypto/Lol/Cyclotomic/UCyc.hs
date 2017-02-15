@@ -79,7 +79,7 @@ import Control.Applicative    as A
 import Control.Arrow
 import Control.DeepSeq
 import Control.Monad.Identity (Identity(..))
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 import Data.Foldable          as F
 import Data.Maybe
 import Data.Traversable

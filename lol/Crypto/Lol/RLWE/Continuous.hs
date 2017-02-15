@@ -28,7 +28,7 @@ import Crypto.Lol.Cyclotomic.UCyc   as U
 import Crypto.Lol.Prelude
 
 import Control.Applicative
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 
 -- | A continuous RLWE sample \( (a,b) \in R_q \times K/(qR)\).  (The
 -- second component is a 'UCyc' because the base type @rrq@

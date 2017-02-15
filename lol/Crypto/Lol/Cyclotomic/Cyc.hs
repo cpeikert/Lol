@@ -91,7 +91,7 @@ import Control.Arrow
 import Control.DeepSeq
 -- GHC warning is wrong: https://ghc.haskell.org/trac/ghc/ticket/12067
 import Control.Monad.Identity
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 import Data.Coerce
 import Data.Traversable
 

@@ -67,7 +67,7 @@ import Control.Applicative
 import Control.Arrow
 import Control.DeepSeq
 import Control.Monad.Identity
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 import Data.Coerce
 import Data.Default
 import Data.Functor.Trans.Tagged

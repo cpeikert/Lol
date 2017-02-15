@@ -123,7 +123,7 @@ library
     deepseq >= 1.4.1.1 && <1.5,
     directory,
     monadcryptorandom,
-    MonadRandom >= 0.2 && < 0.5,
+    MonadRandom >= 0.2 && < 0.6,
     mtl >= 2.2.1 && < 2.3,
     numeric-prelude >= 0.4.2 && < 0.5,
     protocol-buffers,
@@ -132,6 +132,6 @@ library
     reflection >= 1.5.1 && < 2.2,
     singletons >= 1.1.2.1 && < 2.3,
     tagged-transformer >= 0.7 && < 0.9,
-    template-haskell  >=  2.2.0.0,
-    vector==0.11.*,
+    template-haskell >=  2.2.0.0,
+    vector >=0.11 && < 0.13,
     vector-th-unbox >= 0.2.1.0 && < 0.3
