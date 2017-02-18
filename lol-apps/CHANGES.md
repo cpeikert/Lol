@@ -3,7 +3,13 @@ Changelog for lol project
 
 0.2.0.0
 ----
+ * Added [BPF14] key-homomorphic PRF.
+ * Added homomorphic evaluation of PRF.
+
+0.1.1.0
+----
  * Updated documentation with MathJax
+ * Added
 
 0.1.0.0
 -----
