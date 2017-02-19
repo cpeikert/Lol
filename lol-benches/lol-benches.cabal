@@ -48,13 +48,13 @@ library
 
   build-depends:
     ansi-terminal,
-    base >= 4.9,
+    base >= 4.9 && < 5,
     containers,
     criterion,
     crypto-api,
     deepseq,
     DRBG,
-    lol > 0.6.0.0,
+    lol >= 0.6.0.0,
     MonadRandom,
     split,
     statistics,

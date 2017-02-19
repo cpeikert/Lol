@@ -5,7 +5,7 @@ name:                rlwe-challenges
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.0.0.1
+version:             0.1.0.0
 synopsis:            Ring-LWE/LWR challenges using Lol.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -59,7 +59,7 @@ library
     Crypto.RLWE.Challenges.Verify
 
   build-depends: ansi-terminal,
-                 base < 5,
+                 base >= 4.9 && < 5,
                  bytestring,
                  containers,
                  directory,
@@ -67,7 +67,7 @@ library
                  filepath,
                  http-client >= 0.5,
                  http-conduit,
-                 lol >= 0.5.0.0,
+                 lol >= 0.6.0.0,
                  lol-cpp,
                  MonadRandom,
                  mtl,
@@ -88,7 +88,7 @@ executable rlwe-challenges
   ghc-options: -threaded -rtsopts -O2 -auto-all -caf-all -fno-warn-partial-type-signatures
 
   build-depends: ansi-terminal,
-                 base,
+                 base >= 4.9 && < 5,
                  lol >= 0.6.0.0,
                  MonadRandom,
                  options,

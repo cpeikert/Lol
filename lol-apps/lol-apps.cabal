@@ -65,13 +65,13 @@ library
     Crypto.Proto.SHE.TunnelInfo
 
   build-depends:
-    base>=4.9 && <5,
+    base >= 4.9 && < 5,
     containers,
-    deepseq >= 1.4.1.1 && <1.5,
+    deepseq >= 1.4.1.1,
     lol >= 0.6.0.0,
-    MonadRandom >= 0.2 && < 0.5,
+    MonadRandom >= 0.2,
     mtl,
-    numeric-prelude >= 0.4.2 && < 0.5,
+    numeric-prelude >= 0.4.2,
     protocol-buffers,
     protocol-buffers-descriptor,
     singletons,
@@ -89,7 +89,7 @@ test-suite test-apps
 
   build-depends:
     arithmoi,
-    base>=4.9,
+    base >= 4.9 && < 5,
     constraints,
     deepseq,
     DRBG,
@@ -101,12 +101,12 @@ test-suite test-apps
     MonadRandom,
     mtl,
     numeric-prelude,
-    QuickCheck >= 2.8 && < 2.9,
+    QuickCheck >= 2.8,
     random,
     repa,
     singletons,
-    test-framework >= 0.8 && < 0.9,
-    test-framework-quickcheck2 >= 0.3 && < 0.4,
+    test-framework >= 0.8,
+    test-framework-quickcheck2 >= 0.3,
     vector
 
 Benchmark bench-apps
@@ -125,7 +125,7 @@ Benchmark bench-apps
 
   build-depends:
     arithmoi,
-    base>=4.9,
+    base >= 4.9 && < 5,
     containers,
     criterion,
     deepseq,
@@ -154,7 +154,7 @@ executable homomprf
 
   build-depends:
     arithmoi,
-    base>=4.9,
+    base >= 4.9 && < 5,
     deepseq,
     DRBG,
     filepath,
@@ -177,7 +177,7 @@ executable khprf
 
   build-depends:
     arithmoi,
-    base>=4.9,
+    base >= 4.9 && < 5,
     deepseq,
     lol >= 0.6.0.0,
     lol-apps,
@@ -196,7 +196,7 @@ executable symmshe
 
   build-depends:
     arithmoi,
-    base>=4.9,
+    base >= 4.9 && < 5,
     lol >= 0.6.0.0,
     lol-apps,
     lol-cpp,

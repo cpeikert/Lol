@@ -4,7 +4,8 @@ Changelog for lol project
 0.6.0.0
 ----
  * Support for serializing ring products, linear functions, and TypeReps.
- * Split tensors into separate packages lol-cpp and lol-repa.
+ * Split previous lol package into separate tensor packages lol-cpp and lol-repa
+   and utility packages lol-benches and lol-tests.
  * Moved test and benchmark code to packages lol-tests and lol-benches, respectively.
  * Simpler tests and benchmarks (though microbenchmarks might be slightly slower
    than 0.5.0.2).
