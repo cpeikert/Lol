@@ -65,10 +65,10 @@ library
     Crypto.Proto.SHE.TunnelInfo
 
   build-depends:
-    base>=4.8 && <5,
+    base>=4.9 && <5,
     containers,
     deepseq >= 1.4.1.1 && <1.5,
-    lol >= 0.3,
+    lol >= 0.6.0.0,
     MonadRandom >= 0.2 && < 0.5,
     mtl,
     numeric-prelude >= 0.4.2 && < 0.5,
@@ -89,11 +89,11 @@ test-suite test-apps
 
   build-depends:
     arithmoi,
-    base,
+    base>=4.9,
     constraints,
     deepseq,
     DRBG,
-    lol,
+    lol >= 0.6.0.0,
     lol-apps,
     lol-cpp,
     lol-repa,
@@ -125,12 +125,12 @@ Benchmark bench-apps
 
   build-depends:
     arithmoi,
-    base,
+    base>=4.9,
     containers,
     criterion,
     deepseq,
     DRBG,
-    lol,
+    lol >= 0.6.0.0,
     lol-apps,
     lol-benches,
     lol-cpp,
@@ -154,11 +154,11 @@ executable homomprf
 
   build-depends:
     arithmoi,
-    base,
+    base>=4.9,
     deepseq,
     DRBG,
     filepath,
-    lol,
+    lol >= 0.6.0.0,
     lol-apps,
     lol-cpp,
     MonadRandom,
@@ -177,9 +177,9 @@ executable khprf
 
   build-depends:
     arithmoi,
-    base,
+    base>=4.9,
     deepseq,
-    lol,
+    lol >= 0.6.0.0,
     lol-apps,
     lol-cpp,
     MonadRandom,
@@ -196,8 +196,8 @@ executable symmshe
 
   build-depends:
     arithmoi,
-    base,
-    lol,
+    base>=4.9,
+    lol >= 0.6.0.0,
     lol-apps,
     lol-cpp,
     MonadRandom,

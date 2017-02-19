@@ -1,7 +1,9 @@
-
 This library contains modules which benchmark different layers of Lol.
 Choose which layers you want to benchmark,
 and call the appropriate funtion with a proxy for the relevant parameters.
 
 Primarily, this can be used to benchmark third-party 'Tensor' instances,
 but it also includes some useful tools for writing crypto application benchmarks.
+
+Unless you are writing your own benchmarks, you shouldn't explicitly need this
+package.

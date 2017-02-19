@@ -1,6 +1,11 @@
 // proto messages for precomputation step of homomorphic PRF
 // evaluation and testing
 
+// These messages are just repeated messages from SHE.proto, used when multiple
+// operations (on different types) are done in sequence. This avoids having
+// to load messages for each step of a computation, which could be error prone
+// since the messages are type-specific.
+
 import "Lol.proto";
 import "SHE.proto";
 

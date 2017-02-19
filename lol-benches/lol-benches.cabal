@@ -37,8 +37,6 @@ library
   exposed-modules:
     Crypto.Lol.Benchmarks
     Crypto.Lol.Benchmarks.CycBenches
-    Crypto.Lol.Benchmarks.SimpleTensorBenches
-    Crypto.Lol.Benchmarks.SimpleUCycBenches
     Crypto.Lol.Benchmarks.Standard
     Crypto.Lol.Benchmarks.TensorBenches
     Crypto.Lol.Benchmarks.UCycBenches
@@ -50,13 +48,13 @@ library
 
   build-depends:
     ansi-terminal,
-    base,
+    base >= 4.9,
     containers,
     criterion,
     crypto-api,
     deepseq,
     DRBG,
-    lol,
+    lol > 0.6.0.0,
     MonadRandom,
     split,
     statistics,

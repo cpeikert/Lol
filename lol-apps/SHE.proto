@@ -7,24 +7,27 @@ import "Lol.proto";
 // hprotoc -I ../lol -a Lol.proto=Crypto.Proto -p Crypto.Proto SHE.proto
 
 message SecretKey {
-  required R sk = 1;
-  required double v = 2;
+  required R sk              = 1; // ring element
+  required double v          = 2; // scaled variance
 }
 
+// internally used in KSHint
 message RqPolynomial {
-  repeated RqProduct coeffs = 1;
+  repeated RqProduct coeffs  = 1; // constant coefficient first, then linear, etc.
 }
 
+// linear or quadratic key switch hint
 message KSHint {
   repeated RqPolynomial hint = 1;
-  required TypeRep gad        = 2;
+  required TypeRep gad       = 2; // gadget used for key switching
 }
 
+// information for a single ring switch
 message TunnelInfo {
-  required LinearRq func     = 1;
+  required LinearRq func     = 1; // linear function to apply
   repeated KSHint hint       = 2;
-  required uint32 e          = 3;
-  required uint32 r          = 4;
-  required uint32 s          = 5;
-  required uint64 p          = 6;
+  required uint32 e          = 3; // index of greatest common subring of r and s
+  required uint32 r          = 4; // input ring index
+  required uint32 s          = 5; // output ring index
+  required uint64 p          = 6; // plaintext modulus
 }

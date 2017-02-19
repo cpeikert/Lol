@@ -40,8 +40,8 @@ library
     Crypto.Lol.Tests.ZqTests
 
   build-depends:
-    base,
-    lol,
+    base >= 4.9,
+    lol >= 0.6.0.0,
     MonadRandom,
     test-framework,
     test-framework-quickcheck2,
@@ -57,7 +57,7 @@ test-suite test-lol
   ghc-options: -threaded -O2
 
   build-depends:
-    base,
-    lol,
+    base >= 4.9,
+    lol >= 0.6.0.0,
     lol-tests,
     test-framework

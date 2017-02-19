@@ -1,4 +1,6 @@
-
 This library contains modules for testing Lol. Primarily, this can be used to
 verify third-party 'Tensor' instances, but it also includes some useful tools
 for writing crypto application tests.
+
+Unless you are writing your own tests, you shouldn't explicitly need this
+package.

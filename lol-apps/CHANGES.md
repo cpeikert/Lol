@@ -5,6 +5,11 @@ Changelog for lol project
 ----
  * Added [BPF14] key-homomorphic PRF.
  * Added homomorphic evaluation of PRF.
+ * Simpler benchmarks and tests.
+ * SHE: Made hints for key switching and ring tunneling explicit.
+ * SHE: Protocol buffer formats for tunneling, key-switch hints, secret keys, etc.
+   Note that this provides an easy way to save expensive precomputation. See
+   the HomomPRF example for more details.
 
 0.1.1.0
 ----

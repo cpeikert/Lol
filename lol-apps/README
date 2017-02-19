@@ -12,4 +12,6 @@ Overview of applications:
   PRF.
 
 Note that an example using each application can be found in the 'examples'
-directory.
+directory. Tests and benchmarks for SHE and KeyHomomorphicPRF are provided in
+the 'tests' and 'benchmarks' directories. Tests and benchmarks for HomomPRF are
+included in the example for HomomPRF.
