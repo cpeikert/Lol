@@ -58,4 +58,8 @@ library
     MonadRandom,
     split,
     statistics,
-    transformers
+    transformers,
+    -- EAC: lol-benches does NOT depend on vector. However, cabal can't resolve
+    -- dependencies without some help on the vector version. This is a bottleneck
+    -- preventing us from putting lol-benches on stackage.
+    vector < 0.12.0.0
