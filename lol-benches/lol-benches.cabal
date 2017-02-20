@@ -5,7 +5,7 @@ name:                lol-benches
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.0.0.1
+version:             0.0.0.2
 synopsis:            A library for benchmarking <https://hackage.haskell.org/package/lol Λ ∘ λ>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues

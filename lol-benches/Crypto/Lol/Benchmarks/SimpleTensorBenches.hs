@@ -24,7 +24,7 @@ harness (for performance comparison).
 module Crypto.Lol.Benchmarks.SimpleTensorBenches (simpleTensorBenches1, simpleTensorBenches2) where
 
 import Control.Applicative
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 
 import Criterion
 

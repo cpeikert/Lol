@@ -24,7 +24,7 @@ harness (for performance comparison).
 module Crypto.Lol.Benchmarks.SimpleUCycBenches (simpleUCycBenches1, simpleUCycBenches2) where
 
 import Control.Applicative
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol.Prelude
 import Crypto.Lol.Cyclotomic.UCyc

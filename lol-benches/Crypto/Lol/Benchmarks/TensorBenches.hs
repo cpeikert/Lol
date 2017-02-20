@@ -23,7 +23,7 @@ Benchmarks for the 'Tensor' interface.
 module Crypto.Lol.Benchmarks.TensorBenches (tensorBenches1, tensorBenches2) where
 
 import Control.Applicative
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol.Benchmarks
 import Crypto.Lol.Prelude

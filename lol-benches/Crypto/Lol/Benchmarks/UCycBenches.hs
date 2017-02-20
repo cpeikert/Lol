@@ -23,7 +23,7 @@ Benchmarks for the 'UCyc' interface.
 module Crypto.Lol.Benchmarks.UCycBenches (ucycBenches1, ucycBenches2) where
 
 import Control.Applicative
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol.Benchmarks
 import Crypto.Lol.Cyclotomic.Tensor (TElt)

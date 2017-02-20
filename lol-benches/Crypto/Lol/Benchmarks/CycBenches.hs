@@ -23,7 +23,7 @@ Benchmarks for the 'Cyc' interface.
 module Crypto.Lol.Benchmarks.CycBenches (cycBenches1, cycBenches2) where
 
 import Control.Applicative
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol
 import Crypto.Lol.Benchmarks

@@ -25,7 +25,7 @@ import Crypto.Lol
 
 import Control.Applicative
 import Control.Monad
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Array.Repa as R
 

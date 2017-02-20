@@ -24,7 +24,7 @@ This may require some fiddling in exports of 'Tensor' instances to compile.
 module Crypto.Lol.Benchmarks.CTBenches (ctBenches) where
 
 import Control.Applicative
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Prelude
