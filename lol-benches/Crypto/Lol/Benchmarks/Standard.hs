@@ -25,9 +25,9 @@ Default high-level benchmarks for Tensor implementations.
 module Crypto.Lol.Benchmarks.Standard where
 
 import Crypto.Lol.Benchmarks
-import Crypto.Lol.Benchmarks.SimpleTensorBenches
+--import Crypto.Lol.Benchmarks.SimpleTensorBenches
 import Crypto.Lol.Benchmarks.TensorBenches
-import Crypto.Lol.Benchmarks.SimpleUCycBenches
+--import Crypto.Lol.Benchmarks.SimpleUCycBenches
 import Crypto.Lol.Benchmarks.UCycBenches
 import Crypto.Lol.Benchmarks.CycBenches
 import Crypto.Lol.Factored
@@ -66,9 +66,9 @@ oneIdxBenches :: forall t m r gen . _ => Proxy '(m,r) -> Proxy t -> Proxy gen ->
 oneIdxBenches _ _ pgen =
   let ptmr = Proxy :: Proxy '(t,m,r)
   in benchGroup (showType ptmr) $ (($ pgen) . ($ ptmr)) <$> [
-      simpleTensorBenches1,
+      --simpleTensorBenches1,
       tensorBenches1,
-      simpleUCycBenches1,
+      --simpleUCycBenches1,
       ucycBenches1,
       cycBenches1
       ]
@@ -79,9 +79,9 @@ twoIdxBenches :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> IO Benchma
 twoIdxBenches _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)
   in benchGroup (showType ptmr) $ ($ ptmr) <$> [
-      simpleTensorBenches2,
+      --simpleTensorBenches2,
       tensorBenches2,
-      simpleUCycBenches2,
+      --simpleUCycBenches2,
       ucycBenches2,
       cycBenches2
       ]

@@ -1,6 +1,10 @@
 Changelog for lol-benches project
 ================================
 
+0.0.0.3
+-----
+ * Removed imports of Simple*Benches.
+
 0.0.0.2
 -----
  * Import Control.Monad.Random hiding `lift` to support MonadRandom-0.5.1.
