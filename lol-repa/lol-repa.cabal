@@ -99,7 +99,7 @@ Benchmark bench-lol-repa
   hs-source-dirs:   benchmarks
 
   ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
-  ghc-options: -ddump-simpl-stats -fsimpl-tick-factor=110
+  ghc-options: -fsimpl-tick-factor=110
 
   build-depends:
     base >= 4.9 && < 5,
@@ -114,7 +114,7 @@ test-suite test-lol-repa
   main-is:          TestRepaMain.hs
   ghc-options:      -main-is TestRepaMain
   hs-source-dirs:   tests
-  ghc-options:      -threaded -O2 -ddump-simpl-stats
+  ghc-options:      -threaded -O2
 
   build-depends:
     base >= 4.9 && < 5,
