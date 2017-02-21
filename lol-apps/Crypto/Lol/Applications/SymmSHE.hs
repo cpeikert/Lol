@@ -73,7 +73,7 @@ import qualified Crypto.Proto.SHE.TunnelInfo as P
 import Control.Applicative  hiding ((*>))
 import Control.DeepSeq
 import Control.Monad        as CM
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 import Data.Maybe
 import Data.Traversable     as DT
 import Data.Typeable
