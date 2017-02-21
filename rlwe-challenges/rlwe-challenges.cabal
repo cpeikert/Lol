@@ -85,7 +85,7 @@ executable rlwe-challenges
   main-is:          RLWEChallengesMain.hs
   ghc-options:      -main-is RLWEChallengesMain
 
-  ghc-options: -threaded -rtsopts -O2 -auto-all -caf-all -fno-warn-partial-type-signatures
+  ghc-options: -threaded -rtsopts -O2 -fno-warn-partial-type-signatures
 
   build-depends: ansi-terminal,
                  base >= 4.9 && < 5,

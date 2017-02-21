@@ -66,7 +66,7 @@ import Crypto.Random.DRBG
 
 import           Control.Applicative
 import           Control.Monad.Except hiding (lift)
-import           Control.Monad.Random
+import           Control.Monad.Random hiding (lift)
 import qualified Data.ByteString.Lazy as BS
 import           Data.Int
 import           Data.List            (nub)
