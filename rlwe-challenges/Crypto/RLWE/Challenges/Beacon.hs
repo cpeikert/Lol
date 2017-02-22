@@ -9,9 +9,9 @@ Stability   : experimental
 Portability : POSIX
 
 Utility functions for working with the
-<http://www.nist.gov/itl/csd/ct/nist_beacon.cfm NIST Randomness
-Beacon>.
+<http://www.nist.gov/itl/csd/ct/nist_beacon.cfm NIST Randomness Beacon>.
 -}
+
 
 {-# LANGUAGE FlexibleContexts #-}
 
