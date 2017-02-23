@@ -42,9 +42,7 @@ sheTests _ _ =
   in testGroup (showType ptmr) $ ($ ptmr) <$> [
    genTestArgs "DecU . Enc" prop_encDecU,
    genTestArgs "AddPub"     prop_addPub,
-   genTestArgs "MulScal"    prop_mulScal,
    genTestArgs "MulPub"     prop_mulPub,
-   genTestArgs "ScalarPub"  prop_addScalar,
    genTestArgs "CTAdd"      prop_ctadd,
    genTestArgs "CTAdd2"     prop_ctadd2,
    genTestArgs "CTMul"      prop_ctmul,
@@ -111,17 +109,6 @@ prop_addPub a pt sk = testIO $ do
       pt' = decryptUnrestricted sk ct'
   return $ pt' == (a+pt)
 
-prop_mulScal :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
-  => zp
-     -> PT (Cyc t m zp)
-     -> SK (Cyc t m' z)
-     -> Test '(t,m,m',zp,zq)
-prop_mulScal a pt sk = testIO $ do
-  ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
-  let ct' = mulScalar a ct
-      pt' = decryptUnrestricted sk ct'
-  return $ pt' == ((scalarCyc a) * pt)
-
 prop_mulPub :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
   => Cyc t m zp
      -> PT (Cyc t m zp)
@@ -132,14 +119,6 @@ prop_mulPub a pt sk = testIO $ do
   let ct' = mulPublic a ct
       pt' = decryptUnrestricted sk ct'
   return $ pt' == (a*pt)
-
-prop_addScalar :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
-  => zp -> PT (Cyc t m zp) -> SK (Cyc t m' z) -> Test '(t,m,m',zp,zq)
-prop_addScalar c pt sk = testIO $ do
-  ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
-  let ct' = addScalar c ct
-      pt' = decryptUnrestricted sk ct'
-  return $ pt' == ((scalarCyc c)+pt)
 
 prop_ctadd :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
   => PT (Cyc t m zp)

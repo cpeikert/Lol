@@ -36,7 +36,7 @@ SK, PT, CT -- don't export constructors!
 , encrypt
 , errorTerm, errorTermUnrestricted, decrypt, decryptUnrestricted
 -- * Arithmetic with public values
-, addScalar, addPublic, mulScalar, mulPublic
+, addPublic, mulPublic
 -- * Modulus switching
 , rescaleLinearCT, modSwitchPT
 -- * Key switching
@@ -50,7 +50,7 @@ SK, PT, CT -- don't export constructors!
 -- * Constraint synonyms
 , GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx
 , DecryptCtx, DecryptUCtx
-, AddScalarCtx, AddPublicCtx, MulScalarCtx, MulPublicCtx, ModSwitchPTCtx
+, AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
 , KeySwitchCtx, KSHintCtx
 , GenTunnelInfoCtx, TunnelCtx
 , SwitchCtx, LWECtx -- these are internal, but exported for better docs
@@ -359,21 +359,10 @@ keySwitchQuadCirc (KSQHint hint) ct =
   in CT MSD k l $ P.fromCoeffs [c0,c1] + rescaleLinearMSD (switch hint c2')
 
 ---------- Misc homomorphic operations ----------
--- | Constraint synonym for adding a public scalar to a ciphertext.
-type AddScalarCtx t m' zp zq =
-  (Lift' zp, Reduce (LiftOf zp) zq,
-   CElt t zp, CElt t (LiftOf zp), ToSDCtx t m' zp zq)
-
--- | Homomorphically add a public \(\mathbb{Z}_p\) value to an encrypted value.
-addScalar :: forall t m m' zp zq . (AddScalarCtx t m' zp zq)
-          => zp -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
-addScalar b ct =
-  let CT LSD k l c = toLSD ct
-      b' = iterate mulG (scalarCyc $ b * recip l) !! k :: Cyc t m' zp
-  in CT LSD k l $ c + (P.const $ reduce $ liftPow b')
 
 -- | Constraint synonym for adding a public value to an encrypted value.
-type AddPublicCtx t m m' zp zq = (AddScalarCtx t m' zp zq, m `Divides` m')
+type AddPublicCtx t m m' zp zq = (Lift' zp, Reduce (LiftOf zp) zq,
+   CElt t zp, CElt t (LiftOf zp), ToSDCtx t m' zp zq, m `Divides` m')
 
 -- | Homomorphically add a public \( R_p \) value to an encrypted
 -- value.
@@ -386,14 +375,9 @@ addPublic b ct = let CT LSD k l c = toLSD ct in
       b' :: Cyc t m zq = reduce $ liftPow $ linv * (iterate mulG b !! k)
   in CT LSD k l $ c + P.const (embed b')
 
--- | Constraint synonym for multiplying a public scalar value with
--- an encrypted value.
-type MulScalarCtx t m' zp zq =
-  (Lift' zp, Reduce (LiftOf zp) zq, Fact m', CElt t zq)
-
 -- | Homomorphically multiply a public \(\mathbb{Z}_p\) value to an
 -- encrypted value.
-mulScalar :: (MulScalarCtx t m' zp zq)
+mulScalar :: (Lift' zp, Reduce (LiftOf zp) zq, Fact m', CElt t zq)
   => zp -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
 mulScalar a (CT enc k l c) =
   let a' = scalarCyc $ reduce $ lift a
@@ -401,7 +385,8 @@ mulScalar a (CT enc k l c) =
 
 -- | Constraint synonym for multiplying a public value with an encrypted value.
 type MulPublicCtx t m m' zp zq =
-  (MulScalarCtx t m' zp zq, m `Divides` m', CElt t zp, CElt t (LiftOf zp))
+  (Lift' zp, Reduce (LiftOf zp) zq, Fact m', CElt t zq, m `Divides` m', 
+   CElt t zp, CElt t (LiftOf zp))
 
 -- | Homomorphically multiply an encrypted value by a public \( R_p \)
 -- value.
@@ -419,7 +404,8 @@ mulGCT (CT enc k l c) = CT enc (k+1) l $ mulG <$> c
 
 ---------- NumericPrelude instances ----------
 
-instance (Eq zp, MulScalarCtx t m' zp zq, m `Divides` m', ToSDCtx t m' zp zq)
+instance (Lift' zp, Reduce (LiftOf zp) zq, Fact m', CElt t zq, -- mulScalar
+          Eq zp, m `Divides` m', ToSDCtx t m' zp zq)
          => Additive.C (CT m zp (Cyc t m' zq)) where
 
   zero = CT LSD 0 one zero
