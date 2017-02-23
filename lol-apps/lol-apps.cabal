@@ -66,16 +66,16 @@ library
 
   build-depends:
     base >= 4.9 && < 5,
-    containers,
-    deepseq >= 1.4.1.1,
-    lol >= 0.6.0.0,
-    MonadRandom >= 0.2,
-    mtl,
-    numeric-prelude >= 0.4.2,
-    protocol-buffers,
-    protocol-buffers-descriptor,
-    singletons,
-    split
+    containers < 0.6,
+    deepseq >= 1.4.1.1 && < 1.5,
+    lol >= 0.6.0.0 && < 0.7,
+    MonadRandom >= 0.2 && < 0.6,
+    mtl < 2.3,
+    numeric-prelude >= 0.4.2 && < 0.5,
+    protocol-buffers < 2.5,
+    protocol-buffers-descriptor < 2.5,
+    singletons < 2.3,
+    split < 0.3
 
 test-suite test-apps
   type:             exitcode-stdio-1.0
@@ -88,26 +88,26 @@ test-suite test-apps
   ghc-options:      -threaded -rtsopts
 
   build-depends:
-    arithmoi,
+    arithmoi < 0.5,
     base >= 4.9 && < 5,
-    constraints,
-    deepseq,
-    DRBG,
-    lol >= 0.6.0.0,
+    constraints < 0.10,
+    deepseq < 1.5,
+    DRBG < 0.6,
+    lol >= 0.6.0.0 && < 0.7,
     lol-apps,
-    lol-cpp,
-    lol-repa,
-    lol-tests,
-    MonadRandom,
-    mtl,
-    numeric-prelude,
-    QuickCheck >= 2.8,
-    random,
-    repa,
-    singletons,
-    test-framework >= 0.8,
-    test-framework-quickcheck2 >= 0.3,
-    vector
+    lol-cpp < 0.1,
+    lol-repa < 0.1,
+    lol-tests < 0.1,
+    MonadRandom < 0.6,
+    mtl < 2.3,
+    numeric-prelude < 0.5,
+    QuickCheck >= 2.8 && < 3.0,
+    random < 1.2,
+--    repa < 3.5,
+    singletons < 2.3,
+    test-framework >= 0.8 &&  < 0.9,
+    test-framework-quickcheck2 >= 0.3 && < 0.4,
+    vector < 0.13
 
 Benchmark bench-apps
   type:             exitcode-stdio-1.0
@@ -124,24 +124,24 @@ Benchmark bench-apps
 --  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   build-depends:
-    arithmoi,
+    arithmoi < 0.5,
     base >= 4.9 && < 5,
-    containers,
-    criterion,
-    deepseq,
-    DRBG,
-    lol >= 0.6.0.0,
+    containers < 0.6,
+    criterion < 1.2,
+    deepseq < 1.5,
+    DRBG < 0.6,
+    lol >= 0.6.0.0 && < 0.7,
     lol-apps,
-    lol-benches,
-    lol-cpp,
-    lol-repa,
-    MonadRandom,
-    mtl,
-    numeric-prelude,
-    singletons,
-    transformers,
-    vector,
-    repa
+    lol-benches >= 0.0.0.3 && < 0.1,
+    lol-cpp < 0.1,
+    lol-repa < 0.1,
+    MonadRandom < 0.6,
+    mtl < 2.3,
+    numeric-prelude < 0.5,
+    singletons < 2.3,
+    transformers < 0.6,
+    vector < 0.13,
+    repa >=3.4 && < 3.5
 
 executable homomprf
   hs-source-dirs: examples
@@ -153,19 +153,19 @@ executable homomprf
   ghc-options: -threaded -rtsopts
 
   build-depends:
-    arithmoi,
+    arithmoi < 0.5,
     base >= 4.9 && < 5,
-    deepseq,
-    DRBG,
-    filepath,
-    lol >= 0.6.0.0,
+    deepseq < 1.5,
+    DRBG < 0.6,
+    filepath < 1.5,
+    lol >= 0.6.0.0 && < 0.7,
     lol-apps,
-    lol-cpp,
-    MonadRandom,
-    mtl,
-    numeric-prelude,
-    singletons,
-    time
+    lol-cpp < 0.1,
+    MonadRandom < 0.6,
+    mtl < 2.3,
+    numeric-prelude < 0.5,
+    singletons < 2.3,
+    time < 1.9
 
 executable khprf
   hs-source-dirs: examples
@@ -176,15 +176,15 @@ executable khprf
   ghc-options: -threaded -rtsopts
 
   build-depends:
-    arithmoi,
+    arithmoi < 0.5,
     base >= 4.9 && < 5,
-    deepseq,
-    lol >= 0.6.0.0,
+    deepseq < 1.5,
+    lol >= 0.6.0.0 && < 0.7,
     lol-apps,
-    lol-cpp,
-    MonadRandom,
-    mtl,
-    numeric-prelude
+    lol-cpp < 0.1,
+    MonadRandom < 0.6,
+    mtl < 2.3,
+    numeric-prelude < 0.5
 
 executable symmshe
   hs-source-dirs:   examples
@@ -195,10 +195,10 @@ executable symmshe
   ghc-options: -threaded -rtsopts
 
   build-depends:
-    arithmoi,
+    arithmoi < 0.5,
     base >= 4.9 && < 5,
-    lol >= 0.6.0.0,
+    lol >= 0.6.0.0 && < 0.7,
     lol-apps,
-    lol-cpp,
-    MonadRandom,
-    numeric-prelude
+    lol-cpp < 0.1,
+    MonadRandom < 0.6,
+    numeric-prelude < 0.5

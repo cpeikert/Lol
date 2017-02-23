@@ -22,7 +22,7 @@ Tests for KeyHomomorphicPRF.
 module KHPRFTests (khprfTests) where
 
 import Control.Applicative
-import Control.Monad.Random
+import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF

@@ -47,18 +47,18 @@ library
     Crypto.Lol.Utils.PrettyPrint
 
   build-depends:
-    ansi-terminal,
+    ansi-terminal < 0.7,
     base >= 4.9 && < 5,
-    containers,
-    criterion,
-    crypto-api,
-    deepseq,
-    DRBG,
-    lol >= 0.6.0.0,
-    MonadRandom,
-    split,
-    statistics,
-    transformers,
+    containers < 0.6,
+    criterion < 1.2,
+    crypto-api < 0.14,
+    deepseq < 1.5,
+    DRBG < 0.6,
+    lol >= 0.6.0.0 && < 0.7,
+    MonadRandom < 0.6,
+    split < 0.3,
+    statistics < 0.14,
+    transformers < 0.6,
     -- EAC: lol-benches does NOT depend on vector. However, cabal can't resolve
     -- dependencies without some help on the vector version. This is a bottleneck
     -- preventing us from putting lol-benches on stackage.
