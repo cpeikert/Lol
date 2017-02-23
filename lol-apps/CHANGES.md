@@ -1,6 +1,10 @@
 Changelog for lol project
 ================================
 
+0.2.0.1
+----
+ * Fixed compile error in KHPRFTests.
+
 0.2.0.0
 ----
  * Added [BPF14] key-homomorphic PRF.

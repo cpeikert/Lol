@@ -28,8 +28,7 @@ module SHEBenches (sheBenches, decBenches, rescaleBenches, tunnelBenches) where
 import Crypto.Lol.Benchmarks
 
 import Control.Applicative
-import Control.Monad.Random
-import Control.Monad.State
+import Control.Monad.Random hiding (lift)
 import Crypto.Lol.Utils.ShowType
 import Crypto.Random.DRBG
 

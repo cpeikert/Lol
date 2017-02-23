@@ -6,7 +6,7 @@ name:                lol-benches
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
 version:             0.0.0.3
-synopsis:            A library for benchmarking <https://hackage.haskell.org/package/lol Λ ∘ λ>.
+synopsis:            A library for benchmarking <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
 license:             GPL-2
@@ -20,7 +20,7 @@ build-type:          Simple
 extra-source-files:  README, CHANGES.md
 cabal-version:       >= 1.10
 description:
-    This library contains code to benchmark <https://hackage.haskell.org/package/lol Λ ∘ λ (Lol)>.
+    This library contains code to benchmark <https://hackage.haskell.org/package/lol lol>.
     It is designed so that third-party tensors can be easily benchmarked using the same framework.
     For examples of how to use this library, see the benchmarks for
     <https://hackage.haskell.org/package/lol-cpp lol-cpp>.

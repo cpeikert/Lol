@@ -5,8 +5,8 @@ name:                lol-apps
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.2.0.0
-synopsis:            Lattice-based cryptographic applications using Lol.
+version:             0.2.0.1
+synopsis:            Lattice-based cryptographic applications using <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
 license:             GPL-2
@@ -21,7 +21,7 @@ extra-source-files:  README, CHANGES.md, SHE.proto, HomomPRF.proto
 cabal-version:       >= 1.10
 description:
     This library contains example cryptographic applications built using
-    <https://hackage.haskell.org/package/lol Λ ∘ λ>  (Lol),
+    <https://hackage.haskell.org/package/lol lol>,
     a general-purpose library for ring-based lattice cryptography.
 
 source-repository head
@@ -119,7 +119,7 @@ Benchmark bench-apps
 
 --  if flag(llvm)
 --    ghc-options: -fllvm -optlo-O3
-  ghc-options: -threaded -rtsopts
+  ghc-options: -threaded -rtsopts -O2
 --  ghc-options: -O2 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
 --  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
@@ -150,7 +150,7 @@ executable homomprf
   ghc-options: -main-is HomomPRFMain
   other-modules: HomomPRFParams
 
-  ghc-options: -threaded -rtsopts
+  ghc-options: -threaded -rtsopts -O2
 
   build-depends:
     arithmoi < 0.5,
@@ -173,7 +173,7 @@ executable khprf
   main-is: KHPRFMain.hs
   ghc-options: -main-is KHPRFMain
 
-  ghc-options: -threaded -rtsopts
+  ghc-options: -threaded -rtsopts -O2
 
   build-depends:
     arithmoi < 0.5,
@@ -192,7 +192,7 @@ executable symmshe
   main-is:          SHEMain.hs
   ghc-options: -main-is SHEMain
 
-  ghc-options: -threaded -rtsopts
+  ghc-options: -threaded -rtsopts -O2
 
   build-depends:
     arithmoi < 0.5,

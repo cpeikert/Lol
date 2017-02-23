@@ -6,7 +6,7 @@ name:                lol-tests
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
 version:             0.0.0.1
-synopsis:            A library for testing <https://hackage.haskell.org/package/lol Λ ∘ λ>.
+synopsis:            A library for testing <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
 license:             GPL-2
@@ -20,7 +20,7 @@ build-type:          Simple
 extra-source-files:  README, CHANGES.md
 cabal-version:       >= 1.10
 description:
-    This library contains code to test <https://hackage.haskell.org/package/lol Λ ∘ λ (Lol)>.
+    This library contains code to test <https://hackage.haskell.org/package/lol lol>.
     It is designed so that third-party tensors can be easily tested using the same framework.
     For examples of how to use this library, see the tests for
     <https://hackage.haskell.org/package/lol-cpp lol-cpp>.

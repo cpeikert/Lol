@@ -6,7 +6,7 @@ name:                lol-repa
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
 version:             0.0.0.1
-synopsis:            A repa backend for <https://hackage.haskell.org/package/lol Λ ∘ λ>.
+synopsis:            A repa backend for <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
 license:             GPL-2
