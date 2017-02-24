@@ -1,6 +1,10 @@
 Changelog for rlwe-challenges project
 ================================
 
+0.1.0.1
+----
+ * Removed unnecessary dependencies.
+
 0.1.0.0
 ----
  * Support for creating/reading challenges over a base product-ring.

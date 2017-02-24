@@ -5,7 +5,7 @@ name:                lol-apps
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.2.0.1
+version:             0.2.0.2
 synopsis:            Lattice-based cryptographic applications using <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -88,26 +88,15 @@ test-suite test-apps
   ghc-options:      -threaded -rtsopts
 
   build-depends:
-    arithmoi < 0.5,
     base >= 4.9 && < 5,
-    constraints < 0.10,
-    deepseq < 1.5,
-    DRBG < 0.6,
     lol >= 0.6.0.0 && < 0.7,
     lol-apps,
     lol-cpp < 0.1,
     lol-repa < 0.1,
     lol-tests < 0.1,
     MonadRandom < 0.6,
-    mtl < 2.3,
     numeric-prelude < 0.5,
-    QuickCheck >= 2.8 && < 3.0,
-    random < 1.2,
---    repa < 3.5,
-    singletons < 2.3,
-    test-framework >= 0.8 &&  < 0.9,
-    test-framework-quickcheck2 >= 0.3 && < 0.4,
-    vector < 0.13
+    test-framework >= 0.8 &&  < 0.9
 
 Benchmark bench-apps
   type:             exitcode-stdio-1.0
@@ -124,11 +113,7 @@ Benchmark bench-apps
 --  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   build-depends:
-    arithmoi < 0.5,
     base >= 4.9 && < 5,
-    containers < 0.6,
-    criterion < 1.2,
-    deepseq < 1.5,
     DRBG < 0.6,
     lol >= 0.6.0.0 && < 0.7,
     lol-apps,
@@ -137,11 +122,7 @@ Benchmark bench-apps
     lol-repa < 0.1,
     MonadRandom < 0.6,
     mtl < 2.3,
-    numeric-prelude < 0.5,
-    singletons < 2.3,
-    transformers < 0.6,
-    vector < 0.13,
-    repa >=3.4 && < 3.5
+    numeric-prelude < 0.5
 
 executable homomprf
   hs-source-dirs: examples
@@ -153,7 +134,6 @@ executable homomprf
   ghc-options: -threaded -rtsopts -O2
 
   build-depends:
-    arithmoi < 0.5,
     base >= 4.9 && < 5,
     deepseq < 1.5,
     DRBG < 0.6,
@@ -176,7 +156,6 @@ executable khprf
   ghc-options: -threaded -rtsopts -O2
 
   build-depends:
-    arithmoi < 0.5,
     base >= 4.9 && < 5,
     deepseq < 1.5,
     lol >= 0.6.0.0 && < 0.7,
@@ -195,7 +174,6 @@ executable symmshe
   ghc-options: -threaded -rtsopts -O2
 
   build-depends:
-    arithmoi < 0.5,
     base >= 4.9 && < 5,
     lol >= 0.6.0.0 && < 0.7,
     lol-apps,

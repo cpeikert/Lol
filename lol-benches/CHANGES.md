@@ -1,6 +1,10 @@
 Changelog for lol-benches project
 ================================
 
+0.0.0.4
+-----
+ * Removed unnecessary dependencies.
+
 0.0.0.3
 -----
  * Removed imports of Simple*Benches.
