@@ -1,5 +1,5 @@
 {-|
-Module      : SHETests
+Module      : Crypto.Lol.Applications.Tests.SHETests
 Description : Tests for SymmSHE.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -22,7 +22,7 @@ Tests for SymmSHE.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.Applications.SHETests (sheTests, decTest, modSwPTTest, ksTests, twemTests, tunnelTests) where
+module Crypto.Lol.Applications.Tests.SHETests (sheTests, decTest, modSwPTTest, ksTests, twemTests, tunnelTests) where
 
 import Control.Applicative
 import Control.Monad

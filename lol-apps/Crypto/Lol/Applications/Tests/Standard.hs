@@ -1,5 +1,5 @@
 {-|
-Module      : TestAppsMain
+Module      : Crypto.Lol.Applications.Tests.Standard
 Description : Main driver for lol-apps tests.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -8,7 +8,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Main driver for lol-apps tests.
+Mostly-monomorphized tests for lol-apps.
 -}
 
 {-# LANGUAGE DataKinds             #-}
@@ -21,7 +21,7 @@ Main driver for lol-apps tests.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.Applications.Standard (defaultTests) where
+module Crypto.Lol.Applications.Tests.Standard (defaultTests) where
 
 import Control.Monad.Random
 

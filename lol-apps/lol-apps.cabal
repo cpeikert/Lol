@@ -54,6 +54,7 @@ library
     Crypto.Lol.Applications.HomomPRF
     Crypto.Lol.Applications.KeyHomomorphicPRF
     Crypto.Lol.Applications.SymmSHE
+
     Crypto.Proto.HomomPRF
     Crypto.Proto.HomomPRF.LinearFuncChain
     Crypto.Proto.HomomPRF.RoundHintChain
@@ -63,6 +64,13 @@ library
     Crypto.Proto.SHE.RqPolynomial
     Crypto.Proto.SHE.SecretKey
     Crypto.Proto.SHE.TunnelInfo
+
+    Crypto.Lol.Applications.Tests.KHPRFTests
+    Crypto.Lol.Applications.Tests.SHETests
+    Crypto.Lol.Applications.Tests.Standard
+    Crypto.Lol.Applications.Benchmarks.KHPRFBenches
+    Crypto.Lol.Applications.Benchmarks.SHEBenches
+    Crypto.Lol.Applications.Benchmarks.Standard
 
   build-depends:
     base >= 4.9 && < 4.10,

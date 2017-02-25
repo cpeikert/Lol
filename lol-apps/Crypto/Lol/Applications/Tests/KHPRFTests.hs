@@ -1,5 +1,5 @@
 {-|
-Module      : KHPRFTests
+Module      : Crypto.Lol.Applications.Tests.KHPRFTests
 Description : Tests for KeyHomomorphicPRF.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -19,7 +19,7 @@ Tests for KeyHomomorphicPRF.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.KHPRFTests (khprfTests) where
+module Crypto.Lol.Applications.Tests.KHPRFTests (khprfTests) where
 
 import Control.Applicative
 import Control.Monad.Random hiding (lift)
