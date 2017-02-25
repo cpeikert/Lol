@@ -1,7 +1,9 @@
 
 [![Build Status](https://travis-ci.org/cpeikert/Lol.svg?branch=master)](https://travis-ci.org/cpeikert/Lol)
 
-This branch (master) was previously known as 'split-packages'. The main problem preventing us from creating a new Hackage release based on this branch is that microbenchmark performance is severely degraded relative to the fast-microbenechmarks branch.
+This branch (refl-entailment) is a fork of master. The goal is to use entailment
+to avoid monomorphizing calls to reify. This branch modifies rlwe-challenges so
+that we can get a better idea of how compilcated things might get.
 
 --------------------------------------------------------------------------------
 

@@ -11,17 +11,21 @@ Portability : POSIX
 Utility functions for handling exceptions and creating file paths.
 -}
 
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Crypto.RLWE.Challenges.Common where
 
 import Crypto.RLWE.Challenges.Beacon
 
+import           Crypto.Lol (Fact)
 import           Crypto.Lol.Cyclotomic.Tensor.CPP
 import           Crypto.Lol.Types     hiding (RRq)
 import qualified Crypto.Lol.Types as RRq
+import           Crypto.Lol.Types.Proto
 
 import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.InstanceCont
@@ -29,13 +33,20 @@ import Crypto.Proto.RLWE.Challenges.InstanceDisc
 import Crypto.Proto.RLWE.Challenges.InstanceRLWR
 import Crypto.Proto.RLWE.Challenges.Secret
 
+import Crypto.Proto.Lol.KqProduct
+import Crypto.Proto.Lol.RqProduct
+import Crypto.Lol.Cyclotomic.Tensor
+
 import Crypto.Random.DRBG
 
 import Control.Monad.Except
 
 import Data.ByteString.Lazy (unpack)
+import Data.Constraint
 import Data.Int
 import Data.Maybe
+import Data.Reflection hiding (D)
+import Data.Functor.Trans.Tagged
 
 import Net.Beacon
 
@@ -65,6 +76,16 @@ data InstanceU = IC {secret :: !Secret, instc :: !InstanceCont}
 type Zq q = ZqBasic q Int64
 -- | Concrete type used to generate and verify instances
 type RRq q = RRq.RRq q Double
+
+type TensorCtx t = (EntailTensor t, Tensor t, TElt t (Complex Double), TElt t Double)
+
+class EntailTensor t where
+  entailTensor :: Tagged '(t,m,q) ((Reifies q Int64, Fact m) :-
+    (ProtoType (t m (RRq q)) ~ KqProduct,
+     ProtoType (t m (Zq q))  ~ RqProduct,
+     Protoable (t m (Zq q)),
+     Protoable (t m (RRq q)),
+     TElt t (Zq q), TElt t (RRq q)))
 
 -- | Yield a list of challenge names by getting all directory contents
 -- and filtering on all directories whose names start with "chall".
