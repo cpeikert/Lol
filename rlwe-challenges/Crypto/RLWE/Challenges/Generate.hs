@@ -28,7 +28,6 @@ import Crypto.RLWE.Challenges.Common
 import Crypto.RLWE.Challenges.Params as P
 
 import Crypto.Lol                 hiding (lift)
-import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.RLWE.Continuous as C
 import Crypto.Lol.RLWE.Discrete   as D
 import Crypto.Lol.RLWE.RLWR       as R
@@ -69,7 +68,7 @@ generateMain :: (TensorCtx t) => Proxy t -> FilePath -> BeaconAddr -> [Challenge
 generateMain pt path beaconStart cps = do
   let len = length cps
       beaconAddrs = take len $ iterate nextBeaconAddr beaconStart
-  evalCryptoRandIO (zipWithM_ (genAndWriteChallenge path) cps beaconAddrs
+  evalCryptoRandIO (zipWithM_ (genAndWriteChallenge pt path) cps beaconAddrs
     :: RandT (CryptoRand HashDRBG) IO ())
 
 genAndWriteChallenge :: (MonadRandom m, MonadIO m, TensorCtx t)
@@ -119,8 +118,7 @@ genChallengeU pt cp (BA beaconEpoch beaconOffset) = do
   return $ CU chall insts
 
 -- | Generate an instance for the given parameters.
-genInstanceU :: forall t .
-  (EntailTensor t, Tensor t, TElt t (Complex Double), TElt t Double)
+genInstanceU :: forall t . (TensorCtx t)
   => Proxy t -> Params -> ChallengeID -> InstanceID -> BS.ByteString -> InstanceU
 
 genInstanceU _ (Cparams params@ContParams{..}) challengeID instanceID seed =
@@ -136,7 +134,7 @@ genInstanceU _ (Dparams params@DiscParams{..}) challengeID instanceID seed =
   let (Right (g :: CryptoRand InstDRBG)) = newGen $ BS.toStrict seed
   in flip evalRand g $ reify q (\(_::Proxy q) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> (do
-      (s', samples' :: [D.Sample T m (Zq q)]) <- instanceDisc svar $ fromIntegral numSamples
+      (s', samples' :: [D.Sample t m (Zq q)]) <- instanceDisc svar $ fromIntegral numSamples
       let s'' = Secret{s = toProto s', ..}
           samples = uncurry SampleDisc <$> toProto samples'
       return $ ID s'' InstanceDisc{..}) \\ proxy entailTensor (Proxy::Proxy '(t,m,q))))
@@ -145,10 +143,12 @@ genInstanceU _ (Rparams params@RLWRParams{..}) challengeID instanceID seed =
   let (Right (g :: CryptoRand InstDRBG)) = newGen $ BS.toStrict seed
   in flip evalRand g $ reify q (\(_::Proxy q) -> reify p (\(_::Proxy p) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> (do
-      (s', samples' :: [R.Sample T m (Zq q) (Zq p)]) <- instanceRLWR $ fromIntegral numSamples
+      (s', samples' :: [R.Sample t m (Zq q) (Zq p)]) <- instanceRLWR $ fromIntegral numSamples
       let s'' = Secret{s = toProto s', ..}
           samples = uncurry SampleRLWR <$> toProto samples'
-      return $ IR s'' InstanceRLWR{..}) \\ proxy entailTensor (Proxy::Proxy '(t,m,q)))))
+      return $ IR s'' InstanceRLWR{..})
+        \\ proxy entailTensor (Proxy::Proxy '(t,m,q))
+        \\ proxy entailTensor (Proxy::Proxy '(t,m,p)))))
 
 -- | Convert the parsed 'ChallengeParams' into serializable 'Params'
 toProtoParams :: ChallengeParams -> Params

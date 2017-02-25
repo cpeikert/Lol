@@ -11,6 +11,7 @@ Portability : POSIX
 Utility functions for handling exceptions and creating file paths.
 -}
 
+{-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -22,7 +23,6 @@ module Crypto.RLWE.Challenges.Common where
 import Crypto.RLWE.Challenges.Beacon
 
 import           Crypto.Lol (Fact)
-import           Crypto.Lol.Cyclotomic.Tensor.CPP
 import           Crypto.Lol.Types     hiding (RRq)
 import qualified Crypto.Lol.Types as RRq
 import           Crypto.Lol.Types.Proto
@@ -61,9 +61,6 @@ type ChallengeID = Int32
 type InstanceID = Int32
 type InstDRBG = GenBuffered CtrDRBG
 
--- | Concrete Tensor type used to generate and verify instances.
-type T = CT
-
 -- | Holds an (untyped) proto-buf Ring-LWE/LWR challenge.
 data ChallengeU = CU !Challenge ![InstanceU]
 
@@ -77,7 +74,7 @@ type Zq q = ZqBasic q Int64
 -- | Concrete type used to generate and verify instances
 type RRq q = RRq.RRq q Double
 
-type TensorCtx t = (EntailTensor t, Tensor t, TElt t (Complex Double), TElt t Double)
+type TensorCtx t = (EntailTensor t, Tensor t, TElt t (Complex Double), TElt t Double, TElt t Int64)
 
 class EntailTensor t where
   entailTensor :: Tagged '(t,m,q) ((Reifies q Int64, Fact m) :-
