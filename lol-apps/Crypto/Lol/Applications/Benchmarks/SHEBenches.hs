@@ -1,5 +1,5 @@
 {-|
-Module      : SHEBenches
+Module      : Crypto.Lol.Applications.Benchmarks.SHEBenches
 Description : Benchmarks for SymmSHE.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -23,7 +23,7 @@ Benchmarks for SymmSHE.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module SHEBenches (sheBenches, decBenches, rescaleBenches, tunnelBenches) where
+module Crypto.Lol.Applications.Benchmarks.SHEBenches (sheBenches, decBenches, rescaleBenches, tunnelBenches) where
 
 import Crypto.Lol.Benchmarks
 

@@ -1,6 +1,6 @@
 {-|
-Module      : BenchAppsMain
-Description : Main driver for lol-apps benchmarks.
+Module      : Crypto.Lol.Applications.Benchmarks.Standard
+Description : Standard benchmarks for lol-apps.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-2
@@ -8,7 +8,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Main driver for lol-apps benchmarks.
+Mostly-monomorphized benchmarks for lol-apps.
 -}
 
 {-# LANGUAGE DataKinds             #-}
@@ -16,29 +16,23 @@ Main driver for lol-apps benchmarks.
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module BenchAppsMain where
+module Crypto.Lol.Applications.Benchmarks.Standard (sheBenches, khprfBenches) where
 
-import Control.Applicative
 import Control.Monad.Random
 
 import Crypto.Lol
+import Crypto.Lol.Applications.Benchmarks.KHPRFBenches
+import qualified Crypto.Lol.Applications.Benchmarks.SHEBenches as SHE
 import Crypto.Lol.Applications.KeyHomomorphicPRF
-import Crypto.Lol.Applications.SymmSHE hiding (CT)
+import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Benchmarks
-import Crypto.Lol.Cyclotomic.Tensor.CPP
-import Crypto.Lol.Utils.PrettyPrint.Table
 import Crypto.Lol.Types
-
-import KHPRFBenches
-import SHEBenches
-import Crypto.Random.DRBG
 
 infixr 9 **
 data a ** b
@@ -47,63 +41,42 @@ type family Zq (a :: k) :: * where
   Zq (a ** b) = (Zq a, Zq b)
   Zq q = (ZqBasic q Int64)
 
-benchNames :: [String]
-benchNames = [
-  "encrypt",
-  "decrypt",
-  "*",
-  "addPublic",
-  "mulPublic",
-  "rescaleCT",
-  "keySwitch",
-  "tunnel",
-  "balanced-startup"]
-
-main :: IO ()
-main = do
-  let o = (defaultOpts Nothing){benches=[]}
-      pct = Proxy::Proxy CT
-  bs <- sequence $
-          sheBenches' pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG) ++
-          [khprfBenches pct (Proxy::Proxy (BaseBGad 2))]
-  mapM_ (prettyBenches o) bs
-
-sheBenches' :: _ => Proxy t -> Proxy gad -> Proxy gen -> [rnd Benchmark]
-sheBenches' pt pgad pgen  = [
+sheBenches :: _ => Proxy t -> Proxy gad -> Proxy gen -> [rnd Benchmark]
+sheBenches pt pgad pgen  = [
   benchGroup "SHE" $ ($ pt) <$>
-    [sheBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)) pgen,
-     sheBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857)) pgen],
+    [SHE.sheBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)) pgen,
+     SHE.sheBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857)) pgen],
   benchGroup "Dec" $ ($ pt) <$>
-    [decBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
-     decBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
+    [SHE.decBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
+     SHE.decBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
   benchGroup "Rescale" $ ($ pt) <$>
-    [rescaleBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq 1017857, Zq (1017857 ** 1032193))) pgad,
-     rescaleBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq 1008001, Zq (1008001 ** 1065601))) pgad],
+    [SHE.rescaleBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq 1017857, Zq (1017857 ** 1032193))) pgad,
+     SHE.rescaleBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq 1008001, Zq (1008001 ** 1065601))) pgad],
   benchGroup "Tunnel" $ ($ pt) <$>
-    [tunnelBenches {- H0 -> H1 -} (Proxy::Proxy '(F128,
+    [SHE.tunnelBenches {- H0 -> H1 -} (Proxy::Proxy '(F128,
                                                   F128 * F7 * F13,
                                                   F64 * F7, F64 * F7 * F13,
                                                   Zq PP32,
                                                   Zq 3144961)) pgad,
-     tunnelBenches {- H1 -> H2 -} (Proxy::Proxy '(F64 * F7,
+     SHE.tunnelBenches {- H1 -> H2 -} (Proxy::Proxy '(F64 * F7,
                                                   F64 * F7 * F13,
                                                   F32 * F7 * F13,
                                                   F32 * F7 * F13,
                                                   Zq PP32,
                                                   Zq 3144961)) pgad,
-     tunnelBenches {- H2 -> H3 -} (Proxy::Proxy '(F32 * F7 * F13,
+     SHE.tunnelBenches {- H2 -> H3 -} (Proxy::Proxy '(F32 * F7 * F13,
                                                   F32 * F7 * F13,
                                                   F8 * F5 * F7 * F13,
                                                   F8 * F5 * F7 *F13,
                                                   Zq PP32,
                                                   Zq 3144961)) pgad,
-     tunnelBenches {- H3 -> H4 -} (Proxy::Proxy '(F8 * F5 * F7 * F13,
+     SHE.tunnelBenches {- H3 -> H4 -} (Proxy::Proxy '(F8 * F5 * F7 * F13,
                                                   F8 * F5 * F7 *F13,
                                                   F4 * F3 * F5 * F7 * F13,
                                                   F4 * F3 * F5 * F7 * F13,
                                                   Zq PP32,
                                                   Zq 3144961)) pgad,
-     tunnelBenches {- H4 -> H5 -} (Proxy::Proxy '(F4 * F3 * F5 * F7 * F13,
+     SHE.tunnelBenches {- H4 -> H5 -} (Proxy::Proxy '(F4 * F3 * F5 * F7 * F13,
                                                   F4 * F3 * F5 * F7 *F13,
                                                   F9 * F5 * F7 * F13,
                                                   F9 * F5 * F7 * F13,

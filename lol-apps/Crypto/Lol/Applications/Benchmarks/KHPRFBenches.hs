@@ -1,5 +1,5 @@
 {-|
-Module      : KHPRFBenches
+Module      : Crypto.Lol.Applications.Benchmarks.KHPRFBenches
 Description : Benchmarks for KeyHomomorphicPRF.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -23,7 +23,7 @@ Benchmarks for KeyHomomorphicPRF.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module KHPRFBenches (khPRFBenches) where
+module Crypto.Lol.Applications.Benchmarks.KHPRFBenches (khPRFBenches) where
 
 import Control.Applicative
 import Control.Monad.Random hiding (fromList)

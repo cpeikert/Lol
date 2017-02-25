@@ -92,8 +92,8 @@ library
 Benchmark bench-lol-cpp
   type:             exitcode-stdio-1.0
   default-language: Haskell2010
-  main-is:          BenchCPPMain.hs
-  ghc-options:      -main-is BenchCPPMain
+  main-is:          BenchLolCPPMain.hs
+  ghc-options:      -main-is BenchLolCPPMain
   hs-source-dirs:   benchmarks
 
   ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
@@ -109,7 +109,7 @@ Benchmark bench-lol-apps-cpp
   type:             exitcode-stdio-1.0
   default-language: Haskell2010
   main-is:          BenchAppsCPPMain.hs
-  ghc-options:      -main-is BenchCPPMain
+  ghc-options:      -main-is BenchAppsCPPMain
   hs-source-dirs:   benchmarks
 
   ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
@@ -118,15 +118,15 @@ Benchmark bench-lol-apps-cpp
     base >= 4.9 && < 4.10,
     DRBG < 0.6,
     lol >= 0.6.0.0 && < 0.7,
-    lol-apps >= 0.3 && < 0.4,
+    lol-apps >= 0.2.1 && < 0.3,
     lol-benches >= 0.0.0.3 && < 0.1,
     lol-cpp
 
 test-suite test-lol-cpp
   type:             exitcode-stdio-1.0
   default-language: Haskell2010
-  main-is:          TestCPPMain.hs
-  ghc-options:      -main-is TestCPPMain
+  main-is:          TestLolCPPMain.hs
+  ghc-options:      -main-is TestLolCPPMain
   hs-source-dirs:   tests
   ghc-options:      -threaded -O2
 
@@ -139,12 +139,14 @@ test-suite test-lol-apps-cpp
   type:             exitcode-stdio-1.0
   default-language: Haskell2010
   main-is:          TestAppsCPPMain.hs
-  ghc-options:      -main-is TestCPPMain
+  ghc-options:      -main-is TestAppsCPPMain
   hs-source-dirs:   tests
   ghc-options:      -threaded -O2
 
   build-depends:
     base >= 4.9 && < 4.10,
-    lol-apps >= 0.3 && < 0.4,
+    lol >= 0.6.0.0 && < 0.7,
+    lol-apps >= 0.2.1 && < 0.3,
     lol-cpp,
-    lol-tests < 0.1
+    lol-tests < 0.1,
+    test-framework < 0.9

@@ -1,6 +1,6 @@
 {-|
 Module      : Crypto.Lol.Applications.Tests.Standard
-Description : Main driver for lol-apps tests.
+Description : Standard tests for lol-apps.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-2
@@ -27,8 +27,8 @@ import Control.Monad.Random
 
 import Crypto.Lol (Cyc)
 import Crypto.Lol.Applications.SymmSHE hiding (CT)
-import Crypto.Lol.Cyclotomic.Tensor.CPP
-import Crypto.Lol.Cyclotomic.Tensor.Repa
+import Crypto.Lol.Applications.Tests.KHPRFTests
+import Crypto.Lol.Applications.Tests.SHETests
 import Crypto.Lol.Factored
 import Crypto.Lol.Gadget
 import Crypto.Lol.Types
@@ -36,8 +36,6 @@ import Crypto.Lol.Types
 import Data.Int
 import Data.Proxy
 
-import KHPRFTests
-import SHETests
 import Test.Framework
 
 infixr 9 **
@@ -46,13 +44,7 @@ data a ** b
 type family Zq (a :: k) :: * where
   Zq (a ** b) = (Zq a, Zq b)
   Zq q = (ZqBasic q Int64)
-{-
-main :: IO ()
-main = do
-  flip defaultMainWithArgs ["--threads=1","--maximum-generated-tests=100"] $ concat
-    [defaultTests (Proxy::Proxy CT) (Proxy::Proxy TrivGad),
-     defaultTests (Proxy::Proxy RT) (Proxy::Proxy TrivGad)]
--}
+
 defaultTests :: _ => Proxy t -> Proxy gad -> [Test]
 defaultTests pt pgad  =
   [testGroup "SHE" $ ($ pt) <$> [

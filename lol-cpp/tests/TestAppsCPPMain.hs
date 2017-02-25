@@ -15,8 +15,10 @@ module TestAppsCPPMain where
 
 import Crypto.Lol (TrivGad)
 import Crypto.Lol.Cyclotomic.Tensor.CPP
-import Crypto.Lol.Tests.Applications.Standard
+import Crypto.Lol.Applications.Tests.Standard
 import Data.Proxy
+
+import Test.Framework
 
 main :: IO ()
 main = do

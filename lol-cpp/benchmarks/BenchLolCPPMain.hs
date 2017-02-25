@@ -1,6 +1,6 @@
 {-|
 Module      : BenchLolCPPMain
-Description : Main driver for CPP benchmarks.
+Description : Main driver for Lol benchmarks with CPP.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-2
