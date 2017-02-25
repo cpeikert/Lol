@@ -21,7 +21,7 @@ Main driver for lol-apps tests.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module TestAppsMain where
+module Crypto.Lol.Tests.Applications.Standard (defaultTests) where
 
 import Control.Monad.Random
 
@@ -46,13 +46,13 @@ data a ** b
 type family Zq (a :: k) :: * where
   Zq (a ** b) = (Zq a, Zq b)
   Zq q = (ZqBasic q Int64)
-
+{-
 main :: IO ()
 main = do
   flip defaultMainWithArgs ["--threads=1","--maximum-generated-tests=100"] $ concat
     [defaultTests (Proxy::Proxy CT) (Proxy::Proxy TrivGad),
      defaultTests (Proxy::Proxy RT) (Proxy::Proxy TrivGad)]
-
+-}
 defaultTests :: _ => Proxy t -> Proxy gad -> [Test]
 defaultTests pt pgad  =
   [testGroup "SHE" $ ($ pt) <$> [

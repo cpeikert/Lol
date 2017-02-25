@@ -1,5 +1,5 @@
 {-|
-Module      : BenchCPPMain
+Module      : BenchLolCPPMain
 Description : Main driver for CPP benchmarks.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -8,14 +8,14 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Main driver for CPP benchmarks.
+Main driver for Lol benchmarks with CPP.
 -}
 
 {-# LANGUAGE DataKinds      #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE TypeOperators  #-}
 
-module BenchCPPMain where
+module BenchLolCPPMain where
 
 import Crypto.Lol.Benchmarks
 import Crypto.Lol.Benchmarks.Standard

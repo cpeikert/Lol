@@ -5,7 +5,7 @@ name:                lol-apps
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.2.0.2
+version:             0.3.0.0
 synopsis:            Lattice-based cryptographic applications using <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -65,7 +65,7 @@ library
     Crypto.Proto.SHE.TunnelInfo
 
   build-depends:
-    base >= 4.9 && < 5,
+    base >= 4.9 && < 4.10,
     containers < 0.6,
     deepseq >= 1.4.1.1 && < 1.5,
     lol >= 0.6.0.0 && < 0.7,
@@ -77,52 +77,52 @@ library
     singletons < 2.3,
     split < 0.3
 
-test-suite test-apps
-  type:             exitcode-stdio-1.0
-  hs-source-dirs:   tests, examples
-  default-language: Haskell2010
-  main-is:          TestAppsMain.hs
-  ghc-options:      -main-is TestAppsMain
-  other-modules:    KHPRFTests, SHETests
+-- test-suite test-apps
+--   type:             exitcode-stdio-1.0
+--   hs-source-dirs:   tests, examples
+--   default-language: Haskell2010
+--   main-is:          TestAppsMain.hs
+--   ghc-options:      -main-is TestAppsMain
+--   other-modules:    KHPRFTests, SHETests
 
-  ghc-options:      -threaded -rtsopts
+--   ghc-options:      -threaded -rtsopts
 
-  build-depends:
-    base >= 4.9 && < 5,
-    lol >= 0.6.0.0 && < 0.7,
-    lol-apps,
-    lol-cpp < 0.1,
-    lol-repa < 0.1,
-    lol-tests < 0.1,
-    MonadRandom < 0.6,
-    numeric-prelude < 0.5,
-    test-framework >= 0.8 &&  < 0.9
+--   build-depends:
+--     base >= 4.9 && < 4.10,
+--     lol >= 0.6.0.0 && < 0.7,
+--     lol-apps,
+--     lol-cpp < 0.1,
+--     lol-repa < 0.1,
+--     lol-tests < 0.1,
+--     MonadRandom < 0.6,
+--     numeric-prelude < 0.5,
+--     test-framework >= 0.8 &&  < 0.9
 
-Benchmark bench-apps
-  type:             exitcode-stdio-1.0
-  hs-source-dirs:   benchmarks, examples
-  default-language: Haskell2010
-  main-is:          BenchAppsMain.hs
-  ghc-options:      -main-is BenchAppsMain
-  other-modules:    KHPRFBenches, SHEBenches
+-- Benchmark bench-apps
+--   type:             exitcode-stdio-1.0
+--   hs-source-dirs:   benchmarks, examples
+--   default-language: Haskell2010
+--   main-is:          BenchAppsMain.hs
+--   ghc-options:      -main-is BenchAppsMain
+--   other-modules:    KHPRFBenches, SHEBenches
 
---  if flag(llvm)
---    ghc-options: -fllvm -optlo-O3
-  ghc-options: -threaded -rtsopts -O2
---  ghc-options: -O2 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
---  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+-- --  if flag(llvm)
+-- --    ghc-options: -fllvm -optlo-O3
+--   ghc-options: -threaded -rtsopts -O2
+-- --  ghc-options: -O2 -Odph -funbox-strict-fields -fwarn-dodgy-imports -rtsopts
+-- --  ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
-  build-depends:
-    base >= 4.9 && < 5,
-    DRBG < 0.6,
-    lol >= 0.6.0.0 && < 0.7,
-    lol-apps,
-    lol-benches >= 0.0.0.3 && < 0.1,
-    lol-cpp < 0.1,
-    lol-repa < 0.1,
-    MonadRandom < 0.6,
-    mtl < 2.3,
-    numeric-prelude < 0.5
+--   build-depends:
+--     base >= 4.9 && < 4.10,
+--     DRBG < 0.6,
+--     lol >= 0.6.0.0 && < 0.7,
+--     lol-apps,
+--     lol-benches >= 0.0.0.3 && < 0.1,
+--     lol-cpp < 0.1,
+--     lol-repa < 0.1,
+--     MonadRandom < 0.6,
+--     mtl < 2.3,
+--     numeric-prelude < 0.5
 
 executable homomprf
   hs-source-dirs: examples
@@ -134,7 +134,7 @@ executable homomprf
   ghc-options: -threaded -rtsopts -O2
 
   build-depends:
-    base >= 4.9 && < 5,
+    base >= 4.9 && < 4.10,
     deepseq < 1.5,
     DRBG < 0.6,
     filepath < 1.5,
@@ -156,7 +156,7 @@ executable khprf
   ghc-options: -threaded -rtsopts -O2
 
   build-depends:
-    base >= 4.9 && < 5,
+    base >= 4.9 && < 4.10,
     deepseq < 1.5,
     lol >= 0.6.0.0 && < 0.7,
     lol-apps,
@@ -174,7 +174,7 @@ executable symmshe
   ghc-options: -threaded -rtsopts -O2
 
   build-depends:
-    base >= 4.9 && < 5,
+    base >= 4.9 && < 4.10,
     lol >= 0.6.0.0 && < 0.7,
     lol-apps,
     lol-cpp < 0.1,

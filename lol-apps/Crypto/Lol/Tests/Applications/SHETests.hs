@@ -22,7 +22,7 @@ Tests for SymmSHE.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.SHETests (sheTests, decTest, modSwPTTest, ksTests, twemTests, tunnelTests) where
+module Crypto.Lol.Tests.Applications.SHETests (sheTests, decTest, modSwPTTest, ksTests, twemTests, tunnelTests) where
 
 import Control.Applicative
 import Control.Monad

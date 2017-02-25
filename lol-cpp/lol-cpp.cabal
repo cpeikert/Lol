@@ -5,7 +5,7 @@ name:                lol-cpp
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.0.0.3
+version:             0.0.1.0
 synopsis:            A fast C++ backend for <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -77,7 +77,7 @@ library
     Crypto.Lol.Cyclotomic.Tensor.CPP.Instances
 
   build-depends:
-    base >= 4.9 && < 5,
+    base >= 4.9 && < 4.10,
     constraints < 0.10,
     deepseq >= 1.4.1.1 && < 1.5,
     lol >= 0.6.0.0 && < 0.7,
@@ -99,9 +99,26 @@ Benchmark bench-lol-cpp
   ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
 
   build-depends:
-    base >= 4.9 && < 5,
+    base >= 4.9 && < 4.10,
     DRBG < 0.6,
     lol >= 0.6.0.0 && < 0.7,
+    lol-benches >= 0.0.0.3 && < 0.1,
+    lol-cpp
+
+Benchmark bench-lol-apps-cpp
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+  main-is:          BenchAppsCPPMain.hs
+  ghc-options:      -main-is BenchCPPMain
+  hs-source-dirs:   benchmarks
+
+  ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
+
+  build-depends:
+    base >= 4.9 && < 4.10,
+    DRBG < 0.6,
+    lol >= 0.6.0.0 && < 0.7,
+    lol-apps >= 0.3 && < 0.4,
     lol-benches >= 0.0.0.3 && < 0.1,
     lol-cpp
 
@@ -114,6 +131,20 @@ test-suite test-lol-cpp
   ghc-options:      -threaded -O2
 
   build-depends:
-    base >= 4.9 && < 5,
+    base >= 4.9 && < 4.10,
+    lol-cpp,
+    lol-tests < 0.1
+
+test-suite test-lol-apps-cpp
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+  main-is:          TestAppsCPPMain.hs
+  ghc-options:      -main-is TestCPPMain
+  hs-source-dirs:   tests
+  ghc-options:      -threaded -O2
+
+  build-depends:
+    base >= 4.9 && < 4.10,
+    lol-apps >= 0.3 && < 0.4,
     lol-cpp,
     lol-tests < 0.1

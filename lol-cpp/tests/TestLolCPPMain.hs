@@ -1,5 +1,5 @@
 {-|
-Module      : TestCPPMain
+Module      : TestLolCPPMain
 Description : Main driver for CPP tests.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -8,10 +8,10 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Main driver for CPP tests.
+Main driver for Lol tests with CPP.
 -}
 
-module TestCPPMain where
+module TestLolCPPMain where
 
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Tests.Standard

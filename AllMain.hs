@@ -21,8 +21,10 @@ import LolTestsMain ()
 
 import RLWEChallengesMain ()
 
-import BenchCPPMain ()
-import TestCPPMain ()
+import BenchLolCPPMain ()
+import TestLolCPPMain ()
+import BenchAppsCPPMain ()
+import TestAppsCPPMain ()
 
 import BenchRepaMain ()
 import TestRepaMain ()
