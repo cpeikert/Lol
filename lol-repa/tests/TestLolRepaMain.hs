@@ -1,6 +1,6 @@
 {-|
-Module      : TestRepaMain
-Description : Main driver for RT tests.
+Module      : TestLolRepaMain
+Description : Main driver for lol tests with RT.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-2
@@ -8,10 +8,10 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Main driver for RT tests.
+Main driver for lol tests with RT.
 -}
 
-module TestRepaMain where
+module TestLolRepaMain where
 
 import Crypto.Lol.Cyclotomic.Tensor.Repa
 import Crypto.Lol.Tests.Standard

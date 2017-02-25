@@ -12,19 +12,23 @@ This module depends on all source code modules, so it is useful for checking
 that all code compiles, including all top-level executables.
 -}
 
-import SHEMain ()
-import KHPRFMain ()
-import HomomPRFMain ()
-import TestAppsMain ()
-import BenchAppsMain ()
+
 import LolTestsMain ()
 
 import RLWEChallengesMain ()
 
 import BenchLolCPPMain ()
-import TestLolCPPMain ()
 import BenchAppsCPPMain ()
+import TestLolCPPMain ()
 import TestAppsCPPMain ()
 
-import BenchRepaMain ()
-import TestRepaMain ()
+import BenchLolRepaMain ()
+import BenchAppsRepaMain ()
+import TestLolRepaMain ()
+import TestAppsRepaMain ()
+
+
+
+import SHEMain ()
+import KHPRFMain ()
+import HomomPRFMain ()

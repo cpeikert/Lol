@@ -41,6 +41,10 @@ Flag opt
   Description: Turn on library optimizations
   Default:     True
 
+Flag with-apps
+  Description: When this flag is enabled, all lol-apps tests, benchmarks, and examples are built.
+  Default:     True
+
 library
   default-language:   Haskell2010
   ghc-options: -fwarn-dodgy-imports
@@ -110,6 +114,8 @@ Benchmark bench-lol-apps-cpp
   default-language: Haskell2010
   main-is:          BenchAppsCPPMain.hs
   ghc-options:      -main-is BenchAppsCPPMain
+  if flag(with-apps)
+    cpp-options: -DWITH_APPS
   hs-source-dirs:   benchmarks
 
   ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
@@ -120,7 +126,8 @@ Benchmark bench-lol-apps-cpp
     lol >= 0.6.0.0 && < 0.7,
     lol-apps >= 0.2.1 && < 0.3,
     lol-benches >= 0.0.0.3 && < 0.1,
-    lol-cpp
+    lol-cpp,
+    MonadRandom >= 0.2 && < 0.6
 
 test-suite test-lol-cpp
   type:             exitcode-stdio-1.0
@@ -140,6 +147,8 @@ test-suite test-lol-apps-cpp
   default-language: Haskell2010
   main-is:          TestAppsCPPMain.hs
   ghc-options:      -main-is TestAppsCPPMain
+  if flag(with-apps)
+    cpp-options: -DWITH_APPS
   hs-source-dirs:   tests
   ghc-options:      -threaded -O2
 

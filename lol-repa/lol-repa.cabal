@@ -40,6 +40,10 @@ Flag opt
   Description: Turn on library optimizations
   Default:     True
 
+Flag with-apps
+  Description: When this flag is enabled, all lol-apps tests, benchmarks, and examples are built.
+  Default:     True
+
 library
   default-language:   Haskell2010
   ghc-options: -fwarn-dodgy-imports
@@ -82,8 +86,8 @@ library
 Benchmark bench-lol-repa
   type:             exitcode-stdio-1.0
   default-language: Haskell2010
-  main-is:          BenchRepaMain.hs
-  ghc-options:      -main-is BenchRepaMain
+  main-is:          BenchLolRepaMain.hs
+  ghc-options:      -main-is BenchLolRepaMain
   hs-source-dirs:   benchmarks
 
   ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
@@ -96,11 +100,32 @@ Benchmark bench-lol-repa
     lol-benches >= 0.0.0.3 && < 0.1,
     lol-repa
 
+Benchmark bench-lol-apps-repa
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+  main-is:          BenchAppsRepaMain.hs
+  ghc-options:      -main-is BenchAppsRepaMain
+  hs-source-dirs:   benchmarks
+
+  if flag(with-apps)
+    cpp-options: -DWITH_APPS
+  ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
+  ghc-options: -fsimpl-tick-factor=115
+
+  build-depends:
+    base >= 4.9 && < 5,
+    DRBG < 0.6,
+    lol >= 0.6.0.0 && < 0.7,
+    lol-apps >= 0.2.1 && < 0.3,
+    lol-benches >= 0.0.0.3 && < 0.1,
+    lol-repa,
+    MonadRandom >= 0.2 && < 0.6
+
 test-suite test-lol-repa
   type:             exitcode-stdio-1.0
   default-language: Haskell2010
-  main-is:          TestRepaMain.hs
-  ghc-options:      -main-is TestRepaMain
+  main-is:          TestLolRepaMain.hs
+  ghc-options:      -main-is TestLolRepaMain
   hs-source-dirs:   tests
   ghc-options:      -threaded -O2
 
@@ -108,3 +133,21 @@ test-suite test-lol-repa
     base >= 4.9 && < 5,
     lol-repa,
     lol-tests < 0.1
+
+test-suite test-lol-apps-repa
+  type:             exitcode-stdio-1.0
+  default-language: Haskell2010
+  main-is:          TestAppsRepaMain.hs
+  if flag(with-apps)
+    cpp-options: -DWITH_APPS
+  ghc-options:      -main-is TestAppsRepaMain
+  hs-source-dirs:   tests
+  ghc-options:      -threaded -O2
+
+  build-depends:
+    base >= 4.9 && < 5,
+    lol >= 0.6.0.0 && < 0.7,
+    lol-apps >= 0.2.1 && < 0.3,
+    lol-repa,
+    lol-tests < 0.1,
+    test-framework < 0.9
