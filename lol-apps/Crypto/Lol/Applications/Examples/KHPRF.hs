@@ -1,5 +1,5 @@
 {-|
-Module      : KHPRFMain
+Module      : Crypto.Lol.Applications.Examples.KHPRF
 Description : Example using KeyHomomorphicPRF.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -19,7 +19,9 @@ Example using KeyHomomorphicPRF.
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module KHPRFMain where
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
+module Crypto.Lol.Applications.Examples.KHPRF (khprfRingMain, khprfLatticeMain) where
 
 import Control.Applicative
 import Control.DeepSeq
@@ -28,21 +30,19 @@ import Control.Monad.State hiding (state)
 
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
-import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
 import MathObj.Matrix hiding (zipWith)
 
 type Zq q = ZqBasic q Int64
-type Cyclo m q = Cyc CT m (Zq q)
+type Cyclo t m q = Cyc t m (Zq q)
 type Gad = BaseBGad 2
 type M = F128
 
-type Cyclo' q = Cyclo M q
-
-main :: IO ()
-main = do
-  family :: PRFFamily Gad (Cyclo' 257) (Cyclo M 32) <- randomFamily 10 -- works on 10-bit input
+-- | Tensor-polymorphic driver for a key-homomorphic PRF over rings.
+khprfRingMain :: forall t . (_) => Proxy t -> IO ()
+khprfRingMain _ = do
+  family :: PRFFamily Gad (Cyclo t M 257) (Cyclo t M 32) <- randomFamily 10 -- works on 10-bit input
   s <- getRandom                                                            -- prf seed
   let state = prfState family Nothing                                       -- initialize with input 0
       prf = ringPRFM s
@@ -50,8 +50,9 @@ main = do
       res = map rows $ flip evalState state $ mapM prf xs
   res `deepseq` print "done"
 
-main2 :: IO ()
-main2 = do
+-- | Driver for a key-homomorphic PRF over lattices.
+khprfLatticeMain :: IO ()
+khprfLatticeMain = do
   let n = 3 -- 3 rows/matrix
       k = 10 -- 10 bit input
       t = balancedTree k

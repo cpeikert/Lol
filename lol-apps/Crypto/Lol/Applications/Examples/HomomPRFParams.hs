@@ -1,5 +1,5 @@
 {-|
-Module      : HomomPRFParams
+Module      : Crypto.Lol.Applications.Examples.HomomPRFParams
 Description : Parameters for homomorphic PRF.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -15,7 +15,7 @@ Parameters for homomorphic PRF.
 {-# LANGUAGE PolyKinds     #-}
 {-# LANGUAGE TypeOperators #-}
 
-module HomomPRFParams (RngList, Zq, ZQSeq, ZP, ZQ, KSGad, PRFGad) where
+module Crypto.Lol.Applications.Examples.HomomPRFParams (RngList, Zq, ZQSeq, ZP, ZQ, KSGad, PRFGad) where
 
 import Crypto.Lol
 import Crypto.Lol.Types

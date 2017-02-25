@@ -1,5 +1,5 @@
 {-|
-Module      : SHEMain
+Module      : Crypto.Lol.Applications.Examples.SymmSHE
 Description : Example using SymmSHE.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -11,18 +11,20 @@ Portability : POSIX
 Example using SymmSHE.
 -}
 
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE PolyKinds           #-}
-{-# LANGUAGE RebindableSyntax    #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
 
-module SHEMain where
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-import           Crypto.Lol hiding ((^))
-import           Crypto.Lol.Applications.SymmSHE -- exports *ciphertext* 'CT'
-import           Crypto.Lol.Types
-import qualified Crypto.Lol.Cyclotomic.Tensor.CPP as C -- the *tensor* 'CT'
+module Crypto.Lol.Applications.Examples.SymmSHE (sheMain) where
+
+import Crypto.Lol hiding ((^))
+import Crypto.Lol.Applications.SymmSHE -- exports *ciphertext* 'CT'
+import Crypto.Lol.Types
 
 import Algebra.Ring ((^))
 
@@ -54,41 +56,37 @@ type CTZq1 = Zq 536937857
 type CTZq2 = (CTZq1, Zq 536972801)
 type CTZq3 = (CTZq2, Zq 537054337)
 
--- Tensor backend, either Repa (RT) or C (CT)
-type T = C.CT -- can also use RT
-
 type KSGad = TrivGad -- can also use (BaseBGad 2), for example
 
-type PTRing = Cyc T PTIndex PTZq
-type CTRing1 = CT PTIndex PTZq (Cyc T CTIndex CTZq1)
-type CTRing2 = CT PTIndex PTZq (Cyc T CTIndex CTZq2)
-type SKRing = Cyc T CTIndex (LiftOf PTZq)
+type CTRing1 t = CT PTIndex PTZq (Cyc t CTIndex CTZq1)
+type CTRing2 t = CT PTIndex PTZq (Cyc t CTIndex CTZq2)
+type SKRing t = Cyc t CTIndex (LiftOf PTZq)
 
-main :: IO ()
-main = do
+sheMain :: forall t . (_) => Proxy t -> IO ()
+sheMain _ = do
   plaintext <- getRandom
-  sk :: SK SKRing <- genSK (1 :: Double)
+  sk :: SK (SKRing t) <- genSK (1 :: Double)
   -- encrypt with a single modulus
-  ciphertext :: CTRing1 <- encrypt sk plaintext
+  ciphertext :: CTRing1 t <- encrypt sk plaintext
 
   let ct1 = 2*ciphertext
       pt1 = decrypt sk ct1
   print $ "Test1: " ++ (show $ 2*plaintext == pt1)
 
-  hint :: KSQuadCircHint KSGad (Cyc T CTIndex CTZq2) <- ksQuadCircHint sk
+  hint :: KSQuadCircHint KSGad (Cyc t CTIndex CTZq2) <- ksQuadCircHint sk
   let ct2 = keySwitchQuadCirc hint $ ciphertext*ciphertext
       pt2 = decrypt sk ct2
   -- note: this requires a *LARGE* CT modulus to succeed
   print $ "Test2: " ++ (show $ plaintext*plaintext == pt2)
 
   -- so we support using *several* small moduli:
-  hint' :: KSQuadCircHint KSGad (Cyc T CTIndex CTZq3) <- ksQuadCircHint sk
-  ciphertext' :: CTRing2 <- encrypt sk plaintext
+  hint' :: KSQuadCircHint KSGad (Cyc t CTIndex CTZq3) <- ksQuadCircHint sk
+  ciphertext' :: CTRing2 t <- encrypt sk plaintext
   let ct3 = keySwitchQuadCirc hint' $ ciphertext' * ciphertext'
       -- the CT modulus of ct3 is a ring product, which can't be lifted to a fixed size repr
       -- so use decryptUnrestricted instead
       pt3 = decryptUnrestricted sk ct3
-      ct3' = rescaleLinearCT ct3 :: CTRing1
+      ct3' = rescaleLinearCT ct3 :: CTRing1 t
       -- after rescaling, ct3' has a single modulus, so we can use normal decrypt
       pt3' = decrypt sk ct3'
   print $ "Test3: " ++ (show $ (plaintext*plaintext == pt3) && (pt3' == pt3))
