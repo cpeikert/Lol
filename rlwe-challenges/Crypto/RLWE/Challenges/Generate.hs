@@ -56,7 +56,7 @@ import Control.Monad.Random
 
 import qualified Data.ByteString.Lazy as BS
 import Data.Reflection hiding (D)
-import qualified Data.Tagged          as T
+import qualified Data.Tagged as T
 
 import System.Directory (createDirectoryIfMissing)
 

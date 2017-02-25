@@ -1,5 +1,5 @@
 
-[![Build Status](https://travis-ci.org/cpeikert/Lol.svg?branch=master)](https://travis-ci.org/cpeikert/Lol)
+[![Build Status](https://travis-ci.org/cpeikert/Lol.svg?branch=refl-entailment)](https://travis-ci.org/cpeikert/Lol)
 
 This branch (refl-entailment) is a fork of master. The goal is to use entailment
 to avoid monomorphizing calls to reify. This branch modifies rlwe-challenges so
