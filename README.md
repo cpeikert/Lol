@@ -1,7 +1,7 @@
 
 [![Build Status](https://travis-ci.org/cpeikert/Lol.svg?branch=master)](https://travis-ci.org/cpeikert/Lol)
 
-This branch (master) was previously known as 'split-packages'. The main problem preventing us from creating a new Hackage release based on this branch is that microbenchmark performance is severely degraded relative to the fast-microbenechmarks branch.
+This branch is master. It should always be compiling!
 
 --------------------------------------------------------------------------------
 
