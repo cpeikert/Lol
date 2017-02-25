@@ -1,6 +1,10 @@
 Changelog for lol-repa project
 ================================
 
+0.0.0.3
+----
+ * Added lol-apps tests, benchmarks, and examples.
+
 0.0.0.2
 ----
  * Removed unnecessary dependencies.

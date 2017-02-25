@@ -1,6 +1,10 @@
 Changelog for lol-cpp project
 ================================
 
+0.0.0.4
+----
+ * Added lol-apps tests, benchmarks, and examples.
+
 0.0.0.3
 ----
  * Removed unnecessary dependencies.

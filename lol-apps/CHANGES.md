@@ -1,6 +1,10 @@
 Changelog for lol project
 ================================
 
+0.2.1.0
+----
+ * Converted tests, benchmarks, and examples into libraries.
+
 0.2.0.2
 ----
  * Removed unnecessary dependencies.
