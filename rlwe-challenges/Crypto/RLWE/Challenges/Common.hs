@@ -74,8 +74,12 @@ type Zq q = ZqBasic q Int64
 -- | Concrete type used to generate and verify instances
 type RRq q = RRq.RRq q Double
 
+-- | Convenient constraint synonym for 'EntailTensor' that includes addtional
+-- modulus-independent constaints.
 type TensorCtx t = (EntailTensor t, Tensor t, TElt t (Complex Double), TElt t Double, TElt t Int64)
 
+-- | Contains the necessary entailments to allow generation and verification
+-- using reified moduli and cyclotomic indices.
 class EntailTensor t where
   entailTensor :: Tagged '(t,m,q) ((Reifies q Int64, Fact m) :-
     (ProtoType (t m (RRq q)) ~ KqProduct,
