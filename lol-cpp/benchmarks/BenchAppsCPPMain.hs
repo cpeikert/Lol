@@ -11,21 +11,12 @@ Portability : POSIX
 Main driver for lol-apps benchmarks with CPP.
 -}
 
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE RebindableSyntax      #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-
-{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+{-# LANGUAGE CPP       #-}
+{-# LANGUAGE DataKinds #-}
 
 module BenchAppsCPPMain where
 
-import Control.Monad.Random
+#ifdef WITH_APPS
 
 import Crypto.Lol
 import Crypto.Lol.Applications.Benchmarks.Standard
@@ -42,3 +33,10 @@ main = do
           sheBenches pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG) ++
           [khprfBenches pct (Proxy::Proxy (BaseBGad 2))]
   mapM_ (prettyBenches o) bs
+
+#else
+
+main :: IO ()
+main = return ()
+
+#endif

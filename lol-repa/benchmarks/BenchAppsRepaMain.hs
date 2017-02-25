@@ -11,24 +11,12 @@ Portability : POSIX
 Main driver for lol-apps benchmarks with RT.
 -}
 
-{-# LANGUAGE CPP                   #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE RebindableSyntax      #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-
-{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+{-# LANGUAGE CPP       #-}
+{-# LANGUAGE DataKinds #-}
 
 module BenchAppsRepaMain where
 
 #ifdef WITH_APPS
-
-import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Applications.Benchmarks.Standard

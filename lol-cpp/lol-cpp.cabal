@@ -160,59 +160,47 @@ test-suite test-lol-apps-cpp
     lol-tests < 0.1,
     test-framework < 0.9
 
--- executable homomprf
---   hs-source-dirs: examples
---   default-language: Haskell2010
---   main-is: HomomPRFMain.hs
---   ghc-options: -main-is HomomPRFMain
---   other-modules: HomomPRFParams
+executable homomprf-cpp
+  hs-source-dirs: examples
+  default-language: Haskell2010
+  main-is: HomomPRFCPPMain.hs
+  if flag(with-apps)
+    cpp-options: -DWITH_APPS
+  ghc-options: -main-is HomomPRFCPPMain
 
---   ghc-options: -threaded -rtsopts -O2
+  ghc-options: -threaded -rtsopts -O2
 
---   build-depends:
---     base >= 4.9 && < 4.10,
---     deepseq < 1.5,
---     DRBG < 0.6,
---     filepath < 1.5,
---     lol >= 0.6.0.0 && < 0.7,
---     lol-apps,
---     lol-cpp < 0.1,
---     MonadRandom < 0.6,
---     mtl < 2.3,
---     numeric-prelude < 0.5,
---     singletons < 2.3,
---     time < 1.9
+  build-depends:
+    base >= 4.9 && < 4.10,
+    lol-apps >= 0.2.1 && < 0.3,
+    lol-cpp
 
--- executable khprf
---   hs-source-dirs: examples
---   default-language: Haskell2010
---   main-is: KHPRFMain.hs
---   ghc-options: -main-is KHPRFMain
+executable khprf-cpp
+  hs-source-dirs: examples
+  default-language: Haskell2010
+  main-is: KHPRFCPPMain.hs
+  if flag(with-apps)
+    cpp-options: -DWITH_APPS
+  ghc-options: -main-is KHPRFCPPMain
 
---   ghc-options: -threaded -rtsopts -O2
+  ghc-options: -threaded -rtsopts -O2
 
---   build-depends:
---     base >= 4.9 && < 4.10,
---     deepseq < 1.5,
---     lol >= 0.6.0.0 && < 0.7,
---     lol-apps,
---     lol-cpp < 0.1,
---     MonadRandom < 0.6,
---     mtl < 2.3,
---     numeric-prelude < 0.5
+  build-depends:
+    base >= 4.9 && < 4.10,
+    lol-apps >= 0.2.1 && < 0.3,
+    lol-cpp
 
--- executable symmshe
---   hs-source-dirs:   examples
---   default-language: Haskell2010
---   main-is:          SHEMain.hs
---   ghc-options: -main-is SHEMain
+executable symmshe-cpp
+  hs-source-dirs:   examples
+  default-language: Haskell2010
+  main-is:          SHECPPMain.hs
+  if flag(with-apps)
+    cpp-options: -DWITH_APPS
+  ghc-options: -main-is SHECPPMain
 
---   ghc-options: -threaded -rtsopts -O2
+  ghc-options: -threaded -rtsopts -O2
 
---   build-depends:
---     base >= 4.9 && < 4.10,
---     lol >= 0.6.0.0 && < 0.7,
---     lol-apps,
---     lol-cpp < 0.1,
---     MonadRandom < 0.6,
---     numeric-prelude < 0.5
+  build-depends:
+    base >= 4.9 && < 4.10,
+    lol-apps >= 0.2.1 && < 0.3,
+    lol-cpp

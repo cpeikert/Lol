@@ -21,14 +21,14 @@ import BenchLolCPPMain ()
 import BenchAppsCPPMain ()
 import TestLolCPPMain ()
 import TestAppsCPPMain ()
+import HomomPRFCPPMain ()
+import KHPRFCPPMain ()
+import SHECPPMain ()
 
 import BenchLolRepaMain ()
 import BenchAppsRepaMain ()
 import TestLolRepaMain ()
 import TestAppsRepaMain ()
-
-
-
-import SHEMain ()
-import KHPRFMain ()
-import HomomPRFMain ()
+import HomomPRFRepaMain ()
+import KHPRFRepaMain ()
+import SHERepaMain ()
