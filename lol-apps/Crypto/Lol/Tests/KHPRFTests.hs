@@ -19,7 +19,7 @@ Tests for KeyHomomorphicPRF.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module KHPRFTests (khprfTests) where
+module Crypto.Lol.Tests.KHPRFTests (khprfTests) where
 
 import Control.Applicative
 import Control.Monad.Random hiding (lift)
