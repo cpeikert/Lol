@@ -47,4 +47,5 @@ install:
 
 script:
 # Build the package, its tests, and its docs and run the tests
-- travis_wait 35 stack --no-terminal test --haddock --no-haddock-deps
+# --fast is about 33% faster (compile time + test time) than without --fast
+- travis_wait 20 stack --no-terminal test --haddock --no-haddock-deps --fast
