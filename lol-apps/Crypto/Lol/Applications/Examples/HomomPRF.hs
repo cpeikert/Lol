@@ -62,6 +62,7 @@ tskPath   p = protoDir p "encKey.secret"
 -- | The output key of tunneling, used for rounding; also for decryption
 rskPath   p = protoDir p "decKey.secret"
 
+-- | Driver for the homomorphic PRF evaluation.
 -- R' - ... - S'
 -- |  -  |  - |
 -- R  - ... - S

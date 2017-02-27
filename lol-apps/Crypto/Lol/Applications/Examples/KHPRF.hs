@@ -39,7 +39,7 @@ type Cyclo t m q = Cyc t m (Zq q)
 type Gad = BaseBGad 2
 type M = F128
 
--- | Tensor-polymorphic driver for a key-homomorphic PRF over rings.
+-- | Driver for a key-homomorphic PRF over rings.
 khprfRingMain :: forall t . (_) => Proxy t -> IO ()
 khprfRingMain _ = do
   family :: PRFFamily Gad (Cyclo t M 257) (Cyclo t M 32) <- randomFamily 10 -- works on 10-bit input

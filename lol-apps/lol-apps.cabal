@@ -65,6 +65,11 @@ library
     Crypto.Proto.SHE.SecretKey
     Crypto.Proto.SHE.TunnelInfo
 
+    Crypto.Lol.Applications.Tests
+    Crypto.Lol.Applications.Benchmarks
+    Cyrpto.Lol.Applications.Examples
+
+  other-modules:
     Crypto.Lol.Applications.Tests.KHPRFTests
     Crypto.Lol.Applications.Tests.SHETests
     Crypto.Lol.Applications.Tests.Standard
@@ -72,11 +77,9 @@ library
     Crypto.Lol.Applications.Benchmarks.SHEBenches
     Crypto.Lol.Applications.Benchmarks.Standard
     Crypto.Lol.Applications.Examples.HomomPRF
+    Crypto.Lol.Applications.Examples.HomomPRFParams
     Crypto.Lol.Applications.Examples.KHPRF
     Crypto.Lol.Applications.Examples.SymmSHE
-
-  other-modules:
-    Crypto.Lol.Applications.Examples.HomomPRFParams
 
   build-depends:
     base >= 4.9 && < 4.10,
