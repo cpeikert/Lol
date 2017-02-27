@@ -5,7 +5,7 @@ name:                lol-benches
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.0.0.4
+version:             0.0.0.5
 synopsis:            A library for benchmarking <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -57,8 +57,4 @@ library
     lol >= 0.6.0.0 && < 0.7,
     MonadRandom < 0.6,
     split < 0.3,
-    statistics < 0.14,
-    -- EAC: lol-benches does NOT depend on vector. However, cabal can't resolve
-    -- dependencies without some help on the vector version. This is a bottleneck
-    -- preventing us from putting lol-benches on stackage.
-    vector < 0.12.0.0
+    statistics < 0.14

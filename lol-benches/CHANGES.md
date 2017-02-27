@@ -1,6 +1,10 @@
 Changelog for lol-benches project
 ================================
 
+0.0.0.5
+-----
+ * Removed dependency on `vector` since other dependencies now support vector-0.12.
+
 0.0.0.4
 -----
  * Removed unnecessary dependencies.

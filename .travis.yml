@@ -9,7 +9,7 @@
 # named .travis.yml
 
 # Use new container infrastructure to enable caching
-sudo: required
+sudo: false
 
 # Do not choose a language; we provide our own build tools.
 language: generic
@@ -43,8 +43,9 @@ before_install:
 
 install:
 # Build dependencies
-- stack --no-terminal --install-ghc test --only-dependencies
+- travis_wait 20 stack --no-terminal --install-ghc test --only-dependencies
 
 script:
 # Build the package, its tests, and its docs and run the tests
-- travis_wait 35 stack --no-terminal test --haddock --no-haddock-deps
+# --fast is about 33% faster (compile time + test time) than without --fast
+- travis_wait 20 stack --no-terminal test --haddock --no-haddock-deps --fast
