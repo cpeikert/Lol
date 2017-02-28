@@ -12,10 +12,7 @@ This module depends on all source code modules, so it is useful for checking
 that all code compiles, including all top-level executables.
 -}
 
-
 import LolTestsMain ()
-
-import RLWEChallengesMain ()
 
 import BenchLolCPPMain ()
 import BenchAppsCPPMain ()
@@ -32,3 +29,5 @@ import TestAppsRepaMain ()
 import HomomPRFRepaMain ()
 import KHPRFRepaMain ()
 import SHERepaMain ()
+
+import RLWEChallengesMain ()

@@ -8,7 +8,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Tensor-polymorphic benchmarks for  cryptographic applications.
+Tensor-polymorphic benchmarks for cryptographic applications.
 -}
 
 module Crypto.Lol.Applications.Benchmarks (module X) where
