@@ -30,7 +30,9 @@ Class for pretty-printing type parameters to tests and benchmarks
 module Crypto.Lol.Utils.ShowType
 (ArgType
 ,showType
-,ShowType) where
+,ShowType
+,Zq
+,type (**)) where
 
 import Crypto.Lol (Int64,Fact,valueFact,Mod(..), Proxy(..), proxy, TrivGad, BaseBGad)
 import Crypto.Lol.Reflects

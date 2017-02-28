@@ -25,8 +25,8 @@ Tests for the 'Tensor' interface.
 
 module Crypto.Lol.Tests.TensorTests where
 
-import Crypto.Lol.Tests
 import Crypto.Lol.Utils.ShowType
+import Crypto.Lol.Utils.Tests
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor

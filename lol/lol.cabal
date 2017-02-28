@@ -5,7 +5,7 @@ name:                lol
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.6.0.0
+version:             0.7.0.0
 synopsis:            A library for lattice cryptography.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -102,8 +102,8 @@ library
     Crypto.Proto.RLWE.SampleDisc1
     Crypto.Proto.RLWE.SampleRLWR1
 
-    Crypto.Lol.Utils.GenArgs
-    Crypto.Lol.Utils.ShowType
+    Crypto.Lol.Tests
+    Crypto.Lol.Benchmarks
 
   other-modules:
     Crypto.Lol.Cyclotomic.CRTSentinel
@@ -111,6 +111,24 @@ library
     Crypto.Lol.Types.Numeric
     Crypto.Lol.PosBin
     Crypto.Lol.PosBinDefs
+
+    Crypto.Lol.Utils.GenArgs
+    Crypto.Lol.Utils.ShowType
+    Crypto.Lol.Utils.Tests
+    Crypto.Lol.Utils.Benchmarks
+    Crypto.Lol.Utils.PrettyPrint
+    Crypto.Lol.Utils.PrettyPrint.Diagnostic
+    Crypto.Lol.Utils.PrettyPrint.Table
+
+    Crypto.Lol.Tests.CycTests
+    Crypto.Lol.Tests.Default
+    Crypto.Lol.Tests.TensorTests
+    Crypto.Lol.Tests.ZqTests
+
+    Crypto.Lol.Benchmarks.CycBenches
+    Crypto.Lol.Benchmarks.Default
+    Crypto.Lol.Benchmarks.TensorBenches
+    Crypto.Lol.Benchmarks.UCycBenches
 
   build-depends:
     arithmoi >= 0.4.1.3 && < 0.5,
@@ -134,4 +152,26 @@ library
     tagged-transformer >= 0.7 && < 0.9,
     template-haskell >=  2.2.0.0 && < 2.12,
     vector >=0.11 && < 0.13,
-    vector-th-unbox >= 0.2.1.0 && < 0.3
+    vector-th-unbox >= 0.2.1.0 && < 0.3,
+-- dependencies for tests and Benchmarks
+    ansi-terminal < 0.7,
+    criterion < 1.2,
+    DRBG < 0.6,
+    split < 0.3,
+    statistics < 0.14,
+    test-framework < 0.9,
+    test-framework-quickcheck2 < 0.4,
+    QuickCheck < 3.0
+
+test-suite test-lol
+  type:               exitcode-stdio-1.0
+  default-language:   Haskell2010
+  main-is:            LolTestsMain.hs
+  ghc-options:        -main-is LolTestsMain
+  hs-source-dirs:     tests
+  ghc-options:        -threaded
+
+  build-depends:
+    base >= 4.9 && < 5,
+    lol,
+    test-framework < 0.9

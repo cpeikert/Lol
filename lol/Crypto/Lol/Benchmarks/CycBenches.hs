@@ -26,7 +26,7 @@ import Control.Applicative
 import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol
-import Crypto.Lol.Benchmarks
+import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Cyclotomic.Tensor (TElt)
 import Crypto.Lol.Types
 import Crypto.Random

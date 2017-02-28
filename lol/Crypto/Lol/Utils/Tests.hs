@@ -1,5 +1,5 @@
 {-|
-Module      : Crypto.Lol.Tests
+Module      : Crypto.Lol.Utils.Tests
 Description : Infrastructure for testing Lol.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -20,7 +20,7 @@ Infrastructure for testing Lol.
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module Crypto.Lol.Tests
+module Crypto.Lol.Utils.Tests
 (test
 ,testIO
 ,TF.testGroup

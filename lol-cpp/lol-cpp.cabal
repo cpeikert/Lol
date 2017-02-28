@@ -84,7 +84,7 @@ library
     base >= 4.9 && < 4.10,
     constraints < 0.10,
     deepseq >= 1.4.1.1 && < 1.5,
-    lol >= 0.6.0.0 && < 0.7,
+    lol >= 0.6.0.0 && < 0.8,
     MonadRandom >= 0.2 && < 0.6,
     mtl >= 2.2.1 && < 2.3,
     numeric-prelude >= 0.4.2 && < 0.5,
@@ -105,8 +105,7 @@ Benchmark bench-lol-cpp
   build-depends:
     base >= 4.9 && < 4.10,
     DRBG < 0.6,
-    lol >= 0.6.0.0 && < 0.7,
-    lol-benches >= 0.0.0.3 && < 0.1,
+    lol >= 0.7.0.0 && < 0.8,
     lol-cpp
 
 Benchmark bench-lol-apps-cpp
@@ -123,9 +122,8 @@ Benchmark bench-lol-apps-cpp
   build-depends:
     base >= 4.9 && < 4.10,
     DRBG < 0.6,
-    lol >= 0.6.0.0 && < 0.7,
+    lol >= 0.7.0.0 && < 0.8,
     lol-apps >= 0.2.1 && < 0.3,
-    lol-benches >= 0.0.0.3 && < 0.1,
     lol-cpp,
     MonadRandom >= 0.2 && < 0.6
 
@@ -139,8 +137,8 @@ test-suite test-lol-cpp
 
   build-depends:
     base >= 4.9 && < 4.10,
-    lol-cpp,
-    lol-tests < 0.1
+    lol >= 0.7.0.0 && < 0.8,
+    lol-cpp
 
 test-suite test-lol-apps-cpp
   type:             exitcode-stdio-1.0
@@ -154,10 +152,9 @@ test-suite test-lol-apps-cpp
 
   build-depends:
     base >= 4.9 && < 4.10,
-    lol >= 0.6.0.0 && < 0.7,
+    lol >= 0.7.0.0 && < 0.8,
     lol-apps >= 0.2.1 && < 0.3,
     lol-cpp,
-    lol-tests < 0.1,
     test-framework < 0.9
 
 executable homomprf-cpp

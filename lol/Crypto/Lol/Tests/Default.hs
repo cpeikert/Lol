@@ -1,5 +1,5 @@
 {-|
-Module      : Crypto.Lol.Tests.Standard
+Module      : Crypto.Lol.Tests.Default
 Description : High-level tensor tests.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -21,30 +21,23 @@ which can be used to verify a 'Tensor' implementation.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.Standard where
+module Crypto.Lol.Tests.Default where
 
 import Crypto.Lol.Factored
 import Crypto.Lol.Tests.CycTests
 import Crypto.Lol.Tests.TensorTests
 import Crypto.Lol.Tests.ZqTests
-import Crypto.Lol.Types
+import Crypto.Lol.Utils.ShowType
+import Crypto.Lol.Types.IrreducibleChar2 ()
 
-import Data.Int
 import Data.Proxy
 
 import Test.Framework
 
-infixr 9 **
-data a ** b
-
-defaultTestMain :: _ => Proxy t -> IO ()
-defaultTestMain =
+defaultLolTestMain :: _ => Proxy t -> IO ()
+defaultLolTestMain =
   flip defaultMainWithArgs
-    ["--threads=1","--maximum-generated-tests=100"] . defaultTests
-
-type family Zq (a :: k) :: * where
-  Zq (a ** b) = (Zq a, Zq b)
-  Zq q = (ZqBasic q Int64)
+    ["--threads=1","--maximum-generated-tests=100"] . defaultLolTests
 
 -- | Default parameters for 'ZqBasic' tests
 zqTs :: Test
@@ -55,8 +48,8 @@ zqTs = testGroup "Zq Tests" $ [
   zqTests (Proxy::Proxy (Zq (3 ** 5 ** 7)))]
 
 -- | Default @m@/@r@ test parameters, for an arbitrary 'Tensor'.
-defaultTests :: _ => Proxy t -> [Test]
-defaultTests pt = [
+defaultLolTests :: _ => Proxy t -> [Test]
+defaultLolTests pt = [
   testGroup "Tensor Tests" $ ($ pt) <$> [
     tensorTests1 (Proxy::Proxy '(F7,  Zq 29)),
     tensorTests1 (Proxy::Proxy '(F12, SmoothZQ1)),

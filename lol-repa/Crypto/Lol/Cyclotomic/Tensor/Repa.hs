@@ -38,10 +38,10 @@ import Crypto.Lol.Cyclotomic.Tensor.Repa.Instances ()
 import Crypto.Lol.Cyclotomic.Tensor.Repa.RTCommon  as RT hiding
                                                                 ((++))
 import Crypto.Lol.Prelude                                as LP
+import Crypto.Lol.Tests
 import Crypto.Lol.Types.FiniteField                      as FF
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Utils.ShowType
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Module       as Module (C)

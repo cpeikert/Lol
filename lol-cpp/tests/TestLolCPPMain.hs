@@ -14,8 +14,8 @@ Main driver for lol tests with CPP.
 module TestLolCPPMain where
 
 import Crypto.Lol.Cyclotomic.Tensor.CPP
-import Crypto.Lol.Tests.Standard
+import Crypto.Lol.Tests
 import Data.Proxy
 
 main :: IO ()
-main = defaultTestMain (Proxy::Proxy CT)
+main = defaultLolTestMain (Proxy::Proxy CT)

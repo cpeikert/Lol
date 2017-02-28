@@ -11,18 +11,16 @@ Portability : POSIX
 Main driver for lol benchmarks with CPP.
 -}
 
-{-# LANGUAGE DataKinds      #-}
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE TypeOperators  #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module BenchLolCPPMain where
 
 import Crypto.Lol.Benchmarks
-import Crypto.Lol.Benchmarks.Standard
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Factored
-import qualified Crypto.Lol.Utils.PrettyPrint.Diagnostic as D
-import qualified Crypto.Lol.Utils.PrettyPrint.Table as T
 import Crypto.Random.DRBG
 
 import Data.Proxy
@@ -66,18 +64,18 @@ bs = [
 
 main :: IO ()
 main = diagnosticMain
-
+{-
 tableMain :: IO ()
 tableMain = do
-  let opts = (T.defaultOpts $ Just "UCyc"){T.benches=bs}
-  g1 <- defaultBenches (Proxy::Proxy CT)
-  mapM_ (T.prettyBenches opts) g1
-
+  let opts = (defaultTableOpts $ Just "UCyc"){benches=bs}
+  g1 <- defaultLolBenches (Proxy::Proxy CT)
+  mapM_ (prettyBenchesTable opts) g1
+-}
 diagnosticMain :: IO ()
 diagnosticMain = do
-  let opts = D.defaultOpts{D.levels=ls, D.benches=bs}
+  let opts = defaultDiagnosticOpts{levels=ls, benches=bs}
   b1 <- benchGroup "Single Index"
           [oneIdxBenches (Proxy::Proxy '(F64*F9*F25, Zq 14401)) (Proxy::Proxy CT) (Proxy::Proxy HashDRBG)]
   b2 <- benchGroup "Twace-Embed"
           [twoIdxBenches (Proxy::Proxy '(F64*F9*F25, F64*F9*F25, Zq 14401)) (Proxy::Proxy CT)]
-  mapM_ (D.prettyBenches opts) [b1,b2]
+  mapM_ (prettyBenchesDiagnostic opts) [b1,b2]

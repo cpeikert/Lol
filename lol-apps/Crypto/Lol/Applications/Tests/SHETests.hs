@@ -31,7 +31,6 @@ import Control.Monad.Random
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Tests
-import Crypto.Lol.Utils.ShowType
 
 import qualified Test.Framework as TF
 

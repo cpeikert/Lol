@@ -8,7 +8,10 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Benchmarks for the 'Tensor' interface.
+Benchmarks for the 'Tensor' interface. In a perfect world, these benchmarks would
+have the same performance as the 'Cyc' benchmarks. In practice, GHC gets in the
+way at higher levels of the library, resulting in worse performance for 'Cyc'
+in some cases.
 -}
 
 {-# LANGUAGE DataKinds             #-}
@@ -25,7 +28,7 @@ module Crypto.Lol.Benchmarks.TensorBenches (tensorBenches1, tensorBenches2) wher
 import Control.Applicative
 import Control.Monad.Random hiding (lift)
 
-import Crypto.Lol.Benchmarks
+import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Prelude
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types

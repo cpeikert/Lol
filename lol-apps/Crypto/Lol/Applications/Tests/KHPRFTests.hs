@@ -28,7 +28,6 @@ import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Cyclotomic.UCyc
 import Crypto.Lol.Tests
-import Crypto.Lol.Utils.ShowType
 
 import MathObj.Matrix
 

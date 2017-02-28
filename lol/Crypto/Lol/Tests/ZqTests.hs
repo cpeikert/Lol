@@ -29,8 +29,8 @@ module Crypto.Lol.Tests.ZqTests where
 
 import Crypto.Lol
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Tests
 import Crypto.Lol.Utils.ShowType
+import Crypto.Lol.Utils.Tests
 
 import Control.Applicative
 import Control.Monad.Random

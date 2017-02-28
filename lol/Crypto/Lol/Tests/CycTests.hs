@@ -30,7 +30,7 @@ import Control.Monad (liftM2,join)
 import Crypto.Lol
 
 import Crypto.Lol.Utils.ShowType
-import Crypto.Lol.Tests
+import Crypto.Lol.Utils.Tests
 
 import qualified Test.Framework as TF
 

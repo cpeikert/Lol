@@ -1,5 +1,5 @@
 {-|
-Module      : Crypto.Lol.Benchmarks
+Module      : Crypto.Lol.Utils.Benchmarks
 Description : Infrastructure for benchmarking Lol.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -21,8 +21,8 @@ Infrastructure for benchmarking Lol.
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module Crypto.Lol.Benchmarks
-(Crypto.Lol.Benchmarks.bench
+module Crypto.Lol.Utils.Benchmarks
+(Crypto.Lol.Utils.Benchmarks.bench
 ,benchM
 ,benchIO
 ,benchGroup

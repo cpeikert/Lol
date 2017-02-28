@@ -11,8 +11,9 @@ Portability : POSIX
 Main driver for lol-apps benchmarks with RT.
 -}
 
-{-# LANGUAGE CPP       #-}
-{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE CPP                   #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module BenchAppsRepaMain where
 
@@ -20,19 +21,18 @@ module BenchAppsRepaMain where
 
 import Crypto.Lol
 import Crypto.Lol.Applications.Benchmarks
+import Crypto.Lol.Benchmarks
 import Crypto.Lol.Cyclotomic.Tensor.Repa
-import Crypto.Lol.Utils.PrettyPrint.Table
-
 import Crypto.Random.DRBG
 
 main :: IO ()
 main = do
-  let o = (defaultOpts Nothing){benches=[]}
+  let o = (defaultTableOpts Nothing)
       pct = Proxy::Proxy RT
   bs <- sequence $
-          sheBenches pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG) ++
-          [khprfBenches pct (Proxy::Proxy (BaseBGad 2))]
-  mapM_ (prettyBenches o) bs
+          defaultSHEBenches pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG) ++
+          [defaultKHPRFBenches pct (Proxy::Proxy (BaseBGad 2))]
+  mapM_ (prettyBenchesTable o) bs
 
 #else
 

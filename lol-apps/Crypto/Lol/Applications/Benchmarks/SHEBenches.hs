@@ -29,7 +29,6 @@ import Crypto.Lol.Benchmarks
 
 import Control.Applicative
 import Control.Monad.Random hiding (lift)
-import Crypto.Lol.Utils.ShowType
 import Crypto.Random.DRBG
 
 import Crypto.Lol

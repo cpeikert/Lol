@@ -15,10 +15,9 @@ Pretty-printing for benchmark results within a single level of the Lol stack.
 {-# LANGUAGE RecordWildCards #-}
 
 module Crypto.Lol.Utils.PrettyPrint.Table
-(prettyBenches
-,defaultOpts
-,Opts(..)
-,Verb(..)) where
+(prettyBenchesTable
+,defaultTableOpts
+,TableOpts(..)) where
 
 import Control.Monad (forM_, when)
 
@@ -34,7 +33,7 @@ import System.IO
 import Text.Printf
 
 
-data Opts = Opts
+data TableOpts = TOpts
   {verb          :: Verb,     -- ^ Verbosity
    level         :: String,   -- ^ Which level of Lol to benchmark
    benches       :: [String], -- ^ Which operations to benchmark. The empty list means run all benchmarks.
@@ -42,8 +41,8 @@ data Opts = Opts
    colWidth      :: Int,      -- ^ Character width of data columns
    testNameWidth :: Int}      -- ^ Character width of row labels
 
-optsToInternal :: Opts -> Benchmark -> OptsInternal
-optsToInternal Opts{..} bnch =
+optsToInternal :: TableOpts -> Benchmark -> OptsInternal
+optsToInternal TOpts{..} bnch =
   OptsInternal{params=if null params
                       then nub $ map getBenchParams $ benchNames bnch
                       else params,
@@ -57,22 +56,22 @@ optsToInternal Opts{..} bnch =
                ..}
 
 -- | Runs all benchmarks with verbosity 'Progress'.
-defaultOpts :: Maybe String -> Opts
-defaultOpts lvl =
+defaultTableOpts :: Maybe String -> TableOpts
+defaultTableOpts lvl =
   case lvl of
     Nothing -> go ""
     (Just l) -> go l
   where go level =
-          Opts {verb = Progress,
-                benches = [],
-                params = [],
-                colWidth = 30,
-                testNameWidth=20, ..}
+          TOpts {verb = Progress,
+                 benches = [],
+                 params = [],
+                 colWidth = 30,
+                 testNameWidth=20, ..}
 
 -- | Takes benchmark options an a benchmark group nested as params/level/op,
 -- and prints a table comparing operations across all selected levels of Lol.
-prettyBenches :: Opts -> Benchmark-> IO ()
-prettyBenches o bnch = do
+prettyBenchesTable :: TableOpts -> Benchmark-> IO ()
+prettyBenchesTable o bnch = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
   let o'@OptsInternal{..} = optsToInternal o bnch
   rpts <- getReports o' bnch

@@ -11,14 +11,15 @@ Portability : POSIX
 Pretty-printing for benchmark results across levels of the Lol stack.
 -}
 
-{-# LANGUAGE BangPatterns    #-}
-{-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE BangPatterns          #-}
+{-# LANGUAGE RecordWildCards       #-}
+-- EAC: https://ghc.haskell.org/trac/ghc/ticket/13352
+{-# LANGUAGE DuplicateRecordFields #-}
 
 module Crypto.Lol.Utils.PrettyPrint.Diagnostic
-(prettyBenches
-,defaultOpts
-,Opts(..)
-,Verb(..)) where
+(prettyBenchesDiagnostic
+,defaultDiagnosticOpts
+,DiagnosticOpts(..)) where
 
 --import Control.DeepSeq
 --import Control.Exception (evaluate)
@@ -35,7 +36,7 @@ import System.Console.ANSI
 import System.IO
 import Text.Printf
 
-data Opts = Opts
+data DiagnosticOpts = DOpts
   {verb          :: Verb,     -- ^ Verbosity
    levels        :: [String], -- ^ Which levels of Lol to benchmark. The empty list means run all levels.
    benches       :: [String], -- ^ Which operations to benchmark. The empty list means run all benchmarks.
@@ -47,17 +48,17 @@ data Opts = Opts
    testNameWidth :: Int}      -- ^ Character width of row labels
 
 -- | Runs all benchmarks with verbosity 'Progress'.
-defaultOpts :: Opts
-defaultOpts =
-  Opts {verb = Progress,
-        levels = [],
-        benches = [],
-        redThreshold = 1.2,
-        colWidth = 15,
-        testNameWidth=40}
+defaultDiagnosticOpts :: DiagnosticOpts
+defaultDiagnosticOpts =
+  DOpts {verb = Progress,
+         levels = [],
+         benches = [],
+         redThreshold = 1.2,
+         colWidth = 15,
+         testNameWidth=40}
 
-optsToInternal :: Opts -> Benchmark -> OptsInternal
-optsToInternal Opts{..} bnch =
+optsToInternal :: DiagnosticOpts -> Benchmark -> OptsInternal
+optsToInternal DOpts{..} bnch =
   OptsInternal{params=[getBenchParams $ head $ benchNames bnch],
                levels=if null levels
                       then nub $ map getBenchLvl $ benchNames bnch
@@ -69,8 +70,8 @@ optsToInternal Opts{..} bnch =
 
 -- | Takes benchmark options an a benchmark group nested as params/level/op,
 -- and prints a table comparing operations across all selected levels of Lol.
-prettyBenches :: Opts -> Benchmark-> IO ()
-prettyBenches o bnch = do
+prettyBenchesDiagnostic :: DiagnosticOpts -> Benchmark-> IO ()
+prettyBenchesDiagnostic o bnch = do
   hSetBuffering stdout NoBuffering -- for better printing of progress
   let o'@OptsInternal{..} = optsToInternal o bnch
   rpts <- getReports o' bnch

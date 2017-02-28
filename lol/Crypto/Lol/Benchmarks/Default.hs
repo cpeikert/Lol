@@ -1,5 +1,5 @@
 {-|
-Module      : Crypto.Lol.Benchmarks.Standard
+Module      : Crypto.Lol.Benchmarks.Default
 Description : Default high-level benchmarks for Tensor implementations.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -22,32 +22,28 @@ Default high-level benchmarks for Tensor implementations.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Benchmarks.Standard where
+module Crypto.Lol.Benchmarks.Default where
 
-import Crypto.Lol.Benchmarks
 --import Crypto.Lol.Benchmarks.SimpleTensorBenches
 import Crypto.Lol.Benchmarks.TensorBenches
 --import Crypto.Lol.Benchmarks.SimpleUCycBenches
 import Crypto.Lol.Benchmarks.UCycBenches
 import Crypto.Lol.Benchmarks.CycBenches
 import Crypto.Lol.Factored
-import Crypto.Lol.Types
+import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Utils.ShowType
 import Crypto.Random.DRBG
 
-import Data.Int
 import Data.Proxy
-
-type Zq (q :: k) = ZqBasic q Int64
 
 instance Show (ArgType HashDRBG) where
   show _ = "HashDRBG"
 
 -- | Benchmark parameters reported in the paper. We suggest running these benchmarks
 -- to quickly compare performance on your system or with your 'Tensor' backend.
-{-# INLINABLE defaultBenches #-}
-defaultBenches :: _ => Proxy t -> IO [Benchmark]
-defaultBenches pt = sequence [
+{-# INLINABLE defaultLolBenches #-}
+defaultLolBenches :: _ => Proxy t -> IO [Benchmark]
+defaultLolBenches pt = sequence [
   benchGroup "Single Index" $ (($ (Proxy::Proxy HashDRBG)) . ($ pt)) <$> [
     oneIdxBenches (Proxy::Proxy '(F1024,        Zq 12289)),
     oneIdxBenches (Proxy::Proxy '(F2048,        Zq 12289)),

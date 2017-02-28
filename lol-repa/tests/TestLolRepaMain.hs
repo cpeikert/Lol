@@ -14,8 +14,8 @@ Main driver for lol tests with RT.
 module TestLolRepaMain where
 
 import Crypto.Lol.Cyclotomic.Tensor.Repa
-import Crypto.Lol.Tests.Standard
+import Crypto.Lol.Tests
 import Data.Proxy
 
 main :: IO ()
-main = defaultTestMain (Proxy::Proxy RT)
+main = defaultLolTestMain (Proxy::Proxy RT)

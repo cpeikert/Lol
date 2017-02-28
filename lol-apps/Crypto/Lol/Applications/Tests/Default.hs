@@ -1,6 +1,6 @@
 {-|
-Module      : Crypto.Lol.Applications.Tests.Standard
-Description : Standard tests for lol-apps.
+Module      : Crypto.Lol.Applications.Tests.Default
+Description : Default tests for lol-apps.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-2
@@ -21,7 +21,7 @@ Mostly-monomorphized tests for lol-apps.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Applications.Tests.Standard (defaultTests) where
+module Crypto.Lol.Applications.Tests.Default (defaultAppsTests) where
 
 import Control.Monad.Random
 
@@ -31,22 +31,14 @@ import Crypto.Lol.Applications.Tests.KHPRFTests
 import Crypto.Lol.Applications.Tests.SHETests
 import Crypto.Lol.Factored
 import Crypto.Lol.Gadget
-import Crypto.Lol.Types
+import Crypto.Lol.Tests hiding (Test)
 
-import Data.Int
 import Data.Proxy
 
 import Test.Framework
 
-infixr 9 **
-data a ** b
-
-type family Zq (a :: k) :: * where
-  Zq (a ** b) = (Zq a, Zq b)
-  Zq q = (ZqBasic q Int64)
-
-defaultTests :: _ => Proxy t -> Proxy gad -> [Test]
-defaultTests pt pgad  =
+defaultAppsTests :: _ => Proxy t -> Proxy gad -> [Test]
+defaultAppsTests pt pgad  =
   [testGroup "SHE" $ ($ pt) <$> [
     sheTests (Proxy::Proxy '(F7, F7, Zq 2,Zq (19393921 ** 18869761))),
     sheTests (Proxy::Proxy '(F7, F21,Zq 2,Zq (19393921 ** 18869761))),

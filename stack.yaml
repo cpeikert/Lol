@@ -41,10 +41,8 @@ compiler-check: newer-minor
 packages:
 - lol/
 - lol-apps/
-- lol-benches/
 - lol-cpp/
 - lol-repa/
-- lol-tests/
 - rlwe-challenges/
 
 # Dependency packages to be pulled from upstream that are not in the resolver

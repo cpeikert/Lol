@@ -13,7 +13,7 @@ Main driver for Zq tests.
 
 module LolTestsMain where
 
-import Crypto.Lol.Tests.Standard
+import Crypto.Lol.Tests
 import Test.Framework
 
 main :: IO ()

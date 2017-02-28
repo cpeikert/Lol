@@ -27,7 +27,7 @@ import Test.Framework
 main :: IO ()
 main = do
   flip defaultMainWithArgs ["--threads=1","--maximum-generated-tests=100"] $
-    defaultTests (Proxy::Proxy RT) (Proxy::Proxy TrivGad)
+    defaultAppsTests (Proxy::Proxy RT) (Proxy::Proxy TrivGad)
 
 #else
 
