@@ -19,7 +19,7 @@ module TestAppsCPPMain where
 
 import Crypto.Lol (TrivGad)
 import Crypto.Lol.Cyclotomic.Tensor.CPP
-import Crypto.Lol.Applications.Tests.Standard
+import Crypto.Lol.Applications.Tests
 import Data.Proxy
 
 import Test.Framework

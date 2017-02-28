@@ -67,7 +67,7 @@ library
 
     Crypto.Lol.Applications.Tests
     Crypto.Lol.Applications.Benchmarks
-    Cyrpto.Lol.Applications.Examples
+    Crypto.Lol.Applications.Examples
 
   other-modules:
     Crypto.Lol.Applications.Tests.KHPRFTests
@@ -93,10 +93,11 @@ library
     protocol-buffers-descriptor < 2.5,
     singletons < 2.3,
     split < 0.3,
-
+-- dependencies for tests, benchmarks, and executables
     DRBG,
     filepath,
     lol-benches,
     lol-tests,
+    options,
     test-framework,
     time

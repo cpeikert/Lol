@@ -19,7 +19,7 @@ module BenchAppsRepaMain where
 #ifdef WITH_APPS
 
 import Crypto.Lol
-import Crypto.Lol.Applications.Benchmarks.Standard
+import Crypto.Lol.Applications.Benchmarks
 import Crypto.Lol.Cyclotomic.Tensor.Repa
 import Crypto.Lol.Utils.PrettyPrint.Table
 

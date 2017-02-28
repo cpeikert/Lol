@@ -18,7 +18,7 @@ module HomomPRFRepaMain where
 #ifdef WITH_APPS
 
 import Crypto.Lol.Cyclotomic.Tensor.Repa
-import Crypto.Lol.Applications.Examples.HomomPRF
+import Crypto.Lol.Applications.Examples
 import Data.Proxy
 
 main :: IO ()

@@ -19,7 +19,7 @@ module BenchAppsCPPMain where
 #ifdef WITH_APPS
 
 import Crypto.Lol
-import Crypto.Lol.Applications.Benchmarks.Standard
+import Crypto.Lol.Applications.Benchmarks
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Utils.PrettyPrint.Table
 

@@ -18,7 +18,7 @@ module KHPRFCPPMain where
 #ifdef WITH_APPS
 
 import Crypto.Lol.Cyclotomic.Tensor.CPP
-import Crypto.Lol.Applications.Examples.KHPRF
+import Crypto.Lol.Applications.Examples
 import Data.Proxy
 
 main :: IO ()
