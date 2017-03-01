@@ -40,9 +40,11 @@ import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
 import GHC.TypeLits
 
+-- | Convenient syntax for multiplication of moduli in a 'Zq'.
 infixr 9 **
 data a ** b
 
+-- | Converts '**' syntax into nested pair representation.
 type family Zq (a :: k) :: * where
   Zq (a ** b) = (Zq a, Zq b)
   Zq q = (ZqBasic q Int64)
@@ -61,13 +63,13 @@ type family Go (fs :: [k1 -> k2]) (xs :: [k1]) (ys :: [k1]) where
   Go (f ': fs) (x ': xs) ys = (f x) ': (Go (f ': fs) xs ys)
 
 
--- | Wrapper type for printing test/benchmark names
+-- | Wrapper type for printing test/benchmark names.
 data ArgType (a :: k) = AT
 
--- | Constraint synonym for printing test parameters
+-- | Constraint synonym for printing test parameters.
 type ShowType a = Show (ArgType a)
 
--- | Print a showable type argument
+-- | Print a showable type argument.
 showType :: forall a . (Show (ArgType a)) => Proxy a -> String
 showType _ = show (AT :: ArgType a)
 

@@ -42,12 +42,12 @@ import Data.Maybe
 import Statistics.Resampling.Bootstrap (Estimate(..))
 
 -- | Verbosity of benchmark output.
-data Verb = Progress  -- ^ prints a '.' when each benchmark completes
+data Verb = Progress  -- ^ prints a \'.\' when each benchmark completes
           | Abridged  -- ^ prints a one-line summary for each benchmark
           | Full      -- ^ prints full criterion output for each benchmark
           deriving (Eq)
 
--- | Options for printing benchmark summary
+-- | Options for printing benchmark summary.
 data OptsInternal = OptsInternal
   {verb          :: Verb,     -- ^ Verbosity
    levels        :: [String], -- ^ Which levels of Lol to benchmark

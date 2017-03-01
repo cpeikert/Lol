@@ -16,6 +16,8 @@ module TestLolCPPMain where
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Tests
 import Data.Proxy
+import Test.Framework
 
 main :: IO ()
-main = defaultLolTestMain (Proxy::Proxy CT)
+main = defaultMainWithArgs
+  (defaultLolTests (Proxy::Proxy CT)) ["--maximum-generated-tests=100"]

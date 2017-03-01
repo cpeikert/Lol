@@ -25,7 +25,7 @@ Tests for modular arithmetic.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.ZqTests where
+module Crypto.Lol.Tests.ZqTests (zqTests) where
 
 import Crypto.Lol
 import Crypto.Lol.CRTrans
@@ -37,7 +37,7 @@ import Control.Monad.Random
 
 import qualified Test.Framework as TF
 
--- | Tests for 'ZqBasic'
+-- | Tests for modular arithmetic implementations.
 zqTests :: _ => Proxy r -> TF.Test
 zqTests p = testGroup (showType p) $ ($ p) <$> [
   genTestArgs "(+)" prop_add,

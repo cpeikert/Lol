@@ -138,7 +138,8 @@ test-suite test-lol-cpp
   build-depends:
     base >= 4.9 && < 4.10,
     lol >= 0.7.0.0 && < 0.8,
-    lol-cpp
+    lol-cpp,
+    test-framework < 0.9
 
 test-suite test-lol-apps-cpp
   type:             exitcode-stdio-1.0

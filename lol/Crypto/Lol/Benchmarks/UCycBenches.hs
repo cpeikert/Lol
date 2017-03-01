@@ -35,7 +35,10 @@ import Crypto.Lol.Prelude
 import Crypto.Lol.Types
 import Crypto.Random
 
--- | Benchmarks for single-index operations. There must be a CRT basis for \(O_m\) over @r@.
+-- | Benchmarks for single-index 'UCyc' operations.
+-- There must be a CRT basis for \(O_m\) over @r@.
+-- These cover the same functions as @cycBenches1@, but may have different
+-- performance due to how GHC interacts with Lol.
 {-# INLINABLE ucycBenches1 #-}
 ucycBenches1 :: (Monad rnd, _) => Proxy '(t,m,r) -> Proxy gen -> rnd Benchmark
 ucycBenches1 ptmr pgen = benchGroup "UCyc" $ ($ ptmr) <$> [
@@ -57,7 +60,10 @@ ucycBenches1 ptmr pgen = benchGroup "UCyc" $ ($ ptmr) <$> [
   genBenchArgs "error" (bench_errRounded 0.1) .  addGen pgen
   ]
 
--- | Benchmarks for inter-ring operations. There must be a CRT basis for \(O_{m'}\) over @r@.
+-- | Benchmarks for inter-ring 'UCyc' operations.
+-- There must be a CRT basis for \(O_{m'}\) over @r@.
+-- These cover the same functions as @cycBenches2@, but may have different
+-- performance due to how GHC interacts with Lol.
 {-# INLINE ucycBenches2 #-}
 ucycBenches2 :: (Monad rnd, _) => Proxy '(t,m,m',r) -> rnd Benchmark
 ucycBenches2 p = benchGroup "UCyc" $ ($ p) <$> [

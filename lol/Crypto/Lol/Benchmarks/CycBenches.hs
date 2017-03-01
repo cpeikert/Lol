@@ -31,7 +31,8 @@ import Crypto.Lol.Cyclotomic.Tensor (TElt)
 import Crypto.Lol.Types
 import Crypto.Random
 
--- | Benchmarks for single-index operations. There must be a CRT basis for \(O_m\) over @r@.
+-- | Benchmarks for single-index 'Cyc' operations.
+-- There must be a CRT basis for \(O_m\) over @r@.
 {-# INLINABLE cycBenches1 #-}
 cycBenches1 :: (Monad rnd, _) => Proxy '(t,m,r) -> Proxy gen -> rnd Benchmark
 cycBenches1 ptmr pgen = benchGroup "Cyc" $ ($ ptmr) <$> [
@@ -53,7 +54,8 @@ cycBenches1 ptmr pgen = benchGroup "Cyc" $ ($ ptmr) <$> [
   genBenchArgs "error" (bench_errRounded 0.1) . addGen pgen
   ]
 
--- | Benchmarks for inter-ring operations. There must be a CRT basis for \(O_{m'}\) over @r@.
+-- | Benchmarks for inter-ring 'Cyc' operations.
+-- There must be a CRT basis for \(O_{m'}\) over @r@.
 {-# INLINABLE cycBenches2 #-}
 cycBenches2 :: (Monad rnd, _) => Proxy '(t,m,m',r) -> rnd Benchmark
 cycBenches2 p = benchGroup "Cyc" $ ($ p) <$> [

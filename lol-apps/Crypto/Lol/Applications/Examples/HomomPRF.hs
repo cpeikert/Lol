@@ -77,9 +77,13 @@ instance Options MainOpts where
            \it will be generated and saved to this location."})
 
 -- | Driver for the homomorphic PRF evaluation.
+--
 -- R' - ... - S'
+--
 -- |  -  |  - |
+--
 -- R  - ... - S
+--
 -- PRF evaluation usually goes from R' to R. Homomorphic evaluation
 -- goes from R' to S, via S'. To test, we run the computation in the clear
 -- from R' to R, then tunnel in the clear to S.

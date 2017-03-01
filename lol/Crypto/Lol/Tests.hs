@@ -10,15 +10,29 @@ Portability : POSIX
 
   \( \def\C{\mathbb{C}} \)
 
-Tests for individual layers of the Lol stack (Tensor, UCyc, Cyc), plus
-default parameters and helper functions for diplaying results.
+Tests for individual layers of the Lol stack ('Crypto.Lol.Cyclotomic.Tensor',
+'Crypto.Lol.Cyclotomic.UCyc', Crypto.Lol.Cyclotomic.Cyc'), plus
+default parameters and helper functions for displaying results.
 -}
 
-module Crypto.Lol.Tests (module X) where
+module Crypto.Lol.Tests
+(
+-- * Default parameters for tests
+ module Crypto.Lol.Tests.Default
+-- * Tests for different layers of Lol
+,module Crypto.Lol.Tests.TensorTests
+,module Crypto.Lol.Tests.CycTests
+,module Crypto.Lol.Tests.ZqTests
+-- * Utilities for creating tests
+,module Crypto.Lol.Utils.Tests
+,module Crypto.Lol.Utils.GenArgs
+-- * Utilities for showing benchmark results
+,module Crypto.Lol.Utils.ShowType) where
 
-import Crypto.Lol.Utils.Tests       as X
-import Crypto.Lol.Tests.CycTests    as X
-import Crypto.Lol.Tests.Default     as X
-import Crypto.Lol.Tests.TensorTests as X
-import Crypto.Lol.Tests.ZqTests     as X
-import Crypto.Lol.Utils.ShowType    as X
+import Crypto.Lol.Tests.Default
+import Crypto.Lol.Tests.TensorTests
+import Crypto.Lol.Tests.CycTests
+import Crypto.Lol.Tests.ZqTests
+import Crypto.Lol.Utils.Tests
+import Crypto.Lol.Utils.GenArgs
+import Crypto.Lol.Utils.ShowType

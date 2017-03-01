@@ -36,6 +36,7 @@ import System.Console.ANSI
 import System.IO
 import Text.Printf
 
+-- | Options for the diagnostic benchmark printout.
 data DiagnosticOpts = DOpts
   {verb          :: Verb,     -- ^ Verbosity
    levels        :: [String], -- ^ Which levels of Lol to benchmark. The empty list means run all levels.
@@ -68,7 +69,7 @@ optsToInternal DOpts{..} bnch =
                        else benches,
                ..}
 
--- | Takes benchmark options an a benchmark group nested as params/level/op,
+-- | Takes benchmark options an a benchmark group nested as params\/level\/op,
 -- and prints a table comparing operations across all selected levels of Lol.
 prettyBenchesDiagnostic :: DiagnosticOpts -> Benchmark-> IO ()
 prettyBenchesDiagnostic o bnch = do

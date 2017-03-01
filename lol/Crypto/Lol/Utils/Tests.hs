@@ -43,16 +43,16 @@ test = Test
 testIO :: IO Bool -> Test params
 testIO = TestIO
 
--- | Apply parameters to a list of 'TF.Test'
+-- | Apply parameters to a list of 'TF.Test'.
 nestGroup :: String -> [proxy (a :: k) -> TF.Test] -> proxy a -> TF.Test
 nestGroup s ts p = TF.testGroup s $ map ($ p) ts
 
--- | Wrapper around QuickCheck's 'TF.testGroup'
+-- | Wrapper around QuickCheck's 'TF.testGroup'.
 testGroupM :: String -> [IO TF.Test] -> TF.Test
 testGroupM str = TF.buildTest . (TF.testGroup str <$>) . sequence
 
--- | Converts a function mapping zero or more arguments to a 'Test' @a@
--- by generating random inputs to the function
+-- | Converts a function mapping zero or more arguments to a 'TF.Test' @a@
+-- by generating random inputs to the function.
 genTestArgs :: (GenArgs bnch, ResultOf bnch ~ Test a)
   => String -> bnch -> proxy a -> TF.Test
 genTestArgs s f _ = testProperty s $ ioProperty $ do

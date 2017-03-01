@@ -22,7 +22,7 @@ Tests for the 'Cyc' interface.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.CycTests where
+module Crypto.Lol.Tests.CycTests (cycTests1, cycTests2) where
 
 import Control.Applicative
 import Control.Monad (liftM2,join)
@@ -34,7 +34,7 @@ import Crypto.Lol.Utils.Tests
 
 import qualified Test.Framework as TF
 
--- | Tests for single-index operations. There must be a CRT basis for \(O_m\) over @r@.
+-- | Tests for single-index 'Cyc' operations. There must be a CRT basis for \(O_m\) over @r@.
 cycTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> TF.Test
 cycTests1 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,r)
@@ -44,7 +44,7 @@ cycTests1 _ _ =
       genTestArgs "mulGCRT" prop_mulgCRT
       ]
 
--- | Tests for inter-ring operations. There must be a CRT basis for \(O_{m'}\) over @r@.
+-- | Tests for inter-ring 'Cyc' operations. There must be a CRT basis for \(O_{m'}\) over @r@.
 cycTests2 :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> TF.Test
 cycTests2 _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)

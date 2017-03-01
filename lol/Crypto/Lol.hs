@@ -48,12 +48,17 @@ material for reading the documentation.
     This is the dimension of a cyclotomic ring over the base ring.
 -}
 
+-- EAC: See https://github.com/haskell/haddock/issues/563
 module Crypto.Lol
-( module X
+(module Crypto.Lol.Cyclotomic.Cyc
+,module Crypto.Lol.Cyclotomic.Linear
+,module Crypto.Lol.Cyclotomic.RescaleCyc
+,module Crypto.Lol.Gadget
+,module Crypto.Lol.Prelude
 ) where
 
-import Crypto.Lol.Cyclotomic.Cyc        as X
-import Crypto.Lol.Cyclotomic.Linear     as X
-import Crypto.Lol.Cyclotomic.RescaleCyc as X
-import Crypto.Lol.Gadget                as X
-import Crypto.Lol.Prelude               as X
+import Crypto.Lol.Cyclotomic.Cyc
+import Crypto.Lol.Cyclotomic.Linear
+import Crypto.Lol.Cyclotomic.RescaleCyc
+import Crypto.Lol.Gadget
+import Crypto.Lol.Prelude

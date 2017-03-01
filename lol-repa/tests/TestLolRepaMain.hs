@@ -16,6 +16,8 @@ module TestLolRepaMain where
 import Crypto.Lol.Cyclotomic.Tensor.Repa
 import Crypto.Lol.Tests
 import Data.Proxy
+import Test.Framework
 
 main :: IO ()
-main = defaultLolTestMain (Proxy::Proxy RT)
+main = defaultMainWithArgs
+  (defaultLolTests (Proxy::Proxy RT)) ["--threads=1","--maximum-generated-tests=100"]

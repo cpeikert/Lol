@@ -130,7 +130,8 @@ test-suite test-lol-repa
   build-depends:
     base >= 4.9 && < 5,
     lol >= 0.7.0.0 && < 0.8,
-    lol-repa
+    lol-repa,
+    test-framework < 0.9
 
 test-suite test-lol-apps-repa
   type:             exitcode-stdio-1.0

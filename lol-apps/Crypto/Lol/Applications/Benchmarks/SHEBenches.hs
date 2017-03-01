@@ -25,16 +25,16 @@ Benchmarks for SymmSHE.
 
 module Crypto.Lol.Applications.Benchmarks.SHEBenches (sheBenches, decBenches, rescaleBenches, tunnelBenches) where
 
-import Crypto.Lol.Benchmarks
-
 import Control.Applicative
+import Control.DeepSeq
 import Control.Monad.Random hiding (lift)
-import Crypto.Random.DRBG
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
+import Crypto.Lol.Benchmarks
 import Crypto.Lol.Types
 import Crypto.Lol.Types.ZPP
+import Crypto.Random.DRBG
 
 addGen5 :: Proxy gen -> Proxy '(t,m,m',zp,zq) -> Proxy '(t,m,m',zp,zq,gen)
 addGen5 _ _ = Proxy

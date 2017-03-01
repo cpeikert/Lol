@@ -18,4 +18,4 @@ import Test.Framework
 
 main :: IO ()
 main = flip defaultMainWithArgs ["--threads=1","--maximum-generated-tests=100"]
-  [zqTs]
+  [defaultZqTests]

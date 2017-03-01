@@ -1,6 +1,6 @@
 {-|
 Module      : Crypto.Lol.Benchmarks.Default
-Description : Default high-level benchmarks for Tensor implementations.
+Description : Default high-level benchmarks for 'Crypto.Lol.Cyclotomic.Tensor' implementations.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-2
@@ -8,7 +8,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Default high-level benchmarks for Tensor implementations.
+Default high-level benchmarks for 'Crypto.Lol.Cyclotomic.Tensor' implementations.
 -}
 
 {-# LANGUAGE DataKinds             #-}
@@ -22,25 +22,24 @@ Default high-level benchmarks for Tensor implementations.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Benchmarks.Default where
+module Crypto.Lol.Benchmarks.Default (defaultLolBenches, oneIdxBenches, twoIdxBenches) where
 
+import Crypto.Lol
 --import Crypto.Lol.Benchmarks.SimpleTensorBenches
 import Crypto.Lol.Benchmarks.TensorBenches
 --import Crypto.Lol.Benchmarks.SimpleUCycBenches
 import Crypto.Lol.Benchmarks.UCycBenches
 import Crypto.Lol.Benchmarks.CycBenches
-import Crypto.Lol.Factored
 import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Utils.ShowType
 import Crypto.Random.DRBG
-
-import Data.Proxy
 
 instance Show (ArgType HashDRBG) where
   show _ = "HashDRBG"
 
 -- | Benchmark parameters reported in the paper. We suggest running these benchmarks
--- to quickly compare performance on your system or with your 'Tensor' backend.
+-- to quickly compare performance on your system or with your
+-- 'Crypto.Lol.Cyclotomic.Tensor' backend.
 {-# INLINABLE defaultLolBenches #-}
 defaultLolBenches :: _ => Proxy t -> IO [Benchmark]
 defaultLolBenches pt = sequence [

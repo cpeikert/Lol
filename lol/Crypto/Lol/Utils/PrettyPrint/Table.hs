@@ -32,7 +32,7 @@ import Data.List (nub, groupBy, transpose)
 import System.IO
 import Text.Printf
 
-
+-- | Options for the simple benchmark format.
 data TableOpts = TOpts
   {verb          :: Verb,     -- ^ Verbosity
    level         :: String,   -- ^ Which level of Lol to benchmark
@@ -68,7 +68,7 @@ defaultTableOpts lvl =
                  colWidth = 30,
                  testNameWidth=20, ..}
 
--- | Takes benchmark options an a benchmark group nested as params/level/op,
+-- | Takes benchmark options an a benchmark group nested as params\/level\/op,
 -- and prints a table comparing operations across all selected levels of Lol.
 prettyBenchesTable :: TableOpts -> Benchmark-> IO ()
 prettyBenchesTable o bnch = do

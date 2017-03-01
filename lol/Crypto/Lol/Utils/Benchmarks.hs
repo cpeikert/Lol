@@ -29,7 +29,6 @@ module Crypto.Lol.Utils.Benchmarks
 ,genBenchArgs
 ,Bench
 ,Benchmark
-,NFData
 ,addGen) where
 
 import Control.DeepSeq
@@ -42,7 +41,7 @@ import Data.Proxy
 addGen :: Proxy gen -> Proxy '(t,m,r) -> Proxy '(t,m,r,gen)
 addGen _ _ = Proxy
 
--- | Wrapper for criterion's 'nf'
+-- | Wrapper for criterion's 'nf'.
 {-# INLINABLE bench #-}
 bench :: NFData b => (a -> b) -> a -> Bench params
 bench f = Bench . nf f
@@ -57,12 +56,12 @@ benchIO :: NFData b => IO b -> Bench params
 benchIO = Bench . nfIO
 
 {-# INLINABLE benchGroup #-}
--- | Wrapper for criterion's 'bgroup'
+-- | Wrapper for criterion's 'bgroup'.
 benchGroup :: (Monad rnd) => String -> [rnd Benchmark] -> rnd Benchmark
 benchGroup str = (bgroup str <$>) . sequence
 
 -- | Converts a function mapping zero or more arguments to a 'Bench' @a@
--- by generating random inputs to the function
+-- by generating random inputs to the function.
 genBenchArgs :: (GenArgs bnch, ResultOf bnch ~ Bench a, MonadRandom rnd)
   => String -> bnch -> Proxy a -> rnd Benchmark
 genBenchArgs s f _ = (C.bench s . unbench) <$> genArgs f

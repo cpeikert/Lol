@@ -94,7 +94,7 @@ instance (UnPP (CharOf zp) ~ '(Prime2, e),
   => NFData (EvalHints t rngs z zp zq zqs gad) where
   rnf (Hints t r) = rnf t `seq` rnf r
 
--- | Monadic version of 'homomPRF'
+-- | Monadic version of 'homomPRF'.
 homomPRFM ::
   (MonadReader (EvalHints t rngs z zp zq zqs gad) mon,
    MonadState (PRFState (Cyc t r zp) (Cyc t r (TwoOf zp))) mon,
@@ -140,7 +140,7 @@ homomPRF' (Hints tHints rHints) ct x st =
       ctMatrix2 = tunnel (Proxy::Proxy zqs) tHints ctMatrix1
   in (ptRound rHints ctMatrix2, st')
 
--- | \(\Z_2\) for ZqBasic with a 'PrimePower' modulus
+-- | \(\Z_2\) for ZqBasic with a 'PrimePower' modulus.
 type family TwoOf (a :: k) :: k
 type instance TwoOf (ZqBasic (q :: PrimePower) i) = ZqBasic PP2 i
 
@@ -216,7 +216,7 @@ instance (Protoable (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))),
 class (UnPP (CharOf zp) ~ '(Prime2,e)) => PTRound t m m' e zp zq z gad zqs where
   type ZqResult e zq (zqs :: [*])
 
-  -- | Generate hints for rounding from \(R_p=R_{2^k}\) to \(R_2\)
+  -- | Generate hints for rounding from \(R_p=R_{2^k}\) to \(R_2\).
   roundHints :: (MonadRandom rnd)
              => SK (Cyc t m' z) -> rnd (RoundHints t m m' z e zp zq zqs gad)
 
@@ -456,7 +456,7 @@ tunnel pzqs hints x =
 
 
 
--- | Linear functions used for in-the-clear tunneling
+-- | Linear functions used for in-the-clear tunneling.
 data TunnelFuncs t xs zp where
   TFNil :: TunnelFuncs t '[m] zp
   TFCons :: (xs ~ (r ': s ': rngs))

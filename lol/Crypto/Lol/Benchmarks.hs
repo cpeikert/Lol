@@ -14,14 +14,34 @@ Benchmarks for individual layers of the Lol stack (Tensor, UCyc, Cyc), plus
 default parameters and helper functions for diplaying results.
 -}
 
-module Crypto.Lol.Benchmarks (module X) where
+-- EAC: See https://github.com/haskell/haddock/issues/563, which claims that
+-- Haddock doesn't support "re-exporting modules". However, the following
+-- method duplicates the docs of all the re-exported modules here, which is
+-- what I want. It doesn't like it if I rename the modules though.
+module Crypto.Lol.Benchmarks
+(
+-- * Default parameters for benchmarks
+ module Crypto.Lol.Benchmarks.Default
+-- * Benchmarks for different layers of Lol
+,module Crypto.Lol.Benchmarks.TensorBenches
+,module Crypto.Lol.Benchmarks.UCycBenches
+,module Crypto.Lol.Benchmarks.CycBenches
+-- * Utilities for creating benchmarks
+,module Crypto.Lol.Utils.Benchmarks
+,module Crypto.Lol.Utils.GenArgs
+-- * Utilities for showing benchmark results
+,module Crypto.Lol.Utils.ShowType
+,Verb(..)
+,module Crypto.Lol.Utils.PrettyPrint.Table
+,module Crypto.Lol.Utils.PrettyPrint.Diagnostic) where
 
-import Crypto.Lol.Utils.Benchmarks             as X
-import Crypto.Lol.Benchmarks.CycBenches        as X
-import Crypto.Lol.Benchmarks.UCycBenches       as X
-import Crypto.Lol.Benchmarks.Default           as X
-import Crypto.Lol.Benchmarks.TensorBenches     as X
-import Crypto.Lol.Utils.ShowType               as X
-import Crypto.Lol.Utils.PrettyPrint            as X (Verb(..))
-import Crypto.Lol.Utils.PrettyPrint.Table      as X
-import Crypto.Lol.Utils.PrettyPrint.Diagnostic as X
+import Crypto.Lol.Utils.Benchmarks
+import Crypto.Lol.Benchmarks.CycBenches
+import Crypto.Lol.Benchmarks.UCycBenches
+import Crypto.Lol.Benchmarks.Default
+import Crypto.Lol.Benchmarks.TensorBenches
+import Crypto.Lol.Utils.GenArgs
+import Crypto.Lol.Utils.ShowType
+import Crypto.Lol.Utils.PrettyPrint (Verb(..))
+import Crypto.Lol.Utils.PrettyPrint.Table
+import Crypto.Lol.Utils.PrettyPrint.Diagnostic

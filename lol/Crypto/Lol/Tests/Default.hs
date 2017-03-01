@@ -9,7 +9,7 @@ Stability   : experimental
 Portability : POSIX
 
 High-level test groups and parameters,
-which can be used to verify a 'Tensor' implementation.
+which can be used to verify a 'Crypto.Lol.Cyclotomic.Tensor' implementation.
 -}
 
 {-# LANGUAGE DataKinds             #-}
@@ -21,7 +21,7 @@ which can be used to verify a 'Tensor' implementation.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.Default where
+module Crypto.Lol.Tests.Default (defaultLolTests, defaultZqTests) where
 
 import Crypto.Lol.Factored
 import Crypto.Lol.Tests.CycTests
@@ -31,23 +31,17 @@ import Crypto.Lol.Utils.ShowType
 import Crypto.Lol.Types.IrreducibleChar2 ()
 
 import Data.Proxy
-
 import Test.Framework
 
-defaultLolTestMain :: _ => Proxy t -> IO ()
-defaultLolTestMain =
-  flip defaultMainWithArgs
-    ["--threads=1","--maximum-generated-tests=100"] . defaultLolTests
-
--- | Default parameters for 'ZqBasic' tests
-zqTs :: Test
-zqTs = testGroup "Zq Tests" $ [
+-- | Default parameters for 'Crypto.Lol.Types.Unsafe.ZqBasic' tests.
+defaultZqTests :: Test
+defaultZqTests = testGroup "Zq Tests" $ [
   zqTests (Proxy::Proxy (Zq 3)),
   zqTests (Proxy::Proxy (Zq 7)),
   zqTests (Proxy::Proxy (Zq (3 ** 5))),
   zqTests (Proxy::Proxy (Zq (3 ** 5 ** 7)))]
 
--- | Default @m@/@r@ test parameters, for an arbitrary 'Tensor'.
+-- | Default @m@/@r@ test parameters, for an arbitrary 'Crypto.Lol.Cyclotomic.Tensor'.
 defaultLolTests :: _ => Proxy t -> [Test]
 defaultLolTests pt = [
   testGroup "Tensor Tests" $ ($ pt) <$> [
@@ -105,11 +99,5 @@ type ZQ1 = Zq 18869761
 type ZQ2 = Zq (19393921 ** 18869761)
 type ZQ3 = Zq (19918081 ** 19393921 ** 18869761)
 
--- the next three moduli are "good" for any index dividing 128*27*25*7
-type SmoothQ1 = 2148249601
-type SmoothQ2 = 2148854401
-type SmoothQ3 = 2150668801
-
 type SmoothZQ1 = Zq 2148249601
-type SmoothZQ2 = Zq (2148854401 ** 2148249601)
 type SmoothZQ3 = Zq (2148854401 ** 2148249601 ** 2150668801)
