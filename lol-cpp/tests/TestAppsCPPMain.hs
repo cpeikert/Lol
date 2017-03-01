@@ -11,11 +11,7 @@ Portability : POSIX
 Main driver for lol-apps tests with CPP.
 -}
 
-{-# LANGUAGE CPP #-}
-
 module TestAppsCPPMain where
-
-#ifdef WITH_APPS
 
 import Crypto.Lol (TrivGad)
 import Crypto.Lol.Cyclotomic.Tensor.CPP
@@ -28,10 +24,3 @@ main :: IO ()
 main = do
   flip defaultMainWithArgs ["--threads=1","--maximum-generated-tests=100"] $
     defaultAppsTests (Proxy::Proxy CT) (Proxy::Proxy TrivGad)
-
-#else
-
-main :: IO ()
-main = return ()
-
-#endif

@@ -11,11 +11,7 @@ Portability : POSIX
 Example, test, and macro-benchmark for homomorphic evaluation of a PRF with RT.
 -}
 
-{-# LANGUAGE CPP #-}
-
 module HomomPRFRepaMain where
-
-#ifdef WITH_APPS
 
 import Crypto.Lol.Cyclotomic.Tensor.Repa
 import Crypto.Lol.Applications.Examples
@@ -23,10 +19,3 @@ import Data.Proxy
 
 main :: IO ()
 main = homomPRFMain (Proxy::Proxy RT)
-
-#else
-
-main :: IO ()
-main = return ()
-
-#endif

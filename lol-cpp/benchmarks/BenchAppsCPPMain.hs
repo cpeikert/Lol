@@ -11,13 +11,10 @@ Portability : POSIX
 Main driver for lol-apps benchmarks with CPP.
 -}
 
-{-# LANGUAGE CPP                   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 
 module BenchAppsCPPMain where
-
-#ifdef WITH_APPS
 
 import Crypto.Lol
 import Crypto.Lol.Applications.Benchmarks
@@ -33,10 +30,3 @@ main = do
           defaultSHEBenches pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG) ++
           [defaultKHPRFBenches pct (Proxy::Proxy (BaseBGad 2))]
   mapM_ (prettyBenchesTable o) bs
-
-#else
-
-main :: IO ()
-main = return ()
-
-#endif

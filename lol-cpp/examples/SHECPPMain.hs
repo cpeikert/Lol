@@ -11,11 +11,7 @@ Portability : POSIX
 Example using SymmSHE with CPP.
 -}
 
-{-# LANGUAGE CPP #-}
-
 module SHECPPMain where
-
-#ifdef WITH_APPS
 
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Applications.Examples
@@ -23,10 +19,3 @@ import Data.Proxy
 
 main :: IO ()
 main = sheMain (Proxy::Proxy CT)
-
-#else
-
-main :: IO ()
-main = return ()
-
-#endif

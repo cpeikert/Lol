@@ -11,11 +11,7 @@ Portability : POSIX
 Example using SymmSHE with RT.
 -}
 
-{-# LANGUAGE CPP #-}
-
 module SHERepaMain where
-
-#ifdef WITH_APPS
 
 import Crypto.Lol.Cyclotomic.Tensor.Repa
 import Crypto.Lol.Applications.Examples
@@ -23,10 +19,3 @@ import Data.Proxy
 
 main :: IO ()
 main = sheMain (Proxy::Proxy RT)
-
-#else
-
-main :: IO ()
-main = return ()
-
-#endif

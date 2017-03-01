@@ -11,11 +11,7 @@ Portability : POSIX
 Example, test, and macro-benchmark for homomorphic evaluation of a PRF with CPP.
 -}
 
-{-# LANGUAGE CPP #-}
-
 module HomomPRFCPPMain where
-
-#ifdef WITH_APPS
 
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Applications.Examples
@@ -23,10 +19,3 @@ import Data.Proxy
 
 main :: IO ()
 main = homomPRFMain (Proxy::Proxy CT)
-
-#else
-
-main :: IO ()
-main = return ()
-
-#endif
