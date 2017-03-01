@@ -43,8 +43,6 @@ before_install:
 
 install:
 # Build dependencies
-- stack --version
-- stack install --help
 - travis_wait 20 stack install --no-terminal --install-ghc --dependencies-only
 
 script:
