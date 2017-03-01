@@ -1,5 +1,7 @@
 # This file is only used for interactive development;
-# it is not needed to build the library with cabal/stackcd.
+# it is not needed to build the library with cabal/stack.
+# For interactive development, you shouldn't need to explicitly use this file;
+# it is called from the ghci script included with this repository.
 
 CXX      ?= g++
 AR       ?= ar
@@ -19,8 +21,6 @@ $(OBJPATH)/%.o: $(CSRCPATH)/%.cpp
 # from ghci easier: just run 'ghci Foo.hs libctensor.so'
 # See GHC bug https://ghc.haskell.org/trac/ghc/ticket/9386
 
-# the .a file and the .so file must have different names, or cabal configure gets confused and reports
-# that it can't find libctensor.
 all: mkdst $(addprefix $(OBJPATH)/,common.o crt.o g.o l.o mul.o norm.o random.o zq.o)
 	@$(AR) rcs $(LIBPATH)/$(LIBNAME).a $(OBJPATH)/*.o
 	$(CXX) -shared $(CXXFLAGS) -o $(LIBPATH)/$(LIBNAME).so $(OBJPATH)/*.o
@@ -40,3 +40,7 @@ clean:
 	rm -f ./dist/build/bench-lol/bench-lol
 
 .PHONY: all clean
+
+# EAC: Old comment, that I'm keeping around just in case it comes back to bite us:
+#   The .a file and the .so file must have different names, or cabal configure
+#   gets confused and reports that it can't find libctensor.
