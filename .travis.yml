@@ -8,8 +8,9 @@
 # Copy these contents into the root directory of your Github project in a file
 # named .travis.yml
 
-# Use new container infrastructure to enable caching
-sudo: false
+# EAC: sudo seems to be requried to get a machine with enough memory to compile.
+# see https://docs.travis-ci.com/user/ci-environment/
+sudo: required
 
 # Do not choose a language; we provide our own build tools.
 language: generic
