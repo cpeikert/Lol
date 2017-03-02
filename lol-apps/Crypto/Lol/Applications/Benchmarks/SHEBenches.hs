@@ -34,7 +34,7 @@ import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Benchmarks
 import Crypto.Lol.Types
 import Crypto.Lol.Types.ZPP
-import Crypto.Random.DRBG
+import Crypto.Random
 
 addGen5 :: Proxy gen -> Proxy '(t,m,m',zp,zq) -> Proxy '(t,m,m',zp,zq,gen)
 addGen5 _ _ = Proxy

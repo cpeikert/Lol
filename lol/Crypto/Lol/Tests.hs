@@ -15,6 +15,7 @@ Tests for individual layers of the Lol stack ('Crypto.Lol.Cyclotomic.Tensor',
 default parameters and helper functions for displaying results.
 -}
 
+-- EAC: See https://github.com/haskell/haddock/issues/563
 module Crypto.Lol.Tests
 (
 -- * Default parameters for tests

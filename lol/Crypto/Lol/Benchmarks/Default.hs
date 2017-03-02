@@ -13,7 +13,6 @@ Default high-level benchmarks for 'Crypto.Lol.Cyclotomic.Tensor' implementations
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -32,18 +31,14 @@ import Crypto.Lol.Benchmarks.UCycBenches
 import Crypto.Lol.Benchmarks.CycBenches
 import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Utils.ShowType
-import Crypto.Random.DRBG
-
-instance Show (ArgType HashDRBG) where
-  show _ = "HashDRBG"
 
 -- | Benchmark parameters reported in the paper. We suggest running these benchmarks
 -- to quickly compare performance on your system or with your
 -- 'Crypto.Lol.Cyclotomic.Tensor' backend.
 {-# INLINABLE defaultLolBenches #-}
-defaultLolBenches :: _ => Proxy t -> IO [Benchmark]
-defaultLolBenches pt = sequence [
-  benchGroup "Single Index" $ (($ (Proxy::Proxy HashDRBG)) . ($ pt)) <$> [
+defaultLolBenches :: _ => Proxy t -> Proxy h -> IO [Benchmark]
+defaultLolBenches pt phash = sequence [
+  benchGroup "Single Index" $ (($ phash) . ($ pt)) <$> [
     oneIdxBenches (Proxy::Proxy '(F1024,        Zq 12289)),
     oneIdxBenches (Proxy::Proxy '(F2048,        Zq 12289)),
     oneIdxBenches (Proxy::Proxy '(F64*F27,      Zq 3457)),

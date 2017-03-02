@@ -67,8 +67,8 @@ main = diagnosticMain
 {-
 tableMain :: IO ()
 tableMain = do
-  let opts = (defaultTableOpts "UCyc"){benches=bs}
-  g1 <- defaultBenches (Proxy::Proxy RT)
+  let opts = (defaultTableOpts $ Just "UCyc"){benches=bs}
+  g1 <- defaultLolBenches (Proxy::Proxy RT) (Proxy::Proxy HashDRBG)
   mapM_ (prettyBenchesTable opts) g1
 -}
 diagnosticMain :: IO ()
