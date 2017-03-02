@@ -69,7 +69,7 @@ library
     filepath < 1.5,
     http-client >= 0.5 && < 0.6,
     http-conduit < 2.3,
-    lol >= 0.6.0.0 && < 0.8
+    lol >= 0.6.0.0 && < 0.8,
     MonadRandom < 0.6,
     mtl < 2.3,
     nist-beacon < 0.3,
