@@ -38,12 +38,10 @@ before_install:
 - travis_retry curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
 
 install:
-# Build dependencies
-- stack install --no-terminal --install-ghc --dependencies-only
+# Build dependencies for libs, tests, benches, and executables
+- stack build --no-terminal --install-ghc --test--bench --flag lol-cpp:with-execs --flag lol-repa:with-execs --dependencies-only
 
 script:
-# Build the package, its tests, and its docs and run the tests
+# Build the package, its tests, benchmarks, executables, and its docs and run the tests
 # --fast is about 33% faster (compile time + test time) than without --fast
-- travis_wait 30 stack --no-terminal test --haddock --no-haddock-deps --fast
-# build, but do not run, the benchmarks and executables (with --fast) just to make sure everything compiles
-- stack bench --no-run-benchmarks --fast --flag lol-cpp:with-execs --flag lol-repa:with-execs
+- travis_wait 30 stack test --no-terminal --haddock --no-haddock-deps --fast --bench --no-run-benchmarks --flag lol-cpp:with-execs --flag lol-repa:with-execs
