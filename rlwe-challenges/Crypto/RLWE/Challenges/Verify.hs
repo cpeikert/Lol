@@ -83,7 +83,7 @@ import System.Directory    (doesFileExist)
 
 -- | Verifies all instances in the challenge tree, given the path to the
 -- root of the tree.
-verifyMain :: (TensorCtx t) => Proxy t -> FilePath -> IO ()
+verifyMain :: (EntailTensor t) => Proxy t -> FilePath -> IO ()
 verifyMain pt path = do
   -- get a list of challenges to reveal
   challNames <- challengeList path
@@ -105,7 +105,7 @@ verifyMain pt path = do
 
 -- | Reads a challenge and verifies all instances.
 -- Returns the beacon address for the challenge.
-readAndVerifyChallenge :: (TensorCtx t, MonadIO m)
+readAndVerifyChallenge :: (EntailTensor t, MonadIO m)
   => Proxy t -> FilePath -> String -> m (Maybe BeaconAddr)
 readAndVerifyChallenge pt path challName =
   printPassFail ("Verifying " ++ challName) "VERIFIED" $ do
@@ -116,7 +116,7 @@ readAndVerifyChallenge pt path challName =
 -- | Reads a challenge and attempts to regenerate all instances from the
 -- provided seed.
 -- Returns (Just ()) if regeneration succeeded for all instances.
-regenChallenge :: (TensorCtx t, MonadIO m)
+regenChallenge :: (EntailTensor t, MonadIO m)
   => Proxy t -> FilePath -> String -> m (Maybe ())
 regenChallenge pt path challName = do
   printPassWarn ("Regenerating " ++ challName ++ "... ") "VERIFIED" $ do
@@ -247,7 +247,7 @@ checkParamsEq data' param expected actual =
     show expected ++ " but got " ++ show actual
 
 -- | Outputs whether or not we successfully regenerated this instance from the DRBG seed.
-regenInstance :: forall t mon . (TensorCtx t, MonadError String mon)
+regenInstance :: forall t mon . (EntailTensor t, MonadError String mon)
   => Proxy t -> InstanceU -> mon Bool
 -- as always with floating point arithmetic, nothing is perfect (even
 -- deterministic generation of instances).
@@ -296,7 +296,7 @@ regenInstance _ (IR (Secret _ _ _ _ seed s) InstanceRLWR{..}) =
           \\ proxy entailTensor (Proxy::Proxy '(t,m,p)))))
 
 -- | Verify an 'InstanceU'.
-verifyInstanceU :: forall t mon . (TensorCtx t, MonadError String mon) => Proxy t -> InstanceU -> mon ()
+verifyInstanceU :: forall t mon . (EntailTensor t, MonadError String mon) => Proxy t -> InstanceU -> mon ()
 
 verifyInstanceU _ (IC (Secret _ _ _ _ _ s) InstanceCont{..}) =
   let ContParams {..} = params

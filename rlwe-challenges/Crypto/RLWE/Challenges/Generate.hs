@@ -64,14 +64,14 @@ import Text.Printf
 
 -- | Generate and serialize challenges given the path to the root of the tree
 -- and an initial beacon address.
-generateMain :: (TensorCtx t) => Proxy t -> FilePath -> BeaconAddr -> [ChallengeParams] -> IO ()
+generateMain :: (EntailTensor t) => Proxy t -> FilePath -> BeaconAddr -> [ChallengeParams] -> IO ()
 generateMain pt path beaconStart cps = do
   let len = length cps
       beaconAddrs = take len $ iterate nextBeaconAddr beaconStart
   evalCryptoRandIO (zipWithM_ (genAndWriteChallenge pt path) cps beaconAddrs
     :: RandT (CryptoRand HashDRBG) IO ())
 
-genAndWriteChallenge :: (MonadRandom m, MonadIO m, TensorCtx t)
+genAndWriteChallenge :: (MonadRandom m, MonadIO m, EntailTensor t)
   => Proxy t -> FilePath -> ChallengeParams -> BeaconAddr -> m ()
 genAndWriteChallenge pt path cp ba@(BA _ _) = do
   let name = challengeName cp
@@ -103,7 +103,7 @@ challengeName params =
         if null annotation then "" else "-" ++ annotation
 
 -- | Generate a challenge with the given parameters.
-genChallengeU :: (MonadRandom m, TensorCtx t)
+genChallengeU :: (MonadRandom m, EntailTensor t)
   => Proxy t -> ChallengeParams -> BeaconAddr -> m ChallengeU
 genChallengeU pt cp (BA beaconEpoch beaconOffset) = do
   let challengeID = challID cp
@@ -118,7 +118,7 @@ genChallengeU pt cp (BA beaconEpoch beaconOffset) = do
   return $ CU chall insts
 
 -- | Generate an instance for the given parameters.
-genInstanceU :: forall t . (TensorCtx t)
+genInstanceU :: forall t . (EntailTensor t)
   => Proxy t -> Params -> ChallengeID -> InstanceID -> BS.ByteString -> InstanceU
 
 genInstanceU _ (Cparams params@ContParams{..}) challengeID instanceID seed =
