@@ -3,7 +3,7 @@ Module      : Crypto.RLWE.Challenges.Common
 Description : Utility functions for handling exceptions and creating file paths.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
-License     : GPL-2
+License     : GPL-3
 Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX

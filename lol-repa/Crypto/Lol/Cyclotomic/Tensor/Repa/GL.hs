@@ -3,7 +3,7 @@ Module      : Crypto.Lol.Cyclotomic.Tensor.Repa.GL
 Description : The @G@ and @L@ transforms for Repa arrays.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
-License     : GPL-2
+License     : GPL-3
 Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX

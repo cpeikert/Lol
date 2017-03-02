@@ -3,7 +3,7 @@ Module      : Crypto.Lol.Benchmarks.SimpleUCycBenches
 Description : Benchmarks for the 'UCyc' interface, without benchmark harness.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
-License     : GPL-2
+License     : GPL-3
 Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX

@@ -3,7 +3,7 @@ Module      : Crypto.RLWE.Challenges.Generate
 Description : Generates challenges in non-legacy proto format.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
-License     : GPL-2
+License     : GPL-3
 Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX

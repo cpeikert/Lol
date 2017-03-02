@@ -3,7 +3,7 @@ Module      : Crypto.Lol.Utils.PrettyPrint.Table
 Description : Pretty-printing for benchmark results within a single level of the Lol stack.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
-License     : GPL-2
+License     : GPL-3
 Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX

@@ -4,7 +4,7 @@ Description : An implementation of cyclotomic rings that hides the
               internal representations of ring elements.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
-License     : GPL-2
+License     : GPL-3
 Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX

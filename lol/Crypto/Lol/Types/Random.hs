@@ -3,7 +3,7 @@ Module      : Crypto.Lol.Types.Random
 Description : Types for using crypto-api with MonadCryptoRandom.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
-License     : GPL-2
+License     : GPL-3
 Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
