@@ -9,7 +9,7 @@ version:             0.0.0.1
 synopsis:            A compiler for FHE.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
-license:             GPL-2
+license:             GPL-3
 license-file:        LICENSE
 author:              Eric Crockett <ecrockett0@gmail.com>, Chris Peikert <cpeikert@alum.mit.edu>
 maintainer:          Eric Crockett <ecrockett0@gmail.com>

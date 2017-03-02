@@ -9,7 +9,7 @@ version:             0.1.0.1
 synopsis:            Ring-LWE/LWR challenges using Lol.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
-license:             GPL-2
+license:             GPL-3
 license-file:        LICENSE
 author:              Eric Crockett <ecrockett0@gmail.com>, Chris Peikert <cpeikert@alum.mit.edu>
 maintainer:          Eric Crockett <ecrockett0@gmail.com>
