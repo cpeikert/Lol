@@ -39,7 +39,7 @@ before_install:
 
 install:
 # Build dependencies for libs, tests, benches, and executables
-- stack build --no-terminal --install-ghc --test--bench --flag lol-cpp:with-execs --flag lol-repa:with-execs --dependencies-only
+- stack build --no-terminal --install-ghc --test --bench --flag lol-cpp:with-execs --flag lol-repa:with-execs --dependencies-only
 
 script:
 # Build the package, its tests, benchmarks, executables, and its docs and run the tests
