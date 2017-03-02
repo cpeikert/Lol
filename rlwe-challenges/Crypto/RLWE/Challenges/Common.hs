@@ -11,17 +11,21 @@ Portability : POSIX
 Utility functions for handling exceptions and creating file paths.
 -}
 
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Crypto.RLWE.Challenges.Common where
 
 import Crypto.RLWE.Challenges.Beacon
 
-import           Crypto.Lol.Cyclotomic.Tensor.CPP
+import           Crypto.Lol (Fact)
 import           Crypto.Lol.Types     hiding (RRq)
 import qualified Crypto.Lol.Types as RRq
+import           Crypto.Lol.Types.Proto
 
 import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.InstanceCont
@@ -29,13 +33,20 @@ import Crypto.Proto.RLWE.Challenges.InstanceDisc
 import Crypto.Proto.RLWE.Challenges.InstanceRLWR
 import Crypto.Proto.RLWE.Challenges.Secret
 
+import Crypto.Proto.Lol.KqProduct
+import Crypto.Proto.Lol.RqProduct
+import Crypto.Lol.Cyclotomic.Tensor
+
 import Crypto.Random.DRBG
 
 import Control.Monad.Except
 
 import Data.ByteString.Lazy (unpack)
+import Data.Constraint
 import Data.Int
 import Data.Maybe
+import Data.Reflection hiding (D)
+import Data.Functor.Trans.Tagged
 
 import Net.Beacon
 
@@ -50,9 +61,6 @@ type ChallengeID = Int32
 type InstanceID = Int32
 type InstDRBG = GenBuffered CtrDRBG
 
--- | Concrete Tensor type used to generate and verify instances.
-type T = CT
-
 -- | Holds an (untyped) proto-buf Ring-LWE/LWR challenge.
 data ChallengeU = CU !Challenge ![InstanceU]
 
@@ -65,6 +73,20 @@ data InstanceU = IC {secret :: !Secret, instc :: !InstanceCont}
 type Zq q = ZqBasic q Int64
 -- | Concrete type used to generate and verify instances
 type RRq q = RRq.RRq q Double
+
+-- | Convenient constraint synonym for 'EntailTensor' that includes addtional
+-- modulus-independent constaints.
+type TensorCtx t = (EntailTensor t, Tensor t, TElt t (Complex Double), TElt t Double, TElt t Int64)
+
+-- | Contains the necessary entailments to allow generation and verification
+-- using reified moduli and cyclotomic indices.
+class EntailTensor t where
+  entailTensor :: Tagged '(t,m,q) ((Reifies q Int64, Fact m) :-
+    (ProtoType (t m (RRq q)) ~ KqProduct,
+     ProtoType (t m (Zq q))  ~ RqProduct,
+     Protoable (t m (Zq q)),
+     Protoable (t m (RRq q)),
+     TElt t (Zq q), TElt t (RRq q)))
 
 -- | Yield a list of challenge names by getting all directory contents
 -- and filtering on all directories whose names start with "chall".
