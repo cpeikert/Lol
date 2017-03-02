@@ -21,8 +21,6 @@ module Crypto.Lol.Utils.PrettyPrint.Diagnostic
 ,defaultDiagnosticOpts
 ,DiagnosticOpts(..)) where
 
---import Control.DeepSeq
---import Control.Exception (evaluate)
 import Control.Monad (forM_, when)
 
 import Criterion.Measurement (secs)
@@ -31,7 +29,6 @@ import Criterion.Types
 import Crypto.Lol.Utils.PrettyPrint
 
 import Data.List (nub, groupBy, transpose)
-
 import System.Console.ANSI
 import System.IO
 import Text.Printf
@@ -90,7 +87,6 @@ printTable o rpts = do
   mapM_ (printRow o) rpts'
   putStrLn ""
 
--- See Criterion.Internal.analyseOne
 printRow :: OptsInternal -> [Report] -> IO ()
 printRow o@OptsInternal{..} xs@(rpt : _) = do
   printf (testName o) $ getBenchFunc $ reportName rpt

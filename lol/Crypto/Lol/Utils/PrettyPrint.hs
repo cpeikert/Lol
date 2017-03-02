@@ -13,6 +13,7 @@ Pretty-printing for benchmark results.
 
 {-# LANGUAGE BangPatterns    #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections   #-}
 
 module Crypto.Lol.Utils.PrettyPrint
 (getTableName
@@ -27,7 +28,7 @@ module Crypto.Lol.Utils.PrettyPrint
 ,Verb(..)) where
 
 import Control.Monad (foldM, when)
-import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.IO.Class (liftIO)
 
 import Criterion.Internal (runAndAnalyseOne)
 import Criterion.Main.Options (defaultConfig)
@@ -35,9 +36,7 @@ import Criterion.Measurement (secs)
 import Criterion.Monad (Criterion, withConfig)
 import Criterion.Types
 
-import Data.List.Split
 import qualified Data.Map as Map
-import Data.Maybe
 
 import Statistics.Resampling.Bootstrap (Estimate(..))
 
@@ -64,63 +63,63 @@ col, testName :: OptsInternal -> String
 testName OptsInternal{..} = "%-" ++ show testNameWidth ++ "s "
 col OptsInternal{..} = "%-" ++ show colWidth ++ "s "
 
-parseBenchName :: String -> [String]
-parseBenchName = wordsBy (=='/')
+-- get the ith 'word' where words are separated by '/'
+wordBy :: Int -> String -> String
+wordBy 0 = takeWhile (/= '/')
+wordBy i = wordBy (i-1) . tail . dropWhile (/= '/')
 
 getTableName :: String -> String
-getTableName   = (!! 0) . parseBenchName
+getTableName   = wordBy 0
 
 getBenchParams :: String -> String
-getBenchParams = (!! 1) . parseBenchName
+getBenchParams = wordBy 1
 
 getBenchLvl :: String -> String
-getBenchLvl    = (!! 2) . parseBenchName
+getBenchLvl    = wordBy 2
 
 getBenchFunc :: String -> String
-getBenchFunc   = (!! 3) . parseBenchName
+getBenchFunc   = wordBy 3
 
 getReports :: OptsInternal -> Benchmark -> IO [Report]
-getReports o = withConfig (config o) . runAndAnalyse o
+getReports o = withConfig (config o) . summarizeBenchReports o
 
 config :: OptsInternal -> Config
 config OptsInternal{..} = defaultConfig {verbosity = if verb == Full then Normal else Quiet}
 
--- | Run, and analyse, one or more benchmarks.
--- From Criterion.Internal
-runAndAnalyse :: OptsInternal -> Benchmark -> Criterion [Report]
-runAndAnalyse o@OptsInternal{..} bs = for o bs $ \idx desc bm -> do
-  when (verb == Abridged || verb == Full) $ liftIO $ putStr $ "benchmark " ++ desc
-  when (verb == Full) $ liftIO $ putStrLn ""
-  (Analysed rpt) <- runAndAnalyseOne idx desc bm
-  when (verb == Progress) $ liftIO $ putStr "."
-  when (verb == Abridged) $ liftIO $ putStrLn $ "..." ++ secs (getRuntime rpt)
-  return rpt
-
-getRuntime :: Report -> Double
-getRuntime Report{..} =
-  let SampleAnalysis{..} = reportAnalysis
-      (builtin, _) = splitAt 1 anRegress
-      mests = map (\Regression{..} -> Map.lookup "iters" regCoeffs) builtin
-      [Estimate{..}] = catMaybes mests
-  in estPoint
-
--- | Iterate over benchmarks.
--- From Criterion.Internal
-for :: MonadIO m => OptsInternal -> Benchmark -> (Int -> String -> Benchmarkable -> m a) -> m [a]
-for OptsInternal{..} bs0 handle = snd <$> go (0::Int, []) ("", bs0)
+-- collect reports from all selected benchmarks, printing a summary along the way
+summarizeBenchReports :: OptsInternal -> Benchmark -> Criterion [Report]
+summarizeBenchReports OptsInternal{..} b = snd <$> go (0, []) ("", b)
   where
     select name =
       let param = getBenchParams name
           lvl   = getBenchLvl    name
           func  = getBenchFunc   name
       in (lvl `elem` levels) && (func `elem` benches) && (param `elem` params)
-    go (!idx, drs) (pfx, Benchmark desc b)
-      | select desc' = do
-          x <- handle idx desc' b;
-          return (idx + 1, x:drs)
-      | otherwise = do
-          liftIO $ putStrLn desc'
-          return (idx, drs)
-      where desc' = addPrefix pfx desc
-    go (!idx,drs) (pfx, BenchGroup desc bs) =
-      foldM go (idx,drs) [(addPrefix pfx desc, b) | b <- bs]
+    -- if we find a Benchmark that we want to run (as determined by `select`)
+    go r@(rptIdx, reports) (benchPrefix, (Benchmark desc b')) | select benchName = do
+          -- get a single report
+          when (verb == Abridged || verb == Full) $ liftIO $ putStr $ "benchmark " ++ benchName
+          when (verb == Full) $ liftIO $ putStrLn ""
+          (Analysed rpt) <- runAndAnalyseOne rptIdx benchName b'
+          when (verb == Progress) $ liftIO $ putStr "."
+          when (verb == Abridged) $ liftIO $ putStrLn $ "..." ++ secs (getRuntime rpt)
+          -- return the report
+          return (rptIdx, rpt:reports)
+                                                              | otherwise = do
+          -- if we don't want to run this benchmark, print the name anyway.
+          liftIO $ putStrLn benchName
+          -- and return the input
+          return r
+      where benchName = addPrefix benchPrefix desc
+    go r (benchPrefix, (BenchGroup desc bs)) =
+      let lvlName = addPrefix benchPrefix desc -- append the description to the prefix
+          bs' = map (lvlName,) bs
+      in foldM go r bs'
+
+-- | The report runtime, in seconds.
+getRuntime :: Report -> Double
+getRuntime Report{..} =
+  let SampleAnalysis{..} = reportAnalysis
+      Regression{..} = head anRegress
+      Estimate{..} = regCoeffs Map.! "iters"
+  in estPoint

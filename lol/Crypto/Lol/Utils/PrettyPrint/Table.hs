@@ -22,13 +22,11 @@ module Crypto.Lol.Utils.PrettyPrint.Table
 import Control.Monad (forM_, when)
 
 import Criterion.Types
-
 import Criterion.Measurement (secs)
 
 import Crypto.Lol.Utils.PrettyPrint
 
 import Data.List (nub, groupBy, transpose)
-
 import System.IO
 import Text.Printf
 
@@ -90,7 +88,6 @@ printTable o rpts = do
   mapM_ (printRow o) rpts'
   putStrLn ""
 
--- See Criterion.Internal.analyseOne
 printRow :: OptsInternal -> [Report] -> IO ()
 printRow o@OptsInternal{..} xs@(rpt : _) = do
   printf (testName o) $ getBenchFunc $ reportName rpt

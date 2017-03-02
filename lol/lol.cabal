@@ -151,7 +151,6 @@ library
     random >= 1.1 && < 1.2,
     reflection >= 1.5.1 && < 2.2,
     singletons >= 1.1.2.1 && < 2.3,
-    split < 0.3,
     statistics < 0.14,
     tagged-transformer >= 0.7 && < 0.9,
     template-haskell >=  2.2.0.0 && < 2.12,
