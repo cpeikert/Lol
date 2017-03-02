@@ -4,3 +4,5 @@ Lol, using the highly optimized and parallelizable array library Repa.
 
 You can test this package by running `stack test lol-repa`, and benchmark by
 running `stack bench lol-repa`.
+
+The benchmarks for this package take ~6-7GB to compile with GHC-8.0.2.
