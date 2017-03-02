@@ -1,10 +1,8 @@
 :set -irlwe-challenges:rlwe-challenges/exec
-:set -ifhe-compiler
 :set -ilol:lol/tests
 :set -ilol-apps
 :set -ilol-cpp:lol-cpp/benchmarks:lol-cpp/tests:lol-cpp/examples
 :set -ilol-repa:lol-repa/benchmarks:lol-repa/tests:lol-repa/examples
-:set -DWITH_APPS
 
 :set -fprint-explicit-kinds
 :set -freduction-depth=200
