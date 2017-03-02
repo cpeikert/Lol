@@ -1,9 +1,7 @@
 
-[![Build Status](https://travis-ci.org/cpeikert/Lol.svg?branch=lol-apps-exec-lib)](https://travis-ci.org/cpeikert/Lol)
+[![Build Status](https://travis-ci.org/cpeikert/Lol.svg?branch=master)](https://travis-ci.org/cpeikert/Lol)
 
-Relative to master, this branch (lol-apps-exec-lib) turns the lol-apps tests,
-benchmarks, and examples into tensor-polymorphic libraries. This allows individual
-tensor to instantiate the lol-apps executables.
+This branch is master. It should always be compiling!
 
 --------------------------------------------------------------------------------
 
