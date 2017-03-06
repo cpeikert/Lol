@@ -385,7 +385,7 @@ mulScalar a (CT enc k l c) =
 
 -- | Constraint synonym for multiplying a public value with an encrypted value.
 type MulPublicCtx t m m' zp zq =
-  (Lift' zp, Reduce (LiftOf zp) zq, Fact m', CElt t zq, m `Divides` m', 
+  (Lift' zp, Reduce (LiftOf zp) zq, Fact m', CElt t zq, m `Divides` m',
    CElt t zp, CElt t (LiftOf zp))
 
 -- | Homomorphically multiply an encrypted value by a public \( R_p \)
@@ -404,7 +404,7 @@ mulGCT (CT enc k l c) = CT enc (k+1) l $ mulG <$> c
 
 ---------- NumericPrelude instances ----------
 
-instance (Lift' zp, Reduce (LiftOf zp) zq, Fact m', CElt t zq, -- mulScalar
+instance (Lift' zp, Reduce (LiftOf zp) zq, CElt t zq, -- mulScalar
           Eq zp, m `Divides` m', ToSDCtx t m' zp zq)
          => Additive.C (CT m zp (Cyc t m' zq)) where
 
