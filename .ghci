@@ -5,6 +5,8 @@
 :set -ilol-repa:lol-repa/benchmarks:lol-repa/tests:lol-repa/examples
 
 :set -fprint-explicit-kinds
+:set -fprint-explicit-foralls
+:set -fprint-unicode-syntax
 :set -freduction-depth=200
 :set -Wall
 :set -Wall-missed-specialisations
