@@ -77,7 +77,7 @@ type RRq q = RRq.RRq q Double
 
 -- | Contains the necessary entailments to allow generation and verification
 -- using reified moduli and cyclotomic indices.
-class (EntailTensor t, Tensor t, TElt t (Complex Double), TElt t Double, TElt t Int64)
+class (Tensor t, TElt t (Complex Double), TElt t Double, TElt t Int64)
   => EntailTensor t where
   entailTensor :: Tagged '(t,m,q) ((Reifies q Int64, Fact m) :-
     (ProtoType (t m (RRq q)) ~ KqProduct,
