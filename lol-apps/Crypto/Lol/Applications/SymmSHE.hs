@@ -534,7 +534,7 @@ type TunnelCtx t r s e' r' s' zp zq gad =
 -- elements of the decoding basis of \( R/E \) to the corresponding
 -- \( S \)-elements in the input array.
 tunnelCT :: forall gad t e r s e' r' s' zp zq .
-  (TunnelCtx t r s e' r' s' zp zq gad, e ~ FGCD r s)
+  (TunnelCtx t r s e' r' s' zp zq gad)
   => TunnelInfo gad t e r s e' r' s' zp zq
   -> CT r zp (Cyc t r' zq)
   -> CT s zp (Cyc t s' zq)
