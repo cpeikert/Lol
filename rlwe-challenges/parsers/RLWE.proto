@@ -1,4 +1,4 @@
-package Lol;
+option java_package = "crypto.proto.lol";
 
 // proto messages for the RLWE/RLWR problems
 

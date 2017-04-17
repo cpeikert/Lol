@@ -4,3 +4,5 @@ lol-cpp/lib
 **/.stack-work
 **/rlwe-secrets.tar.gz
 **/rlwe-challenges.*
+**/*.pyc
+**/*.class

@@ -1,4 +1,4 @@
-package Lol;
+option java_package = "crypto.proto.lol";
 
 // Proto messages for cyclotomic rings and other basic types in Lol
 
