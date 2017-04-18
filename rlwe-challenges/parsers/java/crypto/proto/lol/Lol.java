@@ -9,7 +9,7 @@ public final class Lol {
       com.google.protobuf.ExtensionRegistry registry) {
   }
   public interface LinearRqOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:LinearRq)
+      // @@protoc_insertion_point(interface_extends:crypto.proto.lol.LinearRq)
       com.google.protobuf.MessageOrBuilder {
 
     /**
@@ -31,31 +31,31 @@ public final class Lol {
     int getR();
 
     /**
-     * <code>repeated .RqProduct coeffs = 3;</code>
+     * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
      */
     java.util.List<crypto.proto.lol.Lol.RqProduct> 
         getCoeffsList();
     /**
-     * <code>repeated .RqProduct coeffs = 3;</code>
+     * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
      */
     crypto.proto.lol.Lol.RqProduct getCoeffs(int index);
     /**
-     * <code>repeated .RqProduct coeffs = 3;</code>
+     * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
      */
     int getCoeffsCount();
     /**
-     * <code>repeated .RqProduct coeffs = 3;</code>
+     * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
      */
     java.util.List<? extends crypto.proto.lol.Lol.RqProductOrBuilder> 
         getCoeffsOrBuilderList();
     /**
-     * <code>repeated .RqProduct coeffs = 3;</code>
+     * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
      */
     crypto.proto.lol.Lol.RqProductOrBuilder getCoeffsOrBuilder(
         int index);
   }
   /**
-   * Protobuf type {@code LinearRq}
+   * Protobuf type {@code crypto.proto.lol.LinearRq}
    *
    * <pre>
    * coeffs contains the function output corresponding to the decoding basis in R
@@ -63,7 +63,7 @@ public final class Lol {
    */
   public static final class LinearRq extends
       com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:LinearRq)
+      // @@protoc_insertion_point(message_implements:crypto.proto.lol.LinearRq)
       LinearRqOrBuilder {
     // Use LinearRq.newBuilder() to construct.
     private LinearRq(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
@@ -145,12 +145,12 @@ public final class Lol {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return crypto.proto.lol.Lol.internal_static_LinearRq_descriptor;
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_LinearRq_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return crypto.proto.lol.Lol.internal_static_LinearRq_fieldAccessorTable
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_LinearRq_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
               crypto.proto.lol.Lol.LinearRq.class, crypto.proto.lol.Lol.LinearRq.Builder.class);
     }
@@ -204,32 +204,32 @@ public final class Lol {
     public static final int COEFFS_FIELD_NUMBER = 3;
     private java.util.List<crypto.proto.lol.Lol.RqProduct> coeffs_;
     /**
-     * <code>repeated .RqProduct coeffs = 3;</code>
+     * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
      */
     public java.util.List<crypto.proto.lol.Lol.RqProduct> getCoeffsList() {
       return coeffs_;
     }
     /**
-     * <code>repeated .RqProduct coeffs = 3;</code>
+     * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
      */
     public java.util.List<? extends crypto.proto.lol.Lol.RqProductOrBuilder> 
         getCoeffsOrBuilderList() {
       return coeffs_;
     }
     /**
-     * <code>repeated .RqProduct coeffs = 3;</code>
+     * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
      */
     public int getCoeffsCount() {
       return coeffs_.size();
     }
     /**
-     * <code>repeated .RqProduct coeffs = 3;</code>
+     * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
      */
     public crypto.proto.lol.Lol.RqProduct getCoeffs(int index) {
       return coeffs_.get(index);
     }
     /**
-     * <code>repeated .RqProduct coeffs = 3;</code>
+     * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
      */
     public crypto.proto.lol.Lol.RqProductOrBuilder getCoeffsOrBuilder(
         int index) {
@@ -377,7 +377,7 @@ public final class Lol {
       return builder;
     }
     /**
-     * Protobuf type {@code LinearRq}
+     * Protobuf type {@code crypto.proto.lol.LinearRq}
      *
      * <pre>
      * coeffs contains the function output corresponding to the decoding basis in R
@@ -385,16 +385,16 @@ public final class Lol {
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:LinearRq)
+        // @@protoc_insertion_point(builder_implements:crypto.proto.lol.LinearRq)
         crypto.proto.lol.Lol.LinearRqOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return crypto.proto.lol.Lol.internal_static_LinearRq_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_LinearRq_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return crypto.proto.lol.Lol.internal_static_LinearRq_fieldAccessorTable
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_LinearRq_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
                 crypto.proto.lol.Lol.LinearRq.class, crypto.proto.lol.Lol.LinearRq.Builder.class);
       }
@@ -439,7 +439,7 @@ public final class Lol {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return crypto.proto.lol.Lol.internal_static_LinearRq_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_LinearRq_descriptor;
       }
 
       public crypto.proto.lol.Lol.LinearRq getDefaultInstanceForType() {
@@ -641,7 +641,7 @@ public final class Lol {
           crypto.proto.lol.Lol.RqProduct, crypto.proto.lol.Lol.RqProduct.Builder, crypto.proto.lol.Lol.RqProductOrBuilder> coeffsBuilder_;
 
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public java.util.List<crypto.proto.lol.Lol.RqProduct> getCoeffsList() {
         if (coeffsBuilder_ == null) {
@@ -651,7 +651,7 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public int getCoeffsCount() {
         if (coeffsBuilder_ == null) {
@@ -661,7 +661,7 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public crypto.proto.lol.Lol.RqProduct getCoeffs(int index) {
         if (coeffsBuilder_ == null) {
@@ -671,7 +671,7 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public Builder setCoeffs(
           int index, crypto.proto.lol.Lol.RqProduct value) {
@@ -688,7 +688,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public Builder setCoeffs(
           int index, crypto.proto.lol.Lol.RqProduct.Builder builderForValue) {
@@ -702,7 +702,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public Builder addCoeffs(crypto.proto.lol.Lol.RqProduct value) {
         if (coeffsBuilder_ == null) {
@@ -718,7 +718,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public Builder addCoeffs(
           int index, crypto.proto.lol.Lol.RqProduct value) {
@@ -735,7 +735,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public Builder addCoeffs(
           crypto.proto.lol.Lol.RqProduct.Builder builderForValue) {
@@ -749,7 +749,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public Builder addCoeffs(
           int index, crypto.proto.lol.Lol.RqProduct.Builder builderForValue) {
@@ -763,7 +763,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public Builder addAllCoeffs(
           java.lang.Iterable<? extends crypto.proto.lol.Lol.RqProduct> values) {
@@ -778,7 +778,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public Builder clearCoeffs() {
         if (coeffsBuilder_ == null) {
@@ -791,7 +791,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public Builder removeCoeffs(int index) {
         if (coeffsBuilder_ == null) {
@@ -804,14 +804,14 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public crypto.proto.lol.Lol.RqProduct.Builder getCoeffsBuilder(
           int index) {
         return getCoeffsFieldBuilder().getBuilder(index);
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public crypto.proto.lol.Lol.RqProductOrBuilder getCoeffsOrBuilder(
           int index) {
@@ -821,7 +821,7 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public java.util.List<? extends crypto.proto.lol.Lol.RqProductOrBuilder> 
            getCoeffsOrBuilderList() {
@@ -832,14 +832,14 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public crypto.proto.lol.Lol.RqProduct.Builder addCoeffsBuilder() {
         return getCoeffsFieldBuilder().addBuilder(
             crypto.proto.lol.Lol.RqProduct.getDefaultInstance());
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public crypto.proto.lol.Lol.RqProduct.Builder addCoeffsBuilder(
           int index) {
@@ -847,7 +847,7 @@ public final class Lol {
             index, crypto.proto.lol.Lol.RqProduct.getDefaultInstance());
       }
       /**
-       * <code>repeated .RqProduct coeffs = 3;</code>
+       * <code>repeated .crypto.proto.lol.RqProduct coeffs = 3;</code>
        */
       public java.util.List<crypto.proto.lol.Lol.RqProduct.Builder> 
            getCoeffsBuilderList() {
@@ -868,7 +868,7 @@ public final class Lol {
         return coeffsBuilder_;
       }
 
-      // @@protoc_insertion_point(builder_scope:LinearRq)
+      // @@protoc_insertion_point(builder_scope:crypto.proto.lol.LinearRq)
     }
 
     static {
@@ -876,11 +876,11 @@ public final class Lol {
       defaultInstance.initFields();
     }
 
-    // @@protoc_insertion_point(class_scope:LinearRq)
+    // @@protoc_insertion_point(class_scope:crypto.proto.lol.LinearRq)
   }
 
   public interface ROrBuilder extends
-      // @@protoc_insertion_point(interface_extends:R)
+      // @@protoc_insertion_point(interface_extends:crypto.proto.lol.R)
       com.google.protobuf.MessageOrBuilder {
 
     /**
@@ -906,11 +906,11 @@ public final class Lol {
     long getXs(int index);
   }
   /**
-   * Protobuf type {@code R}
+   * Protobuf type {@code crypto.proto.lol.R}
    */
   public static final class R extends
       com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:R)
+      // @@protoc_insertion_point(message_implements:crypto.proto.lol.R)
       ROrBuilder {
     // Use R.newBuilder() to construct.
     private R(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
@@ -1000,12 +1000,12 @@ public final class Lol {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return crypto.proto.lol.Lol.internal_static_R_descriptor;
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_R_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return crypto.proto.lol.Lol.internal_static_R_fieldAccessorTable
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_R_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
               crypto.proto.lol.Lol.R.class, crypto.proto.lol.Lol.R.Builder.class);
     }
@@ -1191,20 +1191,20 @@ public final class Lol {
       return builder;
     }
     /**
-     * Protobuf type {@code R}
+     * Protobuf type {@code crypto.proto.lol.R}
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:R)
+        // @@protoc_insertion_point(builder_implements:crypto.proto.lol.R)
         crypto.proto.lol.Lol.ROrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return crypto.proto.lol.Lol.internal_static_R_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_R_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return crypto.proto.lol.Lol.internal_static_R_fieldAccessorTable
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_R_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
                 crypto.proto.lol.Lol.R.class, crypto.proto.lol.Lol.R.Builder.class);
       }
@@ -1242,7 +1242,7 @@ public final class Lol {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return crypto.proto.lol.Lol.internal_static_R_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_R_descriptor;
       }
 
       public crypto.proto.lol.Lol.R getDefaultInstanceForType() {
@@ -1428,7 +1428,7 @@ public final class Lol {
         return this;
       }
 
-      // @@protoc_insertion_point(builder_scope:R)
+      // @@protoc_insertion_point(builder_scope:crypto.proto.lol.R)
     }
 
     static {
@@ -1436,11 +1436,11 @@ public final class Lol {
       defaultInstance.initFields();
     }
 
-    // @@protoc_insertion_point(class_scope:R)
+    // @@protoc_insertion_point(class_scope:crypto.proto.lol.R)
   }
 
-  public interface Rq1OrBuilder extends
-      // @@protoc_insertion_point(interface_extends:Rq1)
+  public interface RqOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:crypto.proto.lol.Rq)
       com.google.protobuf.MessageOrBuilder {
 
     /**
@@ -1475,30 +1475,30 @@ public final class Lol {
     long getXs(int index);
   }
   /**
-   * Protobuf type {@code Rq1}
+   * Protobuf type {@code crypto.proto.lol.Rq}
    *
    * <pre>
    * only holds a single modulus. This type was used to serialize cyclotomic ring
    * elements in the RLWE/RLWR challenges.
    * </pre>
    */
-  public static final class Rq1 extends
+  public static final class Rq extends
       com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:Rq1)
-      Rq1OrBuilder {
-    // Use Rq1.newBuilder() to construct.
-    private Rq1(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      // @@protoc_insertion_point(message_implements:crypto.proto.lol.Rq)
+      RqOrBuilder {
+    // Use Rq.newBuilder() to construct.
+    private Rq(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
       this.unknownFields = builder.getUnknownFields();
     }
-    private Rq1(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+    private Rq(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
 
-    private static final Rq1 defaultInstance;
-    public static Rq1 getDefaultInstance() {
+    private static final Rq defaultInstance;
+    public static Rq getDefaultInstance() {
       return defaultInstance;
     }
 
-    public Rq1 getDefaultInstanceForType() {
+    public Rq getDefaultInstanceForType() {
       return defaultInstance;
     }
 
@@ -1508,7 +1508,7 @@ public final class Lol {
         getUnknownFields() {
       return this.unknownFields;
     }
-    private Rq1(
+    private Rq(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -1579,28 +1579,28 @@ public final class Lol {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return crypto.proto.lol.Lol.internal_static_Rq1_descriptor;
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_Rq_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return crypto.proto.lol.Lol.internal_static_Rq1_fieldAccessorTable
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_Rq_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              crypto.proto.lol.Lol.Rq1.class, crypto.proto.lol.Lol.Rq1.Builder.class);
+              crypto.proto.lol.Lol.Rq.class, crypto.proto.lol.Lol.Rq.Builder.class);
     }
 
-    public static com.google.protobuf.Parser<Rq1> PARSER =
-        new com.google.protobuf.AbstractParser<Rq1>() {
-      public Rq1 parsePartialFrom(
+    public static com.google.protobuf.Parser<Rq> PARSER =
+        new com.google.protobuf.AbstractParser<Rq>() {
+      public Rq parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Rq1(input, extensionRegistry);
+        return new Rq(input, extensionRegistry);
       }
     };
 
     @java.lang.Override
-    public com.google.protobuf.Parser<Rq1> getParserForType() {
+    public com.google.protobuf.Parser<Rq> getParserForType() {
       return PARSER;
     }
 
@@ -1730,53 +1730,53 @@ public final class Lol {
       return super.writeReplace();
     }
 
-    public static crypto.proto.lol.Lol.Rq1 parseFrom(
+    public static crypto.proto.lol.Lol.Rq parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static crypto.proto.lol.Lol.Rq1 parseFrom(
+    public static crypto.proto.lol.Lol.Rq parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static crypto.proto.lol.Lol.Rq1 parseFrom(byte[] data)
+    public static crypto.proto.lol.Lol.Rq parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static crypto.proto.lol.Lol.Rq1 parseFrom(
+    public static crypto.proto.lol.Lol.Rq parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static crypto.proto.lol.Lol.Rq1 parseFrom(java.io.InputStream input)
+    public static crypto.proto.lol.Lol.Rq parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return PARSER.parseFrom(input);
     }
-    public static crypto.proto.lol.Lol.Rq1 parseFrom(
+    public static crypto.proto.lol.Lol.Rq parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return PARSER.parseFrom(input, extensionRegistry);
     }
-    public static crypto.proto.lol.Lol.Rq1 parseDelimitedFrom(java.io.InputStream input)
+    public static crypto.proto.lol.Lol.Rq parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return PARSER.parseDelimitedFrom(input);
     }
-    public static crypto.proto.lol.Lol.Rq1 parseDelimitedFrom(
+    public static crypto.proto.lol.Lol.Rq parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
-    public static crypto.proto.lol.Lol.Rq1 parseFrom(
+    public static crypto.proto.lol.Lol.Rq parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return PARSER.parseFrom(input);
     }
-    public static crypto.proto.lol.Lol.Rq1 parseFrom(
+    public static crypto.proto.lol.Lol.Rq parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -1785,7 +1785,7 @@ public final class Lol {
 
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(crypto.proto.lol.Lol.Rq1 prototype) {
+    public static Builder newBuilder(crypto.proto.lol.Lol.Rq prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
@@ -1797,7 +1797,7 @@ public final class Lol {
       return builder;
     }
     /**
-     * Protobuf type {@code Rq1}
+     * Protobuf type {@code crypto.proto.lol.Rq}
      *
      * <pre>
      * only holds a single modulus. This type was used to serialize cyclotomic ring
@@ -1806,21 +1806,21 @@ public final class Lol {
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:Rq1)
-        crypto.proto.lol.Lol.Rq1OrBuilder {
+        // @@protoc_insertion_point(builder_implements:crypto.proto.lol.Rq)
+        crypto.proto.lol.Lol.RqOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return crypto.proto.lol.Lol.internal_static_Rq1_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_Rq_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return crypto.proto.lol.Lol.internal_static_Rq1_fieldAccessorTable
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_Rq_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                crypto.proto.lol.Lol.Rq1.class, crypto.proto.lol.Lol.Rq1.Builder.class);
+                crypto.proto.lol.Lol.Rq.class, crypto.proto.lol.Lol.Rq.Builder.class);
       }
 
-      // Construct using crypto.proto.lol.Lol.Rq1.newBuilder()
+      // Construct using crypto.proto.lol.Lol.Rq.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
@@ -1855,23 +1855,23 @@ public final class Lol {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return crypto.proto.lol.Lol.internal_static_Rq1_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_Rq_descriptor;
       }
 
-      public crypto.proto.lol.Lol.Rq1 getDefaultInstanceForType() {
-        return crypto.proto.lol.Lol.Rq1.getDefaultInstance();
+      public crypto.proto.lol.Lol.Rq getDefaultInstanceForType() {
+        return crypto.proto.lol.Lol.Rq.getDefaultInstance();
       }
 
-      public crypto.proto.lol.Lol.Rq1 build() {
-        crypto.proto.lol.Lol.Rq1 result = buildPartial();
+      public crypto.proto.lol.Lol.Rq build() {
+        crypto.proto.lol.Lol.Rq result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      public crypto.proto.lol.Lol.Rq1 buildPartial() {
-        crypto.proto.lol.Lol.Rq1 result = new crypto.proto.lol.Lol.Rq1(this);
+      public crypto.proto.lol.Lol.Rq buildPartial() {
+        crypto.proto.lol.Lol.Rq result = new crypto.proto.lol.Lol.Rq(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
@@ -1893,16 +1893,16 @@ public final class Lol {
       }
 
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof crypto.proto.lol.Lol.Rq1) {
-          return mergeFrom((crypto.proto.lol.Lol.Rq1)other);
+        if (other instanceof crypto.proto.lol.Lol.Rq) {
+          return mergeFrom((crypto.proto.lol.Lol.Rq)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(crypto.proto.lol.Lol.Rq1 other) {
-        if (other == crypto.proto.lol.Lol.Rq1.getDefaultInstance()) return this;
+      public Builder mergeFrom(crypto.proto.lol.Lol.Rq other) {
+        if (other == crypto.proto.lol.Lol.Rq.getDefaultInstance()) return this;
         if (other.hasM()) {
           setM(other.getM());
         }
@@ -1939,11 +1939,11 @@ public final class Lol {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        crypto.proto.lol.Lol.Rq1 parsedMessage = null;
+        crypto.proto.lol.Lol.Rq parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (crypto.proto.lol.Lol.Rq1) e.getUnfinishedMessage();
+          parsedMessage = (crypto.proto.lol.Lol.Rq) e.getUnfinishedMessage();
           throw e;
         } finally {
           if (parsedMessage != null) {
@@ -2084,19 +2084,19 @@ public final class Lol {
         return this;
       }
 
-      // @@protoc_insertion_point(builder_scope:Rq1)
+      // @@protoc_insertion_point(builder_scope:crypto.proto.lol.Rq)
     }
 
     static {
-      defaultInstance = new Rq1(true);
+      defaultInstance = new Rq(true);
       defaultInstance.initFields();
     }
 
-    // @@protoc_insertion_point(class_scope:Rq1)
+    // @@protoc_insertion_point(class_scope:crypto.proto.lol.Rq)
   }
 
-  public interface Kq1OrBuilder extends
-      // @@protoc_insertion_point(interface_extends:Kq1)
+  public interface KqOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:crypto.proto.lol.Kq)
       com.google.protobuf.MessageOrBuilder {
 
     /**
@@ -2131,30 +2131,30 @@ public final class Lol {
     double getXs(int index);
   }
   /**
-   * Protobuf type {@code Kq1}
+   * Protobuf type {@code crypto.proto.lol.Kq}
    *
    * <pre>
    * only holds a single modulus. This type was used to serialize cyclotomic ring
    * elements in the RLWE challenges.
    * </pre>
    */
-  public static final class Kq1 extends
+  public static final class Kq extends
       com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:Kq1)
-      Kq1OrBuilder {
-    // Use Kq1.newBuilder() to construct.
-    private Kq1(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
+      // @@protoc_insertion_point(message_implements:crypto.proto.lol.Kq)
+      KqOrBuilder {
+    // Use Kq.newBuilder() to construct.
+    private Kq(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
       super(builder);
       this.unknownFields = builder.getUnknownFields();
     }
-    private Kq1(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
+    private Kq(boolean noInit) { this.unknownFields = com.google.protobuf.UnknownFieldSet.getDefaultInstance(); }
 
-    private static final Kq1 defaultInstance;
-    public static Kq1 getDefaultInstance() {
+    private static final Kq defaultInstance;
+    public static Kq getDefaultInstance() {
       return defaultInstance;
     }
 
-    public Kq1 getDefaultInstanceForType() {
+    public Kq getDefaultInstanceForType() {
       return defaultInstance;
     }
 
@@ -2164,7 +2164,7 @@ public final class Lol {
         getUnknownFields() {
       return this.unknownFields;
     }
-    private Kq1(
+    private Kq(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
@@ -2235,28 +2235,28 @@ public final class Lol {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return crypto.proto.lol.Lol.internal_static_Kq1_descriptor;
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_Kq_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return crypto.proto.lol.Lol.internal_static_Kq1_fieldAccessorTable
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_Kq_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
-              crypto.proto.lol.Lol.Kq1.class, crypto.proto.lol.Lol.Kq1.Builder.class);
+              crypto.proto.lol.Lol.Kq.class, crypto.proto.lol.Lol.Kq.Builder.class);
     }
 
-    public static com.google.protobuf.Parser<Kq1> PARSER =
-        new com.google.protobuf.AbstractParser<Kq1>() {
-      public Kq1 parsePartialFrom(
+    public static com.google.protobuf.Parser<Kq> PARSER =
+        new com.google.protobuf.AbstractParser<Kq>() {
+      public Kq parsePartialFrom(
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws com.google.protobuf.InvalidProtocolBufferException {
-        return new Kq1(input, extensionRegistry);
+        return new Kq(input, extensionRegistry);
       }
     };
 
     @java.lang.Override
-    public com.google.protobuf.Parser<Kq1> getParserForType() {
+    public com.google.protobuf.Parser<Kq> getParserForType() {
       return PARSER;
     }
 
@@ -2383,53 +2383,53 @@ public final class Lol {
       return super.writeReplace();
     }
 
-    public static crypto.proto.lol.Lol.Kq1 parseFrom(
+    public static crypto.proto.lol.Lol.Kq parseFrom(
         com.google.protobuf.ByteString data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static crypto.proto.lol.Lol.Kq1 parseFrom(
+    public static crypto.proto.lol.Lol.Kq parseFrom(
         com.google.protobuf.ByteString data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static crypto.proto.lol.Lol.Kq1 parseFrom(byte[] data)
+    public static crypto.proto.lol.Lol.Kq parseFrom(byte[] data)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data);
     }
-    public static crypto.proto.lol.Lol.Kq1 parseFrom(
+    public static crypto.proto.lol.Lol.Kq parseFrom(
         byte[] data,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws com.google.protobuf.InvalidProtocolBufferException {
       return PARSER.parseFrom(data, extensionRegistry);
     }
-    public static crypto.proto.lol.Lol.Kq1 parseFrom(java.io.InputStream input)
+    public static crypto.proto.lol.Lol.Kq parseFrom(java.io.InputStream input)
         throws java.io.IOException {
       return PARSER.parseFrom(input);
     }
-    public static crypto.proto.lol.Lol.Kq1 parseFrom(
+    public static crypto.proto.lol.Lol.Kq parseFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return PARSER.parseFrom(input, extensionRegistry);
     }
-    public static crypto.proto.lol.Lol.Kq1 parseDelimitedFrom(java.io.InputStream input)
+    public static crypto.proto.lol.Lol.Kq parseDelimitedFrom(java.io.InputStream input)
         throws java.io.IOException {
       return PARSER.parseDelimitedFrom(input);
     }
-    public static crypto.proto.lol.Lol.Kq1 parseDelimitedFrom(
+    public static crypto.proto.lol.Lol.Kq parseDelimitedFrom(
         java.io.InputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
       return PARSER.parseDelimitedFrom(input, extensionRegistry);
     }
-    public static crypto.proto.lol.Lol.Kq1 parseFrom(
+    public static crypto.proto.lol.Lol.Kq parseFrom(
         com.google.protobuf.CodedInputStream input)
         throws java.io.IOException {
       return PARSER.parseFrom(input);
     }
-    public static crypto.proto.lol.Lol.Kq1 parseFrom(
+    public static crypto.proto.lol.Lol.Kq parseFrom(
         com.google.protobuf.CodedInputStream input,
         com.google.protobuf.ExtensionRegistryLite extensionRegistry)
         throws java.io.IOException {
@@ -2438,7 +2438,7 @@ public final class Lol {
 
     public static Builder newBuilder() { return Builder.create(); }
     public Builder newBuilderForType() { return newBuilder(); }
-    public static Builder newBuilder(crypto.proto.lol.Lol.Kq1 prototype) {
+    public static Builder newBuilder(crypto.proto.lol.Lol.Kq prototype) {
       return newBuilder().mergeFrom(prototype);
     }
     public Builder toBuilder() { return newBuilder(this); }
@@ -2450,7 +2450,7 @@ public final class Lol {
       return builder;
     }
     /**
-     * Protobuf type {@code Kq1}
+     * Protobuf type {@code crypto.proto.lol.Kq}
      *
      * <pre>
      * only holds a single modulus. This type was used to serialize cyclotomic ring
@@ -2459,21 +2459,21 @@ public final class Lol {
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:Kq1)
-        crypto.proto.lol.Lol.Kq1OrBuilder {
+        // @@protoc_insertion_point(builder_implements:crypto.proto.lol.Kq)
+        crypto.proto.lol.Lol.KqOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return crypto.proto.lol.Lol.internal_static_Kq1_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_Kq_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return crypto.proto.lol.Lol.internal_static_Kq1_fieldAccessorTable
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_Kq_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
-                crypto.proto.lol.Lol.Kq1.class, crypto.proto.lol.Lol.Kq1.Builder.class);
+                crypto.proto.lol.Lol.Kq.class, crypto.proto.lol.Lol.Kq.Builder.class);
       }
 
-      // Construct using crypto.proto.lol.Lol.Kq1.newBuilder()
+      // Construct using crypto.proto.lol.Lol.Kq.newBuilder()
       private Builder() {
         maybeForceBuilderInitialization();
       }
@@ -2508,23 +2508,23 @@ public final class Lol {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return crypto.proto.lol.Lol.internal_static_Kq1_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_Kq_descriptor;
       }
 
-      public crypto.proto.lol.Lol.Kq1 getDefaultInstanceForType() {
-        return crypto.proto.lol.Lol.Kq1.getDefaultInstance();
+      public crypto.proto.lol.Lol.Kq getDefaultInstanceForType() {
+        return crypto.proto.lol.Lol.Kq.getDefaultInstance();
       }
 
-      public crypto.proto.lol.Lol.Kq1 build() {
-        crypto.proto.lol.Lol.Kq1 result = buildPartial();
+      public crypto.proto.lol.Lol.Kq build() {
+        crypto.proto.lol.Lol.Kq result = buildPartial();
         if (!result.isInitialized()) {
           throw newUninitializedMessageException(result);
         }
         return result;
       }
 
-      public crypto.proto.lol.Lol.Kq1 buildPartial() {
-        crypto.proto.lol.Lol.Kq1 result = new crypto.proto.lol.Lol.Kq1(this);
+      public crypto.proto.lol.Lol.Kq buildPartial() {
+        crypto.proto.lol.Lol.Kq result = new crypto.proto.lol.Lol.Kq(this);
         int from_bitField0_ = bitField0_;
         int to_bitField0_ = 0;
         if (((from_bitField0_ & 0x00000001) == 0x00000001)) {
@@ -2546,16 +2546,16 @@ public final class Lol {
       }
 
       public Builder mergeFrom(com.google.protobuf.Message other) {
-        if (other instanceof crypto.proto.lol.Lol.Kq1) {
-          return mergeFrom((crypto.proto.lol.Lol.Kq1)other);
+        if (other instanceof crypto.proto.lol.Lol.Kq) {
+          return mergeFrom((crypto.proto.lol.Lol.Kq)other);
         } else {
           super.mergeFrom(other);
           return this;
         }
       }
 
-      public Builder mergeFrom(crypto.proto.lol.Lol.Kq1 other) {
-        if (other == crypto.proto.lol.Lol.Kq1.getDefaultInstance()) return this;
+      public Builder mergeFrom(crypto.proto.lol.Lol.Kq other) {
+        if (other == crypto.proto.lol.Lol.Kq.getDefaultInstance()) return this;
         if (other.hasM()) {
           setM(other.getM());
         }
@@ -2592,11 +2592,11 @@ public final class Lol {
           com.google.protobuf.CodedInputStream input,
           com.google.protobuf.ExtensionRegistryLite extensionRegistry)
           throws java.io.IOException {
-        crypto.proto.lol.Lol.Kq1 parsedMessage = null;
+        crypto.proto.lol.Lol.Kq parsedMessage = null;
         try {
           parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-          parsedMessage = (crypto.proto.lol.Lol.Kq1) e.getUnfinishedMessage();
+          parsedMessage = (crypto.proto.lol.Lol.Kq) e.getUnfinishedMessage();
           throw e;
         } finally {
           if (parsedMessage != null) {
@@ -2737,47 +2737,47 @@ public final class Lol {
         return this;
       }
 
-      // @@protoc_insertion_point(builder_scope:Kq1)
+      // @@protoc_insertion_point(builder_scope:crypto.proto.lol.Kq)
     }
 
     static {
-      defaultInstance = new Kq1(true);
+      defaultInstance = new Kq(true);
       defaultInstance.initFields();
     }
 
-    // @@protoc_insertion_point(class_scope:Kq1)
+    // @@protoc_insertion_point(class_scope:crypto.proto.lol.Kq)
   }
 
   public interface RqProductOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:RqProduct)
+      // @@protoc_insertion_point(interface_extends:crypto.proto.lol.RqProduct)
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>repeated .Rq1 rqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
      */
-    java.util.List<crypto.proto.lol.Lol.Rq1> 
+    java.util.List<crypto.proto.lol.Lol.Rq> 
         getRqlistList();
     /**
-     * <code>repeated .Rq1 rqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
      */
-    crypto.proto.lol.Lol.Rq1 getRqlist(int index);
+    crypto.proto.lol.Lol.Rq getRqlist(int index);
     /**
-     * <code>repeated .Rq1 rqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
      */
     int getRqlistCount();
     /**
-     * <code>repeated .Rq1 rqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
      */
-    java.util.List<? extends crypto.proto.lol.Lol.Rq1OrBuilder> 
+    java.util.List<? extends crypto.proto.lol.Lol.RqOrBuilder> 
         getRqlistOrBuilderList();
     /**
-     * <code>repeated .Rq1 rqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
      */
-    crypto.proto.lol.Lol.Rq1OrBuilder getRqlistOrBuilder(
+    crypto.proto.lol.Lol.RqOrBuilder getRqlistOrBuilder(
         int index);
   }
   /**
-   * Protobuf type {@code RqProduct}
+   * Protobuf type {@code crypto.proto.lol.RqProduct}
    *
    * <pre>
    * cyclotomic ring mod the product of one or more moduli
@@ -2785,7 +2785,7 @@ public final class Lol {
    */
   public static final class RqProduct extends
       com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:RqProduct)
+      // @@protoc_insertion_point(message_implements:crypto.proto.lol.RqProduct)
       RqProductOrBuilder {
     // Use RqProduct.newBuilder() to construct.
     private RqProduct(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
@@ -2834,10 +2834,10 @@ public final class Lol {
             }
             case 10: {
               if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-                rqlist_ = new java.util.ArrayList<crypto.proto.lol.Lol.Rq1>();
+                rqlist_ = new java.util.ArrayList<crypto.proto.lol.Lol.Rq>();
                 mutable_bitField0_ |= 0x00000001;
               }
-              rqlist_.add(input.readMessage(crypto.proto.lol.Lol.Rq1.PARSER, extensionRegistry));
+              rqlist_.add(input.readMessage(crypto.proto.lol.Lol.Rq.PARSER, extensionRegistry));
               break;
             }
           }
@@ -2857,12 +2857,12 @@ public final class Lol {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return crypto.proto.lol.Lol.internal_static_RqProduct_descriptor;
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_RqProduct_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return crypto.proto.lol.Lol.internal_static_RqProduct_fieldAccessorTable
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_RqProduct_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
               crypto.proto.lol.Lol.RqProduct.class, crypto.proto.lol.Lol.RqProduct.Builder.class);
     }
@@ -2883,36 +2883,36 @@ public final class Lol {
     }
 
     public static final int RQLIST_FIELD_NUMBER = 1;
-    private java.util.List<crypto.proto.lol.Lol.Rq1> rqlist_;
+    private java.util.List<crypto.proto.lol.Lol.Rq> rqlist_;
     /**
-     * <code>repeated .Rq1 rqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
      */
-    public java.util.List<crypto.proto.lol.Lol.Rq1> getRqlistList() {
+    public java.util.List<crypto.proto.lol.Lol.Rq> getRqlistList() {
       return rqlist_;
     }
     /**
-     * <code>repeated .Rq1 rqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
      */
-    public java.util.List<? extends crypto.proto.lol.Lol.Rq1OrBuilder> 
+    public java.util.List<? extends crypto.proto.lol.Lol.RqOrBuilder> 
         getRqlistOrBuilderList() {
       return rqlist_;
     }
     /**
-     * <code>repeated .Rq1 rqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
      */
     public int getRqlistCount() {
       return rqlist_.size();
     }
     /**
-     * <code>repeated .Rq1 rqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
      */
-    public crypto.proto.lol.Lol.Rq1 getRqlist(int index) {
+    public crypto.proto.lol.Lol.Rq getRqlist(int index) {
       return rqlist_.get(index);
     }
     /**
-     * <code>repeated .Rq1 rqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
      */
-    public crypto.proto.lol.Lol.Rq1OrBuilder getRqlistOrBuilder(
+    public crypto.proto.lol.Lol.RqOrBuilder getRqlistOrBuilder(
         int index) {
       return rqlist_.get(index);
     }
@@ -3034,7 +3034,7 @@ public final class Lol {
       return builder;
     }
     /**
-     * Protobuf type {@code RqProduct}
+     * Protobuf type {@code crypto.proto.lol.RqProduct}
      *
      * <pre>
      * cyclotomic ring mod the product of one or more moduli
@@ -3042,16 +3042,16 @@ public final class Lol {
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:RqProduct)
+        // @@protoc_insertion_point(builder_implements:crypto.proto.lol.RqProduct)
         crypto.proto.lol.Lol.RqProductOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return crypto.proto.lol.Lol.internal_static_RqProduct_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_RqProduct_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return crypto.proto.lol.Lol.internal_static_RqProduct_fieldAccessorTable
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_RqProduct_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
                 crypto.proto.lol.Lol.RqProduct.class, crypto.proto.lol.Lol.RqProduct.Builder.class);
       }
@@ -3092,7 +3092,7 @@ public final class Lol {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return crypto.proto.lol.Lol.internal_static_RqProduct_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_RqProduct_descriptor;
       }
 
       public crypto.proto.lol.Lol.RqProduct getDefaultInstanceForType() {
@@ -3193,22 +3193,22 @@ public final class Lol {
       }
       private int bitField0_;
 
-      private java.util.List<crypto.proto.lol.Lol.Rq1> rqlist_ =
+      private java.util.List<crypto.proto.lol.Lol.Rq> rqlist_ =
         java.util.Collections.emptyList();
       private void ensureRqlistIsMutable() {
         if (!((bitField0_ & 0x00000001) == 0x00000001)) {
-          rqlist_ = new java.util.ArrayList<crypto.proto.lol.Lol.Rq1>(rqlist_);
+          rqlist_ = new java.util.ArrayList<crypto.proto.lol.Lol.Rq>(rqlist_);
           bitField0_ |= 0x00000001;
          }
       }
 
       private com.google.protobuf.RepeatedFieldBuilder<
-          crypto.proto.lol.Lol.Rq1, crypto.proto.lol.Lol.Rq1.Builder, crypto.proto.lol.Lol.Rq1OrBuilder> rqlistBuilder_;
+          crypto.proto.lol.Lol.Rq, crypto.proto.lol.Lol.Rq.Builder, crypto.proto.lol.Lol.RqOrBuilder> rqlistBuilder_;
 
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
-      public java.util.List<crypto.proto.lol.Lol.Rq1> getRqlistList() {
+      public java.util.List<crypto.proto.lol.Lol.Rq> getRqlistList() {
         if (rqlistBuilder_ == null) {
           return java.util.Collections.unmodifiableList(rqlist_);
         } else {
@@ -3216,7 +3216,7 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
       public int getRqlistCount() {
         if (rqlistBuilder_ == null) {
@@ -3226,9 +3226,9 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
-      public crypto.proto.lol.Lol.Rq1 getRqlist(int index) {
+      public crypto.proto.lol.Lol.Rq getRqlist(int index) {
         if (rqlistBuilder_ == null) {
           return rqlist_.get(index);
         } else {
@@ -3236,10 +3236,10 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
       public Builder setRqlist(
-          int index, crypto.proto.lol.Lol.Rq1 value) {
+          int index, crypto.proto.lol.Lol.Rq value) {
         if (rqlistBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -3253,10 +3253,10 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
       public Builder setRqlist(
-          int index, crypto.proto.lol.Lol.Rq1.Builder builderForValue) {
+          int index, crypto.proto.lol.Lol.Rq.Builder builderForValue) {
         if (rqlistBuilder_ == null) {
           ensureRqlistIsMutable();
           rqlist_.set(index, builderForValue.build());
@@ -3267,9 +3267,9 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
-      public Builder addRqlist(crypto.proto.lol.Lol.Rq1 value) {
+      public Builder addRqlist(crypto.proto.lol.Lol.Rq value) {
         if (rqlistBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -3283,10 +3283,10 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
       public Builder addRqlist(
-          int index, crypto.proto.lol.Lol.Rq1 value) {
+          int index, crypto.proto.lol.Lol.Rq value) {
         if (rqlistBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -3300,10 +3300,10 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
       public Builder addRqlist(
-          crypto.proto.lol.Lol.Rq1.Builder builderForValue) {
+          crypto.proto.lol.Lol.Rq.Builder builderForValue) {
         if (rqlistBuilder_ == null) {
           ensureRqlistIsMutable();
           rqlist_.add(builderForValue.build());
@@ -3314,10 +3314,10 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
       public Builder addRqlist(
-          int index, crypto.proto.lol.Lol.Rq1.Builder builderForValue) {
+          int index, crypto.proto.lol.Lol.Rq.Builder builderForValue) {
         if (rqlistBuilder_ == null) {
           ensureRqlistIsMutable();
           rqlist_.add(index, builderForValue.build());
@@ -3328,10 +3328,10 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
       public Builder addAllRqlist(
-          java.lang.Iterable<? extends crypto.proto.lol.Lol.Rq1> values) {
+          java.lang.Iterable<? extends crypto.proto.lol.Lol.Rq> values) {
         if (rqlistBuilder_ == null) {
           ensureRqlistIsMutable();
           com.google.protobuf.AbstractMessageLite.Builder.addAll(
@@ -3343,7 +3343,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
       public Builder clearRqlist() {
         if (rqlistBuilder_ == null) {
@@ -3356,7 +3356,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
       public Builder removeRqlist(int index) {
         if (rqlistBuilder_ == null) {
@@ -3369,16 +3369,16 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
-      public crypto.proto.lol.Lol.Rq1.Builder getRqlistBuilder(
+      public crypto.proto.lol.Lol.Rq.Builder getRqlistBuilder(
           int index) {
         return getRqlistFieldBuilder().getBuilder(index);
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
-      public crypto.proto.lol.Lol.Rq1OrBuilder getRqlistOrBuilder(
+      public crypto.proto.lol.Lol.RqOrBuilder getRqlistOrBuilder(
           int index) {
         if (rqlistBuilder_ == null) {
           return rqlist_.get(index);  } else {
@@ -3386,9 +3386,9 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
-      public java.util.List<? extends crypto.proto.lol.Lol.Rq1OrBuilder> 
+      public java.util.List<? extends crypto.proto.lol.Lol.RqOrBuilder> 
            getRqlistOrBuilderList() {
         if (rqlistBuilder_ != null) {
           return rqlistBuilder_.getMessageOrBuilderList();
@@ -3397,33 +3397,33 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
-      public crypto.proto.lol.Lol.Rq1.Builder addRqlistBuilder() {
+      public crypto.proto.lol.Lol.Rq.Builder addRqlistBuilder() {
         return getRqlistFieldBuilder().addBuilder(
-            crypto.proto.lol.Lol.Rq1.getDefaultInstance());
+            crypto.proto.lol.Lol.Rq.getDefaultInstance());
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
-      public crypto.proto.lol.Lol.Rq1.Builder addRqlistBuilder(
+      public crypto.proto.lol.Lol.Rq.Builder addRqlistBuilder(
           int index) {
         return getRqlistFieldBuilder().addBuilder(
-            index, crypto.proto.lol.Lol.Rq1.getDefaultInstance());
+            index, crypto.proto.lol.Lol.Rq.getDefaultInstance());
       }
       /**
-       * <code>repeated .Rq1 rqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Rq rqlist = 1;</code>
        */
-      public java.util.List<crypto.proto.lol.Lol.Rq1.Builder> 
+      public java.util.List<crypto.proto.lol.Lol.Rq.Builder> 
            getRqlistBuilderList() {
         return getRqlistFieldBuilder().getBuilderList();
       }
       private com.google.protobuf.RepeatedFieldBuilder<
-          crypto.proto.lol.Lol.Rq1, crypto.proto.lol.Lol.Rq1.Builder, crypto.proto.lol.Lol.Rq1OrBuilder> 
+          crypto.proto.lol.Lol.Rq, crypto.proto.lol.Lol.Rq.Builder, crypto.proto.lol.Lol.RqOrBuilder> 
           getRqlistFieldBuilder() {
         if (rqlistBuilder_ == null) {
           rqlistBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              crypto.proto.lol.Lol.Rq1, crypto.proto.lol.Lol.Rq1.Builder, crypto.proto.lol.Lol.Rq1OrBuilder>(
+              crypto.proto.lol.Lol.Rq, crypto.proto.lol.Lol.Rq.Builder, crypto.proto.lol.Lol.RqOrBuilder>(
                   rqlist_,
                   ((bitField0_ & 0x00000001) == 0x00000001),
                   getParentForChildren(),
@@ -3433,7 +3433,7 @@ public final class Lol {
         return rqlistBuilder_;
       }
 
-      // @@protoc_insertion_point(builder_scope:RqProduct)
+      // @@protoc_insertion_point(builder_scope:crypto.proto.lol.RqProduct)
     }
 
     static {
@@ -3441,39 +3441,39 @@ public final class Lol {
       defaultInstance.initFields();
     }
 
-    // @@protoc_insertion_point(class_scope:RqProduct)
+    // @@protoc_insertion_point(class_scope:crypto.proto.lol.RqProduct)
   }
 
   public interface KqProductOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:KqProduct)
+      // @@protoc_insertion_point(interface_extends:crypto.proto.lol.KqProduct)
       com.google.protobuf.MessageOrBuilder {
 
     /**
-     * <code>repeated .Kq1 kqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
      */
-    java.util.List<crypto.proto.lol.Lol.Kq1> 
+    java.util.List<crypto.proto.lol.Lol.Kq> 
         getKqlistList();
     /**
-     * <code>repeated .Kq1 kqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
      */
-    crypto.proto.lol.Lol.Kq1 getKqlist(int index);
+    crypto.proto.lol.Lol.Kq getKqlist(int index);
     /**
-     * <code>repeated .Kq1 kqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
      */
     int getKqlistCount();
     /**
-     * <code>repeated .Kq1 kqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
      */
-    java.util.List<? extends crypto.proto.lol.Lol.Kq1OrBuilder> 
+    java.util.List<? extends crypto.proto.lol.Lol.KqOrBuilder> 
         getKqlistOrBuilderList();
     /**
-     * <code>repeated .Kq1 kqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
      */
-    crypto.proto.lol.Lol.Kq1OrBuilder getKqlistOrBuilder(
+    crypto.proto.lol.Lol.KqOrBuilder getKqlistOrBuilder(
         int index);
   }
   /**
-   * Protobuf type {@code KqProduct}
+   * Protobuf type {@code crypto.proto.lol.KqProduct}
    *
    * <pre>
    * cyclotomic ring mod the product of one or more moduli
@@ -3481,7 +3481,7 @@ public final class Lol {
    */
   public static final class KqProduct extends
       com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:KqProduct)
+      // @@protoc_insertion_point(message_implements:crypto.proto.lol.KqProduct)
       KqProductOrBuilder {
     // Use KqProduct.newBuilder() to construct.
     private KqProduct(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
@@ -3530,10 +3530,10 @@ public final class Lol {
             }
             case 10: {
               if (!((mutable_bitField0_ & 0x00000001) == 0x00000001)) {
-                kqlist_ = new java.util.ArrayList<crypto.proto.lol.Lol.Kq1>();
+                kqlist_ = new java.util.ArrayList<crypto.proto.lol.Lol.Kq>();
                 mutable_bitField0_ |= 0x00000001;
               }
-              kqlist_.add(input.readMessage(crypto.proto.lol.Lol.Kq1.PARSER, extensionRegistry));
+              kqlist_.add(input.readMessage(crypto.proto.lol.Lol.Kq.PARSER, extensionRegistry));
               break;
             }
           }
@@ -3553,12 +3553,12 @@ public final class Lol {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return crypto.proto.lol.Lol.internal_static_KqProduct_descriptor;
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_KqProduct_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return crypto.proto.lol.Lol.internal_static_KqProduct_fieldAccessorTable
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_KqProduct_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
               crypto.proto.lol.Lol.KqProduct.class, crypto.proto.lol.Lol.KqProduct.Builder.class);
     }
@@ -3579,36 +3579,36 @@ public final class Lol {
     }
 
     public static final int KQLIST_FIELD_NUMBER = 1;
-    private java.util.List<crypto.proto.lol.Lol.Kq1> kqlist_;
+    private java.util.List<crypto.proto.lol.Lol.Kq> kqlist_;
     /**
-     * <code>repeated .Kq1 kqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
      */
-    public java.util.List<crypto.proto.lol.Lol.Kq1> getKqlistList() {
+    public java.util.List<crypto.proto.lol.Lol.Kq> getKqlistList() {
       return kqlist_;
     }
     /**
-     * <code>repeated .Kq1 kqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
      */
-    public java.util.List<? extends crypto.proto.lol.Lol.Kq1OrBuilder> 
+    public java.util.List<? extends crypto.proto.lol.Lol.KqOrBuilder> 
         getKqlistOrBuilderList() {
       return kqlist_;
     }
     /**
-     * <code>repeated .Kq1 kqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
      */
     public int getKqlistCount() {
       return kqlist_.size();
     }
     /**
-     * <code>repeated .Kq1 kqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
      */
-    public crypto.proto.lol.Lol.Kq1 getKqlist(int index) {
+    public crypto.proto.lol.Lol.Kq getKqlist(int index) {
       return kqlist_.get(index);
     }
     /**
-     * <code>repeated .Kq1 kqlist = 1;</code>
+     * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
      */
-    public crypto.proto.lol.Lol.Kq1OrBuilder getKqlistOrBuilder(
+    public crypto.proto.lol.Lol.KqOrBuilder getKqlistOrBuilder(
         int index) {
       return kqlist_.get(index);
     }
@@ -3730,7 +3730,7 @@ public final class Lol {
       return builder;
     }
     /**
-     * Protobuf type {@code KqProduct}
+     * Protobuf type {@code crypto.proto.lol.KqProduct}
      *
      * <pre>
      * cyclotomic ring mod the product of one or more moduli
@@ -3738,16 +3738,16 @@ public final class Lol {
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:KqProduct)
+        // @@protoc_insertion_point(builder_implements:crypto.proto.lol.KqProduct)
         crypto.proto.lol.Lol.KqProductOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return crypto.proto.lol.Lol.internal_static_KqProduct_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_KqProduct_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return crypto.proto.lol.Lol.internal_static_KqProduct_fieldAccessorTable
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_KqProduct_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
                 crypto.proto.lol.Lol.KqProduct.class, crypto.proto.lol.Lol.KqProduct.Builder.class);
       }
@@ -3788,7 +3788,7 @@ public final class Lol {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return crypto.proto.lol.Lol.internal_static_KqProduct_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_KqProduct_descriptor;
       }
 
       public crypto.proto.lol.Lol.KqProduct getDefaultInstanceForType() {
@@ -3889,22 +3889,22 @@ public final class Lol {
       }
       private int bitField0_;
 
-      private java.util.List<crypto.proto.lol.Lol.Kq1> kqlist_ =
+      private java.util.List<crypto.proto.lol.Lol.Kq> kqlist_ =
         java.util.Collections.emptyList();
       private void ensureKqlistIsMutable() {
         if (!((bitField0_ & 0x00000001) == 0x00000001)) {
-          kqlist_ = new java.util.ArrayList<crypto.proto.lol.Lol.Kq1>(kqlist_);
+          kqlist_ = new java.util.ArrayList<crypto.proto.lol.Lol.Kq>(kqlist_);
           bitField0_ |= 0x00000001;
          }
       }
 
       private com.google.protobuf.RepeatedFieldBuilder<
-          crypto.proto.lol.Lol.Kq1, crypto.proto.lol.Lol.Kq1.Builder, crypto.proto.lol.Lol.Kq1OrBuilder> kqlistBuilder_;
+          crypto.proto.lol.Lol.Kq, crypto.proto.lol.Lol.Kq.Builder, crypto.proto.lol.Lol.KqOrBuilder> kqlistBuilder_;
 
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
-      public java.util.List<crypto.proto.lol.Lol.Kq1> getKqlistList() {
+      public java.util.List<crypto.proto.lol.Lol.Kq> getKqlistList() {
         if (kqlistBuilder_ == null) {
           return java.util.Collections.unmodifiableList(kqlist_);
         } else {
@@ -3912,7 +3912,7 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
       public int getKqlistCount() {
         if (kqlistBuilder_ == null) {
@@ -3922,9 +3922,9 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
-      public crypto.proto.lol.Lol.Kq1 getKqlist(int index) {
+      public crypto.proto.lol.Lol.Kq getKqlist(int index) {
         if (kqlistBuilder_ == null) {
           return kqlist_.get(index);
         } else {
@@ -3932,10 +3932,10 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
       public Builder setKqlist(
-          int index, crypto.proto.lol.Lol.Kq1 value) {
+          int index, crypto.proto.lol.Lol.Kq value) {
         if (kqlistBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -3949,10 +3949,10 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
       public Builder setKqlist(
-          int index, crypto.proto.lol.Lol.Kq1.Builder builderForValue) {
+          int index, crypto.proto.lol.Lol.Kq.Builder builderForValue) {
         if (kqlistBuilder_ == null) {
           ensureKqlistIsMutable();
           kqlist_.set(index, builderForValue.build());
@@ -3963,9 +3963,9 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
-      public Builder addKqlist(crypto.proto.lol.Lol.Kq1 value) {
+      public Builder addKqlist(crypto.proto.lol.Lol.Kq value) {
         if (kqlistBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -3979,10 +3979,10 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
       public Builder addKqlist(
-          int index, crypto.proto.lol.Lol.Kq1 value) {
+          int index, crypto.proto.lol.Lol.Kq value) {
         if (kqlistBuilder_ == null) {
           if (value == null) {
             throw new NullPointerException();
@@ -3996,10 +3996,10 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
       public Builder addKqlist(
-          crypto.proto.lol.Lol.Kq1.Builder builderForValue) {
+          crypto.proto.lol.Lol.Kq.Builder builderForValue) {
         if (kqlistBuilder_ == null) {
           ensureKqlistIsMutable();
           kqlist_.add(builderForValue.build());
@@ -4010,10 +4010,10 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
       public Builder addKqlist(
-          int index, crypto.proto.lol.Lol.Kq1.Builder builderForValue) {
+          int index, crypto.proto.lol.Lol.Kq.Builder builderForValue) {
         if (kqlistBuilder_ == null) {
           ensureKqlistIsMutable();
           kqlist_.add(index, builderForValue.build());
@@ -4024,10 +4024,10 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
       public Builder addAllKqlist(
-          java.lang.Iterable<? extends crypto.proto.lol.Lol.Kq1> values) {
+          java.lang.Iterable<? extends crypto.proto.lol.Lol.Kq> values) {
         if (kqlistBuilder_ == null) {
           ensureKqlistIsMutable();
           com.google.protobuf.AbstractMessageLite.Builder.addAll(
@@ -4039,7 +4039,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
       public Builder clearKqlist() {
         if (kqlistBuilder_ == null) {
@@ -4052,7 +4052,7 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
       public Builder removeKqlist(int index) {
         if (kqlistBuilder_ == null) {
@@ -4065,16 +4065,16 @@ public final class Lol {
         return this;
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
-      public crypto.proto.lol.Lol.Kq1.Builder getKqlistBuilder(
+      public crypto.proto.lol.Lol.Kq.Builder getKqlistBuilder(
           int index) {
         return getKqlistFieldBuilder().getBuilder(index);
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
-      public crypto.proto.lol.Lol.Kq1OrBuilder getKqlistOrBuilder(
+      public crypto.proto.lol.Lol.KqOrBuilder getKqlistOrBuilder(
           int index) {
         if (kqlistBuilder_ == null) {
           return kqlist_.get(index);  } else {
@@ -4082,9 +4082,9 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
-      public java.util.List<? extends crypto.proto.lol.Lol.Kq1OrBuilder> 
+      public java.util.List<? extends crypto.proto.lol.Lol.KqOrBuilder> 
            getKqlistOrBuilderList() {
         if (kqlistBuilder_ != null) {
           return kqlistBuilder_.getMessageOrBuilderList();
@@ -4093,33 +4093,33 @@ public final class Lol {
         }
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
-      public crypto.proto.lol.Lol.Kq1.Builder addKqlistBuilder() {
+      public crypto.proto.lol.Lol.Kq.Builder addKqlistBuilder() {
         return getKqlistFieldBuilder().addBuilder(
-            crypto.proto.lol.Lol.Kq1.getDefaultInstance());
+            crypto.proto.lol.Lol.Kq.getDefaultInstance());
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
-      public crypto.proto.lol.Lol.Kq1.Builder addKqlistBuilder(
+      public crypto.proto.lol.Lol.Kq.Builder addKqlistBuilder(
           int index) {
         return getKqlistFieldBuilder().addBuilder(
-            index, crypto.proto.lol.Lol.Kq1.getDefaultInstance());
+            index, crypto.proto.lol.Lol.Kq.getDefaultInstance());
       }
       /**
-       * <code>repeated .Kq1 kqlist = 1;</code>
+       * <code>repeated .crypto.proto.lol.Kq kqlist = 1;</code>
        */
-      public java.util.List<crypto.proto.lol.Lol.Kq1.Builder> 
+      public java.util.List<crypto.proto.lol.Lol.Kq.Builder> 
            getKqlistBuilderList() {
         return getKqlistFieldBuilder().getBuilderList();
       }
       private com.google.protobuf.RepeatedFieldBuilder<
-          crypto.proto.lol.Lol.Kq1, crypto.proto.lol.Lol.Kq1.Builder, crypto.proto.lol.Lol.Kq1OrBuilder> 
+          crypto.proto.lol.Lol.Kq, crypto.proto.lol.Lol.Kq.Builder, crypto.proto.lol.Lol.KqOrBuilder> 
           getKqlistFieldBuilder() {
         if (kqlistBuilder_ == null) {
           kqlistBuilder_ = new com.google.protobuf.RepeatedFieldBuilder<
-              crypto.proto.lol.Lol.Kq1, crypto.proto.lol.Lol.Kq1.Builder, crypto.proto.lol.Lol.Kq1OrBuilder>(
+              crypto.proto.lol.Lol.Kq, crypto.proto.lol.Lol.Kq.Builder, crypto.proto.lol.Lol.KqOrBuilder>(
                   kqlist_,
                   ((bitField0_ & 0x00000001) == 0x00000001),
                   getParentForChildren(),
@@ -4129,7 +4129,7 @@ public final class Lol {
         return kqlistBuilder_;
       }
 
-      // @@protoc_insertion_point(builder_scope:KqProduct)
+      // @@protoc_insertion_point(builder_scope:crypto.proto.lol.KqProduct)
     }
 
     static {
@@ -4137,11 +4137,11 @@ public final class Lol {
       defaultInstance.initFields();
     }
 
-    // @@protoc_insertion_point(class_scope:KqProduct)
+    // @@protoc_insertion_point(class_scope:crypto.proto.lol.KqProduct)
   }
 
   public interface TypeRepOrBuilder extends
-      // @@protoc_insertion_point(interface_extends:TypeRep)
+      // @@protoc_insertion_point(interface_extends:crypto.proto.lol.TypeRep)
       com.google.protobuf.MessageOrBuilder {
 
     /**
@@ -4163,7 +4163,7 @@ public final class Lol {
     long getB();
   }
   /**
-   * Protobuf type {@code TypeRep}
+   * Protobuf type {@code crypto.proto.lol.TypeRep}
    *
    * <pre>
    * used to serialize GHC.Fingerprint.Fingerprint. Obviously not intended to be
@@ -4172,7 +4172,7 @@ public final class Lol {
    */
   public static final class TypeRep extends
       com.google.protobuf.GeneratedMessage implements
-      // @@protoc_insertion_point(message_implements:TypeRep)
+      // @@protoc_insertion_point(message_implements:crypto.proto.lol.TypeRep)
       TypeRepOrBuilder {
     // Use TypeRep.newBuilder() to construct.
     private TypeRep(com.google.protobuf.GeneratedMessage.Builder<?> builder) {
@@ -4243,12 +4243,12 @@ public final class Lol {
     }
     public static final com.google.protobuf.Descriptors.Descriptor
         getDescriptor() {
-      return crypto.proto.lol.Lol.internal_static_TypeRep_descriptor;
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_TypeRep_descriptor;
     }
 
     protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
         internalGetFieldAccessorTable() {
-      return crypto.proto.lol.Lol.internal_static_TypeRep_fieldAccessorTable
+      return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_TypeRep_fieldAccessorTable
           .ensureFieldAccessorsInitialized(
               crypto.proto.lol.Lol.TypeRep.class, crypto.proto.lol.Lol.TypeRep.Builder.class);
     }
@@ -4426,7 +4426,7 @@ public final class Lol {
       return builder;
     }
     /**
-     * Protobuf type {@code TypeRep}
+     * Protobuf type {@code crypto.proto.lol.TypeRep}
      *
      * <pre>
      * used to serialize GHC.Fingerprint.Fingerprint. Obviously not intended to be
@@ -4435,16 +4435,16 @@ public final class Lol {
      */
     public static final class Builder extends
         com.google.protobuf.GeneratedMessage.Builder<Builder> implements
-        // @@protoc_insertion_point(builder_implements:TypeRep)
+        // @@protoc_insertion_point(builder_implements:crypto.proto.lol.TypeRep)
         crypto.proto.lol.Lol.TypeRepOrBuilder {
       public static final com.google.protobuf.Descriptors.Descriptor
           getDescriptor() {
-        return crypto.proto.lol.Lol.internal_static_TypeRep_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_TypeRep_descriptor;
       }
 
       protected com.google.protobuf.GeneratedMessage.FieldAccessorTable
           internalGetFieldAccessorTable() {
-        return crypto.proto.lol.Lol.internal_static_TypeRep_fieldAccessorTable
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_TypeRep_fieldAccessorTable
             .ensureFieldAccessorsInitialized(
                 crypto.proto.lol.Lol.TypeRep.class, crypto.proto.lol.Lol.TypeRep.Builder.class);
       }
@@ -4482,7 +4482,7 @@ public final class Lol {
 
       public com.google.protobuf.Descriptors.Descriptor
           getDescriptorForType() {
-        return crypto.proto.lol.Lol.internal_static_TypeRep_descriptor;
+        return crypto.proto.lol.Lol.internal_static_crypto_proto_lol_TypeRep_descriptor;
       }
 
       public crypto.proto.lol.Lol.TypeRep getDefaultInstanceForType() {
@@ -4630,7 +4630,7 @@ public final class Lol {
         return this;
       }
 
-      // @@protoc_insertion_point(builder_scope:TypeRep)
+      // @@protoc_insertion_point(builder_scope:crypto.proto.lol.TypeRep)
     }
 
     static {
@@ -4638,44 +4638,44 @@ public final class Lol {
       defaultInstance.initFields();
     }
 
-    // @@protoc_insertion_point(class_scope:TypeRep)
+    // @@protoc_insertion_point(class_scope:crypto.proto.lol.TypeRep)
   }
 
   private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_LinearRq_descriptor;
+    internal_static_crypto_proto_lol_LinearRq_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_LinearRq_fieldAccessorTable;
+      internal_static_crypto_proto_lol_LinearRq_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_R_descriptor;
+    internal_static_crypto_proto_lol_R_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_R_fieldAccessorTable;
+      internal_static_crypto_proto_lol_R_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_Rq1_descriptor;
+    internal_static_crypto_proto_lol_Rq_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_Rq1_fieldAccessorTable;
+      internal_static_crypto_proto_lol_Rq_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_Kq1_descriptor;
+    internal_static_crypto_proto_lol_Kq_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_Kq1_fieldAccessorTable;
+      internal_static_crypto_proto_lol_Kq_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_RqProduct_descriptor;
+    internal_static_crypto_proto_lol_RqProduct_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_RqProduct_fieldAccessorTable;
+      internal_static_crypto_proto_lol_RqProduct_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_KqProduct_descriptor;
+    internal_static_crypto_proto_lol_KqProduct_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_KqProduct_fieldAccessorTable;
+      internal_static_crypto_proto_lol_KqProduct_fieldAccessorTable;
   private static final com.google.protobuf.Descriptors.Descriptor
-    internal_static_TypeRep_descriptor;
+    internal_static_crypto_proto_lol_TypeRep_descriptor;
   private static
     com.google.protobuf.GeneratedMessage.FieldAccessorTable
-      internal_static_TypeRep_fieldAccessorTable;
+      internal_static_crypto_proto_lol_TypeRep_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -4685,14 +4685,15 @@ public final class Lol {
       descriptor;
   static {
     java.lang.String[] descriptorData = {
-      "\n\tLol.proto\"<\n\010LinearRq\022\t\n\001e\030\001 \002(\r\022\t\n\001r\030" +
-      "\002 \002(\r\022\032\n\006coeffs\030\003 \003(\0132\n.RqProduct\"\032\n\001R\022\t" +
-      "\n\001m\030\001 \002(\r\022\n\n\002xs\030\002 \003(\022\"\'\n\003Rq1\022\t\n\001m\030\001 \002(\r\022" +
-      "\t\n\001q\030\002 \002(\004\022\n\n\002xs\030\003 \003(\022\"\'\n\003Kq1\022\t\n\001m\030\001 \002(\r" +
-      "\022\t\n\001q\030\002 \002(\004\022\n\n\002xs\030\003 \003(\001\"!\n\tRqProduct\022\024\n\006" +
-      "rqlist\030\001 \003(\0132\004.Rq1\"!\n\tKqProduct\022\024\n\006kqlis" +
-      "t\030\001 \003(\0132\004.Kq1\"\037\n\007TypeRep\022\t\n\001a\030\001 \002(\004\022\t\n\001b" +
-      "\030\002 \002(\004B\022\n\020crypto.proto.lol"
+      "\n\tLol.proto\022\020crypto.proto.lol\"M\n\010LinearR" +
+      "q\022\t\n\001e\030\001 \002(\r\022\t\n\001r\030\002 \002(\r\022+\n\006coeffs\030\003 \003(\0132" +
+      "\033.crypto.proto.lol.RqProduct\"\032\n\001R\022\t\n\001m\030\001" +
+      " \002(\r\022\n\n\002xs\030\002 \003(\022\"&\n\002Rq\022\t\n\001m\030\001 \002(\r\022\t\n\001q\030\002" +
+      " \002(\004\022\n\n\002xs\030\003 \003(\022\"&\n\002Kq\022\t\n\001m\030\001 \002(\r\022\t\n\001q\030\002" +
+      " \002(\004\022\n\n\002xs\030\003 \003(\001\"1\n\tRqProduct\022$\n\006rqlist\030" +
+      "\001 \003(\0132\024.crypto.proto.lol.Rq\"1\n\tKqProduct" +
+      "\022$\n\006kqlist\030\001 \003(\0132\024.crypto.proto.lol.Kq\"\037" +
+      "\n\007TypeRep\022\t\n\001a\030\001 \002(\004\022\t\n\001b\030\002 \002(\004"
     };
     com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner assigner =
         new com.google.protobuf.Descriptors.FileDescriptor.    InternalDescriptorAssigner() {
@@ -4706,47 +4707,47 @@ public final class Lol {
       .internalBuildGeneratedFileFrom(descriptorData,
         new com.google.protobuf.Descriptors.FileDescriptor[] {
         }, assigner);
-    internal_static_LinearRq_descriptor =
+    internal_static_crypto_proto_lol_LinearRq_descriptor =
       getDescriptor().getMessageTypes().get(0);
-    internal_static_LinearRq_fieldAccessorTable = new
+    internal_static_crypto_proto_lol_LinearRq_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_LinearRq_descriptor,
+        internal_static_crypto_proto_lol_LinearRq_descriptor,
         new java.lang.String[] { "E", "R", "Coeffs", });
-    internal_static_R_descriptor =
+    internal_static_crypto_proto_lol_R_descriptor =
       getDescriptor().getMessageTypes().get(1);
-    internal_static_R_fieldAccessorTable = new
+    internal_static_crypto_proto_lol_R_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_R_descriptor,
+        internal_static_crypto_proto_lol_R_descriptor,
         new java.lang.String[] { "M", "Xs", });
-    internal_static_Rq1_descriptor =
+    internal_static_crypto_proto_lol_Rq_descriptor =
       getDescriptor().getMessageTypes().get(2);
-    internal_static_Rq1_fieldAccessorTable = new
+    internal_static_crypto_proto_lol_Rq_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_Rq1_descriptor,
+        internal_static_crypto_proto_lol_Rq_descriptor,
         new java.lang.String[] { "M", "Q", "Xs", });
-    internal_static_Kq1_descriptor =
+    internal_static_crypto_proto_lol_Kq_descriptor =
       getDescriptor().getMessageTypes().get(3);
-    internal_static_Kq1_fieldAccessorTable = new
+    internal_static_crypto_proto_lol_Kq_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_Kq1_descriptor,
+        internal_static_crypto_proto_lol_Kq_descriptor,
         new java.lang.String[] { "M", "Q", "Xs", });
-    internal_static_RqProduct_descriptor =
+    internal_static_crypto_proto_lol_RqProduct_descriptor =
       getDescriptor().getMessageTypes().get(4);
-    internal_static_RqProduct_fieldAccessorTable = new
+    internal_static_crypto_proto_lol_RqProduct_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_RqProduct_descriptor,
+        internal_static_crypto_proto_lol_RqProduct_descriptor,
         new java.lang.String[] { "Rqlist", });
-    internal_static_KqProduct_descriptor =
+    internal_static_crypto_proto_lol_KqProduct_descriptor =
       getDescriptor().getMessageTypes().get(5);
-    internal_static_KqProduct_fieldAccessorTable = new
+    internal_static_crypto_proto_lol_KqProduct_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_KqProduct_descriptor,
+        internal_static_crypto_proto_lol_KqProduct_descriptor,
         new java.lang.String[] { "Kqlist", });
-    internal_static_TypeRep_descriptor =
+    internal_static_crypto_proto_lol_TypeRep_descriptor =
       getDescriptor().getMessageTypes().get(6);
-    internal_static_TypeRep_fieldAccessorTable = new
+    internal_static_crypto_proto_lol_TypeRep_fieldAccessorTable = new
       com.google.protobuf.GeneratedMessage.FieldAccessorTable(
-        internal_static_TypeRep_descriptor,
+        internal_static_crypto_proto_lol_TypeRep_descriptor,
         new java.lang.String[] { "A", "B", });
   }
 
