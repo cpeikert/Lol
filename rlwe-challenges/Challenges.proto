@@ -1,4 +1,4 @@
-package Lol;
+package crypto.proto.RLWE.challenges;
 
 // proto messages for RLWE/RLWR challenges. NOTE: the challenges released in
 // 2016 use the Instance*1 and Secret1 formats.
@@ -11,27 +11,27 @@ import "RLWE.proto";
 // hprotoc -I ../lol -a RLWE.proto=Crypto.Proto -a Lol.proto=Crypto.Proto -p Crypto.Proto.RLWE Challenges.proto
 // protoc Challenges.proto -I. -I../lol --cpp_out=../chall-cpp --java_out=../chall-java --python_out=../chall-python
 
-message ContParams {                      // continuous RLWE parameters
-  required int32 m                 = 1;   // cyclotomic index
-  required int64 q                 = 2;   // modulus
-  required double svar             = 3;   // scaled variance
-  required double bound            = 4;   // gSqNorm error bound
-  required int32 numSamples        = 5;   // number of samples
+message ContParams {                     // continuous RLWE parameters
+  required int32 m                 = 1;  // cyclotomic index
+  required int64 q                 = 2;  // modulus
+  required double svar             = 3;  // scaled variance
+  required double bound            = 4;  // gSqNorm error bound
+  required int32 numSamples        = 5;  // number of samples
 }
 
-message DiscParams {                      // discrete RLWE parameters
-  required int32 m                 = 1;   // cyclotomic index
-  required int64 q                 = 2;   // modulus
-  required double svar             = 3;   // scaled variance
-  required int64 bound             = 4;   // gSqNorm error bound
-  required int32 numSamples        = 5;   // number of samples
+message DiscParams {                     // discrete RLWE parameters
+  required int32 m                 = 1;  // cyclotomic index
+  required int64 q                 = 2;  // modulus
+  required double svar             = 3;  // scaled variance
+  required int64 bound             = 4;  // gSqNorm error bound
+  required int32 numSamples        = 5;  // number of samples
 }
 
-message RLWRParams {                      // RLWR parameters
-  required int32 m                 = 1;   // cyclotomic index
-  required int64 q                 = 2;   // modulus
-  required int64 p                 = 3;   // rounding modulus p < q
-  required int32 numSamples        = 4;   // number of samples
+message RLWRParams {                     // RLWR parameters
+  required int32 m                 = 1;  // cyclotomic index
+  required int64 q                 = 2;  // modulus
+  required int64 p                 = 3;  // rounding modulus p < q
+  required int32 numSamples        = 4;  // number of samples
 }
 
 message Challenge {
@@ -46,62 +46,62 @@ message Challenge {
   }
 }
 
-message InstanceCont1 {                  // continuous RLWE instance
-  required int32 challengeID       = 1;  // challenge this instance belongs to
-  required int32 instanceID        = 2;  // instance within the challenge
-  required ContParams params       = 3;  // problem params (self-containment)
-  repeated SampleCont1 samples     = 4;  // the samples
-}
-
-message InstanceDisc1 {                  // discrete RLWE instance
-  required int32 challengeID       = 1;
-  required int32 instanceID        = 2;
-  required DiscParams params       = 3;
-  repeated SampleDisc1 samples     = 4;
-}
-
-message InstanceRLWR1 {                  // RLWR instance
-  required int32 challengeID       = 1;
-  required int32 instanceID        = 2;
-  required RLWRParams params       = 3;
-  repeated SampleRLWR1 samples     = 4;
-}
-
 message InstanceCont {                   // continuous RLWE instance
   required int32 challengeID       = 1;  // challenge this instance belongs to
   required int32 instanceID        = 2;  // instance within the challenge
   required ContParams params       = 3;  // problem params (self-containment)
-  repeated SampleCont samples      = 4;  // the samples
+  repeated crypto.proto.RLWE.SampleCont samples      = 4;  // the samples
 }
 
 message InstanceDisc {                   // discrete RLWE instance
   required int32 challengeID       = 1;
   required int32 instanceID        = 2;
   required DiscParams params       = 3;
-  repeated SampleDisc samples      = 4;
+  repeated crypto.proto.RLWE.SampleDisc samples      = 4;
 }
 
 message InstanceRLWR {                   // RLWR instance
   required int32 challengeID       = 1;
   required int32 instanceID        = 2;
   required RLWRParams params       = 3;
-  repeated SampleRLWR samples      = 4;
+  repeated crypto.proto.RLWE.SampleRLWR samples      = 4;
 }
 
-message Secret1 {                        // a secret for an RLWE/RLWE instance
+message InstanceContProduct {            // continuous RLWE instance
+  required int32 challengeID       = 1;  // challenge this instance belongs to
+  required int32 instanceID        = 2;  // instance within the challenge
+  required ContParams params       = 3;  // problem params (self-containment)
+  repeated crypto.proto.RLWE.SampleContProduct samples  = 4;  // the samples
+}
+
+message InstanceDiscProduct {            // discrete RLWE instance
+  required int32 challengeID       = 1;
+  required int32 instanceID        = 2;
+  required DiscParams params       = 3;
+  repeated crypto.proto.RLWE.SampleDiscProduct samples  = 4;
+}
+
+message InstanceRLWRProduct {            // RLWR instance
+  required int32 challengeID       = 1;
+  required int32 instanceID        = 2;
+  required RLWRParams params       = 3;
+  repeated crypto.proto.RLWE.SampleRLWRProduct samples  = 4;
+}
+
+message Secret {                         // a secret for an RLWE/RLWE instance
   required int32 challengeID       = 1;
   required int32 instanceID        = 2;
   required int32 m                 = 3;
   required int64 q                 = 4;
   required bytes seed              = 5;
-  required Rq1 s                   = 6;
+  required crypto.proto.lol.Rq s                    = 6;
 }
 
-message Secret {                          // a secret for an RLWE/RLWE instance
+message SecretProduct {                  // a secret for an RLWE/RLWE instance
   required int32 challengeID       = 1;
   required int32 instanceID        = 2;
   required int32 m                 = 3;
   required int64 q                 = 4;
   required bytes seed              = 5;
-  required RqProduct s             = 6;
+  required crypto.proto.lol.RqProduct s             = 6;
 }

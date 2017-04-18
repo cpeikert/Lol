@@ -42,14 +42,14 @@ library
     Crypto.Proto.RLWE.Challenges.ContParams
     Crypto.Proto.RLWE.Challenges.DiscParams
     Crypto.Proto.RLWE.Challenges.RLWRParams
+    Crypto.Proto.RLWE.Challenges.InstanceContProduct
+    Crypto.Proto.RLWE.Challenges.InstanceDiscProduct
+    Crypto.Proto.RLWE.Challenges.InstanceRLWRProduct
+    Crypto.Proto.RLWE.Challenges.SecretProduct
     Crypto.Proto.RLWE.Challenges.InstanceCont
     Crypto.Proto.RLWE.Challenges.InstanceDisc
     Crypto.Proto.RLWE.Challenges.InstanceRLWR
     Crypto.Proto.RLWE.Challenges.Secret
-    Crypto.Proto.RLWE.Challenges.InstanceCont1
-    Crypto.Proto.RLWE.Challenges.InstanceDisc1
-    Crypto.Proto.RLWE.Challenges.InstanceRLWR1
-    Crypto.Proto.RLWE.Challenges.Secret1
 
     Crypto.RLWE.Challenges.Beacon
     Crypto.RLWE.Challenges.Common
