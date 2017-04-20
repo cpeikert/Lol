@@ -175,9 +175,9 @@ roundCTDown _ = rescaleLinearCT
 
 
 
--- | Quadratic key switch hints for the rounding phase of PRF evaluation.
+-- | Quadratic key switch hints for the rounding pase of PRF evaluation.
 data RoundHints t m m' z e zp zq zqs gad where
-  RHNil :: RoundHints t m m' z e zp zq zqs gad
+  RHNil :: RoundHints t m m' z 'O zp zq zqs gad
   RHCons :: KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))
            -> RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad
            -> RoundHints t m m' z ('S e) zp zq zqs gad
