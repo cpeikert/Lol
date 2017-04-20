@@ -4,12 +4,14 @@
 # takes the path to a .challenge file first, and an optional second path to a
 # corresponding .instance file. Prints the contents of the .challenge file
 # and the .instance file, if a path is provided.
+# See comments in the code for examples of how to access message contents.
 #
 # You will need the "protobuf" python package to run this code, which you can
 # install with "easy_install protobuf"
 
+# You can find more detailed information about parsing messages in python here:
+# https://developers.google.com/protocol-buffers/docs/reference/python-generated
 import sys
-
 import Challenges_pb2
 
 def parse_challenge(challenge_path):
@@ -49,13 +51,22 @@ if __name__ == "__main__":
   if challenge is None:
     print "Could not parse the challenge parameters."
     sys.exit(-1)
-  print challenge
-
+  print challenge # print all contents
+  # examples of how to access message contents
+'''
+  print challenge.numInstances # access a field
+  print challenge.WhichOneof("params") # shows which type of parameter the message contains
+  print {'cparams': challenge.cparams.m,
+         'dparams': challenge.dparams.numSamples,
+         'rparams': challenge.rparams.q}[challenge.WhichOneof("params")]
+'''
   if len(sys.argv) == 3:
     instance = parse_instance(challenge, sys.argv[2])
-    if instance is not None:
-      print instance
-    else:
+    if instance is None:
       print "Could not parse instance."
+      sys.exit(-1)
+    print instance # print all contents
+    # it is easy to access any member of the parsed message
+    #print instance.samples[0].a.xs[0]
 
   sys.exit(0)

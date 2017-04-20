@@ -2,13 +2,14 @@
 
 # Parses RLWE secret files:
 # takes the path to a .secret file and prints the contents.
+# See comments in the code for examples of how to access message contents.
 #
 # You will need the "protobuf" python package to run this code, which you can
 # install with "easy_install protobuf"
 
-import argparse
+# You can find more detailed information about parsing messages in python here:
+# https://developers.google.com/protocol-buffers/docs/reference/python-generated
 import sys
-
 import Challenges_pb2
 
 def parse_secret(secret_path):
@@ -32,6 +33,7 @@ if __name__ == "__main__":
     print "Could not parse secret."
     sys.exit(-1)
   else:
-    print secret
+    print secret # print all contents
+    #print secret.s.xs[0] # it's easy to access any member of the parsed message
 
   sys.exit(0)
