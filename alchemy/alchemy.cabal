@@ -1,0 +1,33 @@
+name:                alchemy
+version:             0.1.0.0
+synopsis:            ALCHEMY: A Language and Compiler for Homomorphic Encryption Made easY
+homepage:            https://github.com/cpeikert/Lol
+license:             GPL-2
+license-file:        LICENSE
+author:              Eric Crockett <ecrockett0@gmail.com>, Chris Peikert <cpeikert@alum.mit.edu>
+maintainer:          Eric Crockett <ecrockett0@gmail.com>
+copyright:           Eric Crockett, Chris Peikert
+category:            Crypto
+stability:           experimental
+build-type:          Simple
+extra-source-files:  README, CHANGES.md
+cabal-version:       >=1.10
+description:
+        TODO
+
+source-repository head
+  type:     git
+  location: https://github.com/cpeikert/Lol
+
+library
+  default-language:    Haskell2010
+
+  exposed-modules: Crypto.Alchemy.Language.Lambda
+                   Crypto.Alchemy.Language.Arithmetic
+                   Crypto.Alchemy.Interpreter.Eval
+                   --Crypto.Alchemy.Interpreter.Show
+
+  build-depends: base >= 4.7 && < 5
+               , lol >= 0.5
+               , lol-apps >= 0.1
+               , numeric-prelude
