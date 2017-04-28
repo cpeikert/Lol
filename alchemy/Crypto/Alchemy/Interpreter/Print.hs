@@ -25,7 +25,7 @@ instance DB P a where
   s  v = P $ \i -> unP v (i-1)
 
 instance Lambda P where
-  lam f  = P $ \i -> "(λv" ++ show i ++ " → " ++ unP f (i+1) ++ ")"
+  lam f  = P $ \i -> "(\v" ++ show i ++ " -> " ++ unP f (i+1) ++ ")"
   f $: a = P $ \i -> "(" ++ unP f i ++  " " ++ unP a i ++ ")"
 
 instance Add P a where
