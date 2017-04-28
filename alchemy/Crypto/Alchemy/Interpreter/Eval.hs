@@ -33,7 +33,7 @@ instance DB E a where
   s a = E $ appE a . fst
 
 instance (Additive.C a) => Add E a where
-  x +# y = E $ \e -> appE x e + appE y e
+  x +: y = E $ \e -> appE x e + appE y e
 
 instance (Ring.C a) => Mul E a a where
-  x *# y = E $ \e -> appE x e * appE y e
+  x *: y = E $ \e -> appE x e * appE y e

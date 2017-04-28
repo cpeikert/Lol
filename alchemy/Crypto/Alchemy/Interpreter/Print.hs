@@ -29,8 +29,8 @@ instance Lambda P where
   f $: a = P $ \i -> "(" ++ unP f i ++  " " ++ unP a i ++ ")"
 
 instance Add P a where
-  a +# b = P $ \i -> "(" ++ unP a i ++ " + " ++ unP b i ++ ")"
+  a +: b = P $ \i -> "(" ++ unP a i ++ " + " ++ unP b i ++ ")"
 
 instance Mul P a a where
-  a *# b = P $ \i -> "(" ++ unP a i ++ " * " ++ unP b i ++ ")"
+  a *: b = P $ \i -> "(" ++ unP a i ++ " * " ++ unP b i ++ ")"
 
