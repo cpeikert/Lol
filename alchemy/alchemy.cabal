@@ -25,7 +25,7 @@ library
   exposed-modules: Crypto.Alchemy.Language.Lambda
                    Crypto.Alchemy.Language.Arithmetic
                    Crypto.Alchemy.Interpreter.Eval
-                   --Crypto.Alchemy.Interpreter.Show
+                   Crypto.Alchemy.Interpreter.Print
 
   build-depends: base >= 4.7 && < 5
                , lol >= 0.5
