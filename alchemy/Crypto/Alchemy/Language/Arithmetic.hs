@@ -14,7 +14,7 @@ class Add expr a where
 -- output type @a@.)
 
 class Mul expr a where
-  infixl 7 *:                   -- match Haskell's precedence
   type PreMul expr a
 
+  infixl 7 *:                   -- match Haskell's precedence
   (*:) :: expr e (PreMul expr a) -> expr e (PreMul expr a) -> expr e a
