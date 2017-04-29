@@ -54,6 +54,7 @@ extra-deps:
 - tagged-transformer-0.8
 - syntactic-3.6.3
 - type-natural-0.7.1.3
+- ghc-typelits-presburger-0.1.1.0
 - equational-reasoning-0.4.1.1
 - monomorphic-0.0.3.3
 #
