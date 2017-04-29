@@ -13,7 +13,7 @@ class Add expr a where
 -- | Multiplication. (Note that the input type @b@ may differ from the
 -- output type @a@.)
 
-class Mul expr b a | a -> b where
+class Mul expr b a | expr a -> b where
   infixl 7 *:                   -- match Haskell's precedence
 
   (*:) :: expr e b -> expr e b -> expr e a
