@@ -25,5 +25,5 @@ instance (DB ex1 a, DB ex2 a) => DB (Dup ex1 ex2) a where
 instance (Add ex1 a, Add ex2 a) => Add (Dup ex1 ex2) a where
   (Dup a1 a2) +: (Dup b1 b2) = Dup (a1 +: b1) (a2 +: b2)
 
-instance (Mul ex1 a b, Mul ex2 a b) => Mul (Dup ex1 ex2) a b where
+instance (Mul ex1 b a, Mul ex2 b a) => Mul (Dup ex1 ex2) b a where
   (Dup a1 a2) *: (Dup b1 b2) = Dup (a1 *: b1) (a2 *: b2)

@@ -11,5 +11,5 @@ class Add expr a where
 -- | Multiplication. (Note that the input type @b@ may differ from the
 -- output type @a@.)
 
-class Mul expr a b | a -> b where
+class Mul expr b a | a -> b where
   (*:) :: expr e b -> expr e b -> expr e a
