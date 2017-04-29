@@ -3,6 +3,7 @@
 :set -ilol-apps
 :set -ilol-cpp:lol-cpp/benchmarks:lol-cpp/tests:lol-cpp/examples
 :set -ilol-repa:lol-repa/benchmarks:lol-repa/tests:lol-repa/examples
+:set -ialchemy
 
 :set -fprint-explicit-kinds
 :set -fprint-explicit-foralls
