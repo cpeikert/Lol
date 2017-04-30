@@ -21,25 +21,25 @@ class SHE expr where
   type TunnelCtx    expr (t :: Factored -> * -> *) (e :: Factored) (r :: Factored) (s :: Factored) (e' :: Factored) (r' :: Factored) (s' :: Factored) zp zq gad :: Constraint
 
   modSwitchPT :: (ModSwitchCtx expr ct zp', ct ~ CT m zp (Cyc t m' zq))
-    => expr ct -> expr (CT m zp' (Cyc t m' zq))
+    => expr env ct -> expr e (CT m zp' (Cyc t m' zq))
 
   rescale :: (RescaleCtx expr ct zq', ct ~ CT m zp (Cyc t m' zq))
-    => expr (CT m zp (Cyc t m' zq')) -> expr ct
+    => expr env (CT m zp (Cyc t m' zq')) -> expr env ct
 
   -- CJP: doesn't quite fall into addLit, though we could possibly
   -- generalize addLit to cover this (not clear if a good idea; this
   -- signature is pretty special)
   addPublic :: (AddPubCtx expr ct, ct ~ CT m zp (Cyc t m' zq))
-    => Cyc t m zp -> expr ct -> expr ct
+    => Cyc t m zp -> expr env ct -> expr env ct
 
   -- CJP: ditto here
   mulPublic :: (MulPubCtx expr ct, ct ~ CT m zp (Cyc t m' zq))
-    => Cyc t m zp -> expr ct -> expr ct
+    => Cyc t m zp -> expr env ct -> expr env ct
 
   keySwitchQuad :: (KeySwitchCtx expr ct zq' gad, ct ~ CT m zp (Cyc t m' zq))
-    => KSQuadCircHint gad (Cyc t m' zq') -> expr ct -> expr ct
+    => KSQuadCircHint gad (Cyc t m' zq') -> expr env ct -> expr env ct
 
   tunnel :: (TunnelCtx expr t e r s e' r' s' zp zq gad)
     => TunnelInfo gad t e r s e' r' s' zp zq
-    -> expr (CT r zp (Cyc t r' zq))
-    -> expr (CT s zp (Cyc t s' zq))
+    -> expr env (CT r zp (Cyc t r' zq))
+    -> expr env (CT s zp (Cyc t s' zq))
