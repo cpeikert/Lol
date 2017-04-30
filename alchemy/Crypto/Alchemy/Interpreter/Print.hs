@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Crypto.Alchemy.Interpreter.Print
 ( P, pprint
@@ -31,6 +32,12 @@ instance Lambda P where
 instance Add P a where
   a +: b = P $ \i -> "(" ++ unP a i ++ " + " ++ unP b i ++ ")"
 
-instance Mul P a a where
+instance Show a => AddLit P a where
+  addLit a b = P $ \i -> "(addLit " ++ show a ++ " " ++ unP b i ++ ")"
+
+instance Mul P a where
+  type PreMul P a = a
   a *: b = P $ \i -> "(" ++ unP a i ++ " * " ++ unP b i ++ ")"
 
+instance Show a => MulLit P a where
+  mulLit a b = P $ \i -> "(mulLit " ++ show a ++ " " ++ unP b i ++ ")"

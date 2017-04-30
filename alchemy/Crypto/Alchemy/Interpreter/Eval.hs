@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Crypto.Alchemy.Interpreter.Eval
 ( E, eval
@@ -35,5 +36,12 @@ instance DB E a where
 instance (Additive.C a) => Add E a where
   x +: y = E $ \e -> unE x e + unE y e
 
-instance (Ring.C a) => Mul E a a where
+instance (Additive.C a) => AddLit E a where
+  addLit x y = E $ \e -> x + unE y e
+
+instance (Ring.C a) => Mul E a where
+  type PreMul E a = a
   x *: y = E $ \e -> unE x e * unE y e
+
+instance (Ring.C a) => MulLit E a where
+  mulLit x y = E $ \e -> x * unE y e
