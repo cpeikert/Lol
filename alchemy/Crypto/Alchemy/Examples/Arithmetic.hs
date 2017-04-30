@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds           #-}
 {-# LANGUAGE RebindableSyntax    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -7,6 +8,10 @@
 {-# LANGUAGE TypeFamilies        #-}
 
 module Crypto.Alchemy.Examples.Arithmetic where
+
+import Control.Monad.Reader
+import Control.Monad.State
+import Data.Dynamic
 
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
@@ -21,8 +26,6 @@ import Crypto.Alchemy.Language.Lit
 import Crypto.Lol hiding (Pos(..))
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
---import Crypto.Lol.Cyclotomic.Tensor (TElt) -- EAC: I shouldn't need to explicitly import this
---import Crypto.Lol.Types.ZPP -- EAC: I shouldn't need to explicitly import this...
 
 import Data.Type.Natural (Nat (Z))
 
@@ -41,9 +44,6 @@ pt1' a b = pt1 $: lit a $: lit b
 
 type Zq q = ZqBasic q Int64
 
-
-type F = $(mkQ 100)
-
 main :: IO ()
 main = do
   let (exp1a, exp1b) = dup $ pt1 @(Cyc CT F4 (Zq 7), PNoise 'Z (Cyc CT F4 (Zq 7))) @()
@@ -56,13 +56,32 @@ main = do
   putStrLn $ pprint exp2a
   -- apply the PT function to arguments and evaluate the function
   putStrLn $ show $ eval exp2b
+  putStrLn $ show $ eval (pt1 @(Cyc CT F4 (Zq 7))) 7 11
   -- compile the un-applied function to CT, then print it out
   (x,_) <- compile
          @'[ '(F4, F8) ]
-         @'[ Zq $(mkQ 7), Zq $(mkQ 11) ]
+         @'[ Zq $(mkQ $ 2^(4 :: Int))] -- , Zq $(mkQ 11) ]
          @(Zq $(mkQ 13))
          @TrivGad
          @Double
          1.0
-         exp1b
+         (exp1b :: _)
   putStrLn $ pprint x
+
+
+foo ::
+  (m'map ~ '[ '(F4, F8) ],
+   zqs ~ '[ Zq $(mkQ $ 2^(4 :: Int))],
+   ksmod ~ Zq $(mkQ 13),
+   mon ~ ReaderT Double (StateT ([Dynamic], [Dynamic]) IO),
+   expr ~ PT2CT m'map zqs ksmod TrivGad Double P mon,
+   b ~ PNoise 'Z (Cyc CT F4 (Zq 7)),
+   a ~ PreMul expr b)
+  => expr () (a -> a -> b)
+foo = pt1
+
+
+type Zqs = '[ Zq $(mkQ $ 2^(4 :: Int)) ] -- , Zq $(mkQ 11) ]
+
+-- write an interpreter to remove "rescale a -> a"
+-- warnings about moduli mismatches
