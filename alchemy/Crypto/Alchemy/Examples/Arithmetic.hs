@@ -14,7 +14,7 @@ import Control.Monad.Reader
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
 import Crypto.Alchemy.Interpreter.Print
-import Crypto.Alchemy.Interpreter.Compiler.PNoise
+import Crypto.Alchemy.Interpreter.Compiler.Noise
 import Crypto.Alchemy.Interpreter.Compiler.PT2CT
 
 import Crypto.Alchemy.Language.Arithmetic

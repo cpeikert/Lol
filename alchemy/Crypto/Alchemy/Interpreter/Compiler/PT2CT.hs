@@ -21,8 +21,7 @@ module Crypto.Alchemy.Interpreter.Compiler.PT2CT
 , compileP2C
 , encryptP2C
 , decryptP2C
-)
-where
+) where
 
 import Control.Monad.Random
 import Control.Monad.Reader
@@ -35,7 +34,7 @@ import Crypto.Lol                      hiding (Pos (..))
 import Crypto.Lol.Applications.SymmSHE
 
 import Crypto.Alchemy.Interpreter.Compiler.Environment
-import Crypto.Alchemy.Interpreter.Compiler.PNoise
+import Crypto.Alchemy.Interpreter.Compiler.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.SHE
