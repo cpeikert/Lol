@@ -15,12 +15,10 @@
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Alchemy.Interpreter.Compiler.PT2CT
-( PT2CT, pt2ct
+( PT2CT
 , PNoise
 , P2CState
-, compileP2C
-, encryptP2C
-, decryptP2C
+, pt2ct, encryptP2C, decryptP2C
 ) where
 
 import Control.Monad.Random
@@ -43,22 +41,25 @@ encryptP2C :: forall t m m' z zp zq rnd .
   (EncryptCtx t m m' z zp zq, z ~ LiftOf zp, Typeable t, Typeable m', Typeable z, MonadRandom rnd)
   => P2CState -> Cyc t m zp -> Maybe (rnd (CT m zp (Cyc t m' zq)))
 encryptP2C st x = flip evalState st $ do
-  (sk :: Maybe (SK (Cyc t m' z))) <- keyLookup -- ONLY lookup the key, do NOT generate one if it is not found!
+  (sk :: Maybe (SK (Cyc t m' z))) <- lookupKey -- ONLY lookup the key, do NOT generate!
                   -- my feeling is that this should never fail, but we don't have static proof of that
   return $ (flip encrypt x) <$> sk
 
 decryptP2C :: forall t m m' z zp zq . (DecryptCtx t m m' z zp zq, z ~ LiftOf zp, Typeable t, Typeable m', Typeable z)
   => P2CState -> CT m zp (Cyc t m' zq) -> Maybe (Cyc t m zp)
 decryptP2C st x = flip evalState st $ do
-  (sk :: Maybe (SK (Cyc t m' z))) <- keyLookup -- do not generate a new key
+  (sk :: Maybe (SK (Cyc t m' z))) <- lookupKey -- ONLY lookup the key, do NOT generate
   return $ flip decrypt x <$> sk
 
 -- explicit forall is for use with TypeApplications at the top level
--- | Compile a plaintext expression to a ciphertext expression.
-compileP2C :: forall m'map zqs ksmod gad v ctexpr a rnd mon .
+
+-- | Transform a plaintext expression to a ciphertext expression.
+pt2ct :: forall m'map zqs kszq gad v ctex a rnd mon .
   (MonadRandom rnd, mon ~ ReaderT v (StateT P2CState rnd))
-  => v -> PT2CT m'map zqs ksmod gad v ctexpr mon () a -> rnd (ctexpr () (Cyc2CT m'map zqs a), P2CState)
-compileP2C v (PC a) = flip runStateT newP2CState $ flip runReaderT v a
+  => v                          -- | scaled variance for generated keys, hints
+  -> PT2CT m'map zqs kszq gad v ctex mon () a
+  -> rnd (ctex () (Cyc2CT m'map zqs a), P2CState)
+pt2ct v (PC a) = flip runStateT newP2CState $ flip runReaderT v a
 
 -- | Interprets plaintext operations as their corresponding
 -- (homomorphic) ciphertext operations.  The represented plaintext
@@ -69,7 +70,7 @@ newtype PT2CT
   zqs             -- | list of ciphertext moduli, in increasing order.
   --   E.g., '[ Zq 7, (Zq 11, Zq 7), (Zq 13, (Zq 11, Zq 7))].  Nesting
   --   order should match efficient 'RescaleCyc' instances.
-  (ksmod :: *)         -- | additional modulus to use for key switches. Must be
+  (kszq :: *)         -- | additional modulus to use for key switches. Must be
   -- coprime to all moduli in `zqs`
   (gad :: *)      -- | gadget type for key-switch hints
   v               -- | variance type for secret keys/noise
@@ -77,51 +78,51 @@ newtype PT2CT
   mon             -- | monad for creating keys/noise
   e               -- | environment
   a               -- | plaintext type, of form 'PNoise h (Cyc t m zp)'
-  = PC { pt2ct :: mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)) }
+  = PC (mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)))
 
 instance (Lambda ctex, Applicative mon)
-  => Lambda (PT2CT m'map zqs ksmod gad v ctex mon) where
+  => Lambda (PT2CT m'map zqs kszq gad v ctex mon) where
 
   lam (PC f) = PC $ fmap lam f
 
   (PC f) $: (PC a) = PC $ ($:) <$> f <*> a
 
 instance (DB ctex (Cyc2CT m'map zqs a), Applicative mon)
-  => DB (PT2CT m'map zqs ksmod gad v ctex mon) a where
+  => DB (PT2CT m'map zqs kszq gad v ctex mon) a where
 
   v0       = PC $ pure v0
   s (PC a) = PC $ s <$> a
 
 instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
-  => Add (PT2CT m'map zqs ksmod gad v ctex mon) a where
+  => Add (PT2CT m'map zqs kszq gad v ctex mon) a where
 
   (PC a) +: (PC b) = PC $ (+:) <$> a <*> b
   negate' (PC a) = PC $ negate' <$> a
 
-instance (Mul ctexpr ct, SHE ctexpr, PreMul ctexpr ct ~ ct,
+instance (Mul ctex ct, SHE ctex, PreMul ctex ct ~ ct,
           ct ~ Cyc2CT m'map zqs (PNoise h (Cyc t m zp)), ct ~ CT m zp (Cyc t m' zq),
-          z ~ LiftOf zp, zq' ~ (ksmod, zq),
+          z ~ LiftOf zp, zq' ~ (kszq, zq),
           KSHintCtx gad t m' z zq', GenSKCtx t m' z v,
-          RescaleLinearCtx ctexpr (CT m zp (Cyc t m' zq)) (PNoise2Zq zqs (h :+: N2)),
-          KeySwitchQuadCtx ctexpr (CT m zp (Cyc t m' zq)) (ksmod, zq) gad,
+          RescaleLinearCtx ctex (CT m zp (Cyc t m' zq)) (PNoise2Zq zqs (h :+: N2)),
+          KeySwitchQuadCtx ctex (CT m zp (Cyc t m' zq)) (kszq, zq) gad,
 
           -- EAC: Should be able to write (only) the two constraints below, but can't:
           -- (Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq')))
           -- See https://ghc.haskell.org/trac/ghc/ticket/13490
-          Typeable t, Typeable zq, Typeable ksmod, Typeable gad, Typeable z, Typeable m',
+          Typeable t, Typeable zq, Typeable kszq, Typeable gad, Typeable z, Typeable m',
           MonadRandom mon, MonadReader v mon, MonadState P2CState mon)
-  => Mul (PT2CT m'map zqs ksmod gad v ctexpr mon) (PNoise h (Cyc t m zp)) where
+  => Mul (PT2CT m'map zqs kszq gad v ctex mon) (PNoise h (Cyc t m zp)) where
 
-  type PreMul (PT2CT m'map zqs ksmod gad v ctexpr mon) (PNoise h (Cyc t m zp)) = PNoise (h :+: N2) (Cyc t m zp)
+  type PreMul (PT2CT m'map zqs kszq gad v ctex mon) (PNoise h (Cyc t m zp)) = PNoise (h :+: N2) (Cyc t m zp)
 
   (*:) :: forall a b e expr rp .
        (rp ~ Cyc t m zp, a ~ PNoise h rp, b ~ PNoise (h :+: ('S ('S 'Z))) rp,
-        expr ~ PT2CT m'map zqs ksmod gad v ctexpr mon)
+        expr ~ PT2CT m'map zqs kszq gad v ctex mon)
        => expr e b -> expr e b -> expr e a
   (PC a) *: (PC b) = PC $ do
     a' <- a
     b' <- b
-    hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) _) <- getKSHint (Proxy::Proxy ksmod) (Proxy::Proxy (LiftOf zp)) (Proxy::Proxy zq)
+    hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) _) <- getKSHint (Proxy::Proxy kszq) (Proxy::Proxy (LiftOf zp)) (Proxy::Proxy zq)
     return $ keySwitchQuad hint $ (rescaleLinear a') *: (rescaleLinear b')
 
 ----- Type families -----
