@@ -81,7 +81,7 @@ singletons [d|
              -- CJP: fixed a bug here -- it was never decreasing h!
              prefixLen :: [Nat] -> Nat -> Nat
              prefixLen (a : rest) h = if a >= h then S Z
-                                      else S (prefixLen rest (h :- a))
+                                      else S (prefixLen rest (h - a))
              prefixLen [] _ = 
                error "prefixLen: threshold is larger than sum of list entries"
            |]
