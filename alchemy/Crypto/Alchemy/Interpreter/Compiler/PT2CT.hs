@@ -17,8 +17,9 @@
 module Crypto.Alchemy.Interpreter.Compiler.PT2CT
 ( PT2CT, pt2ct
 , PNoise
-, PT2CTState
+, P2CState
 , compile
+, encryptArg
 )
 where
 
@@ -39,16 +40,21 @@ import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.SHE
 
 -- | Holds keys and hints generated during the compilation process.
-newtype PT2CTState = St ([Dynamic],[Dynamic])
+
+encryptArg :: forall t m m' z zp zq rnd .
+  (EncryptCtx t m m' z zp zq, z ~ LiftOf zp, Typeable t, Typeable m', Typeable z, MonadRandom rnd)
+  => P2CState -> Cyc t m zp -> Maybe (rnd (CT m zp (Cyc t m' zq)))
+encryptArg st x = flip evalState st $ do
+  (sk :: Maybe (SK (Cyc t m' z))) <- keyLookup -- ONLY lookup the key, do NOT generate one if it is not found!
+                  -- my feeling is that this should never fail, but we don't have static proof of that
+  return $ (flip encrypt x) <$> sk
 
 -- explicit forall is for use with TypeApplications at the top level
 -- | Compile a plaintext expression to a ciphertext expression.
 compile :: forall m'map zqs ksmod gad v ctexpr a rnd mon .
-  (MonadRandom rnd, mon ~ ReaderT v (StateT ([Dynamic],[Dynamic]) rnd))
-  => v -> PT2CT m'map zqs ksmod gad v ctexpr mon () a -> rnd (ctexpr () (Cyc2CT m'map zqs a), PT2CTState)
-compile v (PC a) = do
-  (b,st) <- flip runStateT ([],[]) $ flip runReaderT v a
-  return (b, St st)
+  (MonadRandom rnd, mon ~ ReaderT v (StateT P2CState rnd))
+  => v -> PT2CT m'map zqs ksmod gad v ctexpr mon () a -> rnd (ctexpr () (Cyc2CT m'map zqs a), P2CState)
+compile v (PC a) = flip runStateT (St ([],[])) $ flip runReaderT v a
 
 -- | Interprets plaintext operations as their corresponding
 -- (homomorphic) ciphertext operations.  The represented plaintext
@@ -99,7 +105,7 @@ instance (Mul ctexpr ct, SHE ctexpr, PreMul ctexpr ct ~ ct,
           -- See https://ghc.haskell.org/trac/ghc/ticket/13490
           Typeable t, Typeable zq, Typeable ksmod, Typeable gad, Typeable z, Typeable m',
 
-          MonadRandom mon, MonadReader v mon, MonadState ([Dynamic],[Dynamic]) mon)
+          MonadRandom mon, MonadReader v mon, MonadState P2CState mon)
   => Mul (PT2CT m'map zqs ksmod gad v ctexpr mon) (PNoise h (Cyc t m zp)) where
 
   type PreMul (PT2CT m'map zqs ksmod gad v ctexpr mon) (PNoise h (Cyc t m zp)) = PNoise (h :+: N2) (Cyc t m zp)

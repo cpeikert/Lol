@@ -11,7 +11,6 @@ module Crypto.Alchemy.Examples.Arithmetic where
 
 import Control.Monad.Reader
 import Control.Monad.State
-import Data.Dynamic
 
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
@@ -65,21 +64,19 @@ main = do
          @TrivGad
          @Double
          1.0
-         (exp1b :: _)
+         exp1b
   putStrLn $ pprint x
-
 
 foo ::
   (m'map ~ '[ '(F4, F8) ],
    zqs ~ '[ Zq $(mkQ $ 2^(4 :: Int))],
    ksmod ~ Zq $(mkQ 13),
-   mon ~ ReaderT Double (StateT ([Dynamic], [Dynamic]) IO),
+   mon ~ ReaderT Double (StateT P2CState IO),
    expr ~ PT2CT m'map zqs ksmod TrivGad Double P mon,
    b ~ PNoise 'Z (Cyc CT F4 (Zq 7)),
    a ~ PreMul expr b)
   => expr () (a -> a -> b)
 foo = pt1
-
 
 type Zqs = '[ Zq $(mkQ $ 2^(4 :: Int)) ] -- , Zq $(mkQ 11) ]
 
