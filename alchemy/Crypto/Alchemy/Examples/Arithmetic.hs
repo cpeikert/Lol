@@ -11,20 +11,19 @@ module Crypto.Alchemy.Examples.Arithmetic where
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
 import Crypto.Alchemy.Interpreter.Print
+import Crypto.Alchemy.Interpreter.Compiler.PNoise
 import Crypto.Alchemy.Interpreter.Compiler.PT2CT
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.Lit
-import Crypto.Alchemy.PNoise
 
 import Crypto.Lol hiding (Pos(..))
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
-import Crypto.Lol.Cyclotomic.Tensor (TElt) -- EAC: I shouldn't need to explicitly import this
-import Crypto.Lol.Types.ZPP -- EAC: I shouldn't need to explicitly import this...
+--import Crypto.Lol.Cyclotomic.Tensor (TElt) -- EAC: I shouldn't need to explicitly import this
+--import Crypto.Lol.Types.ZPP -- EAC: I shouldn't need to explicitly import this...
 
-import GHC.TypeLits
 import Data.Type.Natural (Nat (Z))
 
 -- EAC: We can get rid of signatures once #13524 is fixed (should be in 8.2)

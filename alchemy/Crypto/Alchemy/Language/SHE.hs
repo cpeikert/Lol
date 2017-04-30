@@ -23,7 +23,7 @@ class SHE expr where
   modSwitchPT :: (ModSwitchCtx expr ct zp', ct ~ CT m zp (Cyc t m' zq))
     => expr env ct -> expr env (CT m zp' (Cyc t m' zq))
 
-  rescale :: (RescaleCtx expr ct zq', ct ~ CT m zp (Cyc t m' zq))
+  rescaleLinearCT :: (RescaleCtx expr ct zq', ct ~ CT m zp (Cyc t m' zq))
     => expr env (CT m zp (Cyc t m' zq')) -> expr env ct
 
   -- CJP: doesn't quite fall into addLit, though we could possibly

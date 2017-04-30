@@ -18,27 +18,25 @@ module Crypto.Alchemy.Interpreter.Compiler.PT2CT
 ( PT2CT, pt2ct
 , PNoise
 , PT2CTState
-, compile, SymCT
+, compile
 )
 where
 
-import Algebra.Additive as Additive (C)
-import Algebra.Ring as Ring (C)
 import Control.Monad.Random
 import Control.Monad.Reader
 import Control.Monad.State
 import Data.Dynamic
-import Data.Maybe
-import Data.Type.Natural (Nat (..), type (:+:))
+import Data.Type.Natural (Nat (..), type (:+:), N2)
 import GHC.TypeLits      hiding (type (*), Nat)
 
 import Crypto.Lol                      hiding (Pos (..))
-import Crypto.Lol.Applications.SymmSHE
+import Crypto.Lol.Applications.SymmSHE hiding (rescaleLinearCT, KeySwitchCtx)
 
 import Crypto.Alchemy.Interpreter.Compiler.Environment
 import Crypto.Alchemy.Interpreter.Compiler.PNoise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.SHE
 
 -- | Holds keys and hints generated during the compilation process.
 newtype PT2CTState = St ([Dynamic],[Dynamic])
@@ -89,10 +87,12 @@ instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
 
   (PC a) +: (PC b) = PC $ (+:) <$> a <*> b
 
-instance (Mul ctexpr ct, PreMul ctexpr ct ~ ct,
+instance (Mul ctexpr ct, SHE ctexpr, PreMul ctexpr ct ~ ct,
           ct ~ Cyc2CT m'map zqs (PNoise h (Cyc t m zp)), ct ~ CT m zp (Cyc t m' zq),
           z ~ LiftOf zp, zq' ~ (ksmod, zq),
           KSHintCtx gad t m' z zq', GenSKCtx t m' z v,
+          RescaleCtx ctexpr (CT m zp (Cyc t m' zq)) (PNoise2Zq zqs (h :+: N2)),
+          KeySwitchCtx ctexpr (CT m zp (Cyc t m' zq)) (ksmod, zq) gad,
 
           -- EAC: Should be able to write (only) the two constraints below, but can't:
           -- (Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq')))
@@ -102,7 +102,7 @@ instance (Mul ctexpr ct, PreMul ctexpr ct ~ ct,
           MonadRandom mon, MonadReader v mon, MonadState ([Dynamic],[Dynamic]) mon)
   => Mul (PT2CT m'map zqs ksmod gad v ctexpr mon) (PNoise h (Cyc t m zp)) where
 
-  type PreMul (PT2CT m'map zqs ksmod gad v ctexpr mon) (PNoise h (Cyc t m zp)) = PNoise (h :+: ('S ('S 'Z))) (Cyc t m zp)
+  type PreMul (PT2CT m'map zqs ksmod gad v ctexpr mon) (PNoise h (Cyc t m zp)) = PNoise (h :+: N2) (Cyc t m zp)
 
   (*:) :: forall a b e expr rp .
        (rp ~ Cyc t m zp, a ~ PNoise h rp, b ~ PNoise (h :+: ('S ('S 'Z))) rp,
@@ -112,7 +112,7 @@ instance (Mul ctexpr ct, PreMul ctexpr ct ~ ct,
     a' <- a
     b' <- b
     hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) _) <- getKSHint (Proxy::Proxy ksmod) (Proxy::Proxy (LiftOf zp)) (Proxy::Proxy zq)
-    return $ keySwitchQuadCT hint $ (rescaleCT a') *: (rescaleCT b')
+    return $ keySwitchQuad hint $ (rescaleLinearCT a') *: (rescaleLinearCT b')
 
 ----- Type families -----
 

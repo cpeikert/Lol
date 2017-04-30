@@ -1,20 +1,24 @@
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE KindSignatures        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TemplateHaskellQuotes #-}
+{-# LANGUAGE KindSignatures             #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TemplateHaskellQuotes      #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 
 module Crypto.Alchemy.Interpreter.Compiler.PNoise where
 
-import Algebra.Additive as Additive
-import Algebra.Ring as Ring
+import Algebra.Additive as Additive (C)
+import Algebra.Ring as Ring (C)
 import Language.Haskell.TH
-import Crypto.Lol.Reflects
-import GHC.TypeLits
-import Data.Proxy
 import Data.Functor.Trans.Tagged
+import Data.Type.Natural
+import qualified GHC.TypeLits as TL
+
+import Crypto.Lol.Reflects
 
 -- | A value tagged by @pNoise =~ -log(noise rate)@.
 newtype PNoise (h :: Nat) a = PN a deriving (Additive.C, Ring.C)
@@ -28,7 +32,7 @@ type family PNoise2Zq zqs h where
   PNoise2Zq (zq ': rest) ('S ('S ('S 'Z)))      = zq
   PNoise2Zq (zq ': rest) ('S ('S ('S ('S i))))  = PNoise2Zq rest i
 
-data PNoiseMod = PNM Nat Nat
+data PNoiseMod = PNM TL.Nat Nat
 
 -- 8 bits seems like too much, because our moduli need to be slightly
 -- less than 32 bits to fit into a 64 bit modulus,
@@ -37,10 +41,17 @@ data PNoiseMod = PNM Nat Nat
 noiseUnit :: Double
 noiseUnit = 7.5
 
+mkTypeNat :: Int -> TypeQ
+mkTypeNat 0 = conT 'Z
+mkTypeNat x = conT 'S `appT` (mkTypeNat $ x-1)
+
+mkTypeLit :: Integer -> TypeQ
+mkTypeLit = litT . numTyLit
+
 mkQ :: Integer -> TypeQ
 mkQ q =
-  let lgq = ceiling $ logBase 2 (Ring.fromInteger q :: Double) / noiseUnit
-  in conT 'PNM `appT` (litT $ numTyLit q) `appT` (litT $ numTyLit lgq)
+  let lgq = ceiling $ logBase 2 (fromInteger q :: Double) / noiseUnit
+  in conT 'PNM `appT` (mkTypeLit q) `appT` (mkTypeNat lgq)
 
-instance (KnownNat x, Ring.C i) => Reflects ('PNM x y) i where
-  value = tag $ Ring.fromInteger $ natVal (Proxy::Proxy x)
+instance (Reflects x i) => Reflects ('PNM x y) i where
+  value = retag $ value @x
