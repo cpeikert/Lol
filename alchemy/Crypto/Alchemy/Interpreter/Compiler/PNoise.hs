@@ -78,14 +78,14 @@ singletons [d|
                error "prefixLen: threshold is larger than sum of list entries"
            |]
 
--- | Given a list of moduli, construct nested pairs representing a
--- modulus large enough to contain the given pNoise @h@.
+-- | Given a list of moduli @zqs@, construct nested pairs representing
+-- a product of moduli large enough to contain the given pNoise @h@.
 type PNoise2Zq zqs h =
   List2Pairs (Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs)
 
--- | Logarithm of a noise unit.
-pNoise :: Double
-pNoise = 7.5
+-- | "Bits" per noise unit.
+pNoiseUnit :: Double
+pNoiseUnit = 7.5
 
 mkTypeNat :: Int -> TypeQ
 mkTypeNat x | x < 0 = error $ "mkTypeNat: negative argument " ++ show x
@@ -95,10 +95,12 @@ mkTypeNat x = conT 'S `appT` (mkTypeNat $ x-1)
 mkTypeLit :: Integer -> TypeQ
 mkTypeLit = litT . numTyLit
 
-mkQ :: Integer -> TypeQ
-mkQ q =
-  let lgq = floor $ logBase 2 (fromInteger q) / pNoise
-  in conT 'NN `appT` (mkTypeLit q) `appT` (mkTypeNat lgq)
+-- | TH splice for a 'TLNatNat' of the given integer with the number
+-- of noise units it can hold.
+mkTLNatNat :: Integer -> TypeQ
+mkTLNatNat q =
+  let units = floor $ logBase 2 (fromInteger q) / pNoiseUnit
+  in conT 'NN `appT` (mkTypeLit q) `appT` (mkTypeNat units)
 
 instance (Reflects x i) => Reflects ('NN x y) i where
   value = retag $ value @x
