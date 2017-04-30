@@ -18,8 +18,9 @@ module Crypto.Alchemy.Interpreter.Compiler.PT2CT
 ( PT2CT, pt2ct
 , PNoise
 , P2CState
-, compile
-, encryptArg
+, compileP2C
+, encryptP2C
+, decryptP2C
 )
 where
 
@@ -39,22 +40,26 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.SHE
 
--- | Holds keys and hints generated during the compilation process.
-
-encryptArg :: forall t m m' z zp zq rnd .
+encryptP2C :: forall t m m' z zp zq rnd .
   (EncryptCtx t m m' z zp zq, z ~ LiftOf zp, Typeable t, Typeable m', Typeable z, MonadRandom rnd)
   => P2CState -> Cyc t m zp -> Maybe (rnd (CT m zp (Cyc t m' zq)))
-encryptArg st x = flip evalState st $ do
+encryptP2C st x = flip evalState st $ do
   (sk :: Maybe (SK (Cyc t m' z))) <- keyLookup -- ONLY lookup the key, do NOT generate one if it is not found!
                   -- my feeling is that this should never fail, but we don't have static proof of that
   return $ (flip encrypt x) <$> sk
 
+decryptP2C :: forall t m m' z zp zq . (DecryptCtx t m m' z zp zq, z ~ LiftOf zp, Typeable t, Typeable m', Typeable z)
+  => P2CState -> CT m zp (Cyc t m' zq) -> Maybe (Cyc t m zp)
+decryptP2C st x = flip evalState st $ do
+  (sk :: Maybe (SK (Cyc t m' z))) <- keyLookup -- do not generate a new key
+  return $ flip decrypt x <$> sk
+
 -- explicit forall is for use with TypeApplications at the top level
 -- | Compile a plaintext expression to a ciphertext expression.
-compile :: forall m'map zqs ksmod gad v ctexpr a rnd mon .
+compileP2C :: forall m'map zqs ksmod gad v ctexpr a rnd mon .
   (MonadRandom rnd, mon ~ ReaderT v (StateT P2CState rnd))
   => v -> PT2CT m'map zqs ksmod gad v ctexpr mon () a -> rnd (ctexpr () (Cyc2CT m'map zqs a), P2CState)
-compile v (PC a) = flip runStateT newP2CState $ flip runReaderT v a
+compileP2C v (PC a) = flip runStateT newP2CState $ flip runReaderT v a
 
 -- | Interprets plaintext operations as their corresponding
 -- (homomorphic) ciphertext operations.  The represented plaintext

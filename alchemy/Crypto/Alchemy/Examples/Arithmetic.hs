@@ -21,7 +21,6 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 
 import Crypto.Lol hiding (Pos(..))
-import qualified Crypto.Lol.Applications.SymmSHE as SHE
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
@@ -40,12 +39,13 @@ type Zq q = ZqBasic q Int64
 
 main :: IO ()
 main = do
-  -- look Ma, no types!
+  -- no types needed to show a function!
   putStrLn $ pprint pt1
+  -- evaluate a DSL function to a Haskell function, then apply to arguments
   putStrLn $ show $ eval (pt1 @Int) 7 11
 
   -- compile the un-applied function to CT, then print it out
-  (x,st) <- compile
+  (x,st) <- compileP2C
          @'[ '(F4, F8) ]
          @'[ Zq $(mkQ $ 2^(40 :: Int))] -- , Zq $(mkQ 11) ]
          @(Zq $(mkQ 13))
@@ -54,30 +54,21 @@ main = do
          1.0
          (pt1 @(PNoise 'Z (Cyc CT F4 (Zq 7))))
 
+  -- duplicate the compiled expression
   let (z1,z2) = dup x
-  arg1 <- fromJust $ encryptArg st 7
-  arg2 <- fromJust $ encryptArg st 11
+  -- encrypt some arguments
+  arg1 <- fromJust $ encryptP2C st 7
+  arg2 <- fromJust $ encryptP2C st 11
+  -- print the compiled function
   putStrLn $ pprint z1
-  putStrLn $ show $ eval z2 arg1 arg2
+  -- evaluate the compiled function, then apply it to encrypted inputs
+  let result = eval z2 arg1 arg2
+  -- show the encrypted result
+  putStrLn $ show result
+  -- show the decrypted result
+  putStrLn $ show $ decryptP2C st result
 
-type B = SHE.CT F4 (Zq 7) (Cyc CT F8 (Zq $(mkQ $ 2^(40 :: Int))))
-type A = B
-type F = (A,A) -> (A,A) -> (B,B)
-{-
-foo ::
-  (m'map ~ '[ '(F4, F8) ],
-   zqs ~ '[ Zq $(mkQ $ 2^(4 :: Int))],
-   ksmod ~ Zq $(mkQ 13),
-   mon ~ ReaderT Double (StateT P2CState IO),
-   expr ~ PT2CT m'map zqs ksmod TrivGad Double P mon,
-   b ~ PNoise 'Z (Cyc CT F4 (Zq 7)),
-   a ~ PreMul expr b)
-  => expr () (a -> a -> b)
-foo = pt1
--}
-
-type Zqs = '[ Zq $(mkQ $ 2^(4 :: Int)) ] -- , Zq $(mkQ 11) ]
-
+-- EAC: TODO
 -- write an interpreter to remove "rescale a -> a"
 -- warnings about moduli mismatches
 -- encapsulation for compile CTs? (CTWrapper?)

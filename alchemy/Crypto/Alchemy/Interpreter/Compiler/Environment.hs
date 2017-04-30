@@ -22,6 +22,7 @@ import Crypto.Lol.Applications.SymmSHE
 
 ---- Monad helper functions
 
+-- | Holds keys and hints generated during the compilation process.
 data P2CState = St {keys :: [Dynamic], hints :: [Dynamic]} deriving (Show)
 
 newP2CState :: P2CState
