@@ -12,8 +12,6 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.Lit
 
-import Crypto.Lol (Cyc)
-
 -- the Int is the nesting depth of lambdas outside the expression
 newtype P e a = P { unP :: Int -> String }
 
@@ -36,9 +34,15 @@ instance Lambda P where
 instance Add P a where
   a +: b = P $ \i -> "(" ++ unP a i ++ " + " ++ unP b i ++ ")"
 
+instance Show a => AddLit P a where
+  addLit a b = P $ \i -> "(addLit " ++ show a ++ " " ++ unP b i ++ ")"
+
 instance Mul P a where
   type PreMul P a = a
   a *: b = P $ \i -> "(" ++ unP a i ++ " * " ++ unP b i ++ ")"
 
-instance (Show (Cyc t m zp)) => Lit P (Cyc t m zp) where
+instance Show a => MulLit P a where
+  mulLit a b = P $ \i -> "(mulLit " ++ show a ++ " " ++ unP b i ++ ")"
+
+instance (Show a) => Lit P a where
   lit = P . const . show

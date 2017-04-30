@@ -11,7 +11,7 @@ module Crypto.Alchemy.Examples.Arithmetic where
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
 import Crypto.Alchemy.Interpreter.Print
-import Crypto.Alchemy.Interpreter.PT2CT
+import Crypto.Alchemy.Interpreter.Compiler.PT2CT
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
@@ -20,7 +20,6 @@ import Crypto.Alchemy.PNoise
 
 import Crypto.Lol hiding (Pos(..))
 import Crypto.Lol.Cyclotomic.Tensor.CPP
-import Crypto.Lol.Cyclotomic.Tensor.Repa
 import Crypto.Lol.Types
 import Crypto.Lol.Cyclotomic.Tensor (TElt) -- EAC: I shouldn't need to explicitly import this
 import Crypto.Lol.Types.ZPP -- EAC: I shouldn't need to explicitly import this...
@@ -48,12 +47,12 @@ type F = $(mkQ 100)
 
 main :: IO ()
 main = do
-  let exp1 = pt1 @(PNoise 'Z (Cyc CT F4 (Zq 7)))
-      exp1' = pt1 @(PNoise 'Z (Cyc RT F4 (Zq 7)))
-      (exp2a, exp2b) = dup $ pt1' @(Cyc CT F4 (Zq 7)) 7 11
+  let (exp1a, exp1b) = dup $ pt1 @(Cyc CT F4 (Zq 7), PNoise 'Z (Cyc CT F4 (Zq 7))) @()
+      (exp2a, exp2b) = dup $ pt1' @(Cyc CT F4 (Zq 7), Cyc CT F4 (Zq 7)) @() (7,7) (11,11)
 
   -- print the unapplied PT function
-  putStrLn $ pprint exp1
+  putStrLn $ pprint exp1a
+  --putStrLn $ pprint exp1b
   -- apply the PT function to arguments, then print it out
   putStrLn $ pprint exp2a
   -- apply the PT function to arguments and evaluate the function
@@ -66,5 +65,5 @@ main = do
          @TrivGad
          @Double
          1.0
-         exp1'
+         exp1b
   putStrLn $ pprint x

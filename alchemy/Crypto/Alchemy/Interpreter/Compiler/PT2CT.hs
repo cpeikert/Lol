@@ -4,23 +4,21 @@
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
-{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE PartialTypeSignatures      #-}
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Alchemy.Interpreter.PT2CT
+module Crypto.Alchemy.Interpreter.Compiler.PT2CT
 ( PT2CT, pt2ct
 , PNoise
 , PT2CTState
-, compile
+, compile, SymCT
 )
 where
 
@@ -37,6 +35,8 @@ import GHC.TypeLits      hiding (type (*), Nat)
 import Crypto.Lol                      hiding (Pos (..))
 import Crypto.Lol.Applications.SymmSHE
 
+import Crypto.Alchemy.Interpreter.Compiler.Environment
+import Crypto.Alchemy.Interpreter.Compiler.PNoise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 
@@ -51,9 +51,6 @@ compile :: forall m'map zqs ksmod gad v ctexpr a rnd mon .
 compile v (PC a) = do
   (b,st) <- flip runStateT ([],[]) $ flip runReaderT v a
   return (b, St st)
-
--- | A value tagged by @pNoise =~ -log(noise rate)@.
-newtype PNoise (h :: Nat) a = PN a deriving (Additive.C, Ring.C)
 
 -- | Interprets plaintext operations as their corresponding
 -- (homomorphic) ciphertext operations.  The represented plaintext
@@ -92,7 +89,7 @@ instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
 
   (PC a) +: (PC b) = PC $ (+:) <$> a <*> b
 
-instance (Mul ctexpr ct, SymCT ctexpr, PreMul ctexpr ct ~ ct,
+instance (Mul ctexpr ct, PreMul ctexpr ct ~ ct,
           ct ~ Cyc2CT m'map zqs (PNoise h (Cyc t m zp)), ct ~ CT m zp (Cyc t m' zq),
           z ~ LiftOf zp, zq' ~ (ksmod, zq),
           KSHintCtx gad t m' z zq', GenSKCtx t m' z v,
@@ -117,15 +114,6 @@ instance (Mul ctexpr ct, SymCT ctexpr, PreMul ctexpr ct ~ ct,
     hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) _) <- getKSHint (Proxy::Proxy ksmod) (Proxy::Proxy (LiftOf zp)) (Proxy::Proxy zq)
     return $ keySwitchQuadCT hint $ (rescaleCT a') *: (rescaleCT b')
 
-class SymCT expr where
-
-  rescaleCT :: expr e (CT m zp (Cyc t m' zq)) -> expr e (CT m zp (Cyc t m' zq'))
-
-  keySwitchQuadCT :: (ct ~ CT m zp (Cyc t m' zq))
-                  => KSQuadCircHint gad (Cyc t m' zq') -> expr e ct -> expr e ct
-
-
-
 ----- Type families -----
 
 
@@ -144,16 +132,6 @@ type family Cyc2CT m'map zqs e where
   Cyc2CT m'map zqs c =
     TypeError ('Text "Cyc2CT can't convert type " ':$$: 'ShowType c)
 
--- Maps PNoise to a modulus from a list, according to a heuristic
-type family PNoise2Zq zqs h where
-  -- pNoise unit ~= 8 bits; so 0--3 fit into a 32-bit modulus.
-  PNoise2Zq (zq ': rest) 'Z                     = zq
-  PNoise2Zq (zq ': rest) ('S 'Z)                = zq
-  PNoise2Zq (zq ': rest) ('S ('S 'Z))           = zq
-  PNoise2Zq (zq ': rest) ('S ('S ('S 'Z)))      = zq
-  PNoise2Zq (zq ': rest) ('S ('S ('S ('S i))))  = PNoise2Zq rest i
-
-
 -- type-level map lookup
 type family Lookup m map where
   Lookup m ( '(m,m') ': rest) = m'
@@ -168,62 +146,3 @@ type family (xs :: [k1]) !! (d :: Nat) :: k1 where
   (x ': xs) !! ('S i) = xs !! i
   '[]       !! i =
     TypeError ('Text "Out-of-bounds error for type-level indexing (!!).")
-
----- Monad helper functions
-
--- retrieve the scaled variance parameter from the Reader
-getSvar :: (MonadReader v mon) => mon v
-getSvar = ask
-
--- retrieve a key from the state, or generate a new one otherwise
-getKey :: forall z v mon t m' . (MonadReader v mon, MonadState ([Dynamic], [Dynamic]) mon,
-           MonadRandom mon, GenSKCtx t m' z v, Typeable (Cyc t m' z))
-  => mon (SK (Cyc t m' z))
-getKey = keyLookup >>= \case
-  (Just t) -> return t
-  -- generate a key with the variance stored in the Reader monad
-  Nothing -> genSK =<< getSvar
-
--- not memoized right now, but could be if we also store the linear function as part of the lookup key
--- EAC: https://ghc.haskell.org/trac/ghc/ticket/13490
-genTunnHint :: forall gad zq mon t e r s e' r' s' z zp v .
-  (MonadReader v mon, MonadState ([Dynamic], [Dynamic]) mon, MonadRandom mon,
-   GenSKCtx t r' z v, Typeable (Cyc t r' (LiftOf zp)),
-   GenSKCtx t s' z v, Typeable (Cyc t s' (LiftOf zp)),
-   GenTunnelInfoCtx t e r s e' r' s' z zp zq gad,
-   z ~ LiftOf zp)
-  => Linear t zp e r s -> mon (TunnelInfo gad t e r s e' r' s' zp zq)
-genTunnHint linf = do
-  skout <- getKey @z
-  sk <- getKey @z
-  tunnelInfo linf skout sk
-
--- retrieve a key-switch hint from the state, or generate a new one otherwise
-getKSHint :: forall v mon t z gad m' (zq :: *) zq' ksmod .
-  (-- constraints for getKey
-   MonadReader v mon, MonadState ([Dynamic], [Dynamic]) mon,
-   MonadRandom mon, GenSKCtx t m' z v, Typeable (Cyc t m' z),
-   -- constraints for hintLookup
-   Typeable (KSQuadCircHint gad (Cyc t m' zq')),
-   -- constraints for ksQuadCircHint
-   KSHintCtx gad t m' z zq', zq' ~ (ksmod, zq)) -- EAC: Note that order matches the optimized RescaleCyc instance
-  => Proxy ksmod -> Proxy z -> Proxy zq -> mon (KSQuadCircHint gad (Cyc t m' zq'))
-getKSHint _ _ _ = hintLookup >>= \case
-  (Just h) -> return h
-  Nothing -> do
-    sk :: SK (Cyc t m' z) <- getKey
-    ksQuadCircHint sk
-
--- lookup a key in the state
-keyLookup :: (Typeable a, MonadState ([Dynamic], b) mon) => mon (Maybe a)
-keyLookup = (dynLookup . fst) <$> get
-
--- lookup a hint in the state
-hintLookup :: (Typeable a, MonadState (b, [Dynamic]) mon) => mon (Maybe a)
-hintLookup = (dynLookup . snd) <$> get
-
--- lookup an item in a dynamic list
-dynLookup :: (Typeable a) => [Dynamic] -> Maybe a
-dynLookup ds = case mapMaybe fromDynamic ds of
-  [] -> Nothing
-  [x] -> Just x
