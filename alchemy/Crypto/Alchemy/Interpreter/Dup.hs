@@ -26,48 +26,42 @@ instance (Add ex1 a, Add ex2 a) => Add (Dup ex1 ex2) a where
   (Dup a1 a2) +: (Dup b1 b2) = Dup (a1 +: b1) (a2 +: b2)
   negate' (Dup a1 a2) = Dup (negate' a1) (negate' a2)
 
-instance (Mul ex1 a, Mul ex2 a, PreMul ex1 a ~ PreMul ex2 a) => Mul (Dup ex1 ex2) a where
+instance (Mul ex1 a, Mul ex2 a, PreMul ex1 a ~ PreMul ex2 a) =>
+  Mul (Dup ex1 ex2) a where
+
   type PreMul (Dup ex1 ex2) a = PreMul ex1 a
   (Dup a1 a2) *: (Dup b1 b2) = Dup (a1 *: b1) (a2 *: b2)
 
 instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
-  type ModSwitchCtx (Dup ex1 ex2) ct zp' = (ModSwitchCtx ex1 ct zp', ModSwitchCtx ex2 ct zp')
-  type RescaleCtx   (Dup ex1 ex2) ct zq' = (RescaleCtx ex1 ct zq', RescaleCtx ex2 ct zq')
+  type ModSwitchCtx (Dup ex1 ex2) ct zp' = (ModSwitchCtx ex1 ct zp',
+                                            ModSwitchCtx ex2 ct zp')
+  type RescaleCtx   (Dup ex1 ex2) ct zq' = (RescaleCtx ex1 ct zq',
+                                            RescaleCtx ex2 ct zq')
   type AddPubCtx    (Dup ex1 ex2) ct = (AddPubCtx ex1 ct, AddPubCtx ex2 ct)
   type MulPubCtx    (Dup ex1 ex2) ct = (MulPubCtx ex1 ct, MulPubCtx ex2 ct)
-  type KeySwitchCtx (Dup ex1 ex2) ct zq' gad =
-    (KeySwitchCtx ex1 ct zq' gad, KeySwitchCtx ex2 ct zq' gad)
+  type KeySwitchCtx (Dup ex1 ex2) ct zq' gad = (KeySwitchCtx ex1 ct zq' gad,
+                                                KeySwitchCtx ex2 ct zq' gad)
   type TunnelCtx    (Dup ex1 ex2) t e r s e' r' s' zp zq gad =
-    (TunnelCtx ex1 t e r s e' r' s' zp zq gad, TunnelCtx ex2 t e r s e' r' s' zp zq gad)
+    (TunnelCtx ex1 t e r s e' r' s' zp zq gad,
+     TunnelCtx ex2 t e r s e' r' s' zp zq gad)
 
   modSwitchPT (Dup a b) = Dup (modSwitchPT a) (modSwitchPT b)
 
   rescaleLinearCT (Dup a b) = Dup (rescaleLinearCT a) (rescaleLinearCT b)
 
-  addPublic a (Dup b c) = Dup (addPublic a b) (addPublic a c)
+  addPublic p (Dup a b) = Dup (addPublic p a) (addPublic p b)
 
-  mulPublic a (Dup b c) = Dup (mulPublic a b) (mulPublic a c)
+  mulPublic p (Dup a b) = Dup (mulPublic p a) (mulPublic p b)
 
-  keySwitchQuad h (Dup b c) = Dup (keySwitchQuad h b) (keySwitchQuad h c)
+  keySwitchQuad h (Dup a b) = Dup (keySwitchQuad h a) (keySwitchQuad h b)
 
   tunnel f (Dup a b) = Dup (tunnel f a) (tunnel f b)
 
+
+
 {-
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE UndecidableInstances  #-}
 
-module Crypto.Alchemy.Interpreter.Dup
-( Dup, dup
-) where
-
-import Crypto.Alchemy.Language.Arithmetic
-import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.Lit
+-- OLD AND PROBABLY BUSTED ATTEMPT AT ALLOWING DIFFERENT REP TYPES
 
 data Dup ex e a where
   Dup :: ex1 (Unzip1 e) (Fst a)

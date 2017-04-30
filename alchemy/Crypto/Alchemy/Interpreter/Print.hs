@@ -12,7 +12,7 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.SHE
 
-import Crypto.Lol (Cyc)
+import Crypto.Lol                      (Cyc)
 import Crypto.Lol.Applications.SymmSHE (CT)
 
 -- the Int is the nesting depth of lambdas outside the expression
@@ -32,34 +32,34 @@ instance DB P a where
 
 instance Lambda P where
   lam f  = P $ \i -> "(\\v" ++ show  i ++ " -> " ++ unP f (i+1) ++ ")"
-  f $: a = P $ \i -> "("   ++ unP f i ++ " "    ++ unP a i     ++ ")"
+  f $: a = P $ \i -> "("    ++ unP f i ++ " "    ++ unP a i     ++ ")"
 
 instance Add P a where
-  a +: b = P $ \i -> "( " ++ unP a i ++ " )" ++ " + " ++ "( " ++ unP b i ++ " )"
-  negate' a = P $ \i -> "negate ( " ++ unP a i ++ " )"
+  a +: b = P $ \i -> "(" ++ unP a i ++ " + " ++ unP b i ++ ")"
+  negate' a = P $ \i -> "(negate " ++ unP a i ++ " )"
 
 instance Show a => AddLit P a where
-  addLit a b = P $ \i -> "addLit ( " ++ show a ++ " ) ( " ++ unP b i ++ " )"
+  addLit p a = P $ \i -> "(addLit (" ++ show p ++ ") " ++ unP a i ++ ")"
 
 instance Mul P a where
   type PreMul P a = a
-  a *: b = P $ \i -> "( " ++ unP a i ++ " )" ++ " * " ++ "( " ++ unP b i ++ " )"
+  a *: b = P $ \i -> "(" ++ unP a i ++ " * " ++ unP b i ++ ")"
 
 instance Show a => MulLit P a where
-  mulLit a b = P $ \i -> "mulLit ( " ++ show a ++ " ) ( " ++ unP b i ++ " )"
+  mulLit p a = P $ \i -> "(mulLit (" ++ show p ++ ") " ++ unP a i ++ ")"
 
 instance SHE P where
 
-  type ModSwitchCtx P a zp' = ()
-  type RescaleCtx   P a zq' = ()
-  type AddPubCtx    P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
-  type MulPubCtx    P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
-  type KeySwitchCtx P a zq' gad = ()
-  type TunnelCtx    P t e r s e' r' s' zp zq gad = ()
+  type ModSwitchPTCtx   P a zp' = ()
+  type RescaleLinearCtx P a zq' = ()
+  type AddPublicCtx     P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
+  type MulPublicCtx     P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
+  type KeySwitchQuadCtx P a zq' gad = ()
+  type TunnelCtx        P t e r s e' r' s' zp zq gad = ()
 
-  modSwitchPT (P a) = P $ \i -> "modSwitch $ " ++ a i
-  rescaleLinearCT (P a) = P $ \i -> "rescale $ " ++ a i
-  addPublic a (P b) = P $ \i -> "( " ++ show a ++ " )" ++ " + " ++ "( " ++ b i ++ " )"
-  mulPublic a (P b) = P $ \i -> "( " ++ show a ++ " )" ++ " * " ++ "( " ++ b i ++ " )"
-  keySwitchQuad _ (P a) = P $ \i -> "keySwitch <HINT> $ " ++ a i
-  tunnel _ (P a) = P $ \i -> "tunnel <FUNC> $ " ++ a i
+  modSwitchPT     a = P $ \i -> "(modSwitchPT "   ++ unP a i ++ ")"
+  rescaleLinear   a = P $ \i -> "(rescaleLinear " ++ unP a i ++ ")"
+  addPublic     p a = P $ \i -> "(addPublic (" ++ show p ++ ") " ++ unP a i ++ ")"
+  mulPublic     p a = P $ \i -> "(mulPublic (" ++ show p ++ ") " ++ unP a i ++ ")"
+  keySwitchQuad _ a = P $ \i -> "(keySwitchQuad <HINT> " ++ unP a i ++ ")"
+  tunnel        _ a = P $ \i -> "(tunnel <FUNC> " ++ unP a i ++ ")"

@@ -8,10 +8,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
-module Crypto.Alchemy.Interpreter.Eval
-( E, eval
-)
-where
+module Crypto.Alchemy.Interpreter.Eval ( E, eval) where
 
 import Control.Applicative
 import Control.Monad.Reader
@@ -34,7 +31,7 @@ import qualified Crypto.Lol.Applications.SymmSHE as SHE
 import           Crypto.Lol.Applications.SymmSHE (CT, SK, MulPublicCtx, AddPublicCtx, ToSDCtx, ModSwitchPTCtx)
 
 -- | Metacircular evaluator.
-newtype E e a = E { unE :: e -> a } deriving (Functor,Applicative)
+newtype E e a = E { unE :: e -> a } deriving (Functor, Applicative)
 
 -- | Evaluate a closed expression (i.e., one not having any unbound
 -- variables)
@@ -54,14 +51,14 @@ instance (Additive.C a) => Add E a where
   negate' x = negate <$> x
 
 instance (Additive.C a) => AddLit E a where
-  addLit x y = (x+) <$> y
+  addLit x y = (x +) <$> y
 
 instance (Ring.C a) => Mul E a where
   type PreMul E a = a
   x *: y = (*) <$> x <*> y
 
 instance (Ring.C a) => MulLit E a where
-  mulLit x y = (x*) <$> y
+  mulLit x y = (x *) <$> y
 
 instance SHE E where
 
@@ -134,3 +131,4 @@ logError op a = do
   a' <- a
   let err = errRatio (eval a') sk
   tell $ op ++ ": " ++ show err
+

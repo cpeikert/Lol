@@ -32,7 +32,7 @@ import Data.Type.Natural (Nat (..), type (:+:), N2)
 import GHC.TypeLits      hiding (type (*), Nat)
 
 import Crypto.Lol                      hiding (Pos (..))
-import Crypto.Lol.Applications.SymmSHE hiding (rescaleLinearCT, KeySwitchCtx)
+import Crypto.Lol.Applications.SymmSHE
 
 import Crypto.Alchemy.Interpreter.Compiler.Environment
 import Crypto.Alchemy.Interpreter.Compiler.PNoise
@@ -103,8 +103,8 @@ instance (Mul ctexpr ct, SHE ctexpr, PreMul ctexpr ct ~ ct,
           ct ~ Cyc2CT m'map zqs (PNoise h (Cyc t m zp)), ct ~ CT m zp (Cyc t m' zq),
           z ~ LiftOf zp, zq' ~ (ksmod, zq),
           KSHintCtx gad t m' z zq', GenSKCtx t m' z v,
-          RescaleCtx ctexpr (CT m zp (Cyc t m' zq)) (PNoise2Zq zqs (h :+: N2)),
-          KeySwitchCtx ctexpr (CT m zp (Cyc t m' zq)) (ksmod, zq) gad,
+          RescaleLinearCtx ctexpr (CT m zp (Cyc t m' zq)) (PNoise2Zq zqs (h :+: N2)),
+          KeySwitchQuadCtx ctexpr (CT m zp (Cyc t m' zq)) (ksmod, zq) gad,
 
           -- EAC: Should be able to write (only) the two constraints below, but can't:
           -- (Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq')))
@@ -123,7 +123,7 @@ instance (Mul ctexpr ct, SHE ctexpr, PreMul ctexpr ct ~ ct,
     a' <- a
     b' <- b
     hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) _) <- getKSHint (Proxy::Proxy ksmod) (Proxy::Proxy (LiftOf zp)) (Proxy::Proxy zq)
-    return $ keySwitchQuad hint $ (rescaleLinearCT a') *: (rescaleLinearCT b')
+    return $ keySwitchQuad hint $ (rescaleLinear a') *: (rescaleLinear b')
 
 ----- Type families -----
 
