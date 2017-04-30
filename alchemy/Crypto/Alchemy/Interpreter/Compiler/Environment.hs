@@ -8,7 +8,14 @@
 -- | Contains internal helper functions for PT2CT for looking up/generating
 -- keys and hints during compilation
 
-module Crypto.Alchemy.Interpreter.Compiler.Environment (P2CState, newP2CState, genTunnHint, getKSHint, keyLookup, hintLookup) where
+module Crypto.Alchemy.Interpreter.Compiler.Environment
+(P2CState
+,newP2CState
+,genTunnHint
+,getKSHint
+,keyLookup
+,hintLookup
+,(>=<)) where
 
 import Control.Monad.Random
 import Control.Monad.Reader
