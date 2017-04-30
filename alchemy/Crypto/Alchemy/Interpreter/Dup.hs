@@ -1,5 +1,60 @@
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
+
+module Crypto.Alchemy.Interpreter.Dup (Dup, dup) where
+
+import Crypto.Alchemy.Language.Arithmetic
+import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.Lit
+import Crypto.Alchemy.Language.SHE
+
+dup :: Dup expr1 expr2 e a -> (expr1 e a, expr2 e a)
+dup (Dup a b) = (a,b)
+
+data Dup expr1 expr2 e a = Dup (expr1 e a) (expr2 e a)
+
+instance (Lambda ex1, Lambda ex2) => Lambda (Dup ex1 ex2) where
+  lam (Dup f1 f2) = Dup (lam f1) (lam f2)
+  (Dup f1 f2) $: (Dup a1 a2) = Dup (f1 $: a1) (f2 $: a2)
+
+instance (DB ex1 a, DB ex2 a) => DB (Dup ex1 ex2) a where
+  v0 = Dup v0 v0
+  s (Dup a1 a2) = Dup (s a1) (s a2)
+
+instance (Add ex1 a, Add ex2 a) => Add (Dup ex1 ex2) a where
+  (Dup a1 a2) +: (Dup b1 b2) = Dup (a1 +: b1) (a2 +: b2)
+
+instance (Mul ex1 a, Mul ex2 a, PreMul ex1 a ~ PreMul ex2 a) => Mul (Dup ex1 ex2) a where
+  type PreMul (Dup ex1 ex2) a = PreMul ex1 a
+  (Dup a1 a2) *: (Dup b1 b2) = Dup (a1 *: b1) (a2 *: b2)
+
+instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
+  type ModSwitchCtx (Dup ex1 ex2) ct zp' = (ModSwitchCtx ex1 ct zp', ModSwitchCtx ex2 ct zp')
+  type RescaleCtx   (Dup ex1 ex2) ct zq' = (RescaleCtx ex1 ct zq', RescaleCtx ex2 ct zq')
+  type AddPubCtx    (Dup ex1 ex2) ct = (AddPubCtx ex1 ct, AddPubCtx ex2 ct)
+  type MulPubCtx    (Dup ex1 ex2) ct = (MulPubCtx ex1 ct, MulPubCtx ex2 ct)
+  type KeySwitchCtx (Dup ex1 ex2) ct zq' gad =
+    (KeySwitchCtx ex1 ct zq' gad, KeySwitchCtx ex2 ct zq' gad)
+  type TunnelCtx    (Dup ex1 ex2) t e r s e' r' s' zp zq gad =
+    (TunnelCtx ex1 t e r s e' r' s' zp zq gad, TunnelCtx ex2 t e r s e' r' s' zp zq gad)
+
+  modSwitchPT (Dup a b) = Dup (modSwitchPT a) (modSwitchPT b)
+
+  rescaleLinearCT (Dup a b) = Dup (rescaleLinearCT a) (rescaleLinearCT b)
+
+  addPublic a (Dup b c) = Dup (addPublic a b) (addPublic a c)
+
+  mulPublic a (Dup b c) = Dup (mulPublic a b) (mulPublic a c)
+
+  keySwitchQuad h (Dup b c) = Dup (keySwitchQuad h b) (keySwitchQuad h c)
+
+  tunnel f (Dup a b) = Dup (tunnel f a) (tunnel f b)
+
+{-
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds             #-}
@@ -56,3 +111,4 @@ instance (Mul ex1 a1, Mul ex2 a2) => Mul (Dup '(ex1,ex2)) (a1,a2) where
 
 instance (Lit ex1 a1, Lit ex2 a2) => Lit (Dup '(ex1, ex2)) (a1, a2) where
   lit (a1,a2) = Dup (lit a1) (lit a2)
+-}
