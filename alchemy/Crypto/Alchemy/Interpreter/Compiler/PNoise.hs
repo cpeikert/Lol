@@ -83,9 +83,9 @@ singletons [d|
 type PNoise2Zq zqs h =
   List2Pairs (Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs)
 
--- | Base of the logarithm in pNoise := -log (noise rate).
-pNoiseBase :: Double
-pNoiseBase = 7.5
+-- | Logarithm of a noise unit.
+pNoise :: Double
+pNoise = 7.5
 
 mkTypeNat :: Int -> TypeQ
 mkTypeNat x | x < 0 = error $ "mkTypeNat: negative argument " ++ show x
@@ -97,7 +97,7 @@ mkTypeLit = litT . numTyLit
 
 mkQ :: Integer -> TypeQ
 mkQ q =
-  let lgq = floor $ logBase pNoiseBase (fromInteger q)
+  let lgq = floor $ logBase 2 (fromInteger q) / pNoise
   in conT 'NN `appT` (mkTypeLit q) `appT` (mkTypeNat lgq)
 
 instance (Reflects x i) => Reflects ('NN x y) i where
