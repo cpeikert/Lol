@@ -16,7 +16,6 @@ import NumericPrelude
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.Lit
 
 -- | Metacircular evaluator.
 newtype E e a = E { unE :: e -> a }
@@ -46,6 +45,3 @@ instance (Ring.C a) => Mul E a where
 
 instance (Ring.C a) => MulLit E a where
   mulLit x y = E $ \e -> x * unE y e
-
-instance Lit E a where
-  lit = E . const

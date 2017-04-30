@@ -10,7 +10,6 @@ where
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.Lit
 import Crypto.Alchemy.Language.SHE
 
 import Crypto.Lol (Cyc)
@@ -47,9 +46,6 @@ instance Mul P a where
 
 instance Show a => MulLit P a where
   mulLit a b = P $ \i -> "mulLit ( " ++ show a ++ " ) ( " ++ unP b i ++ " )"
-
-instance (Show a) => Lit P a where
-  lit = P . const . show
 
 instance SHE P where
 

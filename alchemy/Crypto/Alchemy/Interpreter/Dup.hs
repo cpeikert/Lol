@@ -7,7 +7,6 @@ module Crypto.Alchemy.Interpreter.Dup (Dup, dup) where
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.Lit
 import Crypto.Alchemy.Language.SHE
 
 dup :: Dup expr1 expr2 e a -> (expr1 e a, expr2 e a)
