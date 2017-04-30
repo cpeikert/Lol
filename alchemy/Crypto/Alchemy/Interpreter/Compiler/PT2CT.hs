@@ -54,7 +54,7 @@ encryptArg st x = flip evalState st $ do
 compile :: forall m'map zqs ksmod gad v ctexpr a rnd mon .
   (MonadRandom rnd, mon ~ ReaderT v (StateT P2CState rnd))
   => v -> PT2CT m'map zqs ksmod gad v ctexpr mon () a -> rnd (ctexpr () (Cyc2CT m'map zqs a), P2CState)
-compile v (PC a) = flip runStateT (St ([],[])) $ flip runReaderT v a
+compile v (PC a) = flip runStateT newP2CState $ flip runReaderT v a
 
 -- | Interprets plaintext operations as their corresponding
 -- (homomorphic) ciphertext operations.  The represented plaintext
@@ -104,7 +104,6 @@ instance (Mul ctexpr ct, SHE ctexpr, PreMul ctexpr ct ~ ct,
           -- (Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq')))
           -- See https://ghc.haskell.org/trac/ghc/ticket/13490
           Typeable t, Typeable zq, Typeable ksmod, Typeable gad, Typeable z, Typeable m',
-
           MonadRandom mon, MonadReader v mon, MonadState P2CState mon)
   => Mul (PT2CT m'map zqs ksmod gad v ctexpr mon) (PNoise h (Cyc t m zp)) where
 

@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts    #-}
 {-# LANGUAGE LambdaCase          #-}
+{-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeFamilies        #-}
@@ -7,7 +8,7 @@
 -- | Contains internal helper functions for PT2CT for looking up/generating
 -- keys and hints during compilation
 
-module Crypto.Alchemy.Interpreter.Compiler.Environment where
+module Crypto.Alchemy.Interpreter.Compiler.Environment (P2CState, newP2CState, genTunnHint, getKSHint, keyLookup, hintLookup) where
 
 import Control.Monad.Random
 import Control.Monad.Reader
@@ -21,7 +22,10 @@ import Crypto.Lol.Applications.SymmSHE
 
 ---- Monad helper functions
 
-newtype P2CState = St {unST :: ([Dynamic],[Dynamic])}
+data P2CState = St {keys :: [Dynamic], hints :: [Dynamic]} deriving (Show)
+
+newP2CState :: P2CState
+newP2CState = St [] []
 
 -- retrieve the scaled variance parameter from the Reader
 getSvar :: (MonadReader v mon) => mon v
@@ -34,7 +38,22 @@ getKey :: forall z v mon t m' . (MonadReader v mon, MonadState P2CState mon,
 getKey = keyLookup >>= \case
   (Just t) -> return t
   -- generate a key with the variance stored in the Reader monad
-  Nothing -> genSK =<< getSvar
+  Nothing -> do
+    v <- getSvar
+    putKey >=< genSK v
+
+putKey :: (MonadState P2CState m, Typeable r') => SK r' -> m ()
+putKey sk = modify' $ \St{..} -> St {keys=toDyn sk : keys,..}
+
+putHint :: (MonadState P2CState m, Typeable a) => a -> m ()
+putHint h = modify' $ \St{..} -> St {hints=toDyn h : hints,..}
+
+-- sequences the first action and returns the value of the second
+(>=<) :: (Monad m) => (a -> m ()) -> m a -> m a
+a >=< b = do
+  b' <- b
+  a b'
+  return b'
 
 -- not memoized right now, but could be if we also store the linear function as part of the lookup key
 -- EAC: https://ghc.haskell.org/trac/ghc/ticket/13490
@@ -64,15 +83,15 @@ getKSHint _ _ _ = hintLookup >>= \case
   (Just h) -> return h
   Nothing -> do
     sk :: SK (Cyc t m' z) <- getKey
-    ksQuadCircHint sk
+    putHint >=< ksQuadCircHint sk
 
 -- lookup a key in the state
 keyLookup :: (Typeable a, MonadState P2CState mon) => mon (Maybe a)
-keyLookup = (dynLookup . fst . unST) <$> get
+keyLookup = (dynLookup . keys) <$> get
 
 -- lookup a hint in the state
 hintLookup :: (Typeable a, MonadState P2CState mon) => mon (Maybe a)
-hintLookup = (dynLookup . snd . unST) <$> get
+hintLookup = (dynLookup . hints) <$> get
 
 -- lookup an item in a dynamic list
 dynLookup :: (Typeable a) => [Dynamic] -> Maybe a
