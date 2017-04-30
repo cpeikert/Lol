@@ -21,10 +21,12 @@ module Crypto.Alchemy.Interpreter.Compiler.PNoise where
 import           Algebra.Additive          as Additive (C)
 import           Algebra.Ring              as Ring (C)
 import           Data.Functor.Trans.Tagged
-import           Data.Singletons.Prelude
-import           Data.Singletons.TH
+import           Data.Singletons.Prelude   hiding ((:<))
+import           Data.Singletons.Prelude.List (Sum)
+import           Data.Singletons.TH        hiding ((:<))
 import           Data.Type.Natural
-import qualified GHC.TypeLits              as TL
+import qualified GHC.TypeLits              as TL (Nat)
+import           GHC.TypeLits              hiding (Nat)
 import           Language.Haskell.TH
 
 import Crypto.Lol.Reflects
@@ -75,13 +77,27 @@ singletons [d|
              prefixLen (a : rest) h = if a >= h then S Z
                                       else S (prefixLen rest (h - a))
              prefixLen [] _ =
+               -- this should be caught by the PNoise2ZqError type family
                error "prefixLen: threshold is larger than sum of list entries"
            |]
 
 -- | Given a list of moduli, construct nested pairs representing a
 -- modulus large enough to contain the given pNoise @h@.
 type PNoise2Zq zqs h =
-  List2Pairs (Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs)
+  PNoise2ZqError (h :<= (Sum (MapNatOf (MapModulus zqs)))) (Sum (MapNatOf (MapModulus zqs))) h zqs
+
+type family NatToLit x where
+  NatToLit 'Z = 0
+  NatToLit ('S n) = 1 + (NatToLit n)
+
+type family PNoise2ZqError b sum h zqs where
+  -- h <= sum: we're good to go
+  PNoise2ZqError 'True sum h zqs = List2Pairs (Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs)
+  -- error if sum < h
+  PNoise2ZqError 'False sum h zqs =
+    TypeError ('Text "PNoise2Zq: Modulus needs to support at least " ':<>: 'ShowType (NatToLit h) ':<>:
+      'Text " noise units, but it only supports " ':<>: 'ShowType (NatToLit sum) ':<>: 'Text " units." ':$$:
+      'Text "You need a bigger modulus!")
 
 -- | Logarithm of a noise unit.
 pNoise :: Double

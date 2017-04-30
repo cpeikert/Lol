@@ -47,7 +47,7 @@ main = do
   -- compile the un-applied function to CT, then print it out
   (x,st) <- compileP2C
          @'[ '(F4, F8) ]
-         @'[ Zq $(mkQ $ 2^(40 :: Int))] -- , Zq $(mkQ 11) ]
+         @'[ Zq $(mkQ $ 2^(15 :: Int))] -- , Zq $(mkQ 11) ]
          @(Zq $(mkQ 13))
          @TrivGad
          @Double
