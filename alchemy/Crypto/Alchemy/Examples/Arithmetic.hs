@@ -1,26 +1,27 @@
-{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE PolyKinds           #-}
-{-# LANGUAGE RebindableSyntax    #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell     #-}
-{-# LANGUAGE TypeApplications    #-}
-{-# LANGUAGE TypeFamilies        #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Crypto.Alchemy.Examples.Arithmetic where
 
 import Control.Monad.Reader
 
+import Crypto.Alchemy.Interpreter.Compiler.Noise
+import Crypto.Alchemy.Interpreter.Compiler.PT2CT
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
 import Crypto.Alchemy.Interpreter.Print
-import Crypto.Alchemy.Interpreter.Compiler.Noise
-import Crypto.Alchemy.Interpreter.Compiler.PT2CT
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 
-import Crypto.Lol hiding (Pos(..))
+import Crypto.Lol                       hiding (Pos (..))
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
@@ -47,7 +48,7 @@ main = do
   -- compile the un-applied function to CT, then print it out
   (x,st) <- compileP2C
          @'[ '(F4, F8) ]
-         @'[ Zq $(mkTLNatNat $ 2^(40 :: Int))] -- , Zq $(mkTLNatNat 11) ]
+         @'[ Zq $(mkTLNatNat $ 2^(15 :: Int))] -- , Zq $(mkTLNatNat 11) ]
          @(Zq $(mkTLNatNat 13))
          @TrivGad
          @Double

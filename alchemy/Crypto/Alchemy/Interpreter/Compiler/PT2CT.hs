@@ -96,6 +96,7 @@ instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
   => Add (PT2CT m'map zqs ksmod gad v ctex mon) a where
 
   (PC a) +: (PC b) = PC $ (+:) <$> a <*> b
+  negate' (PC a) = PC $ negate' <$> a
 
 instance (Mul ctexpr ct, SHE ctexpr, PreMul ctexpr ct ~ ct,
           ct ~ Cyc2CT m'map zqs (PNoise h (Cyc t m zp)), ct ~ CT m zp (Cyc t m' zq),

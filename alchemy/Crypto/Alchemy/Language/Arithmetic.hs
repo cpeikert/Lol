@@ -9,6 +9,7 @@ class Add expr a where
   infixl 6 +:                   -- match Haskell's precedence
 
   (+:) :: expr e a -> expr e a -> expr e a
+  negate' :: expr e a -> expr e a
 
 -- | Addition of (metalanguage) literals to (object language)
 -- expressions.
@@ -34,3 +35,7 @@ class MulLit expr a where
   infixl 7 `mulLit`
 
   mulLit :: a -> expr e a -> expr e a
+
+infixl 6  -:
+(-:) :: (Add expr a) => expr e a -> expr e a -> expr e a
+a -: b = a +: negate' b

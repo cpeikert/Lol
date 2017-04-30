@@ -36,6 +36,7 @@ instance Lambda P where
 
 instance Add P a where
   a +: b = P $ \i -> "(" ++ unP a i ++ " + " ++ unP b i ++ ")"
+  negate' a = P $ \i -> "(negate " ++ unP a i ++ " )"
 
 instance Show a => AddLit P a where
   addLit p a = P $ \i -> "(addLit (" ++ show p ++ ") " ++ unP a i ++ ")"
