@@ -52,6 +52,9 @@ compile v (PC a) = do
   (b,st) <- flip runStateT ([],[]) $ flip runReaderT v a
   return (b, St st)
 
+-- | A value tagged by @pNoise =~ -log(noise rate)@.
+newtype PNoise (h :: Nat) a = PN a deriving (Additive.C, Ring.C)
+
 -- | Interprets plaintext operations as their corresponding
 -- (homomorphic) ciphertext operations.  The represented plaintext
 -- types should have the form 'PNoise h (Cyc t m zp)'.
@@ -70,9 +73,6 @@ newtype PT2CT
   e               -- | environment
   a               -- | plaintext type, of form 'PNoise h (Cyc t m zp)'
   = PC { pt2ct :: mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)) }
-
--- | A value tagged by @pNoise =~ -log(noise rate)@.
-newtype PNoise (h :: Nat) a = PN a deriving (Additive.C, Ring.C)
 
 instance (Lambda ctex, Applicative mon)
   => Lambda (PT2CT m'map zqs ksmod gad v ctex mon) where

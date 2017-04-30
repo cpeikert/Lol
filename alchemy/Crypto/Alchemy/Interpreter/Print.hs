@@ -1,5 +1,7 @@
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Crypto.Alchemy.Interpreter.Print
 ( P, pprint
@@ -8,6 +10,9 @@ where
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.Lit
+
+import Crypto.Lol (Cyc)
 
 -- the Int is the nesting depth of lambdas outside the expression
 newtype P e a = P { unP :: Int -> String }
@@ -25,12 +30,15 @@ instance DB P a where
   s  v = P $ \i -> unP v (i-1)
 
 instance Lambda P where
-  lam f  = P $ \i -> "(\v" ++ show  i ++ " -> " ++ unP f (i+1) ++ ")"
+  lam f  = P $ \i -> "(\\v" ++ show  i ++ " -> " ++ unP f (i+1) ++ ")"
   f $: a = P $ \i -> "("   ++ unP f i ++ " "    ++ unP a i     ++ ")"
 
 instance Add P a where
   a +: b = P $ \i -> "(" ++ unP a i ++ " + " ++ unP b i ++ ")"
 
-instance Mul P a a where
+instance Mul P a where
+  type PreMul P a = a
   a *: b = P $ \i -> "(" ++ unP a i ++ " * " ++ unP b i ++ ")"
 
+instance (Show (Cyc t m zp)) => Lit P (Cyc t m zp) where
+  lit = P . const . show

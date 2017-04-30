@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Crypto.Alchemy.Interpreter.Eval
 ( E, eval
@@ -15,6 +16,9 @@ import NumericPrelude
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.Lit
+
+import Crypto.Lol (Cyc)
 
 -- | Metacircular evaluator.
 newtype E e a = E { unE :: e -> a }
@@ -35,5 +39,9 @@ instance DB E a where
 instance (Additive.C a) => Add E a where
   x +: y = E $ \e -> unE x e + unE y e
 
-instance (Ring.C a) => Mul E a a where
+instance (Ring.C a) => Mul E a where
+  type PreMul E a = a
   x *: y = E $ \e -> unE x e * unE y e
+
+instance Lit E (Cyc t m zp) where
+  lit = E . const
