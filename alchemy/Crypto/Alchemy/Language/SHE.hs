@@ -21,7 +21,7 @@ class SHE expr where
   type TunnelCtx    expr (t :: Factored -> * -> *) (e :: Factored) (r :: Factored) (s :: Factored) (e' :: Factored) (r' :: Factored) (s' :: Factored) zp zq gad :: Constraint
 
   modSwitchPT :: (ModSwitchCtx expr ct zp', ct ~ CT m zp (Cyc t m' zq))
-    => expr env ct -> expr e (CT m zp' (Cyc t m' zq))
+    => expr env ct -> expr env (CT m zp' (Cyc t m' zq))
 
   rescale :: (RescaleCtx expr ct zq', ct ~ CT m zp (Cyc t m' zq))
     => expr env (CT m zp (Cyc t m' zq')) -> expr env ct
