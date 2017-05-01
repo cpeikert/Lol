@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Crypto.Alchemy.Language.Lambda where
@@ -14,6 +15,13 @@ class Lambda expr where
 -- | Let-sharing.
 let_ :: Lambda expr => expr e a -> expr (e,a) b -> expr e b
 let_ a f = lam f $: a
+
+-- | Composition.
+infixr 9 .:
+-- could also drop the DB (a->b), (b->c) and set f,g envs to (e,a)
+(.:) :: (Lambda expr, DB expr a, DB expr (a -> b), DB expr (b -> c)) =>
+        expr e (b -> c) -> expr e (a -> b) -> expr e (a -> c)
+f .: g = lam (s f $: (s g $: v0))
 
 -- | Symantics for de Bruijn variables.
 
