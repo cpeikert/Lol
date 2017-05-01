@@ -5,10 +5,10 @@
 {-# LANGUAGE TypeApplications    #-}
 {-# LANGUAGE TypeFamilies        #-}
 
--- | Contains internal helper functions for PT2CT for looking up/generating
+-- | Internal helper functions for PT2CT for looking up/generating
 -- keys and hints during compilation
 
-module Crypto.Alchemy.Interpreter.Compiler.Environment
+module Crypto.Alchemy.Interpreter.PT2CT.Environment
 ( P2CState
 , newP2CState
 , tunnelHint

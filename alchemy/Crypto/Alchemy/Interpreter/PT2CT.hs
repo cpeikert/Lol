@@ -14,7 +14,7 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Alchemy.Interpreter.Compiler.PT2CT
+module Crypto.Alchemy.Interpreter.PT2CT
 ( PT2CT
 , PNoise
 , P2CState
@@ -31,8 +31,8 @@ import GHC.TypeLits      hiding (type (*), Nat)
 import Crypto.Lol                      hiding (Pos (..))
 import Crypto.Lol.Applications.SymmSHE
 
-import Crypto.Alchemy.Interpreter.Compiler.Environment
-import Crypto.Alchemy.Interpreter.Compiler.Noise
+import Crypto.Alchemy.Interpreter.PT2CT.Environment
+import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.SHE

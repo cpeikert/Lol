@@ -16,7 +16,7 @@
 {-# LANGUAGE UndecidableInstances       #-}
 
 -- should be a hidden/internal module
-module Crypto.Alchemy.Interpreter.Compiler.Noise where
+module Crypto.Alchemy.Interpreter.PT2CT.Noise where
 
 import           Algebra.Additive          as Additive (C)
 import           Algebra.Ring              as Ring (C)
