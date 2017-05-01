@@ -33,21 +33,21 @@ instance (Mul ex1 a, Mul ex2 a, PreMul ex1 a ~ PreMul ex2 a) =>
   (Dup a1 a2) *: (Dup b1 b2) = Dup (a1 *: b1) (a2 *: b2)
 
 instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
-  type ModSwitchCtx (Dup ex1 ex2) ct zp' = (ModSwitchCtx ex1 ct zp',
-                                            ModSwitchCtx ex2 ct zp')
-  type RescaleCtx   (Dup ex1 ex2) ct zq' = (RescaleCtx ex1 ct zq',
-                                            RescaleCtx ex2 ct zq')
-  type AddPubCtx    (Dup ex1 ex2) ct = (AddPubCtx ex1 ct, AddPubCtx ex2 ct)
-  type MulPubCtx    (Dup ex1 ex2) ct = (MulPubCtx ex1 ct, MulPubCtx ex2 ct)
-  type KeySwitchCtx (Dup ex1 ex2) ct zq' gad = (KeySwitchCtx ex1 ct zq' gad,
-                                                KeySwitchCtx ex2 ct zq' gad)
+  type ModSwitchPTCtx (Dup ex1 ex2) ct zp' = (ModSwitchPTCtx ex1 ct zp',
+                                              ModSwitchPTCtx ex2 ct zp')
+  type RescaleLinearCtx (Dup ex1 ex2) ct zq' = (RescaleLinearCtx ex1 ct zq',
+                                                RescaleLinearCtx ex2 ct zq')
+  type AddPublicCtx (Dup ex1 ex2) ct = (AddPublicCtx ex1 ct, AddPublicCtx ex2 ct)
+  type MulPublicCtx (Dup ex1 ex2) ct = (MulPublicCtx ex1 ct, MulPublicCtx ex2 ct)
+  type KeySwitchQuadCtx (Dup ex1 ex2) ct zq' gad = (KeySwitchQuadCtx ex1 ct zq' gad,
+                                                    KeySwitchQuadCtx ex2 ct zq' gad)
   type TunnelCtx    (Dup ex1 ex2) t e r s e' r' s' zp zq gad =
     (TunnelCtx ex1 t e r s e' r' s' zp zq gad,
      TunnelCtx ex2 t e r s e' r' s' zp zq gad)
 
   modSwitchPT (Dup a b) = Dup (modSwitchPT a) (modSwitchPT b)
 
-  rescaleLinearCT (Dup a b) = Dup (rescaleLinearCT a) (rescaleLinearCT b)
+  rescaleLinear (Dup a b) = Dup (rescaleLinear a) (rescaleLinear b)
 
   addPublic p (Dup a b) = Dup (addPublic p a) (addPublic p b)
 

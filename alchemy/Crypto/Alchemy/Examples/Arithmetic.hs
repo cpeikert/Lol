@@ -46,7 +46,7 @@ main = do
   putStrLn $ show $ eval (pt1 @Int) 7 11
 
   -- compile the un-applied function to CT, then print it out
-  (x,st) <- compileP2C
+  (x,st) <- pt2ct
          @'[ '(F4, F8) ]
          @'[ Zq $(mkTLNatNat $ 2^(15 :: Int))] -- , Zq $(mkTLNatNat 11) ]
          @(Zq $(mkTLNatNat 13))
@@ -71,5 +71,4 @@ main = do
 
 -- EAC: TODO
 -- write an interpreter to remove "rescale a -> a"
--- warnings about moduli mismatches
 -- encapsulation for compile CTs? (CTWrapper?)
