@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
-module Crypto.Alchemy.Interpreter.Eval ( E, eval) where
+module Crypto.Alchemy.Interpreter.Eval ( E, eval ) where
 
 import Control.Applicative
 import Control.Monad.State
@@ -21,9 +21,9 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.SHE
 
-import Crypto.Lol hiding (lift)
-import qualified Crypto.Lol.Applications.SymmSHE as SHE
+import           Crypto.Lol
 import           Crypto.Lol.Applications.SymmSHE (CT, ToSDCtx)
+import qualified Crypto.Lol.Applications.SymmSHE as SHE
 
 -- | Metacircular evaluator.
 newtype E e a = E { unE :: e -> a } deriving (Functor, Applicative)
@@ -64,8 +64,8 @@ instance SHE E where
   type KeySwitchQuadCtx E (CT m zp (Cyc t m' zq)) zq' gad = (SHE.KeySwitchCtx gad t m' zp zq zq')
   type TunnelCtx    E t e r s e' r' s' zp zq gad      = (SHE.TunnelCtx t r s e' r' s' zp zq gad)
 
-  modSwitchPT     = fmap SHE.modSwitchPT
-  rescaleLinear = fmap SHE.rescaleLinearCT
+  modSwitchPT     = fmap   SHE.modSwitchPT
+  rescaleLinear   = fmap   SHE.rescaleLinearCT
   addPublic       = fmap . SHE.addPublic
   mulPublic       = fmap . SHE.mulPublic
   keySwitchQuad   = fmap . SHE.keySwitchQuadCirc
