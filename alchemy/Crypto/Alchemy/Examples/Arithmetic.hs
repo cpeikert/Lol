@@ -14,6 +14,7 @@ import Control.Monad.Reader
 
 import Crypto.Alchemy.Interpreter.Compiler.Noise
 import Crypto.Alchemy.Interpreter.Compiler.PT2CT
+import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
 import Crypto.Alchemy.Interpreter.Print
@@ -48,7 +49,7 @@ main = do
   -- compile the un-applied function to CT, then print it out
   (x,st) <- pt2ct
          @'[ '(F4, F8) ]
-         @'[ Zq $(mkTLNatNat $ 2^(15 :: Int))] -- , Zq $(mkTLNatNat 11) ]
+         @'[ Zq $(mkTLNatNat $ 2^(15 :: Int)), Zq $(mkTLNatNat $ 2^(15 :: Int)+1) ]
          @(Zq $(mkTLNatNat 13))
          @TrivGad
          @Double
@@ -57,11 +58,14 @@ main = do
 
   -- duplicate the compiled expression
   let (z1,z2) = dup x
+      (w1,w2) = dup z1
   -- encrypt some arguments
   arg1 <- fromJust $ encryptP2C st 7
   arg2 <- fromJust $ encryptP2C st 11
   -- print the compiled function
-  putStrLn $ pprint z1
+  putStrLn $ pprint w1
+  -- if the first modulus is large enough, this will remove the rescales!
+  putStrLn $ pprint $ dedupRescale w2
   -- evaluate the compiled function, then apply it to encrypted inputs
   let result = eval z2 arg1 arg2
   -- show the encrypted result
@@ -70,5 +74,6 @@ main = do
   putStrLn $ show $ decryptP2C st result
 
 -- EAC: TODO
--- write an interpreter to remove "rescale a -> a"
 -- encapsulation for compile CTs? (CTWrapper?)
+-- tunneling example
+-- print out intermediate error ratios
