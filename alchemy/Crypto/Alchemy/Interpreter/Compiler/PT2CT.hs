@@ -66,18 +66,16 @@ pt2ct v (PC a) = flip runStateT newP2CState $ flip runReaderT v a
 -- types should have the form 'PNoise h (Cyc t m zp)'.
 
 newtype PT2CT
-  m'map           -- | list of (plaintext index m, ciphertext index m')
-  zqs             -- | list of ciphertext moduli, in increasing order.
-  --   E.g., '[ Zq 7, (Zq 11, Zq 7), (Zq 13, (Zq 11, Zq 7))].  Nesting
-  --   order should match efficient 'RescaleCyc' instances.
-  (kszq :: *)         -- | additional modulus to use for key switches. Must be
-  -- coprime to all moduli in `zqs`
-  (gad :: *)      -- | gadget type for key-switch hints
-  v               -- | variance type for secret keys/noise
-  ctex            -- | interpreter of ciphertext ops
-  mon             -- | monad for creating keys/noise
-  e               -- | environment
-  a               -- | plaintext type, of form 'PNoise h (Cyc t m zp)'
+  m'map    -- | list (map) of (plaintext index m, ciphertext index m')
+  zqs      -- | list of pairwise coprime Zq components for ciphertexts
+  kszq     -- | additional Zq component for key switches; must be
+           -- coprime to all moduli in 'zqs'
+  gad      -- | gadget type for key-switch hints
+  v        -- | scaled-variance type for secret keys/noise
+  ctex     -- | interpreter of ciphertext operations
+  mon      -- | monad for creating keys/noise
+  e        -- | environment
+  a        -- | plaintext type, of form 'PNoise h (Cyc t m zp)'
   = PC (mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)))
 
 instance (Lambda ctex, Applicative mon)
@@ -116,7 +114,7 @@ instance (Mul ctex ct, SHE ctex, PreMul ctex ct ~ ct,
   type PreMul (PT2CT m'map zqs kszq gad v ctex mon) (PNoise h (Cyc t m zp)) = PNoise (h :+: N2) (Cyc t m zp)
 
   (*:) :: forall a b e expr rp .
-       (rp ~ Cyc t m zp, a ~ PNoise h rp, b ~ PNoise (h :+: ('S ('S 'Z))) rp,
+       (rp ~ Cyc t m zp, a ~ PNoise h rp, b ~ PNoise (h :+: N2) rp,
         expr ~ PT2CT m'map zqs kszq gad v ctex mon)
        => expr e b -> expr e b -> expr e a
   (PC a) *: (PC b) = PC $ do
