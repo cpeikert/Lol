@@ -24,7 +24,7 @@ import Crypto.Alchemy.Language.Lambda
 
 -- CJP: also need some structure to give us secret keys
 newtype NoiseWriter e a = NW { unNW :: e -> a }
-  deriving (Functor, Applicative)
+  deriving (Functor)            -- not Applicative; don't want 'pure'!
 
 -- CJP: should String be replaced by something more structured?  E.g.,
 -- Integer to carry the largest noise coeff?  Or Double to carry the
@@ -40,7 +40,7 @@ writeNoise = flip unNW ()
 
 instance Lambda NoiseWriter where
   lam f  = NW $ curry $ unNW f
-  ($:) = (<*>)
+  f $: a = NW $ unNW f <*> unNW a
 
 instance DB NoiseWriter a where
   v0  = NW snd
