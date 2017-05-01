@@ -48,7 +48,7 @@ instance (DB expr a) => DB (DupRescale expr) a where
 
 instance (Add expr a) => Add (DupRescale expr) a where
   a +: b = NoCtx $ (dedupRescale a) +: (dedupRescale b)
-  negate' = dupMap negate'
+  neg = dupMap neg
 
 instance (Mul expr a) => Mul (DupRescale expr) a where
   type PreMul (DupRescale expr) a = PreMul expr a

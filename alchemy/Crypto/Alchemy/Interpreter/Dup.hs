@@ -24,7 +24,7 @@ instance (DB ex1 a, DB ex2 a) => DB (Dup ex1 ex2) a where
 
 instance (Add ex1 a, Add ex2 a) => Add (Dup ex1 ex2) a where
   (Dup a1 a2) +: (Dup b1 b2) = Dup (a1 +: b1) (a2 +: b2)
-  negate' (Dup a1 a2) = Dup (negate' a1) (negate' a2)
+  neg (Dup a1 a2) = Dup (neg a1) (neg a2)
 
 instance (Mul ex1 a, Mul ex2 a, PreMul ex1 a ~ PreMul ex2 a) =>
   Mul (Dup ex1 ex2) a where

@@ -43,7 +43,7 @@ instance DB E a where
 
 instance (Additive.C a) => Add E a where
   x +: y = (+) <$> x <*> y
-  negate' x = negate <$> x
+  neg x = negate <$> x
 
 instance (Additive.C a) => AddLit E a where
   addLit x y = (x +) <$> y

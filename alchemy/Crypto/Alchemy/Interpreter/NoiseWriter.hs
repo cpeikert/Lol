@@ -56,4 +56,4 @@ instance (MonadWriter NoiseLog mon, ct ~ (CT m zp (Cyc t m zq)),
     let z = x' + y'
     writer (z, [{- CJP: TODO; indicate result of (+:) ? -}])
 
-  negate' = fmap (fmap negate)  -- don't log noise b/c it doesn't grow
+  neg = fmap (fmap negate)  -- don't log noise b/c it doesn't grow
