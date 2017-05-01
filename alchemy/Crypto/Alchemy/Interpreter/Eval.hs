@@ -26,7 +26,8 @@ import           Crypto.Lol.Applications.SymmSHE (CT, ToSDCtx)
 import qualified Crypto.Lol.Applications.SymmSHE as SHE
 
 -- | Metacircular evaluator.
-newtype E e a = E { unE :: e -> a } deriving (Functor, Applicative)
+newtype E e a = E { unE :: e -> a }
+  deriving (Functor)            -- not Applicative; don't want 'pure'!
 
 -- | Evaluate a closed expression (i.e., one not having any unbound
 -- variables)
@@ -35,14 +36,14 @@ eval = flip unE ()
 
 instance Lambda E where
   lam f  = E $ curry $ unE f
-  ($:) = (<*>)
+  f $: a = E $ unE f <*> unE a
 
 instance DB E a where
   v0  = E snd
   s a = E $ unE a . fst
 
 instance (Additive.C a) => Add E a where
-  x +: y = (+) <$> x <*> y
+  x +: y = E $ (+) <$> unE x <*> unE y
   neg x = negate <$> x
 
 instance (Additive.C a) => AddLit E a where
@@ -50,7 +51,7 @@ instance (Additive.C a) => AddLit E a where
 
 instance (Ring.C a) => Mul E a where
   type PreMul E a = a
-  x *: y = (*) <$> x <*> y
+  x *: y = E $ (*) <$> unE x <*> unE y
 
 instance (Ring.C a) => MulLit E a where
   mulLit x y = (x *) <$> y
