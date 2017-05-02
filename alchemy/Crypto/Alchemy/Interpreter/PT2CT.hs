@@ -91,8 +91,8 @@ instance (Lambda ctex, Applicative mon)
 instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
   => Add (PT2CT m'map zqs kszq gad v ctex mon) a where
 
-  add = PC $ pure add
-  neg = PC $ pure neg
+  add_ = PC $ pure add_
+  neg_ = PC $ pure neg_
 
 instance (Lambda ctex, Mul ctex ct, SHE ctex, PreMul ctex ct ~ ct,
           ct ~ Cyc2CT m'map zqs (PNoise h (Cyc t m zp)), ct ~ CT m zp (Cyc t m' zq),
@@ -110,14 +110,15 @@ instance (Lambda ctex, Mul ctex ct, SHE ctex, PreMul ctex ct ~ ct,
 
   type PreMul (PT2CT m'map zqs kszq gad v ctex mon) (PNoise h (Cyc t m zp)) = PNoise (h :+: N2) (Cyc t m zp)
 
-  mul :: forall a b e expr rp .
-         (rp ~ Cyc t m zp, a ~ PNoise h rp, b ~ PNoise (h :+: N2) rp,
-          expr ~ PT2CT m'map zqs kszq gad v ctex mon)
-      => expr e (b -> b -> a)
-  mul = PC $ do
+  mul_ :: forall a b e expr rp .
+          (rp ~ Cyc t m zp, a ~ PNoise h rp, b ~ PNoise (h :+: N2) rp,
+           expr ~ PT2CT m'map zqs kszq gad v ctex mon) =>
+          expr e (b -> b -> a)
+  mul_ = PC $ do
     hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) _) <- 
       getKSHint (Proxy::Proxy kszq) (Proxy::Proxy (LiftOf zp)) (Proxy::Proxy zq)
-    return $ lam $ lam $ keySwitchQuad hint $ (rescaleLinear v0) *: (rescaleLinear v1)
+    return $ lam $ lam $
+      keySwitchQuad hint $ (rescaleLinear v0) *: (rescaleLinear v1)
 
 ----- Type families -----
 
