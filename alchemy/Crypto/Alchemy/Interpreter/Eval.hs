@@ -37,8 +37,6 @@ eval = flip unE ()
 instance Lambda E where
   lam f  = E $ curry $ unE f
   f $: a = E $ unE f <*> unE a
-
-instance DB E a where
   v0  = E snd
   s a = E $ unE a . fst
 
