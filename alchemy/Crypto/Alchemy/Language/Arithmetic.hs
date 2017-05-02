@@ -13,7 +13,7 @@ class Add expr a where
   -- | Negation.
   neg :: expr e (a -> a)
 
--- | Convenient equivalent of 'add'.
+-- | Convenient metalanguage version of 'add'.
 infixl 6 +:                     -- match Haskell's precedence
 (+:), (-:) :: (Add expr a, Lambda expr) => expr e a -> expr e a -> expr e a
 a +: b = add $: a $: b
@@ -38,7 +38,7 @@ class Mul expr a where
   -- | Multiplication.
   mul :: expr e (PreMul expr a -> PreMul expr a -> a)
 
--- | Convenient equivalent to 'mul'.
+-- | Convenient metalanguage version of 'mul'.
 infixl 7 *:                     -- match Haskell's precedence
 (*:) :: (Mul expr a, Lambda expr) =>
         expr e (PreMul expr a) -> expr e (PreMul expr a) -> expr e a
