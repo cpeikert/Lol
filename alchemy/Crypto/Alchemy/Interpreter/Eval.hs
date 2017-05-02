@@ -41,18 +41,18 @@ instance Lambda E where
   s a    = E $ unE a . fst
 
 instance (Additive.C a) => Add E a where
-  add = E $ pure (+)
-  neg = E $ pure negate
+  add_ = E $ pure (+)
+  neg_ = E $ pure negate
 
 instance (Additive.C a) => AddLit E a where
-  addLit x y = (x +) <$> y
+  x >+: y = (x +) <$> y
 
 instance (Ring.C a) => Mul E a where
   type PreMul E a = a
-  mul = E $ pure (*)
+  mul_ = E $ pure (*)
 
 instance (Ring.C a) => MulLit E a where
-  mulLit x y = (x *) <$> y
+  x >*: y = (x *) <$> y
 
 instance SHE E where
 
