@@ -17,8 +17,6 @@ data Dup expr1 expr2 e a = Dup (expr1 e a) (expr2 e a)
 instance (Lambda ex1, Lambda ex2) => Lambda (Dup ex1 ex2) where
   lam (Dup f1 f2) = Dup (lam f1) (lam f2)
   (Dup f1 f2) $: (Dup a1 a2) = Dup (f1 $: a1) (f2 $: a2)
-
-instance (DB ex1 a, DB ex2 a) => DB (Dup ex1 ex2) a where
   v0 = Dup v0 v0
   s (Dup a1 a2) = Dup (s a1) (s a2)
 

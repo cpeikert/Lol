@@ -22,17 +22,15 @@ newtype P e a = P { unP :: Int -> String }
 pprint :: P () a -> String
 pprint = flip unP 0
 
--- CJP: variable indices increase ("outside in"), rather than "inside
--- out" (the object-language form) because it is a simpler
--- implementation.
-
-instance DB P a where
-  v0   = P $ \i -> "v" ++ show (i-1)
-  s  v = P $ \i -> unP v (i-1)
+-- | In the printout, variable indices grow "outside in," rather than
+-- "inside out" (as in object-language code) because the
+-- implementation is simpler that way.
 
 instance Lambda P where
   lam f  = P $ \i -> "(\\v" ++ show  i ++ " -> " ++ unP f (i+1) ++ ")"
   f $: a = P $ \i -> "("    ++ unP f i ++ " "    ++ unP a i     ++ ")"
+  v0     = P $ \i -> "v" ++ show (i-1)
+  s  v   = P $ \i -> unP v (i-1)
 
 instance Add P a where
   a +: b = P $ \i -> "(" ++ unP a i ++ " + " ++ unP b i ++ ")"

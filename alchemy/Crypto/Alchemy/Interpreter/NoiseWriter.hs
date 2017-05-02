@@ -41,10 +41,8 @@ writeNoise = flip unNW ()
 instance Lambda NoiseWriter where
   lam f  = NW $ curry $ unNW f
   f $: a = NW $ unNW f <*> unNW a
-
-instance DB NoiseWriter a where
-  v0  = NW snd
-  s a = NW $ unNW a . fst
+  v0     = NW snd
+  s a    = NW $ unNW a . fst
 
 instance (MonadWriter NoiseLog mon, ct ~ (CT m zp (Cyc t m zq)),
           Additive.C ct {- CJP: more for extracting error -}) =>

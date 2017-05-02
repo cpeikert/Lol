@@ -85,9 +85,6 @@ instance (Lambda ctex, Applicative mon)
 
   (PC f) $: (PC a) = PC $ ($:) <$> f <*> a
 
-instance (DB ctex (Cyc2CT m'map zqs a), Applicative mon)
-  => DB (PT2CT m'map zqs kszq gad v ctex mon) a where
-
   v0       = PC $ pure v0
   s (PC a) = PC $ s <$> a
 
@@ -139,7 +136,10 @@ type family Cyc2CT m'map zqs e where
   Cyc2CT m'map zqs (a -> b) = (Cyc2CT m'map zqs a -> Cyc2CT m'map zqs b)
 
   Cyc2CT m'map zqs c =
-    TypeError ('Text "Cyc2CT can't convert type " ':$$: 'ShowType c)
+    TypeError ('Text "Type family 'Cyc2CT' can't convert type '"
+               ':<>: 'ShowType c ':<>: 'Text "'."
+               ':$$: 'Text "It only converts types of the form 'PNoise h (Cyc t m zp)"
+               ':<>: 'Text "and pairs/functions thereof.")
 
 -- type-level map lookup
 type family Lookup m map where
