@@ -12,7 +12,7 @@ class Lambda expr where
   -- | Application.
   ($:) :: expr e (a -> b) -> expr e a -> expr e b
 
-  -- | The zero'th (most recently bound) variable.
+  -- | The zero'th (most-recently bound) variable.
   v0 :: expr (b,a) a
 
   -- | Extend environment.
@@ -31,6 +31,7 @@ f .: g = lam (s f $: (s g $: v0))
 -- CJP: for some reason have to give signature here, even though ghci
 -- infers them correctly
 
+-- | The one'th (second-most-recently bound) variable.
 v1 :: Lambda expr => expr ((c,b),a) b
 v1 = s v0
 
