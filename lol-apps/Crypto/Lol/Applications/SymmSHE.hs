@@ -48,7 +48,7 @@ SK, PT, CT -- don't export constructors!
 , TunnelInfo, tunnelInfo
 , tunnelCT
 -- * Constraint synonyms
-, GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx
+, GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx, ErrorTermUCtx
 , DecryptCtx, DecryptUCtx
 , AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
 , KeySwitchCtx, KSHintCtx
@@ -174,6 +174,11 @@ decrypt sk ct =
      in (scalarCyc l) * twace (iterate divG' e !! k)
 
 --- unrestricted versions ---
+
+-- | Constraint synonym for unrestricted error term.
+type ErrorTermUCtx t m' z zp zq =
+  (Reduce z zq, Lift' zq, CElt t z, ToSDCtx t m' zp zq)
+
 -- | Constraint synonym for unrestricted decryption.
 type DecryptUCtx t m m' z zp zq =
   (Fact m, Fact m', CElt t zp, m `Divides` m',
@@ -183,7 +188,7 @@ type DecryptUCtx t m m' z zp zq =
 -- | More general form of 'errorTerm' that works for unrestricted
 -- output coefficient types.
 errorTermUnrestricted ::
-  (Reduce z zq, Lift' zq, CElt t z, ToSDCtx t m' zp zq)
+  (ErrorTermUCtx t m' z zp zq)
   => SK (Cyc t m' z) -> CT m zp (Cyc t m' zq) -> UCyc t m' D (LiftOf zq)
 errorTermUnrestricted (SK _ s) = let sq = reduce s in
   \ct -> let (CT LSD _ _ c) = toLSD ct
