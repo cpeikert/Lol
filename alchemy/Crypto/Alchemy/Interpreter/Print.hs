@@ -33,15 +33,15 @@ instance Lambda P where
   s  v   = P $ \i -> unP v (i-1)
 
 instance Add P a where
-  a +: b = P $ \i -> "(" ++ unP a i ++ " + " ++ unP b i ++ ")"
-  neg a  = P $ \i -> "(negate " ++ unP a i ++ " )"
+  add = P $ const "add"
+  neg = P $ const "neg"
 
 instance Show a => AddLit P a where
   addLit p a = P $ \i -> "(addLit (" ++ show p ++ ") " ++ unP a i ++ ")"
 
 instance Mul P a where
   type PreMul P a = a
-  a *: b = P $ \i -> "(" ++ unP a i ++ " * " ++ unP b i ++ ")"
+  mul = P $ const "mul"
 
 instance Show a => MulLit P a where
   mulLit p a = P $ \i -> "(mulLit (" ++ show p ++ ") " ++ unP a i ++ ")"

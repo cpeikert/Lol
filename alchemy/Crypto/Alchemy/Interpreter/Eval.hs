@@ -37,19 +37,19 @@ eval = flip unE ()
 instance Lambda E where
   lam f  = E $ curry $ unE f
   f $: a = E $ unE f <*> unE a
-  v0  = E snd
-  s a = E $ unE a . fst
+  v0     = E snd
+  s a    = E $ unE a . fst
 
 instance (Additive.C a) => Add E a where
-  x +: y = E $ (+) <$> unE x <*> unE y
-  neg x = negate <$> x
+  add = E $ pure (+)
+  neg = E $ pure negate
 
 instance (Additive.C a) => AddLit E a where
   addLit x y = (x +) <$> y
 
 instance (Ring.C a) => Mul E a where
   type PreMul E a = a
-  x *: y = E $ (*) <$> unE x <*> unE y
+  mul = E $ pure (*)
 
 instance (Ring.C a) => MulLit E a where
   mulLit x y = (x *) <$> y

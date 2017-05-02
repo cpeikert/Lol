@@ -21,14 +21,14 @@ instance (Lambda ex1, Lambda ex2) => Lambda (Dup ex1 ex2) where
   s (Dup a1 a2) = Dup (s a1) (s a2)
 
 instance (Add ex1 a, Add ex2 a) => Add (Dup ex1 ex2) a where
-  (Dup a1 a2) +: (Dup b1 b2) = Dup (a1 +: b1) (a2 +: b2)
-  neg (Dup a1 a2) = Dup (neg a1) (neg a2)
+  add = Dup add add
+  neg = Dup neg neg
 
 instance (Mul ex1 a, Mul ex2 a, PreMul ex1 a ~ PreMul ex2 a) =>
   Mul (Dup ex1 ex2) a where
 
   type PreMul (Dup ex1 ex2) a = PreMul ex1 a
-  (Dup a1 a2) *: (Dup b1 b2) = Dup (a1 *: b1) (a2 *: b2)
+  mul = Dup mul mul
 
 instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
   type ModSwitchPTCtx (Dup ex1 ex2) ct zp' = (ModSwitchPTCtx ex1 ct zp',
