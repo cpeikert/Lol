@@ -45,12 +45,12 @@ instance (Lambda expr) => Lambda (DedupRescale expr) where
   s a = NoCtx $ s $ dedupRescale a
 
 instance (Add expr a) => Add (DedupRescale expr) a where
-  add = NoCtx add
-  neg = NoCtx neg
+  add_ = NoCtx add_
+  neg_ = NoCtx neg_
 
 instance (Mul expr a) => Mul (DedupRescale expr) a where
   type PreMul (DedupRescale expr) a = PreMul expr a
-  mul = NoCtx mul
+  mul_ = NoCtx mul_
 
 instance (SHE expr) => SHE (DedupRescale expr) where
 
