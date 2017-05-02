@@ -3,6 +3,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
@@ -10,11 +11,7 @@ module Crypto.Alchemy.Interpreter.NoiseWriter
 ( NoiseWriter, writeNoise )
 where
 
-import Control.Applicative
 import Control.Monad.Writer.Class
-
-import Algebra.Additive as Additive (C)
-import NumericPrelude
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
@@ -42,12 +39,30 @@ type NoiseLog = [String]
 writeNoise :: NoiseWriter expr m e a -> expr (Monadify m e) (Monadify m a)
 writeNoise = unNW
 
-{-
-
 instance (Lambda expr) => Lambda (NoiseWriter expr m) where
+  lam    = NW . lam . unNW
+  f $: a = NW $ unNW f $: unNW a
+  v0     = NW v0
+  s      = NW . s . unNW
+
+
+-- | Log the noise rate of a given ciphertext.
+tellNoiseRate :: forall t m' m z zp zq mon ct .
+  (ErrorTermUCtx t m' z zp zq, Mod zq, ToInteger (LiftOf zq),
+   MonadWriter NoiseLog mon, ct ~ CT m zp (Cyc t m' zq)) =>
+  SK (Cyc t m' z) -> ct -> mon ct
+tellNoiseRate sk =
+  let noiseRate =
+        (/ (fromIntegral $ proxy modulus (Proxy::Proxy zq))) .
+        fromIntegral . maximum . fmap abs . errorTermUnrestricted sk
+  in \ct -> do
+    tell [show (noiseRate ct :: Double) ++ "\n"]
+    return ct
 
 instance (MonadWriter NoiseLog mon, ct ~ (CT m zp (Cyc t m zq)),
-          Additive.C ct {- CJP: more for extracting error -}) =>
-  Add (NoiseWriter expr mon) (mon ct) where
+          Applicative_ expr, Add expr ct {- CJP: more for extracting error -})
+         => Add (NoiseWriter expr mon) ct where
 
--}
+  add_ = NW $ liftA2_ $: add_
+
+  neg_ = NW $ liftA_ $: neg_  -- don't log error because it doesn't grow
