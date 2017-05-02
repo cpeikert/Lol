@@ -19,6 +19,7 @@ import Algebra.Ring     as Ring
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
 
 import           Crypto.Lol
@@ -53,6 +54,16 @@ instance (Ring.C a) => Mul E a where
 
 instance (Ring.C a) => MulLit E a where
   x >*: y = (x *) <$> y
+
+instance Functor_ E where
+  fmap_ = E $ pure fmap
+
+instance Applicative_ E where
+  pure_ = E $ pure pure
+  ap_   = E $ pure (<*>)
+
+instance Monad_ E where
+  bind_ = E $ pure (>>=)
 
 instance SHE E where
 
