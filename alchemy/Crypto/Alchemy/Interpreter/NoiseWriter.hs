@@ -21,37 +21,33 @@ import Crypto.Lol.Applications.SymmSHE
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.Monad
 
 -- CJP: also need some structure to give us secret keys
-newtype NoiseWriter e a = NW { unNW :: e -> a }
-  deriving (Functor)            -- not Applicative; don't want 'pure'!
+-- | A transformer that additionally logs the sizes of the noise terms
+-- of any ciphertexts created during interpretation.
+newtype NoiseWriter expr m e a =
+  NW { unNW :: expr (Monadify m e) (Monadify m a) }
+
+type family Monadify m a where
+  Monadify m (a,b) = (Monadify m a, Monadify m b)
+  Monadify m (a -> b) = Monadify m a -> Monadify m b
+  Monadify m a = m a
 
 -- CJP: should String be replaced by something more structured?  E.g.,
 -- Integer to carry the largest noise coeff?  Or Double to carry the
 -- noise rate?
 type NoiseLog = [String]
 
--- | Evaluate a closed expression.  (Typically the object-language
--- type @a@ should involve ciphertexts wrapped in a 'MonadWriter' for
--- 'NoiseLog', as needed by the instances of 'Add', 'Mul', etc. for
--- 'NoiseWriter')
-writeNoise :: NoiseWriter () a -> a
-writeNoise = flip unNW ()
+writeNoise :: NoiseWriter expr m e a -> expr (Monadify m e) (Monadify m a)
+writeNoise = unNW
 
-instance Lambda NoiseWriter where
-  lam f  = NW $ curry $ unNW f
-  f $: a = NW $ unNW f <*> unNW a
-  v0     = NW snd
-  s a    = NW $ unNW a . fst
+{-
+
+instance (Lambda expr) => Lambda (NoiseWriter expr m) where
 
 instance (MonadWriter NoiseLog mon, ct ~ (CT m zp (Cyc t m zq)),
           Additive.C ct {- CJP: more for extracting error -}) =>
-  Add NoiseWriter (mon ct) where
+  Add (NoiseWriter expr mon) (mon ct) where
 
-  x +: y = NW $ \e -> do
-    x' <- unNW x e
-    y' <- unNW y e
-    let z = x' + y'
-    writer (z, [{- CJP: TODO; indicate result of (+:) ? -}])
-
-  neg = fmap (fmap negate)  -- don't log noise b/c it doesn't grow
+-}
