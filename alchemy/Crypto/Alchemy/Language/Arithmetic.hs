@@ -9,25 +9,26 @@ import Crypto.Alchemy.Language.Lambda
 
 class Add expr a where
   -- | Addition.
-  add :: expr e (a -> a -> a)
+  add_ :: expr e (a -> a -> a)
   -- | Negation.
-  neg :: expr e (a -> a)
+  neg_ :: expr e (a -> a)
 
--- | Convenient metalanguage version of 'add'.
-infixl 6 +:                     -- match Haskell's precedence
+infixl 6 +:, -:
 (+:), (-:) :: (Add expr a, Lambda expr) => expr e a -> expr e a -> expr e a
-a +: b = add $: a $: b
 
-infixl 6 -:
-a -: b = a +: neg $: b
+-- | Convenient metalanguage version of 'add_'.
+a +: b = add_ $: a $: b
+
+-- | Convenient metalanguage version of subtraction.
+a -: b = a +: (neg_ $: b)
 
 -- | Addition of (metalanguage) literals to (object language)
 -- expressions.
 
 class AddLit expr a where
-  infixl 6 `addLit`
+  infixl 6 >+:
 
-  addLit :: a -> expr e a -> expr e a
+  (>+:) :: a -> expr e a -> expr e a
 
 -- | Multiplication. (Note that the input type @b@ may differ from the
 -- output type @a@.)
@@ -36,18 +37,18 @@ class Mul expr a where
   type PreMul expr a
 
   -- | Multiplication.
-  mul :: expr e (PreMul expr a -> PreMul expr a -> a)
+  mul_ :: expr e (PreMul expr a -> PreMul expr a -> a)
 
 -- | Convenient metalanguage version of 'mul'.
 infixl 7 *:                     -- match Haskell's precedence
 (*:) :: (Mul expr a, Lambda expr) =>
         expr e (PreMul expr a) -> expr e (PreMul expr a) -> expr e a
-a *: b = mul $: a $: b
+a *: b = mul_ $: a $: b
 
 -- | Multiplication of (metalanguage) literals to (object language)
 -- expressions.
 
 class MulLit expr a where
-  infixl 7 `mulLit`
+  infixl 7 >*:
 
-  mulLit :: a -> expr e a -> expr e a
+  (>*:) :: a -> expr e a -> expr e a
