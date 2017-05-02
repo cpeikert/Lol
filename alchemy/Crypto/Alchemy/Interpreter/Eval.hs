@@ -67,12 +67,12 @@ instance Monad_ E where
 
 instance SHE E where
 
-  type ModSwitchPTCtx   E (CT m zp (Cyc t m' zq)) zp' = (SHE.ModSwitchPTCtx t m' zp zp' zq)
-  type RescaleLinearCtx E (CT m zp (Cyc t m' zq)) zq' = (RescaleCyc (Cyc t) zq' zq, ToSDCtx t m' zp zq')
-  type AddPublicCtx E (CT m zp (Cyc t m' zq))         = (SHE.AddPublicCtx t m m' zp zq)
-  type MulPublicCtx E (CT m zp (Cyc t m' zq))         = (SHE.MulPublicCtx t m m' zp zq)
+  type ModSwitchPTCtx   E (CT m zp (Cyc t m' zq)) zp'     = (SHE.ModSwitchPTCtx t m' zp zp' zq)
+  type RescaleLinearCtx E (CT m zp (Cyc t m' zq)) zq'     = (RescaleCyc (Cyc t) zq' zq, ToSDCtx t m' zp zq')
+  type AddPublicCtx     E (CT m zp (Cyc t m' zq))         = (SHE.AddPublicCtx t m m' zp zq)
+  type MulPublicCtx     E (CT m zp (Cyc t m' zq))         = (SHE.MulPublicCtx t m m' zp zq)
   type KeySwitchQuadCtx E (CT m zp (Cyc t m' zq)) zq' gad = (SHE.KeySwitchCtx gad t m' zp zq zq')
-  type TunnelCtx    E t e r s e' r' s' zp zq gad      = (SHE.TunnelCtx t r s e' r' s' zp zq gad)
+  type TunnelCtx        E t e r s e' r' s' zp zq gad      = (SHE.TunnelCtx t r s e' r' s' zp zq gad)
 
   modSwitchPT     = fmap   SHE.modSwitchPT
   rescaleLinear   = fmap   SHE.rescaleLinearCT
