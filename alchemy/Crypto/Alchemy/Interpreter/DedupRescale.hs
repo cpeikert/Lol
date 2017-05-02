@@ -41,8 +41,6 @@ dupMap f = NoCtx . f . dedupRescale
 instance (Lambda expr) => Lambda (DupRescale expr) where
   lam f = NoCtx $ lam $ dedupRescale f
   f $: a = NoCtx $ (dedupRescale f) $: (dedupRescale a)
-
-instance (DB expr a) => DB (DupRescale expr) a where
   v0  = NoCtx v0
   s a = NoCtx $ s $ dedupRescale a
 
