@@ -25,6 +25,7 @@ import Control.Monad.State
 import Data.Dynamic
 import Data.Maybe (mapMaybe)
 
+import Crypto.Alchemy.MonadAccumulator
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
 
@@ -37,7 +38,7 @@ newP2CState :: P2CState
 newP2CState = St [] []
 
 -- retrieve a key from the state, or generate one if it doesn't exist
-getKey :: forall z v mon t m' . (MonadReader v mon, MonadState P2CState mon,
+getKey :: forall z v mon t m' . (MonadReader v mon, MonadAccumulator P2CState mon,
            MonadRandom mon, GenSKCtx t m' z v, Typeable (Cyc t m' z))
   => mon (SK (Cyc t m' z))
 getKey = lookupKey >>= \case
@@ -45,25 +46,12 @@ getKey = lookupKey >>= \case
   -- generate a key with the variance stored in the Reader monad
   Nothing -> do
     v <- ask
-    putKey >=< genSK v
-
-putKey :: (MonadState P2CState m, Typeable r') => SK r' -> m ()
-putKey sk = modify' $ \St{..} -> St {keys=toDyn sk : keys,..}
-
-putHint :: (MonadState P2CState m, Typeable a) => a -> m ()
-putHint h = modify' $ \St{..} -> St {hints=toDyn h : hints,..}
-
--- sequences the first action and returns the value of the second
-(>=<) :: (Monad m) => (a -> m ()) -> m a -> m a
-a >=< b = do
-  b' <- b
-  a b'
-  return b'
+    append =<< genSK (v :: v)
 
 -- not memoized right now, but could be if we also store the linear function as part of the lookup key
 -- EAC: https://ghc.haskell.org/trac/ghc/ticket/13490
 tunnelHint :: forall gad zq mon t e r s e' r' s' z zp v .
-  (MonadReader v mon, MonadState P2CState mon, MonadRandom mon,
+  (MonadReader v mon, MonadAccumulator P2CState mon, MonadRandom mon,
    GenSKCtx t r' z v, Typeable (Cyc t r' (LiftOf zp)),
    GenSKCtx t s' z v, Typeable (Cyc t s' (LiftOf zp)),
    GenTunnelInfoCtx t e r s e' r' s' z zp zq gad,
@@ -77,7 +65,7 @@ tunnelHint linf = do
 -- retrieve a key-switch hint from the state, or generate a new one otherwise
 getKSHint :: forall v mon t z gad m' zq zq' ksmod .
   (-- constraints for getKey
-   MonadReader v mon, MonadState P2CState mon,
+   MonadReader v mon, MonadAccumulator P2CState mon,
    MonadRandom mon, GenSKCtx t m' z v, Typeable (Cyc t m' z),
    -- constraints for lookupHint
    Typeable (KSQuadCircHint gad (Cyc t m' zq')),
@@ -88,13 +76,13 @@ getKSHint _ _ _ = lookupHint >>= \case
   (Just h) -> return h
   Nothing -> do
     sk :: SK (Cyc t m' z) <- getKey
-    putHint >=< ksQuadCircHint sk
+    append =<< ksQuadCircHint sk
 
-lookupKey :: (Typeable a, MonadState P2CState mon) => mon (Maybe a)
-lookupKey = (dynLookup . keys) <$> get
+lookupKey :: (Typeable a, MonadReader P2CState mon) => mon (Maybe a)
+lookupKey = (dynLookup . keys) <$> ask
 
-lookupHint :: (Typeable a, MonadState P2CState mon) => mon (Maybe a)
-lookupHint = (dynLookup . hints) <$> get
+lookupHint :: (Typeable a, MonadReader P2CState mon) => mon (Maybe a)
+lookupHint = (dynLookup . hints) <$> ask
 
 -- lookup an item in a list of dynamics
 dynLookup :: (Typeable a) => [Dynamic] -> Maybe a
