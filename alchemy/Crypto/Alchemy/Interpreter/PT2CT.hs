@@ -40,15 +40,15 @@ import Crypto.Alchemy.Language.SHE
 encryptP2C :: forall t m m' z zp zq rnd .
   (EncryptCtx t m m' z zp zq, z ~ LiftOf zp, Typeable t, Typeable m', Typeable z, MonadRandom rnd)
   => P2CState -> Cyc t m zp -> Maybe (rnd (CT m zp (Cyc t m' zq)))
-encryptP2C st x = flip evalState st $ do
-  (sk :: Maybe (SK (Cyc t m' z))) <- lookupKey -- ONLY lookup the key, do NOT generate!
+encryptP2C st x = flip runReader st $ do
+  (sk :: Maybe (SK (Cyc t m' z))) <- lookupP2C -- ONLY lookup the key, do NOT generate!
                   -- my feeling is that this should never fail, but we don't have static proof of that
   return $ (flip encrypt x) <$> sk
 
 decryptP2C :: forall t m m' z zp zq . (DecryptCtx t m m' z zp zq, z ~ LiftOf zp, Typeable t, Typeable m', Typeable z)
   => P2CState -> CT m zp (Cyc t m' zq) -> Maybe (Cyc t m zp)
-decryptP2C st x = flip evalState st $ do
-  (sk :: Maybe (SK (Cyc t m' z))) <- lookupKey -- ONLY lookup the key, do NOT generate
+decryptP2C st x = flip runReader st $ do
+  (sk :: Maybe (SK (Cyc t m' z))) <- lookupP2C -- ONLY lookup the key, do NOT generate
   return $ flip decrypt x <$> sk
 
 -- explicit forall is for use with TypeApplications at the top level
@@ -115,7 +115,7 @@ instance (Lambda ctex, Mul ctex ct, SHE ctex, PreMul ctex ct ~ ct,
            expr ~ PT2CT m'map zqs kszq gad v ctex mon) =>
           expr e (b -> b -> a)
   mul_ = PC $ do
-    hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) _) <- 
+    hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) _) <-
       getKSHint (Proxy::Proxy kszq) (Proxy::Proxy (LiftOf zp)) (Proxy::Proxy zq)
     return $ lam $ lam $
       keySwitchQuad hint $ (rescaleLinear v0) *: (rescaleLinear v1)
