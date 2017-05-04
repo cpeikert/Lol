@@ -1,7 +1,6 @@
-{-# LANGUAGE FlexibleInstances      #-}
-{-# LANGUAGE FunctionalDependencies #-}
-{-# LANGUAGE MultiParamTypeClasses  #-}
-{-# LANGUAGE UndecidableInstances   #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Crypto.Alchemy.MonadAccumulator where
 
@@ -10,7 +9,7 @@ import Control.Monad.State
 
 -- | An append-only state monad.
 
-class (Monoid w) => MonadAccumulator w m | m -> w where
+class (Monoid w) => MonadAccumulator w m where
   -- | Append the given value to the state inside the monad.
   append :: w -> m ()
 
