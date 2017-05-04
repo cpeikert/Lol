@@ -38,9 +38,13 @@ newtype Hints = Hints { unHints :: [Dynamic] } deriving (Monoid, Show)
 -- | An monad that accumulates (dynamic) keys and hints.
 newtype KeysHintsAccum a = Accum (State (Keys, Hints) a) deriving (Functor, Applicative, Monad)
 
+-- | Unwrap  a KeysHintsAccum computation as a (result, keys, hints) triple
+runKeysHintsAccum :: KeysHintsAccum a -> (Keys, Hints, a)
+runKeysHintsAccum (Accum a) = map (\(b,(c,d)) -> (b,c,d)) $ runState a (mempty, mempty)
 
-runKeysHintsAccum :: KeysHintsAccum a -> a
-runKeysHintsAccum (Accum a) = evalState a (mempty, mempty)
+-- | Unwrap  a KeysHintsAccum computation, discarding the accumulated result.
+evalKeysHintsAccum :: KeysHintsAccum a -> a
+evalKeysHintsAccum (Accum a) = evalState a (mempty, mempty)
 
 instance MonadAccumulator Keys KeysHintsAccum where
   append key = Accum $ do -- in State monad
@@ -59,6 +63,9 @@ instance MonadAccumulator Hints KeysHintsAccum where
   accumulate f = Accum $ state $ \(keys, hints) ->
     let (a,hints') = f hints
     in (a, (keys, hints `mappend` hints'))
+
+
+
 
 -- | Look up a value of the desired type, if it exists.
 lookupKey :: (MonadReader Keys mon, Typeable a) => mon (Maybe a)
@@ -121,6 +128,7 @@ getQuadCircHint _ = embedReader lookupHint >>= \case
 
 -- not memoized right now, but could be if we also store the linear function as part of the lookup key
 -- EAC: https://ghc.haskell.org/trac/ghc/ticket/13490
+-- | Generate auxilliary data needed for tunneling. Note that the results are /not/ stored or reused later.
 getTunnelHint :: forall gad zq mon t e r s e' r' s' z zp v .
   (MonadReader v mon, MonadAccumulator Keys mon, MonadRandom mon,
    GenSKCtx t r' z v, Typeable (Cyc t r' (LiftOf zp)),

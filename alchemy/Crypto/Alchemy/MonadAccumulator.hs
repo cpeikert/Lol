@@ -1,11 +1,11 @@
-{-# LANGUAGE FlexibleInstances     #-}
+--{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE UndecidableInstances  #-}
+--{-# LANGUAGE UndecidableInstances  #-}
 
 module Crypto.Alchemy.MonadAccumulator where
 
 import Control.Monad.Reader
-import Control.Monad.State
+--import Control.Monad.State
 
 -- | An append-only state monad.
 
@@ -17,14 +17,19 @@ class (Monoid w, Monad m) => MonadAccumulator w m where
   -- function should output a value and the state /to be appended/ to
   -- the previous state.
   accumulate  :: (w -> (a,w)) -> m a
-
+{-
 -- EAC: (Monad m) *should* be implied by (MonadState w m), but GHC can't figure that out...
 instance (Monad m, MonadState w m, Monoid w) => MonadAccumulator w m where
   append w = modify (`mappend` w)
   accumulate f = state $ \w -> let (a,z) = f w in (a, w `mappend` z)
 
+-- | Output the output of the computation as well as the accumulated result.
 runAccumulator :: (Monoid w) => State w a -> (a, w)
 runAccumulator = flip runState mempty
+-}
+-- | Output the
 
+-- | Turn a computation that only requires a `MonadReader` constraint into
+-- one that works with a `MonadAccumulator` constraint.
 embedReader :: (MonadAccumulator s m) => Reader s a -> m a
 embedReader x = accumulate $ \s -> (runReader x s, s)
