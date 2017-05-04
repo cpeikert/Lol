@@ -72,21 +72,18 @@ runEnvironT v = ((\((a,b),c) -> (a,b,c)) <$>) . flip runReaderT v . runAccumulat
 evalEnvironT :: (Functor m) => v -> StateT Keys (StateT Hints (ReaderT v m)) a -> m a
 evalEnvironT v = ((\(a,_,_) -> a) <$>) . runEnvironT v
 
+lookupDyn :: (Typeable a) => [Dynamic] -> Maybe a
+lookupDyn ds = case mapMaybe fromDynamic ds of
+                 []    -> Nothing
+                 (x:_) -> Just x
+
 -- | Look up a key of the desired type, if it exists.
-lookupKey :: (MonadReader Keys mon, Typeable a) => mon (Maybe a)
-lookupKey = (dynLookup . unKeys) <$> ask
-  where dynLookup :: (Typeable a) => [Dynamic] -> Maybe a
-        dynLookup ds = case mapMaybe fromDynamic ds of
-          []    -> Nothing
-          (x:_) -> Just x
+lookupKey :: (MonadReader Keys m, Typeable a) => m (Maybe a)
+lookupKey = (lookupDyn . unKeys) <$> ask
 
 -- | Look up a hint of the desired type, if it exists.
-lookupHint :: (MonadReader Hints mon, Typeable a) => mon (Maybe a)
-lookupHint = (dynLookup . unHints) <$> ask
-  where dynLookup :: (Typeable a) => [Dynamic] -> Maybe a
-        dynLookup ds = case mapMaybe fromDynamic ds of
-          []    -> Nothing
-          (x:_) -> Just x
+lookupHint :: (MonadReader Hints m, Typeable a) => m (Maybe a)
+lookupHint = (lookupDyn . unHints) <$> ask
 
 -- | Append a key to the internal state.
 appendKey :: (MonadAccumulator Keys m, Typeable (Cyc t m' z))
