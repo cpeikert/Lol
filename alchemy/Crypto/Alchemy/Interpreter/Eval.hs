@@ -77,11 +77,11 @@ instance SHE E where
   type TunnelCtx        E t e r s e' r' s' zp zq gad      = (SHE.TunnelCtx t r s e' r' s' zp zq gad)
 
   modSwitchPT     = fmap   SHE.modSwitchPT
-  rescaleLinear   = fmap   SHE.rescaleLinearCT
+  rescaleLinear   = fmap   SHE.rescaleLinear
   addPublic       = fmap . SHE.addPublic
   mulPublic       = fmap . SHE.mulPublic
   keySwitchQuad   = fmap . SHE.keySwitchQuadCirc
-  tunnel          = fmap . SHE.tunnelCT
+  tunnel          = fmap . SHE.tunnel
 
 -- | Uses 'SHE.errorTermUnrestricted' to compute 'errorRate'.
 instance ErrorRate E where
