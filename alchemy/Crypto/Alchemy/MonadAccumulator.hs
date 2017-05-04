@@ -1,11 +1,12 @@
---{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
---{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Crypto.Alchemy.MonadAccumulator where
 
 import Control.Monad.Reader
---import Control.Monad.State
+import Control.Monad.State
+import Control.Monad.Trans.Class (lift)
 
 -- | An append-only state monad.
 
@@ -17,17 +18,26 @@ class (Monoid w, Monad m) => MonadAccumulator w m where
   -- function should output a value and the state /to be appended/ to
   -- the previous state.
   accumulate  :: (w -> (a,w)) -> m a
-{-
+
 -- EAC: (Monad m) *should* be implied by (MonadState w m), but GHC can't figure that out...
-instance (Monad m, MonadState w m, Monoid w) => MonadAccumulator w m where
+instance (Monoid w, Monad m) => MonadAccumulator w (StateT w m) where
   append w = modify (`mappend` w)
-  accumulate f = state $ \w -> let (a,z) = f w in (a, w `mappend` z)
+  -- EAC: check this
+  accumulate f = StateT $ \w -> let (a,z) = f w in return (a, w `mappend` z)
+
+instance (MonadAccumulator w m) => MonadAccumulator w (ReaderT w m) where
+  append = lift . append
+  accumulate = lift . accumulate
+
+-- EAC: Per Chris's comment, we'll probably also need an instance for RandT
 
 -- | Output the output of the computation as well as the accumulated result.
-runAccumulator :: (Monoid w) => State w a -> (a, w)
-runAccumulator = flip runState mempty
--}
--- | Output the
+runAccumulator :: (Monoid w) => StateT w m a -> m (a, w)
+runAccumulator = flip runStateT mempty
+
+-- | Output the output of the computation, discarding the accumulated result.
+evalAccumulator :: (Monoid w, Functor m) => StateT w m a -> m a
+evalAccumulator = (fst <$>) . runAccumulator
 
 -- | Turn a computation that only requires a `MonadReader` constraint into
 -- one that works with a `MonadAccumulator` constraint.

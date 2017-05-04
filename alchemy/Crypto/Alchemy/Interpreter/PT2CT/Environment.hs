@@ -10,7 +10,7 @@
 -- keys and hints during compilation
 
 module Crypto.Alchemy.Interpreter.PT2CT.Environment
-( KeysHintsAccum, runKeysHintsAccum, evalKeysHintsAccum,
+( --KeysHintsAccum, runKeysHintsAccum, evalKeysHintsAccum,
   Keys, Hints, lookupKey, lookupHint,
   getKey, getQuadCircHint, getTunnelHint
 )
@@ -18,7 +18,7 @@ where
 
 import Control.Monad.Random
 import Control.Monad.Reader
-import Control.Monad.State
+--import Control.Monad.State
 
 import Data.Dynamic
 import Data.Maybe   (mapMaybe)
@@ -35,6 +35,7 @@ newtype Keys = Keys { unKeys :: [Dynamic] } deriving (Monoid, Show)
 -- | Wrapper for a dynamic list of hints.
 newtype Hints = Hints { unHints :: [Dynamic] } deriving (Monoid, Show)
 
+{-
 -- | An monad that accumulates (dynamic) keys and hints.
 newtype KeysHintsAccum a = Accum (State (Keys, Hints) a) deriving (Functor, Applicative, Monad)
 
@@ -63,7 +64,7 @@ instance MonadAccumulator Hints KeysHintsAccum where
   accumulate f = Accum $ state $ \(keys, hints) ->
     let (a,hints') = f hints
     in (a, (keys, hints `mappend` hints'))
-
+-}
 
 
 
