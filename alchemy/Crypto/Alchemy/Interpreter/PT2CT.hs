@@ -1,16 +1,15 @@
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE ExplicitNamespaces         #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE InstanceSigs               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE PartialTypeSignatures      #-}
-{-# LANGUAGE PolyKinds                  #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE ExplicitNamespaces    #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
@@ -81,8 +80,7 @@ decrypt x = do
 instance (Lambda ctex, Applicative mon)
   => Lambda (PT2CT m'map zqs kszq gad v ctex mon) where
 
-  lam (PC f) = PC $ fmap lam f
-
+  lam (PC f) = PC $ lam <$> f
   (PC f) $: (PC a) = PC $ ($:) <$> f <*> a
 
   v0       = PC $ pure v0
