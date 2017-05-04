@@ -10,9 +10,8 @@
 -- keys and hints during compilation
 
 module Crypto.Alchemy.Interpreter.PT2CT.Environment
-( --KeysHintsAccum, runKeysHintsAccum, evalKeysHintsAccum,
-  Keys, Hints, lookupKey, lookupHint,
-  getKey, getQuadCircHint, getTunnelHint
+( Keys, Hints, lookupKey, lookupHint
+, getKey, getQuadCircHint, getTunnelHint
 )
 where
 
