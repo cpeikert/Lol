@@ -9,7 +9,7 @@ import Control.Monad.State
 
 -- | An append-only state monad.
 
-class (Monoid w) => MonadAccumulator w m where
+class (Monoid w, Monad m) => MonadAccumulator w m where
   -- | Append the given value to the state inside the monad.
   append :: w -> m ()
 
