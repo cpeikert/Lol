@@ -63,6 +63,25 @@ instance (Lambda expr, Applicative k)
   s (ERW a) = ERW $ s <$> a
 
 
+{- attempt to abstract the pattern of "convert a pure obj-lang function
+to one which writes the error rate of its final output"
+
+liftWriteError2 ::
+  (MonadWriter ErrorRateLog w, MonadReader Keys k, Typeable cyc,
+   List_ expr, MonadWriter_ expr,
+   ErrorRate expr, ErrorRateCtx expr c z)
+  => Proxy cyc -> expr e (a -> b -> c) -> k (expr e (w a -> w b -> w c))
+
+liftWriteError2 f_ = do
+  let mf_ = liftA2_ $: f_
+  key :: Maybe (SK cyc) <- lookupKey
+  case key of
+    Just sk -> return $ lam $ lam $ after_
+               $: lam (tell_ $: (cons_ $: (errorRate sk $: v0) $: nil_))
+               $: (mf_ $: v1 $: v0)
+    Nothing -> return mf_
+-}
+
 instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
           ct ~ (CT m zp (Cyc t m' zq)), z ~ (LiftOf zp), Typeable (Cyc t m' z),
           List_ expr, MonadWriter_ expr,
