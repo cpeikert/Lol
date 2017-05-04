@@ -1,4 +1,4 @@
-package Lol;
+// package Lol;   // commented out because hprotoc chokes on it
 
 // proto messages for RLWE/RLWR challenges. NOTE: the challenges released in
 // 2016 use the Instance*1 and Secret1 formats.

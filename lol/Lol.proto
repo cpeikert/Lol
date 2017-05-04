@@ -1,4 +1,4 @@
-package Lol;
+// package Lol;   // commented out because hprotoc chokes on it
 
 // Proto messages for cyclotomic rings and other basic types in Lol
 

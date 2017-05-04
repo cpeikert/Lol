@@ -23,7 +23,7 @@ message KSHint {
 }
 
 // information for a single ring switch
-message TunnelInfo {
+message TunnelHint {
   required LinearRq func     = 1; // linear function to apply
   repeated KSHint hint       = 2;
   required uint32 e          = 3; // index of greatest common subring of r and s
