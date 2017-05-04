@@ -75,7 +75,7 @@ decrypt :: forall mon t m m' z zp zq .
    Typeable t, Typeable m', Typeable z)
   => CT m zp (Cyc t m' zq) -> mon (Maybe (Cyc t m zp))
 decrypt x = do
-  sk :: SK (Cyc t m' z) <- lookupKey
+  sk :: Maybe (SK (Cyc t m' z)) <- lookupKey
   return $ flip SHE.decrypt x <$> sk
 
 instance (Lambda ctex, Applicative mon)
