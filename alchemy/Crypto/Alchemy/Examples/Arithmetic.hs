@@ -12,8 +12,8 @@ module Crypto.Alchemy.Examples.Arithmetic where
 
 import Control.Monad.Reader
 
-import Crypto.Alchemy.Interpreter.Compiler.Noise
-import Crypto.Alchemy.Interpreter.Compiler.PT2CT
+import Crypto.Alchemy.Interpreter.PT2CT.Noise
+import Crypto.Alchemy.Interpreter.PT2CT
 import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
@@ -33,7 +33,7 @@ import Data.Type.Natural (Nat (Z))
 
 -- we give a type signature for easy partial type application
 pt1 :: forall b e expr a .
-  (a ~ PreMul expr b, Mul expr b, Add expr a, DB expr a, Lambda expr)
+  (a ~ PreMul expr b, Mul expr b, Add expr a, Lambda expr)
   => expr e (a -> a -> b)
 pt1 = lam $ lam $ v0 *: (v0 +: (s v0))
 
