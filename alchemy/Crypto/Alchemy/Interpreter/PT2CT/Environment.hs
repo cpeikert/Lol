@@ -6,8 +6,7 @@
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 
--- | Internal helper functions for PT2CT for looking up/generating
--- keys and hints during compilation
+-- | Functions for looking up/generating keys and key-switch hints.
 
 module Crypto.Alchemy.Interpreter.PT2CT.Environment
 ( Keys, Hints, lookupKey, lookupHint
