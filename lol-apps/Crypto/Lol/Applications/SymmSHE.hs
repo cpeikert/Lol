@@ -245,10 +245,10 @@ rescaleLinearMSD c = case coeffs c of
        show (length $ coeffs c)
 
 -- | Rescale a linear ciphertext to a new modulus.
-rescaleLinearCT :: (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq)
-           => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq')
-rescaleLinearCT ct = let CT MSD k l c = toMSD ct
-                     in CT MSD k l $ rescaleLinearMSD c
+rescaleLinear :: (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq)
+              => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq')
+rescaleLinear ct = let CT MSD k l c = toMSD ct
+                   in CT MSD k l $ rescaleLinearMSD c
 
 -- | Constraint synonym for modulus switching.
 type ModSwitchPTCtx t m' zp zp' zq =
