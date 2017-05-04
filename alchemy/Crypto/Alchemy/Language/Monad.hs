@@ -72,7 +72,7 @@ return_ = pure_
 
 class (Monad_ expr) => MonadReader_ expr where
   -- | Object-language analogue of 'ask'.
-  ask_ :: (MonadReader r m) => expr e (m r)
+  ask_   :: (MonadReader r m) => expr e (m r)
 
   -- | Object-language analogue of 'local'.
   local_ :: (MonadReader r m) => expr e ((r -> r) -> m a -> m a)
