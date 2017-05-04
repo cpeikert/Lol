@@ -55,7 +55,6 @@ main = do
            @'[ Zq $(mkTLNatNat $ 2^(15 :: Int)), Zq $(mkTLNatNat $ 2^(15 :: Int)+1) ]
            @(Zq $(mkTLNatNat 13))
            @TrivGad
-           @Double -- EAC: If we put a MonadReader constraint on pt2ct, we wouldn't need this.
            (pt1 @(PNoise 'Z (Cyc CT F4 (Zq 7))))
 
     -- duplicate the compiled expression
@@ -79,4 +78,3 @@ main = do
 -- EAC: TODO
 -- encapsulation for compile CTs? (CTWrapper?)
 -- tunneling example
--- print out intermediate error ratios
