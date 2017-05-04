@@ -10,7 +10,7 @@
 -- keys and hints during compilation
 
 module Crypto.Alchemy.Interpreter.PT2CT.Environment
-( KeysHintsAccum, runKeysHintsAccum,
+( KeysHintsAccum, runKeysHintsAccum, evalKeysHintsAccum,
   Keys, Hints, lookupKey, lookupHint,
   getKey, getQuadCircHint, getTunnelHint
 )
@@ -39,8 +39,8 @@ newtype Hints = Hints { unHints :: [Dynamic] } deriving (Monoid, Show)
 newtype KeysHintsAccum a = Accum (State (Keys, Hints) a) deriving (Functor, Applicative, Monad)
 
 -- | Unwrap  a KeysHintsAccum computation as a (result, keys, hints) triple
-runKeysHintsAccum :: KeysHintsAccum a -> (Keys, Hints, a)
-runKeysHintsAccum (Accum a) = map (\(b,(c,d)) -> (b,c,d)) $ runState a (mempty, mempty)
+runKeysHintsAccum :: KeysHintsAccum a -> (a, Keys, Hints)
+runKeysHintsAccum (Accum a) = (\(b,(c,d)) -> (b,c,d)) $ runState a (mempty, mempty)
 
 -- | Unwrap  a KeysHintsAccum computation, discarding the accumulated result.
 evalKeysHintsAccum :: KeysHintsAccum a -> a
