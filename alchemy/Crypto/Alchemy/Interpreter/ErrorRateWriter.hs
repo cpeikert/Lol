@@ -7,7 +7,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
-module Crypto.Alchemy.Interpreter.NoiseWriter
+module Crypto.Alchemy.Interpreter.ErrorRateWriter
 ( NoiseWriter, writeNoise )
 where
 
@@ -19,8 +19,10 @@ import Crypto.Lol.Applications.SymmSHE
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.Monad
+import Crypto.Alchemy.Language.SHE
 
 -- CJP: also need some structure to give us secret keys
+
 -- | A transformer that additionally logs the sizes of the noise terms
 -- of any ciphertexts created during interpretation.
 newtype NoiseWriter expr m e a =
@@ -46,21 +48,8 @@ instance (Lambda expr) => Lambda (NoiseWriter expr m) where
   s      = NW . s . unNW
 
 
--- | Log the noise rate of a given ciphertext.
-tellNoiseRate :: forall t m' m z zp zq mon ct .
-  (ErrorTermUCtx t m' z zp zq, Mod zq, ToInteger (LiftOf zq),
-   MonadWriter NoiseLog mon, ct ~ CT m zp (Cyc t m' zq)) =>
-  SK (Cyc t m' z) -> ct -> mon ct
-tellNoiseRate sk =
-  let noiseRate =
-        (/ (fromIntegral $ proxy modulus (Proxy::Proxy zq))) .
-        fromIntegral . maximum . fmap abs . errorTermUnrestricted sk
-  in \ct -> do
-    tell [show (noiseRate ct :: Double) ++ "\n"]
-    return ct
-
 instance (MonadWriter NoiseLog mon, ct ~ (CT m zp (Cyc t m zq)),
-          Applicative_ expr, Add expr ct {- CJP: more for extracting error -})
+          ErrorRate expr, Applicative_ expr, Add expr ct {- CJP: more for extracting error -})
          => Add (NoiseWriter expr mon) ct where
 
   add_ = NW $ liftA2_ $: add_
