@@ -18,7 +18,8 @@ class (Monoid w, Monad m) => MonadAccumulator w m where
   -- the previous state.
   accumulate  :: (w -> (a,w)) -> m a
 
-instance (MonadState w m, Monoid w) => MonadAccumulator w m where
+-- EAC: (Monad m) *should* be implied by (MonadState w m), but GHC can't figure that out...
+instance (Monad m, MonadState w m, Monoid w) => MonadAccumulator w m where
   append w = modify (`mappend` w)
   accumulate f = state $ \w -> let (a,z) = f w in (a, w `mappend` z)
 
