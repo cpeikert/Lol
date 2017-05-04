@@ -19,15 +19,18 @@ class (Monoid w, Monad m) => MonadAccumulator w m where
   -- the previous state.
   accumulate  :: (w -> (a,w)) -> m a
 
--- CJP: why do these specialized instances instead of the (admittedly
--- too-general) one with head 'w m', and MonadState constraint?
+instance (MonadAccumulator w m) => MonadAccumulator w (StateT w' m) where
+  append = lift . append
+  accumulate = lift . accumulate
 
-instance (Monoid w, Monad m) => MonadAccumulator w (StateT w m) where
+-- EAC: (Monad m) *should* be implied by (MonadState w m), but GHC can't figure that out...
+-- EAC: See Environment.hs for a way to avoid overlapping instances (just remove the pragma and the instance above this comment)
+instance {-# OVERLAPPING #-} (Monoid w, Monad m) => MonadAccumulator w (StateT w m) where
   append w = modify (`mappend` w)
   -- EAC: check this
   accumulate f = StateT $ \w -> let (a,z) = f w in return (a, w `mappend` z)
 
-instance (MonadAccumulator w m) => MonadAccumulator w (ReaderT w m) where
+instance (MonadAccumulator w m) => MonadAccumulator w (ReaderT s m) where
   append = lift . append
   accumulate = lift . accumulate
 
@@ -35,12 +38,12 @@ instance (MonadAccumulator w m) => MonadAccumulator w (ReaderT w m) where
 -- CJP: and many more -- essentially one for every existing state transformer...
 
 -- | Output the output of the computation as well as the accumulated result.
-runAccumulator :: (Monoid w) => StateT w m a -> m (a, w)
-runAccumulator = flip runStateT mempty
+runAccumulatorT :: (Monoid w) => StateT w m a -> m (a, w)
+runAccumulatorT = flip runStateT mempty
 
 -- | Output the output of the computation, discarding the accumulated result.
-evalAccumulator :: (Monoid w, Functor m) => StateT w m a -> m a
-evalAccumulator = (fst <$>) . runAccumulator
+evalAccumulatorT :: (Monoid w, Functor m) => StateT w m a -> m a
+evalAccumulatorT = (fst <$>) . runAccumulatorT
 
 -- | Embed a computation that only requires a 'Reader' into one that
 -- works with a 'MonadAccumulator'.

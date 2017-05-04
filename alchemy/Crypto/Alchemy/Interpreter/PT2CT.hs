@@ -38,7 +38,6 @@ import Crypto.Alchemy.MonadAccumulator
 -- | Interprets plaintext operations as their corresponding
 -- (homomorphic) ciphertext operations.  The represented plaintext
 -- types should have the form 'PNoise h (Cyc t m zp)'.
-
 newtype PT2CT
   m'map    -- | list (map) of (plaintext index m, ciphertext index m')
   zqs      -- | list of pairwise coprime Zq components for ciphertexts
@@ -50,10 +49,13 @@ newtype PT2CT
   mon      -- | monad for creating keys/noise
   e        -- | environment
   a        -- | plaintext type; should be of the form 'PNoise h (Cyc t m zp)'
-  = PC {
-    -- | Transform a plaintext expression to a ciphertext expression.
-    pt2ct :: mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a))
-    }
+  = PC (mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)))
+
+-- | Transform a plaintext expression to a ciphertext expression.
+pt2ct :: forall m'map zqs kszq gad v ctex a mon . (MonadReader v mon) =>
+      -- this forall is for use with TypeApplications at the top level
+  PT2CT m'map zqs kszq gad v ctex mon () a -> mon (ctex () (Cyc2CT m'map zqs a))
+pt2ct (PC a) = a
 
 encrypt :: forall mon t m m' z zp zq v .
   (MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon,
@@ -85,11 +87,6 @@ instance (Lambda ctex, Applicative mon)
 
   v0       = PC $ pure v0
   s (PC a) = PC $ s <$> a
-
--- CJP: does *every* operation on Cyc need to ensure that a key has
--- been generated for the corresponding CT type?  Currently this is
--- only done "where necessary" to generate hints and to encrypt
--- inputs.  This might already be enough...
 
 instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
   => Add (PT2CT m'map zqs kszq gad v ctex mon) a where

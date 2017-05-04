@@ -7,21 +7,23 @@
 {-# LANGUAGE TypeFamilies               #-}
 
 -- | Functions for looking up/generating keys and key-switch hints.
-
 module Crypto.Alchemy.Interpreter.KeysHints
-( Keys, Hints, lookupKey, lookupHint
-, getKey, getQuadCircHint, getTunnelHint
+( --KeysHintsAccumT, runKeysHintsAccumT, evalKeysHintsAccumT
+  Keys, Hints, lookupKey, lookupHint,
+  getKey, getQuadCircHint, getTunnelHint,
+  runEnvironT, evalEnvironT
 )
 where
 
 import Control.Monad.Random
 import Control.Monad.Reader
+import Control.Monad.State
 
 import Data.Dynamic
 import Data.Maybe   (mapMaybe)
 
 import Crypto.Alchemy.MonadAccumulator
-import Crypto.Lol
+import Crypto.Lol hiding (lift)
 import Crypto.Lol.Applications.SymmSHE
 
 ---- Monad helper functions
@@ -31,6 +33,44 @@ newtype Keys = Keys { unKeys :: [Dynamic] } deriving (Monoid, Show)
 
 -- | Wrapper for a dynamic list of hints.
 newtype Hints = Hints { unHints :: [Dynamic] } deriving (Monoid, Show)
+
+{-
+-- EAC: the following code is an overlap-free alternative to using nested StateT directly.
+-- | An monad that accumulates (dynamic) keys and hints.
+newtype KeysHintsAccumT m a = AccumT (StateT Keys (StateT Hints m) a) deriving (Functor, Applicative, Monad, MonadIO, MonadRandom, MonadAccumulator Keys)
+
+instance MonadTrans KeysHintsAccumT where
+  lift = AccumT . lift . lift
+
+instance (Monad m) => MonadAccumulator Hints (KeysHintsAccumT m) where
+  append = AccumT . lift . append
+  accumulate = AccumT . lift . accumulate
+
+-- | Unwrap  a KeysHintsAccum computation as a (result, keys, hints) triple
+runKeysHintsAccumT :: (Functor m) => KeysHintsAccumT m a -> m (a, Keys, Hints)
+runKeysHintsAccumT (AccumT a) = (\((b,c),d) -> (b,c,d)) <$> (runAccumulatorT $ runAccumulatorT a)
+
+-- | Unwrap  a KeysHintsAccum computation, discarding the accumulated result.
+evalKeysHintsAccumT :: (Monad m) => KeysHintsAccumT m a -> m a
+evalKeysHintsAccumT (AccumT a) = evalAccumulatorT $ evalAccumulatorT a
+
+runEnvironT :: (Functor m) => v -> ReaderT v (KeysHintsAccumT m) a -> m (a, Keys, Hints)
+runEnvironT v = runKeysHintsAccumT . flip runReaderT v
+
+-- | Output the output of the computation, discarding the accumulated result.
+evalEnvironT :: (Monad m) => v -> ReaderT v (KeysHintsAccumT m) a -> m a
+evalEnvironT v = evalKeysHintsAccumT . flip runReaderT v
+-}
+
+-- EAC: could define these in PT2CT, since the point is that they provide exactly what those instances need
+
+-- | Type-restricted version of runAccumulatorT for the
+runEnvironT :: (Functor m) => v -> StateT Keys (StateT Hints (ReaderT v m)) a -> m (a, Keys, Hints)
+runEnvironT v = ((\((a,b),c) -> (a,b,c)) <$>) . flip runReaderT v . runAccumulatorT . runAccumulatorT
+
+-- | Output the output of the computation, discarding the accumulated result.
+evalEnvironT :: (Functor m) => v -> StateT Keys (StateT Hints (ReaderT v m)) a -> m a
+evalEnvironT v = ((\(a,_,_) -> a) <$>) . runEnvironT v
 
 -- | Look up a key of the desired type, if it exists.
 lookupKey :: (MonadReader Keys mon, Typeable a) => mon (Maybe a)
