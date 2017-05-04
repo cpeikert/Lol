@@ -5,7 +5,7 @@
 module Crypto.Alchemy.Language.SHE where
 
 import Crypto.Lol                      (Cyc, Factored)
-import Crypto.Lol.Applications.SymmSHE (CT, KSQuadCircHint, SK, TunnelInfo)
+import Crypto.Lol.Applications.SymmSHE (CT, KSQuadCircHint, SK, TunnelHint)
 import GHC.Exts
 
 -- | Symantics for somewhat-homomorphic encryption operations (not
@@ -45,7 +45,7 @@ class SHE expr where
     => KSQuadCircHint gad (Cyc t m' zq') -> expr env ct -> expr env ct
 
   tunnel :: (TunnelCtx expr t e r s e' r' s' zp zq gad)
-    => TunnelInfo gad t e r s e' r' s' zp zq
+    => TunnelHint gad t e r s e' r' s' zp zq
     -> expr env (CT r zp (Cyc t r' zq))
     -> expr env (CT s zp (Cyc t s' zq))
 

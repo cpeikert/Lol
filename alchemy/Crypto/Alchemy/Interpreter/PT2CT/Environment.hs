@@ -109,8 +109,8 @@ getQuadCircHint :: forall v mon t z gad m' zq zq' kszq .
    Typeable (KSQuadCircHint gad (Cyc t m' zq')),
    -- constraints for ksQuadCircHint
    KSHintCtx gad t m' z zq', zq' ~ (kszq, zq))
-  => Proxy kszq -> Proxy z -> Proxy zq -> mon (KSQuadCircHint gad (Cyc t m' zq'))
-getQuadCircHint _ _ _ = embedReader lookupHint >>= \case
+  => Proxy z -> mon (KSQuadCircHint gad (Cyc t m' zq'))
+getQuadCircHint _ = embedReader lookupAux >>= \case
   (Just h) -> return h
   Nothing -> do
     sk :: SK (Cyc t m' z) <- getKey
