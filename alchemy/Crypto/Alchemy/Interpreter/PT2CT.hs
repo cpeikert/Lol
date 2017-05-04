@@ -17,7 +17,7 @@
 module Crypto.Alchemy.Interpreter.PT2CT
 ( PT2CT
 , PNoise
-, PT2CTAux
+--, PT2CTAux
 , pt2ct, encrypt, decrypt
 ) where
 
@@ -39,28 +39,28 @@ import Crypto.Alchemy.Language.SHE                  as LSHE
 import Crypto.Alchemy.MonadAccumulator
 
 encrypt :: forall mon t m m' z zp zq .
-  (MonadRandom mon, MonadReader PT2CTAux mon,
+  (MonadRandom mon, MonadReader Keys mon,
    EncryptCtx t m m' z zp zq, z ~ LiftOf zp,
    Typeable t, Typeable m', Typeable z)
   => Cyc t m zp -> mon (CT m zp (Cyc t m' zq))
 encrypt x = do
   -- CJP: assumes we always have a key. fix later.
-  Just (sk :: SK (Cyc t m' z)) <- lookupAux
+  Just (sk :: SK (Cyc t m' z)) <- lookupKey
   SHE.encrypt sk x
 
 decrypt :: forall mon t m m' z zp zq .
-  (MonadReader PT2CTAux mon,
+  (MonadReader Keys mon,
    DecryptCtx t m m' z zp zq, z ~ LiftOf zp,
    Typeable t, Typeable m', Typeable z)
   => CT m zp (Cyc t m' zq) -> mon (Cyc t m zp)
 decrypt x = do
   -- CJP: assumes we always have a key. fix later.
-  Just (sk :: SK (Cyc t m' z)) <- lookupAux
+  Just (sk :: SK (Cyc t m' z)) <- lookupKey
   return $ SHE.decrypt sk x
 
 -- | Transform a plaintext expression to a ciphertext expression.
 
-pt2ct :: forall m'map zqs kszq gad v ctex a rnd mon .
+pt2ct :: forall m'map zqs kszq gad v ctex a mon .
       -- this forall is for use with TypeApplications at the top level
   v   -- | scaled variance for generated keys, hints
   -> PT2CT m'map zqs kszq gad v ctex (ReaderT v mon) () a
@@ -116,7 +116,7 @@ instance (Lambda ctex, Mul ctex ct, SHE ctex, PreMul ctex ct ~ ct,
           -- (Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq')))
           -- See https://ghc.haskell.org/trac/ghc/ticket/13490
           Typeable t, Typeable zq, Typeable kszq, Typeable gad, Typeable z, Typeable m',
-          MonadRandom mon, MonadAccumulator PT2CTAux mon, MonadReader v mon)
+          MonadRandom mon, MonadAccumulator Keys mon, MonadAccumulator Hints mon, MonadReader v mon)
   => Mul (PT2CT m'map zqs kszq gad v ctex mon) (PNoise h (Cyc t m zp)) where
 
   type PreMul (PT2CT m'map zqs kszq gad v ctex mon) (PNoise h (Cyc t m zp)) = PNoise (h :+: N2) (Cyc t m zp)
