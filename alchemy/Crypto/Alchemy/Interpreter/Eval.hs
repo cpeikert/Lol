@@ -13,7 +13,8 @@
 module Crypto.Alchemy.Interpreter.Eval ( E, eval ) where
 
 import Control.Applicative
-import Control.Monad.State
+import Control.Monad.Reader
+import Control.Monad.Writer
 import Data.Tuple
 
 import Algebra.Additive as Additive
@@ -66,6 +67,14 @@ instance Applicative_ E where
 
 instance Monad_ E where
   bind_ = E $ pure (>>=)
+
+instance MonadReader_ E where
+  ask_   = E $ pure ask
+  local_ = E $ pure local
+
+instance MonadWriter_ E where
+  tell_   = E $ pure tell
+  listen_ = E $ pure listen
 
 instance SHE E where
 
