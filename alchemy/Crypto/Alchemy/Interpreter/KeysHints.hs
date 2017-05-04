@@ -32,7 +32,7 @@ newtype Keys = Keys { unKeys :: [Dynamic] } deriving (Monoid, Show)
 -- | Wrapper for a dynamic list of hints.
 newtype Hints = Hints { unHints :: [Dynamic] } deriving (Monoid, Show)
 
--- | Look up a value of the desired type, if it exists.
+-- | Look up a key of the desired type, if it exists.
 lookupKey :: (MonadReader Keys mon, Typeable a) => mon (Maybe a)
 lookupKey = (dynLookup . unKeys) <$> ask
   where dynLookup :: (Typeable a) => [Dynamic] -> Maybe a
@@ -40,7 +40,7 @@ lookupKey = (dynLookup . unKeys) <$> ask
           []    -> Nothing
           (x:_) -> Just x
 
--- | Look up a value of the desired type, if it exists.
+-- | Look up a hint of the desired type, if it exists.
 lookupHint :: (MonadReader Hints mon, Typeable a) => mon (Maybe a)
 lookupHint = (dynLookup . unHints) <$> ask
   where dynLookup :: (Typeable a) => [Dynamic] -> Maybe a
@@ -48,15 +48,17 @@ lookupHint = (dynLookup . unHints) <$> ask
           []    -> Nothing
           (x:_) -> Just x
 
--- | Append a value to the internal state.
+-- | Append a key to the internal state.
 appendKey :: (MonadAccumulator Keys m, Typeable (Cyc t m' z))
   => SK (Cyc t m' z) -> m ()
 appendKey a = append $ Keys [toDyn a]
 
+-- | Append a hint to the internal state.
 appendHint :: (MonadAccumulator Hints m, Typeable a) => a -> m ()
 appendHint a = append $ Hints [toDyn a]
 
--- | Sequence a, then pass the result to f and return a
+-- | Perform the action, then perform the action given by the result,
+-- and return the (first) result.
 (>=<) :: (Monad m) => (a -> m ()) -> m a -> m a
 f >=< a = do
   a' <- a
