@@ -10,7 +10,7 @@ class Lambda expr where
   lam :: expr (e,a) b -> expr e (a -> b)
 
   -- | Application.
-  infixl 0 $:             -- ($) is infixr, but l is nicer for obj lang
+  infixl 1 $:             -- ($) is infixr, but l is nicer for obj lang
   ($:) :: expr e (a -> b) -> expr e a -> expr e b
 
   -- | The zero'th (most-recently bound) variable.
