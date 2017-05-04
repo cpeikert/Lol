@@ -38,21 +38,21 @@ SK, PT, CT -- don't export constructors!
 -- * Arithmetic with public values
 , addPublic, mulPublic
 -- * Modulus switching
-, rescaleLinearCT, modSwitchPT
+, rescaleLinear, modSwitchPT
 -- * Key switching
 , KSLinearHint, KSQuadCircHint
 , ksLinearHint, ksQuadCircHint
 , keySwitchLinear, keySwitchQuadCirc
 -- * Ring switching
 , embedSK, embedCT, twaceCT
-, TunnelInfo, tunnelInfo
-, tunnelCT
+, TunnelHint, tunnelHint
+, tunnel
 -- * Constraint synonyms
 , GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx, ErrorTermUCtx
 , DecryptCtx, DecryptUCtx
 , AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
 , KeySwitchCtx, KSHintCtx
-, GenTunnelInfoCtx, TunnelCtx
+, TunnelHintCtx, TunnelCtx
 , SwitchCtx, LWECtx -- these are internal, but exported for better docs
 ) where
 
@@ -68,7 +68,7 @@ import Crypto.Proto.Lol.RqProduct (RqProduct)
 import qualified Crypto.Proto.SHE.KSHint as P
 import qualified Crypto.Proto.SHE.RqPolynomial as P
 import qualified Crypto.Proto.SHE.SecretKey as P
-import qualified Crypto.Proto.SHE.TunnelInfo as P
+import qualified Crypto.Proto.SHE.TunnelHint as P
 
 import Control.Applicative  hiding ((*>))
 import Control.DeepSeq
@@ -496,16 +496,16 @@ twaceCT (CT d 0 l c) = CT d 0 l (twace <$> c)
 twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 
 -- | Auxilliary data needed to tunnel from \(\O_{r'}\) to \(\O_{s'}\).
-data TunnelInfo gad t (e :: Factored) (r :: Factored) (s :: Factored) e' r' s' zp zq =
+data TunnelHint gad t (e :: Factored) (r :: Factored) (s :: Factored) e' r' s' zp zq =
   TInfo (Linear t zq e' r' s') [Tagged gad [Polynomial (Cyc t s' zq)]]
 
 instance (NFData (Linear t zq e' r' s'), NFData (Cyc t s' zq))
-  => NFData (TunnelInfo gad t e r s e' r' s' zp zq) where
+  => NFData (TunnelHint gad t e r s e' r' s' zp zq) where
   rnf (TInfo l t) = rnf l `seq` rnf t
 
 -- EAC: `e' ~ (e * ...) is not needed in this module, but it is needed as use sites...
--- | Constraint synonym for generating 'TunnelInfo'.
-type GenTunnelInfoCtx t e r s e' r' s' z zp zq gad =
+-- | Constraint synonym for generating 'TunnelHint'.
+type TunnelHintCtx t e r s e' r' s' z zp zq gad =
   (ExtendLinIdx e r s e' r' s', -- extendLin
    e' ~ (e * (r' / r)),         -- convenience; implied by prev constraint
    KSHintCtx gad t r' z zq,     -- ksHint
@@ -513,13 +513,13 @@ type GenTunnelInfoCtx t e r s e' r' s' z zp zq gad =
    CElt t z, e' `Divides` r')   -- powBasis
 
 -- | Generates auxilliary data needed to tunnel from \(\O_{r'}\) to \(\O_{s'}\).
-tunnelInfo :: forall gad t e r s e' r' s' z zp zq rnd .
-  (MonadRandom rnd, GenTunnelInfoCtx t e r s e' r' s' z zp zq gad)
+tunnelHint :: forall gad t e r s e' r' s' z zp zq rnd .
+  (MonadRandom rnd, TunnelHintCtx t e r s e' r' s' z zp zq gad)
   => Linear t zp e r s
   -> SK (Cyc t s' z)
   -> SK (Cyc t r' z)
-  -> rnd (TunnelInfo gad t e r s e' r' s' zp zq)
-tunnelInfo f skout (SK _ sin) = -- generate hints
+  -> rnd (TunnelHint gad t e r s e' r' s' zp zq)
+tunnelHint f skout (SK _ sin) = -- generate hints
   (let f' = extendLin $ lift f :: Linear t z e' r' s'
        f'q = reduce f' :: Linear t zq e' r' s'
        -- choice of basis here must match coeffs* basis below
@@ -538,12 +538,12 @@ type TunnelCtx t r s e' r' s' zp zq gad =
 -- | Homomorphically apply the \( E \)-linear function that maps the
 -- elements of the decoding basis of \( R/E \) to the corresponding
 -- \( S \)-elements in the input array.
-tunnelCT :: forall gad t e r s e' r' s' zp zq .
+tunnel :: forall gad t e r s e' r' s' zp zq .
   (TunnelCtx t r s e' r' s' zp zq gad)
-  => TunnelInfo gad t e r s e' r' s' zp zq
+  => TunnelHint gad t e r s e' r' s' zp zq
   -> CT r zp (Cyc t r' zq)
   -> CT s zp (Cyc t s' zq)
-tunnelCT (TInfo f'q hints) ct =
+tunnel (TInfo f'q hints) ct =
   (let CT MSD 0 s c = toMSD $ absorbGFactors ct
        [c0,c1] = coeffs c
        -- apply E-linear function to constant term c0
@@ -595,17 +595,17 @@ instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ RqProduct)
 instance (Mod zp, Typeable gad,
           Protoable (Linear t zq e' r' s'),
           Protoable (KSLinearHint gad (Cyc t s' zq)), Reflects s Int, Reflects r Int, Reflects e Int)
-  => Protoable (TunnelInfo gad t e r s e' r' s' zp zq) where
-  type ProtoType (TunnelInfo gad t e r s e' r' s' zp zq) = P.TunnelInfo
+  => Protoable (TunnelHint gad t e r s e' r' s' zp zq) where
+  type ProtoType (TunnelHint gad t e r s e' r' s' zp zq) = P.TunnelHint
   toProto (TInfo linf hints) =
-    P.TunnelInfo
+    P.TunnelHint
       (toProto linf)
       (toProto $ KSLHint <$> hints)
       (fromIntegral (proxy value (Proxy::Proxy e) :: Int))
       (fromIntegral (proxy value (Proxy::Proxy r) :: Int))
       (fromIntegral (proxy value (Proxy::Proxy s) :: Int))
       (fromIntegral $ proxy modulus (Proxy::Proxy zp))
-  fromProto (P.TunnelInfo linf hints e r s p) =
+  fromProto (P.TunnelHint linf hints e r s p) =
     let e' = fromIntegral $ (proxy value (Proxy::Proxy e) :: Int)
         r' = fromIntegral $ (proxy value (Proxy::Proxy r) :: Int)
         s' = fromIntegral $ (proxy value (Proxy::Proxy s) :: Int)
@@ -615,7 +615,7 @@ instance (Mod zp, Typeable gad,
          linf' <- fromProto linf
          hs <- (map (\(KSLHint x) -> x)) <$> fromProto hints
          return $ TInfo linf' hs
-       else error $ "Error reading TunnelInfo proto data:" ++
+       else error $ "Error reading TunnelHint proto data:" ++
               "\nexpected p=" ++ show p' ++ ", got " ++ show p ++
               "\nexpected e=" ++ show e' ++ ", got " ++ show e ++
               "\nexpected r=" ++ show r' ++ ", got " ++ show r ++

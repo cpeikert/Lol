@@ -1,4 +1,4 @@
-package Lol;
+// package Lol;  // commented out because hprotoc chokes on it
 
 // proto messages for the RLWE/RLWR problems
 
