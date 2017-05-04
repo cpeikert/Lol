@@ -1,23 +1,20 @@
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE ExplicitNamespaces         #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE InstanceSigs               #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE PartialTypeSignatures      #-}
-{-# LANGUAGE PolyKinds                  #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE ExplicitNamespaces    #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Alchemy.Interpreter.PT2CT
-( PT2CT
-, PNoise
---, PT2CTAux
+( PT2CT, PNoise
 , pt2ct, encrypt, decrypt
 ) where
 
@@ -31,41 +28,12 @@ import           Crypto.Lol                      hiding (Pos (..))
 import           Crypto.Lol.Applications.SymmSHE hiding (decrypt, encrypt)
 import qualified Crypto.Lol.Applications.SymmSHE as SHE
 
-import Crypto.Alchemy.Interpreter.PT2CT.Environment
+import Crypto.Alchemy.Interpreter.KeysHints
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.SHE                  as LSHE
+import Crypto.Alchemy.Language.SHE            as LSHE
 import Crypto.Alchemy.MonadAccumulator
-
-encrypt :: forall mon t m m' z zp zq v .
-  (MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon,
-   EncryptCtx t m m' z zp zq, z ~ LiftOf zp, GenSKCtx t m' z v,
-   Typeable t, Typeable m', Typeable z)
-  => Cyc t m zp -> mon (CT m zp (Cyc t m' zq))
-encrypt x = do
-  -- EAC: We have to allow key generation in `encrypt`. Consider the expression
-  -- `lam v0` representing `id :: CT -> CT`. I should be able to evaluate this
-  -- function on an encrypted input, but there's no way for me to generate a key
-  -- in the definitoin of `lam` or `v0`.
-  (sk :: SK (Cyc t m' z)) <- getKey
-  SHE.encrypt sk x
-
-decrypt :: forall mon t m m' z zp zq .
-  (MonadReader Keys mon,
-   DecryptCtx t m m' z zp zq, z ~ LiftOf zp,
-   Typeable t, Typeable m', Typeable z)
-  => CT m zp (Cyc t m' zq) -> mon (Cyc t m zp)
-decrypt x = do
-  -- CJP: assumes we always have a key. fix later.
-  Just (sk :: SK (Cyc t m' z)) <- lookupKey
-  return $ SHE.decrypt sk x
-
--- | Transform a plaintext expression to a ciphertext expression.
-pt2ct :: forall m'map zqs kszq gad v ctex a mon . (MonadReader v mon) =>
-      -- this forall is for use with TypeApplications at the top level
-  PT2CT m'map zqs kszq gad v ctex mon () a -> mon (ctex () (Cyc2CT m'map zqs a))
-pt2ct (PC a) = a
 
 -- | Interprets plaintext operations as their corresponding
 -- (homomorphic) ciphertext operations.  The represented plaintext
@@ -83,11 +51,38 @@ newtype PT2CT
   a        -- | plaintext type; should be of the form 'PNoise h (Cyc t m zp)'
   = PC (mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)))
 
+-- | Transform a plaintext expression to a ciphertext expression.
+pt2ct :: forall m'map zqs kszq gad v ctex a mon . (MonadReader v mon) =>
+      -- this forall is for use with TypeApplications at the top level
+  PT2CT m'map zqs kszq gad v ctex mon () a -> mon (ctex () (Cyc2CT m'map zqs a))
+pt2ct (PC a) = a
+
+encrypt :: forall mon t m m' z zp zq v .
+  (MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon,
+   EncryptCtx t m m' z zp zq, z ~ LiftOf zp, GenSKCtx t m' z v,
+   Typeable t, Typeable m', Typeable z)
+  => Cyc t m zp -> mon (CT m zp (Cyc t m' zq))
+encrypt x = do
+  -- EAC: We need to allow key generation in `encrypt`. Consider the
+  -- expression `lam v0` representing `id :: CT -> CT`. We should be
+  -- able to evaluate this function on an encrypted input, but there's
+  -- no way to generate a key in the definition of `lam` or `v0`.
+  (sk :: SK (Cyc t m' z)) <- getKey
+  SHE.encrypt sk x
+
+decrypt :: forall mon t m m' z zp zq .
+  (MonadReader Keys mon,
+   DecryptCtx t m m' z zp zq, z ~ LiftOf zp,
+   Typeable t, Typeable m', Typeable z)
+  => CT m zp (Cyc t m' zq) -> mon (Maybe (Cyc t m zp))
+decrypt x = do
+  sk :: Maybe (SK (Cyc t m' z)) <- lookupKey
+  return $ flip SHE.decrypt x <$> sk
+
 instance (Lambda ctex, Applicative mon)
   => Lambda (PT2CT m'map zqs kszq gad v ctex mon) where
 
-  lam (PC f) = PC $ fmap lam f
-
+  lam (PC f) = PC $ lam <$> f
   (PC f) $: (PC a) = PC $ ($:) <$> f <*> a
 
   v0       = PC $ pure v0

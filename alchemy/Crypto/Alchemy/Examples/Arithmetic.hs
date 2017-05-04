@@ -14,7 +14,7 @@ import Control.Monad.Reader
 
 import Crypto.Alchemy.MonadAccumulator
 import Crypto.Alchemy.Interpreter.PT2CT
-import Crypto.Alchemy.Interpreter.PT2CT.Environment
+import Crypto.Alchemy.Interpreter.KeysHints
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Dup

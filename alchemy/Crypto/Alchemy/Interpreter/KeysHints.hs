@@ -6,10 +6,8 @@
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 
--- | Internal helper functions for PT2CT for looking up/generating
--- keys and hints during compilation
-
-module Crypto.Alchemy.Interpreter.PT2CT.Environment
+-- | Functions for looking up/generating keys and key-switch hints.
+module Crypto.Alchemy.Interpreter.KeysHints
 ( --KeysHintsAccumT, runKeysHintsAccumT, evalKeysHintsAccumT
   Keys, Hints, lookupKey, lookupHint,
   getKey, getQuadCircHint, getTunnelHint,
@@ -35,6 +33,7 @@ newtype Keys = Keys { unKeys :: [Dynamic] } deriving (Monoid, Show)
 
 -- | Wrapper for a dynamic list of hints.
 newtype Hints = Hints { unHints :: [Dynamic] } deriving (Monoid, Show)
+
 {-
 -- EAC: the following code is an overlap-free alternative to using nested StateT directly.
 -- | An monad that accumulates (dynamic) keys and hints.
@@ -73,7 +72,6 @@ runEnvironT v = ((\((a,b),c) -> (a,b,c)) <$>) . flip runReaderT v . runAccumulat
 evalEnvironT :: (Functor m) => v -> StateT Keys (StateT Hints (ReaderT v m)) a -> m a
 evalEnvironT v = ((\(a,_,_) -> a) <$>) . runEnvironT v
 
-
 -- | Look up a value of the desired type, if it exists.
 lookupKey :: (MonadReader Keys mon, Typeable a) => mon (Maybe a)
 lookupKey = (dynLookup . unKeys) <$> ask
@@ -91,7 +89,8 @@ lookupHint = (dynLookup . unHints) <$> ask
           (x:_) -> Just x
 
 -- | Append a value to the internal state.
-appendKey :: (MonadAccumulator Keys m, Typeable (Cyc t m' z)) => SK (Cyc t m' z) -> m ()
+appendKey :: (MonadAccumulator Keys m, Typeable (Cyc t m' z))
+  => SK (Cyc t m' z) -> m ()
 appendKey a = append $ Keys [toDyn a]
 
 appendHint :: (MonadAccumulator Hints m, Typeable a) => a -> m ()
@@ -133,9 +132,11 @@ getQuadCircHint _ = embedReader lookupHint >>= \case
     sk :: SK (Cyc t m' z) <- getKey
     appendHint >=< ksQuadCircHint sk
 
--- not memoized right now, but could be if we also store the linear function as part of the lookup key
+-- not memoized right now, but could be if we also store the linear
+-- function as part of the lookup key
+
 -- EAC: https://ghc.haskell.org/trac/ghc/ticket/13490
--- | Generate auxilliary data needed for tunneling. Note that the results are /not/ stored or reused later.
+-- | Generate a hint for tunneling. The result is /not/ memoized.
 getTunnelHint :: forall gad zq mon t e r s e' r' s' z zp v .
   (MonadReader v mon, MonadAccumulator Keys mon, MonadRandom mon,
    GenSKCtx t r' z v, Typeable (Cyc t r' (LiftOf zp)),

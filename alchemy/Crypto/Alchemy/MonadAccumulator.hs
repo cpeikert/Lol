@@ -6,7 +6,7 @@ module Crypto.Alchemy.MonadAccumulator where
 
 import Control.Monad.Reader
 import Control.Monad.State
-import Control.Monad.Trans.Class (lift)
+import Control.Monad.Trans  (lift)
 
 -- | An append-only state monad.
 
@@ -35,6 +35,7 @@ instance (MonadAccumulator w m) => MonadAccumulator w (ReaderT s m) where
   accumulate = lift . accumulate
 
 -- EAC: Per Chris's comment, we'll probably also need an instance for RandT
+-- CJP: and many more -- essentially one for every existing state transformer...
 
 -- | Output the output of the computation as well as the accumulated result.
 runAccumulatorT :: (Monoid w) => StateT w m a -> m (a, w)
@@ -44,7 +45,7 @@ runAccumulatorT = flip runStateT mempty
 evalAccumulatorT :: (Monoid w, Functor m) => StateT w m a -> m a
 evalAccumulatorT = (fst <$>) . runAccumulatorT
 
--- | Turn a computation that only requires a `MonadReader` constraint into
--- one that works with a `MonadAccumulator` constraint.
-embedReader :: (MonadAccumulator s m) => Reader s a -> m a
-embedReader x = accumulate $ \s -> (runReader x s, s)
+-- | Embed a computation that only requires a 'Reader' into one that
+-- works with a 'MonadAccumulator'.
+embedReader :: (MonadAccumulator r m) => Reader r a -> m a
+embedReader x = accumulate $ \r -> (runReader x r, r)
