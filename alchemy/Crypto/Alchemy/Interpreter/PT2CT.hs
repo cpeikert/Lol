@@ -29,11 +29,11 @@ import           Crypto.Lol                      hiding (Pos (..))
 import           Crypto.Lol.Applications.SymmSHE hiding (decrypt, encrypt)
 import qualified Crypto.Lol.Applications.SymmSHE as SHE
 
-import Crypto.Alchemy.Interpreter.PT2CT.Environment
+import Crypto.Alchemy.Interpreter.KeysHints
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.SHE                  as LSHE
+import Crypto.Alchemy.Language.SHE            as LSHE
 import Crypto.Alchemy.MonadAccumulator
 
 -- | Interprets plaintext operations as their corresponding

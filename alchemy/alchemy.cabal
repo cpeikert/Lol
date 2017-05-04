@@ -26,7 +26,9 @@ library
                    Crypto.Alchemy.Language.Arithmetic
                    Crypto.Alchemy.Interpreter.Eval
                    Crypto.Alchemy.Interpreter.Print
+                   Crypto.Alchemy.Interpreter.Dup
                    Crypto.Alchemy.Interpreter.PT2CT
+                   Crypto.Alchemy.Interpreter.KeysHints
 
   build-depends: base >= 4.7 && < 5
                , lol >= 0.5
