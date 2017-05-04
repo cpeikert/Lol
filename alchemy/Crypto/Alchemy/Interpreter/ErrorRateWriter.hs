@@ -14,6 +14,7 @@ where
 import Control.Applicative
 import Control.Monad.Reader
 import Control.Monad.Writer
+import Data.Typeable
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
@@ -21,6 +22,7 @@ import Crypto.Lol.Applications.SymmSHE
 import Crypto.Alchemy.Interpreter.KeysHints
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
 
@@ -34,7 +36,6 @@ newtype ErrorRateWriter
   e                             -- | environment
   a                             -- | represented type
   = ERW { unERW :: k (expr (Monadify w e) (Monadify w a)) }
-    deriving (Functor)
 
 type family Monadify m a where
   Monadify m (a,b) = (Monadify m a, Monadify m b)
@@ -63,11 +64,19 @@ instance (Lambda expr, Applicative k)
 
 
 instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
-          ct ~ (CT m zp (Cyc t m zq)),
-          ErrorRate expr, Applicative_ expr, Add expr ct)
+          ct ~ (CT m zp (Cyc t m' zq)), z ~ (LiftOf zp), Typeable (Cyc t m' z),
+          List_ expr, MonadWriter_ expr,
+          Add expr ct, ErrorRate expr, ErrorRateCtx expr ct z)
          => Add (ErrorRateWriter expr k w) ct where
 
-  add_ = ERW $ pure $ liftA2_ $: add_
+  add_ = ERW $ do               -- in k monad
+    key :: Maybe (SK (Cyc t m' z)) <- lookupKey
+    let madd_ = liftA2_ $: add_
+    case key of
+      Just sk -> return $ lam $ lam $ after_
+                 $: lam (tell_ $: (cons_ $: (errorRate sk $: v0) $: nil_))
+                 $: (madd_ $: v1 $: v0)
+      Nothing -> return madd_
 
   -- don't log error because it doesn't grow
   neg_ = ERW $ pure $ liftA_ $: neg_

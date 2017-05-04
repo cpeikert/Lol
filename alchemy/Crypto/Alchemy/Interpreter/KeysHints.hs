@@ -108,10 +108,8 @@ getKey :: (MonadReader v mon, MonadAccumulator Keys mon,
   => mon (SK (Cyc t m' z))
 getKey = embedReader lookupKey >>= \case
   (Just t) -> return t
-  -- generate a key with the variance stored in the Reader monad
-  Nothing -> do
-    v <- ask
-    appendKey >=< genSK v
+  -- generate and save a key (using the variance from the monad)
+  Nothing -> appendKey >=< (ask >>= genSK)
 
 -- | Lookup a (quadratic, circular) key-switch hint, generating one
 -- (and the underlying key if necessary) if it doesn't exist, and
