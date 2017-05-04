@@ -6,10 +6,11 @@ module Crypto.Alchemy.Language.Lambda where
 -- | Symantics for functions and application.
 
 class Lambda expr where
-  -- | Abstraction.
-  lam  :: expr (e,a) b -> expr e (a -> b)
+  -- | Lambda abstraction.
+  lam :: expr (e,a) b -> expr e (a -> b)
 
   -- | Application.
+  infixr 0 $:
   ($:) :: expr e (a -> b) -> expr e a -> expr e b
 
   -- | The zero'th (most-recently bound) variable.
