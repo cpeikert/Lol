@@ -17,49 +17,55 @@
 module Crypto.Alchemy.Interpreter.PT2CT
 ( PT2CT
 , PNoise
-, P2CState
-, pt2ct, encryptP2C, decryptP2C
+, PT2CTAux
+, pt2ct, encrypt, decrypt
 ) where
 
 import Control.Monad.Random
 import Control.Monad.Reader
-import Control.Monad.State
 import Data.Dynamic
-import Data.Type.Natural (Nat (..), type (:+:), N2)
-import GHC.TypeLits      hiding (type (*), Nat)
+import Data.Type.Natural    ((:+:), N2, Nat (..))
+import GHC.TypeLits         hiding (type (*), Nat)
 
-import Crypto.Lol                      hiding (Pos (..))
-import Crypto.Lol.Applications.SymmSHE
+import           Crypto.Lol                      hiding (Pos (..))
+import           Crypto.Lol.Applications.SymmSHE hiding (decrypt, encrypt)
+import qualified Crypto.Lol.Applications.SymmSHE as SHE
 
 import Crypto.Alchemy.Interpreter.PT2CT.Environment
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.SHE
+import Crypto.Alchemy.Language.SHE                  as LSHE
+import Crypto.Alchemy.MonadAccumulator
 
-encryptP2C :: forall t m m' z zp zq rnd .
-  (EncryptCtx t m m' z zp zq, z ~ LiftOf zp, Typeable t, Typeable m', Typeable z, MonadRandom rnd)
-  => P2CState -> Cyc t m zp -> Maybe (rnd (CT m zp (Cyc t m' zq)))
-encryptP2C st x = flip runReader st $ do
-  (sk :: Maybe (SK (Cyc t m' z))) <- lookupP2C -- ONLY lookup the key, do NOT generate!
-                  -- my feeling is that this should never fail, but we don't have static proof of that
-  return $ (flip encrypt x) <$> sk
+encrypt :: forall mon t m m' z zp zq .
+  (MonadRandom mon, MonadReader PT2CTAux mon,
+   EncryptCtx t m m' z zp zq, z ~ LiftOf zp,
+   Typeable t, Typeable m', Typeable z)
+  => Cyc t m zp -> mon (CT m zp (Cyc t m' zq))
+encrypt x = do
+  -- CJP: assumes we always have a key. fix later.
+  Just (sk :: SK (Cyc t m' z)) <- lookupAux
+  SHE.encrypt sk x
 
-decryptP2C :: forall t m m' z zp zq . (DecryptCtx t m m' z zp zq, z ~ LiftOf zp, Typeable t, Typeable m', Typeable z)
-  => P2CState -> CT m zp (Cyc t m' zq) -> Maybe (Cyc t m zp)
-decryptP2C st x = flip runReader st $ do
-  (sk :: Maybe (SK (Cyc t m' z))) <- lookupP2C -- ONLY lookup the key, do NOT generate
-  return $ flip decrypt x <$> sk
-
--- explicit forall is for use with TypeApplications at the top level
+decrypt :: forall mon t m m' z zp zq .
+  (MonadReader PT2CTAux mon,
+   DecryptCtx t m m' z zp zq, z ~ LiftOf zp,
+   Typeable t, Typeable m', Typeable z)
+  => CT m zp (Cyc t m' zq) -> mon (Cyc t m zp)
+decrypt x = do
+  -- CJP: assumes we always have a key. fix later.
+  Just (sk :: SK (Cyc t m' z)) <- lookupAux
+  return $ SHE.decrypt sk x
 
 -- | Transform a plaintext expression to a ciphertext expression.
+
 pt2ct :: forall m'map zqs kszq gad v ctex a rnd mon .
-  (MonadRandom rnd, mon ~ ReaderT v (StateT P2CState rnd))
-  => v                          -- | scaled variance for generated keys, hints
-  -> PT2CT m'map zqs kszq gad v ctex mon () a
-  -> rnd (ctex () (Cyc2CT m'map zqs a), P2CState)
-pt2ct v (PC a) = flip runStateT newP2CState $ flip runReaderT v a
+      -- this forall is for use with TypeApplications at the top level
+  v   -- | scaled variance for generated keys, hints
+  -> PT2CT m'map zqs kszq gad v ctex (ReaderT v mon) () a
+  -> mon (ctex () (Cyc2CT m'map zqs a))
+pt2ct v (PC a) = runReaderT a v
 
 -- | Interprets plaintext operations as their corresponding
 -- (homomorphic) ciphertext operations.  The represented plaintext
@@ -75,7 +81,7 @@ newtype PT2CT
   ctex     -- | interpreter of ciphertext operations
   mon      -- | monad for creating keys/noise
   e        -- | environment
-  a        -- | plaintext type, of form 'PNoise h (Cyc t m zp)'
+  a        -- | plaintext type; should be of the form 'PNoise h (Cyc t m zp)'
   = PC (mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)))
 
 instance (Lambda ctex, Applicative mon)
@@ -88,6 +94,10 @@ instance (Lambda ctex, Applicative mon)
   v0       = PC $ pure v0
   s (PC a) = PC $ s <$> a
 
+-- CJP: IMPORTANT!  TODO: *every* operation on Cyc needs to ensure
+-- that a key has been generated for the corresponding CT type.
+-- Currently this is not done.
+
 instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
   => Add (PT2CT m'map zqs kszq gad v ctex mon) a where
 
@@ -95,7 +105,8 @@ instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
   neg_ = PC $ pure neg_
 
 instance (Lambda ctex, Mul ctex ct, SHE ctex, PreMul ctex ct ~ ct,
-          ct ~ Cyc2CT m'map zqs (PNoise h (Cyc t m zp)), ct ~ CT m zp (Cyc t m' zq),
+          ct ~ Cyc2CT m'map zqs (PNoise h (Cyc t m zp)),
+          ct ~ CT m zp (Cyc t m' zq),
           z ~ LiftOf zp, zq' ~ (kszq, zq),
           KSHintCtx gad t m' z zq', GenSKCtx t m' z v,
           RescaleLinearCtx ctex (CT m zp (Cyc t m' zq)) (PNoise2Zq zqs (h :+: N2)),
@@ -105,7 +116,7 @@ instance (Lambda ctex, Mul ctex ct, SHE ctex, PreMul ctex ct ~ ct,
           -- (Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq')))
           -- See https://ghc.haskell.org/trac/ghc/ticket/13490
           Typeable t, Typeable zq, Typeable kszq, Typeable gad, Typeable z, Typeable m',
-          MonadRandom mon, MonadReader v mon, MonadState P2CState mon)
+          MonadRandom mon, MonadAccumulator PT2CTAux mon, MonadReader v mon)
   => Mul (PT2CT m'map zqs kszq gad v ctex mon) (PNoise h (Cyc t m zp)) where
 
   type PreMul (PT2CT m'map zqs kszq gad v ctex mon) (PNoise h (Cyc t m zp)) = PNoise (h :+: N2) (Cyc t m zp)
@@ -115,10 +126,10 @@ instance (Lambda ctex, Mul ctex ct, SHE ctex, PreMul ctex ct ~ ct,
            expr ~ PT2CT m'map zqs kszq gad v ctex mon) =>
           expr e (b -> b -> a)
   mul_ = PC $ do
-    hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) _) <-
-      getKSHint (Proxy::Proxy kszq) (Proxy::Proxy (LiftOf zp)) (Proxy::Proxy zq)
+    hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) zq') <-
+      getQuadCircHint (Proxy::Proxy (LiftOf zp))
     return $ lam $ lam $
-      keySwitchQuad hint $ (rescaleLinear v0) *: (rescaleLinear v1)
+      keySwitchQuad hint $ (LSHE.rescaleLinear v0) *: (LSHE.rescaleLinear v1)
 
 ----- Type families -----
 
