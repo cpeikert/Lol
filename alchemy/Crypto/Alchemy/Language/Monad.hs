@@ -67,12 +67,19 @@ a >>=: f = bind_ $: a $: f
 return_ :: (Monad_ expr, Monad m) => expr e (a -> m a)
 return_ = pure_
 
+-- | Perform the action, then perform the action given by the result,
+-- and return the (first) result.
+after_ :: (Monad_ expr, Monad m) => expr e ((a -> m ()) -> m a -> m a)
+after_ = lam $ lam $ bind_ $: v0 $:
+         lam (bind_ $: (v2 $: v0) $:
+               lam (return_ $: v1))
+
 -- | Symantics for reader monads: promotes any 'MonadReader' to the
 -- object language.
 
 class (Monad_ expr) => MonadReader_ expr where
   -- | Object-language analogue of 'ask'.
-  ask_ :: (MonadReader r m) => expr e (m r)
+  ask_   :: (MonadReader r m) => expr e (m r)
 
   -- | Object-language analogue of 'local'.
   local_ :: (MonadReader r m) => expr e ((r -> r) -> m a -> m a)
