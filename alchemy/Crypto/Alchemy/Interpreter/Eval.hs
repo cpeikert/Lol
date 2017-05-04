@@ -2,9 +2,11 @@
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
@@ -80,3 +82,15 @@ instance SHE E where
   mulPublic       = fmap . SHE.mulPublic
   keySwitchQuad   = fmap . SHE.keySwitchQuadCirc
   tunnel          = fmap . SHE.tunnelCT
+
+-- | Uses 'SHE.errorTermUnrestricted' to compute 'errorRate'.
+instance ErrorRate E where
+  type ErrorRateCtx E (CT m zp (Cyc t m' zq)) z =
+    (SHE.ErrorTermUCtx t m' z zp zq, Mod zq, ToInteger (LiftOf zq))
+
+  errorRate :: forall t m' m z zp zq ct e .
+               (ErrorRateCtx E ct z, ct ~ CT m zp (Cyc t m' zq)) =>
+               SHE.SK (Cyc t m' z) -> E e (ct -> Double)
+  errorRate sk = E $ pure $
+    (/ (fromIntegral $ proxy modulus (Proxy::Proxy zq))) .
+    fromIntegral . maximum . fmap abs . SHE.errorTermUnrestricted sk
