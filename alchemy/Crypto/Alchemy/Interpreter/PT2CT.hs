@@ -62,21 +62,14 @@ decrypt x = do
   return $ SHE.decrypt sk x
 
 -- | Transform a plaintext expression to a ciphertext expression.
-{-
--- EAC: Unfortunately, we can't apply `v` here (see comment in `encrypt`).
--- As a result, I'm making the newtype destructor pt2ct, which will also
--- work for type application purposes.
-pt2ct :: forall m'map zqs kszq gad v ctex a mon .
+pt2ct :: forall m'map zqs kszq gad v ctex a mon . (MonadReader v mon) =>
       -- this forall is for use with TypeApplications at the top level
-  v   -- | scaled variance for generated keys, hints
-  -> PT2CT m'map zqs kszq gad v ctex (ReaderT v mon) () a
-  -> mon (ctex () (Cyc2CT m'map zqs a))
-pt2ct v (PC a) = runReaderT a v
--}
+  PT2CT m'map zqs kszq gad v ctex mon () a -> mon (ctex () (Cyc2CT m'map zqs a))
+pt2ct (PC a) = a
+
 -- | Interprets plaintext operations as their corresponding
 -- (homomorphic) ciphertext operations.  The represented plaintext
 -- types should have the form 'PNoise h (Cyc t m zp)'.
-
 newtype PT2CT
   m'map    -- | list (map) of (plaintext index m, ciphertext index m')
   zqs      -- | list of pairwise coprime Zq components for ciphertexts
@@ -88,7 +81,7 @@ newtype PT2CT
   mon      -- | monad for creating keys/noise
   e        -- | environment
   a        -- | plaintext type; should be of the form 'PNoise h (Cyc t m zp)'
-  = PC {pt2ct :: mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a))}
+  = PC (mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)))
 
 instance (Lambda ctex, Applicative mon)
   => Lambda (PT2CT m'map zqs kszq gad v ctex mon) where
@@ -99,10 +92,6 @@ instance (Lambda ctex, Applicative mon)
 
   v0       = PC $ pure v0
   s (PC a) = PC $ s <$> a
-
--- CJP: IMPORTANT!  TODO: *every* operation on Cyc needs to ensure
--- that a key has been generated for the corresponding CT type.
--- Currently this is not done.
 
 instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
   => Add (PT2CT m'map zqs kszq gad v ctex mon) a where
