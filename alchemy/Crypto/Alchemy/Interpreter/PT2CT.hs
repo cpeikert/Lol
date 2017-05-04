@@ -38,14 +38,17 @@ import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.SHE                  as LSHE
 import Crypto.Alchemy.MonadAccumulator
 
-encrypt :: forall mon t m m' z zp zq .
-  (MonadRandom mon, MonadReader Keys mon,
-   EncryptCtx t m m' z zp zq, z ~ LiftOf zp,
+encrypt :: forall mon t m m' z zp zq v .
+  (MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon,
+   EncryptCtx t m m' z zp zq, z ~ LiftOf zp, GenSKCtx t m' z v,
    Typeable t, Typeable m', Typeable z)
   => Cyc t m zp -> mon (CT m zp (Cyc t m' zq))
 encrypt x = do
-  -- CJP: assumes we always have a key. fix later.
-  Just (sk :: SK (Cyc t m' z)) <- lookupKey
+  -- EAC: We have to allow key generation in `encrypt`. Consider the expression
+  -- `lam v0` representing `id :: CT -> CT`. I should be able to evaluate this
+  -- function on an encrypted input, but there's no way for me to generate a key
+  -- in the definitoin of `lam` or `v0`.
+  (sk :: SK (Cyc t m' z)) <- getKey
   SHE.encrypt sk x
 
 decrypt :: forall mon t m m' z zp zq .
@@ -59,14 +62,17 @@ decrypt x = do
   return $ SHE.decrypt sk x
 
 -- | Transform a plaintext expression to a ciphertext expression.
-
+{-
+-- EAC: Unfortunately, we can't apply `v` here (see comment in `encrypt`).
+-- As a result, I'm making the newtype destructor pt2ct, which will also
+-- work for type application purposes.
 pt2ct :: forall m'map zqs kszq gad v ctex a mon .
       -- this forall is for use with TypeApplications at the top level
   v   -- | scaled variance for generated keys, hints
   -> PT2CT m'map zqs kszq gad v ctex (ReaderT v mon) () a
   -> mon (ctex () (Cyc2CT m'map zqs a))
 pt2ct v (PC a) = runReaderT a v
-
+-}
 -- | Interprets plaintext operations as their corresponding
 -- (homomorphic) ciphertext operations.  The represented plaintext
 -- types should have the form 'PNoise h (Cyc t m zp)'.
@@ -82,7 +88,7 @@ newtype PT2CT
   mon      -- | monad for creating keys/noise
   e        -- | environment
   a        -- | plaintext type; should be of the form 'PNoise h (Cyc t m zp)'
-  = PC (mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)))
+  = PC {pt2ct :: mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a))}
 
 instance (Lambda ctex, Applicative mon)
   => Lambda (PT2CT m'map zqs kszq gad v ctex mon) where
