@@ -3,6 +3,9 @@ module Crypto.Alchemy.Language.Monad where
 
 import Crypto.Alchemy.Language.Lambda
 
+import Control.Monad.Reader
+import Control.Monad.Writer
+
 -- | Symantics for functors: promotes any 'Functor' to the object
 -- language. (Instances should obey the monad laws.)
 
@@ -63,3 +66,23 @@ a >>=: f = bind_ $: a $: f
 
 return_ :: (Monad_ expr, Monad m) => expr e (a -> m a)
 return_ = pure_
+
+-- | Symantics for reader monads: promotes any 'MonadReader' to the
+-- object language.
+
+class (Monad_ expr) => MonadReader_ expr where
+  -- | Object-language analogue of 'ask'.
+  ask_ :: (MonadReader r m) => expr e (m r)
+
+  -- | Object-language analogue of 'local'.
+  local_ :: (MonadReader r m) => expr e ((r -> r) -> m a -> m a)
+
+-- | Symantics for writer monads: promotes any 'MonadWriter' to the
+-- object language.
+
+class (Monad_ expr) => MonadWriter_ expr where
+  -- | Object-language analogue of 'tell'.
+  tell_   :: (MonadWriter w m) => expr e (w -> m ())
+
+  -- | Object-language analogue of 'listen_'.
+  listen_ :: (MonadWriter w m) => expr e (m a -> m (a,w))
