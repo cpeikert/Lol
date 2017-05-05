@@ -23,7 +23,7 @@ module Crypto.Alchemy.Interpreter.PT2CT
 import Control.Monad.Random
 import Control.Monad.Reader
 import Data.Dynamic
-import Data.Type.Natural    ((:+:), N1, N2, Nat (..))
+import Data.Type.Natural    ((:+:), N2, Nat (..))
 import GHC.TypeLits         hiding (type (*), Nat)
 
 import           Crypto.Lol                      hiding (Pos (..))
@@ -36,7 +36,7 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.SHE            as LSHE
---import Crypto.Alchemy.Language.Tunnel
+import Crypto.Alchemy.Language.Tunnel
 import Crypto.Alchemy.MonadAccumulator
 
 -- | Interprets plaintext operations as their corresponding
@@ -147,36 +147,32 @@ type TunnelCtxPT' ctex t e r s r' s' z zp zq zq' gad v =
    GenSKCtx t r' z v, GenSKCtx t s' z v,
    Typeable t, Typeable r', Typeable s', Typeable z, -- bug; see genTunnHint
    RescaleLinearCtx ctex (CT r zp (Cyc t r' zq')) zq, RescaleLinearCtx ctex (CT s zp (Cyc t s' zq)) zq')
+-}
 
-type family ZqOf ct where
-  ZqOf (CT m zp (Cyc t m' zq)) = zq
+instance (MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon,
+          e' ~ Lookup e m'map, r' ~ Lookup r m'map, s' ~ Lookup s m'map,
+          ce ~ Cyc t e zp, cr ~ Cyc t r zp, cs ~ Cyc t s zp,
+          zq ~ PNoise2Zq zqs h, -- CJP: h or h+1 here?
+          z ~ LiftOf zp,
+          SHE ctex, LSHE.TunnelCtx ctex t e r s e' r' s' zp zq gad)
 
-instance (SHE ctex, MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon)
-  => Tunnel (PT2CT m'map zqs kszq gad v ctex mon) where
+  -- CJP: recall that the types have to be fully spelled out here and
+  -- in the associated type
+  => Tunnel (PT2CT m'map zqs kszq gad z v ctex mon)
+         (Cyc t e zp) (PNoise ('S h) (Cyc t r zp)) (PNoise h (Cyc t s zp)) where
 
-  type PreTunnel (PT2CT m'map zqs kszq gad v ctex mon) r (PNoise h (Cyc t s zp)) = PNoise (h :+: N1) (Cyc t r zp)
-  type TunnelCtxPT (PT2CT m'map zqs kszq gad v ctex mon) e r (PNoise h (Cyc t s zp)) =
-    (TunnelCtxPT' ctex t e r s
-      (Lookup r m'map)
-      (Lookup s m'map)
-      (LiftOf zp) zp
-      (ZqOf (Cyc2CT m'map zqs (PNoise h (Cyc t s zp))))
-      (kszq, ZqOf (Cyc2CT m'map zqs (PNoise h (Cyc t s zp))))
-      gad
-      v)
+  -- ditto
+  type LinearOf (PT2CT m'map zqs kszq gad z v ctex mon)
+       (Cyc t e zp) (PNoise ('S h) (Cyc t r zp)) (PNoise h (Cyc t s zp)) =
+    Tagged h (Linear t zp e r s) -- need h for injectivity
+
+  -- CJP: TODO: implementation, started below
+
 {-
-  tunnelPT :: forall t e r s zp h env .
-    (TunnelCtxPT (PT2CT m'map zqs kszq gad v ctex mon) e r (PNoise h (Cyc t s zp)))
-    => Linear t zp e r s
-       -> PT2CT m'map zqs kszq gad v ctex mon env (PNoise (h :+: N1) (Cyc t r zp) -> PNoise h (Cyc t s zp))
+  tunnel f = PC $ do
+    hint <- getTunnelHint
+    return lam $
 -}
-  tunnelPT f = PC $ do
-    (z' :: PT2CT m'map zqs kszq gad v ctex mon env (PNoise (h :+: N1) (Cyc t r zp) -> PNoise h (Cyc t s zp))) -> PC $ do
-      thint <- getTunnelHint @gad @(kszq, ZqOf (Cyc2CT m'map zqs (PNoise h (Cyc t s zp)))) f
-      let b = LSHE.rescaleLinear v0 :: _ _  (Cyc2CT m'mzp zqs (PNoise h (Cyc t r zp))) -- rescale input
-      return $ lam $ LSHE.rescaleLinear $ LSHE.tunnel thint $ LSHE.rescaleLinear b
--}
-
 
 ----- Type families -----
 
