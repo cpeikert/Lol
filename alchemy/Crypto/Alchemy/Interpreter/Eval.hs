@@ -22,6 +22,7 @@ import Algebra.Ring     as Ring
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
 
@@ -44,19 +45,23 @@ instance Lambda E where
   v0     = E snd
   s a    = E $ unE a . fst
 
-instance (Additive.C a) => Add E a where
+instance Additive.C a => Add E a where
   add_ = E $ pure (+)
   neg_ = E $ pure negate
 
-instance (Additive.C a) => AddLit E a where
+instance Additive.C a => AddLit E a where
   x >+: y = (x +) <$> y
 
-instance (Ring.C a) => Mul E a where
+instance Ring.C a => Mul E a where
   type PreMul E a = a
   mul_ = E $ pure (*)
 
-instance (Ring.C a) => MulLit E a where
+instance Ring.C a => MulLit E a where
   x >*: y = (x *) <$> y
+
+instance List_ E where
+  nil_  = E $ pure []
+  cons_ = E $ pure (:)
 
 instance Functor_ E where
   fmap_ = E $ pure fmap
