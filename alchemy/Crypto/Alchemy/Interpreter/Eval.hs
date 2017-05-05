@@ -59,7 +59,7 @@ instance Ring.C a => Mul E a where
 instance Ring.C a => MulLit E a where
   x >*: y = (x *) <$> y
 
-instance List_ E where
+instance List E where
   nil_  = E $ pure []
   cons_ = E $ pure (:)
 
