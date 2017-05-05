@@ -8,9 +8,9 @@
 
 -- | Functions for looking up/generating keys and key-switch hints.
 module Crypto.Alchemy.Interpreter.KeysHints
-( Keys, Hints, lookupKey, lookupHint,
-  getKey, getQuadCircHint, getTunnelHint,
-  runKeysHints, evalKeysHints
+( Keys, Hints, lookupKey, lookupHint
+, getKey, getQuadCircHint, getTunnelHint
+, runKeysHints, evalKeysHints
 )
 where
 
