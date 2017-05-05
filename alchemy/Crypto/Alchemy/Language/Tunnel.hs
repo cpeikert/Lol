@@ -11,7 +11,7 @@ class Tunnel expr (e :: k) r s where
 
   -- | Type representing @E@-linear functions from @R@ to @S@.
   -- (It is injective in e,r,s.)
-  type LinearOf expr e r s = lin | lin -> e r s
+  type LinearOf expr e r s = lin | lin -> expr e r s
 
   -- | An object-language expression representing the given linear
   -- function.
