@@ -324,27 +324,32 @@ type KeySwitchCtx gad t m' zp zq zq' =
    ToSDCtx t m' zp zq, SwitchCtx gad t m' zq')
 
 -- | Hint for a linear key switch
-newtype KSLinearHint gad r'q' = KSLHint (Tagged gad [Polynomial r'q']) deriving (NFData)
+newtype KSLinearHint gad r'q' = KSLHint (Tagged gad [Polynomial r'q'])
+  deriving (NFData)
 
 -- | Hint for a circular quadratic key switch.
-newtype KSQuadCircHint gad r'q' = KSQHint (Tagged gad [Polynomial r'q']) deriving (NFData)
+newtype KSQuadCircHint gad r'q' = KSQHint (Tagged gad [Polynomial r'q'])
+  deriving (NFData)
 
--- | A hint to switch a linear ciphertext under \( s_{\text{in}} \) to a linear
--- one under \( s_{\text{out}} \).
+-- | A hint to switch a linear ciphertext under \( s_{\text{in}} \) to
+-- a linear one under \( s_{\text{out}} \).
 ksLinearHint :: (KSHintCtx gad t m' z zq', MonadRandom rnd)
   => SK (Cyc t m' z) -- sout
   -> SK (Cyc t m' z) -- sin
   -> rnd (KSLinearHint gad (Cyc t m' zq'))
 ksLinearHint skout (SK _ sin) = KSLHint <$> ksHint skout sin
 
--- | Switch a linear ciphertext using the supplied hint.
+-- | Switch a linear ciphertext using the supplied hint.  (The
+-- ciphertext may first need to be rescaled so that its modulus
+-- matches that of the hint.)
 keySwitchLinear :: (KeySwitchCtx gad t m' zp zq zq')
-  => KSLinearHint gad (Cyc t m' zq') -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
+  => KSLinearHint gad (Cyc t m' zq')
+  -> CT m zp (Cyc t m' zq')
+  -> CT m zp (Cyc t m' zq')
 keySwitchLinear (KSLHint hint) ct =
   let CT MSD k l c = toMSD ct
       [c0,c1] = coeffs c
-      c1' = rescalePow c1
-  in CT MSD k l $ P.const c0 + rescaleLinearMSD (switch hint c1')
+  in CT MSD k l $ P.const c0 + (switch hint c1)
 
 -- | A hint to switch a quadratic ciphertext to a linear
 -- one under the same key.
@@ -356,7 +361,9 @@ ksQuadCircHint sk@(SK _ s) = KSQHint <$> ksHint sk (s*s)
 -- | Switch a quadratic ciphertext (i.e., one with three components)
 -- to a linear one under the /same/ key using the supplied hint.
 keySwitchQuadCirc :: (KeySwitchCtx gad t m' zp zq zq')
-  => KSQuadCircHint gad (Cyc t m' zq') -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq)
+  => KSQuadCircHint gad (Cyc t m' zq')
+  -> CT m zp (Cyc t m' zq')
+  -> CT m zp (Cyc t m' zq')
 keySwitchQuadCirc (KSQHint hint) ct =
   let CT MSD k l c = toMSD ct
       [c0,c1,c2] = coeffs c
