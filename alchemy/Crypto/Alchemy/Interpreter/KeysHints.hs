@@ -107,12 +107,12 @@ getQuadCircHint _ = readerToAccumulator lookupHint >>= \case
 -- | Generate a hint for tunneling. The result is /not/ memoized.
 getTunnelHint :: forall gad zq mon t e r s e' r' s' z zp v .
   (MonadReader v mon, MonadAccumulator Keys mon, MonadRandom mon,
-   GenSKCtx t r' z v, Typeable (Cyc t r' (LiftOf zp)),
-   GenSKCtx t s' z v, Typeable (Cyc t s' (LiftOf zp)),
-   TunnelHintCtx t e r s e' r' s' z zp zq gad,
-   z ~ LiftOf zp)
-  => Linear t zp e r s -> mon (TunnelHint gad t e r s e' r' s' zp zq)
-getTunnelHint linf = do
+   GenSKCtx t r' z v, Typeable (Cyc t r' z),
+   GenSKCtx t s' z v, Typeable (Cyc t s' z),
+   TunnelHintCtx t e r s e' r' s' z zp zq gad)
+  => Proxy z -> Linear t zp e r s
+  -> mon (TunnelHint gad t e r s e' r' s' zp zq)
+getTunnelHint _ linf = do
   skout <- getKey @_ @_ @_ @_ @z
   skin <- getKey @_ @_ @_ @_ @z
   tunnelHint linf skout skin
