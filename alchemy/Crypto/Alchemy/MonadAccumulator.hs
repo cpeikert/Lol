@@ -8,7 +8,6 @@ import Control.Monad.Cont
 import Control.Monad.Except
 import Control.Monad.List
 import Control.Monad.Random
-
 import Control.Monad.Reader
 import Control.Monad.RWS
 import Control.Monad.State
@@ -48,6 +47,10 @@ instance (MonadAccumulator w m) => MonadAccumulator w (WriterT w m) where
   accumulate = lift . accumulate
 
 instance (MonadAccumulator w m) => MonadAccumulator w (RandT g m) where
+  append = lift . append
+  accumulate = lift . accumulate
+
+instance (MonadAccumulator w m, Error e) => MonadAccumulator w (ErrorT e m) where
   append = lift . append
   accumulate = lift . accumulate
 
