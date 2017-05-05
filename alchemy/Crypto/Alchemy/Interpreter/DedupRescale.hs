@@ -100,11 +100,16 @@ instance (SHE expr) => SHE (DedupRescale expr) where
     => (DedupRescale expr) e (CT m zp (Cyc t m' zq'))
     -> (DedupRescale expr) e ct
 
-  rescaleLinear (Rescaled (prev :: expr e ct') x) =
-    case (eqT :: Maybe (ct' :~: ct)) of
-      (Just Refl) -> DR prev
-      -- previous op was a rescale, but from a different type than we need
-      Nothing -> Rescaled x $ rescaleLinear x
+  rescaleLinear (Rescaled y@(prev :: expr e ct') x) =
+    -- first check if *this* rescale is a no-op
+    case (eqT :: Maybe (CT m zp (Cyc t m' zq') :~: ct)) of
+      -- if so, preserve the context
+      (Just Refl) -> Rescaled y x
+      -- if not, check if this rescale reverses the previous rescale
+      Nothing -> case (eqT :: Maybe (ct' :~: ct)) of
+        (Just Refl) -> DR prev
+        -- previous op was a rescale, but from a different type than we need
+        Nothing -> Rescaled x $ rescaleLinear x
 
   rescaleLinear (DR x) =
     -- also remove if the input and output types are the same
