@@ -71,8 +71,8 @@ encrypt :: forall mon t m m' zp zq z v .
    -- CJP: DON'T LOVE THIS CHOICE OF z HERE; IT'S ARBITRARY
    EncryptCtx t m m' z zp zq, z ~ LiftOf zp, GenSKCtx t m' z v,
    Typeable t, Typeable m', Typeable z)
-  => v                          -- | scaled variance for keys and error
-  -> Cyc t m zp                 -- | plaintext
+  => v                           -- | scaled variance for keys and error
+  -> Cyc t m zp                  -- | plaintext
   -> mon (CT m zp (Cyc t m' zq)) -- | (monadic) ciphertext
 encrypt v x = flip runReaderT v $ do
   -- generate key if necessary

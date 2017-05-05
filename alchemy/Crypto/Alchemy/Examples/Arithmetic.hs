@@ -40,6 +40,9 @@ pt1 = lam $ lam $ v0 *: (v0 +: (s v0))
 
 type Zq q = ZqBasic q Int64
 
+argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
+argToReader f a = flip f a =<< ask
+
 main :: IO ()
 main = do
   -- no types needed to show a function!
@@ -47,23 +50,24 @@ main = do
   -- evaluate a DSL function to a Haskell function, then apply to arguments
   putStrLn $ show $ eval (pt1 @Int) 7 11
 
-  evalEnvironT (1.0 :: Double) $ do
+  evalKeysHints (1.0 :: Double) $ do
 
     -- compile the un-applied function to CT, then print it out
-    x <- pt2ct
+    x <- argToReader (pt2ct
            @'[ '(F4, F8) ]
            @'[ Zq $(mkTLNatNat $ 2^(15 :: Int)), Zq $(mkTLNatNat $ 2^(15 :: Int)+1) ]
            @(Zq $(mkTLNatNat 13))
            @TrivGad
-           @Double
+           @Int64
+           @Double)
            (pt1 @(PNoise 'Z (Cyc CT F4 (Zq 7))))
 
     -- duplicate the compiled expression
     let (z1,z2) = dup x
         (w1,w2) = dup z1
     -- encrypt some arguments
-    arg1 <- encrypt 7
-    arg2 <- encrypt 11
+    arg1 <- argToReader encrypt 7
+    arg2 <- argToReader encrypt 11
     -- print the compiled function
     liftIO $ putStrLn $ pprint w1
     -- if the first modulus is large enough, this will remove the rescales!
