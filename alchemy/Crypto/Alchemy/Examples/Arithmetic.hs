@@ -55,6 +55,7 @@ main = do
            @'[ Zq $(mkTLNatNat $ 2^(15 :: Int)), Zq $(mkTLNatNat $ 2^(15 :: Int)+1) ]
            @(Zq $(mkTLNatNat 13))
            @TrivGad
+           @Double
            (pt1 @(PNoise 'Z (Cyc CT F4 (Zq 7))))
 
     -- duplicate the compiled expression
@@ -72,7 +73,7 @@ main = do
     -- show the encrypted result
     liftIO $ putStrLn $ show result
     -- show the decrypted result
-    decResult <- embedReader $ decrypt result
+    decResult <- readerToAccumulator $ decrypt result
     liftIO $ putStrLn $ show $ decResult
 
 -- EAC: TODO

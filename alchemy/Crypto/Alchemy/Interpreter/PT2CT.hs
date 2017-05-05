@@ -55,7 +55,7 @@ newtype PT2CT
   = PC (mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)))
 
 -- | Transform a plaintext expression to a ciphertext expression.
-pt2ct :: forall m'map zqs kszq gad v ctex a mon . (MonadReader v mon) =>
+pt2ct :: forall m'map zqs kszq gad v ctex a mon .
       -- this forall is for use with TypeApplications at the top level
   PT2CT m'map zqs kszq gad v ctex mon () a -> mon (ctex () (Cyc2CT m'map zqs a))
 pt2ct (PC a) = a
