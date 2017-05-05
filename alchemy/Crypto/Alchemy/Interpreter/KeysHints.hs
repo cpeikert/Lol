@@ -106,7 +106,7 @@ f >=< a = do
 getKey :: (MonadReader v mon, MonadAccumulator Keys mon,
            MonadRandom mon, GenSKCtx t m' z v, Typeable (Cyc t m' z))
   => mon (SK (Cyc t m' z))
-getKey = embedReader lookupKey >>= \case
+getKey = readerToAccumulator lookupKey >>= \case
   (Just t) -> return t
   -- generate and save a key (using the variance from the monad)
   Nothing -> appendKey >=< (ask >>= genSK)
@@ -123,7 +123,7 @@ getQuadCircHint :: forall v mon t z gad m' zq zq' kszq .
    -- constraints for ksQuadCircHint
    KSHintCtx gad t m' z zq', zq' ~ (kszq, zq))
   => Proxy z -> mon (KSQuadCircHint gad (Cyc t m' zq'))
-getQuadCircHint _ = embedReader lookupHint >>= \case
+getQuadCircHint _ = readerToAccumulator lookupHint >>= \case
   (Just h) -> return h
   Nothing -> do
     sk :: SK (Cyc t m' z) <- getKey
