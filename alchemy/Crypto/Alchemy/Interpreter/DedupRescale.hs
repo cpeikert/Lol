@@ -1,3 +1,4 @@
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE InstanceSigs          #-}
@@ -12,9 +13,11 @@ where
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.List
+import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
 
-import Crypto.Lol (Cyc)
+import Crypto.Lol                      (Cyc)
 import Crypto.Lol.Applications.SymmSHE (CT)
 import Data.Typeable
 
@@ -57,9 +60,19 @@ instance (Lambda expr) => Lambda (DedupRescale expr) where
   v0  = DR v0
   s a = DR $ s $ unDR a
 
+instance (List expr) => List (DedupRescale expr) where
+  nil_  = DR nil_
+  cons_ = DR cons_
+
 instance (Add expr a) => Add (DedupRescale expr) a where
   add_ = DR add_
   neg_ = DR neg_
+
+instance (AddLit expr a) => AddLit (DedupRescale expr) a where
+  x >+: y = DR $ x >+: unDR y
+
+instance (MulLit expr a) => MulLit (DedupRescale expr) a where
+  x >*: y = DR $ x >*: unDR y
 
 instance (Mul expr a) => Mul (DedupRescale expr) a where
   type PreMul (DedupRescale expr) a = PreMul expr a
@@ -107,3 +120,20 @@ instance (SHE expr) => SHE (DedupRescale expr) where
 
   tunnel = dedupMap . tunnel
 
+instance (Functor_ expr) => Functor_ (DedupRescale expr) where
+  fmap_ = DR fmap_
+
+instance (Applicative_ expr) => Applicative_ (DedupRescale expr) where
+  pure_ = DR pure_
+  ap_   = DR ap_
+
+instance (Monad_ expr) => Monad_ (DedupRescale expr) where
+  bind_ = DR bind_
+
+instance (MonadReader_ expr) => MonadReader_ (DedupRescale expr) where
+  ask_ = DR ask_
+  local_ = DR local_
+
+instance (MonadWriter_ expr) => MonadWriter_ (DedupRescale expr) where
+  tell_ = DR tell_
+  listen_ = DR listen_
