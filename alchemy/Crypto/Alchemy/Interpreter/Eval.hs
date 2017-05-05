@@ -8,6 +8,7 @@
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
 module Crypto.Alchemy.Interpreter.Eval ( E, eval ) where
@@ -25,6 +26,7 @@ import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
+import Crypto.Alchemy.Language.Tunnel
 
 import           Crypto.Lol
 import           Crypto.Lol.Applications.SymmSHE (CT, ToSDCtx)
@@ -59,6 +61,28 @@ instance Ring.C a => Mul E a where
 instance Ring.C a => MulLit E a where
   x >*: y = (x *) <$> y
 
+instance SHE E where
+
+  type ModSwitchPTCtx   E (CT m zp (Cyc t m' zq)) zp'     = (SHE.ModSwitchPTCtx t m' zp zp' zq)
+  type RescaleLinearCtx E (CT m zp (Cyc t m' zq)) zq'     = (RescaleCyc (Cyc t) zq' zq, ToSDCtx t m' zp zq')
+  type AddPublicCtx     E (CT m zp (Cyc t m' zq))         = (SHE.AddPublicCtx t m m' zp zq)
+  type MulPublicCtx     E (CT m zp (Cyc t m' zq))         = (SHE.MulPublicCtx t m m' zp zq)
+  type KeySwitchQuadCtx E (CT m zp (Cyc t m' zq)) zq' gad = (SHE.KeySwitchCtx gad t m' zp zq zq')
+  type TunnelCtx        E t e r s e' r' s' zp zq gad      = (SHE.TunnelCtx t r s e' r' s' zp zq gad)
+
+  modSwitchPT     = fmap   SHE.modSwitchPT
+  rescaleLinear   = fmap   SHE.rescaleLinear
+  addPublic       = fmap . SHE.addPublic
+  mulPublic       = fmap . SHE.mulPublic
+  keySwitchQuad   = fmap . SHE.keySwitchQuadCirc
+  tunnel          = fmap . SHE.tunnel
+
+instance (e `Divides` r, e `Divides` s, CElt t zp) => Tunnel E e (Cyc t r zp) (Cyc t s zp) where
+
+  type LinearOf E e (Cyc t r zp) (Cyc t s zp) = Linear t zp e r s
+
+  tunnel = E . const . evalLin
+
 instance List E where
   nil_  = E $ pure []
   cons_ = E $ pure (:)
@@ -80,22 +104,6 @@ instance MonadReader_ E where
 instance MonadWriter_ E where
   tell_   = E $ pure tell
   listen_ = E $ pure listen
-
-instance SHE E where
-
-  type ModSwitchPTCtx   E (CT m zp (Cyc t m' zq)) zp'     = (SHE.ModSwitchPTCtx t m' zp zp' zq)
-  type RescaleLinearCtx E (CT m zp (Cyc t m' zq)) zq'     = (RescaleCyc (Cyc t) zq' zq, ToSDCtx t m' zp zq')
-  type AddPublicCtx     E (CT m zp (Cyc t m' zq))         = (SHE.AddPublicCtx t m m' zp zq)
-  type MulPublicCtx     E (CT m zp (Cyc t m' zq))         = (SHE.MulPublicCtx t m m' zp zq)
-  type KeySwitchQuadCtx E (CT m zp (Cyc t m' zq)) zq' gad = (SHE.KeySwitchCtx gad t m' zp zq zq')
-  type TunnelCtx        E t e r s e' r' s' zp zq gad      = (SHE.TunnelCtx t r s e' r' s' zp zq gad)
-
-  modSwitchPT     = fmap   SHE.modSwitchPT
-  rescaleLinear   = fmap   SHE.rescaleLinear
-  addPublic       = fmap . SHE.addPublic
-  mulPublic       = fmap . SHE.mulPublic
-  keySwitchQuad   = fmap . SHE.keySwitchQuadCirc
-  tunnel          = fmap . SHE.tunnel
 
 -- | Uses 'SHE.errorTermUnrestricted' to compute 'errorRate'.
 instance ErrorRate E where
