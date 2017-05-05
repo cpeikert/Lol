@@ -56,7 +56,7 @@ dedupMap f = DR . f . unDR
 
 instance (Lambda expr) => Lambda (DedupRescale expr) where
   lam f = DR $ lam $ unDR f
-  f $: a = DR $ (unDR f) $: (unDR a)
+  f $: a = DR $ unDR f $: unDR a
   v0  = DR v0
   s a = DR $ s $ unDR a
 
@@ -108,7 +108,7 @@ instance (SHE expr) => SHE (DedupRescale expr) where
 
   rescaleLinear (DR x) =
     -- also remove if the input and output types are the same
-    case (eqT :: Maybe ((CT m zp (Cyc t m' zq')) :~: ct)) of
+    case (eqT :: Maybe (CT m zp (Cyc t m' zq') :~: ct)) of
       (Just Refl) -> DR x
       Nothing -> Rescaled x $ rescaleLinear x
 
