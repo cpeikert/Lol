@@ -34,6 +34,7 @@ import Crypto.Alchemy.Interpreter.KeysHints
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.SHE            as LSHE
 --import Crypto.Alchemy.Language.Tunnel
 import Crypto.Alchemy.MonadAccumulator
@@ -96,6 +97,11 @@ instance (Lambda ctex, Applicative mon)
 
   v0       = PC $ pure v0
   s (PC a) = PC $ s <$> a
+
+instance (List_ ctex, Applicative mon)
+  => List_ (PT2CT m'map zqs kszq gad v ctex mon) where
+  nil_  = PC $ pure nil_
+  cons_ = PC $ pure cons_
 
 instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
   => Add (PT2CT m'map zqs kszq gad v ctex mon) a where
@@ -181,14 +187,16 @@ type family Cyc2CT m'map zqs e where
   Cyc2CT m'map zqs (a,b)    = (Cyc2CT m'map zqs a,   Cyc2CT m'map zqs b)
   Cyc2CT m'map zqs ()       = ()
 
+  -- for lists
+  Cyc2CT m'map zqs [a]      = [Cyc2CT m'map zqs a]
+
   -- for functions
   Cyc2CT m'map zqs (a -> b) = (Cyc2CT m'map zqs a -> Cyc2CT m'map zqs b)
 
   Cyc2CT m'map zqs c =
     TypeError ('Text "Type family 'Cyc2CT' can't convert type '"
                ':<>: 'ShowType c ':<>: 'Text "'."
-               ':$$: 'Text "It only converts types of the form 'PNoise h (Cyc t m zp)"
-               ':<>: 'Text "and pairs/functions thereof.")
+               ':$$: 'Text "It only converts types of the form 'PNoise h (Cyc t m zp) and pairs/lists/functions thereof.")
 
 -- type-level map lookup
 type family Lookup m map where
