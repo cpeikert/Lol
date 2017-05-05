@@ -136,7 +136,7 @@ instance (rp ~ Cyc t m zp, zq' ~ (kszq, zq),
       keySwitchQuad hint $ LSHE.rescaleLinear v0 *: LSHE.rescaleLinear v1
 
 instance (zq' ~ (kszq, zq), r' ~ Lookup r m'map, s' ~ Lookup s m'map,
-          rp ~ Cyc t r zp,
+          rp ~ Cyc t r zp, expr ~ PT2CT m'map zqs kszq gad z v ctex mon,
           -- output ciphertext type
           CT s zp (Cyc t s' zq)   ~ Cyc2CT m'map zqs (PNoise h (Cyc t s zp)),
           -- input ciphertext type: plaintext has one-larger pnoise
@@ -158,15 +158,19 @@ instance (zq' ~ (kszq, zq), r' ~ Lookup r m'map, s' ~ Lookup s m'map,
   -- ditto
   type LinearOf (PT2CT m'map zqs kszq gad z v ctex mon)
          e (PNoise ('S h) (Cyc t r zp)) (PNoise h (Cyc t s zp)) =
-           Tagged h (Linear t zp e r s) -- need h for injectivity
+           Tagged '(h, PT2CT m'map zqs kszq gad z v ctex mon)
+           (Linear t zp e r s) -- need tag for injectivity
 
   tunnel f = PC $ do
-    hint <- getTunnelHint @gad @zq' (Proxy::Proxy z) (proxy f (Proxy::Proxy h))
+    hint <- getTunnelHint @gad @zq' (Proxy::Proxy z) (proxy f (Proxy::Proxy '(h,expr)))
     return $ lam $
       LSHE.rescaleLinear $
       LSHE.tunnel hint $
+      -- 
       LSHE.rescaleLinear $
-      (LSHE.rescaleLinear (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise ('S h) rp))) :: ctex _ (Cyc2CT m'map zqs (PNoise h rp)))
+      -- first (possibly) rescale to target modulus
+      (LSHE.rescaleLinear (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise ('S h) rp)))
+        :: ctex _ (Cyc2CT m'map zqs (PNoise h rp)))
 
 ----- Type families -----
 
