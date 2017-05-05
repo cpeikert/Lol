@@ -48,6 +48,7 @@ newtype PT2CT
   (kszq :: *)     -- | additional Zq component for key switches; must be
            -- coprime to all moduli in 'zqs'
   (gad :: *)      -- | gadget type for key-switch hints
+  z               -- | integral type for secret keys
   v        -- | scaled-variance type for secret keys/noise
   ctex     -- | interpreter of ciphertext operations
   mon      -- | monad for creating keys/noise
@@ -56,17 +57,18 @@ newtype PT2CT
   = PC { unPC :: mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)) }
 
 -- | Transform a plaintext expression to a ciphertext expression.
-pt2ct :: forall m'map zqs kszq gad v ctex a mon .
+pt2ct :: forall m'map zqs kszq gad z v ctex a mon .
       -- this forall is for use with TypeApplications at the top level
   v   -- | scaled variance to used for generating keys/hints
-  -> PT2CT m'map zqs kszq gad v ctex (ReaderT v mon) () a -- | plaintext expression
+  -> PT2CT m'map zqs kszq gad z v ctex (ReaderT v mon) () a -- | plaintext expression
   -> mon (ctex () (Cyc2CT m'map zqs a)) -- | (monadic) ctex expression
 pt2ct v = flip runReaderT v . unPC
 
 -- | Encrypt a plaintext (using the given scaled variance) under an
 -- appropriate key (from the monad), generating one if necessary.
-encrypt :: forall mon t m m' z zp zq v .
+encrypt :: forall mon t m m' zp zq z v .
   (MonadRandom mon, MonadAccumulator Keys mon,
+   -- CJP: DON'T LOVE THIS CHOICE OF z HERE; IT'S ARBITRARY
    EncryptCtx t m m' z zp zq, z ~ LiftOf zp, GenSKCtx t m' z v,
    Typeable t, Typeable m', Typeable z)
   => v                          -- | scaled variance for keys and error
@@ -81,6 +83,7 @@ encrypt v x = flip runReaderT v $ do
 -- if one exists.
 decrypt :: forall mon t m m' z zp zq .
   (MonadReader Keys mon,
+   -- CJP: DON'T LOVE THIS CHOICE OF z HERE; IT'S ARBITRARY
    DecryptCtx t m m' z zp zq, z ~ LiftOf zp,
    Typeable t, Typeable m', Typeable z)
   => CT m zp (Cyc t m' zq) -> mon (Maybe (Cyc t m zp))
@@ -90,7 +93,7 @@ decrypt x = do
 
 
 instance (Lambda ctex, Applicative mon)
-  => Lambda (PT2CT m'map zqs kszq gad v ctex mon) where
+  => Lambda (PT2CT m'map zqs kszq gad z v ctex mon) where
 
   lam (PC f) = PC $ lam <$> f
   (PC f) $: (PC a) = PC $ ($:) <$> f <*> a
@@ -99,40 +102,40 @@ instance (Lambda ctex, Applicative mon)
   s (PC a) = PC $ s <$> a
 
 instance (List ctex, Applicative mon)
-  => List (PT2CT m'map zqs kszq gad v ctex mon) where
+  => List (PT2CT m'map zqs kszq gad z v ctex mon) where
   nil_  = PC $ pure nil_
   cons_ = PC $ pure cons_
 
 instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
-  => Add (PT2CT m'map zqs kszq gad v ctex mon) a where
+  => Add (PT2CT m'map zqs kszq gad z v ctex mon) a where
 
   add_ = PC $ pure add_
   neg_ = PC $ pure neg_
 
-instance (Lambda ctex, Mul ctex ct, SHE ctex, PreMul ctex ct ~ ct,
-          ct ~ Cyc2CT m'map zqs (PNoise h (Cyc t m zp)),
-          ct ~ CT m zp (Cyc t m' zq),
-          z ~ LiftOf zp, zq' ~ (kszq, zq),
+instance (rp ~ Cyc t m zp, zq' ~ (kszq, zq),
+          ct ~ Cyc2CT m'map zqs (PNoise h rp), ct ~ CT m zp (Cyc t m' zq),
+          Lambda ctex, Mul ctex ct, PreMul ctex ct ~ ct, SHE ctex,
+          RescaleLinearCtx ctex ct (PNoise2Zq zqs (h :+: N2)),
+          KeySwitchQuadCtx ctex ct zq' gad,
           KSHintCtx gad t m' z zq', GenSKCtx t m' z v,
-          RescaleLinearCtx ctex (CT m zp (Cyc t m' zq)) (PNoise2Zq zqs (h :+: N2)),
-          KeySwitchQuadCtx ctex (CT m zp (Cyc t m' zq)) (kszq, zq) gad,
 
-          -- EAC: Should be able to write (only) the two constraints below, but can't:
-          -- (Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq')))
+          -- EAC: Should be able to write just these constraints, but can't:
+          -- Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq'))
           -- See https://ghc.haskell.org/trac/ghc/ticket/13490
           Typeable t, Typeable zq, Typeable kszq, Typeable gad, Typeable z, Typeable m',
-          MonadRandom mon, MonadAccumulator Keys mon, MonadAccumulator Hints mon, MonadReader v mon)
-  => Mul (PT2CT m'map zqs kszq gad v ctex mon) (PNoise h (Cyc t m zp)) where
+          MonadRandom mon, MonadReader v mon,
+          MonadAccumulator Keys mon, MonadAccumulator Hints mon)
 
-  type PreMul (PT2CT m'map zqs kszq gad v ctex mon) (PNoise h (Cyc t m zp)) = PNoise (h :+: N2) (Cyc t m zp)
+  -- CJP: recall that the types have to be fully spelled out here and
+  -- in the associated type
+  => Mul (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h (Cyc t m zp)) where
 
-  mul_ :: forall a b e expr rp .
-          (rp ~ Cyc t m zp, a ~ PNoise h rp, b ~ PNoise (h :+: N2) rp,
-           expr ~ PT2CT m'map zqs kszq gad v ctex mon) =>
-          expr e (b -> b -> a)
+  -- ditto
+  type PreMul (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h (Cyc t m zp)) =
+    PNoise (h :+: N2) (Cyc t m zp)
+
   mul_ = PC $ do
-    hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) zq') <-
-      getQuadCircHint (Proxy::Proxy (LiftOf zp))
+    hint :: KSQuadCircHint gad (Cyc t m' zq') <- getQuadCircHint (Proxy::Proxy z)
     return $ lam $ lam $
       keySwitchQuad hint $ LSHE.rescaleLinear v0 *: LSHE.rescaleLinear v1
 
