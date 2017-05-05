@@ -5,6 +5,7 @@
 module Crypto.Alchemy.MonadAccumulator where
 
 import Control.Monad.Cont
+import Control.Monad.Error
 import Control.Monad.Except
 import Control.Monad.List
 import Control.Monad.Random
