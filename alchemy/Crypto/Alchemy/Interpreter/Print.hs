@@ -22,6 +22,8 @@ newtype P e a = P { unP :: Int -> String }
 pprint :: P () a -> String
 pprint = flip unP 0
 
+pureP = P . const
+
 -- | In the printout, variable indices grow "outside in," rather than
 -- "inside out" (as in object-language code) because the
 -- implementation is simpler that way.
@@ -32,19 +34,41 @@ instance Lambda P where
   v0     = P $ \i -> "v" ++ show (i-1)
   s  v   = P $ \i -> unP v (i-1)
 
+instance List P where
+  nil_  = pureP "nil"
+  cons_ = pureP "cons"
+
 instance Add P a where
-  add_ = P $ const "add"
-  neg_ = P $ const "neg"
+  add_ = pureP "add"
+  neg_ = pureP "neg"
 
 instance Show a => AddLit P a where
   p >+: a = P $ \i -> "(addLit (" ++ show p ++ ") " ++ unP a i ++ ")"
 
 instance Mul P a where
   type PreMul P a = a
-  mul_ = P $ const "mul"
+  mul_ = pureP "mul"
 
 instance Show a => MulLit P a where
   p >*: a = P $ \i -> "(mulLit (" ++ show p ++ ") " ++ unP a i ++ ")"
+
+instance Functor_ P where
+  fmap_ = pureP "fmap"
+
+instance Applicative_ P where
+  pure_ = pureP "pure"
+  ap_   = pureP "ap"
+
+instance Monad_ P where
+  bind_ = pureP "bind"
+
+instance MonadReader_ P where
+  ask_   = pureP "ask"
+  local_ = pureP "local"
+
+instance MonadWriter_ P where
+  tell_   = pureP "tell"
+  listen_ = pureP "listen"
 
 instance SHE P where
 
@@ -61,3 +85,7 @@ instance SHE P where
   mulPublic     p a = P $ \i -> "(mulPublic (" ++ show p ++ ") " ++ unP a i ++ ")"
   keySwitchQuad _ a = P $ \i -> "(keySwitchQuad <HINT> " ++ unP a i ++ ")"
   tunnel        _ a = P $ \i -> "(tunnel <FUNC> " ++ unP a i ++ ")"
+
+instance ErrorRate P where
+  type ErrorRateCtx P ct z = ()
+  errorRate sk = pureP "errorRate"
