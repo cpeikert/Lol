@@ -118,11 +118,7 @@ instance (rp ~ Cyc t m zp, zq' ~ (kszq, zq),
           RescaleLinearCtx ctex ct (PNoise2Zq zqs (h :+: N2)),
           KeySwitchQuadCtx ctex ct zq' gad,
           KSHintCtx gad t m' z zq', GenSKCtx t m' z v,
-
-          -- EAC: Should be able to write just these constraints, but can't:
-          -- Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq'))
-          -- See https://ghc.haskell.org/trac/ghc/ticket/13490
-          Typeable t, Typeable zq, Typeable kszq, Typeable gad, Typeable z, Typeable m',
+          Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq')),
           MonadRandom mon, MonadReader v mon,
           MonadAccumulator Keys mon, MonadAccumulator Hints mon)
 
