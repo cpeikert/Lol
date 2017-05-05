@@ -1,22 +1,17 @@
-{-# LANGUAGE DataKinds    #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 
 module Crypto.Alchemy.Language.Tunnel where
 
-import Control.Newtype
-import Crypto.Lol (Cyc, Factored, Linear)
-import GHC.Exts
+-- | Symantics for (plaintext) ring-tunneling.
 
--- | Symantics for leveled plaintext operations of some depth @d@.
+class Tunnel expr e r s where
 
-class Tunnel expr where
+  -- | Type representing @E@-linear functions from @R@ to @S@.
+  -- (It is injective in e,r,s.)
+  type LinearOf expr e r s = lin | lin -> e r s
 
-  type PreTunnel expr (r :: Factored) b
-  -- EAC: I tried using a instead of r, but in the PT2CT instance, a has a type family due to PNoise,
-  -- and that is not allowed in associated type synonym parameters
-  type TunnelCtxPT expr (e :: Factored) (r :: Factored) b :: Constraint
-
-  tunnelPT :: (TunnelCtxPT expr e r b, a ~ PreTunnel expr r b,
-               Newtype a (Cyc t r zp), Newtype b (Cyc t s zp))
-           => Linear t zp e r s -> expr env (a -> b)
+  -- | An object-language expression representing the given linear
+  -- function.
+  tunnel :: LinearOf expr e r s -> expr env (r -> s)
