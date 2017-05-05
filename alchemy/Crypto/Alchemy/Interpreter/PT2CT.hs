@@ -134,7 +134,7 @@ instance (Lambda ctex, Mul ctex ct, SHE ctex, PreMul ctex ct ~ ct,
     hint :: KSQuadCircHint gad (Cyc t (Lookup m m'map) zq') <-
       getQuadCircHint (Proxy::Proxy (LiftOf zp))
     return $ lam $ lam $
-      keySwitchQuad hint $ (LSHE.rescaleLinear v0) *: (LSHE.rescaleLinear v1)
+      keySwitchQuad hint $ LSHE.rescaleLinear v0 *: LSHE.rescaleLinear v1
 
 
 {-
