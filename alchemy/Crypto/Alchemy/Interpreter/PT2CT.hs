@@ -139,40 +139,27 @@ instance (rp ~ Cyc t m zp, zq' ~ (kszq, zq),
     return $ lam $ lam $
       keySwitchQuad hint $ LSHE.rescaleLinear v0 *: LSHE.rescaleLinear v1
 
+instance (SHE ctex, Lambda ctex, MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon,
+          ct ~ Cyc2CT m'map zqs (PNoise h (Cyc t s zp)), ct ~ CT s zp (Cyc t s' zq),
+          zq' ~ (kszq, zq), r' ~ Lookup r m'map, s' ~ Lookup s m'map,
+          LSHE.TunnelCtx ctex t e r s (e * (r' / r)) r' s' zp zq' gad,
+          TunnelHintCtx t e r s (e * (r' / r)) r' s' z zp zq' gad,
+          GenSKCtx t r' z v, GenSKCtx t s' z v,
+          Typeable t, Typeable r', Typeable s', Typeable z, -- bug; see genTunnHint
+          ctin ~ Cyc2CT m'map zqs (PNoise ('S h) (Cyc t r zp)), ctin ~ CT r zp (Cyc t r' zqin),
+          RescaleLinearCtx ctex (CT r zp (Cyc t r' zq)) zqin,
+          RescaleLinearCtx ctex (CT r zp (Cyc t r' zq')) zq,
+          RescaleLinearCtx ctex (CT s zp (Cyc t s' zq)) zq')
+  => Tunnel (PT2CT m'map zqs kszq gad z v ctex mon) e (PNoise ('S h) (Cyc t r zp)) (PNoise h (Cyc t s zp)) where
 
-{-
-type TunnelCtxPT' ctex t e r s r' s' z zp zq zq' gad v =
-  (LSHE.TunnelCtx ctex t e r s (e * (r' / r)) r' s'   zp zq' gad,
-   TunnelHintCtx   t e r s (e * (r' / r)) r' s' z zp zq' gad,
-   GenSKCtx t r' z v, GenSKCtx t s' z v,
-   Typeable t, Typeable r', Typeable s', Typeable z, -- bug; see genTunnHint
-   RescaleLinearCtx ctex (CT r zp (Cyc t r' zq')) zq, RescaleLinearCtx ctex (CT s zp (Cyc t s' zq)) zq')
--}
-
-instance (MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon,
-          e' ~ Lookup e m'map, r' ~ Lookup r m'map, s' ~ Lookup s m'map,
-          ce ~ Cyc t e zp, cr ~ Cyc t r zp, cs ~ Cyc t s zp,
-          zq ~ PNoise2Zq zqs h, -- CJP: h or h+1 here?
-          z ~ LiftOf zp,
-          SHE ctex, LSHE.TunnelCtx ctex t e r s e' r' s' zp zq gad)
-
-  -- CJP: recall that the types have to be fully spelled out here and
-  -- in the associated type
-  => Tunnel (PT2CT m'map zqs kszq gad z v ctex mon)
-         (Cyc t e zp) (PNoise ('S h) (Cyc t r zp)) (PNoise h (Cyc t s zp)) where
-
-  -- ditto
   type LinearOf (PT2CT m'map zqs kszq gad z v ctex mon)
-       (Cyc t e zp) (PNoise ('S h) (Cyc t r zp)) (PNoise h (Cyc t s zp)) =
-    Tagged h (Linear t zp e r s) -- need h for injectivity
+         e (PNoise ('S h) (Cyc t r zp)) (PNoise h (Cyc t s zp)) =
+           Tagged h (Linear t zp e r s) -- need h for injectivity
 
-  -- CJP: TODO: implementation, started below
-
-{-
   tunnel f = PC $ do
-    hint <- getTunnelHint
-    return lam $
--}
+    thint <- getTunnelHint @gad @zq' (proxy f (Proxy::Proxy h))
+    let b = LSHE.rescaleLinear (v0 :: ctex _  (Cyc2CT m'map zqs (PNoise ('S h) (Cyc t r zp)))) :: ctex _  (Cyc2CT m'map zqs (PNoise h (Cyc t r zp))) -- rescale input
+    return $ lam $ LSHE.rescaleLinear $ LSHE.tunnel thint $ LSHE.rescaleLinear b
 
 ----- Type families -----
 

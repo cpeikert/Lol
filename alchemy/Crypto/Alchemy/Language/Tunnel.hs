@@ -1,4 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
 
@@ -6,7 +7,7 @@ module Crypto.Alchemy.Language.Tunnel where
 
 -- | Symantics for (plaintext) ring-tunneling.
 
-class Tunnel expr e r s where
+class Tunnel expr (e :: k) r s where
 
   -- | Type representing @E@-linear functions from @R@ to @S@.
   -- (It is injective in e,r,s.)
