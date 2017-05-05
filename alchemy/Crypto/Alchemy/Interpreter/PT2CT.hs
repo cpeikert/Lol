@@ -153,8 +153,7 @@ instance (zq' ~ (kszq, zq), r' ~ Lookup r m'map, s' ~ Lookup s m'map,
           RescaleLinearCtx ctex (CT r zp (Cyc t r' zq))  zqin,
           RescaleLinearCtx ctex (CT r zp (Cyc t r' zq')) zq,
           RescaleLinearCtx ctex (CT s zp (Cyc t s' zq))  zq',
-          -- GHC bug; see getTunnelHint
-          Typeable t, Typeable r', Typeable s', Typeable z)
+          Typeable (Cyc t r' z), Typeable (Cyc t s' z))
   -- CJP: recall that the types have to be fully spelled out here and
   -- in the associated type; we can't use the shorthand ct etc.
   => Tunnel (PT2CT m'map zqs kszq gad z v ctex mon)
@@ -166,13 +165,12 @@ instance (zq' ~ (kszq, zq), r' ~ Lookup r m'map, s' ~ Lookup s m'map,
            Tagged h (Linear t zp e r s) -- need h for injectivity
 
   tunnel f = PC $ do
-    hint <- getTunnelHint @gad @zq' (proxy f (Proxy::Proxy h))
+    hint <- getTunnelHint @gad @zq' (Proxy::Proxy z) (proxy f (Proxy::Proxy h))
     return $ lam $ 
       LSHE.rescaleLinear $
       LSHE.tunnel hint $
       LSHE.rescaleLinear $
-      (LSHE.rescaleLinear (v0 :: ctex _ (CT r zp (Cyc t r' zqin)))
-        :: ctex _ (Cyc2CT m'map zqs (PNoise h rp)))
+      (LSHE.rescaleLinear v0 :: ctex _ (Cyc2CT m'map zqs (PNoise h rp)))
 
 ----- Type families -----
 
