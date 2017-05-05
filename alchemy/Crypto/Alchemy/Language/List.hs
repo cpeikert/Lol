@@ -3,7 +3,7 @@ module Crypto.Alchemy.Language.List where
 
 -- | Symantics for list operations.
 
-class List_ expr where
+class List expr where
   -- | Empty list.
   nil_  :: expr e [a]
 

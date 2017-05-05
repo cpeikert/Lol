@@ -68,7 +68,7 @@ to one which writes the error rate of its final output"
 
 liftWriteError2 ::
   (MonadWriter ErrorRateLog w, MonadReader Keys k, Typeable cyc,
-   List_ expr, MonadWriter_ expr,
+   List expr, MonadWriter_ expr,
    ErrorRate expr, ErrorRateCtx expr c z)
   => Proxy cyc -> expr e (a -> b -> c) -> k (expr e (w a -> w b -> w c))
 
@@ -84,7 +84,7 @@ liftWriteError2 f_ = do
 
 instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
           ct ~ (CT m zp (Cyc t m' zq)), z ~ (LiftOf zp), Typeable (Cyc t m' z),
-          List_ expr, MonadWriter_ expr,
+          List expr, MonadWriter_ expr,
           Add expr ct, ErrorRate expr, ErrorRateCtx expr ct z)
          => Add (ErrorRateWriter expr k w) ct where
 

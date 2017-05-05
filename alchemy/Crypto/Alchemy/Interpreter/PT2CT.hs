@@ -98,8 +98,8 @@ instance (Lambda ctex, Applicative mon)
   v0       = PC $ pure v0
   s (PC a) = PC $ s <$> a
 
-instance (List_ ctex, Applicative mon)
-  => List_ (PT2CT m'map zqs kszq gad v ctex mon) where
+instance (List ctex, Applicative mon)
+  => List (PT2CT m'map zqs kszq gad v ctex mon) where
   nil_  = PC $ pure nil_
   cons_ = PC $ pure cons_
 
