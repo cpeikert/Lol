@@ -7,7 +7,12 @@ module Crypto.Alchemy.Interpreter.Dup (Dup, dup) where
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.SHE
+import Crypto.Alchemy.Language.List
+import Crypto.Alchemy.Language.Monad
+import Crypto.Alchemy.Language.SHE    as LSHE
+import Crypto.Alchemy.Language.Tunnel as T
+
+import Data.Functor.Trans.Tagged
 
 dup :: Dup expr1 expr2 e a -> (expr1 e a, expr2 e a)
 dup (Dup a b) = (a,b)
@@ -59,9 +64,36 @@ instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
 
   keySwitchQuad h (Dup a b) = Dup (keySwitchQuad h a) (keySwitchQuad h b)
 
-  tunnel f (Dup a b) = Dup (tunnel f a) (tunnel f b)
+  tunnel f (Dup a b) = Dup (LSHE.tunnel f a) (LSHE.tunnel f b)
 
+instance (Tunnel ex1 e r s, Tunnel ex2 e r s,
+          LinearOf ex1 e r s ~ LinearOf ex2 e r s)
+  => Tunnel (Dup ex1 ex2) e r s where
+  type LinearOf (Dup ex1 ex2) e r s = Tagged ex2 (LinearOf ex1 e r s)
 
+  tunnel f = Dup (T.tunnel (untag f)) (T.tunnel (untag f))
+
+instance (List ex1, List ex2) => List (Dup ex1 ex2) where
+  nil_  = Dup nil_ nil_
+  cons_ = Dup cons_ cons_
+
+instance (Functor_ ex1, Functor_ ex2) => Functor_ (Dup ex1 ex2) where
+  fmap_ = Dup fmap_ fmap_
+
+instance (Applicative_ ex1, Applicative_ ex2) => Applicative_ (Dup ex1 ex2) where
+  pure_ = Dup pure_ pure_
+  ap_   = Dup ap_ ap_
+
+instance (Monad_ ex1, Monad_ ex2) => Monad_ (Dup ex1 ex2) where
+  bind_ = Dup bind_ bind_
+
+instance (MonadReader_ ex1, MonadReader_ ex2) => MonadReader_ (Dup ex1 ex2) where
+  ask_   = Dup ask_ ask_
+  local_ = Dup local_ local_
+
+instance (MonadWriter_ ex1, MonadWriter_ ex2) => MonadWriter_ (Dup ex1 ex2) where
+  tell_   = Dup tell_ tell_
+  listen_ = Dup listen_ listen_
 
 {-
 
