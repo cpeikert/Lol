@@ -35,7 +35,7 @@ import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.SHE            as LSHE
-import Crypto.Alchemy.Language.Tunnel
+--import Crypto.Alchemy.Language.Tunnel
 import Crypto.Alchemy.MonadAccumulator
 
 -- | Interprets plaintext operations as their corresponding
@@ -52,27 +52,32 @@ newtype PT2CT
   mon      -- | monad for creating keys/noise
   e        -- | environment
   a        -- | plaintext type; should be of the form 'PNoise h (Cyc t m zp)'
-  = PC (mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)))
+  = PC { unPC :: mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)) }
 
 -- | Transform a plaintext expression to a ciphertext expression.
-pt2ct :: forall m'map zqs kszq gad v ctex a mon . (MonadReader v mon) =>
+pt2ct :: forall m'map zqs kszq gad v ctex a mon .
       -- this forall is for use with TypeApplications at the top level
-  PT2CT m'map zqs kszq gad v ctex mon () a -> mon (ctex () (Cyc2CT m'map zqs a))
-pt2ct (PC a) = a
+  v   -- | scaled variance to used for generating keys/hints
+  -> PT2CT m'map zqs kszq gad v ctex (ReaderT v mon) () a -- | plaintext expression
+  -> mon (ctex () (Cyc2CT m'map zqs a)) -- | (monadic) ctex expression
+pt2ct v = flip runReaderT v . unPC
 
+-- | Encrypt a plaintext (using the given scaled variance) under an
+-- appropriate key (from the monad), generating one if necessary.
 encrypt :: forall mon t m m' z zp zq v .
-  (MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon,
+  (MonadRandom mon, MonadAccumulator Keys mon,
    EncryptCtx t m m' z zp zq, z ~ LiftOf zp, GenSKCtx t m' z v,
    Typeable t, Typeable m', Typeable z)
-  => Cyc t m zp -> mon (CT m zp (Cyc t m' zq))
-encrypt x = do
-  -- EAC: We need to allow key generation in `encrypt`. Consider the
-  -- expression `lam v0` representing `id :: CT -> CT`. We should be
-  -- able to evaluate this function on an encrypted input, but there's
-  -- no way to generate a key in the definition of `lam` or `v0`.
+  => v                          -- | scaled variance for keys and error
+  -> Cyc t m zp                 -- | plaintext
+  -> mon (CT m zp (Cyc t m' zq)) -- | (monadic) ciphertext
+encrypt v x = flip runReaderT v $ do
+  -- generate key if necessary
   (sk :: SK (Cyc t m' z)) <- getKey
   SHE.encrypt sk x
 
+-- | Decrypt a ciphertext under an appropriate key (from the monad),
+-- if one exists.
 decrypt :: forall mon t m m' z zp zq .
   (MonadReader Keys mon,
    DecryptCtx t m m' z zp zq, z ~ LiftOf zp,
@@ -81,6 +86,7 @@ decrypt :: forall mon t m m' z zp zq .
 decrypt x = do
   sk :: Maybe (SK (Cyc t m' z)) <- lookupKey
   return $ flip SHE.decrypt x <$> sk
+
 
 instance (Lambda ctex, Applicative mon)
   => Lambda (PT2CT m'map zqs kszq gad v ctex mon) where
