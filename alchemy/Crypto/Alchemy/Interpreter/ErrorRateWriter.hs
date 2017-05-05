@@ -30,6 +30,8 @@ import Crypto.Alchemy.Language.SHE
 -- of any ciphertexts created during interpretation.
 newtype ErrorRateWriter
   expr                          -- | the underyling interpreter
+  z                             -- | integral type for keys
+  -- CJP: DON'T LOVE THIS z HERE.
   k                             -- | (reader) monad that supplies the
                                 -- keys for extracting error
   w                             -- | (writer) monad for logging error rates
@@ -49,12 +51,12 @@ type ErrorRateLog = [Double]
 
 -- | Transform an expression into (a monadic) one that logs error
 -- rates, where the needed keys are obtained from the monad.
-writeErrorRates :: ErrorRateWriter expr k w e a
+writeErrorRates :: ErrorRateWriter expr z k w e a
                 -> k (expr (Monadify w e) (Monadify w a))
 writeErrorRates = unERW
 
 instance (Lambda expr, Applicative k)
-  => Lambda (ErrorRateWriter expr k w) where
+  => Lambda (ErrorRateWriter expr z k w) where
 
   lam (ERW f) = ERW $ lam <$> f
   (ERW f) $: (ERW a) = ERW $ ($:) <$> f <*> a
@@ -83,10 +85,10 @@ liftWriteError2 f_ = do
 -}
 
 instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
-          ct ~ (CT m zp (Cyc t m' zq)), z ~ (LiftOf zp), Typeable (Cyc t m' z),
+          ct ~ (CT m zp (Cyc t m' zq)), Typeable (Cyc t m' z),
           List expr, MonadWriter_ expr,
           Add expr ct, ErrorRate expr, ErrorRateCtx expr ct z)
-         => Add (ErrorRateWriter expr k w) ct where
+         => Add (ErrorRateWriter expr z k w) ct where
 
   add_ = ERW $ do               -- in k monad
     key :: Maybe (SK (Cyc t m' z)) <- lookupKey
@@ -105,8 +107,8 @@ instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
           -- needed because PreMul could take some crazy form
           Monadify w (PreMul expr ct) ~ w (PreMul expr ct),
           ErrorRate expr, Applicative_ expr, Mul expr ct)
-         => Mul (ErrorRateWriter expr k w) ct where
+         => Mul (ErrorRateWriter expr z k w) ct where
 
-  type PreMul (ErrorRateWriter expr k w) ct = PreMul expr ct
+  type PreMul (ErrorRateWriter expr z k w) ct = PreMul expr ct
 
   mul_ = ERW $ pure $ liftA2_ $: mul_
