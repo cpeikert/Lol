@@ -28,10 +28,13 @@ import Data.Typeable
 data DedupRescale expr e a where
   -- Indicates that the expression is the result of a rescale from b
   -- to a; retains the pre-rescaled expression.
-  Rescaled :: (Typeable b) =>
-    { prescaled :: expr e b, unDR :: expr e a } -> DedupRescale expr e a
+  Rescaled :: (Typeable b) => expr e b -> expr e a -> DedupRescale expr e a
   -- Generic case.
-  DR :: { unDR :: expr e a } -> DedupRescale expr e a
+  DR :: expr e a -> DedupRescale expr e a
+
+unDR :: DedupRescale expr e a -> expr e a
+unDR (Rescaled _ a) = a
+unDR (DR a) = a
 
 -- | De-duplicate rescaling operations in an expression.
 dedupRescale :: DedupRescale expr e a -> expr e a
