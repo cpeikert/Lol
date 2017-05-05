@@ -10,6 +10,8 @@ where
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.List
+import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
 
 import Crypto.Lol                      (Cyc)
@@ -22,6 +24,7 @@ newtype P e a = P { unP :: Int -> String }
 pprint :: P () a -> String
 pprint = flip unP 0
 
+pureP :: String -> P e a
 pureP = P . const
 
 -- | In the printout, variable indices grow "outside in," rather than
@@ -88,4 +91,4 @@ instance SHE P where
 
 instance ErrorRate P where
   type ErrorRateCtx P ct z = ()
-  errorRate sk = pureP "errorRate"
+  errorRate _ = pureP "errorRate"
