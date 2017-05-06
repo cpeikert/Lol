@@ -45,6 +45,9 @@ defaultSHEBenches pt pgad pgen  = [
   benchGroup "Rescale" $ ($ pt) <$>
     [rescaleBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq 1017857, Zq (1017857 ** 1032193))) pgad,
      rescaleBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq 1008001, Zq (1008001 ** 1065601))) pgad],
+  benchGroup "KeySwitch" $ ($ pt) <$>
+    [keySwitchBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq (1017857 ** 1032193))) pgad,
+     keySwitchBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq (1008001 ** 1065601))) pgad],
   benchGroup "Tunnel" $ ($ pt) <$>
     [tunnelBenches {- H0 -> H1 -} (Proxy::Proxy '(F128,
                                                   F128 * F7 * F13,
