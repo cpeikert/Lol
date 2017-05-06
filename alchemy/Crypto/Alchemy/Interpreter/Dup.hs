@@ -9,7 +9,7 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
-import Crypto.Alchemy.Language.SHE        as LSHE
+import Crypto.Alchemy.Language.SHE
 import Crypto.Alchemy.Language.Tunnel     as T
 
 import Data.Functor.Trans.Tagged
@@ -54,17 +54,12 @@ instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
     (TunnelCtx ex1 t e r s e' r' s' zp zq gad,
      TunnelCtx ex2 t e r s e' r' s' zp zq gad)
 
-  modSwitchPT (Dup a b) = Dup (modSwitchPT a) (modSwitchPT b)
-
-  rescaleLinear (Dup a b) = Dup (rescaleLinear a) (rescaleLinear b)
-
-  addPublic p (Dup a b) = Dup (addPublic p a) (addPublic p b)
-
-  mulPublic p (Dup a b) = Dup (mulPublic p a) (mulPublic p b)
-
-  keySwitchQuad h (Dup a b) = Dup (keySwitchQuad h a) (keySwitchQuad h b)
-
-  tunnel f (Dup a b) = Dup (LSHE.tunnel f a) (LSHE.tunnel f b)
+  modSwitchPT_     = Dup  modSwitchPT_       modSwitchPT_
+  rescaleLinear_   = Dup  rescaleLinear_     rescaleLinear_
+  addPublic_     p = Dup (addPublic_ p)     (addPublic_ p)
+  mulPublic_     p = Dup (mulPublic_ p)     (mulPublic_ p)
+  keySwitchQuad_ h = Dup (keySwitchQuad_ h) (keySwitchQuad_ h)
+  tunnel_        h = Dup (tunnel_ h)        (tunnel_ h)
 
 instance (Tunnel ex1 e r s, Tunnel ex2 e r s,
           LinearOf ex1 e r s ~ LinearOf ex2 e r s)

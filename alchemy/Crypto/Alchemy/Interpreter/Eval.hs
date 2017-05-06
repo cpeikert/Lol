@@ -26,9 +26,8 @@ import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
 
-import           Crypto.Lol
-import           Crypto.Lol.Applications.SymmSHE (CT, ToSDCtx)
-import qualified Crypto.Lol.Applications.SymmSHE as SHE
+import Crypto.Lol
+import Crypto.Lol.Applications.SymmSHE as SHE
 
 -- | Metacircular evaluator.
 newtype E e a = E { unE :: e -> a }
@@ -84,27 +83,27 @@ instance MonadWriter_ E where
 instance SHE E where
 
   type ModSwitchPTCtx   E (CT m zp (Cyc t m' zq)) zp' = (SHE.ModSwitchPTCtx t m' zp zp' zq)
-  type RescaleLinearCtx E (CT m zp (Cyc t m' zq)) zq' = (RescaleCyc (Cyc t) zq' zq, ToSDCtx t m' zp zq')
+  type RescaleLinearCtx E (CT m zp (Cyc t m' zq)) zq' = (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq)
   type AddPublicCtx     E (CT m zp (Cyc t m' zq))     = (SHE.AddPublicCtx t m m' zp zq)
   type MulPublicCtx     E (CT m zp (Cyc t m' zq))     = (SHE.MulPublicCtx t m m' zp zq)
   type KeySwitchQuadCtx E (CT m zp (Cyc t m' zq)) gad = (SHE.KeySwitchCtx gad t m' zp zq)
   type TunnelCtx        E t e r s e' r' s' zp zq gad  = (SHE.TunnelCtx t r s e' r' s' zp zq gad)
 
-  modSwitchPT     = fmap   SHE.modSwitchPT
-  rescaleLinear   = fmap   SHE.rescaleLinear
-  addPublic       = fmap . SHE.addPublic
-  mulPublic       = fmap . SHE.mulPublic
-  keySwitchQuad   = fmap . SHE.keySwitchQuadCirc
-  tunnel          = fmap . SHE.tunnel
+  modSwitchPT_     = E $ pure   modSwitchPT
+  rescaleLinear_   = E $ pure   rescaleLinear
+  addPublic_       = E . pure . addPublic
+  mulPublic_       = E . pure . mulPublic
+  keySwitchQuad_   = E . pure . keySwitchQuadCirc
+  tunnel_          = E . pure . tunnel
 
 -- | Uses 'SHE.errorTermUnrestricted' to compute 'errorRate'.
 instance ErrorRate E where
   type ErrorRateCtx E (CT m zp (Cyc t m' zq)) z =
     (SHE.ErrorTermUCtx t m' z zp zq, Mod zq, ToInteger (LiftOf zq))
 
-  errorRate :: forall t m' m z zp zq ct e .
-               (ErrorRateCtx E ct z, ct ~ CT m zp (Cyc t m' zq)) =>
-               SHE.SK (Cyc t m' z) -> E e (ct -> Double)
-  errorRate sk = E $ pure $
+  errorRate_ :: forall t m' m z zp zq ct e .
+                (ErrorRateCtx E ct z, ct ~ CT m zp (Cyc t m' zq)) =>
+                SHE.SK (Cyc t m' z) -> E e (ct -> Double)
+  errorRate_ sk = E $ pure $
     (/ (fromIntegral $ proxy modulus (Proxy::Proxy zq))) .
     fromIntegral . maximum . fmap abs . SHE.errorTermUnrestricted sk

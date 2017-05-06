@@ -82,13 +82,13 @@ instance SHE P where
   type KeySwitchQuadCtx P a gad = ()
   type TunnelCtx        P t e r s e' r' s' zp zq gad = ()
 
-  modSwitchPT     a = P $ \i -> "(modSwitchPT "   ++ unP a i ++ ")"
-  rescaleLinear   a = P $ \i -> "(rescaleLinear " ++ unP a i ++ ")"
-  addPublic     p a = P $ \i -> "(addPublic (" ++ show p ++ ") " ++ unP a i ++ ")"
-  mulPublic     p a = P $ \i -> "(mulPublic (" ++ show p ++ ") " ++ unP a i ++ ")"
-  keySwitchQuad _ a = P $ \i -> "(keySwitchQuad <HINT> " ++ unP a i ++ ")"
-  tunnel        _ a = P $ \i -> "(tunnel <FUNC> " ++ unP a i ++ ")"
+  modSwitchPT_     = pureP   "modSwitchPT"
+  rescaleLinear_   = pureP   "rescaleLinear"
+  addPublic_     p = pureP $ "addPublic (" ++ show p ++ ")"
+  mulPublic_     p = pureP $ "mulPublic (" ++ show p ++ ")"
+  keySwitchQuad_ _ = pureP   "keySwitchQuad <HINT>"
+  tunnel_        _ = pureP   "tunnel <FUNC>"
 
 instance ErrorRate P where
   type ErrorRateCtx P ct z = ()
-  errorRate _ = pureP "errorRate"
+  errorRate_ _ = pureP "errorRate"

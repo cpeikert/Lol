@@ -25,25 +25,24 @@ class SHE expr where
     (e' :: Factored) (r' :: Factored) (s' :: Factored)
     zp zq gad :: Constraint
 
-  modSwitchPT :: (ModSwitchPTCtx expr ct zp', ct ~ CT m zp (Cyc t m' zq))
-    => expr env ct -> expr env (CT m zp' (Cyc t m' zq))
+  modSwitchPT_ :: (ModSwitchPTCtx expr ct zp', ct ~ CT m zp (Cyc t m' zq))
+    => expr env (ct -> CT m zp' (Cyc t m' zq))
 
-  rescaleLinear :: (RescaleLinearCtx expr ct zq', ct ~ CT m zp (Cyc t m' zq))
-    => expr env (CT m zp (Cyc t m' zq')) -> expr env ct
+  rescaleLinear_ :: (RescaleLinearCtx expr ct zq', ct ~ CT m zp (Cyc t m' zq))
+    => expr env (ct -> CT m zp (Cyc t m' zq'))
 
-  addPublic :: (AddPublicCtx expr ct, ct ~ CT m zp (Cyc t m' zq))
-    => Cyc t m zp -> expr env ct -> expr env ct
+  addPublic_ :: (AddPublicCtx expr ct, ct ~ CT m zp (Cyc t m' zq))
+    => Cyc t m zp -> expr env (ct -> ct)
 
-  mulPublic :: (MulPublicCtx expr ct, ct ~ CT m zp (Cyc t m' zq))
-    => Cyc t m zp -> expr env ct -> expr env ct
+  mulPublic_ :: (MulPublicCtx expr ct, ct ~ CT m zp (Cyc t m' zq))
+    => Cyc t m zp -> expr env (ct -> ct)
 
-  keySwitchQuad :: (KeySwitchQuadCtx expr ct gad, ct ~ CT m zp (Cyc t m' zq))
-    => KSQuadCircHint gad (Cyc t m' zq) -> expr env ct -> expr env ct
+  keySwitchQuad_ :: (KeySwitchQuadCtx expr ct gad, ct ~ CT m zp (Cyc t m' zq))
+    => KSQuadCircHint gad (Cyc t m' zq) -> expr env (ct -> ct)
 
-  tunnel :: (TunnelCtx expr t e r s e' r' s' zp zq gad)
+  tunnel_ :: (TunnelCtx expr t e r s e' r' s' zp zq gad)
     => TunnelHint gad t e r s e' r' s' zp zq
-    -> expr env (CT r zp (Cyc t r' zq))
-    -> expr env (CT s zp (Cyc t s' zq))
+    -> expr env (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq))
 
 -- | Symantics for obtaining the error rate of a ciphertext.
 
@@ -53,5 +52,5 @@ class ErrorRate expr where
 
   -- | Error rate of a ciphertext.  (Note that the secret key lives
   -- "outside" the object language.)
-  errorRate :: (ErrorRateCtx expr ct z, ct ~ CT m zp (Cyc t m' zq))
-            => SK (Cyc t m' z) -> expr e (ct -> Double)
+  errorRate_ :: (ErrorRateCtx expr ct z, ct ~ CT m zp (Cyc t m' zq))
+             => SK (Cyc t m' z) -> expr e (ct -> Double)
