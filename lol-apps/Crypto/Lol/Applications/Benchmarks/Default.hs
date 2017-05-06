@@ -4,7 +4,7 @@ Description : Default benchmarks for lol-apps.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
