@@ -17,8 +17,8 @@ message LinearFuncChain {
   repeated LinearRq funcs    = 1;
 }
 
-message TunnelInfoChain {
-  repeated TunnelInfo hints = 1;
+message TunnelHintChain {
+  repeated TunnelHint hints = 1;
 }
 
 message RoundHintChain {
