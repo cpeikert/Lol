@@ -13,11 +13,11 @@ import GHC.Exts
 
 class SHE expr where
 
-  type ModSwitchPTCtx   expr ct zp'     :: Constraint
-  type RescaleLinearCtx expr ct zq'     :: Constraint
-  type AddPublicCtx     expr ct         :: Constraint
-  type MulPublicCtx     expr ct         :: Constraint
-  type KeySwitchQuadCtx expr ct zq' gad :: Constraint
+  type ModSwitchPTCtx   expr ct zp' :: Constraint
+  type RescaleLinearCtx expr ct zq' :: Constraint
+  type AddPublicCtx     expr ct     :: Constraint
+  type MulPublicCtx     expr ct     :: Constraint
+  type KeySwitchQuadCtx expr ct gad :: Constraint
   type TunnelCtx
     expr
     (t  :: Factored -> * -> *)
@@ -31,18 +31,14 @@ class SHE expr where
   rescaleLinear :: (RescaleLinearCtx expr ct zq', ct ~ CT m zp (Cyc t m' zq))
     => expr env (CT m zp (Cyc t m' zq')) -> expr env ct
 
-  -- CJP: doesn't quite fall into addLit, though we could possibly
-  -- generalize addLit to cover this (not clear if a good idea; this
-  -- signature is pretty special)
   addPublic :: (AddPublicCtx expr ct, ct ~ CT m zp (Cyc t m' zq))
     => Cyc t m zp -> expr env ct -> expr env ct
 
-  -- CJP: ditto here
   mulPublic :: (MulPublicCtx expr ct, ct ~ CT m zp (Cyc t m' zq))
     => Cyc t m zp -> expr env ct -> expr env ct
 
-  keySwitchQuad :: (KeySwitchQuadCtx expr ct zq' gad, ct ~ CT m zp (Cyc t m' zq))
-    => KSQuadCircHint gad (Cyc t m' zq') -> expr env ct -> expr env ct
+  keySwitchQuad :: (KeySwitchQuadCtx expr ct gad, ct ~ CT m zp (Cyc t m' zq))
+    => KSQuadCircHint gad (Cyc t m' zq) -> expr env ct -> expr env ct
 
   tunnel :: (TunnelCtx expr t e r s e' r' s' zp zq gad)
     => TunnelHint gad t e r s e' r' s' zp zq

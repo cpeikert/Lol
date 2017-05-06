@@ -79,7 +79,7 @@ instance SHE P where
   type RescaleLinearCtx P a zq' = ()
   type AddPublicCtx     P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
   type MulPublicCtx     P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
-  type KeySwitchQuadCtx P a zq' gad = ()
+  type KeySwitchQuadCtx P a gad = ()
   type TunnelCtx        P t e r s e' r' s' zp zq gad = ()
 
   modSwitchPT     a = P $ \i -> "(modSwitchPT "   ++ unP a i ++ ")"

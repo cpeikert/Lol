@@ -112,11 +112,14 @@ instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
   add_ = PC $ pure add_
   neg_ = PC $ pure neg_
 
-instance (rp ~ Cyc t m zp, zq' ~ (kszq, zq),
-          ct ~ Cyc2CT m'map zqs (PNoise h rp), ct ~ CT m zp (Cyc t m' zq),
+instance (m' ~ Lookup m m'map,
+          zqin ~ PNoise2Zq zqs (h :+: N2), zq' ~ (kszq, zq), zq ~ PNoise2Zq zqs h,
+          ctin ~ CT m zp (Cyc t m' zqin), ct' ~ CT m zp (Cyc t m' zq'), ct ~ CT m zp (Cyc t m' zq),
           Lambda ctex, Mul ctex ct, PreMul ctex ct ~ ct, SHE ctex,
-          RescaleLinearCtx ctex ct (PNoise2Zq zqs (h :+: N2)),
-          KeySwitchQuadCtx ctex ct zq' gad,
+          RescaleLinearCtx ctex ct  zqin, -- input -> zq (final modulus)
+          RescaleLinearCtx ctex ct' zq,   -- zq    -> scaled-up zq' (hint)
+          RescaleLinearCtx ctex ct  zq',  -- zq'   -> zq, finally
+          KeySwitchQuadCtx ctex ct' gad,  -- hint over zq'
           KSHintCtx gad t m' z zq', GenSKCtx t m' z v,
           Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq')),
           MonadRandom mon, MonadReader v mon,
@@ -133,7 +136,10 @@ instance (rp ~ Cyc t m zp, zq' ~ (kszq, zq),
   mul_ = PC $ do
     hint :: KSQuadCircHint gad (Cyc t m' zq') <- getQuadCircHint (Proxy::Proxy z)
     return $ lam $ lam $
-      keySwitchQuad hint $ LSHE.rescaleLinear v0 *: LSHE.rescaleLinear v1
+      LSHE.rescaleLinear $ keySwitchQuad hint $ LSHE.rescaleLinear $
+      -- CJP: GHC should infer the types of v0,v1 -- but here we are
+      ((LSHE.rescaleLinear (v0 :: ctex _ ctin) *: 
+        LSHE.rescaleLinear (v1 :: ctex _ ctin)) :: ctex _ ct)
 
 instance (zq' ~ (kszq, zq), r' ~ Lookup r m'map, s' ~ Lookup s m'map,
           rp ~ Cyc t r zp, expr ~ PT2CT m'map zqs kszq gad z v ctex mon,
@@ -164,11 +170,10 @@ instance (zq' ~ (kszq, zq), r' ~ Lookup r m'map, s' ~ Lookup s m'map,
   tunnel f = PC $ do
     hint <- getTunnelHint @gad @zq' (Proxy::Proxy z) (proxy f (Proxy::Proxy '(h,expr)))
     return $ lam $
-      LSHE.rescaleLinear $
-      LSHE.tunnel hint $
-      -- 
-      LSHE.rescaleLinear $
-      -- first (possibly) rescale to target modulus
+      LSHE.rescaleLinear $ -- then scale back to the target modulus zq
+      LSHE.tunnel hint $   -- tunnel w/ the hint
+      LSHE.rescaleLinear $ -- then scale (up) to the hint modulus zq'
+      -- first (possibly) rescale down to the target modulus zq
       (LSHE.rescaleLinear (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise ('S h) rp)))
         :: ctex _ (Cyc2CT m'map zqs (PNoise h rp)))
 

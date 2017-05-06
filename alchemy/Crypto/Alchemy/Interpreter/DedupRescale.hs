@@ -88,8 +88,8 @@ instance (SHE expr) => SHE (DedupRescale expr) where
      RescaleLinearCtx expr (CT m zp (Cyc t m' zq)) zq')
   type AddPublicCtx (DedupRescale expr) ct = (AddPublicCtx expr ct)
   type MulPublicCtx (DedupRescale expr) ct = (MulPublicCtx expr ct)
-  type KeySwitchQuadCtx (DedupRescale expr) ct zq' gad =
-    (KeySwitchQuadCtx expr ct zq' gad)
+  type KeySwitchQuadCtx (DedupRescale expr) ct gad =
+    (KeySwitchQuadCtx expr ct gad)
   type TunnelCtx    (DedupRescale expr) t e r s e' r' s' zp zq gad =
     (TunnelCtx expr t e r s e' r' s' zp zq gad)
 

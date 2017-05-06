@@ -9,8 +9,8 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
-import Crypto.Alchemy.Language.SHE    as LSHE
-import Crypto.Alchemy.Language.Tunnel as T
+import Crypto.Alchemy.Language.SHE        as LSHE
+import Crypto.Alchemy.Language.Tunnel     as T
 
 import Data.Functor.Trans.Tagged
 
@@ -48,8 +48,8 @@ instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
                                                 RescaleLinearCtx ex2 ct zq')
   type AddPublicCtx (Dup ex1 ex2) ct = (AddPublicCtx ex1 ct, AddPublicCtx ex2 ct)
   type MulPublicCtx (Dup ex1 ex2) ct = (MulPublicCtx ex1 ct, MulPublicCtx ex2 ct)
-  type KeySwitchQuadCtx (Dup ex1 ex2) ct zq' gad = (KeySwitchQuadCtx ex1 ct zq' gad,
-                                                    KeySwitchQuadCtx ex2 ct zq' gad)
+  type KeySwitchQuadCtx (Dup ex1 ex2) ct gad = (KeySwitchQuadCtx ex1 ct gad,
+                                                KeySwitchQuadCtx ex2 ct gad)
   type TunnelCtx    (Dup ex1 ex2) t e r s e' r' s' zp zq gad =
     (TunnelCtx ex1 t e r s e' r' s' zp zq gad,
      TunnelCtx ex2 t e r s e' r' s' zp zq gad)
