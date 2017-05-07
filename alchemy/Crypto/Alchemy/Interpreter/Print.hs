@@ -1,4 +1,3 @@
-{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -14,9 +13,8 @@ import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
-import Crypto.Alchemy.Language.Tunnel
 
-import Crypto.Lol                      (Cyc, Linear, Factored)
+import Crypto.Lol                      (Cyc)
 import Crypto.Lol.Applications.SymmSHE (CT)
 
 -- the Int is the nesting depth of lambdas outside the expression
@@ -57,27 +55,6 @@ instance Mul P a where
 instance Show a => MulLit P a where
   p >*: a = P $ \i -> "(mulLit (" ++ show p ++ ") " ++ unP a i ++ ")"
 
-instance SHE P where
-
-  type ModSwitchPTCtx   P a zp' = ()
-  type RescaleLinearCtx P a zq' = ()
-  type AddPublicCtx     P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
-  type MulPublicCtx     P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
-  type KeySwitchQuadCtx P a zq' gad = ()
-  type TunnelCtx        P t e r s e' r' s' zp zq gad = ()
-
-  modSwitchPT     a = P $ \i -> "(modSwitchPT "   ++ unP a i ++ ")"
-  rescaleLinear   a = P $ \i -> "(rescaleLinear " ++ unP a i ++ ")"
-  addPublic     p a = P $ \i -> "(addPublic (" ++ show p ++ ") " ++ unP a i ++ ")"
-  mulPublic     p a = P $ \i -> "(mulPublic (" ++ show p ++ ") " ++ unP a i ++ ")"
-  keySwitchQuad _ a = P $ \i -> "(keySwitchQuad <HINT> " ++ unP a i ++ ")"
-  tunnel        _ a = P $ \i -> "(tunnel <FUNC> " ++ unP a i ++ ")"
-
-instance Tunnel P (e :: Factored) (Cyc t r zp) (Cyc t s zp) where
-  type LinearOf P e (Cyc t r zp) (Cyc t s zp) = Linear t zp e r s
-
-  tunnel _ = pureP "tunnel"
-
 instance Functor_ P where
   fmap_ = pureP "fmap"
 
@@ -96,6 +73,22 @@ instance MonadWriter_ P where
   tell_   = pureP "tell"
   listen_ = pureP "listen"
 
+instance SHE P where
+
+  type ModSwitchPTCtx   P a zp' = ()
+  type RescaleLinearCtx P a zq' = ()
+  type AddPublicCtx     P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
+  type MulPublicCtx     P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
+  type KeySwitchQuadCtx P a gad = ()
+  type TunnelCtx        P t e r s e' r' s' zp zq gad = ()
+
+  modSwitchPT_     = pureP   "modSwitchPT"
+  rescaleLinear_   = pureP   "rescaleLinear"
+  addPublic_     p = pureP $ "addPublic (" ++ show p ++ ")"
+  mulPublic_     p = pureP $ "mulPublic (" ++ show p ++ ")"
+  keySwitchQuad_ _ = pureP   "keySwitchQuad <HINT>"
+  tunnel_        _ = pureP   "tunnel <FUNC>"
+
 instance ErrorRate P where
   type ErrorRateCtx P ct z = ()
-  errorRate _ = pureP "errorRate"
+  errorRate_ _ = pureP "errorRate"

@@ -58,11 +58,13 @@ writeErrorRates = unERW
 instance (Lambda expr, Applicative k)
   => Lambda (ErrorRateWriter expr z k w) where
 
-  lam (ERW f) = ERW $ lam <$> f
-  (ERW f) $: (ERW a) = ERW $ ($:) <$> f <*> a
-
+  lam f  = ERW $ lam <$> unERW f
+  f $: a = ERW $ ($:) <$> unERW f <*> unERW a
   v0     = ERW $ pure v0
-  s (ERW a) = ERW $ s <$> a
+  s a    = ERW $ s <$> unERW a
+
+-- instance SHE (ErrorRateWriter expr z k w) where
+
 
 
 {- attempt to abstract the pattern of "convert a pure obj-lang function
@@ -95,7 +97,7 @@ instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
     let madd_ = liftA2_ $: add_
     case key of
       Just sk -> return $ lam $ lam $ after_
-                 $: lam (tell_ $: (cons_ $: (errorRate sk $: v0) $: nil_))
+                 $: lam (tell_ $: (cons_ $: (errorRate_ sk $: v0) $: nil_))
                  $: (madd_ $: v1 $: v0)
       Nothing -> return madd_
 

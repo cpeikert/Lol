@@ -108,7 +108,7 @@ homomPRFMain' pt MainOpts{..} _ = do
       (lfuns, hints, encKey, decKey) <- time "Generating hints..." $ flip evalRand gen $ do
         let v = 1.0 :: Double
         encKey <- genSK v
-        (tHints, decKey) <- tunnelInfoChain encKey
+        (tHints, decKey) <- tunnelHintChain encKey
         let lfuns = ptTunnelFuncs
         rHints <- roundHints decKey
         let hints = Hints tHints rHints
@@ -135,7 +135,7 @@ homomPRFMain' pt MainOpts{..} _ = do
 readHints :: forall mon t rngs z e zp zq zqs gad r' s' .
   (MonadIO mon, MonadError String mon, Mod zp, UnPP (CharOf zp) ~ '(Prime2, e),
    ProtoReadable (TunnelFuncs t (PTRings rngs) (TwoOf zp)),
-   ProtoReadable (TunnelInfoChain gad t rngs zp (ZqUp zq zqs)),
+   ProtoReadable (TunnelHintChain gad t rngs zp (ZqUp zq zqs)),
    ProtoReadable (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z e zp (ZqDown zq zqs) zqs gad),
    ProtoReadable (SK (Cyc t r' z)), ProtoReadable (SK (Cyc t s' z)))
   => String -> mon (TunnelFuncs t (PTRings rngs) (TwoOf zp),
@@ -153,7 +153,7 @@ readHints root = do
 writeHints :: forall mon t rngs z e zp zq zqs gad r' s' .
   (MonadIO mon, Mod zp, UnPP (CharOf zp) ~ '(Prime2, e),
    ProtoReadable (TunnelFuncs t (PTRings rngs) (TwoOf zp)),
-   ProtoReadable (TunnelInfoChain gad t rngs zp (ZqUp zq zqs)),
+   ProtoReadable (TunnelHintChain gad t rngs zp (ZqUp zq zqs)),
    ProtoReadable (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z e zp (ZqDown zq zqs) zqs gad),
    ProtoReadable (SK (Cyc t r' z)), ProtoReadable (SK (Cyc t s' z)))
   => String
