@@ -36,7 +36,7 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.SHE as LSHE
-import Crypto.Alchemy.Language.Tunnel
+import Crypto.Alchemy.Language.Tunnel as T
 import Crypto.Alchemy.MonadAccumulator
 
 -- | Interprets plaintext operations as their corresponding
@@ -48,7 +48,7 @@ newtype PT2CT
   (kszq :: *)     -- | additional Zq component for key switches; must be
            -- coprime to all moduli in 'zqs'
   (gad :: *)      -- | gadget type for key-switch hints
-  z               -- | integral type for secret keys
+  (z :: *)        -- | integral type for secret keys
   v        -- | scaled-variance type for secret keys/noise
   ctex     -- | interpreter of ciphertext operations
   mon      -- | monad for creating keys/noise
@@ -136,41 +136,53 @@ instance (m' ~ Lookup m m'map,
   mul_ = PC $ do
     hint :: KSQuadCircHint gad (Cyc t m' zq') <- getQuadCircHint (Proxy::Proxy z)
     return $ lam $ lam $
-      rescaleLinear_ $: 
+      rescaleLinear_ $:
       (keySwitchQuad_ hint $:
         (rescaleLinear_ $:
          -- CJP: GHC should infer the types of v0,v1 -- but here we are
-         (((rescaleLinear_ $: (v0 :: ctex _ ctin)) *: 
+         (((rescaleLinear_ $: (v0 :: ctex _ ctin)) *:
             (rescaleLinear_ $: (v1 :: ctex _ ctin))) :: ctex _ ct)))
 
-instance (zq' ~ (kszq, zq), r' ~ Lookup r m'map, s' ~ Lookup s m'map,
-          rp ~ Cyc t r zp, expr ~ PT2CT m'map zqs kszq gad z v ctex mon,
-          -- output ciphertext type
-          CT s zp (Cyc t s' zq)   ~ Cyc2CT m'map zqs (PNoise h (Cyc t s zp)),
-          -- input ciphertext type: plaintext has one-larger pnoise
-          CT r zp (Cyc t r' zqin) ~ Cyc2CT m'map zqs (PNoise ('S h) rp),
-          SHE ctex, Lambda ctex,
-          MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon,
-          LSHE.TunnelCtx ctex t e r s (e * (r' / r)) r' s' zp zq' gad,
-          TunnelHintCtx t e r s (e * (r' / r)) r' s' z zp zq' gad,
-          GenSKCtx t r' z v, GenSKCtx t s' z v,
-          RescaleLinearCtx ctex (CT r zp (Cyc t r' zqin)) zq,
-          RescaleLinearCtx ctex (CT r zp (Cyc t r' zq))   zq',
-          RescaleLinearCtx ctex (CT s zp (Cyc t s' zq'))  zq,
-          Typeable t, Typeable r', Typeable s', Typeable z)
-  -- CJP: recall that the types have to be fully spelled out here and
-  -- in the associated type; we can't use the shorthand ct etc.
-  => Tunnel (PT2CT m'map zqs kszq gad z v ctex mon)
-         e (PNoise ('S h) (Cyc t r zp)) (PNoise h (Cyc t s zp)) where
+type PT2CTTunnCtx ctex m'map zqs h t e r s r' s' z zp zq zqin kszq v gad =
+  (PT2CTTunnCtx' ctex m'map zqs h t e r s r' s' z zp zq zqin (zq,kszq) v gad)
 
-  -- ditto
-  type LinearOf (PT2CT m'map zqs kszq gad z v ctex mon)
-         e (PNoise ('S h) (Cyc t r zp)) (PNoise h (Cyc t s zp)) =
-           Tagged '(h, PT2CT m'map zqs kszq gad z v ctex mon)
-           (Linear t zp e r s) -- need tag for injectivity
+type PT2CTTunnCtx' ctex m'map zqs h t e r s r' s' z zp zq zqin zq' v gad =
+  (-- output ciphertext type
+   CT s zp (Cyc t s' zq)   ~ Cyc2CT m'map zqs (PNoise h (Cyc t s zp)),
+   -- input ciphertext type: plaintext has one-larger pnoise
+   CT r zp (Cyc t r' zqin) ~ Cyc2CT m'map zqs (PNoise ('S h) (Cyc t r zp)),
+   LSHE.TunnelCtx ctex t e r s (e * (r' / r)) r' s'   zp zq' gad,
+   TunnelHintCtx       t e r s (e * (r' / r)) r' s' z zp zq' gad,
+   GenSKCtx t r' z v, GenSKCtx t s' z v,
+   RescaleLinearCtx ctex (CT r zp (Cyc t r' zqin)) zq,
+   RescaleLinearCtx ctex (CT r zp (Cyc t r' zq))   zq',
+   RescaleLinearCtx ctex (CT s zp (Cyc t s' zq'))  zq,
+   Typeable t, Typeable r', Typeable s', Typeable z)
 
+type family ZqOfCT ct where ZqOfCT (CT r zp (Cyc t r' zq)) = zq
+
+instance (SHE ctex, Lambda ctex, MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon)
+  => Tunnel (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h) where
+
+  type PreTunnel (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h) = PNoise ('S h)
+
+  type TunnelCtx (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h) t e r s zp =
+    (PT2CTTunnCtx
+      ctex m'map zqs h t e r s
+      (Lookup r m'map)
+      (Lookup s m'map)
+      z zp
+      (ZqOfCT (Cyc2CT m'map zqs (PNoise h (Cyc t s zp))))
+      (ZqOfCT (Cyc2CT m'map zqs (PNoise ('S h) (Cyc t r zp))))
+      kszq v gad)
+
+  tunnel :: forall t zp e r s env expr zq' rp .
+    (expr ~ PT2CT m'map zqs kszq gad z v ctex mon, T.TunnelCtx expr (PNoise h) t e r s zp,
+     zq' ~ (kszq, ZqOfCT (Cyc2CT m'map zqs (PNoise h (Cyc t s zp)))),
+     rp ~ Cyc t r zp)
+    => Linear t zp e r s -> expr env (PNoise ('S h) rp -> PNoise h (Cyc t s zp))
   tunnel f = PC $ do
-    hint <- getTunnelHint @gad @zq' (Proxy::Proxy z) (proxy f (Proxy::Proxy '(h,expr)))
+    hint <- getTunnelHint @gad @zq' (Proxy::Proxy z) f
     return $ lam $
       rescaleLinear_ $: -- then scale back to the target modulus zq
       (tunnel_ hint $:   -- tunnel w/ the hint

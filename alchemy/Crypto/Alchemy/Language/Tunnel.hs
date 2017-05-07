@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds              #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE PolyKinds              #-}
 {-# LANGUAGE TypeFamilies           #-}
@@ -5,14 +6,26 @@
 
 module Crypto.Alchemy.Language.Tunnel where
 
+import Crypto.Lol
+import GHC.Exts (Constraint)
+
 -- | Symantics for (plaintext) ring-tunneling.
 
-class Tunnel expr (e :: k) r s where
+class Tunnel expr m where
 
-  -- | Type representing @E@-linear functions from @R@ to @S@.
-  -- (It is injective in e,r,s.)
-  type LinearOf expr e r s = lin | lin -> expr e r s
+  -- | Constraints needed to tunnel
+  type TunnelCtx
+         expr
+         (m :: * -> *)
+         (t :: Factored -> * -> *)
+         (e :: Factored)
+         (r :: Factored)
+         (s :: Factored)
+         zp :: Constraint
 
-  -- | An object-language expression representing the given linear
-  -- function.
-  tunnel :: LinearOf expr e r s -> expr env (r -> s)
+  -- | 'Cyc' wrapper for the input to tunneling
+  type PreTunnel expr m :: * -> *
+
+  -- | An object-language expression representing the given linear function.
+  tunnel :: (TunnelCtx expr m t e r s zp) =>
+    Linear t zp e r s -> expr env ((PreTunnel expr m) (Cyc t r zp) -> m (Cyc t s zp))
