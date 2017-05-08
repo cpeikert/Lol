@@ -1,9 +1,9 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds #-}
+{-# LANGUAGE RebindableSyntax #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -39,33 +39,26 @@ import Data.Type.Natural
 
 -- EAC: We can get rid of signatures once #13524 is fixed (should be in 8.2)
 
-tunn1 :: (Tunnel expr eru r u, Tunnel expr eus u s, Lambda expr)
-  => LinearOf expr eru r u -> LinearOf expr eus u s -> expr env (r -> s)
-tunn1 f1 f2 = lam $ tunnel f2 $: (tunnel f1 $: v0)
-
--- EAC: redundant pattern match is a bug: https://ghc.haskell.org/trac/ghc/ticket/13651
-monoTunn1 :: forall r u cs expr eru eus t zp cr cu h s env .
-  (Tunnel expr eru cr cu, Tunnel expr eus cu cs, Lambda expr,
-   LinearOf expr eru cr cu ~ Tagged h (Linear t zp eru r u),
-   LinearOf expr eus cu cs ~ Tagged ('S h) (Linear t zp eus u s))
-  => Tagged h (Linear t zp eru r u) -> Tagged ('S h) (Linear t zp eus u s) -> expr env (cr -> cs)
-monoTunn1 = tunn1
+tunn1 :: forall env t r u s zp ms expr mr mu .
+  (Tunnel expr mu, Tunnel expr ms,
+   TunnelCtx expr mu t (FGCD r u) r u zp,
+   TunnelCtx expr ms t (FGCD u s) u s zp,
+   mu ~ PreTunnel expr ms, mr ~ PreTunnel expr mu,
+   Lambda expr, FunCtx t r u zp, FunCtx t u s zp)
+  => Proxy u -> expr env (mr (Cyc t r zp) -> ms (Cyc t s zp))
+tunn1 _ = lam $ tunnel decToCRT $: (tunnel (decToCRT @u) $: v0)
 
 type Zq q = ZqBasic q Int64
 
 main :: IO ()
 main = do
-  let (exp1a, exp1b) = dup $ monoTunn1
-        @H0
-        @H1
-        @(PNoise 'Z (Cyc CT H2 (Zq PP8)))
-        (tag decToCRT)
-        (tag decToCRT)
+  let (exp1a, exp1b) = dup $ tunn1 @() @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy
+
   -- example with rescale de-duplication when tunneling
   -- print the unapplied PT function
   putStrLn $ pprint exp1a
-  putStrLn $ pprint exp1b
-   {-
+  putStrLn $ show $ eval exp1b 2
+{-
   -- compile the up-applied function to CT, then print it out
   (y,_) <- compile
          @'[ '(H0, H0'), '(H1,H1'), '(H2, H2') ]
@@ -86,6 +79,7 @@ type H2 = F2 * F7 * F13
 type H0' = H0 * F7 * F13
 type H1' = H1 * F13
 type H2' = H2
+
 {-
 -- EAC: This is copied from HomomPRF, but it needs a permanent home.
 type TunnelPTCtx' expr d t e r s zp =
