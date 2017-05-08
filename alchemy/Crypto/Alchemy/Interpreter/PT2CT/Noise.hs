@@ -1,5 +1,6 @@
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -34,7 +35,14 @@ import Crypto.Lol.Types.Unsafe.ZqBasic
 
 -- | A value tagged by @pNoise =~ -log(noise rate)@.
 newtype PNoise (h :: Nat) a = PN a
-  deriving (Additive.C, Ring.C)
+  -- EAC: Okay to derive Functor and Applicative? It makes life easier because
+  -- we can define a single instance (e.g., of E) rather than one for Identity
+  -- and one for (PNoise h)
+  deriving (Additive.C, Ring.C, Functor, Show)
+
+instance Applicative (PNoise h) where
+  pure = PN
+  (PN f) <*> (PN a) = PN $ f a
 
 -- CJP: why should this be defined here?
 type family Modulus zq :: k
