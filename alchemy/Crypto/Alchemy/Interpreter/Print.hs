@@ -13,6 +13,7 @@ import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
+import Crypto.Alchemy.Language.Tunnel
 
 import Crypto.Lol                      (Cyc)
 import Crypto.Lol.Applications.SymmSHE (CT)
@@ -88,6 +89,12 @@ instance SHE P where
   mulPublic_     p = pureP $ "mulPublic (" ++ show p ++ ")"
   keySwitchQuad_ _ = pureP   "keySwitchQuad <HINT>"
   tunnel_        _ = pureP   "tunnel <FUNC>"
+
+instance Tunnel P m where
+  type PreTunnel P m = m
+  type TunnelCtx P m t e r s zp = ()
+
+  tunnel  _ = pureP "tunnel <FUNC>"
 
 instance ErrorRate P where
   type ErrorRateCtx P ct z = ()
