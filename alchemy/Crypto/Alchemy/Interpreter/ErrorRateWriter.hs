@@ -61,6 +61,10 @@ after_ = lam $ lam $ bind_ $: v0 $:
          lam (bind_ $: (v2 $: v0) $:
                lam (return_ $: v1))
 
+tellError :: (MonadWriter ErrorRateLog mon,
+              List expr, MonadWriter_ expr, ErrorRate expr,
+              ErrorRateCtx expr (CT m zp (Cyc t m' zq)) z) =>
+  SK (Cyc t m' z) -> expr e (CT m zp (Cyc t m' zq) -> mon ())
 tellError sk = lam (tell_ $: (cons_ $: (errorRate_ sk $: v0) $: nil_))
 
 -- | Convert an object-language function to a (monadic) one that
