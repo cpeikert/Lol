@@ -143,10 +143,10 @@ instance (m' ~ Lookup m m'map,
          (((rescaleLinear_ $: (v0 :: ctex _ ctin)) *:
             (rescaleLinear_ $: (v1 :: ctex _ ctin))) :: ctex _ ct)))
 
-type PT2CTTunnCtx ctex m'map zqs h t e r s r' s' z zp zq zqin kszq v gad =
-  (PT2CTTunnCtx' ctex m'map zqs h t e r s r' s' z zp zq zqin (kszq,zq) v gad)
+type PT2CTTunnelCtx ctex m'map zqs h t e r s r' s' z zp zq zqin kszq v gad =
+  (PT2CTTunnelCtx' ctex m'map zqs h t e r s r' s' z zp zq zqin (kszq,zq) v gad)
 
-type PT2CTTunnCtx' ctex m'map zqs h t e r s r' s' z zp zq zqin zq' v gad =
+type PT2CTTunnelCtx' ctex m'map zqs h t e r s r' s' z zp zq zqin zq' v gad =
   (-- output ciphertext type
    CT s zp (Cyc t s' zq)   ~ Cyc2CT m'map zqs (PNoise h (Cyc t s zp)),
    -- input ciphertext type: plaintext has one-larger pnoise
@@ -159,21 +159,20 @@ type PT2CTTunnCtx' ctex m'map zqs h t e r s r' s' z zp zq zqin zq' v gad =
    RescaleLinearCtx ctex (CT s zp (Cyc t s' zq'))  zq,
    Typeable t, Typeable r', Typeable s', Typeable z)
 
-type family ZqOfCT ct where ZqOfCT (CT r zp (Cyc t r' zq)) = zq
-
-instance (SHE ctex, Lambda ctex, MonadRandom mon, MonadReader v mon, MonadAccumulator Keys mon)
+instance (SHE ctex, Lambda ctex,
+          MonadAccumulator Keys mon, MonadRandom mon, MonadReader v mon)
   => TunnelCyc (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h) where
 
   type PreTunnelCyc (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h) = PNoise ('S h)
 
   type TunnelCycCtx (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h) t e r s zp =
-    (PT2CTTunnCtx
+    (PT2CTTunnelCtx
       ctex m'map zqs h t e r s
       (Lookup r m'map)
       (Lookup s m'map)
       z zp
-      (ZqOfCT (Cyc2CT m'map zqs (PNoise h (Cyc t s zp))))
-      (ZqOfCT (Cyc2CT m'map zqs (PNoise ('S h) (Cyc t r zp))))
+      (PNoise2Zq zqs h)
+      (PNoise2Zq zqs ('S h))
       kszq v gad)
 
   tunnelCyc :: forall t zp e r s env expr zq' rp r' zq .
@@ -184,15 +183,15 @@ instance (SHE ctex, Lambda ctex, MonadRandom mon, MonadReader v mon, MonadAccumu
   tunnelCyc f = PC $ do
     hint <- getTunnelHint @gad @zq' (Proxy::Proxy z) f
     return $ lam $
-      rescaleLinear_ $: -- then scale back to the target modulus zq
-      (tunnel_ hint $:   -- tunnel w/ the hint
+      rescaleLinear_ $:    -- then scale back to the target modulus zq
+      (tunnel_ hint $:     -- tunnel w/ the hint
         (rescaleLinear_ $: -- then scale (up) to the hint modulus zq'
-        -- first (possibly) rescale down to the target modulus zq
+         -- first (possibly) rescale down to the target modulus zq
          (rescaleLinear_ $: (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise ('S h) rp)))
           :: ctex _ (CT r zp (Cyc t r' zq)))))
 
------ Type families -----
 
+----- Type families -----
 
 type family Cyc2CT m'map zqs e where
 
