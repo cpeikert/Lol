@@ -67,24 +67,22 @@ instance (Lambda expr, Applicative k)
 
 
 
-{- attempt to abstract the pattern of "convert a pure obj-lang function
-to one which writes the error rate of its final output"
-
 liftWriteError2 ::
-  (MonadWriter ErrorRateLog w, MonadReader Keys k, Typeable cyc,
-   List expr, MonadWriter_ expr,
-   ErrorRate expr, ErrorRateCtx expr c z)
-  => Proxy cyc -> expr e (a -> b -> c) -> k (expr e (w a -> w b -> w c))
+  (MonadWriter ErrorRateLog w, MonadReader Keys k, Typeable (SK (Cyc t m' z)),
+   List expr, MonadWriter_ expr, ErrorRate expr,
+   c ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr c z)
+  => Proxy (Cyc t m' z)         -- | the cyc type of the needed secret key
+  -> expr e (a -> b -> c)       -- | the function to lift
+  -> k (expr e (w a -> w b -> w c))
 
-liftWriteError2 f_ = do
-  let mf_ = liftA2_ $: f_
-  key :: Maybe (SK cyc) <- lookupKey
+liftWriteError2 _ f_ = do
+  key :: Maybe (SK (Cyc t m' z)) <- lookupKey
   case key of
-    Just sk -> return $ lam $ lam $ after_
-               $: lam (tell_ $: (cons_ $: (errorRate sk $: v0) $: nil_))
-               $: (mf_ $: v1 $: v0)
-    Nothing -> return mf_
--}
+    Just sk -> let mf_ = liftA2_ $: (s $ s f_)
+               in return $ lam $ lam $ after_
+                  $: lam (tell_ $: (cons_ $: (errorRate_ sk $: v0) $: nil_))
+                  $: (mf_ $: v1 $: v0)
+    Nothing -> return $ liftA2_ $: f_
 
 instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
           ct ~ (CT m zp (Cyc t m' zq)), Typeable (Cyc t m' z),
@@ -92,7 +90,10 @@ instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
           Add expr ct, ErrorRate expr, ErrorRateCtx expr ct z)
          => Add (ErrorRateWriter expr z k w) ct where
 
-  add_ = ERW $ do               -- in k monad
+  add_ = ERW $ liftWriteError2 (Proxy::Proxy (Cyc t m' z)) add_
+
+{-
+  do               -- in k monad
     key :: Maybe (SK (Cyc t m' z)) <- lookupKey
     let madd_ = liftA2_ $: add_
     case key of
@@ -100,6 +101,7 @@ instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
                  $: lam (tell_ $: (cons_ $: (errorRate_ sk $: v0) $: nil_))
                  $: (madd_ $: v1 $: v0)
       Nothing -> return madd_
+-}
 
   -- don't log error because it doesn't grow
   neg_ = ERW $ pure $ liftA_ $: neg_
