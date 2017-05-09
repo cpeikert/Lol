@@ -8,7 +8,7 @@
 
 -- | Functions for looking up/generating keys and key-switch hints.
 module Crypto.Alchemy.Interpreter.KeysHints
-( Keys, Hints, lookupKey, lookupHint
+( Keys, Hints, lookupKey -- not lookupHint, which is too general
 , getKey, getQuadCircHint, getTunnelHint
 , runKeysHints, evalKeysHints
 )
@@ -49,10 +49,13 @@ lookupDyn ds = case mapMaybe fromDynamic ds of
                  (x:_) -> Just x
 
 -- | Look up a key of the desired type, if it exists.
-lookupKey :: (MonadReader Keys m, Typeable a) => m (Maybe a)
+lookupKey :: (MonadReader Keys m, Typeable (SK (Cyc t m' z)))
+             => m (Maybe (SK (Cyc t m' z)))
 lookupKey = (lookupDyn . unKeys) <$> ask
 
--- | Look up a hint of the desired type, if it exists.
+-- | Look up a hint of the desired type, if it exists.  (This works
+-- for both QuadCircHints and TunnelHints; the function is not
+-- specialized to enforce a particular one of these.)
 lookupHint :: (MonadReader Hints m, Typeable a) => m (Maybe a)
 lookupHint = (lookupDyn . unHints) <$> ask
 
@@ -85,14 +88,14 @@ getKey = readerToAccumulator lookupKey >>= \case
 -- | Lookup a (quadratic, circular) key-switch hint, generating one
 -- (and the underlying key if necessary) if it doesn't exist, and
 -- return it.
-getQuadCircHint :: forall v mon t z gad m' zq zq' kszq .
+getQuadCircHint :: forall v mon t z gad m' zq' .
   (-- constraints for getKey
    MonadReader v mon, MonadAccumulator Keys mon, MonadAccumulator Hints mon,
    MonadRandom mon, GenSKCtx t m' z v, Typeable (Cyc t m' z),
    -- constraints for lookup
    Typeable (KSQuadCircHint gad (Cyc t m' zq')),
    -- constraints for ksQuadCircHint
-   KSHintCtx gad t m' z zq', zq' ~ (kszq, zq))
+   KSHintCtx gad t m' z zq')
   => Proxy z -> mon (KSQuadCircHint gad (Cyc t m' zq'))
 getQuadCircHint _ = readerToAccumulator lookupHint >>= \case
   (Just h) -> return h
