@@ -16,7 +16,7 @@ import Crypto.Alchemy.MonadAccumulator
 import Crypto.Alchemy.Interpreter.PT2CT
 import Crypto.Alchemy.Interpreter.KeysHints
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
-import Crypto.Alchemy.Interpreter.DedupRescale
+--import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
 import Crypto.Alchemy.Interpreter.Print
@@ -71,7 +71,7 @@ main = do
     -- print the compiled function
     liftIO $ putStrLn $ pprint w1
     -- if the first modulus is large enough, this will remove the rescales!
-    liftIO $ putStrLn $ pprint $ dedupRescale w2
+    liftIO $ putStrLn $ pprint $ w2 -- dedupRescale w2
     -- evaluate the compiled function, then apply it to encrypted inputs
     let result = eval z2 arg1 arg2
     -- show the encrypted result

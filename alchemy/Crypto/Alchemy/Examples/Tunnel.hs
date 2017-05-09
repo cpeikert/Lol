@@ -1,23 +1,31 @@
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RebindableSyntax #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators  #-}
 
-
 module Crypto.Alchemy.Examples.Tunnel where
 
-
+import Control.Monad.Identity
+import Control.Monad.IO.Class
+import Control.Monad.Reader
+import Crypto.Alchemy.Interpreter.KeysHints
 --{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 --{-# OPTIONS_GHC -fno-warn-missing-signatures      #-}
 
 --import Control.Applicative
 --import Control.Monad.Identity
+import Algebra.Additive as Additive (C(..))
+import qualified Algebra.Ring as Ring (C(..))
+
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.Tunnel
@@ -27,8 +35,10 @@ import Crypto.Alchemy.Interpreter.Eval
 --import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Print
 import Crypto.Alchemy.Interpreter.PT2CT
+import Crypto.Alchemy.Interpreter.PT2CT.Noise hiding (take)
 
-import Crypto.Lol hiding (Pos(..))
+import Crypto.Lol (($), (^), (+))
+import Crypto.Lol --hiding (Pos(..))
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 import Crypto.Lol.Cyclotomic.Tensor (TElt) -- EAC: I shouldn't need to explicitly import this
@@ -37,9 +47,10 @@ import Crypto.Lol.Types.ZPP -- EAC: I shouldn't need to explicitly import this..
 --import Data.Functor.Trans.Tagged
 import Data.Type.Natural
 
+
 -- EAC: We can get rid of signatures once #13524 is fixed (should be in 8.2)
 
-tunn1 :: forall env t r u s zp ms expr mr mu .
+tunn1 :: forall t r u s zp ms env expr mr mu .
   (Tunnel expr mu, Tunnel expr ms,
    TunnelCtx expr mu t (FGCD r u) r u zp,
    TunnelCtx expr ms t (FGCD u s) u s zp,
@@ -50,29 +61,39 @@ tunn1 _ = lam $ tunnel decToCRT $: (tunnel (decToCRT @u) $: v0)
 
 type Zq q = ZqBasic q Int64
 
+argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
+argToReader f a = flip f a =<< ask
+
+deriving instance (Additive a) => Additive.C (Identity a)
+deriving instance (Ring a) => Ring.C (Identity a)
+
 main :: IO ()
 main = do
-  let (exp1a, exp1b) = dup $ tunn1 @() @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy
+  let (exp1a, exp1b) = dup $ tunn1 @CT @H0 @H1 @H2 @(Zq PP8) @Identity Proxy
 
   -- example with rescale de-duplication when tunneling
   -- print the unapplied PT function
   putStrLn $ pprint exp1a
   putStrLn $ show $ eval exp1b 2
-{-
+
   -- compile the up-applied function to CT, then print it out
-  (y,_) <- compile
+  evalKeysHints (1.0 :: Double) $ do
+    y <- argToReader (pt2ct
          @'[ '(H0, H0'), '(H1,H1'), '(H2, H2') ]
-         @'[ Zq 7, (Zq 11, Zq 7) ]
-         @'[ '(Zq 7, (Zq 11, Zq 7)), '((Zq 11, Zq 7), (Zq 13, (Zq 11, Zq 7))) ]
+         @'[ Zq $(mkTLNatNat $ 2^(15 :: Int)),
+             Zq $(mkTLNatNat $ 2^(15 :: Int)+2),
+             Zq $(mkTLNatNat $ 2^(15 :: Int)+4) ]
+         @(Zq $(mkTLNatNat $ 2^(15 :: Int)+6))
          @TrivGad
          @Int64
-         @Double
-         exp1b
-  -- compile once, interpret with multiple ctexprs!!
-  let (z1,z2) = dupCT y
-  putStrLn $ pprint z1
-  putStrLn $ pprint $ dedupRescale z2
--}
+         @Double)
+         (tunn1 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy)
+    -- compile once, interpret with multiple ctexprs!!
+    let (z1,z2) = dup y
+    liftIO $ putStrLn $ pprint z1
+    liftIO $ putStrLn $ pprint z2
+    --liftIO $ putStrLn $ pprint $ dedupRescale z2
+
 type H0 = F8
 type H1 = F4 * F7
 type H2 = F2 * F7 * F13
