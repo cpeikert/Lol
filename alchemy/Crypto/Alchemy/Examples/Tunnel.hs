@@ -1,52 +1,41 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE RebindableSyntax #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators  #-}
+{-# LANGUAGE PartialTypeSignatures      #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RebindableSyntax           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeApplications           #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 
 module Crypto.Alchemy.Examples.Tunnel where
 
+import Algebra.Additive as Additive (C(..))
+import qualified Algebra.Ring as Ring (C(..))
 import Control.Monad.Identity
 import Control.Monad.IO.Class
 import Control.Monad.Reader
-import Crypto.Alchemy.Interpreter.KeysHints
---{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
---{-# OPTIONS_GHC -fno-warn-missing-signatures      #-}
+import Data.Type.Natural
 
---import Control.Applicative
---import Control.Monad.Identity
-import Algebra.Additive as Additive (C(..))
-import qualified Algebra.Ring as Ring (C(..))
-
-import Crypto.Alchemy.Interpreter.Dup
-import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.Tunnel
-
-
-import Crypto.Alchemy.Interpreter.Eval
 --import Crypto.Alchemy.Interpreter.DedupRescale
+import Crypto.Alchemy.Interpreter.Dup
+import Crypto.Alchemy.Interpreter.Eval
+import Crypto.Alchemy.Interpreter.KeysHints
 import Crypto.Alchemy.Interpreter.Print
 import Crypto.Alchemy.Interpreter.PT2CT
 import Crypto.Alchemy.Interpreter.PT2CT.Noise hiding (take)
+import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.Tunnel
 
-import Crypto.Lol (($), (^), (+))
-import Crypto.Lol --hiding (Pos(..))
+import Crypto.Lol hiding (Pos(..))
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 import Crypto.Lol.Cyclotomic.Tensor (TElt) -- EAC: I shouldn't need to explicitly import this
-import Crypto.Lol.Types.ZPP -- EAC: I shouldn't need to explicitly import this...
-
---import Data.Functor.Trans.Tagged
-import Data.Type.Natural
-
+import Crypto.Lol.Types.ZPP                -- EAC: I shouldn't need to explicitly import this...
 
 -- EAC: We can get rid of signatures once #13524 is fixed (should be in 8.2)
 
@@ -61,9 +50,12 @@ tunn1 _ = lam $ tunnel decToCRT $: (tunnel (decToCRT @u) $: v0)
 
 type Zq q = ZqBasic q Int64
 
+
+-- EAC: This is a convenient function, but it needs a home.
 argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
 argToReader f a = flip f a =<< ask
 
+-- EAC: these instances need a home
 deriving instance (Additive a) => Additive.C (Identity a)
 deriving instance (Ring a) => Ring.C (Identity a)
 
