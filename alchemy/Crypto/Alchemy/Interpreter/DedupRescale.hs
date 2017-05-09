@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE LambdaCase            #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -21,33 +22,21 @@ import Crypto.Lol                      (Cyc)
 import Crypto.Lol.Applications.SymmSHE (CT)
 import Data.Typeable
 
--- unlike in section 2.4 of the lecture notes, we don't use a function
--- from the context to the value, because then *every* op would then
--- have to call rescaleCT (if there's a context) with the possible
--- exception of rescaleCT itself.  Here it is better to work
--- "bottom-up" rather than "top-down," by remembering whether each
--- subexpression was the result of a rescale or not.
-
 data DedupRescale expr e a where
-  -- Indicates that the expression is the result of a rescale from b
-  -- to a; retains the pre-rescaled expression.
+  -- rescaleLinear_ itself
+  --Rescale  :: expr e a -> DedupRescale expr e a
+  -- a result of rescaleLinear_
   Rescaled :: (Typeable b) => expr e b -> expr e a -> DedupRescale expr e a
-  -- Generic case.
-  DR :: expr e a -> DedupRescale expr e a
-
-unDR :: DedupRescale expr e a -> expr e a
-unDR (Rescaled _ a) = a
-unDR (DR a) = a
+  -- something else
+  Unscaled :: expr e a -> DedupRescale expr e a
 
 -- | De-duplicate rescaling operations in an expression.
 dedupRescale :: DedupRescale expr e a -> expr e a
-dedupRescale = unDR
+dedupRescale (Rescaled _ a) = a
+dedupRescale (Unscaled a) = a
 
--- map, ignoring rescaling context
-dedupMap :: (expr e a -> expr e b)
-       -> DedupRescale expr e a -> DedupRescale expr e b
-dedupMap f = DR . f . unDR
-
+-- shorter
+dr = dedupRescale
 
 -- EAC: sharing implications?
 -- consider: (\x -> rescaleDown x + (rescaleDown x*x)) (rescaleUp y)
@@ -55,30 +44,45 @@ dedupMap f = DR . f . unDR
 -- we rescaleUp twice (but remove the duplicate)
 
 instance (Lambda expr) => Lambda (DedupRescale expr) where
-  lam f = DR $ lam $ unDR f
-  f $: a = DR $ unDR f $: unDR a
-  v0  = DR v0
-  s a = DR $ s $ unDR a
+  lam (Rescaled b a) = Rescaled (lam b) (lam a)
+  lam (Unscaled   a) = Unscaled         (lam a)
+
+  v0 = Unscaled v0
+
+  s   (Rescaled b a) = Rescaled (s b) (s a)
+  s   (Unscaled   a) = Unscaled       (s a)
+
+  ($:) :: DedupRescale expr e (a -> b)
+       -> DedupRescale expr e a
+       -> DedupRescale expr e b
+
+  (Unscaled   f) $: a = Unscaled $ f $: dr a
+  f              $: (Unscaled a) = Unscaled $ dr f $: a
+
+  -- the interesting case: double-rescaling
+  (Rescaled _ f) $: (Rescaled (prev :: expr e b') a) =
+    case (eqT :: Maybe (b :~: b')) of
+      Just Refl -> Unscaled prev
 
 instance (List expr) => List (DedupRescale expr) where
-  nil_  = DR nil_
-  cons_ = DR cons_
+  nil_  = Unscaled nil_
+  cons_ = Unscaled cons_
 
 instance (Add expr a) => Add (DedupRescale expr) a where
-  add_ = DR add_
-  neg_ = DR neg_
+  add_ = Unscaled add_
+  neg_ = Unscaled neg_
 
 instance (AddLit expr a) => AddLit (DedupRescale expr) a where
-  x >+: y = DR $ x >+: unDR y
+  x >+: y = Unscaled $ x >+: dr y
 
 instance (MulLit expr a) => MulLit (DedupRescale expr) a where
-  x >*: y = DR $ x >*: unDR y
+  x >*: y = Unscaled $ x >*: dr y
 
 instance (Mul expr a) => Mul (DedupRescale expr) a where
   type PreMul (DedupRescale expr) a = PreMul expr a
-  mul_ = DR mul_
+  mul_ = Unscaled mul_
 
-instance (SHE expr) => SHE (DedupRescale expr) where
+instance (SHE expr, Lambda expr) => SHE (DedupRescale expr) where
 
   type ModSwitchPTCtx (DedupRescale expr) ct zp' =
     (ModSwitchPTCtx expr ct zp')
@@ -93,52 +97,37 @@ instance (SHE expr) => SHE (DedupRescale expr) where
   type TunnelCtx    (DedupRescale expr) t e r s e' r' s' zp zq gad =
     (TunnelCtx expr t e r s e' r' s' zp zq gad)
 
-  modSwitchPT = dedupMap modSwitchPT
+  modSwitchPT_ = Unscaled modSwitchPT_
 
-  rescaleLinear :: forall ct zq' m zp t m' zq e .
+  rescaleLinear_ :: forall ct zq' m zp t m' zq e .
     (RescaleLinearCtx (DedupRescale expr) ct zq', ct ~ CT m zp (Cyc t m' zq))
-    => (DedupRescale expr) e (CT m zp (Cyc t m' zq'))
-    -> (DedupRescale expr) e ct
+    => (DedupRescale expr) e (ct -> CT m zp (Cyc t m' zq'))
 
-  rescaleLinear (Rescaled y@(prev :: expr e ct') x) =
-    -- first check if *this* rescale is a no-op
-    case (eqT :: Maybe (CT m zp (Cyc t m' zq') :~: ct)) of
-      -- if so, preserve the context
-      (Just Refl) -> Rescaled y x
-      -- if not, check if this rescale reverses the previous rescale
-      Nothing -> case (eqT :: Maybe (ct' :~: ct)) of
-        (Just Refl) -> DR prev
-        -- previous op was a rescale, but from a different type than we need
-        Nothing -> Rescaled x $ rescaleLinear x
+  rescaleLinear_ =
+    -- check if this rescale is a no-op
+    case (eqT :: Maybe (ct :~: CT m zp (Cyc t m' zq'))) of
+      Just Refl -> Unscaled $ lam v0 -- skip it, w/identity function
+      Nothing   -> Rescaled undefined rescaleLinear_
 
-  rescaleLinear (DR x) =
-    -- also remove if the input and output types are the same
-    case (eqT :: Maybe (CT m zp (Cyc t m' zq') :~: ct)) of
-      (Just Refl) -> DR x
-      Nothing -> Rescaled x $ rescaleLinear x
-
-  addPublic = dedupMap . addPublic
-
-  mulPublic = dedupMap . mulPublic
-
-  keySwitchQuad = dedupMap . keySwitchQuad
-
-  tunnel = dedupMap . tunnel
+  addPublic_     p = Unscaled $ addPublic_ p
+  mulPublic_     p = Unscaled $ mulPublic_ p
+  keySwitchQuad_ h = Unscaled $ keySwitchQuad_ h
+  tunnel_        h = Unscaled $ tunnel_ h
 
 instance (Functor_ expr) => Functor_ (DedupRescale expr) where
-  fmap_ = DR fmap_
+  fmap_ = Unscaled fmap_
 
 instance (Applicative_ expr) => Applicative_ (DedupRescale expr) where
-  pure_ = DR pure_
-  ap_   = DR ap_
+  pure_ = Unscaled pure_
+  ap_   = Unscaled ap_
 
 instance (Monad_ expr) => Monad_ (DedupRescale expr) where
-  bind_ = DR bind_
+  bind_ = Unscaled bind_
 
 instance (MonadReader_ expr) => MonadReader_ (DedupRescale expr) where
-  ask_ = DR ask_
-  local_ = DR local_
+  ask_   = Unscaled ask_
+  local_ = Unscaled local_
 
 instance (MonadWriter_ expr) => MonadWriter_ (DedupRescale expr) where
-  tell_ = DR tell_
-  listen_ = DR listen_
+  tell_   = Unscaled tell_
+  listen_ = Unscaled listen_
