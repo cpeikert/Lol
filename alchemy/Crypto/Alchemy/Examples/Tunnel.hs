@@ -29,7 +29,7 @@ import Crypto.Alchemy.Interpreter.Print
 import Crypto.Alchemy.Interpreter.PT2CT
 import Crypto.Alchemy.Interpreter.PT2CT.Noise hiding (take)
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.Tunnel
+import Crypto.Alchemy.Language.TunnelCyc
 
 import Crypto.Lol hiding (Pos(..))
 import Crypto.Lol.Cyclotomic.Tensor.CPP
@@ -40,13 +40,13 @@ import Crypto.Lol.Types.ZPP                -- EAC: I shouldn't need to explicitl
 -- EAC: We can get rid of signatures once #13524 is fixed (should be in 8.2)
 
 tunn1 :: forall t r u s zp ms env expr mr mu .
-  (Tunnel expr mu, Tunnel expr ms,
-   TunnelCtx expr mu t (FGCD r u) r u zp,
-   TunnelCtx expr ms t (FGCD u s) u s zp,
-   mu ~ PreTunnel expr ms, mr ~ PreTunnel expr mu,
+  (TunnelCyc expr mu, TunnelCyc expr ms,
+   TunnelCycCtx expr mu t (FGCD r u) r u zp,
+   TunnelCycCtx expr ms t (FGCD u s) u s zp,
+   mu ~ PreTunnelCyc expr ms, mr ~ PreTunnelCyc expr mu,
    Lambda expr, FunCtx t r u zp, FunCtx t u s zp)
   => Proxy u -> expr env (mr (Cyc t r zp) -> ms (Cyc t s zp))
-tunn1 _ = lam $ tunnel decToCRT $: (tunnel (decToCRT @u) $: v0)
+tunn1 _ = lam $ tunnelCyc decToCRT $: (tunnelCyc (decToCRT @u) $: v0)
 
 type Zq q = ZqBasic q Int64
 

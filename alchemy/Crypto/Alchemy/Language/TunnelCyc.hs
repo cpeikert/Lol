@@ -4,17 +4,17 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
 
-module Crypto.Alchemy.Language.Tunnel where
+module Crypto.Alchemy.Language.TunnelCyc where
 
 import Crypto.Lol
 import GHC.Exts (Constraint)
 
 -- | Symantics for (plaintext) ring-tunneling.
 
-class Tunnel expr m where
+class TunnelCyc expr m where
 
   -- | Constraints needed to tunnel
-  type TunnelCtx
+  type TunnelCycCtx
          expr
          (m :: * -> *)
          (t :: Factored -> * -> *)
@@ -24,8 +24,8 @@ class Tunnel expr m where
          zp :: Constraint
 
   -- | 'Cyc' wrapper for the input to tunneling
-  type PreTunnel expr m :: * -> *
+  type PreTunnelCyc expr m :: * -> *
 
   -- | An object-language expression representing the given linear function.
-  tunnel :: (TunnelCtx expr m t e r s zp) =>
-    Linear t zp e r s -> expr env ((PreTunnel expr m) (Cyc t r zp) -> m (Cyc t s zp))
+  tunnelCyc :: (TunnelCycCtx expr m t e r s zp) =>
+    Linear t zp e r s -> expr env ((PreTunnelCyc expr m) (Cyc t r zp) -> m (Cyc t s zp))

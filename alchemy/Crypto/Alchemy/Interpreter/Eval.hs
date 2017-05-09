@@ -26,11 +26,11 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
-import Crypto.Alchemy.Language.SHE        as LSHE
-import Crypto.Alchemy.Language.Tunnel     as T
+import Crypto.Alchemy.Language.SHE
+import Crypto.Alchemy.Language.TunnelCyc
 
 import Crypto.Lol
-import Crypto.Lol.Applications.SymmSHE as SHE
+import Crypto.Lol.Applications.SymmSHE    as SHE
 
 -- | Metacircular evaluator.
 newtype E e a = E { unE :: e -> a }
@@ -99,11 +99,11 @@ instance SHE E where
   keySwitchQuad_   = E . pure . keySwitchQuadCirc
   tunnel_          = E . pure . SHE.tunnel
 
-instance (Applicative m) => Tunnel E m where
-  type PreTunnel E m = m
-  type TunnelCtx E m t e r s zp = (e `Divides` r, e `Divides` s, CElt t zp)
+instance (Applicative m) => TunnelCyc E m where
+  type PreTunnelCyc E m = m
+  type TunnelCycCtx E m t e r s zp = (e `Divides` r, e `Divides` s, CElt t zp)
 
-  tunnel f = E $ pure $ fmap (evalLin f)
+  tunnelCyc f = E $ pure $ fmap (evalLin f)
 
 -- | Uses 'SHE.errorTermUnrestricted' to compute 'errorRate'.
 instance ErrorRate E where

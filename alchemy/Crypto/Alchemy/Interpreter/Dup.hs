@@ -9,8 +9,8 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
-import Crypto.Alchemy.Language.SHE        as LSHE
-import Crypto.Alchemy.Language.Tunnel     as T
+import Crypto.Alchemy.Language.SHE
+import Crypto.Alchemy.Language.TunnelCyc
 
 dup :: Dup expr1 expr2 e a -> (expr1 e a, expr2 e a)
 dup (Dup a b) = (a,b)
@@ -49,8 +49,8 @@ instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
   type KeySwitchQuadCtx (Dup ex1 ex2) ct gad = (KeySwitchQuadCtx ex1 ct gad,
                                                 KeySwitchQuadCtx ex2 ct gad)
   type TunnelCtx    (Dup ex1 ex2) t e r s e' r' s' zp zq gad =
-    (LSHE.TunnelCtx ex1 t e r s e' r' s' zp zq gad,
-     LSHE.TunnelCtx ex2 t e r s e' r' s' zp zq gad)
+    (TunnelCtx ex1 t e r s e' r' s' zp zq gad,
+     TunnelCtx ex2 t e r s e' r' s' zp zq gad)
 
   modSwitchPT_     = Dup  modSwitchPT_       modSwitchPT_
   rescaleLinear_   = Dup  rescaleLinear_     rescaleLinear_
@@ -59,14 +59,14 @@ instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
   keySwitchQuad_ h = Dup (keySwitchQuad_ h) (keySwitchQuad_ h)
   tunnel_        h = Dup (tunnel_ h)        (tunnel_ h)
 
-instance (Tunnel ex1 m, Tunnel ex2 m, PreTunnel ex1 m ~ PreTunnel ex2 m)
-  => Tunnel (Dup ex1 ex2) m where
-  type PreTunnel (Dup ex1 ex2) m = PreTunnel ex1 m
+instance (TunnelCyc ex1 m, TunnelCyc ex2 m, PreTunnelCyc ex1 m ~ PreTunnelCyc ex2 m)
+  => TunnelCyc (Dup ex1 ex2) m where
+  type PreTunnelCyc (Dup ex1 ex2) m = PreTunnelCyc ex1 m
 
-  type TunnelCtx (Dup ex1 ex2) m t e r s zp =
-    (T.TunnelCtx ex1 m t e r s zp, T.TunnelCtx ex2 m t e r s zp)
+  type TunnelCycCtx (Dup ex1 ex2) m t e r s zp =
+    (TunnelCycCtx ex1 m t e r s zp, TunnelCycCtx ex2 m t e r s zp)
 
-  tunnel f = Dup (T.tunnel f) (T.tunnel f)
+  tunnelCyc f = Dup (tunnelCyc f) (tunnelCyc f)
 
 instance (List ex1, List ex2) => List (Dup ex1 ex2) where
   nil_  = Dup nil_ nil_
