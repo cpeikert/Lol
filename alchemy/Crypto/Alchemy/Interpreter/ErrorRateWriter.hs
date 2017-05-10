@@ -67,6 +67,8 @@ tellError :: (MonadWriter ErrorRateLog mon,
   SK (Cyc t m' z) -> expr e (CT m zp (Cyc t m' zq) -> mon ())
 tellError sk = lam (tell_ $: (cons_ $: (errorRate_ sk $: v0) $: nil_))
 
+{-
+-- EAC: Not used
 -- | Convert an object-language function to a (monadic) one that
 -- writes the error rate of its ciphertext output.
 liftWriteError ::
@@ -81,7 +83,7 @@ liftWriteError ::
 liftWriteError sk f_ =
   let mf_ = liftA_ $: s f_
   in lam $ after_ $: tellError sk $: (mf_ $: v0)
-
+-}
 liftWriteError2 ::
   (MonadWriter ErrorRateLog w, List expr, MonadWriter_ expr, ErrorRate expr,
    c ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr c z)
@@ -108,11 +110,9 @@ instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
   -- don't log error because it doesn't grow
   neg_ = ERW $ pure $ liftA_ $: neg_
 
-{- CJP: why does GHC complain about missing Typeable constraints?? Even
- adding them doesn't fix it
-
 instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
-          ct ~ (CT m zp (Cyc t m zq)), Typeable (SK (Cyc t m' z)),
+          ct ~ (CT m zp (Cyc t m' zq)), Typeable (SK (Cyc t m' z)),
+          ErrorRate expr,
           -- needed because PreMul could take some crazy form
           Monadify w (PreMul expr ct) ~ w (PreMul expr ct),
           List expr, MonadWriter_ expr,
@@ -126,7 +126,7 @@ instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
     case key of
       Just sk -> return $ liftWriteError2 sk mul_
       Nothing -> return $ liftA2_ $: mul_
--}
+
 
 
 
