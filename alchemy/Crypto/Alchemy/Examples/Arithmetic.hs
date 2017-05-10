@@ -36,7 +36,7 @@ import Data.Type.Natural (Nat (Z))
 pt1 :: forall b e expr a .
   (a ~ PreMul expr b, Mul expr b, Add expr a, Lambda expr)
   => expr e (a -> a -> b)
-pt1 = lam $ lam $ v0 *: (v0 +: (s v0))
+pt1 = lam $ lam $ v0 *: (v0 +: v1)
 
 type Zq q = ZqBasic q Int64
 
