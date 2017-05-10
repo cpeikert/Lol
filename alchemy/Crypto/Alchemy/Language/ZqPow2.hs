@@ -15,7 +15,7 @@ type Pow2 e = 'PP '(Prime2, e)
 
 -- | Symantics for division-by-2 of argument and modulus.
 
-class DivZqPow2 expr where
+class Div2ZqPow2 expr where
   -- | Divide the argument and its modulus by 2, when the argument is
   -- known to be even (otherwise behavior may be undefined).
   div2ZqPow2 :: expr (ZqBasic (Pow2 ('S e)) i -> ZqBasic (Pow2 e) i)
