@@ -112,10 +112,9 @@ instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
 
 instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
           ct ~ (CT m zp (Cyc t m' zq)), Typeable (SK (Cyc t m' z)),
-          ErrorRate expr,
           -- needed because PreMul could take some crazy form
           Monadify w (PreMul expr ct) ~ w (PreMul expr ct),
-          List expr, MonadWriter_ expr,
+          List expr, MonadWriter_ expr, ErrorRate expr,
           Mul expr ct, ErrorRateCtx expr ct z)
          => Mul (ErrorRateWriter expr z k w) ct where
 
