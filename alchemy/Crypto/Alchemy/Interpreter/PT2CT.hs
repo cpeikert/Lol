@@ -23,7 +23,7 @@ module Crypto.Alchemy.Interpreter.PT2CT
 import Control.Monad.Random
 import Control.Monad.Reader
 import Data.Dynamic
-import Data.Type.Natural    ((:+:), N2, Nat (..))
+import Data.Type.Natural    ((:+:), N1, N2, Nat (..))
 import GHC.TypeLits         hiding (type (*), Nat)
 
 import           Crypto.Lol                      hiding (Pos (..))
@@ -45,8 +45,6 @@ import Crypto.Alchemy.MonadAccumulator
 newtype PT2CT
   m'map    -- | list (map) of (plaintext index m, ciphertext index m')
   zqs      -- | list of pairwise coprime Zq components for ciphertexts
-  (kszq :: *)     -- | additional Zq component for key switches; must be
-           -- coprime to all moduli in 'zqs'
   (gad :: *)      -- | gadget type for key-switch hints
   (z :: *)        -- | integral type for secret keys
   v        -- | scaled-variance type for secret keys/noise
@@ -57,10 +55,10 @@ newtype PT2CT
   = PC { unPC :: mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)) }
 
 -- | Transform a plaintext expression to a ciphertext expression.
-pt2ct :: forall m'map zqs kszq gad z v ctex a mon .
+pt2ct :: forall m'map zqs gad z v ctex a mon .
       -- this forall is for use with TypeApplications at the top level
   v   -- | scaled variance to used for generating keys/hints
-  -> PT2CT m'map zqs kszq gad z v ctex (ReaderT v mon) () a -- | plaintext expression
+  -> PT2CT m'map zqs gad z v ctex (ReaderT v mon) () a -- | plaintext expression
   -> mon (ctex () (Cyc2CT m'map zqs a)) -- | (monadic) ctex expression
 pt2ct v = flip runReaderT v . unPC
 
@@ -93,7 +91,7 @@ decrypt x = do
 
 
 instance (Lambda ctex, Applicative mon)
-  => Lambda (PT2CT m'map zqs kszq gad z v ctex mon) where
+  => Lambda (PT2CT m'map zqs gad z v ctex mon) where
 
   lam (PC f) = PC $ lam <$> f
   (PC f) $: (PC a) = PC $ ($:) <$> f <*> a
@@ -102,54 +100,39 @@ instance (Lambda ctex, Applicative mon)
   s (PC a) = PC $ s <$> a
 
 instance (List ctex, Applicative mon)
-  => List (PT2CT m'map zqs kszq gad z v ctex mon) where
+  => List (PT2CT m'map zqs gad z v ctex mon) where
   nil_  = PC $ pure nil_
   cons_ = PC $ pure cons_
 
 instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
-  => Add (PT2CT m'map zqs kszq gad z v ctex mon) a where
+  => Add (PT2CT m'map zqs gad z v ctex mon) a where
 
   add_ = PC $ pure add_
   neg_ = PC $ pure neg_
 
 instance (m' ~ Lookup m m'map,
-          zqin ~ PNoise2Zq zqs (TotalNoiseUnits zqs (h :+: N2)),
-          zq' ~ (kszq, zq), zq ~ PNoise2Zq zqs h,
-          ctin ~ CT m zp (Cyc t m' zqin), ct' ~ CT m zp (Cyc t m' zq'),
-          ct ~ CT m zp (Cyc t m' zq),
-          Lambda ctex, Mul ctex ct, PreMul ctex ct ~ ct, SHE ctex,
-          RescaleLinearCtx ctex ctin zq,  -- input -> zq (final modulus)
-          RescaleLinearCtx ctex ct   zq', -- zq    -> scaled-up zq' (hint)
-          RescaleLinearCtx ctex ct'  zq,  -- zq'   -> zq, finally
-          KeySwitchQuadCtx ctex ct' gad,  -- hint over zq'
-          KSHintCtx gad t m' z zq', GenSKCtx t m' z v,
-          Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq')),
+          zqin ~ PNoise2Zq zqs (TotalNoiseUnits zqs (h :+: N2)), zq ~ PNoise2Zq zqs h,
+          ctin ~ CT m zp (Cyc t m' zqin), ct ~ CT m zp (Cyc t m' zq),
+          Lambda ctex, Mul ctex ctin, PreMul ctex ctin ~ ctin, SHE ctex,
+          RescaleLinearCtx ctex ctin zq,  -- zqin -> zq (final modulus)
+          KeySwitchQuadCtx ctex ctin gad,  -- hint over zqin
+          KSHintCtx gad t m' z zqin,
+          GenSKCtx t m' z v,
+          Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zqin)),
           MonadRandom mon, MonadReader v mon,
           MonadAccumulator Keys mon, MonadAccumulator Hints mon)
-
-  -- CJP: recall that the types have to be fully spelled out here and
-  -- in the associated type; we can't use the shorthand rp, ct, etc.
-  => Mul (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h (Cyc t m zp)) where
+  => Mul (PT2CT m'map zqs gad z v ctex mon) (PNoise h (Cyc t m zp)) where
 
   -- ditto
-  type PreMul (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h (Cyc t m zp)) =
+  type PreMul (PT2CT m'map zqs gad z v ctex mon) (PNoise h (Cyc t m zp)) =
     PNoise (TotalNoiseUnits zqs (h :+: N2)) (Cyc t m zp)
 -- take h+2, then accumulate enough modulus untils to be at least h+2, and then
 -- set input pnoise to be *that*
   mul_ = PC $ do
-    hint :: KSQuadCircHint gad (Cyc t m' zq') <- getQuadCircHint (Proxy::Proxy z)
-    return $ lam $ lam $
-      rescaleLinear_ $:
-      (keySwitchQuad_ hint $:
-        (rescaleLinear_ $:
-         -- CJP: GHC should infer the types of v0,v1 -- but here we are
-         (((rescaleLinear_ $: (v0 :: ctex _ ctin)) *:
-            (rescaleLinear_ $: (v1 :: ctex _ ctin))) :: ctex _ ct)))
+    hint :: KSQuadCircHint gad (Cyc t m' zqin) <- getQuadCircHint (Proxy::Proxy z)
+    return $ lam $ lam $ rescaleLinear_ $: (keySwitchQuad_ hint $: (v0 *: v1))
 
-type PT2CTTunnelCtx ctex m'map zqs h t e r s r' s' z zp zq zqin kszq v gad =
-  (PT2CTTunnelCtx' ctex m'map zqs h t e r s r' s' z zp zq zqin (kszq,zq) v gad)
-
-type PT2CTTunnelCtx' ctex m'map zqs h t e r s r' s' z zp zq zqin zq' v gad =
+type PT2CTTunnelCtx ctex m'map zqs h t e r s r' s' z zp zq zqin zq' v gad =
   (-- output ciphertext type
    CT s zp (Cyc t s' zq)   ~ Cyc2CT m'map zqs (PNoise h (Cyc t s zp)),
    -- input ciphertext type: plaintext has one-larger pnoise
@@ -164,25 +147,27 @@ type PT2CTTunnelCtx' ctex m'map zqs h t e r s r' s' z zp zq zqin zq' v gad =
 
 instance (SHE ctex, Lambda ctex,
           MonadAccumulator Keys mon, MonadRandom mon, MonadReader v mon)
-  => TunnelCyc (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h) where
+  => TunnelCyc (PT2CT m'map zqs gad z v ctex mon) (PNoise h) where
 
-  type PreTunnelCyc (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h) = PNoise ('S h)
+  -- EAC: Danger: ('S h) is not the same as (h :+: N1)
+  type PreTunnelCyc (PT2CT m'map zqs gad z v ctex mon) (PNoise h) = PNoise (h :+: N1)
 
-  type TunnelCycCtx (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h) t e r s zp =
+  type TunnelCycCtx (PT2CT m'map zqs gad z v ctex mon) (PNoise h) t e r s zp =
     (PT2CTTunnelCtx
       ctex m'map zqs h t e r s
       (Lookup r m'map)
       (Lookup s m'map)
       z zp
       (PNoise2Zq zqs h)
-      (PNoise2Zq zqs ('S h))
-      kszq v gad)
+      (PNoise2Zq zqs (h :+: N1))
+      (PNoise2Zq zqs (h :+: N2))
+      v gad)
 
   tunnelCyc :: forall t zp e r s env expr zq' rp r' zq .
-    (expr ~ PT2CT m'map zqs kszq gad z v ctex mon, TunnelCycCtx expr (PNoise h) t e r s zp,
+    (expr ~ PT2CT m'map zqs gad z v ctex mon, TunnelCycCtx expr (PNoise h) t e r s zp,
      Cyc2CT m'map zqs (PNoise h (Cyc t r zp)) ~ CT r zp (Cyc t r' zq),
-     zq' ~ (kszq, zq), rp ~ Cyc t r zp)
-    => Linear t zp e r s -> expr env (PNoise ('S h) rp -> PNoise h (Cyc t s zp))
+     zq' ~ PNoise2Zq zqs (h :+: N2), rp ~ Cyc t r zp)
+    => Linear t zp e r s -> expr env (PNoise (h :+: N1) rp -> PNoise h (Cyc t s zp))
   tunnelCyc f = PC $ do
     hint <- getTunnelHint @gad @zq' (Proxy::Proxy z) f
     return $ lam $
@@ -190,7 +175,7 @@ instance (SHE ctex, Lambda ctex,
       (tunnel_ hint $:     -- tunnel w/ the hint
         (rescaleLinear_ $: -- then scale (up) to the hint modulus zq'
          -- first (possibly) rescale down to the target modulus zq
-         (rescaleLinear_ $: (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise ('S h) rp)))
+         (rescaleLinear_ $: (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise (h :+: N1) rp)))
           :: ctex _ (CT r zp (Cyc t r' zq)))))
 
 
