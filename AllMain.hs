@@ -31,3 +31,6 @@ import KHPRFRepaMain ()
 import SHERepaMain ()
 
 import RLWEChallengesMain ()
+
+import Crypto.Alchemy.Examples.Arithmetic
+import Crypto.Alchemy.Examples.Tunnel

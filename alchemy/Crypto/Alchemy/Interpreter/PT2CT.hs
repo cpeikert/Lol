@@ -113,12 +113,14 @@ instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
   neg_ = PC $ pure neg_
 
 instance (m' ~ Lookup m m'map,
-          zqin ~ PNoise2Zq zqs (h :+: N2), zq' ~ (kszq, zq), zq ~ PNoise2Zq zqs h,
-          ctin ~ CT m zp (Cyc t m' zqin), ct' ~ CT m zp (Cyc t m' zq'), ct ~ CT m zp (Cyc t m' zq),
+          zqin ~ PNoise2Zq zqs (TotalNoiseUnits zqs (h :+: N2)),
+          zq' ~ (kszq, zq), zq ~ PNoise2Zq zqs h,
+          ctin ~ CT m zp (Cyc t m' zqin), ct' ~ CT m zp (Cyc t m' zq'),
+          ct ~ CT m zp (Cyc t m' zq),
           Lambda ctex, Mul ctex ct, PreMul ctex ct ~ ct, SHE ctex,
           RescaleLinearCtx ctex ctin zq,  -- input -> zq (final modulus)
           RescaleLinearCtx ctex ct   zq', -- zq    -> scaled-up zq' (hint)
-          RescaleLinearCtx ctex ct'  zq, -- zq'   -> zq, finally
+          RescaleLinearCtx ctex ct'  zq,  -- zq'   -> zq, finally
           KeySwitchQuadCtx ctex ct' gad,  -- hint over zq'
           KSHintCtx gad t m' z zq', GenSKCtx t m' z v,
           Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' zq')),
@@ -131,8 +133,9 @@ instance (m' ~ Lookup m m'map,
 
   -- ditto
   type PreMul (PT2CT m'map zqs kszq gad z v ctex mon) (PNoise h (Cyc t m zp)) =
-    PNoise (h :+: N2) (Cyc t m zp)
-
+    PNoise (TotalNoiseUnits zqs (h :+: N2)) (Cyc t m zp)
+-- take h+2, then accumulate enough modulus untils to be at least h+2, and then
+-- set input pnoise to be *that*
   mul_ = PC $ do
     hint :: KSQuadCircHint gad (Cyc t m' zq') <- getQuadCircHint (Proxy::Proxy z)
     return $ lam $ lam $

@@ -98,9 +98,13 @@ type family NatToLit x where
   NatToLit 'Z = 0
   NatToLit ('S n) = 1 + (NatToLit n)
 
+type TotalNoiseUnits zqs h = Sum (MapNatOf (MapModulus (ListOfZqs zqs h)))
+
+type ListOfZqs zqs h = Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs
+
 type family PNoise2ZqError b sum h zqs where
   -- h <= sum: we're good to go
-  PNoise2ZqError 'True sum h zqs = List2Pairs (Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs)
+  PNoise2ZqError 'True sum h zqs = List2Pairs (ListOfZqs zqs h)
   -- error if sum < h
   PNoise2ZqError 'False sum h zqs =
     TypeError ('Text "PNoise2Zq: Modulus needs to support at least " ':<>: 'ShowType (NatToLit h) ':<>:
