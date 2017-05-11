@@ -95,6 +95,8 @@ import Control.Monad.Random hiding (lift)
 import Data.Coerce
 import Data.Traversable
 
+
+
 -- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
 -- \(\Z_q[\zeta_m]\), and \(\Q[\zeta_m]\) in an explicit
 -- representation: @t@ is the
@@ -502,6 +504,13 @@ unzipCyc (CRT u) = either ((cycPE *** cycPE) . unzipCRTE)
                    ((cycPC *** cycPC) . unzipCRTC) u
 unzipCyc (Scalar c) = Scalar *** Scalar $ c
 unzipCyc (Sub c) = Sub *** Sub $ unzipCyc c
+
+-- We attempted to add an optimized instance `RescaleCyc (Cyc t) a a`, but
+-- there's no way to do this: any constraint that matches both the generic
+-- instance and the identity instance will always pick the same one, regardless
+-- of whether a~b. Thus we can never pick the identity instance in some cases,
+-- and the generic instance in others, which is the only reason to have two
+-- instances.
 
 instance {-# OVERLAPS #-} (Rescale a b, CElt t a, TElt t b)
     => R.RescaleCyc (Cyc t) a b where

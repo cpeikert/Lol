@@ -137,7 +137,7 @@ homomPRF' (Hints tHints rHints) ct x st =
   let (atx,st') = evalTree x st
       firstElt = head $ head $ columns atx
       ctMatrix1 = mulPublic firstElt ct
-      ctMatrix2 = tunnel (Proxy::Proxy zqs) tHints ctMatrix1
+      ctMatrix2 = tunnelH (Proxy::Proxy zqs) tHints ctMatrix1
   in (ptRound rHints ctMatrix2, st')
 
 -- | \(\Z_2\) for ZqBasic with a 'PrimePower' modulus.
@@ -149,14 +149,14 @@ type family Div2 (a :: k) :: k
 type instance Div2 (ZqBasic q i) = ZqBasic (Div2 q) i
 type instance Div2 (pp :: PrimePower) = Head (UnF (PpToF pp / F2))
 
--- type-restricted versions of rescaleLinearCT
+-- type-restricted versions of rescaleLinear
 roundCTUp :: (RescaleCyc (Cyc t) zq (ZqUp zq zqs), ToSDCtx t m' zp zq)
   => Proxy zqs -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' (ZqUp zq zqs))
-roundCTUp _ = rescaleLinearCT
+roundCTUp _ = rescaleLinear
 
 roundCTDown :: (RescaleCyc (Cyc t) zq (ZqDown zq zqs), ToSDCtx t m' zp zq)
   => Proxy zqs -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' (ZqDown zq zqs))
-roundCTDown _ = rescaleLinearCT
+roundCTDown _ = rescaleLinear
 
 
 
@@ -175,9 +175,9 @@ roundCTDown _ = rescaleLinearCT
 
 
 
--- | Quadratic key switch hints for the rounding phase of PRF evaluation.
+-- | Quadratic key switch hints for the rounding pase of PRF evaluation.
 data RoundHints t m m' z e zp zq zqs gad where
-  RHNil :: RoundHints t m m' z e zp zq zqs gad
+  RHNil :: RoundHints t m m' z 'O zp zq zqs gad
   RHCons :: KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))
            -> RoundHints t m m' z e (Div2 zp) (ZqDown zq zqs) zqs gad
            -> RoundHints t m m' z ('S e) zp zq zqs gad
@@ -241,10 +241,11 @@ instance PTRound t m m' P1 (ZqBasic PP2 i) zq z gad zqs where
 instance (UnPP p ~ '(Prime2, 'S e),                                                 -- superclass constraint
           zqup ~ ZqUp zq zqs, zq' ~ ZqDown zq zqs, zp ~ ZqBasic p i, zp' ~ Div2 zp, -- convenience synonyms
           AddPublicCtx t m m' zp zq, AddPublicCtx t m m' zp zq',                    -- addPublic
-          KeySwitchCtx gad t m' zp zq zqup, KSHintCtx gad t m' z zqup,              -- for quadratic key switch
+          KeySwitchCtx gad t m' zp zqup, KSHintCtx gad t m' z zqup,                 -- for quadratic key switch
           Reflects p Int,                                                           -- value
           Ring (CT m zp (Cyc t m' zq)),                                             -- (*)
-          RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq,                            -- rescaleLinearCT
+          Rescale zq zqup,                                                          -- rescaleLinear (pre-switch)
+          RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq, Rescale zqup zq',          -- rescaleLinear (post-switch)
           ModSwitchPTCtx t m' zp zp' zq',                                           -- modSwitchPT
           PTRound t m m' e zp' zq' z gad zqs,                                       -- recursive call
           Protoable (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))))                  -- toProto
@@ -258,14 +259,14 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
 
   ptRound (RHCons ksqHint rest) x =
     let x' = addPublic one x
-        xprod = rescaleLinearCT $ keySwitchQuadCirc ksqHint $ x*x'
+        xprod = rescaleLinear $ keySwitchQuadCirc ksqHint $ rescaleLinear $ x*x'
         p = proxy value (Proxy::Proxy p)
         xs = map (\y->modSwitchPT $ addPublic (fromInteger $ y*(-y+1)) xprod) [1..] :: [CT m zp' (Cyc t m' zq')]
     in ptRoundInternal rest $ take (p `div` 4) xs
 
   ptRoundInternal (RHCons ksqHint rest) (xs :: [CT m (ZqBasic p i) (Cyc t m' zq)]) =
     let pairs = chunksOf 2 xs
-        go [a,b] = modSwitchPT $ rescaleLinearCT $ keySwitchQuadCirc ksqHint $ a*b :: CT m zp' (Cyc t m' zq')
+        go [a,b] = modSwitchPT $ rescaleLinear $ keySwitchQuadCirc ksqHint $ rescaleLinear $ a*b :: CT m zp' (Cyc t m' zq')
     in ptRoundInternal rest (map go pairs)
 
 
@@ -388,7 +389,7 @@ instance (ExtendLinIdx e r s e' r' s', -- tunnelHintChain
           CElt t zp, Ring zq, Random zq, CElt t zq,   -- tunnelHintChain
           Reduce (DecompOf zq) zq, Gadget gad zq,     -- tunnelHintChain
           NFElt zq, CElt t (DecompOf zq),             -- tunnelHintChain
-          TunnelCtx t r s e' r' s' zp zq gad,         -- tunnelCT
+          TunnelCtx t r s e' r' s' zp zq gad,         -- tunnel
           e ~ FGCD r s, e `Divides` r, e `Divides` s, -- linearDec
           ZPP zp, TElt t (ZpOf zp),                   -- crtSet
           Tunnel ('(s,s') ': rngs) t zp zq gad,       -- recursive call
@@ -409,7 +410,7 @@ instance (ExtendLinIdx e r s e' r' s', -- tunnelHintChain
     (thints,sk') <- tunnelHintChain skout
     return (THCons thint thints, sk')
 
-  tunnelInternal (THCons thint rest) = tunnelInternal rest . tunnelCT thint
+  tunnelInternal (THCons thint rest) = tunnelInternal rest . tunnel thint
 
 -- | Context for multi-step homomorphic tunneling.
 type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
@@ -423,9 +424,9 @@ type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
 -- ciphertext for the key switches, then 'tunnelInternal', then round down twice:
 -- once to remove the key switch modulus, and once to dampen the noise incurred
 -- while tunneling.
-tunnel :: forall rngs r r' s s' t z zp zq gad zqs . (MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs)
+tunnelH :: forall rngs r r' s s' t z zp zq gad zqs . (MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs)
   => Proxy zqs -> TunnelHintChain gad t rngs zp (ZqUp zq zqs) -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
-tunnel pzqs hints x =
+tunnelH pzqs hints x =
   let y = tunnelInternal hints $ roundCTUp pzqs x
   in roundCTDown pzqs $ roundCTDown pzqs y
 

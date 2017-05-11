@@ -89,18 +89,18 @@ library
     Crypto.Proto.Lol
     Crypto.Proto.Lol.LinearRq
     Crypto.Proto.Lol.R
-    Crypto.Proto.Lol.Rq1
+    Crypto.Proto.Lol.Rq
     Crypto.Proto.Lol.RqProduct
-    Crypto.Proto.Lol.Kq1
+    Crypto.Proto.Lol.Kq
     Crypto.Proto.Lol.KqProduct
     Crypto.Proto.Lol.TypeRep
     Crypto.Proto.RLWE
+    Crypto.Proto.RLWE.SampleContProduct
+    Crypto.Proto.RLWE.SampleDiscProduct
+    Crypto.Proto.RLWE.SampleRLWRProduct
     Crypto.Proto.RLWE.SampleCont
     Crypto.Proto.RLWE.SampleDisc
     Crypto.Proto.RLWE.SampleRLWR
-    Crypto.Proto.RLWE.SampleCont1
-    Crypto.Proto.RLWE.SampleDisc1
-    Crypto.Proto.RLWE.SampleRLWR1
 
     Crypto.Lol.Tests
     Crypto.Lol.Benchmarks

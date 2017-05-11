@@ -29,10 +29,10 @@ import qualified Crypto.Lol.Types as RRq
 import           Crypto.Lol.Types.Proto
 
 import Crypto.Proto.RLWE.Challenges.Challenge
-import Crypto.Proto.RLWE.Challenges.InstanceCont
-import Crypto.Proto.RLWE.Challenges.InstanceDisc
-import Crypto.Proto.RLWE.Challenges.InstanceRLWR
-import Crypto.Proto.RLWE.Challenges.Secret
+import Crypto.Proto.RLWE.Challenges.InstanceContProduct
+import Crypto.Proto.RLWE.Challenges.InstanceDiscProduct
+import Crypto.Proto.RLWE.Challenges.InstanceRLWRProduct
+import Crypto.Proto.RLWE.Challenges.SecretProduct
 
 import Crypto.Proto.Lol.KqProduct
 import Crypto.Proto.Lol.RqProduct
@@ -66,9 +66,9 @@ type InstDRBG = GenBuffered CtrDRBG
 data ChallengeU = CU !Challenge ![InstanceU]
 
 -- | Holds an (untyped) proto-buf Ring-LWE/LWR instance.
-data InstanceU = IC {secret :: !Secret, instc :: !InstanceCont}
-               | ID {secret :: !Secret, instd :: !InstanceDisc}
-               | IR {secret :: !Secret, instr :: !InstanceRLWR}
+data InstanceU = IC {secret :: !SecretProduct, instc :: !InstanceContProduct}
+               | ID {secret :: !SecretProduct, instd :: !InstanceDiscProduct}
+               | IR {secret :: !SecretProduct, instr :: !InstanceRLWRProduct}
 
 -- | Concrete type used to generate and verify instances
 type Zq q = ZqBasic q Int64

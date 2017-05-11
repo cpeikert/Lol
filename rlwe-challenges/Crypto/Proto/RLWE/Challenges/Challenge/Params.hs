@@ -7,13 +7,13 @@ import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Crypto.Proto.RLWE.Challenges.ContParams as Challenges (ContParams)
-import qualified Crypto.Proto.RLWE.Challenges.DiscParams as Challenges (DiscParams)
-import qualified Crypto.Proto.RLWE.Challenges.RLWRParams as Challenges (RLWRParams)
+import qualified Crypto.Proto.RLWE.Challenges.ContParams as Crypto.Proto.RLWE.Challenges (ContParams)
+import qualified Crypto.Proto.RLWE.Challenges.DiscParams as Crypto.Proto.RLWE.Challenges (DiscParams)
+import qualified Crypto.Proto.RLWE.Challenges.RLWRParams as Crypto.Proto.RLWE.Challenges (RLWRParams)
 
-data Params = Cparams{cparams :: (Challenges.ContParams)}
-            | Dparams{dparams :: (Challenges.DiscParams)}
-            | Rparams{rparams :: (Challenges.RLWRParams)}
+data Params = Cparams{cparams :: (Crypto.Proto.RLWE.Challenges.ContParams)}
+            | Dparams{dparams :: (Crypto.Proto.RLWE.Challenges.DiscParams)}
+            | Rparams{rparams :: (Crypto.Proto.RLWE.Challenges.RLWRParams)}
             deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
 get'cparams x
  = case x of

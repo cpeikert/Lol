@@ -44,24 +44,24 @@ import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.Challenge.Params
 import Crypto.Proto.RLWE.Challenges.ContParams
 import Crypto.Proto.RLWE.Challenges.DiscParams
+import Crypto.Proto.RLWE.Challenges.InstanceContProduct
+import Crypto.Proto.RLWE.Challenges.InstanceDiscProduct
+import Crypto.Proto.RLWE.Challenges.InstanceRLWRProduct
 import Crypto.Proto.RLWE.Challenges.InstanceCont
 import Crypto.Proto.RLWE.Challenges.InstanceDisc
 import Crypto.Proto.RLWE.Challenges.InstanceRLWR
-import Crypto.Proto.RLWE.Challenges.InstanceCont1
-import Crypto.Proto.RLWE.Challenges.InstanceDisc1
-import Crypto.Proto.RLWE.Challenges.InstanceRLWR1
 import Crypto.Proto.RLWE.Challenges.RLWRParams
+import Crypto.Proto.RLWE.Challenges.SecretProduct
 import Crypto.Proto.RLWE.Challenges.Secret
-import Crypto.Proto.RLWE.Challenges.Secret1
 
 import Crypto.Proto.Lol.KqProduct
 import Crypto.Proto.Lol.RqProduct
-import Crypto.Proto.RLWE.SampleCont1
-import Crypto.Proto.RLWE.SampleDisc1
-import Crypto.Proto.RLWE.SampleRLWR1
 import Crypto.Proto.RLWE.SampleCont
 import Crypto.Proto.RLWE.SampleDisc
 import Crypto.Proto.RLWE.SampleRLWR
+import Crypto.Proto.RLWE.SampleContProduct
+import Crypto.Proto.RLWE.SampleDiscProduct
+import Crypto.Proto.RLWE.SampleRLWRProduct
 
 import Crypto.Random.DRBG
 
@@ -174,8 +174,8 @@ readFullChallenge path challName Challenge{..} = do
   return (BA beaconEpoch beaconOffset, insts)
 
 validateSecret :: (MonadError String m)
-  => String -> ChallengeID -> InstanceID -> Int32 -> Int64 -> Secret -> m ()
-validateSecret sfile cid iid m q (Secret cid' iid' m' q' seed _) = do
+  => String -> ChallengeID -> InstanceID -> Int32 -> Int64 -> SecretProduct -> m ()
+validateSecret sfile cid iid m q (SecretProduct cid' iid' m' q' seed _) = do
   checkParamsEq sfile "challID" cid cid'
   checkParamsEq sfile "instID" iid iid'
   checkParamsEq sfile "m" m m'
@@ -201,43 +201,43 @@ readInstanceU :: (MonadIO m, MonadError String m)
 readInstanceU params' path challName cid iid = do
   let secFile = secretFilePath path challName iid
   s <- catchError
-         (readProtoType secFile >>= \Secret1{..} -> return Secret{s=RqProduct $ singleton s,..})
+         (readProtoType secFile >>= \Secret{..} -> return SecretProduct{s=RqProduct $ singleton s,..})
          (\_->readProtoType secFile)
   let instFile = instFilePath path challName iid
   case params' of
     (Cparams ContParams{..}) -> do
-      inst@(InstanceCont cid' iid' iparams _) <- catchError
-        (readProtoType instFile >>= \InstanceCont1{..} ->
-          return $ InstanceCont{samples=updateLegacySampleCont<$>samples,..})
+      inst@(InstanceContProduct cid' iid' iparams _) <- catchError
+        (readProtoType instFile >>= \InstanceCont{..} ->
+          return $ InstanceContProduct{samples=updateLegacySampleCont<$>samples,..})
         (\_->readProtoType instFile)
       validateSecret secFile cid iid m q s
       validateInstance instFile cid iid params' cid' iid' (Cparams iparams)
       return $ IC s inst
     (Dparams DiscParams{..}) -> do
-      inst@(InstanceDisc cid' iid' iparams _) <- catchError
-        (readProtoType instFile >>= \InstanceDisc1{..} ->
-          return InstanceDisc{samples=updateLegacySampleDisc<$>samples,..})
+      inst@(InstanceDiscProduct cid' iid' iparams _) <- catchError
+        (readProtoType instFile >>= \InstanceDisc{..} ->
+          return InstanceDiscProduct{samples=updateLegacySampleDisc<$>samples,..})
         (\_->readProtoType instFile)
       validateSecret secFile cid iid m q s
       validateInstance instFile cid iid params' cid' iid' (Dparams iparams)
       return $ ID s inst
     (Rparams RLWRParams{..}) -> do
-      inst@(InstanceRLWR cid' iid' iparams _) <- catchError
-        (readProtoType instFile >>= \InstanceRLWR1{..} ->
-          return InstanceRLWR{samples=updateLegacySampleRLWR<$>samples,..})
+      inst@(InstanceRLWRProduct cid' iid' iparams _) <- catchError
+        (readProtoType instFile >>= \InstanceRLWR{..} ->
+          return InstanceRLWRProduct{samples=updateLegacySampleRLWR<$>samples,..})
         (\_->readProtoType instFile)
       validateSecret secFile cid iid m q s
       validateInstance instFile cid iid params' cid' iid' (Rparams iparams)
       return $ IR s inst
 
-updateLegacySampleCont :: SampleCont1 -> SampleCont
-updateLegacySampleCont SampleCont1{..} = SampleCont{a = RqProduct $ singleton a, b = KqProduct $ singleton b}
+updateLegacySampleCont :: SampleCont -> SampleContProduct
+updateLegacySampleCont SampleCont{..} = SampleContProduct{a = RqProduct $ singleton a, b = KqProduct $ singleton b}
 
-updateLegacySampleDisc :: SampleDisc1 -> SampleDisc
-updateLegacySampleDisc SampleDisc1{..} = SampleDisc{a = RqProduct $ singleton a, b = RqProduct $ singleton b}
+updateLegacySampleDisc :: SampleDisc -> SampleDiscProduct
+updateLegacySampleDisc SampleDisc{..} = SampleDiscProduct{a = RqProduct $ singleton a, b = RqProduct $ singleton b}
 
-updateLegacySampleRLWR :: SampleRLWR1 -> SampleRLWR
-updateLegacySampleRLWR SampleRLWR1{..} = SampleRLWR{a = RqProduct $ singleton a, b = RqProduct $ singleton b}
+updateLegacySampleRLWR :: SampleRLWR -> SampleRLWRProduct
+updateLegacySampleRLWR SampleRLWR{..} = SampleRLWRProduct{a = RqProduct $ singleton a, b = RqProduct $ singleton b}
 
 checkParamsEq :: (MonadError String m, Show a, Eq a)
   => String -> String -> a -> a -> m ()
@@ -253,7 +253,7 @@ regenInstance :: forall t mon . (EntailTensor t, MonadError String mon)
 -- deterministic generation of instances).
 -- the secret and a_i are discrete, so they should match exactly.
 -- the b_i shouldn't be too far off.
-regenInstance _ (IC (Secret _ _ _ _ seed s) InstanceCont{..}) =
+regenInstance _ (IC (SecretProduct _ _ _ _ seed s) InstanceContProduct{..}) =
   let ContParams {..} = params
       (Right (g :: CryptoRand InstDRBG)) = newGen $ BS.toStrict seed
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
@@ -264,11 +264,11 @@ regenInstance _ (IC (Secret _ _ _ _ seed s) InstanceCont{..}) =
               (a == a') && maximum (fmapDec abs $ lift $ b-b') < 2 ^- (-20)
         s' :: Cyc t m (Zq q) <- fromProto s
         samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
-          fmap (\(SampleCont a b) -> (a,b)) samples
+          fmap (\(SampleContProduct a b) -> (a,b)) samples
         return $ (expectedS == s') && (and $ zipWith csampleEq expectedSamples samples'))
           \\ proxy entailTensor (Proxy::Proxy '(t,m,q))))
 
-regenInstance _ (ID (Secret _ _ _ _ seed s) InstanceDisc{..}) =
+regenInstance _ (ID (SecretProduct _ _ _ _ seed s) InstanceDiscProduct{..}) =
   let DiscParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> (do
@@ -276,11 +276,11 @@ regenInstance _ (ID (Secret _ _ _ _ seed s) InstanceDisc{..}) =
       let (expectedS, expectedSamples :: [D.Sample t m (Zq q)]) =
             flip evalRand g $ instanceDisc svar (fromIntegral numSamples)
       s' :: Cyc t m (Zq q) <- fromProto s
-      samples' <- fromProto $ fmap (\(SampleDisc a b) -> (a,b)) samples
+      samples' <- fromProto $ fmap (\(SampleDiscProduct a b) -> (a,b)) samples
       return $ (expectedS == s') && (expectedSamples == samples'))
         \\ proxy entailTensor (Proxy::Proxy '(t,m,q))))
 
-regenInstance _ (IR (Secret _ _ _ _ seed s) InstanceRLWR{..}) =
+regenInstance _ (IR (SecretProduct _ _ _ _ seed s) InstanceRLWRProduct{..}) =
   let RLWRParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) ->
@@ -290,7 +290,7 @@ regenInstance _ (IR (Secret _ _ _ _ seed s) InstanceRLWR{..}) =
               flip evalRand g $ instanceRLWR (fromIntegral numSamples)
         s' :: Cyc t m (Zq q) <- fromProto s
         samples' :: [R.Sample _ _ _ (Zq p)] <- fromProto $
-          fmap (\(SampleRLWR a b) -> (a,b)) samples
+          fmap (\(SampleRLWRProduct a b) -> (a,b)) samples
         return $ (expectedS == s') && (expectedSamples == samples'))
           \\ proxy entailTensor (Proxy::Proxy '(t,m,q))
           \\ proxy entailTensor (Proxy::Proxy '(t,m,p)))))
@@ -298,35 +298,35 @@ regenInstance _ (IR (Secret _ _ _ _ seed s) InstanceRLWR{..}) =
 -- | Verify an 'InstanceU'.
 verifyInstanceU :: forall t mon . (EntailTensor t, MonadError String mon) => Proxy t -> InstanceU -> mon ()
 
-verifyInstanceU _ (IC (Secret _ _ _ _ _ s) InstanceCont{..}) =
+verifyInstanceU _ (IC (SecretProduct _ _ _ _ _ s) InstanceContProduct{..}) =
   let ContParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> (do
       s' :: Cyc t m (Zq q) <- fromProto s
       samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
-        fmap (\(SampleCont a b) -> (a,b)) samples
+        fmap (\(SampleContProduct a b) -> (a,b)) samples
       throwErrorUnless (validInstanceCont bound s' samples')
         "A continuous RLWE sample exceeded the error bound.")
         \\ proxy entailTensor (Proxy::Proxy '(t,m,q))))
 
-verifyInstanceU _ (ID (Secret _ _ _ _ _ s) InstanceDisc{..}) =
+verifyInstanceU _ (ID (SecretProduct _ _ _ _ _ s) InstanceDiscProduct{..}) =
   let DiscParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> (do
       s' :: Cyc t m (Zq q) <- fromProto s
-      samples' <- fromProto $ fmap (\(SampleDisc a b) -> (a,b)) samples
+      samples' <- fromProto $ fmap (\(SampleDiscProduct a b) -> (a,b)) samples
       throwErrorUnless (validInstanceDisc bound s' samples')
         "A discrete RLWE sample exceeded the error bound.")
         \\ proxy entailTensor (Proxy::Proxy '(t,m,q))))
 
-verifyInstanceU _ (IR (Secret _ _ _ _ _ s) InstanceRLWR{..}) =
+verifyInstanceU _ (IR (SecretProduct _ _ _ _ _ s) InstanceRLWRProduct{..}) =
   let RLWRParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
     reify (fromIntegral q :: Int64) (\(_::Proxy q) ->
       reify (fromIntegral p :: Int64) (\(_::Proxy p) -> (do
         s' :: Cyc t m (Zq q) <- fromProto s
         samples' :: [R.Sample _ _ _ (Zq p)] <- fromProto $
-          fmap (\(SampleRLWR a b) -> (a,b)) samples
+          fmap (\(SampleRLWRProduct a b) -> (a,b)) samples
         throwErrorUnless (validInstanceRLWR s' samples')
           "An RLWR sample was invalid.")
           \\ proxy entailTensor (Proxy::Proxy '(t,m,q))

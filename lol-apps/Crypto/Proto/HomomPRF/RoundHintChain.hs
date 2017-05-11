@@ -7,9 +7,9 @@ import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Crypto.Proto.SHE.KSHint as SHE (KSHint)
+import qualified Crypto.Proto.SHE.KSHint as Crypto.Proto.SHE (KSHint)
 
-data RoundHintChain = RoundHintChain{hints :: !(P'.Seq SHE.KSHint)}
+data RoundHintChain = RoundHintChain{hints :: !(P'.Seq Crypto.Proto.SHE.KSHint)}
                     deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
 
 instance P'.Mergeable RoundHintChain where
@@ -57,7 +57,7 @@ instance P'.ReflectDescriptor RoundHintChain where
   getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList []) (P'.fromDistinctAscList [10])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".HomomPRF.RoundHintChain\", haskellPrefix = [MName \"Crypto\",MName \"Proto\"], parentModule = [MName \"HomomPRF\"], baseName = MName \"RoundHintChain\"}, descFilePath = [\"Crypto\",\"Proto\",\"HomomPRF\",\"RoundHintChain.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".HomomPRF.RoundHintChain.hints\", haskellPrefix' = [MName \"Crypto\",MName \"Proto\"], parentModule' = [MName \"HomomPRF\",MName \"RoundHintChain\"], baseName' = FName \"hints\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".SHE.KSHint\", haskellPrefix = [MName \"Crypto\",MName \"Proto\"], parentModule = [MName \"SHE\"], baseName = MName \"KSHint\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".crypto.proto.HomomPRF.RoundHintChain\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"HomomPRF\"], baseName = MName \"RoundHintChain\"}, descFilePath = [\"Crypto\",\"Proto\",\"HomomPRF\",\"RoundHintChain.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".crypto.proto.HomomPRF.RoundHintChain.hints\", haskellPrefix' = [], parentModule' = [MName \"Crypto\",MName \"Proto\",MName \"HomomPRF\",MName \"RoundHintChain\"], baseName' = FName \"hints\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".crypto.proto.SHE.KSHint\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"SHE\"], baseName = MName \"KSHint\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
 
 instance P'.TextType RoundHintChain where
   tellT = P'.tellSubMessage

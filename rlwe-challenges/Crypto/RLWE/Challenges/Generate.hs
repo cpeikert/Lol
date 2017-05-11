@@ -38,14 +38,14 @@ import Crypto.Proto.RLWE.Challenges.Challenge
 import Crypto.Proto.RLWE.Challenges.Challenge.Params
 import Crypto.Proto.RLWE.Challenges.ContParams
 import Crypto.Proto.RLWE.Challenges.DiscParams
-import Crypto.Proto.RLWE.Challenges.InstanceCont
-import Crypto.Proto.RLWE.Challenges.InstanceDisc
-import Crypto.Proto.RLWE.Challenges.InstanceRLWR
+import Crypto.Proto.RLWE.Challenges.InstanceContProduct
+import Crypto.Proto.RLWE.Challenges.InstanceDiscProduct
+import Crypto.Proto.RLWE.Challenges.InstanceRLWRProduct
 import Crypto.Proto.RLWE.Challenges.RLWRParams
-import Crypto.Proto.RLWE.Challenges.Secret           as S
-import Crypto.Proto.RLWE.SampleCont
-import Crypto.Proto.RLWE.SampleDisc
-import Crypto.Proto.RLWE.SampleRLWR
+import Crypto.Proto.RLWE.Challenges.SecretProduct           as S
+import Crypto.Proto.RLWE.SampleContProduct
+import Crypto.Proto.RLWE.SampleDiscProduct
+import Crypto.Proto.RLWE.SampleRLWRProduct
 
 import Crypto.Random.DRBG
 
@@ -126,27 +126,27 @@ genInstanceU _ (Cparams params@ContParams{..}) challengeID instanceID seed =
   in flip evalRand g $ reify q (\(_::Proxy q) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> (do
       (s', samples' :: [C.Sample t m (Zq q) (RRq q)]) <- instanceCont svar $ fromIntegral numSamples
-      let s'' = Secret{s = toProto s', ..}
-          samples = uncurry SampleCont <$> toProto samples'
-      return $ IC s'' InstanceCont{..}) \\ proxy entailTensor (Proxy::Proxy '(t,m,q))))
+      let s'' = SecretProduct{s = toProto s', ..}
+          samples = uncurry SampleContProduct <$> toProto samples'
+      return $ IC s'' InstanceContProduct{..}) \\ proxy entailTensor (Proxy::Proxy '(t,m,q))))
 
 genInstanceU _ (Dparams params@DiscParams{..}) challengeID instanceID seed =
   let (Right (g :: CryptoRand InstDRBG)) = newGen $ BS.toStrict seed
   in flip evalRand g $ reify q (\(_::Proxy q) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> (do
       (s', samples' :: [D.Sample t m (Zq q)]) <- instanceDisc svar $ fromIntegral numSamples
-      let s'' = Secret{s = toProto s', ..}
-          samples = uncurry SampleDisc <$> toProto samples'
-      return $ ID s'' InstanceDisc{..}) \\ proxy entailTensor (Proxy::Proxy '(t,m,q))))
+      let s'' = SecretProduct{s = toProto s', ..}
+          samples = uncurry SampleDiscProduct <$> toProto samples'
+      return $ ID s'' InstanceDiscProduct{..}) \\ proxy entailTensor (Proxy::Proxy '(t,m,q))))
 
 genInstanceU _ (Rparams params@RLWRParams{..}) challengeID instanceID seed =
   let (Right (g :: CryptoRand InstDRBG)) = newGen $ BS.toStrict seed
   in flip evalRand g $ reify q (\(_::Proxy q) -> reify p (\(_::Proxy p) ->
     reifyFactI (fromIntegral m) (\(_::proxy m) -> (do
       (s', samples' :: [R.Sample t m (Zq q) (Zq p)]) <- instanceRLWR $ fromIntegral numSamples
-      let s'' = Secret{s = toProto s', ..}
-          samples = uncurry SampleRLWR <$> toProto samples'
-      return $ IR s'' InstanceRLWR{..})
+      let s'' = SecretProduct{s = toProto s', ..}
+          samples = uncurry SampleRLWRProduct <$> toProto samples'
+      return $ IR s'' InstanceRLWRProduct{..})
         \\ proxy entailTensor (Proxy::Proxy '(t,m,q))
         \\ proxy entailTensor (Proxy::Proxy '(t,m,p)))))
 

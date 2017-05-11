@@ -37,10 +37,10 @@ import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Unsafe.RRq
 import Crypto.Lol.Types.Unsafe.ZqBasic
 
-import Crypto.Proto.Lol.Kq1
+import Crypto.Proto.Lol.Kq
 import Crypto.Proto.Lol.KqProduct
 import Crypto.Proto.Lol.R
-import Crypto.Proto.Lol.Rq1
+import Crypto.Proto.Lol.Rq
 import Crypto.Proto.Lol.RqProduct
 
 import Algebra.ZeroTestable as ZeroTestable
@@ -131,7 +131,7 @@ instance (Fact m, Reflects q Int64) => Protoable (IZipVector m (ZqBasic q Int64)
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = fromIntegral (proxy value (Proxy::Proxy q) :: Int64)
         xs = S.fromList $ V.toList $ V.map LP.lift xs'
-    in RqProduct $ S.singleton Rq1{..}
+    in RqProduct $ S.singleton Rq{..}
 
   fromProto (RqProduct xs') = do
     let rqlist = F.toList xs'
@@ -141,7 +141,7 @@ instance (Fact m, Reflects q Int64) => Protoable (IZipVector m (ZqBasic q Int64)
     unless (F.length rqlist == 1) $ throwError $
       "An error occurred while reading the proto type for CT.\n\
       \Expected a list of one Rq, but list has length " ++ show (F.length rqlist)
-    let [Rq1{..}] = rqlist
+    let [Rq{..}] = rqlist
         ys' = V.fromList $ F.toList xs
         len = F.length xs
     unless (m' == fromIntegral m) $ throwError $
@@ -162,7 +162,7 @@ instance (Fact m, Reflects q Double) => Protoable (IZipVector m (RRq q Double)) 
     let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
         q = round (proxy value (Proxy::Proxy q) :: Double)
         xs = S.fromList $ V.toList $ V.map LP.lift xs'
-    in KqProduct $ S.singleton Kq1{..}
+    in KqProduct $ S.singleton Kq{..}
 
   fromProto (KqProduct xs') = do
     let rqlist = F.toList xs'
@@ -172,7 +172,7 @@ instance (Fact m, Reflects q Double) => Protoable (IZipVector m (RRq q Double)) 
     unless (F.length rqlist == 1) $ throwError $
       "An error occurred while reading the proto type for CT.\n\
       \Expected a list of one Rq, but list has length " ++ show (F.length rqlist)
-    let [Kq1{..}] = rqlist
+    let [Kq{..}] = rqlist
         ys' = V.fromList $ F.toList xs
         len = F.length xs
     unless (m' == fromIntegral m) $ throwError $
