@@ -7,7 +7,7 @@ import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Crypto.Proto.Crypto.Proto.SHE.TunnelHint as Crypto.Proto.SHE (TunnelHint)
+import qualified Crypto.Proto.SHE.TunnelHint as Crypto.Proto.SHE (TunnelHint)
 
 data TunnelHintChain = TunnelHintChain{hints :: !(P'.Seq Crypto.Proto.SHE.TunnelHint)}
                      deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
@@ -57,7 +57,7 @@ instance P'.ReflectDescriptor TunnelHintChain where
   getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList []) (P'.fromDistinctAscList [10])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".crypto.proto.HomomPRF.TunnelHintChain\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"HomomPRF\"], baseName = MName \"TunnelHintChain\"}, descFilePath = [\"Crypto\",\"Proto\",\"HomomPRF\",\"TunnelHintChain.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".crypto.proto.HomomPRF.TunnelHintChain.hints\", haskellPrefix' = [], parentModule' = [MName \"Crypto\",MName \"Proto\",MName \"HomomPRF\",MName \"TunnelHintChain\"], baseName' = FName \"hints\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".crypto.proto.SHE.TunnelHint\", haskellPrefix = [MName \"Crypto\",MName \"Proto\"], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"SHE\"], baseName = MName \"TunnelHint\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".crypto.proto.HomomPRF.TunnelHintChain\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"HomomPRF\"], baseName = MName \"TunnelHintChain\"}, descFilePath = [\"Crypto\",\"Proto\",\"HomomPRF\",\"TunnelHintChain.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".crypto.proto.HomomPRF.TunnelHintChain.hints\", haskellPrefix' = [], parentModule' = [MName \"Crypto\",MName \"Proto\",MName \"HomomPRF\",MName \"TunnelHintChain\"], baseName' = FName \"hints\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".crypto.proto.SHE.TunnelHint\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"SHE\"], baseName = MName \"TunnelHint\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
 
 instance P'.TextType TunnelHintChain where
   tellT = P'.tellSubMessage

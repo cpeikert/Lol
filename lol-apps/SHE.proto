@@ -4,7 +4,7 @@ package crypto.proto.SHE;
 
 import "Lol.proto";
 
-// run this: hprotoc -I ../lol -a Lol.proto=Crypto.Proto SHE.proto
+// run this: hprotoc -I ../lol SHE.proto
 
 message SecretKey {
   required crypto.proto.lol.R sk              = 1; // ring element

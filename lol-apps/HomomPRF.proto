@@ -13,7 +13,7 @@ import "SHE.proto";
 
 // run this:
 
-// hprotoc -I ../lol -a Lol.proto=Crypto.Proto -a SHE.proto=Crypto.Proto HomomPRF.proto
+// hprotoc -I ../lol HomomPRF.proto
 
 message LinearFuncChain {
   repeated crypto.proto.lol.LinearRq funcs    = 1;

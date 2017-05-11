@@ -8,7 +8,7 @@ import "RLWE.proto";
 
 // run this:
 
-// hprotoc -I ../lol -a RLWE.proto=Crypto.Proto -a Lol.proto=Crypto.Proto Challenges.proto
+// hprotoc -I ../lol Challenges.proto
 // protoc Challenges.proto -I. -I../lol --cpp_out=../chall-cpp --java_out=../chall-java --python_out=../chall-python
 
 message ContParams {                     // continuous RLWE parameters

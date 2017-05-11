@@ -7,7 +7,7 @@ import qualified Data.Typeable as Prelude'
 import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
-import qualified Crypto.Proto.Crypto.Proto.Lol.RqProduct as Crypto.Proto.Lol (RqProduct)
+import qualified Crypto.Proto.Lol.RqProduct as Crypto.Proto.Lol (RqProduct)
 
 data RqPolynomial = RqPolynomial{coeffs :: !(P'.Seq Crypto.Proto.Lol.RqProduct)}
                   deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
@@ -57,7 +57,7 @@ instance P'.ReflectDescriptor RqPolynomial where
   getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList []) (P'.fromDistinctAscList [10])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".crypto.proto.SHE.RqPolynomial\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"SHE\"], baseName = MName \"RqPolynomial\"}, descFilePath = [\"Crypto\",\"Proto\",\"SHE\",\"RqPolynomial.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".crypto.proto.SHE.RqPolynomial.coeffs\", haskellPrefix' = [], parentModule' = [MName \"Crypto\",MName \"Proto\",MName \"SHE\",MName \"RqPolynomial\"], baseName' = FName \"coeffs\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".crypto.proto.lol.RqProduct\", haskellPrefix = [MName \"Crypto\",MName \"Proto\"], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"Lol\"], baseName = MName \"RqProduct\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".crypto.proto.SHE.RqPolynomial\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"SHE\"], baseName = MName \"RqPolynomial\"}, descFilePath = [\"Crypto\",\"Proto\",\"SHE\",\"RqPolynomial.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".crypto.proto.SHE.RqPolynomial.coeffs\", haskellPrefix' = [], parentModule' = [MName \"Crypto\",MName \"Proto\",MName \"SHE\",MName \"RqPolynomial\"], baseName' = FName \"coeffs\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".crypto.proto.lol.RqProduct\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"Lol\"], baseName = MName \"RqProduct\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
 
 instance P'.TextType RqPolynomial where
   tellT = P'.tellSubMessage
