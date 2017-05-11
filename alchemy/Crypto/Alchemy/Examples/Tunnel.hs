@@ -75,7 +75,6 @@ main = do
          @'[ Zq $(mkTLNatNat $ 2^(15 :: Int)),
              Zq $(mkTLNatNat $ 2^(15 :: Int)+2),
              Zq $(mkTLNatNat $ 2^(15 :: Int)+4) ]
-         @(Zq $(mkTLNatNat $ 2^(15 :: Int)+6))
          @TrivGad
          @Int64
          @Double)

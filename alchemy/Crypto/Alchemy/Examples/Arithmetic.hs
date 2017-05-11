@@ -56,7 +56,6 @@ main = do
     x <- argToReader (pt2ct
            @'[ '(F4, F8) ]
            @'[ Zq $(mkTLNatNat $ 2^(15 :: Int)), Zq $(mkTLNatNat $ 2^(15 :: Int)+1) ]
-           @(Zq $(mkTLNatNat 13))
            @TrivGad
            @Int64
            @Double)
