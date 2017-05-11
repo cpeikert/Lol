@@ -1,5 +1,7 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE DataKinds              #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE TypeFamilies           #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 
 {-|
 
@@ -7,25 +9,25 @@
 
 -}
 
-{-# LANGUAGE DataKinds #-}
 
 module Crypto.Alchemy.Language.Zq where
 
-import Crypto.Lol       (Pos (..), Prime2, PrimePower (PP))
-import Crypto.Lol.Types (ZqBasic)
-
-type Pow2 e = 'PP '(Prime2, e)
+import Crypto.Lol (Pos)
 
 -- | Symantics for division-by-2 of both the value and its modulus.
 
-class Div2Zq expr a where
-  type family PreDiv expr a
+class Div2Zq expr zq where
+  type PreDiv2 expr zq
 
-  div2Zq_ :: expr (PreDiv expr a -> a)
+  div2Zq_ :: expr (PreDiv2 expr zq -> zq)
 
 
--- | Symantics for rescaling on a power-of-two modulus.
+-- | Symantics for rescaling the integers modulo a power of two.
 
-class RescaleZqPow2 expr where
-  -- | Rescale (round) the argument from \( \Z_{2^e} \) to \( \Z_2 \).
-  rescaleZqPow2_ :: expr (ZqBasic (Pow2 e) i -> ZqBasic (Pow2 'O) i)
+class RescaleZqPow2 expr z2 where
+  -- | The type corresponding to \( \Z_{2^k} \).  (The type should
+  -- determine the exponent, hence the partially injectivity.)
+  type PreRescaleZqPow2 expr (k::Pos) z2 = z2k | z2k -> k
+
+  -- | Rescale (round) the argument from \( \Z_{2^k} \) to \( \Z_2 \).
+  rescaleZqPow2_ :: expr e (PreRescaleZqPow2 expr k z2 -> z2)
