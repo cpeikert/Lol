@@ -12,6 +12,7 @@ Example using SymmSHE.
 -}
 
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
@@ -75,8 +76,8 @@ sheMain _ = do
   print $ "Test1 (expect TRUE): " ++ (show $ 2*plaintext == pt1)
 
   hint :: KSQuadCircHint KSGad (Cyc t CTIndex CTZq2) <- ksQuadCircHint sk
-  let ct2 = keySwitchQuadCirc hint $ rescaleLinear $ ciphertext*ciphertext
-      pt2 = decrypt sk ct2
+  let ct2 = rescaleLinear $ keySwitchQuadCirc hint $ rescaleLinear $ ciphertext*ciphertext
+      pt2 = decrypt sk (ct2 :: CTRing1 t)
   -- note: this requires a *LARGE* CT modulus to succeed
   print $ "Test2 (expect FALSE): " ++ (show $ plaintext*plaintext == pt2)
 

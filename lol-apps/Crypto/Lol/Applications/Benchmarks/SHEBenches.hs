@@ -60,12 +60,12 @@ decBenches _ _ =
 -- must be able to round from zq' to zq
 rescaleBenches :: forall t m m' zp zq zq' gad rnd . (MonadRandom rnd, _)
   => Proxy '(m,m',zp,zq,zq') -> Proxy gad -> Proxy t -> rnd Benchmark
-rescaleBenches _ pgad _ =
+rescaleBenches _ _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',zp,zq,zq')
   in benchGroup (showType ptmr ++ "/SymmSHE") $ ($ ptmr) <$> [
        genBenchArgs "rescale" bench_rescale]
 
-keySwitchBenches :: forall t m m' zp zq zq' gad rnd . (MonadRandom rnd, _)
+keySwitchBenches :: forall t m m' zp zq gad rnd . (MonadRandom rnd, _)
   => Proxy '(m,m',zp,zq) -> Proxy gad -> Proxy t -> rnd Benchmark
 keySwitchBenches _ pgad _ =
   let ptmr = Proxy :: Proxy '(t,m,m',zp,zq)
