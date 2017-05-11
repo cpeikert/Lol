@@ -505,14 +505,7 @@ unzipCyc (CRT u) = either ((cycPE *** cycPE) . unzipCRTE)
 unzipCyc (Scalar c) = Scalar *** Scalar $ c
 unzipCyc (Sub c) = Sub *** Sub $ unzipCyc c
 
--- We attempted to add an optimized instance `RescaleCyc (Cyc t) a a`, but
--- there's no way to do this: any constraint that matches both the generic
--- instance and the identity instance will always pick the same one, regardless
--- of whether a~b. Thus we can never pick the identity instance in some cases,
--- and the generic instance in others, which is the only reason to have two
--- instances.
-
-instance {-# OVERLAPS #-} (Rescale a b, CElt t a, TElt t b)
+instance {-# INCOHERENT #-} (Rescale a b, CElt t a, TElt t b)
     => R.RescaleCyc (Cyc t) a b where
 
   -- Optimized for subring constructors, for powerful basis.
@@ -523,6 +516,12 @@ instance {-# OVERLAPS #-} (Rescale a b, CElt t a, TElt t b)
 
   rescaleCyc R.Pow c = Pow $ fmapPow rescale $ uncycPow c
   rescaleCyc R.Dec c = Dec $ fmapDec rescale $ uncycDec c
+  {-# INLINABLE rescaleCyc #-}
+
+instance R.RescaleCyc (Cyc t) a a where
+
+  -- No-op rescale
+  rescaleCyc _ = id
   {-# INLINABLE rescaleCyc #-}
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
