@@ -4,7 +4,7 @@ Description : Homomorphic evaluation of the PRF from <http://web.eecs.umich.edu/
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
@@ -30,7 +30,7 @@ Homomorphic evaluation of the PRF from <http://web.eecs.umich.edu/~cpeikert/pubs
 module Crypto.Lol.Applications.HomomPRF
 (homomPRF, homomPRFM
 ,RoundHints(..), roundHints
-,TunnelInfoChain(..), tunnelInfoChain
+,TunnelHintChain(..), tunnelHintChain
 ,EvalHints(..)
 ,MultiTunnelCtx, ZqUp, ZqDown
 ,TwoOf
@@ -55,9 +55,9 @@ import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types.Proto
 import qualified Crypto.Proto.HomomPRF.LinearFuncChain as P
 import qualified Crypto.Proto.HomomPRF.RoundHintChain as P
-import qualified Crypto.Proto.HomomPRF.TunnelInfoChain as P
+import qualified Crypto.Proto.HomomPRF.TunnelHintChain as P
 import qualified Crypto.Proto.Lol.RqProduct as P
-import qualified Crypto.Proto.SHE.TunnelInfo as P
+import qualified Crypto.Proto.SHE.TunnelHint as P
 
 import Data.List.Split (chunksOf)
 import Data.Promotion.Prelude
@@ -84,12 +84,12 @@ type family NextListElt (x :: k) (xs :: [k]) :: k where
 -- | The offline data needed for homomorphic PRF evaluation.
 data EvalHints t rngs z zp zq zqs gad where
   Hints :: (UnPP (CharOf zp) ~ '(Prime2, e))
-        => TunnelInfoChain gad t rngs zp (ZqUp zq zqs)
+        => TunnelHintChain gad t rngs zp (ZqUp zq zqs)
         -> RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z e zp (ZqDown zq zqs) zqs gad
         -> EvalHints t rngs z zp zq zqs gad
 
 instance (UnPP (CharOf zp) ~ '(Prime2, e),
-          NFData (TunnelInfoChain gad t rngs zp (ZqUp zq zqs)),
+          NFData (TunnelHintChain gad t rngs zp (ZqUp zq zqs)),
           NFData (RoundHints t (Fst (Last rngs)) (Snd (Last rngs)) z e zp (ZqDown zq zqs) zqs gad))
   => NFData (EvalHints t rngs z zp zq zqs gad) where
   rnf (Hints t r) = rnf t `seq` rnf r
@@ -308,68 +308,68 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
 
 -- For (homomorphic) tunneling
 
--- | Sequence of 'TunnelInfo' for consecutive ring tunnels.
-data TunnelInfoChain gad t xs zp zq where
-  THNil :: TunnelInfoChain gad t '[ '(m,m') ] zp zq
+-- | Sequence of 'TunnelHint' for consecutive ring tunnels.
+data TunnelHintChain gad t xs zp zq where
+  THNil :: TunnelHintChain gad t '[ '(m,m') ] zp zq
   THCons :: (xs ~ ('(r,r') ': '(s,s') ': rngs), e' ~ (e * (r' / r)), e ~ FGCD r s)
-         => TunnelInfo gad t e r s e' r' s' zp zq
-         -> TunnelInfoChain gad t (Tail xs) zp zq
-         -> TunnelInfoChain gad t xs zp zq
+         => TunnelHint gad t e r s e' r' s' zp zq
+         -> TunnelHintChain gad t (Tail xs) zp zq
+         -> TunnelHintChain gad t xs zp zq
 
-instance NFData (TunnelInfoChain gad t '[ '(m,m') ] zp zq) where
+instance NFData (TunnelHintChain gad t '[ '(m,m') ] zp zq) where
   rnf THNil = ()
 
 instance (e' ~ (e * (r' / r)), e ~ FGCD r s,
-          NFData (TunnelInfo gad t e r s e' r' s' zp zq),
-          NFData (TunnelInfoChain gad t ('(s,s') ': rngs) zp zq))
-  => NFData (TunnelInfoChain gad t ('(r,r') ': '(s,s') ': rngs) zp zq) where
+          NFData (TunnelHint gad t e r s e' r' s' zp zq),
+          NFData (TunnelHintChain gad t ('(s,s') ': rngs) zp zq))
+  => NFData (TunnelHintChain gad t ('(r,r') ': '(s,s') ': rngs) zp zq) where
   rnf (THCons t ts) = rnf t `seq` rnf ts
 
-instance Protoable (TunnelInfoChain gad t '[ '(m,m') ] zp zq) where
-  type ProtoType (TunnelInfoChain gad t '[ '(m,m') ] zp zq) = P.TunnelInfoChain
-  toProto THNil = P.TunnelInfoChain empty
-  fromProto (P.TunnelInfoChain xs) | xs == empty = return THNil
-  fromProto _ = throwError $ "Got non-empty chain on fromProto for TunnelInfoChain"
+instance Protoable (TunnelHintChain gad t '[ '(m,m') ] zp zq) where
+  type ProtoType (TunnelHintChain gad t '[ '(m,m') ] zp zq) = P.TunnelHintChain
+  toProto THNil = P.TunnelHintChain empty
+  fromProto (P.TunnelHintChain xs) | xs == empty = return THNil
+  fromProto _ = throwError $ "Got non-empty chain on fromProto for TunnelHintChain"
 
 instance (e' ~ (e * (r' / r)), e ~ FGCD r s,
-          Protoable (TunnelInfo gad t e r s e' r' s' zp zq),
-          Protoable (TunnelInfoChain gad t ('(s,s') ': rngs) zp zq),
-          ProtoType (TunnelInfoChain gad t ('(s,s') ': rngs) zp zq) ~ P.TunnelInfoChain)
-  => Protoable (TunnelInfoChain gad t ('(r,r') ': '(s,s') ': rngs) zp zq) where
-  type ProtoType (TunnelInfoChain gad t ('(r,r') ': '(s,s') ': rngs) zp zq) = P.TunnelInfoChain
+          Protoable (TunnelHint gad t e r s e' r' s' zp zq),
+          Protoable (TunnelHintChain gad t ('(s,s') ': rngs) zp zq),
+          ProtoType (TunnelHintChain gad t ('(s,s') ': rngs) zp zq) ~ P.TunnelHintChain)
+  => Protoable (TunnelHintChain gad t ('(r,r') ': '(s,s') ': rngs) zp zq) where
+  type ProtoType (TunnelHintChain gad t ('(r,r') ': '(s,s') ': rngs) zp zq) = P.TunnelHintChain
   toProto (THCons hint rest) =
     let h' = toProto hint
-        (P.TunnelInfoChain hs') = toProto rest
-    in P.TunnelInfoChain $ h' <| hs'
+        (P.TunnelHintChain hs') = toProto rest
+    in P.TunnelHintChain $ h' <| hs'
 
-  fromProto (P.TunnelInfoChain zs) = do
-    when (zs == empty) $ throwError "fromProto TunnelInfo: expected at least one element"
+  fromProto (P.TunnelHintChain zs) = do
+    when (zs == empty) $ throwError "fromProto TunnelHint: expected at least one element"
     let (x :< xs) = viewl zs
     y <- fromProto x
-    ys <- fromProto $ P.TunnelInfoChain xs
+    ys <- fromProto $ P.TunnelHintChain xs
     return $ THCons y ys
 
 -- | Functions related to homomorphic ring tunneling.
 class Tunnel xs t zp zq gad where
 
-  -- | Generates 'TunnelInfo' for each tunnel step from @Head xs@ to @Last xs@.
-  tunnelInfoChain :: (MonadRandom rnd, Head xs ~ '(r,r'), Last xs ~ '(s,s'),
-                  Lift zp z, CElt t z, ToInteger z, Reduce z zq) -- constraints involving 'z' from GenTunnelInfoCtx
-              => SK (Cyc t r' z) -> rnd (TunnelInfoChain gad t xs zp zq, SK (Cyc t s' z)) -- , TunnelFuncs t (PTRings xs) zp
+  -- | Generates 'TunnelHint' for each tunnel step from @Head xs@ to @Last xs@.
+  tunnelHintChain :: (MonadRandom rnd, Head xs ~ '(r,r'), Last xs ~ '(s,s'),
+                  Lift zp z, CElt t z, ToInteger z, Reduce z zq) -- constraints involving 'z' from GenTunnelHintCtx
+              => SK (Cyc t r' z) -> rnd (TunnelHintChain gad t xs zp zq, SK (Cyc t s' z)) -- , TunnelFuncs t (PTRings xs) zp
 
   -- | Tunnel from @Head xs@ to @Last xs@.
   tunnelInternal :: (Head xs ~ '(r,r'), Last xs ~ '(s,s')) =>
-    TunnelInfoChain gad t xs zp zq -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
+    TunnelHintChain gad t xs zp zq -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)
 
 instance Tunnel '[ '(m,m') ] t zp zq gad where
 
-  tunnelInfoChain sk = return (THNil,sk)
+  tunnelHintChain sk = return (THNil,sk)
 
   tunnelInternal _ = id
 
--- EAC: I expand the GenTunnelInfoCtx synonym here to remove all occurrences of 'z',
--- which instead only occur in the context of tunnelInfoChain. This is because 'z' is
--- not relevant for tunnelInternal nor TunnelInfoChain, so we would have to pass
+-- EAC: I expand the GenTunnelHintCtx synonym here to remove all occurrences of 'z',
+-- which instead only occur in the context of tunnelHintChain. This is because 'z' is
+-- not relevant for tunnelInternal nor TunnelHintChain, so we would have to pass
 -- a proxy for 'z'. This is a problem I have had many times, and still don't have a
 -- good solution for: the class exists only to match on the type list, all of
 -- of the other class params exist only so I can write constrints involving the changing
@@ -382,21 +382,21 @@ instance Tunnel '[ '(m,m') ] t zp zq gad where
 -- The root of this problem seems to be that the functions hold constant some
 -- parameters, but change others, while the constraint synonyms refer to all of
 -- them, even though some are orthogonal constraints.
-instance (ExtendLinIdx e r s e' r' s', -- tunnelInfoChain
-          e' ~ (e * (r' / r)),         -- tunnelInfoChain
-          e' `Divides` r',             -- tunnelInfoChain
-          CElt t zp, Ring zq, Random zq, CElt t zq,   -- tunnelInfoChain
-          Reduce (DecompOf zq) zq, Gadget gad zq,     -- tunnelInfoChain
-          NFElt zq, CElt t (DecompOf zq),             -- tunnelInfoChain
+instance (ExtendLinIdx e r s e' r' s', -- tunnelHintChain
+          e' ~ (e * (r' / r)),         -- tunnelHintChain
+          e' `Divides` r',             -- tunnelHintChain
+          CElt t zp, Ring zq, Random zq, CElt t zq,   -- tunnelHintChain
+          Reduce (DecompOf zq) zq, Gadget gad zq,     -- tunnelHintChain
+          NFElt zq, CElt t (DecompOf zq),             -- tunnelHintChain
           TunnelCtx t r s e' r' s' zp zq gad,         -- tunnelCT
           e ~ FGCD r s, e `Divides` r, e `Divides` s, -- linearDec
           ZPP zp, TElt t (ZpOf zp),                   -- crtSet
           Tunnel ('(s,s') ': rngs) t zp zq gad,       -- recursive call
-          Protoable (TunnelInfo gad t e r s e' r' s' zp zq),
-          ProtoType (TunnelInfo gad t e r s e' r' s' zp zq) ~ P.TunnelInfo) -- toProto
+          Protoable (TunnelHint gad t e r s e' r' s' zp zq),
+          ProtoType (TunnelHint gad t e r s e' r' s' zp zq) ~ P.TunnelHint) -- toProto
   => Tunnel ('(r,r') ': '(s,s') ': rngs) t zp zq gad where
 
-  tunnelInfoChain sk = do
+  tunnelHintChain sk = do
     skout <- genSKWithVar sk
     let crts = proxy crtSet (Proxy::Proxy e)
         r = proxy totientFact (Proxy::Proxy r)
@@ -405,8 +405,8 @@ instance (ExtendLinIdx e r s e' r' s', -- tunnelInfoChain
         -- only take as many crts as we need
         -- otherwise linearDec fails
         linf = linearDec (take dim crts) :: Linear t zp e r s
-    thint :: TunnelInfo gad t e r s e' r' s' zp zq <- tunnelInfo linf skout sk
-    (thints,sk') <- tunnelInfoChain skout
+    thint :: TunnelHint gad t e r s e' r' s' zp zq <- tunnelHint linf skout sk
+    (thints,sk') <- tunnelHintChain skout
     return (THCons thint thints, sk')
 
   tunnelInternal (THCons thint rest) = tunnelInternal rest . tunnelCT thint
@@ -424,7 +424,7 @@ type MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs =
 -- once to remove the key switch modulus, and once to dampen the noise incurred
 -- while tunneling.
 tunnel :: forall rngs r r' s s' t z zp zq gad zqs . (MultiTunnelCtx rngs r r' s s' t z zp zq gad zqs)
-  => Proxy zqs -> TunnelInfoChain gad t rngs zp (ZqUp zq zqs) -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
+  => Proxy zqs -> TunnelHintChain gad t rngs zp (ZqUp zq zqs) -> CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' (ZqDown zq zqs))
 tunnel pzqs hints x =
   let y = tunnelInternal hints $ roundCTUp pzqs x
   in roundCTDown pzqs $ roundCTDown pzqs y

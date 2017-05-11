@@ -1,3 +1,5 @@
+package crypto.proto.HomomPRF;
+
 // proto messages for precomputation step of homomorphic PRF
 // evaluation and testing
 
@@ -11,16 +13,16 @@ import "SHE.proto";
 
 // run this:
 
-// hprotoc -I ../lol -a Lol.proto=Crypto.Proto -a SHE.proto=Crypto.Proto -p Crypto.Proto HomomPRF.proto
+// hprotoc -I ../lol -a Lol.proto=Crypto.Proto -a SHE.proto=Crypto.Proto HomomPRF.proto
 
 message LinearFuncChain {
-  repeated LinearRq funcs    = 1;
+  repeated crypto.proto.lol.LinearRq funcs    = 1;
 }
 
-message TunnelInfoChain {
-  repeated TunnelInfo hints = 1;
+message TunnelHintChain {
+  repeated crypto.proto.SHE.TunnelHint hints = 1;
 }
 
 message RoundHintChain {
-  repeated KSHint hints = 1;
+  repeated crypto.proto.SHE.KSHint hints = 1;
 }
