@@ -17,9 +17,9 @@ import Crypto.Lol (Pos)
 -- | Symantics for division-by-2 of both the value and its modulus.
 
 class Div2Zq expr zq where
-  type PreDiv2 expr zq
+  type PreDiv2Zq expr zq
 
-  div2Zq_ :: expr (PreDiv2 expr zq -> zq)
+  div2Zq_ :: expr (PreDiv2Zq expr zq -> zq)
 
 
 -- | Symantics for rescaling the integers modulo a power of two.
