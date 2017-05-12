@@ -39,6 +39,9 @@ newtype ErrorRateWriter
   a                             -- | represented type
   = ERW { unERW :: k (expr (Monadify w e) (Monadify w a)) }
 
+-- EAC: can't make this injective because there's ambiguity involving `w`:
+-- Consider `m Bool -> m Bool`: this could be the result of
+-- `Monadify (m Bool ->) (m Bool)` or `Monadify m (Bool -> Bool)`
 type family Monadify w a where
   Monadify w (a,b) = (Monadify w a, Monadify w b)
   Monadify w (a -> b) = Monadify w a -> Monadify w b
