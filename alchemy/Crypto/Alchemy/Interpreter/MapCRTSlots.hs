@@ -77,6 +77,6 @@ instance (Functor f, Zq2Cyc t m (f zq) ~ f (Cyc t m zq),
   MulLit (MapCRTSlots expr t m) (f zq) where
   a >*: (M b) = M $ (scalarCyc <$> a) >*: b
 
-instance Functor_ expr => Functor_ (MapCRTSlots expr t m) where
-  fmap_ :: MapCRTSlots expr t m e ((a -> b) -> f a -> f b)
-  fmap_ = M $ (fmap_ :: expr _ ((_ -> _) -> f _ -> f _))
+-- CJP: unclear whether we can instantiate Functor_; should Zq2Cyc be
+-- applied to the functor itself?  For functor (ZqB ->) it would seem
+-- yes; for functor [] clearly no.
