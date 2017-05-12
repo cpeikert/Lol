@@ -12,9 +12,13 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Alchemy.Interpreter.RescaleToTree where
+module Crypto.Alchemy.Interpreter.RescaleToTree
+(RescaleCycCRTCtx, rescaleCycCRT_, rescaleCycCRT
+,RescaleToTree, rescaleToTree) where
 
+import Crypto.Alchemy.Interpreter.MapCRTSlots
 import Crypto.Alchemy.Interpreter.PT2CT.Noise hiding (take)
+
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
@@ -28,6 +32,23 @@ import Crypto.Lol.Reflects -- EAC: shouldn't have to import this
 import Crypto.Lol.Types
 
 import Control.Applicative
+
+-- | Constraint synonym for rescaling the CRT slots of a Cyc.
+-- This synonym is injective in zqenv.
+type RescaleCycCRTCtx zqenv env t m expr k z2 cyc2k =
+  RescaleCycCRTCtx' (RescaleToTree (MapCRTSlots expr t m)) zqenv env t m k z2 cyc2k
+
+type RescaleCycCRTCtx' bigexpr zqenv env t m k z2 cyc2k =
+  (env ~ Zq2Cyc t m zqenv, RescaleZqPow2 bigexpr k z2,
+   Zq2Cyc t m (PreRescaleZqPow2 bigexpr k z2) ~ cyc2k)
+
+rescaleCycCRT_ :: (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2k)
+  => Tagged k (expr env (cyc2k -> Zq2Cyc t m z2))
+rescaleCycCRT_ = mapCRTSlots <$> rescaleToTree <$> rescaleZqPow2_
+
+rescaleCycCRT :: (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2k, Lambda expr)
+  => Tagged k (expr env cyc2k -> expr env (Zq2Cyc t m z2))
+rescaleCycCRT = ($:) <$> rescaleCycCRT_
 
 newtype RescaleToTree expr env a = RT {rescaleToTree :: expr env a}
   deriving (Lambda, List, Functor_, Applicative_, Monad_, MonadReader_, MonadWriter_)
@@ -77,7 +98,7 @@ instance (TunnelCyc expr m) => TunnelCyc (RescaleToTree expr) m where
 
   type PreTunnelCyc (RescaleToTree expr) m = PreTunnelCyc expr m
 
-  tunnelCyc = RT . tunnelCyc
+  tunnelCyc_ = RT . tunnelCyc_
 
 
 type family PreRescale expr (k::Pos) z2 where
@@ -138,27 +159,6 @@ rescaleZqPow2__ = pure $ RT $ lam $
     in internal (Proxy::Proxy k) $ take pDiv4 $
          map ((div2_ $:) . (>+: xprod)) [fromInteger $ y * (-y+1) | y <- [1..]]
 
-
-{-
-instance (z2k ~ PreRescale expr k (ZqBasic PP2 i), prediv ~ PreDiv2 expr z2k,
-  Lambda expr, Internal expr k (ZqBasic PP2 i), Reflects ('S k) Int,
-  Mul expr prediv, Div2 expr z2k,
-  Ring (PreMul expr prediv), Ring prediv,
-  AddLit expr (PreMul expr prediv), AddLit expr prediv,
-  ToInteger i)
-  => RescaleZqPow2 (RescaleToTree expr) ('S k) (ZqBasic PP2 i) where
-
-  type PreRescaleZqPow2 (RescaleToTree expr) ('S k) (ZqBasic PP2 i) =
-    PreRescale expr ('S k) (ZqBasic PP2 i)
-
-  -- k > 1, so p = 2^k >= 4, meaning we can divide p by 4
-  rescaleZqPow2_ = pure $ RT $ lam $
-    let xprod = v0 *: (one >+: v0)
-        lgpVal = proxy value (Proxy::Proxy ('S k)) :: Int
-        pDiv4 = 2^(lgpVal-2)
-    in internal (Proxy::Proxy k) $ take pDiv4 $
-         map ((div2_ $:) . (>+: xprod)) [fromInteger $ y * (-y+1) | y <- [1..]]
--}
 class Internal expr (k :: Pos) z2 where
   internal :: Proxy k -> [expr env (PreRescale expr k z2)] -> expr env z2
 

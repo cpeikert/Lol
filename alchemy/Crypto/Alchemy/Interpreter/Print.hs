@@ -94,7 +94,7 @@ instance TunnelCyc P m where
   type PreTunnelCyc P m = m
   type TunnelCycCtx P m t e r s zp = ()
 
-  tunnelCyc  _ = pureP "tunnelCyc <FUNC>"
+  tunnelCyc_  _ = pureP "tunnelCyc <FUNC>"
 
 instance ErrorRate P where
   type ErrorRateCtx P ct z = ()

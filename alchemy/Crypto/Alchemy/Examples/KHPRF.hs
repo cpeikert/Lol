@@ -1,27 +1,23 @@
-{-# LANGUAGE ConstraintKinds #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Crypto.Alchemy.Examples.KHPRF where
-
-import Control.Applicative
 
 import Crypto.Lol
 import Crypto.Lol.Types
 import Crypto.Lol.Cyclotomic.Tensor (TElt) -- EAC: I shouldn't need to explicitly import this
 import Crypto.Lol.Types.ZPP                -- EAC: I shouldn't need to explicitly import this...
 
-import Crypto.Alchemy.Interpreter.MapCRTSlots
 import Crypto.Alchemy.Interpreter.PT2CT.Noise hiding (take)
 import Crypto.Alchemy.Interpreter.RescaleToTree
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.RescaleZqPow2
 import Crypto.Alchemy.Language.TunnelCyc
 
 -- a concrete Z_2^e data type
@@ -36,19 +32,8 @@ easyPRF :: forall t r s z2k k i expr env h h' h'' zqenv e .
    RescaleCycCRTCtx zqenv env t s expr k (PNoise h (ZqBasic PP2 i)) (PNoise h'' (Cyc t s z2k)))
   => expr env (PNoise h' (Cyc t r z2k)) -> expr env (PNoise h (Cyc t s (Z2E 'O i)))
 easyPRF x =
-  let roundPT = proxy rescaleCycCRT_ (Proxy::Proxy k)
-  in roundPT $: (tunnelCyc decToCRT $: x)
-
-type RescaleCycCRTCtx zqenv env t m expr k z2 cyc2k =
-  RescaleCycCRTCtx' (RescaleToTree (MapCRTSlots expr t m)) zqenv env t m k z2 cyc2k
-
-type RescaleCycCRTCtx' bigexpr zqenv env t m k z2 cyc2k =
-  (env ~ Zq2Cyc t m zqenv, RescaleZqPow2 bigexpr k z2,
-   Zq2Cyc t m (PreRescaleZqPow2 bigexpr k z2) ~ cyc2k)
-
-rescaleCycCRT_ :: (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2k)
-  => Tagged k (expr env (cyc2k -> Zq2Cyc t m z2))
-rescaleCycCRT_ = mapCRTSlots <$> rescaleToTree <$> rescaleZqPow2_
+  let roundPT = proxy rescaleCycCRT (Proxy::Proxy k)
+  in roundPT $ tunnelCyc decToCRT x
 
 type FunCtx t r s zp = FunCtx' t (FGCD r s) r s zp
 

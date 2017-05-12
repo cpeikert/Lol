@@ -46,7 +46,7 @@ tunn1 :: forall t r u s zp ms env expr mr mu .
    mu ~ PreTunnelCyc expr ms, mr ~ PreTunnelCyc expr mu,
    Lambda expr, FunCtx t r u zp, FunCtx t u s zp)
   => Proxy u -> expr env (mr (Cyc t r zp) -> ms (Cyc t s zp))
-tunn1 _ = lam $ tunnelCyc decToCRT $: (tunnelCyc (decToCRT @u) $: v0)
+tunn1 _ = lam $ tunnelCyc decToCRT $ tunnelCyc (decToCRT @u) v0
 
 type Zq q = ZqBasic q Int64
 

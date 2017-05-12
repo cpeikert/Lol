@@ -223,7 +223,7 @@ instance TunnelCyc (PT2CT m'map zqs TrivGad z v ctex mon) (PNoise h) where
     (PT2CTTunnelCtx ctex mon m'map zqs h t e r s (Lookup r m'map) (Lookup s m'map)
       z zp (PNoise2Zq zqs h) (PNoise2Zq zqs (h :+: N1)) v TrivGad)
 
-  tunnelCyc = pt2ctTunnelCyc
+  tunnelCyc_ = pt2ctTunnelCyc
 
 instance TunnelCyc (PT2CT m'map zqs (BaseBGad 2) z v ctex mon) (PNoise h) where
 
@@ -234,7 +234,7 @@ instance TunnelCyc (PT2CT m'map zqs (BaseBGad 2) z v ctex mon) (PNoise h) where
     (PT2CTTunnelCtx ctex mon m'map zqs h t e r s (Lookup r m'map) (Lookup s m'map)
       z zp (PNoise2Zq zqs h) (PNoise2Zq zqs (h :+: N1)) v (BaseBGad 2))
 
-  tunnelCyc = pt2ctTunnelCyc
+  tunnelCyc_ = pt2ctTunnelCyc
 
 -- | Generic implementation of `tunnelCyc` for 'PT2CT' with any gadget.
 pt2ctTunnelCyc :: forall t zp e r s env expr rp r' zq h zqs m'map gad z v ctex mon .

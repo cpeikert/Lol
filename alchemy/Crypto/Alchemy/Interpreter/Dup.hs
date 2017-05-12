@@ -66,7 +66,7 @@ instance (TunnelCyc ex1 m, TunnelCyc ex2 m, PreTunnelCyc ex1 m ~ PreTunnelCyc ex
   type TunnelCycCtx (Dup ex1 ex2) m t e r s zp =
     (TunnelCycCtx ex1 m t e r s zp, TunnelCycCtx ex2 m t e r s zp)
 
-  tunnelCyc f = Dup (tunnelCyc f) (tunnelCyc f)
+  tunnelCyc_ f = Dup (tunnelCyc_ f) (tunnelCyc_ f)
 
 instance (List ex1, List ex2) => List (Dup ex1 ex2) where
   nil_  = Dup nil_ nil_
