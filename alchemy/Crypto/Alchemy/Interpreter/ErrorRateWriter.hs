@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
@@ -67,39 +68,39 @@ tellError :: (MonadWriter ErrorRateLog mon,
   SK (Cyc t m' z) -> expr e (CT m zp (Cyc t m' zq) -> mon ())
 tellError sk = lam (tell_ $: (cons_ $: (errorRate_ sk $: v0) $: nil_))
 
-{-
--- EAC: Not used
 -- | Convert an object-language function to a (monadic) one that
 -- writes the error rate of its ciphertext output.
 liftWriteError ::
   (MonadWriter ErrorRateLog w, List expr, MonadWriter_ expr, ErrorRate expr,
-   b ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr b z)
+   ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z)
   => SK (Cyc t m' z)            -- | the secret key
-  -> expr e (a -> b)            -- | the function to lift
-  -> expr e (w a -> w b)
-  -- CJP: would prefer for this function to be monadic and look up the
-  -- secret key itself, but GHC fails to find the Typeable constraints
-  -- that I put right there in the signature.
+  -> expr e (a -> ct)            -- | the function to lift
+  -> expr e (w a -> w ct)
 liftWriteError sk f_ =
   let mf_ = liftA_ $: s f_
   in lam $ after_ $: tellError sk $: (mf_ $: v0)
--}
+
 liftWriteError2 ::
   (MonadWriter ErrorRateLog w, List expr, MonadWriter_ expr, ErrorRate expr,
-   c ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr c z)
+   ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z)
   => SK (Cyc t m' z)            -- | the secret key
-  -> expr e (a -> b -> c)       -- | the function to lift
-  -> expr e (w a -> w b -> w c)
+  -> expr e (a -> b -> ct)       -- | the function to lift
+  -> expr e (w a -> w b -> w ct)
 
+-- CJP: would prefer for this function to be monadic and look up the
+-- secret key itself, but GHC fails to find the Typeable constraints
+-- that I put right there in the signature.
 liftWriteError2 sk f_ =
   let mf_ = liftA2_ $: s (s f_)
   in lam $ lam $ after_ $: tellError sk $: (mf_ $: v1 $: v0)
 
-instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
-          ct ~ (CT m zp (Cyc t m' zq)), Typeable (SK (Cyc t m' z)),
-          List expr, MonadWriter_ expr,
-          Add expr ct, ErrorRate expr, ErrorRateCtx expr ct z)
-         => Add (ErrorRateWriter expr z k w) ct where
+type WriteErrorCtx expr z k w ct t m m' zp zq =
+  (MonadWriter ErrorRateLog w, MonadReader Keys k, Typeable (SK (Cyc t m' z)),
+   List expr, MonadWriter_ expr, ErrorRate expr,
+   ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z)
+
+instance (WriteErrorCtx expr z k w ct t m m' zp zq,
+          Add expr ct) => Add (ErrorRateWriter expr z k w) ct where
 
   add_ = ERW $ do
     key :: Maybe (SK (Cyc t m' z)) <- lookupKey
@@ -110,12 +111,10 @@ instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
   -- don't log error because it doesn't grow
   neg_ = ERW $ pure $ liftA_ $: neg_
 
-instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
-          ct ~ (CT m zp (Cyc t m' zq)), Typeable (SK (Cyc t m' z)),
+instance (WriteErrorCtx expr z k w ct t m m' zp zq,
+          Mul expr ct,
           -- needed because PreMul could take some crazy form
-          Monadify w (PreMul expr ct) ~ w (PreMul expr ct),
-          List expr, MonadWriter_ expr, ErrorRate expr,
-          Mul expr ct, ErrorRateCtx expr ct z)
+          Monadify w (PreMul expr ct) ~ w (PreMul expr ct))
          => Mul (ErrorRateWriter expr z k w) ct where
 
   type PreMul (ErrorRateWriter expr z k w) ct = PreMul expr ct
@@ -126,7 +125,21 @@ instance (MonadWriter ErrorRateLog w, MonadReader Keys k,
       Just sk -> return $ liftWriteError2 sk mul_
       Nothing -> return $ liftA2_ $: mul_
 
+instance (WriteErrorCtx expr z k w ct t m m' zp zq,
+          AddLit expr ct) => AddLit (ErrorRateWriter expr z k w) ct where
+  addLit_ a = ERW $ do
+    key :: Maybe (SK (Cyc t m' z)) <- lookupKey
+    case key of
+      Just sk -> return $ liftWriteError sk $ addLit_ a
+      Nothing -> return $ liftA_ $: addLit_ a
 
+instance (WriteErrorCtx expr z k w ct t m m' zp zq,
+          MulLit expr ct) => MulLit (ErrorRateWriter expr z k w) ct where
+  mulLit_ a = ERW $ do
+    key :: Maybe (SK (Cyc t m' z)) <- lookupKey
+    case key of
+      Just sk -> return $ liftWriteError sk $ mulLit_ a
+      Nothing -> return $ liftA_ $: mulLit_ a
 
 
 ----- TRIVIAL WRAPPER INSTANCES -----
