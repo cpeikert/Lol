@@ -53,10 +53,12 @@ class MulLit expr a where
 
   (>*:) :: a -> expr e a -> expr e a
 
--- | Symantics for division-by-2 of both a value and its integer
--- modulus.
+-- | Symantics for division-by-2 of a known-to-be-even value along
+-- with its integer modulus.
 
 class Div2 expr a where
   type PreDiv2 expr a
 
+  -- | Divide a value that is known to be even, along with its integer
+  -- modulus, by two.
   div2_ :: expr e (PreDiv2 expr a -> a)
