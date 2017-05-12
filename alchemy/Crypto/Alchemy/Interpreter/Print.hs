@@ -47,14 +47,14 @@ instance Add P a where
   neg_ = pureP "neg"
 
 instance Show a => AddLit P a where
-  p >+: a = P $ \i -> "(addLit (" ++ show p ++ ") " ++ unP a i ++ ")"
+  addLit_ a = pureP $ "addLit (" ++ show a ++ ")"
 
 instance Mul P a where
   type PreMul P a = a
   mul_ = pureP "mul"
 
 instance Show a => MulLit P a where
-  p >*: a = P $ \i -> "(mulLit (" ++ show p ++ ") " ++ unP a i ++ ")"
+  mulLit_ a = pureP $ "mulLit (" ++ show a ++ ")"
 
 instance Functor_ P where
   fmap_ = pureP "fmap"
