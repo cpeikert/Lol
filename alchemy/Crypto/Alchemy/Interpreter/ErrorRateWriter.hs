@@ -74,30 +74,37 @@ liftWriteError ::
   (MonadWriter ErrorRateLog w, List expr, MonadWriter_ expr, ErrorRate expr,
    ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z)
   => SK (Cyc t m' z)            -- | the secret key
-  -> expr e (a -> ct)            -- | the function to lift
+  -> expr e (a -> ct)           -- | the function to lift
   -> expr e (w a -> w ct)
 liftWriteError sk f_ =
   let mf_ = liftA_ $: s f_
   in lam $ after_ $: tellError sk $: (mf_ $: v0)
 
-liftWriteError2 ::
-  (MonadWriter ErrorRateLog w, List expr, MonadWriter_ expr, ErrorRate expr,
+type WriteErrorCtx expr z k w ct t m m' zp zq =
+  (MonadWriter ErrorRateLog w, MonadReader Keys k, Typeable (SK (Cyc t m' z)),
+   List expr, MonadWriter_ expr, ErrorRate expr,
    ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z)
+
+liftWriteError2 ::
+  (WriteErrorCtx expr z k w ct t m m' zp zq)
   => SK (Cyc t m' z)            -- | the secret key
-  -> expr e (a -> b -> ct)       -- | the function to lift
-  -> expr e (w a -> w b -> w ct)
+  -> expr e (a -> b -> ct)      -- | the function to lift
+  -> k (expr e (w a -> w b -> w ct))
 
 -- CJP: would prefer for this function to be monadic and look up the
 -- secret key itself, but GHC fails to find the Typeable constraints
 -- that I put right there in the signature.
 liftWriteError2 sk f_ =
   let mf_ = liftA2_ $: s (s f_)
-  in lam $ lam $ after_ $: tellError sk $: (mf_ $: v1 $: v0)
+  in do
+    key :: Maybe (SK (Cyc t m' z)) <- lookupKey
+    case key of
+      Just sk -> return $ lam $ lam $ after_ $: tellError sk $: (mf_ $: v1 $: v0)
+      Nothing -> return $ liftA2_ $: f_
 
-type WriteErrorCtx expr z k w ct t m m' zp zq =
-  (MonadWriter ErrorRateLog w, MonadReader Keys k, Typeable (SK (Cyc t m' z)),
-   List expr, MonadWriter_ expr, ErrorRate expr,
-   ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z)
+
+
+{-
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq,
           Add expr ct) => Add (ErrorRateWriter expr z k w) ct where
@@ -140,6 +147,8 @@ instance (WriteErrorCtx expr z k w ct t m m' zp zq,
     case key of
       Just sk -> return $ liftWriteError sk $ mulLit_ a
       Nothing -> return $ liftA_ $: mulLit_ a
+
+-}
 
 
 ----- TRIVIAL WRAPPER INSTANCES -----
