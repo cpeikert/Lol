@@ -34,10 +34,10 @@ instance (Mul ex1 a, Mul ex2 a, PreMul ex1 a ~ PreMul ex2 a) =>
   mul_ = Dup mul_ mul_
 
 instance (AddLit ex1 a, AddLit ex2 a) => AddLit (Dup ex1 ex2) a where
-  a >+: (Dup b1 b2) = Dup (a >+: b1) (a >+: b2)
+  addLit_ a = Dup (addLit_ a) (addLit_ a)
 
 instance (MulLit ex1 a, MulLit ex2 a) => MulLit (Dup ex1 ex2) a where
-  a >*: (Dup b1 b2) = Dup (a >*: b1) (a >*: b2)
+  mulLit_ a = Dup (mulLit_ a) (mulLit_ a)
 
 instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
   type ModSwitchPTCtx (Dup ex1 ex2) ct zp' = (ModSwitchPTCtx ex1 ct zp',
