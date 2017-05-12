@@ -1,10 +1,11 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-module Crypto.Alchemy.Language.MapCRTSlots where
+module Crypto.Alchemy.Interpreter.MapCRTSlots where
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
@@ -14,7 +15,7 @@ import Crypto.Lol
 import Crypto.Lol.Types (ZqBasic)
 
 type family Zq2Cyc t m a where
-  Zq2Cyc t m (ZqBasic q i) = Cyc t m (ZqBasic q i)
+  Zq2Cyc t m (ZqBasic (q :: k) i) = Cyc t m (ZqBasic q i)
   Zq2Cyc t m (a -> b) = Zq2Cyc t m a -> Zq2Cyc t m b
   Zq2Cyc t m (a, b) = (Zq2Cyc t m a, Zq2Cyc t m b)
   Zq2Cyc t m (f a) = f (Zq2Cyc t m a) -- covers PNoise h, Maybe, ...
@@ -64,21 +65,21 @@ instance (Mul expr (Zq2Cyc t m a),
 
 instance (zq ~ ZqBasic q i, AddLit expr (Cyc t m zq)) =>
   AddLit (MapCRTSlots expr t m) zq where
-  a >+: (M b) = M $ scalarCyc a >+: b
+  addLit_ a = M $ addLit_ (scalarCyc a)
 
 instance (zq ~ ZqBasic q i, MulLit expr (Cyc t m zq)) =>
   MulLit (MapCRTSlots expr t m) zq where
-  a >*: (M b) = M $ scalarCyc a >*: b
+  mulLit_ a = M $ mulLit_ (scalarCyc a)
 
 instance (Functor f, Zq2Cyc t m (f zq) ~ f (Cyc t m zq),
           AddLit expr (f (Cyc t m zq))) =>
   AddLit (MapCRTSlots expr t m) (f zq) where
-  a >+: (M b) = M $ (scalarCyc <$> a) >+: b
+  addLit_ a = M $ addLit_ (scalarCyc <$> a)
 
 instance (Functor f, Zq2Cyc t m (f zq) ~ f (Cyc t m zq),
           MulLit expr (f (Cyc t m zq))) =>
   MulLit (MapCRTSlots expr t m) (f zq) where
-  a >*: (M b) = M $ (scalarCyc <$> a) >*: b
+  mulLit_ a = M $ mulLit_ (scalarCyc <$> a)
 
 -- CJP: unclear whether we can instantiate Functor_; should Zq2Cyc be
 -- applied to the functor itself?  For functor (ZqB ->) it would seem
