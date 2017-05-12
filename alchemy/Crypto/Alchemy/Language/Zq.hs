@@ -14,14 +14,6 @@ module Crypto.Alchemy.Language.Zq where
 
 import Crypto.Lol (Pos)
 
--- | Symantics for division-by-2 of both the value and its modulus.
-
-class Div2Zq expr zq where
-  type PreDiv2Zq expr zq
-
-  div2Zq_ :: expr (PreDiv2Zq expr zq -> zq)
-
-
 -- | Symantics for rescaling the integers modulo a power of two.
 
 class RescaleZqPow2 expr z2 where

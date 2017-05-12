@@ -52,3 +52,11 @@ class MulLit expr a where
   infixl 7 >*:
 
   (>*:) :: a -> expr e a -> expr e a
+
+-- | Symantics for division-by-2 of both a value and its integer
+-- modulus.
+
+class Div2 expr a where
+  type PreDiv2 expr a
+
+  div2_ :: expr e (PreDiv2 expr a -> a)
