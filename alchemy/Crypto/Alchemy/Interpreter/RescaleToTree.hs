@@ -28,7 +28,7 @@ import Crypto.Lol.Types
 
 import Control.Applicative
 
-newtype RescaleToTree expr env a = RT (expr env a)
+newtype RescaleToTree expr env a = RT {rescaleToTree :: expr env a}
   deriving (Lambda, List, Functor_, Applicative_, Monad_, MonadReader_, MonadWriter_)
 
 instance (Add expr a) => Add (RescaleToTree expr) a where
