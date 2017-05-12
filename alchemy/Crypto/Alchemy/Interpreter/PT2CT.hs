@@ -27,7 +27,7 @@ import Data.Type.Natural    --((:+:), N1, N2, N3, N4, N5, Nat (..))
 import GHC.TypeLits         hiding (type (*), Nat)
 
 import           Crypto.Lol                      hiding (Pos (..))
-import           Crypto.Lol.Applications.SymmSHE hiding (decrypt, encrypt, TunnelCtx)
+import           Crypto.Lol.Applications.SymmSHE hiding (decrypt, encrypt, TunnelCtx, AddPublicCtx, MulPublicCtx)
 import qualified Crypto.Lol.Applications.SymmSHE as SHE
 
 import Crypto.Alchemy.Interpreter.KeysHints
@@ -114,6 +114,17 @@ instance (Add ctex (Cyc2CT m'map zqs a), Applicative mon)
   add_ = PC $ pure add_
   neg_ = PC $ pure neg_
 
+instance (SHE ctex, Applicative mon,
+          AddPublicCtx ctex (Cyc2CT m'map zqs (PNoise h (Cyc t m zp)))) =>
+  AddLit (PT2CT m'map zqs gad z v ctex mon) (PNoise h (Cyc t m zp)) where
+
+  addLit_ (PN a) = PC $ pure $ addPublic_ a
+
+instance (SHE ctex, Applicative mon,
+          MulPublicCtx ctex (Cyc2CT m'map zqs (PNoise h (Cyc t m zp)))) =>
+  MulLit (PT2CT m'map zqs gad z v ctex mon) (PNoise h (Cyc t m zp)) where
+
+  mulLit_ (PN a) = PC $ pure $ mulPublic_ a
 
 type KSModulus gad zqs h = PNoise2Zq zqs (KSPNoise gad h)
 
