@@ -19,7 +19,9 @@ import Crypto.Alchemy.Interpreter.PT2CT.Noise
 --import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
+--import Crypto.Alchemy.Interpreter.MapCRTSlots
 import Crypto.Alchemy.Interpreter.Print
+import Crypto.Alchemy.Interpreter.RescaleToTree
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
