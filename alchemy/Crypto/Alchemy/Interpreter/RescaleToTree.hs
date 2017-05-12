@@ -2,7 +2,6 @@
 {-# LANGUAGE FlexibleContexts       #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE RebindableSyntax      #-}
@@ -14,6 +13,7 @@
 
 module Crypto.Alchemy.Interpreter.RescaleToTree where
 
+import Crypto.Alchemy.Interpreter.PT2CT.Noise hiding (take)
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
@@ -23,11 +23,12 @@ import Crypto.Alchemy.Language.SHE
 import Crypto.Alchemy.Language.TunnelCyc
 
 import Crypto.Lol
+import Crypto.Lol.Reflects -- EAC: shouldn't have to import this
 import Crypto.Lol.Types
 
-import Data.Singletons
+import Control.Applicative
 
-newtype RescaleToTree expr env a = RT (expr env a)
+newtype RescaleToTree expr env a = RT {rescaleToTree :: expr env a}
   deriving (Lambda, List, Functor_, Applicative_, Monad_, MonadReader_, MonadWriter_)
 
 instance (Add expr a) => Add (RescaleToTree expr) a where
@@ -78,56 +79,74 @@ instance (TunnelCyc expr m) => TunnelCyc (RescaleToTree expr) m where
   tunnelCyc = RT . tunnelCyc
 
 
-type family PreTunnel' expr (k::Pos) i where
-  PreTunnel' expr 'O i = ZqBasic PP2 i
-  PreTunnel' expr ('S k) i = PreMul expr (PreDiv2 expr (PreTunnel' expr k i))
+type family PreRescale expr (k::Pos) z2 where
+  PreRescale expr 'O z2 = z2
+  PreRescale expr ('S k) z2 = PreMul expr (PreDiv2 expr (PreRescale expr k z2))
 
+instance (Lambda expr) => RescaleZqPow2 (RescaleToTree expr) 'O (ZqBasic PP2 i) where
 
-instance (zp2k ~ ZqBasic ('PP '(Prime2, k)) i, prezp2k ~ PreMul expr zp2k,
-  Lambda expr, Internal expr k i, Mul expr zp2k, PosC k, Ring (PreMul expr zp2k),
-  AddLit expr prezp2k, AddLit expr zp2k, ToInteger i, PreMul expr zp2k ~ zp2k)
-  => RescaleZqPow2 (RescaleToTree expr) k (ZqBasic PP2 i) where
-  -- | The type corresponding to \( \Z_{2^k} \).  (The type should
-  -- determine the exponent, hence the partially injectivity.)
-  type PreRescaleZqPow2 (RescaleToTree expr) k (ZqBasic PP2 i) = ZqBasic ('PP '(Prime2, k)) i
+  type PreRescaleZqPow2 (RescaleToTree expr) 'O (ZqBasic PP2 i) = ZqBasic PP2 i
 
-  -- | Rescale (round) the argument from \( \Z_{2^k} \) to \( \Z_2 \).
-  rescaleZqPow2_ :: forall env . RescaleToTree expr env (ZqBasic ('PP '(Prime2, k)) i -> ZqBasic PP2 i)
-  rescaleZqPow2_ = case (sing :: SPos k) of
-    -- k = 1, so p = 2^k = 2
-    SO -> RT $ lam v0
-    -- k > 1, so p = 2^k >= 4, meaning we can divide p by 4
-    lgp@(SS k') -> RT $ lam $
-      let xprod = v0 *: (one >+: v0) :: expr _ (ZqBasic ('PP '(Prime2, k)) i)
-          lgpVal = posToInt $ fromSing lgp :: Int
-          pDiv4 = 2^(lgpVal-2)
-      in internal $ take pDiv4 $ map ((div2_ $:) . (>+: xprod)) [fromInteger $ y * (-y+1) | y <- [1..]]
+  -- k = 1, so p = 2^k = 2
+  rescaleZqPow2_ = pure $ RT $ lam v0
+
+instance (Lambda expr) => RescaleZqPow2 (RescaleToTree expr) 'O (PNoise h (ZqBasic PP2 i)) where
+
+  type PreRescaleZqPow2 (RescaleToTree expr) 'O (PNoise h (ZqBasic PP2 i)) =
+    PNoise h (ZqBasic PP2 i)
+
+  -- k = 1, so p = 2^k = 2
+  rescaleZqPow2_ = pure $ RT $ lam v0
+
+instance (z2k ~ PreRescale expr k (ZqBasic PP2 i), prediv ~ PreDiv2 expr z2k,
+  Lambda expr, Internal expr k (ZqBasic PP2 i), Reflects ('S k) Int,
+  Mul expr prediv, Div2 expr z2k,
+  Ring (PreMul expr prediv), Ring prediv,
+  AddLit expr (PreMul expr prediv), AddLit expr prediv,
+  ToInteger i)
+  => RescaleZqPow2 (RescaleToTree expr) ('S k) (ZqBasic PP2 i) where
+
+  type PreRescaleZqPow2 (RescaleToTree expr) ('S k) (ZqBasic PP2 i) =
+    PreRescale expr ('S k) (ZqBasic PP2 i)
+
+  -- k > 1, so p = 2^k >= 4, meaning we can divide p by 4
+  rescaleZqPow2_ = pure $ RT $ lam $
+    let xprod = v0 *: (one >+: v0)
+        lgpVal = proxy value (Proxy::Proxy ('S k)) :: Int
+        pDiv4 = 2^(lgpVal-2)
+    in internal (Proxy::Proxy k) $ take pDiv4 $
+         map ((div2_ $:) . (>+: xprod)) [fromInteger $ y * (-y+1) | y <- [1..]]
 {-
-instance (zp2k ~ ZqBasic ('PP '(Prime2, k)) i, prezp2k ~ PreMul expr zp2k,
-  Lambda expr, Internal expr k i, Mul expr zp2k, PosC k, Ring (PreMul expr zp2k),
-  AddLit expr prezp2k, AddLit expr zp2k, ToInteger i, PreMul expr zp2k ~ zp2k)
-  => RescaleZqPow2 (RescaleToTree expr) k (PNoise h (ZqBasic PP2 i)) where
-  -- | The type corresponding to \( \Z_{2^k} \).  (The type should
-  -- determine the exponent, hence the partially injectivity.)
-  type PreRescaleZqPow2 (RescaleToTree expr) k (PNoise h (ZqBasic PP2 i)) = ZqBasic ('PP '(Prime2, k)) i
+instance (z2k ~ PreRescale expr k (ZqBasic PP2 i), prediv ~ PreDiv2 expr z2k,
+  Lambda expr, Internal expr k (ZqBasic PP2 i), Reflects ('S k) Int,
+  Mul expr prediv, Div2 expr z2k,
+  Ring (PreMul expr prediv), Ring prediv,
+  AddLit expr (PreMul expr prediv), AddLit expr prediv,
+  ToInteger i)
+  => RescaleZqPow2 (RescaleToTree expr) ('S k) (ZqBasic PP2 i) where
 
-  -- | Rescale (round) the argument from \( \Z_{2^k} \) to \( \Z_2 \).
-  rescaleZqPow2_ :: forall env . RescaleToTree expr env (ZqBasic ('PP '(Prime2, k)) i -> ZqBasic PP2 i)
-  rescaleZqPow2_ = case (sing :: SPos k) of
-    -- k = 1, so p = 2^k = 2
-    SO -> RT $ lam v0
-    -- k > 1, so p = 2^k >= 4, meaning we can divide p by 4
-    lgp@(SS k') -> RT $ lam $
-      let xprod = v0 *: (one >+: v0) :: expr _ (ZqBasic ('PP '(Prime2, k)) i)
-          lgpVal = posToInt $ fromSing lgp :: Int
-          pDiv4 = 2^(lgpVal-2)
-      in internal $ take pDiv4 $ map ((div2_ $:) . (>+: xprod)) [fromInteger $ y * (-y+1) | y <- [1..]]
+  type PreRescaleZqPow2 (RescaleToTree expr) ('S k) (ZqBasic PP2 i) =
+    PreRescale expr ('S k) (ZqBasic PP2 i)
+
+  -- k > 1, so p = 2^k >= 4, meaning we can divide p by 4
+  rescaleZqPow2_ = pure $ RT $ lam $
+    let xprod = v0 *: (one >+: v0)
+        lgpVal = proxy value (Proxy::Proxy ('S k)) :: Int
+        pDiv4 = 2^(lgpVal-2)
+    in internal (Proxy::Proxy k) $ take pDiv4 $
+         map ((div2_ $:) . (>+: xprod)) [fromInteger $ y * (-y+1) | y <- [1..]]
 -}
-class Internal expr (k :: Pos) i where
-  internal :: [expr env (ZqBasic ('PP '(Prime2, k)) i)] -> expr env (ZqBasic PP2 i)
+class Internal expr (k :: Pos) z2 where
+  internal :: Proxy k -> [expr env (PreRescale expr k z2)] -> expr env z2
 
-instance Internal expr P1 i where
-  internal [x] = x
-  internal _ = error "Internal error in RescaleToTree (internal) base case."
+instance Internal expr P1 z2 where
+  internal _ [x] = x
+  internal _ _ = error "Internal error in RescaleToTree (internal) base case."
 
---instance
+instance (Internal expr k z2, Div2 expr (PreRescale expr k z2), Lambda expr,
+          Mul expr (PreDiv2 expr (PreRescale expr k z2)))
+  => Internal expr ('S k) z2 where
+  internal _ = internal (Proxy::Proxy k) . map ((div2_ $:) . uncurry (*:)) . listToPairs
+
+listToPairs :: [a] -> [(a,a)]
+listToPairs (a:b:xs) = (a,b):listToPairs xs
