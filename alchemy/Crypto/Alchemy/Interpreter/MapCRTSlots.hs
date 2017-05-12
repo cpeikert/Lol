@@ -1,10 +1,10 @@
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE FlexibleContexts       #-}
+{-# LANGUAGE FlexibleInstances      #-}
+{-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE UndecidableInstances   #-}
 
 module Crypto.Alchemy.Interpreter.MapCRTSlots where
 
@@ -15,7 +15,7 @@ import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Lol
 import Crypto.Lol.Types (ZqBasic)
 
-type family Zq2Cyc t m a = cyca | cyca -> a where
+type family Zq2Cyc t m a = cyca | cyca -> a t m where
   Zq2Cyc t m (ZqBasic (q :: k) i) = Cyc t m (ZqBasic q i)
   Zq2Cyc t m (a -> b) = Zq2Cyc t m a -> Zq2Cyc t m b
   Zq2Cyc t m (a, b) = (Zq2Cyc t m a, Zq2Cyc t m b)
