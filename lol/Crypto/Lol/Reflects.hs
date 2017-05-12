@@ -35,6 +35,7 @@ import Control.Applicative
 import Data.Functor.Trans.Tagged
 import Data.Proxy
 import Data.Reflection
+import Data.Singletons
 import GHC.TypeLits              as TL
 
 -- | Reflection without fundep, and with tagged value. Intended only
@@ -48,15 +49,11 @@ class Reflects a i where
 instance (KnownNat a, Ring.C i) => Reflects (a :: TL.Nat) i where
   value = tag $ fromIntegral $ natVal (Proxy::Proxy a)
 
-{-
-
 instance (PosC a, ToInteger.C i) => Reflects a i where
   value = tag $ posToInt $ fromSing (sing :: Sing a)
 
 instance (BinC a, ToInteger.C i) => Reflects a i where
   value = tag $ binToInt $ fromSing (sing :: Sing a)
-
--}
 
 instance (Prime p, ToInteger.C i) => Reflects p i where
   value = fromIntegral <$> valuePrime
