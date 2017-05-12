@@ -85,7 +85,7 @@ type WriteErrorCtx expr z k w ct t m m' zp zq =
    List expr, MonadWriter_ expr, ErrorRate expr,
    ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z)
 
-liftWriteError2 ::
+liftWriteError2 :: forall w k t m' z expr ct m zp zq a b e .
   (WriteErrorCtx expr z k w ct t m m' zp zq)
   => SK (Cyc t m' z)            -- | the secret key
   -> expr e (a -> b -> ct)      -- | the function to lift
