@@ -1,8 +1,6 @@
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
@@ -10,8 +8,7 @@ module Crypto.Alchemy.Language.MapCRTSlots where
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.Monad
-import Crypto.Alchemy.Language.ZqPow2
+
 
 import Crypto.Lol
 import Crypto.Lol.Types (ZqBasic)
@@ -37,7 +34,13 @@ newtype MapCRTSlots expr t m e a =
 mapCRTSlots :: MapCRTSlots expr t m e a -> expr (Zq2Cyc t m e) (Zq2Cyc t m a)
 mapCRTSlots = unM
 
--- instances: DivZq, ... but NOT RescaleZqPow2!
+instance (Div2 expr (Zq2Cyc t m a), rq' ~ (PreDiv2 expr (Zq2Cyc t m a)),
+          -- Zq2Cyc, Cyc2Zq must be inverses in this scenario
+          Zq2Cyc t m (Cyc2Zq rq') ~ rq') => Div2 (MapCRTSlots expr t m) a where
+
+  type PreDiv2 (MapCRTSlots expr t m) a = Cyc2Zq (PreDiv2 expr (Zq2Cyc t m a))
+
+  div2_ = M div2_
 
 instance Lambda expr => Lambda (MapCRTSlots expr t m) where
   lam    = M . lam . unM
@@ -50,7 +53,7 @@ instance (Add expr (Zq2Cyc t m a)) => Add (MapCRTSlots expr t m) a where
   neg_ = M neg_
 
 instance (Mul expr (Zq2Cyc t m a),
-          -- need Zq2Cyc, Cyc2Zq to be inverses in this scenario
+          -- Zq2Cyc, Cyc2Zq must be inverses in this scenario
           Zq2Cyc t m (Cyc2Zq (PreMul expr (Zq2Cyc t m a))) ~
           PreMul expr (Zq2Cyc t m a)) =>
   Mul (MapCRTSlots expr t m) a where
