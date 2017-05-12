@@ -51,14 +51,14 @@ library
     ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   exposed-modules:
-    -- Crypto.Lol.Applications.HomomPRF
+    Crypto.Lol.Applications.HomomPRF
     Crypto.Lol.Applications.KeyHomomorphicPRF
     Crypto.Lol.Applications.SymmSHE
 
-    -- Crypto.Proto.HomomPRF
-    -- Crypto.Proto.HomomPRF.LinearFuncChain
-    -- Crypto.Proto.HomomPRF.RoundHintChain
-    -- Crypto.Proto.HomomPRF.TunnelHintChain
+    Crypto.Proto.HomomPRF
+    Crypto.Proto.HomomPRF.LinearFuncChain
+    Crypto.Proto.HomomPRF.RoundHintChain
+    Crypto.Proto.HomomPRF.TunnelHintChain
     Crypto.Proto.SHE
     Crypto.Proto.SHE.KSHint
     Crypto.Proto.SHE.RqPolynomial
@@ -76,8 +76,8 @@ library
     Crypto.Lol.Applications.Benchmarks.KHPRFBenches
     Crypto.Lol.Applications.Benchmarks.SHEBenches
     Crypto.Lol.Applications.Benchmarks.Default
-    -- Crypto.Lol.Applications.Examples.HomomPRF
-    -- Crypto.Lol.Applications.Examples.HomomPRFParams
+    Crypto.Lol.Applications.Examples.HomomPRF
+    Crypto.Lol.Applications.Examples.HomomPRFParams
     Crypto.Lol.Applications.Examples.KHPRF
     Crypto.Lol.Applications.Examples.SymmSHE
 
