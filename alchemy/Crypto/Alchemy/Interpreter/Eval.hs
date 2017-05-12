@@ -47,41 +47,44 @@ instance Lambda E where
   v0     = E snd
   s a    = E $ unE a . fst
 
+pureE :: a -> E e a
+pureE = E . pure
+
 instance Additive.C a => Add E a where
-  add_ = E $ pure (+)
-  neg_ = E $ pure negate
+  add_ = pureE (+)
+  neg_ = pureE negate
 
 instance Additive.C a => AddLit E a where
-  addLit_ x = E $ pure (x +)
+  addLit_ x = pureE (x +)
 
 instance Ring.C a => Mul E a where
   type PreMul E a = a
-  mul_ = E $ pure (*)
+  mul_ = pureE (*)
 
 instance Ring.C a => MulLit E a where
-  mulLit_ x = E $ pure (x *)
+  mulLit_ x = pureE (x *)
 
 instance List E where
-  nil_  = E $ pure []
-  cons_ = E $ pure (:)
+  nil_  = pureE []
+  cons_ = pureE (:)
 
 instance Functor_ E where
-  fmap_ = E $ pure fmap
+  fmap_ = pureE fmap
 
 instance Applicative_ E where
-  pure_ = E $ pure pure
-  ap_   = E $ pure (<*>)
+  pure_ = pureE pure
+  ap_   = pureE (<*>)
 
 instance Monad_ E where
-  bind_ = E $ pure (>>=)
+  bind_ = pureE (>>=)
 
 instance MonadReader_ E where
-  ask_   = E $ pure ask
-  local_ = E $ pure local
+  ask_   = pureE ask
+  local_ = pureE local
 
 instance MonadWriter_ E where
-  tell_   = E $ pure tell
-  listen_ = E $ pure listen
+  tell_   = pureE tell
+  listen_ = pureE listen
 
 instance SHE E where
 
@@ -92,18 +95,18 @@ instance SHE E where
   type KeySwitchQuadCtx E (CT m zp (Cyc t m' zq)) gad = (SHE.KeySwitchCtx gad t m' zp zq)
   type TunnelCtx        E t e r s e' r' s' zp zq gad  = (SHE.TunnelCtx t r s e' r' s' zp zq gad)
 
-  modSwitchPT_     = E $ pure   modSwitchPT
-  rescaleLinear_   = E $ pure   rescaleLinear
-  addPublic_       = E . pure . addPublic
-  mulPublic_       = E . pure . mulPublic
-  keySwitchQuad_   = E . pure . keySwitchQuadCirc
-  tunnel_          = E . pure . SHE.tunnel
+  modSwitchPT_     = pureE   modSwitchPT
+  rescaleLinear_   = pureE   rescaleLinear
+  addPublic_       = pureE . addPublic
+  mulPublic_       = pureE . mulPublic
+  keySwitchQuad_   = pureE . keySwitchQuadCirc
+  tunnel_          = pureE . SHE.tunnel
 
 instance (Applicative m) => TunnelCyc E m where
   type PreTunnelCyc E m = m
   type TunnelCycCtx E m t e r s zp = (e `Divides` r, e `Divides` s, CElt t zp)
 
-  tunnelCyc f = E $ pure $ fmap (evalLin f)
+  tunnelCyc f = pureE $ fmap (evalLin f)
 
 -- | Uses 'SHE.errorTermUnrestricted' to compute 'errorRate'.
 instance ErrorRate E where
@@ -113,6 +116,6 @@ instance ErrorRate E where
   errorRate_ :: forall t m' m z zp zq ct e .
                 (ErrorRateCtx E ct z, ct ~ CT m zp (Cyc t m' zq)) =>
                 SHE.SK (Cyc t m' z) -> E e (ct -> Double)
-  errorRate_ sk = E $ pure $
+  errorRate_ sk = pureE $
     (/ (fromIntegral $ proxy modulus (Proxy::Proxy zq))) .
     fromIntegral . maximum . fmap abs . SHE.errorTermUnrestricted sk
