@@ -9,6 +9,7 @@
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
@@ -33,7 +34,9 @@ import qualified Crypto.Lol.Applications.SymmSHE as SHE
 import Crypto.Lol.Types
 
 import Crypto.Alchemy.Interpreter.KeysHints
+--import Crypto.Alchemy.Interpreter.MapCRTSlots
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
+--import Crypto.Alchemy.Interpreter.RescaleToTree
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
@@ -57,13 +60,12 @@ newtype PT2CT
   = PC { unPC :: mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)) }
 
 -- | Transform a plaintext expression to a ciphertext expression.
-pt2ct :: forall m'map zqs gad z v ctex a mon .
+pt2ct :: forall m'map zqs gad z v e ctex a mon .
       -- this forall is for use with TypeApplications at the top level
   v   -- | scaled variance to used for generating keys/hints
-  -> PT2CT m'map zqs gad z v ctex (ReaderT v mon) () a -- | plaintext expression
-  -> mon (ctex () (Cyc2CT m'map zqs a)) -- | (monadic) ctex expression
+  -> PT2CT m'map zqs gad z v ctex (ReaderT v mon) e a -- | plaintext expression
+  -> mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)) -- | (monadic) ctex expression
 pt2ct v = flip runReaderT v . unPC
-
 
 -- | Encrypt a plaintext (using the given scaled variance) under an
 -- appropriate key (from the monad), generating one if necessary.
@@ -253,7 +255,7 @@ pt2ctTunnelCyc f = PC $ do
 
 ----- Type families -----
 
-type family Cyc2CT (m'map :: [(Factored, Factored)]) zqs e where
+type family Cyc2CT (m'map :: [(Factored, Factored)]) zqs e = cte | cte -> e where
 
   Cyc2CT m'map zqs (PNoise h (Cyc t m zp)) =
     CT m zp (Cyc t (Lookup m m'map) (PNoise2Zq zqs h))
@@ -268,10 +270,11 @@ type family Cyc2CT (m'map :: [(Factored, Factored)]) zqs e where
   -- for functions
   Cyc2CT m'map zqs (a -> b) = (Cyc2CT m'map zqs a -> Cyc2CT m'map zqs b)
 
-  Cyc2CT m'map zqs c =
-    TypeError ('Text "Type family 'Cyc2CT' can't convert type '"
-               ':<>: 'ShowType c ':<>: 'Text "'."
-               ':$$: 'Text "It only converts types of the form 'PNoise h (Cyc t m zp) and pairs/lists/functions thereof.")
+  Cyc2CT m'map zqs c = Tagged c
+    (TypeError ('Text "Type family 'Cyc2CT' can't convert type '"
+                ':<>: 'ShowType c ':<>: 'Text "'."
+                ':$$: 'Text "It only converts types of the form 'PNoise h (Cyc t m zp) and pairs/lists/functions thereof."))
+
 
 -- type-level map lookup
 type family Lookup m (map :: [(Factored, Factored)]) where

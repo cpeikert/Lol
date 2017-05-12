@@ -3,22 +3,23 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
 module Crypto.Alchemy.Interpreter.MapCRTSlots where
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-
+import Crypto.Alchemy.Interpreter.PT2CT.Noise
 
 import Crypto.Lol
 import Crypto.Lol.Types (ZqBasic)
 
-type family Zq2Cyc t m a where
+type family Zq2Cyc t m a = cyca | cyca -> a where
   Zq2Cyc t m (ZqBasic (q :: k) i) = Cyc t m (ZqBasic q i)
   Zq2Cyc t m (a -> b) = Zq2Cyc t m a -> Zq2Cyc t m b
   Zq2Cyc t m (a, b) = (Zq2Cyc t m a, Zq2Cyc t m b)
-  Zq2Cyc t m (f a) = f (Zq2Cyc t m a) -- covers PNoise h, Maybe, ...
+  Zq2Cyc t m (PNoise h a) = PNoise h (Zq2Cyc t m a)
   -- CJP: TODO include an error case to make things break when they should
 
 -- inverse of the above
@@ -26,7 +27,7 @@ type family Cyc2Zq cyc where
   Cyc2Zq (Cyc t m zq) = zq
   Cyc2Zq (a -> b) = Cyc2Zq a -> Cyc2Zq b
   Cyc2Zq (a, b) = (Cyc2Zq a, Cyc2Zq b)
-  Cyc2Zq (f a) = f (Cyc2Zq a)   -- covers PNoise h, Maybe, ...
+  Cyc2Zq (PNoise h a) = PNoise h (Cyc2Zq a)
   -- CJP: TODO error here
 
 newtype MapCRTSlots expr t m e a =

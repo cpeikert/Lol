@@ -31,8 +31,8 @@ ex2 ~ MapCRTSlots ex3 t m
 mapCRTSlots $ rescaleToTree rescaleZqPow2_ :: ex3 (Zq2Cyc t m (PreRescale ex2 k z2) -> z2))
 -}
 
-rescaleCycPow2_ :: forall t m i k expr bigex z2 e . (bigex ~ RescaleToTree (MapCRTSlots expr t m), z2 ~ ZqBasic PP2 i,
-  RescaleZqPow2 bigex k z2)
-  => Proxy t -> Proxy m -> Proxy e
-     -> Tagged (k :: Pos) (expr (Zq2Cyc t m e) (Zq2Cyc t m (PreRescaleZqPow2 bigex k z2 -> z2)))
-rescaleCycPow2_ _ _ _ = mapCRTSlots <$> rescaleToTree <$> (rescaleZqPow2_ :: Tagged k (bigex e (PreRescaleZqPow2 bigex k z2 -> z2)))
+rescaleCycPow2_ :: forall t m i k expr bigex z2 e .
+  (bigex ~ RescaleToTree (MapCRTSlots expr t m),
+   z2 ~ ZqBasic PP2 i, RescaleZqPow2 bigex k z2)
+  => Proxy t -> Proxy m -> Tagged (k :: Pos) (expr (Zq2Cyc t m e) (Zq2Cyc t m (PreRescaleZqPow2 bigex k z2 -> z2)))
+rescaleCycPow2_ _ _ = mapCRTSlots <$> rescaleToTree <$> (rescaleZqPow2_ :: Tagged k (bigex e (PreRescaleZqPow2 bigex k z2 -> z2)))
