@@ -26,9 +26,11 @@ a -: b = a +: (neg_ $: b)
 -- expressions.
 
 class AddLit expr a where
-  infixl 6 >+:
+  addLit_ :: a -> expr e (a -> a)
 
-  (>+:) :: a -> expr e a -> expr e a
+infixl 6 >+:
+(>+:) :: (AddLit expr a, Lambda expr) => a -> expr e a -> expr e a
+a >+: b = addLit_ a $: b
 
 -- | Multiplication. (Note that the input type @b@ may differ from the
 -- output type @a@.)
@@ -49,9 +51,11 @@ a *: b = mul_ $: a $: b
 -- expressions.
 
 class MulLit expr a where
-  infixl 7 >*:
+  mulLit_ :: a -> expr e (a -> a)
 
-  (>*:) :: a -> expr e a -> expr e a
+infixl 7 >*:
+(>*:) :: (MulLit expr a, Lambda expr) => a -> expr e a -> expr e a
+a >*: b = mulLit_ a $: b
 
 -- | Symantics for division-by-2 of a known-to-be-even value along
 -- with its integer modulus.
