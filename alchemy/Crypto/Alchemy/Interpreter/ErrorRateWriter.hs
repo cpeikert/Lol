@@ -68,45 +68,44 @@ tellError :: (MonadWriter ErrorRateLog mon,
   SK (Cyc t m' z) -> expr e (CT m zp (Cyc t m' zq) -> mon ())
 tellError sk = lam (tell_ $: (cons_ $: (errorRate_ sk $: v0) $: nil_))
 
--- | Convert an object-language function to a (monadic) one that
--- writes the error rate of its ciphertext output.
-liftWriteError ::
-  (MonadWriter ErrorRateLog w, List expr, MonadWriter_ expr, ErrorRate expr,
-   ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z)
-  => SK (Cyc t m' z)            -- | the secret key
-  -> expr e (a -> ct)            -- | the function to lift
-  -> expr e (w a -> w ct)
-liftWriteError sk f_ =
-  let mf_ = liftA_ $: s f_
-  in lam $ after_ $: tellError sk $: (mf_ $: v0)
-
-liftWriteError2 ::
-  (MonadWriter ErrorRateLog w, List expr, MonadWriter_ expr, ErrorRate expr,
-   ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z)
-  => SK (Cyc t m' z)            -- | the secret key
-  -> expr e (a -> b -> ct)       -- | the function to lift
-  -> expr e (w a -> w b -> w ct)
-
--- CJP: would prefer for this function to be monadic and look up the
--- secret key itself, but GHC fails to find the Typeable constraints
--- that I put right there in the signature.
-liftWriteError2 sk f_ =
-  let mf_ = liftA2_ $: s (s f_)
-  in lam $ lam $ after_ $: tellError sk $: (mf_ $: v1 $: v0)
-
 type WriteErrorCtx expr z k w ct t m m' zp zq =
   (MonadWriter ErrorRateLog w, MonadReader Keys k, Typeable (SK (Cyc t m' z)),
    List expr, MonadWriter_ expr, ErrorRate expr,
    ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z)
 
+-- | Convert an object-language function to a (monadic) one that
+-- writes the error rate of its ciphertext output.
+liftWriteError :: forall expr z k w ct t m m' zp zq a e .
+  (WriteErrorCtx expr z k w ct t m m' zp zq)
+  => Proxy z
+  -> expr e (a -> ct)           -- | the function to lift
+  -> k (expr e (w a -> w ct))
+liftWriteError _ f_ =
+  let mf_ = liftA_ $: s f_
+  in do
+    key :: Maybe (SK (Cyc t m' z)) <- lookupKey
+    case key of
+      Just sk -> return $ lam $ after_ $: tellError sk $: (mf_ $: v0)
+      Nothing -> return $ liftA_ $: f_
+
+liftWriteError2 :: forall expr z k w ct t m m' zp zq a b e .
+  (WriteErrorCtx expr z k w ct t m m' zp zq)
+  => Proxy z
+  -> expr e (a -> b -> ct)      -- | the function to lift
+  -> k (expr e (w a -> w b -> w ct))
+
+liftWriteError2 _ f_ =
+  let mf_ = liftA2_ $: s (s f_)
+  in do
+    key :: Maybe (SK (Cyc t m' z)) <- lookupKey
+    case key of
+      Just sk -> return $ lam $ lam $ after_ $: tellError sk $: (mf_ $: v1 $: v0)
+      Nothing -> return $ liftA2_ $: f_
+
 instance (WriteErrorCtx expr z k w ct t m m' zp zq,
           Add expr ct) => Add (ErrorRateWriter expr z k w) ct where
 
-  add_ = ERW $ do
-    key :: Maybe (SK (Cyc t m' z)) <- lookupKey
-    case key of
-      Just sk -> return $ liftWriteError2 sk add_
-      Nothing -> return $ liftA2_ $: add_
+  add_ = ERW $ liftWriteError2 (Proxy::Proxy z) add_
 
   -- don't log error because it doesn't grow
   neg_ = ERW $ pure $ liftA_ $: neg_
@@ -119,27 +118,15 @@ instance (WriteErrorCtx expr z k w ct t m m' zp zq,
 
   type PreMul (ErrorRateWriter expr z k w) ct = PreMul expr ct
 
-  mul_ = ERW $ do
-    key :: Maybe (SK (Cyc t m' z)) <- lookupKey
-    case key of
-      Just sk -> return $ liftWriteError2 sk mul_
-      Nothing -> return $ liftA2_ $: mul_
+  mul_ = ERW $ liftWriteError2 (Proxy::Proxy z) mul_
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq,
           AddLit expr ct) => AddLit (ErrorRateWriter expr z k w) ct where
-  addLit_ a = ERW $ do
-    key :: Maybe (SK (Cyc t m' z)) <- lookupKey
-    case key of
-      Just sk -> return $ liftWriteError sk $ addLit_ a
-      Nothing -> return $ liftA_ $: addLit_ a
+  addLit_ a = ERW $ liftWriteError (Proxy::Proxy z) $ addLit_ a
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq,
           MulLit expr ct) => MulLit (ErrorRateWriter expr z k w) ct where
-  mulLit_ a = ERW $ do
-    key :: Maybe (SK (Cyc t m' z)) <- lookupKey
-    case key of
-      Just sk -> return $ liftWriteError sk $ mulLit_ a
-      Nothing -> return $ liftA_ $: mulLit_ a
+  mulLit_ a = ERW $ liftWriteError (Proxy::Proxy z) $ mulLit_ a
 
 
 ----- TRIVIAL WRAPPER INSTANCES -----
