@@ -30,7 +30,7 @@ import Crypto.Alchemy.Language.SHE
 import Crypto.Alchemy.Language.TunnelCyc
 
 import Crypto.Lol
-import Crypto.Lol.Applications.SymmSHE    as SHE
+import Crypto.Lol.Applications.SymmSHE as SHE
 
 -- | Metacircular evaluator.
 newtype E e a = E { unE :: e -> a }
@@ -52,14 +52,14 @@ instance Additive.C a => Add E a where
   neg_ = E $ pure negate
 
 instance Additive.C a => AddLit E a where
-  x >+: y = (x +) <$> y
+  addLit_ x = E $ pure (x +)
 
 instance Ring.C a => Mul E a where
   type PreMul E a = a
   mul_ = E $ pure (*)
 
 instance Ring.C a => MulLit E a where
-  x >*: y = (x *) <$> y
+  mulLit_ x = E $ pure (x *)
 
 instance List E where
   nil_  = E $ pure []
