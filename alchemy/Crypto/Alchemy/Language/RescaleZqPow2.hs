@@ -10,7 +10,7 @@
 -}
 
 
-module Crypto.Alchemy.Language.Zq where
+module Crypto.Alchemy.Language.RescaleZqPow2 where
 
 import Crypto.Lol (Pos)
 
