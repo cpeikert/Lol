@@ -105,30 +105,32 @@ liftWriteError2 _ f_ =
       Just sk -> return $ lam $ lam $ after_ $: tellError sk $: (mf_ $: v1 $: v0)
       Nothing -> return $ liftA2_ $: f_
 
-instance (WriteErrorCtx expr z k w ct t m m' zp zq,
-          Add expr ct) => Add (ErrorRateWriter expr z k w) ct where
+instance (WriteErrorCtx expr z k w ct t m m' zp zq, Add expr ct) =>
+  Add (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) where
 
   add_ = ERW $ liftWriteError2 (Proxy::Proxy z) add_
 
   -- don't log error because it doesn't grow
   neg_ = ERW $ pure $ liftA_ $: neg_
 
-instance (WriteErrorCtx expr z k w ct t m m' zp zq,
-          Mul expr ct,
+instance (WriteErrorCtx expr z k w ct t m m' zp zq, Mul expr ct,
           -- needed because PreMul could take some crazy form
           Monadify w (PreMul expr ct) ~ w (PreMul expr ct))
-         => Mul (ErrorRateWriter expr z k w) ct where
+         => Mul (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) where
 
-  type PreMul (ErrorRateWriter expr z k w) ct = PreMul expr ct
+  type PreMul (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) =
+    PreMul expr (CT m zp (Cyc t m' zq))
 
   mul_ = ERW $ liftWriteError2 (Proxy::Proxy z) mul_
 
-instance (WriteErrorCtx expr z k w ct t m m' zp zq,
-          AddLit expr ct) => AddLit (ErrorRateWriter expr z k w) ct where
+instance (WriteErrorCtx expr z k w ct t m m' zp zq, AddLit expr ct) =>
+  AddLit (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) where
+
   addLit_ a = ERW $ liftWriteError (Proxy::Proxy z) $ addLit_ a
 
-instance (WriteErrorCtx expr z k w ct t m m' zp zq,
-          MulLit expr ct) => MulLit (ErrorRateWriter expr z k w) ct where
+instance (WriteErrorCtx expr z k w ct t m m' zp zq, MulLit expr ct) =>
+  MulLit (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) where
+
   mulLit_ a = ERW $ liftWriteError (Proxy::Proxy z) $ mulLit_ a
 
 
