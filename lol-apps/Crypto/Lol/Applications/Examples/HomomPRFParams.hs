@@ -15,7 +15,7 @@ Parameters for homomorphic PRF.
 {-# LANGUAGE PolyKinds     #-}
 {-# LANGUAGE TypeOperators #-}
 
-module Crypto.Lol.Applications.Examples.HomomPRFParams (RngList, Zq, ZQSeq, ZP, ZQ, KSGad, PRFGad) where
+module Crypto.Lol.Applications.Examples.HomomPRFParams (RngList, Zq, ZQSeq, ZP, ZQ, KSGad, PRFGad, H0, H1, H2, H3, H4, H5) where
 
 import Crypto.Lol
 import Crypto.Lol.Types
