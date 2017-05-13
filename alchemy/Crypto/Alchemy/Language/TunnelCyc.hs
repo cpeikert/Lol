@@ -39,5 +39,6 @@ class TunnelCyc expr m where
 
 tunnelCyc :: (TunnelCyc expr m, TunnelCycCtx expr m t e r s zp, Lambda expr)
   => Linear t zp e r s
-  -> expr env ((PreTunnelCyc expr m) (Cyc t r zp)) -> expr env (m (Cyc t s zp))
+  -> expr env ((PreTunnelCyc expr m) (Cyc t r zp))
+  -> expr env (m (Cyc t s zp))
 tunnelCyc f a = tunnelCyc_ f $: a
