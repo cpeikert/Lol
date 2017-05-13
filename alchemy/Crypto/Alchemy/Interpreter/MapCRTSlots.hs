@@ -6,6 +6,17 @@
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances   #-}
 
+{-|
+
+  \( \def\Z{\mathbb{Z}} \)
+
+-}
+
+-- | A transform that maps any /arithmetic/ function on \( \Z_q \)
+-- values over the mod-\( q \) SIMD (or CRT) "slots" of a cyclotomic
+-- ring \( R_q \).  If the contents of the slots are not limited to \(
+-- \Z_q \) values, the behavior of the transform is undefined.
+
 module Crypto.Alchemy.Interpreter.MapCRTSlots where
 
 import Crypto.Alchemy.Language.Arithmetic
