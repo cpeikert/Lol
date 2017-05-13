@@ -84,7 +84,7 @@ liftWriteError :: forall expr z k w ct t m m' zp zq a e .
   -> expr e (a -> ct)           -- | the function to lift
   -> k (expr e (w a -> w ct))
 liftWriteError _ f_ =
-  let mf_ = liftA_ $: s f_
+  let mf_ = liftA_ $: s f_      -- shift because we use between lam,v0
   in do
     key :: Maybe (SK (Cyc t m' z)) <- lookupKey
     case key of
@@ -98,7 +98,7 @@ liftWriteError2 :: forall expr z k w ct t m m' zp zq a b e .
   -> k (expr e (w a -> w b -> w ct))
 
 liftWriteError2 _ f_ =
-  let mf_ = liftA2_ $: s (s f_)
+  let mf_ = liftA2_ $: s (s f_) -- shift because we use between lam/lam,v0/v1
   in do
     key :: Maybe (SK (Cyc t m' z)) <- lookupKey
     case key of
