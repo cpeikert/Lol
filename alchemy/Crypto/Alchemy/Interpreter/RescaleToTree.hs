@@ -12,9 +12,16 @@
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
+{-|
+
+  \( \def\Z{\mathbb{Z}} \)
+
+-}
+
 module Crypto.Alchemy.Interpreter.RescaleToTree
-(RescaleCycCRTCtx, rescaleCycCRT_, rescaleCycCRT
-,RescaleToTree, rescaleToTree) where
+( RescaleToTree, rescaleToTree, RescaleCycCRTCtx
+, rescaleTreeCRT_, rescaleTreeCRT)
+where
 
 import Crypto.Alchemy.Interpreter.MapCRTSlots
 
@@ -37,21 +44,29 @@ import Control.Applicative
 type RescaleCycCRTCtx zqenv env t m expr k z2 cyc2 cyc2k =
   RescaleCycCRTCtx' (RescaleToTree (MapCRTSlots expr t m)) zqenv env t m k z2 cyc2 cyc2k
 
-type RescaleCycCRTCtx' bigexpr zqenv env t m k z2 cyc2 cyc2k =
-  (env ~ Zq2Cyc t m zqenv, RescaleZqPow2 bigexpr k z2,
-   cyc2k ~ Zq2Cyc t m (PreRescaleZqPow2 bigexpr k z2), cyc2 ~ Zq2Cyc t m z2)
+type RescaleCycCRTCtx' rescaleexpr zqenv env t m k z2 cyc2 cyc2k =
+  (env ~ Zq2Cyc t m zqenv, RescaleZqPow2 rescaleexpr k z2,
+   cyc2k ~ Zq2Cyc t m (PreRescaleZqPow2 rescaleexpr k z2), cyc2 ~ Zq2Cyc t m z2)
 
-rescaleCycCRT_ :: forall zqenv env t m expr k z2 cyc2 cyc2k bigexpr .
-  (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2 cyc2k, bigexpr ~ RescaleToTree (MapCRTSlots expr t m))
+-- | Convenience function: using the (arithmetic) rescaling tree,
+-- rescale each \( \Z_{2^k} \) value in the mod-\( 2^k \) CRT slots of
+-- \( R_{2^k} \) down to \( \Z_2 \), with the result in \( R_2 \).
+-- (If the values in the slots are not restricted to \( \Z_{2^k} \),
+-- the behavior is undefined.)
+rescaleTreeCRT_ :: forall zqenv env t m expr k z2 cyc2 cyc2k rescaleexpr .
+  (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2 cyc2k,
+   rescaleexpr ~ RescaleToTree (MapCRTSlots expr t m))
   => Tagged '(t,m,k) (expr env (cyc2k -> Zq2Cyc t m z2))
 -- EAC: GHC is insisting on a type sig here, but I suspect it is unnecessary.
-rescaleCycCRT_ = pure $ proxy (mapCRTSlots <$> (rescaleToTree <$> rescaleZqPow2_ :: _ (MapCRTSlots expr t m zqenv (PreRescaleZqPow2 bigexpr k z2 -> z2)))) (Proxy::Proxy k)
+rescaleTreeCRT_ = pure $ proxy
+  (mapCRTSlots <$> (rescaleToTree <$> rescaleZqPow2_ :: _ (MapCRTSlots expr t m zqenv (PreRescaleZqPow2 rescaleexpr k z2 -> z2))))
+  (Proxy::Proxy k)
 
-rescaleCycCRT :: (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2 cyc2k, Lambda expr)
+rescaleTreeCRT :: (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2 cyc2k, Lambda expr)
   => Tagged '(t,m,k) (expr env cyc2k -> expr env (Zq2Cyc t m z2))
-rescaleCycCRT = ($:) <$> rescaleCycCRT_
+rescaleTreeCRT = ($:) <$> rescaleTreeCRT_
 
-newtype RescaleToTree expr env a = RT {rescaleToTree :: expr env a}
+newtype RescaleToTree expr env a = RT { rescaleToTree :: expr env a }
   deriving (Lambda, List, Functor_, Applicative_, Monad_, MonadReader_, MonadWriter_)
 
 instance (Add expr a) => Add (RescaleToTree expr) a where
@@ -74,48 +89,44 @@ instance (Div2 expr a) => Div2 (RescaleToTree expr) a where
   div2_ = RT div2_
 
 instance (SHE expr) => SHE (RescaleToTree expr) where
-  type ModSwitchPTCtx   (RescaleToTree expr) ct zp' = ModSwitchPTCtx expr ct zp'
-  type RescaleLinearCtx (RescaleToTree expr) ct zq' = RescaleLinearCtx expr ct zq'
-  type AddPublicCtx     (RescaleToTree expr) ct     = AddPublicCtx expr ct
-  type MulPublicCtx     (RescaleToTree expr) ct     = MulPublicCtx expr ct
-  type KeySwitchQuadCtx (RescaleToTree expr) ct gad = KeySwitchQuadCtx expr ct gad
+  type ModSwitchPTCtx   (RescaleToTree expr) ct zp' =
+       ModSwitchPTCtx                  expr  ct zp'
+  type RescaleLinearCtx (RescaleToTree expr) ct zq' =
+       RescaleLinearCtx                expr  ct zq'
+  type AddPublicCtx     (RescaleToTree expr) ct     =
+       AddPublicCtx                    expr  ct
+  type MulPublicCtx     (RescaleToTree expr) ct     =
+       MulPublicCtx                    expr  ct
+  type KeySwitchQuadCtx (RescaleToTree expr) ct gad =
+       KeySwitchQuadCtx                expr  ct gad
   type TunnelCtx (RescaleToTree expr) t e r s e' r' s' zp zq gad =
-    TunnelCtx expr t e r s e' r' s' zp zq gad
+       TunnelCtx                expr  t e r s e' r' s' zp zq gad
 
-  modSwitchPT_ = RT modSwitchPT_
-
-  rescaleLinear_ = RT rescaleLinear_
-
-  addPublic_ = RT . addPublic_
-
-  mulPublic_ = RT . mulPublic_
-
+  modSwitchPT_   = RT   modSwitchPT_
+  rescaleLinear_ = RT   rescaleLinear_
+  addPublic_     = RT . addPublic_
+  mulPublic_     = RT . mulPublic_
   keySwitchQuad_ = RT . keySwitchQuad_
-
-  tunnel_ = RT . tunnel_
+  tunnel_        = RT . tunnel_
 
 instance (TunnelCyc expr m) => TunnelCyc (RescaleToTree expr) m where
-  type TunnelCycCtx (RescaleToTree expr) m t e r s zp = TunnelCycCtx expr m t e r s zp
+  type TunnelCycCtx (RescaleToTree expr) m t e r s zp =
+       TunnelCycCtx                expr  m t e r s zp
 
   type PreTunnelCyc (RescaleToTree expr) m = PreTunnelCyc expr m
 
   tunnelCyc_ = RT . tunnelCyc_
 
-
 type family PreRescale expr (k::Pos) z2 where
-  PreRescale expr 'O z2 = z2
+  PreRescale expr  'O    z2 = z2
   PreRescale expr ('S k) z2 = PreMul expr (PreDiv2 expr (PreRescale expr k z2))
 
-instance (Lambda expr) => RescaleZqPow2 (RescaleToTree expr) 'O (ZqBasic PP2 i) where
+-- CJP: rescaling anything from mod-2 to mod-2 is just the identity
+-- function.  Is this instance head OK, or too general?
 
-  type PreRescaleZqPow2 (RescaleToTree expr) 'O (ZqBasic PP2 i) = ZqBasic PP2 i
+instance (Lambda expr) => RescaleZqPow2 (RescaleToTree expr) 'O a where
 
-  -- k = 1, so p = 2^k = 2
-  rescaleZqPow2_ = pure $ RT $ lam v0
-
-instance (Lambda expr) => RescaleZqPow2 (RescaleToTree expr) 'O (f (ZqBasic PP2 i)) where
-
-  type PreRescaleZqPow2 (RescaleToTree expr) 'O (f (ZqBasic PP2 i)) = f (ZqBasic PP2 i)
+  type PreRescaleZqPow2 (RescaleToTree expr) 'O a = a
 
   -- k = 1, so p = 2^k = 2
   rescaleZqPow2_ = pure $ RT $ lam v0
@@ -148,10 +159,10 @@ type RescaleToTreeCtx'' expr k z2 prediv =
    Internal expr k z2, Reflects ('S k) Int, Mul expr prediv,
    Ring (PreMul expr prediv), Ring prediv, AddLit expr (PreMul expr prediv))
 
--- k > 1, so p = 2^k >= 4, meaning we can divide p by 4
-rescaleZqPow2__ :: forall expr k z2 e .
-  (RescaleToTreeCtx expr k z2)
-  => Tagged ('S k) (RescaleToTree expr e (PreRescaleZqPow2 (RescaleToTree expr) ('S k) z2 -> z2))
+-- 'S k > 1, so p = 2^k >= 4, meaning we can divide p by 4
+rescaleZqPow2__ :: forall expr k z2 e . (RescaleToTreeCtx expr k z2)
+  => Tagged ('S k)
+  (RescaleToTree expr e (PreRescaleZqPow2 (RescaleToTree expr) ('S k) z2 -> z2))
 rescaleZqPow2__ = pure $ RT $ lam $
     let xprod = v0 *: (one >+: v0)
         lgpVal = proxy value (Proxy::Proxy ('S k)) :: Int
@@ -164,7 +175,7 @@ class Internal expr (k :: Pos) z2 where
 
 instance Internal expr P1 z2 where
   internal _ [x] = x
-  internal _ _ = error "Internal error in RescaleToTree (internal) base case."
+  internal _ _   = error "Internal error in RescaleToTree (internal) base case."
 
 instance (Internal expr k z2, Div2 expr (PreRescale expr k z2), Lambda expr,
           Mul expr (PreDiv2 expr (PreRescale expr k z2)))
@@ -172,4 +183,6 @@ instance (Internal expr k z2, Div2 expr (PreRescale expr k z2), Lambda expr,
   internal _ = internal (Proxy::Proxy k) . map ((div2_ $:) . uncurry (*:)) . listToPairs
 
 listToPairs :: [a] -> [(a,a)]
-listToPairs (a:b:xs) = (a,b):listToPairs xs
+listToPairs []       = []
+listToPairs (a:b:xs) = (a,b) : listToPairs xs
+listToPairs _        = error "listToPairs internal error: odd number of elements"
