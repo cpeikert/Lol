@@ -34,7 +34,8 @@ import Crypto.Alchemy.Language.SHE
 import Crypto.Alchemy.Language.TunnelCyc
 
 import Crypto.Lol
-import Crypto.Lol.Reflects -- EAC: shouldn't have to import this
+-- EAC: shouldn't have to import this
+import Crypto.Lol.Reflects
 import Crypto.Lol.Types
 
 import Control.Applicative
