@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 
 module Crypto.Alchemy.Language.Lambda where
@@ -44,3 +45,12 @@ v3 = s v2
 
 v4 :: Lambda expr => expr (((((f,e),d),c),b),a) e
 v4 = s v3
+
+class Embed env' env where
+  embedExpr :: (Lambda expr) => expr env' a -> expr env a
+
+instance Embed () () where
+  embedExpr = id
+
+instance Embed e (e,x) where
+  embedExpr = s

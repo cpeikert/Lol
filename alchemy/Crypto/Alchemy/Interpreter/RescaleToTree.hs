@@ -19,7 +19,7 @@
 -}
 
 module Crypto.Alchemy.Interpreter.RescaleToTree
-( RescaleToTree, rescaleToTree, RescaleCycCRTCtx
+( RescaleCycCRTCtx
 , rescaleTreeCRT_, rescaleTreeCRT)
 where
 
@@ -42,11 +42,11 @@ import Control.Applicative
 
 -- | Constraint synonym for rescaling the CRT slots of a Cyc.
 -- This synonym is injective in zqenv and cyc2.
-type RescaleCycCRTCtx zqenv env t m expr k z2 cyc2 cyc2k =
-  RescaleCycCRTCtx' (RescaleToTree (MapCRTSlots expr t m)) zqenv env t m k z2 cyc2 cyc2k
+type RescaleCycCRTCtx env t m expr k z2 cyc2 cyc2k =
+  (Lambda expr, Embed () env, RescaleCycCRTCtx' (RescaleToTree (MapCRTSlots expr t m)) t m k z2 cyc2 cyc2k)
 
-type RescaleCycCRTCtx' rescaleexpr zqenv env t m k z2 cyc2 cyc2k =
-  (env ~ Zq2Cyc t m zqenv, RescaleZqPow2 rescaleexpr k z2,
+type RescaleCycCRTCtx' rescaleexpr t m k z2 cyc2 cyc2k =
+  (RescaleZqPow2 rescaleexpr k z2,
    cyc2k ~ Zq2Cyc t m (PreRescaleZqPow2 rescaleexpr k z2), cyc2 ~ Zq2Cyc t m z2)
 
 -- | Convenience function: using the (arithmetic) rescaling tree,
@@ -54,69 +54,28 @@ type RescaleCycCRTCtx' rescaleexpr zqenv env t m k z2 cyc2 cyc2k =
 -- \( R_{2^k} \) down to \( \Z_2 \), with the result in \( R_2 \).
 -- (If the values in the slots are not restricted to \( \Z_{2^k} \),
 -- the behavior is undefined.)
-rescaleTreeCRT_ :: forall zqenv env t m expr k z2 cyc2 cyc2k rescaleexpr .
-  (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2 cyc2k,
+rescaleTreeCRT_ :: forall env t m expr k z2 cyc2 cyc2k rescaleexpr .
+  (RescaleCycCRTCtx env t m expr k z2 cyc2 cyc2k,
    rescaleexpr ~ RescaleToTree (MapCRTSlots expr t m))
   => Tagged '(t,m,k) (expr env (cyc2k -> Zq2Cyc t m z2))
 -- EAC: GHC is insisting on a type sig here, but I suspect it is unnecessary.
-rescaleTreeCRT_ = pure $ proxy
-  (mapCRTSlots <$> (rescaleToTree <$> rescaleZqPow2_ :: _ (MapCRTSlots expr t m zqenv (PreRescaleZqPow2 rescaleexpr k z2 -> z2))))
+rescaleTreeCRT_ =  pure $ embedExpr $ proxy
+  (mapCRTSlots <$> (rescaleToTree <$> rescaleZqPow2_ :: _ (MapCRTSlots expr t m () (PreRescaleZqPow2 rescaleexpr k z2 -> z2))))
   (Proxy::Proxy k)
 
-rescaleTreeCRT :: (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2 cyc2k, Lambda expr)
+rescaleTreeCRT :: (RescaleCycCRTCtx env t m expr k z2 cyc2 cyc2k)
   => Tagged '(t,m,k) (expr env cyc2k -> expr env (Zq2Cyc t m z2))
 rescaleTreeCRT = ($:) <$> rescaleTreeCRT_
 
+-- EAC: RescaleToTree *only* needs to be an instance of RescaleZqPow2, and no
+-- other interpreters need to implement that class. It feels like that RescaleZqPow2
+-- doesn't really need to be a class at all, and RescaleToTree doesn't need to be
+-- a full interpreter.
+
+-- However, I'm keeping it this way for now
+
 newtype RescaleToTree expr env a = RT { rescaleToTree :: expr env a }
-  deriving (Lambda, List, Functor_, Applicative_, Monad_, MonadReader_, MonadWriter_)
-
-instance (Add expr a) => Add (RescaleToTree expr) a where
-  add_ = RT add_
-  neg_ = RT neg_
-
-instance (AddLit expr a) => AddLit (RescaleToTree expr) a where
-  addLit_ = RT . addLit_
-
-instance (Mul expr a) => Mul (RescaleToTree expr) a where
-  type PreMul (RescaleToTree expr) a = PreMul expr a
-  mul_ = RT mul_
-
-instance (MulLit expr a) => MulLit (RescaleToTree expr) a where
-  mulLit_ = RT . mulLit_
-
-instance (Div2 expr a) => Div2 (RescaleToTree expr) a where
-  type PreDiv2 (RescaleToTree expr) a = PreDiv2 expr a
-
-  div2_ = RT div2_
-
-instance (SHE expr) => SHE (RescaleToTree expr) where
-  type ModSwitchPTCtx   (RescaleToTree expr) ct zp' =
-       ModSwitchPTCtx                  expr  ct zp'
-  type RescaleLinearCtx (RescaleToTree expr) ct zq' =
-       RescaleLinearCtx                expr  ct zq'
-  type AddPublicCtx     (RescaleToTree expr) ct     =
-       AddPublicCtx                    expr  ct
-  type MulPublicCtx     (RescaleToTree expr) ct     =
-       MulPublicCtx                    expr  ct
-  type KeySwitchQuadCtx (RescaleToTree expr) ct gad =
-       KeySwitchQuadCtx                expr  ct gad
-  type TunnelCtx (RescaleToTree expr) t e r s e' r' s' zp zq gad =
-       TunnelCtx                expr  t e r s e' r' s' zp zq gad
-
-  modSwitchPT_   = RT   modSwitchPT_
-  rescaleLinear_ = RT   rescaleLinear_
-  addPublic_     = RT . addPublic_
-  mulPublic_     = RT . mulPublic_
-  keySwitchQuad_ = RT . keySwitchQuad_
-  tunnel_        = RT . tunnel_
-
-instance (TunnelCyc expr m) => TunnelCyc (RescaleToTree expr) m where
-  type TunnelCycCtx (RescaleToTree expr) m t e r s zp =
-       TunnelCycCtx                expr  m t e r s zp
-
-  type PreTunnelCyc (RescaleToTree expr) m = PreTunnelCyc expr m
-
-  tunnelCyc_ = RT . tunnelCyc_
+  --deriving (Lambda, List, Functor_, Applicative_, Monad_, MonadReader_, MonadWriter_)
 
 type family PreRescale expr (k::Pos) z2 where
   PreRescale expr  'O    z2 = z2
@@ -190,3 +149,53 @@ listToPairs :: [a] -> [(a,a)]
 listToPairs []       = []
 listToPairs (a:b:xs) = (a,b) : listToPairs xs
 listToPairs _        = error "listToPairs internal error: odd number of elements"
+
+{-
+instance (Add expr a) => Add (RescaleToTree expr) a where
+  add_ = RT add_
+  neg_ = RT neg_
+
+instance (AddLit expr a) => AddLit (RescaleToTree expr) a where
+  addLit_ = RT . addLit_
+
+instance (Mul expr a) => Mul (RescaleToTree expr) a where
+  type PreMul (RescaleToTree expr) a = PreMul expr a
+  mul_ = RT mul_
+
+instance (MulLit expr a) => MulLit (RescaleToTree expr) a where
+  mulLit_ = RT . mulLit_
+
+instance (Div2 expr a) => Div2 (RescaleToTree expr) a where
+  type PreDiv2 (RescaleToTree expr) a = PreDiv2 expr a
+
+  div2_ = RT div2_
+
+instance (SHE expr) => SHE (RescaleToTree expr) where
+  type ModSwitchPTCtx   (RescaleToTree expr) ct zp' =
+       ModSwitchPTCtx                  expr  ct zp'
+  type RescaleLinearCtx (RescaleToTree expr) ct zq' =
+       RescaleLinearCtx                expr  ct zq'
+  type AddPublicCtx     (RescaleToTree expr) ct     =
+       AddPublicCtx                    expr  ct
+  type MulPublicCtx     (RescaleToTree expr) ct     =
+       MulPublicCtx                    expr  ct
+  type KeySwitchQuadCtx (RescaleToTree expr) ct gad =
+       KeySwitchQuadCtx                expr  ct gad
+  type TunnelCtx (RescaleToTree expr) t e r s e' r' s' zp zq gad =
+       TunnelCtx                expr  t e r s e' r' s' zp zq gad
+
+  modSwitchPT_   = RT   modSwitchPT_
+  rescaleLinear_ = RT   rescaleLinear_
+  addPublic_     = RT . addPublic_
+  mulPublic_     = RT . mulPublic_
+  keySwitchQuad_ = RT . keySwitchQuad_
+  tunnel_        = RT . tunnel_
+
+instance (TunnelCyc expr m) => TunnelCyc (RescaleToTree expr) m where
+  type TunnelCycCtx (RescaleToTree expr) m t e r s zp =
+       TunnelCycCtx                expr  m t e r s zp
+
+  type PreTunnelCyc (RescaleToTree expr) m = PreTunnelCyc expr m
+
+  tunnelCyc_ = RT . tunnelCyc_
+-}
