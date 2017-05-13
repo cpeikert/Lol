@@ -125,6 +125,9 @@ type family PreRescale expr (k::Pos) z2 where
 -- CJP: rescaling anything from mod-2 to mod-2 is just the identity
 -- function.  Is this instance head OK, or too general?
 
+-- TODO: go back to specific instance heads for ZqBasic, PNoise,
+-- Identity (if necessary)
+
 instance (Lambda expr) => RescaleZqPow2 (RescaleToTree expr) 'O a where
 
   type PreRescaleZqPow2 (RescaleToTree expr) 'O a = a
