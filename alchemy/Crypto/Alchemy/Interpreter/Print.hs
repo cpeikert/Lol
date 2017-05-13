@@ -16,9 +16,10 @@ import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
 import Crypto.Alchemy.Language.TunnelCyc
 
-import Crypto.Lol                      (Cyc, Pos(..), Prime2, PrimePower(..))
+import Crypto.Lol                      (Cyc, Pos (..), Prime2,
+                                        PrimePower (..))
 import Crypto.Lol.Applications.SymmSHE (CT)
-import Crypto.Lol.Types (ZqBasic)
+import Crypto.Lol.Types                (ZqBasic)
 
 -- the Int is the nesting depth of lambdas outside the expression
 newtype P e a = P { unP :: Int -> String }
@@ -59,11 +60,15 @@ instance Show a => MulLit P a where
   mulLit_ a = pureP $ "mulLit (" ++ show a ++ ")"
 
 instance Div2 P (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) where
-  type PreDiv2 P (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) = Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i)
+  type PreDiv2 P (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) =
+    Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i)
+
   div2_ = pureP "div2"
 
 instance Div2 P (f (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
-  type PreDiv2 P (f (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) = f (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
+  type PreDiv2 P (f (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
+    f (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
+
   div2_ = pureP "div2"
 
 instance Functor_ P where
