@@ -17,7 +17,6 @@ module Crypto.Alchemy.Interpreter.RescaleToTree
 ,RescaleToTree, rescaleToTree) where
 
 import Crypto.Alchemy.Interpreter.MapCRTSlots
-import Crypto.Alchemy.Interpreter.PT2CT.Noise hiding (take)
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
@@ -34,20 +33,22 @@ import Crypto.Lol.Types
 import Control.Applicative
 
 -- | Constraint synonym for rescaling the CRT slots of a Cyc.
--- This synonym is injective in zqenv.
-type RescaleCycCRTCtx zqenv env t m expr k z2 cyc2k =
-  RescaleCycCRTCtx' (RescaleToTree (MapCRTSlots expr t m)) zqenv env t m k z2 cyc2k
+-- This synonym is injective in zqenv and cyc2.
+type RescaleCycCRTCtx zqenv env t m expr k z2 cyc2 cyc2k =
+  RescaleCycCRTCtx' (RescaleToTree (MapCRTSlots expr t m)) zqenv env t m k z2 cyc2 cyc2k
 
-type RescaleCycCRTCtx' bigexpr zqenv env t m k z2 cyc2k =
+type RescaleCycCRTCtx' bigexpr zqenv env t m k z2 cyc2 cyc2k =
   (env ~ Zq2Cyc t m zqenv, RescaleZqPow2 bigexpr k z2,
-   Zq2Cyc t m (PreRescaleZqPow2 bigexpr k z2) ~ cyc2k)
+   cyc2k ~ Zq2Cyc t m (PreRescaleZqPow2 bigexpr k z2), cyc2 ~ Zq2Cyc t m z2)
 
-rescaleCycCRT_ :: (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2k)
-  => Tagged k (expr env (cyc2k -> Zq2Cyc t m z2))
-rescaleCycCRT_ = mapCRTSlots <$> rescaleToTree <$> rescaleZqPow2_
+rescaleCycCRT_ :: forall zqenv env t m expr k z2 cyc2 cyc2k bigexpr .
+  (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2 cyc2k, bigexpr ~ RescaleToTree (MapCRTSlots expr t m))
+  => Tagged '(t,m,k) (expr env (cyc2k -> Zq2Cyc t m z2))
+-- EAC: GHC is insisting on a type sig here, but I suspect it is unnecessary.
+rescaleCycCRT_ = pure $ proxy (mapCRTSlots <$> (rescaleToTree <$> rescaleZqPow2_ :: _ (MapCRTSlots expr t m zqenv (PreRescaleZqPow2 bigexpr k z2 -> z2)))) (Proxy::Proxy k)
 
-rescaleCycCRT :: (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2k, Lambda expr)
-  => Tagged k (expr env cyc2k -> expr env (Zq2Cyc t m z2))
+rescaleCycCRT :: (RescaleCycCRTCtx zqenv env t m expr k z2 cyc2 cyc2k, Lambda expr)
+  => Tagged '(t,m,k) (expr env cyc2k -> expr env (Zq2Cyc t m z2))
 rescaleCycCRT = ($:) <$> rescaleCycCRT_
 
 newtype RescaleToTree expr env a = RT {rescaleToTree :: expr env a}
@@ -112,10 +113,9 @@ instance (Lambda expr) => RescaleZqPow2 (RescaleToTree expr) 'O (ZqBasic PP2 i) 
   -- k = 1, so p = 2^k = 2
   rescaleZqPow2_ = pure $ RT $ lam v0
 
-instance (Lambda expr) => RescaleZqPow2 (RescaleToTree expr) 'O (PNoise h (ZqBasic PP2 i)) where
+instance (Lambda expr) => RescaleZqPow2 (RescaleToTree expr) 'O (f (ZqBasic PP2 i)) where
 
-  type PreRescaleZqPow2 (RescaleToTree expr) 'O (PNoise h (ZqBasic PP2 i)) =
-    PNoise h (ZqBasic PP2 i)
+  type PreRescaleZqPow2 (RescaleToTree expr) 'O (f (ZqBasic PP2 i)) = f (ZqBasic PP2 i)
 
   -- k = 1, so p = 2^k = 2
   rescaleZqPow2_ = pure $ RT $ lam v0
@@ -128,11 +128,11 @@ instance (RescaleToTreeCtx expr k (ZqBasic PP2 i))
 
   rescaleZqPow2_ = rescaleZqPow2__
 
-instance (RescaleToTreeCtx expr k (PNoise h (ZqBasic PP2 i)))
-  => RescaleZqPow2 (RescaleToTree expr) ('S k) (PNoise h (ZqBasic PP2 i)) where
+instance (RescaleToTreeCtx expr k (f (ZqBasic PP2 i)))
+  => RescaleZqPow2 (RescaleToTree expr) ('S k) (f (ZqBasic PP2 i)) where
 
-  type PreRescaleZqPow2 (RescaleToTree expr) ('S k) (PNoise h (ZqBasic PP2 i)) =
-    PreRescale expr ('S k) (PNoise h (ZqBasic PP2 i))
+  type PreRescaleZqPow2 (RescaleToTree expr) ('S k) (f (ZqBasic PP2 i)) =
+    PreRescale expr ('S k) (f (ZqBasic PP2 i))
 
   rescaleZqPow2_ = rescaleZqPow2__
 
