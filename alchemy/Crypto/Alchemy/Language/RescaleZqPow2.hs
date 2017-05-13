@@ -10,8 +10,8 @@
 
 module Crypto.Alchemy.Language.RescaleZqPow2 where
 
-import Crypto.Lol (Pos, Tagged)
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Lol                     (Pos, Tagged)
 
 -- | Symantics for rescaling the integers modulo a power of two.
 
