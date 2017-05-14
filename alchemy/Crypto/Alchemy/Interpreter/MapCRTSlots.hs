@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
 {-# LANGUAGE PolyKinds              #-}
+{-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances   #-}
@@ -19,9 +20,9 @@
 
 module Crypto.Alchemy.Interpreter.MapCRTSlots where
 
+import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Interpreter.PT2CT.Noise
 
 import Crypto.Lol
 import Crypto.Lol.Types (ZqBasic)
@@ -49,7 +50,8 @@ type family Cyc2Zq cyc where
 newtype MapCRTSlots expr t m e a =
   M { unM :: expr (Zq2Cyc t m e) (Zq2Cyc t m a) }
 
-mapCRTSlots :: MapCRTSlots expr t m e a -> expr (Zq2Cyc t m e) (Zq2Cyc t m a)
+mapCRTSlots :: forall t m expr e a . -- for Type Applications
+  MapCRTSlots expr t m e a -> expr (Zq2Cyc t m e) (Zq2Cyc t m a)
 mapCRTSlots = unM
 
 instance Lambda expr => Lambda (MapCRTSlots expr t m) where

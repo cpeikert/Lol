@@ -24,23 +24,23 @@ module Crypto.Alchemy.Interpreter.PT2CT
 import Control.Monad.Random
 import Control.Monad.Reader
 import Data.Dynamic
-import Data.Type.Natural    --((:+:), N1, N2, N3, N4, N5, Nat (..))
+import Data.Type.Natural
 import GHC.TypeLits         hiding (type (*), Nat)
 
 import           Crypto.Lol                      hiding (Pos (..))
 import qualified Crypto.Lol                      as Lol
-import           Crypto.Lol.Applications.SymmSHE hiding (decrypt, encrypt, TunnelCtx, AddPublicCtx, MulPublicCtx)
+import           Crypto.Lol.Applications.SymmSHE hiding (AddPublicCtx,
+                                                  MulPublicCtx, TunnelCtx,
+                                                  decrypt, encrypt)
 import qualified Crypto.Lol.Applications.SymmSHE as SHE
-import Crypto.Lol.Types
+import           Crypto.Lol.Types
 
 import Crypto.Alchemy.Interpreter.KeysHints
---import Crypto.Alchemy.Interpreter.MapCRTSlots
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
---import Crypto.Alchemy.Interpreter.RescaleToTree
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
-import Crypto.Alchemy.Language.SHE               as LSHE
+import Crypto.Alchemy.Language.SHE            as LSHE
 import Crypto.Alchemy.Language.TunnelCyc
 import Crypto.Alchemy.MonadAccumulator
 
@@ -185,13 +185,14 @@ pt2ctMul = PC $ do
     :: ctex _ (CT m zp (Cyc t m' hintzq)))
 
 instance (SHE ctex, Applicative mon,
-  LSHE.ModSwitchPTCtx ctex
-    (CT m (ZqBasic ('PP '(Prime2, 'Lol.S e)) i)
-      (Cyc t (Lookup m m'map) (PNoise2Zq zqs h)))
-    (ZqBasic ('PP '(Prime2, e)) i))
-  => Div2 (PT2CT m'map zqs gad z v ctex mon) (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, e)) i))) where
+          LSHE.ModSwitchPTCtx ctex
+           (CT m (ZqBasic ('PP '(Prime2, 'Lol.S e)) i) (Cyc t (Lookup m m'map) (PNoise2Zq zqs h)))
+           (ZqBasic ('PP '(Prime2, e)) i)) =>
+  Div2 (PT2CT m'map zqs gad z v ctex mon)
+  (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, e)) i))) where
 
-  type PreDiv2 (PT2CT m'map zqs gad z v ctex mon) (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, e)) i))) =
+  type PreDiv2 (PT2CT m'map zqs gad z v ctex mon)
+       (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, e)) i))) =
     PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, 'Lol.S e)) i))
 
   div2_ = PC $ pure modSwitchPT_
