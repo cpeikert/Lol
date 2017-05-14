@@ -42,43 +42,55 @@ type Z2E e i = ZqBasic ('PP '(Prime2, e)) i
 deriving instance (Additive a) => Additive.C (Identity a)
 deriving instance (Ring a) => Ring.C (Identity a)
 
-khprf_5hop :: forall t rngs z2k outputPNoise env k i expr z2 zqenv h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise .
-  (z2k ~ Z2E k i, z2 ~ Zq PP2,
+khprf_5hop :: forall t rngs k outputPNoise env z2k expr z2 h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise .
+  (z2 ~ Zq PP2,
    -- tunnel
    rngs ~ '[h0,h1,h2,h3,h4,h5], TunnelChainCtx expr t postTunnelPNoise z2k rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
    -- rescaleCycCRT
-   RescaleCycCRTCtx zqenv env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
-  => Proxy rngs -> expr env (preTunnelPNoise (Cyc t h0 z2k) -> outputPNoise (Cyc t h5 z2))
-khprf_5hop _ = proxy rescaleCycCRT_ (Proxy::Proxy '(t,h5,k)) .:
+   RescaleCycCRTCtx env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
+  => Proxy rngs -> Tagged k (expr env (preTunnelPNoise (Cyc t h0 z2k) -> outputPNoise (Cyc t h5 z2)))
+khprf_5hop _ = return $ (untag $ rescaleTreeCRT_ @t @h5 @k) .:
   tunnelDecToCRT_ .: tunnelDecToCRT_ @h4 .: tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1 .: lam v0
 
-khprf_1hop' :: forall t h4 h5  z2k outputPNoise env k i expr z2 zqenv postTunnelPNoise preTunnelPNoise rngs .
-  (z2k ~ Z2E k i, z2 ~ Zq PP2, Lambda expr,
+-- khprf_1hop', but without point-free style
+khprf_1hop'' :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs .
+  (z2 ~ Zq PP2,
     -- tunnel
    rngs ~ '[h4,h5], TunnelChainCtx expr t postTunnelPNoise z2k rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
    -- rescaleCycCRT
-   RescaleCycCRTCtx zqenv env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
-  => expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2))
-khprf_1hop' = proxy rescaleCycCRT_ (Proxy::Proxy '(t,h5,k)) .: tunnelDecToCRT_ .: lam v0
+   RescaleCycCRTCtx env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
+  => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
+khprf_1hop'' = return $ lam $ (untag $ rescaleTreeCRT_ @t @h5 @k) $: (tunnelDecToCRT_ $: v0)
 
-khprf_1hop :: forall t h4 h5  z2k outputPNoise env k i expr z2 zqenv postTunnelPNoise preTunnelPNoise .
-  (z2k ~ Z2E k i, z2 ~ Zq PP2, Lambda expr,
+-- khprf_1hop, but with generalized tunneling constraints
+khprf_1hop' :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs .
+  (z2 ~ Zq PP2,
+    -- tunnel
+   rngs ~ '[h4,h5], TunnelChainCtx expr t postTunnelPNoise z2k rngs,
+   PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
+   -- rescaleCycCRT
+   RescaleCycCRTCtx env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
+  => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
+khprf_1hop' = return $ (untag $ rescaleTreeCRT_ @t @h5 @k) .: tunnelDecToCRT_
+
+khprf_1hop :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise .
+  (z2 ~ Zq PP2, Lambda expr,
     -- tunnel
    TunnelDecToCRTCtx expr postTunnelPNoise t h4 h5 z2k,
    PreTunnelCyc expr postTunnelPNoise ~ preTunnelPNoise,
    -- rescaleCycCRT
-   RescaleCycCRTCtx zqenv env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
-  => expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2))
-khprf_1hop = proxy rescaleCycCRT_ (Proxy::Proxy '(t,h5,k)) .: tunnelDecToCRT_ .: lam v0
+   RescaleCycCRTCtx env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
+  => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
+khprf_1hop = return $ (untag $ rescaleTreeCRT_ @t @h5 @k) .: tunnelDecToCRT_
 
-khprf_0hop :: forall t h5  z2k outputPNoise env k i expr z2 zqenv postTunnelPNoise .
-  (z2k ~ Z2E k i, z2 ~ Zq PP2, Lambda expr,
+khprf_0hop :: forall t h5 k outputPNoise z2k env expr z2 postTunnelPNoise .
+  (z2 ~ Zq PP2, Lambda expr,
    -- rescaleCycCRT
-   RescaleCycCRTCtx zqenv (env, postTunnelPNoise (Cyc t h5 z2k)) t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
-  => expr env (postTunnelPNoise (Cyc t h5 z2k) -> outputPNoise (Cyc t h5 z2))
-khprf_0hop = lam $ proxy rescaleCycCRT (Proxy::Proxy '(t,h5,k)) v0
+   RescaleCycCRTCtx env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
+  => Tagged k (expr env (postTunnelPNoise (Cyc t h5 z2k) -> outputPNoise (Cyc t h5 z2)))
+khprf_0hop = retag $ rescaleTreeCRT_ @t @h5 @k
 
 main :: IO ()
 main = do
@@ -86,14 +98,16 @@ main = do
 
   -- example with rescale de-duplication when tunneling
   -- print the unapplied PT function
-  putStrLn $ pprint $ khprf_0hop @CT @H5 @(Zq PP8) @(PNoise 'Z)
-  putStrLn $ pprint $ khprf_0hop @CT @H5 @(Zq PP8) @Identity
-  putStrLn $ pprint $ khprf_1hop @CT @H0 @H1 @(Zq PP8) @(PNoise 'Z)
-  putStrLn $ pprint $ khprf_1hop @CT @H0 @H1 @(Zq PP8) @Identity
-  putStrLn $ pprint $ khprf_1hop' @CT @H0 @H1 @(Zq PP8) @(PNoise 'Z)
-  putStrLn $ pprint $ khprf_1hop' @CT @H0 @H1 @(Zq PP8) @Identity
-  putStrLn $ pprint $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @(PNoise 'Z) Proxy
-  putStrLn $ pprint $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @Identity Proxy
+  putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @(PNoise 'Z)
+  putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @Identity
+  putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3 @(PNoise 'Z)
+  putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3  @Identity
+  putStrLn $ pprint $ untag $ khprf_1hop' @CT @H0 @H1 @P3 @(PNoise 'Z)
+  putStrLn $ pprint $ untag $ khprf_1hop' @CT @H0 @H1 @P3 @Identity
+  putStrLn $ pprint $ untag $ khprf_1hop'' @CT @H0 @H1 @P3 @(PNoise 'Z)
+  putStrLn $ pprint $ untag $ khprf_1hop'' @CT @H0 @H1 @P3 @Identity
+  putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) Proxy
+  putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @Identity Proxy
   --putStrLn $ show $ eval exp1b 2
 {-
   -- compile the up-applied function to CT, then print it out

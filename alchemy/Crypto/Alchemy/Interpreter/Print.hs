@@ -59,6 +59,11 @@ instance Mul P a where
 instance Show a => MulLit P a where
   mulLit_ a = pureP $ "mulLit (" ++ show a ++ ")"
 
+instance Div2 P a where
+  type PreDiv2 P a = a
+
+  div2_ = pureP "div2"
+{-
 instance Div2 P (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) where
   type PreDiv2 P (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) =
     Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i)
@@ -70,7 +75,7 @@ instance Div2 P (f (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
     f (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
 
   div2_ = pureP "div2"
-
+-}
 instance Functor_ P where
   fmap_ = pureP "fmap"
 
