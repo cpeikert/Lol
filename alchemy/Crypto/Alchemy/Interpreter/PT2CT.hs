@@ -214,6 +214,8 @@ type PT2CTTunnelCtx' ctex mon m'map zqs h t e r s r' s' z zp zq zqin hintzq v ga
    RescaleLinearCtx ctex (CT s zp (Cyc t s' hintzq))  zq,
    Typeable t, Typeable r', Typeable s', Typeable z)
 
+-- multiple TunnelCyc instances, one for each type of gad we might use
+
 instance TunnelCyc (PT2CT m'map zqs TrivGad z v ctex mon) (PNoise h) where
 
   -- EAC: Danger: as far as GHC is concerned, ('S h) is not the same as (h :+: N1)

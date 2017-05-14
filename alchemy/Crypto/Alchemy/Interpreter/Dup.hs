@@ -2,6 +2,7 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Crypto.Alchemy.Interpreter.Dup (Dup, dup) where
 
@@ -59,12 +60,13 @@ instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
   keySwitchQuad_ h = Dup (keySwitchQuad_ h) (keySwitchQuad_ h)
   tunnel_        h = Dup (tunnel_ h)        (tunnel_ h)
 
-instance (TunnelCyc ex1 m, TunnelCyc ex2 m, PreTunnelCyc ex1 m ~ PreTunnelCyc ex2 m)
-  => TunnelCyc (Dup ex1 ex2) m where
-  type PreTunnelCyc (Dup ex1 ex2) m = PreTunnelCyc ex1 m
+instance (TunnelCyc ex1 rep, TunnelCyc ex2 rep,
+          PreTunnelCyc ex1 rep ~ PreTunnelCyc ex2 rep)
+  => TunnelCyc (Dup ex1 ex2) rep where
+  type PreTunnelCyc (Dup ex1 ex2) rep = PreTunnelCyc ex1 rep
 
-  type TunnelCycCtx (Dup ex1 ex2) m t e r s zp =
-    (TunnelCycCtx ex1 m t e r s zp, TunnelCycCtx ex2 m t e r s zp)
+  type TunnelCycCtx (Dup ex1 ex2) rep t e r s zp =
+    (TunnelCycCtx ex1 rep t e r s zp, TunnelCycCtx ex2 rep t e r s zp)
 
   tunnelCyc_ f = Dup (tunnelCyc_ f) (tunnelCyc_ f)
 
