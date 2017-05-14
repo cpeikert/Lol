@@ -49,7 +49,8 @@ type family Cyc2Zq cyc where
 newtype MapCRTSlots expr t m e a =
   M { unM :: expr (Zq2Cyc t m e) (Zq2Cyc t m a) }
 
-mapCRTSlots :: MapCRTSlots expr t m e a -> expr (Zq2Cyc t m e) (Zq2Cyc t m a)
+mapCRTSlots :: forall t m expr e a . -- for Type Applications
+  MapCRTSlots expr t m e a -> expr (Zq2Cyc t m e) (Zq2Cyc t m a)
 mapCRTSlots = unM
 
 instance Lambda expr => Lambda (MapCRTSlots expr t m) where
