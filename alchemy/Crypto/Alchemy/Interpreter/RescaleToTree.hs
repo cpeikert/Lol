@@ -51,7 +51,7 @@ type RescaleCycCRTCtx' rescaleexpr t m k z2 cyc2 cyc2k =
 -- \( R_{2^k} \) down to \( \Z_2 \), with the result in \( R_2 \).
 -- (If the values in the slots are not restricted to \( \Z_{2^k} \),
 -- the behavior is undefined.)
-rescaleTreeCRT_ :: forall env t m expr k z2 cyc2 cyc2k rescaleexpr .
+rescaleTreeCRT_ :: forall t m k env expr z2 cyc2 cyc2k rescaleexpr .
   (RescaleCycCRTCtx env t m expr k z2 cyc2 cyc2k,
    rescaleexpr ~ RescaleToTree (MapCRTSlots expr t m))
   => Tagged '(t,m,k) (expr env (cyc2k -> Zq2Cyc t m z2))
@@ -61,9 +61,14 @@ rescaleTreeCRT_ =  pure $ weaken $ proxy
                        _ (MapCRTSlots expr t m () (PreRescaleZqPow2 rescaleexpr k z2 -> z2))))
   (Proxy::Proxy k)
 
-rescaleTreeCRT :: (RescaleCycCRTCtx env t m expr k z2 cyc2 cyc2k)
+rescaleTreeCRT :: forall t m k env expr z2 cyc2 cyc2k .
+  (RescaleCycCRTCtx env t m expr k z2 cyc2 cyc2k)
   => Tagged '(t,m,k) (expr env cyc2k -> expr env (Zq2Cyc t m z2))
 rescaleTreeCRT = ($:) <$> rescaleTreeCRT_
+
+
+
+
 
 -- EAC: RescaleToTree *only* needs to be an instance of RescaleZqPow2, and no
 -- other interpreters need to implement that class. It feels like that RescaleZqPow2
