@@ -7,6 +7,7 @@
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -23,7 +24,9 @@ import Crypto.Lol.Types.ZPP                -- EAC: I shouldn't need to explicitl
 
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
+import Crypto.Alchemy.Interpreter.KeysHints
 import Crypto.Alchemy.Interpreter.Print
+import Crypto.Alchemy.Interpreter.PT2CT
 import Crypto.Alchemy.Interpreter.PT2CT.Noise hiding (take)
 import Crypto.Alchemy.Interpreter.RescaleToTree
 import Crypto.Alchemy.Language.Lambda
@@ -32,6 +35,7 @@ import Crypto.Alchemy.Language.TunnelCyc
 import Algebra.Additive as Additive (C(..))
 import qualified Algebra.Ring as Ring (C(..))
 import Control.Monad.Identity
+import Control.Monad.Reader
 import Data.Singletons.Prelude.List (Reverse)
 import Data.Type.Natural (Nat(Z))
 
@@ -42,8 +46,12 @@ type Z2E e i = ZqBasic ('PP '(Prime2, e)) i
 deriving instance (Additive a) => Additive.C (Identity a)
 deriving instance (Ring a) => Ring.C (Identity a)
 
-khprf_5hop :: forall t rngs k outputPNoise env z2k expr z2 h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise .
-  (z2 ~ Zq PP2,
+-- EAC: This is a convenient function, but it needs a home.
+argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
+argToReader f a = flip f a =<< ask
+
+khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise .
+  (z2 ~ Z2E 'O i,
    -- tunnel
    rngs ~ '[h0,h1,h2,h3,h4,h5], TunnelChainCtx expr t postTunnelPNoise z2k rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
@@ -94,8 +102,6 @@ khprf_0hop = retag $ rescaleTreeCRT_ @t @h5 @k
 
 main :: IO ()
 main = do
-  --let (exp1a, exp1b) = dup $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @(PNoise 'Z) @() @('S ('S 'O)) @Int64 Proxy
-
   -- example with rescale de-duplication when tunneling
   -- print the unapplied PT function
   putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @(PNoise 'Z)
@@ -106,27 +112,51 @@ main = do
   putStrLn $ pprint $ untag $ khprf_1hop' @CT @H0 @H1 @P3 @Identity
   putStrLn $ pprint $ untag $ khprf_1hop'' @CT @H0 @H1 @P3 @(PNoise 'Z)
   putStrLn $ pprint $ untag $ khprf_1hop'' @CT @H0 @H1 @P3 @Identity
-  putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) Proxy
-  putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @Identity Proxy
-  --putStrLn $ show $ eval exp1b 2
-{-
+  --putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) Proxy
+  putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @Identity @Int64 Proxy
+
+  -- EAC: It's terrible that we can't use Dup here: PreDiv2 P and PreDiv2 E disagree
+  putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy
+  putStrLn $ show $ eval (untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy) 2
+
   -- compile the up-applied function to CT, then print it out
   evalKeysHints (1.0 :: Double) $ do
     y <- argToReader (pt2ct
-         @'[ '(H0, H0'), '(H1,H1'), '(H2, H2') ]
-         @'[ Zq $(mkTLNatNat $ 2^(15 :: Int)),
-             Zq $(mkTLNatNat $ 2^(15 :: Int)+2),
-             Zq $(mkTLNatNat $ 2^(15 :: Int)+4) ]
-         @TrivGad
-         @Int64
-         @Double)
-         (tunn1 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy)
+                         @RngList -- from HomoPRFParams
+                         @ZqList
+                         @TrivGad
+                         @Int64
+                         @Double)
+                         (untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy)
     -- compile once, interpret with multiple ctexprs!!
     let (z1,z2) = dup y
     liftIO $ putStrLn $ pprint z1
     liftIO $ putStrLn $ pprint z2
     --liftIO $ putStrLn $ pprint $ dedupRescale z2
--}
+
+
+
+
+
+
+
+
+
+type ZQ1 = Zq $(mkTLNatNat 18869761)
+type ZQ2 = Zq $(mkTLNatNat 19393921)
+type ZQ3 = Zq $(mkTLNatNat 19918081)
+type ZQ4 = Zq $(mkTLNatNat 25159681)
+-- a 31-bit modulus, for rounding off after the last four hops
+type ZQ5 = Zq $(mkTLNatNat 2149056001)
+-- for rounding off after the first hop
+type ZQ6 = Zq $(mkTLNatNat 3144961)
+type ZQ7 = Zq $(mkTLNatNat 7338241)
+type ZqList = '[ZQ1,ZQ2,ZQ3,ZQ4,ZQ5,ZQ6,ZQ7]
+
+
+
+
+
 
 -- given the output 'm' (Cyc wrapper) of a chain of tunnels, returns the input Cyc wrapper.
 type family PreTunnelM expr m (rngs :: [Factored]) where
