@@ -27,14 +27,11 @@ import Crypto.Alchemy.Interpreter.MapCRTSlots
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.List
-import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.RescaleZqPow2
-import Crypto.Alchemy.Language.SHE
-import Crypto.Alchemy.Language.TunnelCyc
 
 import Crypto.Lol
 -- EAC: shouldn't have to import this
+-- CJP: needed for the Reflects instance for Pos and use of 'value', right?
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types
 
@@ -43,7 +40,7 @@ import Control.Applicative
 -- | Constraint synonym for rescaling the CRT slots of a Cyc.
 -- This synonym is injective in zqenv and cyc2.
 type RescaleCycCRTCtx env t m expr k z2 cyc2 cyc2k =
-  (Lambda expr, Embed () env, RescaleCycCRTCtx' (RescaleToTree (MapCRTSlots expr t m)) t m k z2 cyc2 cyc2k)
+  (Lambda expr, Weaken () env, RescaleCycCRTCtx' (RescaleToTree (MapCRTSlots expr t m)) t m k z2 cyc2 cyc2k)
 
 type RescaleCycCRTCtx' rescaleexpr t m k z2 cyc2 cyc2k =
   (RescaleZqPow2 rescaleexpr k z2,
@@ -59,8 +56,9 @@ rescaleTreeCRT_ :: forall env t m expr k z2 cyc2 cyc2k rescaleexpr .
    rescaleexpr ~ RescaleToTree (MapCRTSlots expr t m))
   => Tagged '(t,m,k) (expr env (cyc2k -> Zq2Cyc t m z2))
 -- EAC: GHC is insisting on a type sig here, but I suspect it is unnecessary.
-rescaleTreeCRT_ =  pure $ embedExpr $ proxy
-  (mapCRTSlots <$> (rescaleToTree <$> rescaleZqPow2_ :: _ (MapCRTSlots expr t m () (PreRescaleZqPow2 rescaleexpr k z2 -> z2))))
+rescaleTreeCRT_ =  pure $ weaken $ proxy
+  (mapCRTSlots <$> (rescaleToTree <$> rescaleZqPow2_ ::
+                       _ (MapCRTSlots expr t m () (PreRescaleZqPow2 rescaleexpr k z2 -> z2))))
   (Proxy::Proxy k)
 
 rescaleTreeCRT :: (RescaleCycCRTCtx env t m expr k z2 cyc2 cyc2k)
