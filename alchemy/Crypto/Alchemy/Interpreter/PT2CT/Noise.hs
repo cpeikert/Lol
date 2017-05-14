@@ -34,7 +34,7 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic
 
 -- | A value tagged by @pNoise =~ -log(noise rate)@.
-newtype PNoise (h :: Nat) a = PN a
+newtype PNoise (h :: Nat) a = PN {unPN :: a}
   -- EAC: Okay to derive Functor and Applicative? It makes life easier because
   -- we can define a single instance (e.g., of E) rather than one for Identity
   -- and one for (PNoise h)

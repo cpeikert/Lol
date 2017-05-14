@@ -40,6 +40,11 @@ instance (AddLit ex1 a, AddLit ex2 a) => AddLit (Dup ex1 ex2) a where
 instance (MulLit ex1 a, MulLit ex2 a) => MulLit (Dup ex1 ex2) a where
   mulLit_ a = Dup (mulLit_ a) (mulLit_ a)
 
+instance (Div2 ex1 a, Div2 ex2 a, PreDiv2 ex1 a ~ PreDiv2 ex2 a)
+  => Div2 (Dup ex1 ex2) a where
+  type PreDiv2 (Dup ex1 ex2) a = PreDiv2 ex1 a
+  div2_ = Dup div2_ div2_
+
 instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
   type ModSwitchPTCtx (Dup ex1 ex2) ct zp' = (ModSwitchPTCtx ex1 ct zp',
                                               ModSwitchPTCtx ex2 ct zp')

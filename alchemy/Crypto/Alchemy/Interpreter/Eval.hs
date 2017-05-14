@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveFunctor              #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
@@ -22,6 +23,7 @@ import Data.Tuple
 import Algebra.Additive as Additive
 import Algebra.Ring     as Ring
 
+import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
@@ -31,6 +33,7 @@ import Crypto.Alchemy.Language.TunnelCyc
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE as SHE
+import Crypto.Lol.Types
 
 -- | Metacircular evaluator.
 newtype E e a = E { unE :: e -> a }
@@ -63,6 +66,37 @@ instance Ring.C a => Mul E a where
 
 instance Ring.C a => MulLit E a where
   mulLit_ x = pureE (x *)
+
+instance (RescaleCyc (Cyc t) (ZqBasic ('PP '(Prime2, 'S k)) i) (ZqBasic ('PP '(Prime2, k)) i),
+          Fact m)
+  => Div2 E (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) where
+  type PreDiv2 E (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) =
+    Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i)
+  -- since input is divisible by two, it doesn't matter which basis we use
+  div2_ = pureE rescalePow
+
+instance (RescaleCyc (Cyc t) (ZqBasic ('PP '(Prime2, 'S k)) i) (ZqBasic ('PP '(Prime2, k)) i),
+          Fact m)
+  => Div2 E (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
+  type PreDiv2 E (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
+    PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
+  -- since input is divisible by two, it doesn't matter which basis we use
+  div2_ = pureE $ (PN . rescalePow . unPN)
+
+instance (RescaleCyc (Cyc t) (ZqBasic ('PP '(Prime2, 'S k)) i) (ZqBasic ('PP '(Prime2, k)) i),
+          Fact m)
+  => Div2 E (Identity (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
+  type PreDiv2 E (Identity (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
+    Identity (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
+  -- since input is divisible by two, it doesn't matter which basis we use
+  div2_ = pureE $ (Identity . rescalePow . runIdentity)
+
+instance (SHE.ModSwitchPTCtx t m' (ZqBasic ('PP '(Prime2, 'S k)) i) (ZqBasic ('PP '(Prime2, k)) i) zq) =>
+  Div2 E (CT m (ZqBasic ('PP '(Prime2, k)) i) (Cyc t m' zq)) where
+  type PreDiv2 E (CT m (ZqBasic ('PP '(Prime2, k)) i) (Cyc t m' zq)) =
+    CT m (ZqBasic ('PP '(Prime2, 'S k)) i) (Cyc t m' zq)
+
+  div2_ = pureE modSwitchPT
 
 instance List E where
   nil_  = pureE []
