@@ -105,11 +105,11 @@ instance SHE P where
   keySwitchQuad_ _ = pureP   "keySwitchQuad <HINT>"
   tunnel_        _ = pureP   "tunnel <FUNC>"
 
-instance TunnelCyc P m where
-  type PreTunnelCyc P m = m
-  type TunnelCycCtx P m t e r s zp = ()
+instance TunnelCyc P rep where
+  type PreTunnelCyc P rep = rep
+  type TunnelCycCtx P rep t e r s zp = ()
 
-  tunnelCyc_  _ = pureP "tunnelCyc <FUNC>"
+  tunnelCyc_ _ = pureP "tunnelCyc <FUNC>"
 
 instance ErrorRate P where
   type ErrorRateCtx P ct z = ()

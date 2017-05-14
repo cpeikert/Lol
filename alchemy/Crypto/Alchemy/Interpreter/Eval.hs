@@ -102,9 +102,9 @@ instance SHE E where
   keySwitchQuad_   = pureE . keySwitchQuadCirc
   tunnel_          = pureE . SHE.tunnel
 
-instance (Applicative m) => TunnelCyc E m where
-  type PreTunnelCyc E m = m
-  type TunnelCycCtx E m t e r s zp = (e `Divides` r, e `Divides` s, CElt t zp)
+instance (Applicative rep) => TunnelCyc E rep where
+  type PreTunnelCyc E rep = rep
+  type TunnelCycCtx E rep t e r s zp = (e `Divides` r, e `Divides` s, CElt t zp)
 
   tunnelCyc_ f = pureE $ fmap (evalLin f)
 
