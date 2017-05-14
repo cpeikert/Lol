@@ -49,8 +49,8 @@ v4 = s v3
 class Embed env' env where
   embedExpr :: (Lambda expr) => expr env' a -> expr env a
 
-instance Embed () () where
+instance Embed e e where
   embedExpr = id
 
-instance Embed e (e,x) where
-  embedExpr = s
+instance (Embed e1 e2) => Embed e1 (e2,x) where
+  embedExpr = s . embedExpr
