@@ -209,8 +209,7 @@ type PT2CTTunnelCtx' ctex mon m'map zqs h t e r s r' s' z zp zq zqin hintzq v ga
    TunnelCtx ctex t e r s (e * (r' / r)) r' s'   zp hintzq gad,
    TunnelHintCtx       t e r s (e * (r' / r)) r' s' z zp hintzq gad,
    GenSKCtx t r' z v, GenSKCtx t s' z v,
-   RescaleLinearCtx ctex (CT r zp (Cyc t r' zqin)) zq,
-   RescaleLinearCtx ctex (CT r zp (Cyc t r' zq))   hintzq,
+   RescaleLinearCtx ctex (CT r zp (Cyc t r' zqin)) hintzq,
    RescaleLinearCtx ctex (CT s zp (Cyc t s' hintzq))  zq,
    Typeable t, Typeable r', Typeable s', Typeable z)
 
@@ -249,9 +248,7 @@ pt2ctTunnelCyc f = PC $ do
     rescaleLinear_ $:    -- then scale back to the target modulus zq
     (tunnel_ hint $:     -- tunnel w/ the hint
       (rescaleLinear_ $: -- then scale (up) to the hint modulus zq'
-       -- first (possibly) rescale down to the target modulus zq
-       (rescaleLinear_ $: (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise (h :+: N1) rp)))
-        :: ctex _ (CT r zp (Cyc t r' zq)))))
+        (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise (h :+: N1) rp)))))
 
 ----- Type families -----
 
