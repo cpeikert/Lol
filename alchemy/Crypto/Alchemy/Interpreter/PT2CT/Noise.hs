@@ -50,12 +50,12 @@ type instance Modulus (ZqBasic q i) = q
 
 -- | Convert a list to nested pairs, in "reverse inside out" order:
 -- last element of list is first and outermost.
-type family List2Pairs a where List2Pairs a = L2P (Reverse a)
+type List2Pairs a = L2P (Reverse a)
 
 -- auxiliary family
 type family L2P a where
   L2P '[a] = a
-  L2P (a ': b) = (a, List2Pairs b)
+  L2P (a ': b) = (a, L2P b)
 
 -- | Maps  'Modulus' over a type list.
 type family MapModulus zqs where
