@@ -1,8 +1,10 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies          #-}
 
-module Crypto.Alchemy.Interpreter.Size where
+module Crypto.Alchemy.Interpreter.Size
+( S, size )
+where
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
@@ -11,7 +13,7 @@ import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
 import Crypto.Alchemy.Language.TunnelCyc
 
-newtype S expr a = S Int
+newtype S expr a = S { size :: Int }
 
 instance Add S a where
   add_ = S 1
@@ -64,15 +66,10 @@ instance SHE S where
   type TunnelCtx S t e r s e' r' s' zp zq gad = ()
 
   modSwitchPT_ = S 1
-
   modSwitch_ = S 1
-
   addPublic_ _ = S 1
-
   mulPublic_ _ = S 1
-
   keySwitchQuad_ _ = S 1
-
   tunnel_ _ = S 1
 
 instance TunnelCyc S rep where
