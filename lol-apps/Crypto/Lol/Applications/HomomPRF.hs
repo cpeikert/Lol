@@ -244,8 +244,8 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
           KeySwitchCtx gad t m' zp zqup, KSHintCtx gad t m' z zqup,                 -- for quadratic key switch
           Reflects p Int,                                                           -- value
           Ring (CT m zp (Cyc t m' zq)),                                             -- (*)
-          Rescale zq zqup,                                                          -- rescaleLinear (pre-switch)
-          RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq, Rescale zqup zq',          -- rescaleLinear (post-switch)
+          Rescale zq zqup,                                                          -- modSwitch (pre-switch)
+          RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq, Rescale zqup zq',          -- modSwitch (post-switch)
           ModSwitchPTCtx t m' zp zp' zq',                                           -- modSwitchPT
           PTRound t m m' e zp' zq' z gad zqs,                                       -- recursive call
           Protoable (KSQuadCircHint gad (Cyc t m' (ZqUp zq zqs))))                  -- toProto
@@ -259,14 +259,14 @@ instance (UnPP p ~ '(Prime2, 'S e),                                             
 
   ptRound (RHCons ksqHint rest) x =
     let x' = addPublic one x
-        xprod = rescaleLinear $ keySwitchQuadCirc ksqHint $ rescaleLinear $ x*x'
+        xprod = modSwitch $ keySwitchQuadCirc ksqHint $ modSwitch $ x*x'
         p = proxy value (Proxy::Proxy p)
         xs = map (\y->modSwitchPT $ addPublic (fromInteger $ y*(-y+1)) xprod) [1..] :: [CT m zp' (Cyc t m' zq')]
     in ptRoundInternal rest $ take (p `div` 4) xs
 
   ptRoundInternal (RHCons ksqHint rest) (xs :: [CT m (ZqBasic p i) (Cyc t m' zq)]) =
     let pairs = chunksOf 2 xs
-        go [a,b] = modSwitchPT $ rescaleLinear $ keySwitchQuadCirc ksqHint $ rescaleLinear $ a*b :: CT m zp' (Cyc t m' zq')
+        go [a,b] = modSwitchPT $ modSwitch $ keySwitchQuadCirc ksqHint $ modSwitch $ a*b :: CT m zp' (Cyc t m' zq')
     in ptRoundInternal rest (map go pairs)
 
 
