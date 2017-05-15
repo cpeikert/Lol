@@ -18,7 +18,7 @@
 -}
 
 module Crypto.Alchemy.Interpreter.RescaleTree
-( rescaleTreePow2_, RescaleTreePow2Ctx )
+( rescaleTreePow2_, RescaleTreePow2Ctx, PreRescaleTreePow2 )
 where
 
 import Crypto.Alchemy.Language.Arithmetic
@@ -27,14 +27,18 @@ import Crypto.Alchemy.Language.Lambda
 import Crypto.Lol
 -- EAC: shouldn't have to import this
 -- CJP: needed for the Reflects instance for Pos and use of 'value', right?
+-- EAC: Yes, but it should be exported by Lol.
 import Crypto.Lol.Reflects
 
-type RescaleTreePow2Ctx expr k r2 =
-  (Lambda expr, Reflects k Int, TreeMul expr k r2,
-   Div2 expr (PreRescaleTreePow2 expr k r2),
-   RescaleTreePow2Ctx' expr (PreDiv2 expr (PreRescaleTreePow2 expr k r2)))
+type family RescaleTreePow2Ctx expr k r2 where
+  RescaleTreePow2Ctx expr ('S k) r2 = RescaleTreePow2Ctx' expr k r2
 
-type RescaleTreePow2Ctx' expr r2k1 =
+type RescaleTreePow2Ctx' expr k r2 =
+  (Lambda expr, Reflects k Int, PosC k, TreeMul expr k r2,
+   Div2 expr (PreRescaleTreePow2 expr k r2),
+   RescaleTreePow2Ctx'' expr (PreDiv2 expr (PreRescaleTreePow2 expr k r2)))
+
+type RescaleTreePow2Ctx'' expr r2k1 =
   (AddLit expr r2k1, AddLit expr (PreMul expr r2k1), Mul expr r2k1,
    Ring r2k1, Ring (PreMul expr r2k1))
 
@@ -49,7 +53,7 @@ type family PreRescaleTreePow2 expr k r2 where
 -- mod-@2^{k+1}@ CRT slots hold \( \Z_{2^{k+1}} \) values (otherwise,
 -- the behavior is undefined).
 
-rescaleTreePow2_ :: forall k r2 expr e . (RescaleTreePow2Ctx expr k r2)
+rescaleTreePow2_ :: forall r2 k expr e . (RescaleTreePow2Ctx expr ('S k) r2)
   => Tagged ('S k) (expr e (PreRescaleTreePow2 expr ('S k) r2 -> r2))
 rescaleTreePow2_ = tag $ lam $
     let v'    = v0 *: (one >+: v0)

@@ -22,8 +22,10 @@ import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 import Crypto.Lol.Types.ZPP                -- EAC: I shouldn't need to explicitly import this...
 
+import Crypto.Alchemy.MonadAccumulator
 --import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Dup
+import Crypto.Alchemy.Interpreter.ErrorRateWriter
 import Crypto.Alchemy.Interpreter.Eval
 import Crypto.Alchemy.Interpreter.KeysHints
 import Crypto.Alchemy.Interpreter.Print
@@ -35,8 +37,10 @@ import Crypto.Alchemy.Language.TunnelCyc
 
 import Algebra.Additive as Additive (C(..))
 import qualified Algebra.Ring as Ring (C(..))
+import Control.Applicative
 import Control.Monad.Identity
 import Control.Monad.Reader
+import Control.Monad.Writer
 import Data.Singletons.Prelude.List (Reverse)
 import Data.Type.Natural (Nat(Z))
 
@@ -51,61 +55,80 @@ deriving instance (Ring a) => Ring.C (Identity a)
 argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
 argToReader f a = flip f a =<< ask
 
-khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise .
+khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise k' .
   (z2 ~ Z2E 'O i,
    -- tunnel
-   rngs ~ '[h0,h1,h2,h3,h4,h5], TunnelChainCtx expr t postTunnelPNoise z2k rngs,
+   rngs ~ '[h0,h1,h2,h3,h4,h5],
+   TunnelChainCtx expr t postTunnelPNoise z2k rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
    -- rescaleCycCRT
-   RescaleCycCRTCtx env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
+   k ~ 'S k',
+   PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
+   RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Proxy rngs -> Tagged k (expr env (preTunnelPNoise (Cyc t h0 z2k) -> outputPNoise (Cyc t h5 z2)))
-khprf_5hop _ = return $ (untag $ rescaleTreeCRT_ @t @h5 @k) .:
-  tunnelDecToCRT_ .: tunnelDecToCRT_ @h4 .: tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1 .: lam v0
-{-
+khprf_5hop _ = do
+  rescale <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
+  return $ rescale .: tunnelDecToCRT_ .: tunnelDecToCRT_ @h4 .:
+    tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1 .: lam v0
+
 -- khprf_1hop', but without point-free style
-khprf_1hop'' :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs .
+khprf_1hop'' :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs k' .
   (z2 ~ Zq PP2,
     -- tunnel
    rngs ~ '[h4,h5], TunnelChainCtx expr t postTunnelPNoise z2k rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
    -- rescaleCycCRT
-   RescaleCycCRTCtx env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
+   k ~ 'S k',
+   PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
+   RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
-khprf_1hop'' = return $ lam $ (untag $ rescaleTreeCRT_ @t @h5 @k) $: (tunnelDecToCRT_ $: v0)
+khprf_1hop'' = do
+  rescale <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
+  return $ lam $ rescale $: (tunnelDecToCRT_ $: v0)
 
 -- khprf_1hop, but with generalized tunneling constraints
-khprf_1hop' :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs .
+khprf_1hop' :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs k' .
   (z2 ~ Zq PP2,
     -- tunnel
    rngs ~ '[h4,h5], TunnelChainCtx expr t postTunnelPNoise z2k rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
    -- rescaleCycCRT
-   RescaleCycCRTCtx env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
+   k ~ 'S k',
+   PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
+   RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
-khprf_1hop' = return $ (untag $ rescaleTreeCRT_ @t @h5 @k) .: tunnelDecToCRT_
+khprf_1hop' = do
+  rescale <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
+  return $ rescale .: tunnelDecToCRT_
 
-khprf_1hop :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise .
+khprf_1hop :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise k' .
   (z2 ~ Zq PP2, Lambda expr,
     -- tunnel
    TunnelDecToCRTCtx expr postTunnelPNoise t h4 h5 z2k,
    PreTunnelCyc expr postTunnelPNoise ~ preTunnelPNoise,
    -- rescaleCycCRT
-   RescaleCycCRTCtx env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
+   k ~ 'S k',
+   PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
+   RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
-khprf_1hop = return $ (untag $ rescaleTreeCRT_ @t @h5 @k) .: tunnelDecToCRT_
+khprf_1hop = do
+  rescale <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
+  return $ rescale .: tunnelDecToCRT_
 
-khprf_0hop :: forall t h5 k outputPNoise z2k env expr z2 postTunnelPNoise .
+khprf_0hop :: forall t h5 k outputPNoise z2k env expr z2 postTunnelPNoise k' .
   (z2 ~ Zq PP2, Lambda expr,
    -- rescaleCycCRT
-   RescaleCycCRTCtx env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
+   k ~ 'S k',
+   PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
+   RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Tagged k (expr env (postTunnelPNoise (Cyc t h5 z2k) -> outputPNoise (Cyc t h5 z2)))
-khprf_0hop = retag $ rescaleTreeCRT_ @t @h5 @k
--}
+khprf_0hop = rescaleTreePow2_
+
 main :: IO ()
 main = do
   -- example with rescale de-duplication when tunneling
   -- print the unapplied PT function
-  {-putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @(PNoise 'Z)
+  putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @(PNoise 'Z)
   putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @Identity
   putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3 @(PNoise 'Z)
   putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3  @Identity
@@ -120,7 +143,7 @@ main = do
   -- EAC: It's terrible that we can't use Dup here: PreDiv2 P and PreDiv2 E disagree
   putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy
   putStrLn $ show $ eval (untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy) 2
-  -}
+
   -- compile the up-applied function to CT, then print it out
   evalKeysHints (1.0 :: Double) $ do
     y <- argToReader (pt2ct
@@ -133,8 +156,9 @@ main = do
     -- compile once, interpret with multiple ctexprs!!
     let (z1,z2) = dup y
     liftIO $ putStrLn $ pprint z1
-    (z2', errors) <- runWriterT $ writeErrorRates z2
-    liftIO $ putStrLn $ show $ eval z2' 2
+    z2' <- readerToAccumulator $ writeErrorRates @_ @Int64 z2
+    let (z2'',errors) = runWriter $ eval z2' $ return 2
+    liftIO $ putStrLn $ show z2''
     liftIO $ print errors
     --liftIO $ putStrLn $ pprint $ dedupRescale z2
 
