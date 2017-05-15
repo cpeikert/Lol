@@ -43,6 +43,7 @@ newtype ErrorRateWriter
 -- Consider `m Bool -> m Bool`: this could be the result of
 -- `Monadify (m Bool ->) (m Bool)` or `Monadify m (Bool -> Bool)`
 type family Monadify w a where
+  Monadify w () = ()
   Monadify w (a,b) = (Monadify w a, Monadify w b)
   Monadify w (a -> b) = Monadify w a -> Monadify w b
   Monadify w a = w a
@@ -126,13 +127,20 @@ instance (WriteErrorCtx expr z k w ct t m m' zp zq, Mul expr ct,
 instance (WriteErrorCtx expr z k w ct t m m' zp zq, AddLit expr ct) =>
   AddLit (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) where
 
-  addLit_ a = ERW $ liftWriteError (Proxy::Proxy z) $ addLit_ a
+  addLit_ = ERW . liftWriteError (Proxy::Proxy z) . addLit_
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq, MulLit expr ct) =>
   MulLit (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) where
 
-  mulLit_ a = ERW $ liftWriteError (Proxy::Proxy z) $ mulLit_ a
+  mulLit_ = ERW . liftWriteError (Proxy::Proxy z) . mulLit_
 
+instance (Monadify w (PreDiv2 expr ct) ~ w (PreDiv2 expr ct), ct ~ CT m zp (Cyc t m' zq),
+          Div2 expr ct, Lambda expr, Applicative_ expr, Applicative w, Applicative k)
+  => Div2 (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) where
+  type PreDiv2 (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) =
+    PreDiv2 expr (CT m zp (Cyc t m' zq))
+
+  div2_ = ERW $ pure $ liftA_ $: div2_
 
 ----- TRIVIAL WRAPPER INSTANCES -----
 
