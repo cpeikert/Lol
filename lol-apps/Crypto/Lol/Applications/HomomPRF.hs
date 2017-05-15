@@ -149,14 +149,14 @@ type family Div2 (a :: k) :: k
 type instance Div2 (ZqBasic q i) = ZqBasic (Div2 q) i
 type instance Div2 (pp :: PrimePower) = Head (UnF (PpToF pp / F2))
 
--- type-restricted versions of rescaleLinear
+-- type-restricted versions of modSwitch
 roundCTUp :: (RescaleCyc (Cyc t) zq (ZqUp zq zqs), ToSDCtx t m' zp zq)
   => Proxy zqs -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' (ZqUp zq zqs))
-roundCTUp _ = rescaleLinear
+roundCTUp _ = modSwitch
 
 roundCTDown :: (RescaleCyc (Cyc t) zq (ZqDown zq zqs), ToSDCtx t m' zp zq)
   => Proxy zqs -> CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' (ZqDown zq zqs))
-roundCTDown _ = rescaleLinear
+roundCTDown _ = modSwitch
 
 
 
