@@ -22,6 +22,7 @@ import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 import Crypto.Lol.Types.ZPP                -- EAC: I shouldn't need to explicitly import this...
 
+--import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
 import Crypto.Alchemy.Interpreter.KeysHints
@@ -60,7 +61,7 @@ khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 p
   => Proxy rngs -> Tagged k (expr env (preTunnelPNoise (Cyc t h0 z2k) -> outputPNoise (Cyc t h5 z2)))
 khprf_5hop _ = return $ (untag $ rescaleTreeCRT_ @t @h5 @k) .:
   tunnelDecToCRT_ .: tunnelDecToCRT_ @h4 .: tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1 .: lam v0
-
+{-
 -- khprf_1hop', but without point-free style
 khprf_1hop'' :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs .
   (z2 ~ Zq PP2,
@@ -99,12 +100,12 @@ khprf_0hop :: forall t h5 k outputPNoise z2k env expr z2 postTunnelPNoise .
    RescaleCycCRTCtx env t h5 expr k (outputPNoise z2) (outputPNoise (Cyc t h5 z2)) (postTunnelPNoise (Cyc t h5 z2k)))
   => Tagged k (expr env (postTunnelPNoise (Cyc t h5 z2k) -> outputPNoise (Cyc t h5 z2)))
 khprf_0hop = retag $ rescaleTreeCRT_ @t @h5 @k
-
+-}
 main :: IO ()
 main = do
   -- example with rescale de-duplication when tunneling
   -- print the unapplied PT function
-  putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @(PNoise 'Z)
+  {-putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @(PNoise 'Z)
   putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @Identity
   putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3 @(PNoise 'Z)
   putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3  @Identity
@@ -115,10 +116,11 @@ main = do
   --putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) Proxy
   putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @Identity @Int64 Proxy
 
+
   -- EAC: It's terrible that we can't use Dup here: PreDiv2 P and PreDiv2 E disagree
   putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy
   putStrLn $ show $ eval (untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy) 2
-
+  -}
   -- compile the up-applied function to CT, then print it out
   evalKeysHints (1.0 :: Double) $ do
     y <- argToReader (pt2ct
@@ -131,16 +133,10 @@ main = do
     -- compile once, interpret with multiple ctexprs!!
     let (z1,z2) = dup y
     liftIO $ putStrLn $ pprint z1
-    liftIO $ putStrLn $ pprint z2
+    (z2', errors) <- runWriterT $ writeErrorRates z2
+    liftIO $ putStrLn $ show $ eval z2' 2
+    liftIO $ print errors
     --liftIO $ putStrLn $ pprint $ dedupRescale z2
-
-
-
-
-
-
-
-
 
 type ZQ1 = Zq $(mkTLNatNat 18869761)
 type ZQ2 = Zq $(mkTLNatNat 19393921)
@@ -152,9 +148,6 @@ type ZQ5 = Zq $(mkTLNatNat 2149056001)
 type ZQ6 = Zq $(mkTLNatNat 3144961)
 type ZQ7 = Zq $(mkTLNatNat 7338241)
 type ZqList = '[ZQ1,ZQ2,ZQ3,ZQ4,ZQ5,ZQ6,ZQ7]
-
-
-
 
 
 
