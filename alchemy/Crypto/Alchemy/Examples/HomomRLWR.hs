@@ -13,7 +13,7 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-module Crypto.Alchemy.Examples.KHPRF where
+module Crypto.Alchemy.Examples.HomomRLWR where
 
 import Crypto.Lol
 import Crypto.Lol.Applications.Examples.HomomPRFParams
