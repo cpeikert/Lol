@@ -29,6 +29,10 @@ instance Mul S a where
 instance MulLit S a where
   mulLit_ _ = S 1
 
+instance Div2 S a where
+  type PreDiv2 S a = a
+  div2_ = S 1
+
 instance Lambda S where
   lam (S i) = S $ i+1
   (S f) $: (S a) = S $ f + a + 1
