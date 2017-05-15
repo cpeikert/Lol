@@ -21,6 +21,8 @@ module Crypto.Alchemy.Interpreter.RescaleTree
 ( rescaleTreePow2_, RescaleTreePow2Ctx, PreRescaleTreePow2 )
 where
 
+import Data.Constraint
+
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 
@@ -31,18 +33,16 @@ import Crypto.Lol
 import Crypto.Lol.Reflects
 import Data.Singletons
 
-type RescaleTreePow2Ctx expr k r2 = (PosC k, RescaleTreePow2Ctx' expr k r2)
+type RescaleTreePow2Ctx expr k r2 =
+  (Lambda expr, PosC k, RescaleTreePow2Ctx' expr k r2)
 
-type family RescaleTreePow2Ctx' expr k r2 where
-  RescaleTreePow2Ctx' expr 'O r2 = Lambda expr
-  RescaleTreePow2Ctx' expr ('S k) r2 = RescaleTreePow2Ctx'' expr k r2
+type family RescaleTreePow2Ctx' expr k r2 :: Constraint where
+  RescaleTreePow2Ctx' expr 'O      r2 = ()
+  RescaleTreePow2Ctx' expr ('S k') r2 =
+    (PosC k', TreeMul expr k' r2, Div2 expr (PreRescaleTreePow2 expr k' r2),
+     RescaleTreePow2Ctx'' expr (PreDiv2 expr (PreRescaleTreePow2 expr k' r2)))
 
-type RescaleTreePow2Ctx'' expr k r2 =
-  (Lambda expr, Reflects k Int, PosC k, TreeMul expr k r2,
-   Div2 expr (PreRescaleTreePow2 expr k r2),
-   RescaleTreePow2Ctx''' expr (PreDiv2 expr (PreRescaleTreePow2 expr k r2)))
-
-type RescaleTreePow2Ctx''' expr r2k1 =
+type RescaleTreePow2Ctx'' expr r2k1 =
   (AddLit expr r2k1, AddLit expr (PreMul expr r2k1), Mul expr r2k1,
    Ring r2k1, Ring (PreMul expr r2k1))
 
@@ -60,7 +60,7 @@ type family PreRescaleTreePow2 expr k r2 where
 rescaleTreePow2_ :: forall r2 k expr e . (RescaleTreePow2Ctx expr k r2)
   => Tagged k (expr e (PreRescaleTreePow2 expr k r2 -> r2))
 rescaleTreePow2_ = case (sing :: SPos k) of
-  SO -> tag $ lam v0
+  SO     -> tag $ lam v0
   (SS _) -> rescaleTreePow2_'
 
 rescaleTreePow2_' :: forall r2 k expr e . (RescaleTreePow2Ctx expr ('S k) r2)
