@@ -81,7 +81,7 @@ instance (RescaleCyc (Cyc t) (ZqBasic ('PP '(Prime2, 'S k)) i) (ZqBasic ('PP '(P
   type PreDiv2 E (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
     PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
   -- since input is divisible by two, it doesn't matter which basis we use
-  div2_ = pureE $ (PN . rescalePow . unPN)
+  div2_ = pureE $ PN . rescalePow . unPN
 
 instance (RescaleCyc (Cyc t) (ZqBasic ('PP '(Prime2, 'S k)) i) (ZqBasic ('PP '(Prime2, k)) i),
           Fact m)
@@ -89,7 +89,7 @@ instance (RescaleCyc (Cyc t) (ZqBasic ('PP '(Prime2, 'S k)) i) (ZqBasic ('PP '(P
   type PreDiv2 E (Identity (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
     Identity (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
   -- since input is divisible by two, it doesn't matter which basis we use
-  div2_ = pureE $ (Identity . rescalePow . runIdentity)
+  div2_ = pureE $ Identity . rescalePow . runIdentity
 
 instance (SHE.ModSwitchPTCtx t m' (ZqBasic ('PP '(Prime2, 'S k)) i) (ZqBasic ('PP '(Prime2, k)) i) zq) =>
   Div2 E (CT m (ZqBasic ('PP '(Prime2, k)) i) (Cyc t m' zq)) where
@@ -123,14 +123,14 @@ instance MonadWriter_ E where
 instance SHE E where
 
   type ModSwitchPTCtx   E (CT m zp (Cyc t m' zq)) zp' = (SHE.ModSwitchPTCtx t m' zp zp' zq)
-  type RescaleLinearCtx E (CT m zp (Cyc t m' zq)) zq' = (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq)
+  type ModSwitchCtx     E (CT m zp (Cyc t m' zq)) zq' = (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq)
   type AddPublicCtx     E (CT m zp (Cyc t m' zq))     = (SHE.AddPublicCtx t m m' zp zq)
   type MulPublicCtx     E (CT m zp (Cyc t m' zq))     = (SHE.MulPublicCtx t m m' zp zq)
   type KeySwitchQuadCtx E (CT m zp (Cyc t m' zq)) gad = (SHE.KeySwitchCtx gad t m' zp zq)
   type TunnelCtx        E t e r s e' r' s' zp zq gad  = (SHE.TunnelCtx t r s e' r' s' zp zq gad)
 
   modSwitchPT_     = pureE   modSwitchPT
-  rescaleLinear_   = pureE   rescaleLinear
+  modSwitch_       = pureE   modSwitch
   addPublic_       = pureE . addPublic
   mulPublic_       = pureE . mulPublic
   keySwitchQuad_   = pureE . keySwitchQuadCirc

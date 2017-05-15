@@ -148,8 +148,8 @@ type PT2CTMulCtx' m zp    h zqs gad hintzq ctex t z v mon m' =
 
 type PT2CTMulCtx'' h zqs gad hintzq ctex t z v mon m' ctin hintct =
   (Lambda ctex, Mul ctex ctin, PreMul ctex ctin ~ ctin, SHE ctex,
-   RescaleLinearCtx ctex ctin hintzq,              -- zqin -> zq (final modulus)
-   RescaleLinearCtx ctex hintct (PNoise2Zq zqs h), -- zqin -> zq (final modulus)
+   ModSwitchCtx ctex ctin hintzq,              -- zqin -> zq (final modulus)
+   ModSwitchCtx ctex hintct (PNoise2Zq zqs h), -- zqin -> zq (final modulus)
    KeySwitchQuadCtx ctex hintct gad,               -- hint over zqin
    KSHintCtx gad t m' z hintzq,
    GenSKCtx t m' z v,
@@ -180,7 +180,7 @@ pt2ctMul :: forall m' m m'map zp t zqs h gad ctex z v mon env hin hintzq .
   => PT2CT m'map zqs gad z v ctex mon env (PNoise hin (Cyc t m zp) -> PNoise hin (Cyc t m zp) -> PNoise h (Cyc t m zp))
 pt2ctMul = PC $ do
   hint :: KSQuadCircHint gad (Cyc t m' hintzq) <- getQuadCircHint (Proxy::Proxy z)
-  return $ lam $ lam $ rescaleLinear_ $: (keySwitchQuad_ hint $: (rescaleLinear_ $:
+  return $ lam $ lam $ modSwitch_ $: (keySwitchQuad_ hint $: (modSwitch_ $:
     (v0 *: v1 :: ctex _ (CT m zp (Cyc t m' (PNoise2Zq zqs (TotalNoiseUnits zqs (h :+: N2)))))))
     :: ctex _ (CT m zp (Cyc t m' hintzq)))
 
@@ -210,8 +210,8 @@ type PT2CTTunnelCtx' ctex mon m'map zqs h t e r s r' s' z zp zq zqin hintzq v ga
    TunnelCtx ctex t e r s (e * (r' / r)) r' s'   zp hintzq gad,
    TunnelHintCtx       t e r s (e * (r' / r)) r' s' z zp hintzq gad,
    GenSKCtx t r' z v, GenSKCtx t s' z v,
-   RescaleLinearCtx ctex (CT r zp (Cyc t r' zqin)) hintzq,
-   RescaleLinearCtx ctex (CT s zp (Cyc t s' hintzq))  zq,
+   ModSwitchCtx ctex (CT r zp (Cyc t r' zqin)) hintzq,
+   ModSwitchCtx ctex (CT s zp (Cyc t s' hintzq))  zq,
    Typeable t, Typeable r', Typeable s', Typeable z)
 
 -- multiple TunnelCyc instances, one for each type of gad we might use
@@ -248,9 +248,9 @@ pt2ctTunnelCyc :: forall t zp e r s env expr rp r' zq h zqs m'map gad z v ctex m
 pt2ctTunnelCyc f = PC $ do
   hint <- getTunnelHint @gad @(KSModulus gad zqs h) (Proxy::Proxy z) f
   return $ lam $
-    rescaleLinear_ $:    -- then scale back to the target modulus zq
+    modSwitch_ $:    -- then scale back to the target modulus zq
     (tunnel_ hint $:     -- tunnel w/ the hint
-      (rescaleLinear_ $: -- then scale (up) to the hint modulus zq'
+      (modSwitch_ $: -- then scale (up) to the hint modulus zq'
         (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise (h :+: N1) rp)))))
 
 ----- Type families -----

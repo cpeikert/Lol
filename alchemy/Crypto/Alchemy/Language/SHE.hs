@@ -14,7 +14,7 @@ import GHC.Exts
 class SHE expr where
 
   type ModSwitchPTCtx   expr ct zp' :: Constraint
-  type RescaleLinearCtx expr ct zq' :: Constraint
+  type ModSwitchCtx     expr ct zq' :: Constraint
   type AddPublicCtx     expr ct     :: Constraint
   type MulPublicCtx     expr ct     :: Constraint
   type KeySwitchQuadCtx expr ct gad :: Constraint
@@ -28,7 +28,7 @@ class SHE expr where
   modSwitchPT_ :: (ModSwitchPTCtx expr ct zp', ct ~ CT m zp (Cyc t m' zq))
     => expr env (ct -> CT m zp' (Cyc t m' zq))
 
-  rescaleLinear_ :: (RescaleLinearCtx expr ct zq', ct ~ CT m zp (Cyc t m' zq))
+  modSwitch_ :: (ModSwitchCtx expr ct zq', ct ~ CT m zp (Cyc t m' zq))
     => expr env (ct -> CT m zp (Cyc t m' zq'))
 
   addPublic_ :: (AddPublicCtx expr ct, ct ~ CT m zp (Cyc t m' zq))

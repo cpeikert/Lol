@@ -156,7 +156,7 @@ instance (SHE expr, Applicative_ expr, Applicative k, Applicative w) =>
   SHE (ErrorRateWriter expr z k w) where
 
   type ModSwitchPTCtx   (ErrorRateWriter expr z k w) ct zp' = ModSwitchPTCtx expr ct zp'
-  type RescaleLinearCtx (ErrorRateWriter expr z k w) ct zq' = RescaleLinearCtx expr ct zq'
+  type ModSwitchCtx     (ErrorRateWriter expr z k w) ct zq' = ModSwitchCtx expr ct zq'
   type AddPublicCtx     (ErrorRateWriter expr z k w) ct     = AddPublicCtx expr ct
   type MulPublicCtx     (ErrorRateWriter expr z k w) ct     = MulPublicCtx expr ct
   type KeySwitchQuadCtx (ErrorRateWriter expr z k w) ct gad = KeySwitchQuadCtx expr ct gad
@@ -164,7 +164,7 @@ instance (SHE expr, Applicative_ expr, Applicative k, Applicative w) =>
     (ErrorRateWriter expr z k w) t e r s e' r' s' zp zq gad = TunnelCtx expr t e r s e' r' s' zp zq gad
 
   modSwitchPT_     = ERW $ pure $ liftA_ $: modSwitchPT_
-  rescaleLinear_   = ERW $ pure $ liftA_ $: rescaleLinear_
+  modSwitch_       = ERW $ pure $ liftA_ $: modSwitch_
   addPublic_     p = ERW $ pure $ liftA_ $: addPublic_ p
   mulPublic_     p = ERW $ pure $ liftA_ $: mulPublic_ p
   keySwitchQuad_ h = ERW $ pure $ liftA_ $: keySwitchQuad_ h
