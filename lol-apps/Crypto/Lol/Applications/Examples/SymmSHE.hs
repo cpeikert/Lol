@@ -54,8 +54,8 @@ type PTZq = ZqBasic PP8 Int64
 -- doesn't have to be "good", but "good" moduli are faster.
 type Zq q = ZqBasic q Int64 -- uses PolyKinds
 type CTZq1 = Zq 536937857
-type CTZq2 = (CTZq1, Zq 536972801)
-type CTZq3 = (CTZq2, Zq 537054337)
+type CTZq2 = (Zq 536972801, CTZq1)
+type CTZq3 = (Zq 537054337, CTZq2)
 
 type KSGad = TrivGad -- can also use (BaseBGad 2), for example
 
