@@ -12,7 +12,7 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 
-module Crypto.Alchemy.Examples.Tunnel where
+module Tunnel where
 
 import Algebra.Additive as Additive (C(..))
 import qualified Algebra.Ring as Ring (C(..))

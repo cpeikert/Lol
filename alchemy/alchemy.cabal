@@ -22,17 +22,77 @@ source-repository head
 library
   default-language:    Haskell2010
 
-  exposed-modules: Crypto.Alchemy.Language.Lambda
-                   Crypto.Alchemy.Language.Arithmetic
+  exposed-modules: Crypto.Alchemy.Interpreter.Dup
+                   Crypto.Alchemy.Interpreter.ErrorRateWriter
                    Crypto.Alchemy.Interpreter.Eval
-                   Crypto.Alchemy.Interpreter.Print
-                   Crypto.Alchemy.Interpreter.Dup
-                   Crypto.Alchemy.Interpreter.PT2CT
                    Crypto.Alchemy.Interpreter.KeysHints
+                   Crypto.Alchemy.Interpreter.PT2CT
+                   Crypto.Alchemy.Interpreter.PT2CT.Noise
+                   Crypto.Alchemy.Interpreter.Print
+                   Crypto.Alchemy.Interpreter.RescaleTree
+                   Crypto.Alchemy.Language.Arithmetic
+                   Crypto.Alchemy.Language.Lambda
+                   Crypto.Alchemy.Language.List
+                   Crypto.Alchemy.Language.Monad
+                   Crypto.Alchemy.Language.SHE
+                   Crypto.Alchemy.Language.TunnelCyc
+                   Crypto.Alchemy.MonadAccumulator
 
   build-depends: base >= 4.7 && < 5
                , lol >= 0.5
                , lol-apps >= 0.1
+               , MonadRandom
+               , mtl
                , numeric-prelude
+               , singletons
+               , tagged-transformer
+               , template-haskell
                , type-natural
-               
+
+executable alchemy-arithmetic
+  hs-source-dirs: examples
+  default-language: Haskell2010
+  main-is: Arithmetic.hs
+  ghc-options: -main-is Arithmetic
+
+  ghc-options: -threaded -rtsopts -O2
+
+  build-depends:
+    alchemy,
+    base >= 4.9 && < 4.10,
+    lol,
+    lol-cpp,
+    mtl,
+    type-natural
+
+executable alchemy-homomrlwr
+  hs-source-dirs: examples
+  default-language: Haskell2010
+  main-is: HomomRLWR.hs
+  ghc-options: -main-is HomomRLWR
+
+  ghc-options: -threaded -rtsopts -O2
+
+  build-depends:
+    alchemy,
+    base >= 4.9 && < 4.10,
+    lol,
+    lol-cpp,
+    mtl,
+    numeric-prelude,
+    singletons,
+    type-natural
+
+executable alchemy-tunnel
+  hs-source-dirs:   examples
+  default-language: Haskell2010
+  main-is:          Tunnel.hs
+  ghc-options: -main-is Tunnel
+
+  ghc-options: -threaded -rtsopts -O2
+
+  build-depends:
+    alchemy,
+    base >= 4.9 && < 4.10,
+    lol,
+    lol-cpp

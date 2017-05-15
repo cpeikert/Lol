@@ -8,7 +8,7 @@
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 
-module Crypto.Alchemy.Examples.Arithmetic where
+module Arithmetic where
 
 import Control.Monad.Reader
 

@@ -32,6 +32,6 @@ import SHERepaMain ()
 
 import RLWEChallengesMain ()
 
-import Crypto.Alchemy.Examples.Arithmetic
-import Crypto.Alchemy.Examples.KHPRF
-import Crypto.Alchemy.Examples.Tunnel
+import Arithmetic ()
+import HomomRLWR ()
+import Tunnel ()

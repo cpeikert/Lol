@@ -13,10 +13,9 @@
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-module Crypto.Alchemy.Examples.HomomRLWR where
+module HomomRLWR where
 
 import Crypto.Lol
-import Crypto.Lol.Applications.Examples.HomomPRFParams
 import Crypto.Lol.Cyclotomic.Tensor (TElt) -- EAC: I shouldn't need to explicitly import this
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
@@ -37,7 +36,6 @@ import Crypto.Alchemy.Language.TunnelCyc
 
 import Algebra.Additive as Additive (C(..))
 import qualified Algebra.Ring as Ring (C(..))
-import Control.Applicative
 import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.Writer
@@ -67,8 +65,8 @@ khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 p
    RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Proxy rngs -> Tagged k (expr env (preTunnelPNoise (Cyc t h0 z2k) -> outputPNoise (Cyc t h5 z2)))
 khprf_5hop _ = do
-  rescale <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
-  return $ rescale .: tunnelDecToCRT_ .: tunnelDecToCRT_ @h4 .:
+  rescaleTree <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
+  return $ rescaleTree .: tunnelDecToCRT_ .: tunnelDecToCRT_ @h4 .:
     tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1 .: lam v0
 
 -- khprf_1hop', but without point-free style
@@ -83,8 +81,8 @@ khprf_1hop'' :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise
    RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
 khprf_1hop'' = do
-  rescale <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
-  return $ lam $ rescale $: (tunnelDecToCRT_ $: v0)
+  rescaleTree <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
+  return $ lam $ rescaleTree $: (tunnelDecToCRT_ $: v0)
 
 -- khprf_1hop, but with generalized tunneling constraints
 khprf_1hop' :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs k' .
@@ -98,8 +96,8 @@ khprf_1hop' :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise 
    RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
 khprf_1hop' = do
-  rescale <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
-  return $ rescale .: tunnelDecToCRT_
+  rescaleTree <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
+  return $ rescaleTree .: tunnelDecToCRT_
 
 khprf_1hop :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise k' .
   (z2 ~ Z2E 'O i, Lambda expr,
@@ -112,8 +110,8 @@ khprf_1hop :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise p
    RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
 khprf_1hop = do
-  rescale <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
-  return $ rescale .: tunnelDecToCRT_
+  rescaleTree <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
+  return $ rescaleTree .: tunnelDecToCRT_
 
 khprf_0hop :: forall t h5 k outputPNoise i z2k env expr z2 postTunnelPNoise k' .
   (z2 ~ Z2E 'O i, Lambda expr,
@@ -173,7 +171,21 @@ type ZQ6 = Zq $(mkTLNatNat 3144961)
 type ZQ7 = Zq $(mkTLNatNat 7338241)
 type ZqList = '[ZQ1,ZQ2,ZQ3,ZQ4,ZQ5,ZQ6,ZQ7]
 
+type Zq (q :: TLNatNat) = ZqBasic q Int64
 
+type H0 = F128
+type H1 = F64 * F7
+type H2 = F32 * F7 * F13
+type H3 = F8 * F5 * F7 * F13
+type H4 = F4 * F3 * F5 * F7 * F13
+type H5 = F9 * F5 * F7 * F13
+type H0' = H0 * F7 * F13
+type H1' = H1 * F13
+type H2' = H2
+type H3' = H3
+type H4' = H4
+type H5' = H5
+type RngList = '[ '(H0,H0'), '(H1,H1'), '(H2,H2'), '(H3,H3'), '(H4,H4'), '(H5,H5') ]
 
 -- given the output 'm' (Cyc wrapper) of a chain of tunnels, returns the input Cyc wrapper.
 type family PreTunnelM expr m (rngs :: [Factored]) where
