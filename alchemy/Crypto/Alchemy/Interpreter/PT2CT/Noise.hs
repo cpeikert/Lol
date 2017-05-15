@@ -16,8 +16,12 @@
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
+{-# OPTIONS_GHC -fno-warn-unused-binds  #-}
+
 -- should be a hidden/internal module
-module Crypto.Alchemy.Interpreter.PT2CT.Noise where
+module Crypto.Alchemy.Interpreter.PT2CT.Noise
+(PNoise(..), PNoise2Zq, TotalNoiseUnits
+,TLNatNat, mkTLNatNat) where
 
 import           Algebra.Additive          as Additive (C)
 import           Algebra.Ring              as Ring (C)
