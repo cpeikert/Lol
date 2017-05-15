@@ -76,7 +76,7 @@ sheMain _ = do
   print $ "Test1 (expect TRUE): " ++ (show $ 2*plaintext == pt1)
 
   hint :: KSQuadCircHint KSGad (Cyc t CTIndex CTZq2) <- ksQuadCircHint sk
-  let ct2 = rescaleLinear $ keySwitchQuadCirc hint $ rescaleLinear $ ciphertext*ciphertext
+  let ct2 = modSwitch $ keySwitchQuadCirc hint $ modSwitch $ ciphertext*ciphertext
       pt2 = decrypt sk (ct2 :: CTRing1 t)
   -- note: this requires a *LARGE* CT modulus to succeed
   print $ "Test2 (expect FALSE): " ++ (show $ plaintext*plaintext == pt2)
@@ -84,11 +84,11 @@ sheMain _ = do
   -- so we support using *several* small moduli:
   hint' :: KSQuadCircHint KSGad (Cyc t CTIndex CTZq3) <- ksQuadCircHint sk
   ciphertext' :: CTRing2 t <- encrypt sk plaintext
-  let ct3 = keySwitchQuadCirc hint' $ rescaleLinear $ ciphertext' * ciphertext'
+  let ct3 = keySwitchQuadCirc hint' $ modSwitch $ ciphertext' * ciphertext'
       -- the CT modulus of ct3 is a ring product, which can't be lifted to a fixed size repr
       -- so use decryptUnrestricted instead
       pt3 = decryptUnrestricted sk ct3
-      ct3' = rescaleLinear ct3 :: CTRing1 t
+      ct3' = modSwitch ct3 :: CTRing1 t
       -- after rescaling, ct3' has a single modulus, so we can use normal decrypt
       pt3' = decrypt sk ct3'
   print $ "Test3 (expect TRUE): " ++ (show $ (plaintext*plaintext == pt3) && (pt3' == pt3))
