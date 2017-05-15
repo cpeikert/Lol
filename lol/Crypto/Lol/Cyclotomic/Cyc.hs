@@ -525,7 +525,7 @@ instance R.RescaleCyc (Cyc t) a a where
   {-# INLINABLE rescaleCyc #-}
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
--- algorithm
+-- algorithm; removes one ring from the product.
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
          CElt t (a,b), CElt t a, CElt t b, CElt t (LiftOf a))
          => R.RescaleCyc (Cyc t) (a,b) b where
@@ -539,6 +539,66 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
                          (a,b) = unzipCyc c
                          z = liftCyc bas a
                      in Scalar (recip (reduce aval)) * (b - reduce z)
+  {-# INLINABLE rescaleCyc #-}
+
+-- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
+-- algorithm; removes two rings from the product.
+instance (R.RescaleCyc (Cyc t) (b,c) c, Rescale (a,(b,c)) c,
+          R.RescaleCyc (Cyc t) (a,(b,c)) (b,c))
+         => R.RescaleCyc (Cyc t) (a,(b,c)) c where
+
+  -- optimized for subrings and powerful basis (see comments in other
+  -- instance for why this doesn't work for decoding basis)
+  rescaleCyc R.Pow (Scalar c) = Scalar $ rescale c
+  rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
+
+  rescaleCyc bas (a :: Cyc t m (a,(b,c))) =
+    R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,c))
+  {-# INLINABLE rescaleCyc #-}
+
+-- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
+-- algorithm; removes three rings from the product.
+instance (R.RescaleCyc (Cyc t) (b,(c,d)) d, Rescale (a,(b,(c,d))) d,
+          R.RescaleCyc (Cyc t) (a,(b,(c,d))) (b,(c,d)))
+         => R.RescaleCyc (Cyc t) (a,(b,(c,d))) d where
+
+  -- optimized for subrings and powerful basis (see comments in other
+  -- instance for why this doesn't work for decoding basis)
+  rescaleCyc R.Pow (Scalar c) = Scalar $ rescale c
+  rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
+
+  rescaleCyc bas (a :: Cyc t m (a,(b,(c,d)))) =
+    R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,(c,d)))
+  {-# INLINABLE rescaleCyc #-}
+
+-- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
+-- algorithm; removes four rings from the product.
+instance (R.RescaleCyc (Cyc t) (b,(c,(d,e))) e, Rescale (a,(b,(c,(d,e)))) e,
+          R.RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) (b,(c,(d,e))))
+         => R.RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) e where
+
+  -- optimized for subrings and powerful basis (see comments in other
+  -- instance for why this doesn't work for decoding basis)
+  rescaleCyc R.Pow (Scalar c) = Scalar $ rescale c
+  rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
+
+  rescaleCyc bas (a :: Cyc t m (a,(b,(c,(d,e))))) =
+    R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,(c,(d,e))))
+  {-# INLINABLE rescaleCyc #-}
+
+-- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
+-- algorithm; removes five rings from the product.
+instance (R.RescaleCyc (Cyc t) (b,(c,(d,(e,f)))) f, Rescale (a,(b,(c,(d,(e,f))))) f,
+          R.RescaleCyc (Cyc t) (a,(b,(c,(d,(e,f))))) (b,(c,(d,(e,f)))))
+         => R.RescaleCyc (Cyc t) (a,(b,(c,(d,(e,f))))) f where
+
+  -- optimized for subrings and powerful basis (see comments in other
+  -- instance for why this doesn't work for decoding basis)
+  rescaleCyc R.Pow (Scalar c) = Scalar $ rescale c
+  rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
+
+  rescaleCyc bas (a :: Cyc t m (a,(b,(c,(d,(e,f)))))) =
+    R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,(c,(d,(e,f)))))
   {-# INLINABLE rescaleCyc #-}
 
 -- | promoted from base ring

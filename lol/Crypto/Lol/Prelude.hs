@@ -220,6 +220,9 @@ instance (Reduce a b1, Reduce a b2) => Reduce a (b1, b2) where
   reduce x = (reduce x, reduce x)
   {-# INLINABLE reduce #-}
 
+
+
+
 -- | Rescale a product ring of \(\Z_q\)s
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b)
          => Rescale (a,b) b where
@@ -228,19 +231,37 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b)
             in \(x1,x2) -> q1inv * (x2 - reduce (lift x1))
   {-# INLINABLE rescale #-}
 
+-- | Rescale down by a product ring of two \(\Z_q\)s
+instance (Rescale (a,(b,c)) (b,c), Rescale (b,c) c,
+          Additive a, Additive c)
+         => Rescale (a,(b,c)) c where
+  rescale = (rescale :: (b,c) -> c) . rescale
+  {-# INLINABLE rescale #-}
+
+-- | Rescale down by a product ring of three \(\Z_q\)s
+instance (Rescale (a,(b,(c,d))) (b,(c,d)), Rescale (b,(c,d)) d, Additive a)
+  => Rescale (a,(b,(c,d))) d where
+  rescale = (rescale :: (b,(c,d)) -> d) . rescale
+  {-# INLINABLE rescale #-}
+
+-- | Rescale down by a product ring of four \(\Z_q\)s
+instance (Rescale (a,(b,(c,(d,e)))) (b,(c,(d,e))), Rescale (b,(c,(d,e))) e, Additive a)
+  => Rescale (a,(b,(c,(d,e)))) e where
+  rescale = (rescale :: (b,(c,(d,e))) -> e) . rescale
+  {-# INLINABLE rescale #-}
+
+-- | Rescale down by a product ring of five \(\Z_q\)s
+instance (Rescale (a,(b,(c,(d,(e,f))))) (b,(c,(d,(e,f)))), Rescale (b,(c,(d,(e,f)))) f, Additive a)
+  => Rescale (a,(b,(c,(d,(e,f))))) f where
+  rescale = (rescale :: (b,(c,(d,(e,f)))) -> f) . rescale
+  {-# INLINABLE rescale #-}
+
 -- | Rescale a product ring of \(\Z_q\)s
 instance (Mod b, Field a, Lift b (ModRep b), Reduce (LiftOf b) a)
          => Rescale (a,b) a where
   rescale = let q2val = proxy modulus (Proxy::Proxy b)
                 q2inv = recip $ reduce q2val
             in \(x1,x2) -> q2inv * (x1 - reduce (lift x2))
-  {-# INLINABLE rescale #-}
-
--- | Rescale a (multi-)product ring of \(\Z_q\)s
-instance (Rescale (a,(b,c)) (b,c), Rescale (b,c) c,
-          Additive a, Additive c)
-         => Rescale (a,(b,c)) c where
-  rescale = (rescale :: (b,c) -> c) . rescale
   {-# INLINABLE rescale #-}
 
 -- | Rescale a (multi-)product ring of \(\Z_q\)s
@@ -262,6 +283,28 @@ instance (Ring b, Mod a, Reduce (ModRep a) b) => Rescale b (a,b) where
   -- multiply by q1
   rescale = let q1val = reduce $ proxy modulus (Proxy::Proxy a)
             in \x -> (zero, q1val * x)
+  {-# INLINABLE rescale #-}
+
+-- | Rescale up by a product of two rings
+instance (Additive a, Rescale c (b,c), Rescale (b,c) (a,(b,c))) => Rescale c (a,(b,c)) where
+  rescale x = rescale (rescale x :: (b,c))
+  {-# INLINABLE rescale #-}
+
+-- | Rescale up by a product of three rings
+instance (Additive a, Rescale d (b,(c,d)), Rescale (b,(c,d)) (a,(b,(c,d)))) => Rescale d (a,(b,(c,d))) where
+  rescale x = rescale (rescale x :: (b,(c,d)))
+  {-# INLINABLE rescale #-}
+
+-- | Rescale up by a product of four rings
+instance (Additive a, Rescale e (b,(c,(d,e))), Rescale (b,(c,(d,e))) (a,(b,(c,(d,e)))))
+  => Rescale e (a,(b,(c,(d,e)))) where
+  rescale x = rescale (rescale x :: (b,(c,(d,e))))
+  {-# INLINABLE rescale #-}
+
+-- | Rescale up by a product of five rings
+instance (Additive a, Rescale f (b,(c,(d,(e,f)))), Rescale (b,(c,(d,(e,f)))) (a,(b,(c,(d,(e,f))))))
+  => Rescale f (a,(b,(c,(d,(e,f))))) where
+  rescale x = rescale (rescale x :: (b,(c,(d,(e,f)))))
   {-# INLINABLE rescale #-}
 
 -- | Encode for a product ring
