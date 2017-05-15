@@ -2,6 +2,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 
+-- | Computes the size of an AST for the expression.
+
 module Crypto.Alchemy.Interpreter.Size
 ( S, size )
 where

@@ -2,6 +2,8 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
 
+-- | Computes the multiplicative depth of an expression.
+
 module Crypto.Alchemy.Interpreter.Depth
 ( D, depth )
 where
