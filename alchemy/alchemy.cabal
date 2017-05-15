@@ -55,7 +55,7 @@ executable alchemy-arithmetic
   main-is: Arithmetic.hs
   ghc-options: -main-is Arithmetic
 
-  ghc-options: -threaded -rtsopts -O2
+  ghc-options: -rtsopts
 
   build-depends:
     alchemy,
@@ -70,8 +70,8 @@ executable alchemy-homomrlwr
   default-language: Haskell2010
   main-is: HomomRLWR.hs
   ghc-options: -main-is HomomRLWR
-
-  ghc-options: -threaded -rtsopts -O2
+  buildable: False
+  ghc-options: -rtsopts
 
   build-depends:
     alchemy,
@@ -89,10 +89,13 @@ executable alchemy-tunnel
   main-is:          Tunnel.hs
   ghc-options: -main-is Tunnel
 
-  ghc-options: -threaded -rtsopts -O2
+  ghc-options: -rtsopts
 
   build-depends:
     alchemy,
     base >= 4.9 && < 4.10,
     lol,
-    lol-cpp
+    lol-cpp,
+    mtl,
+    numeric-prelude,
+    type-natural

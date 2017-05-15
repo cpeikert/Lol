@@ -53,30 +53,28 @@ deriving instance (Ring a) => Ring.C (Identity a)
 argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
 argToReader f a = flip f a =<< ask
 
-khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise k' .
+khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise .
   (z2 ~ Z2E 'O i,
    -- tunnel
    rngs ~ '[h0,h1,h2,h3,h4,h5],
    TunnelChainCtx expr t postTunnelPNoise z2k rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
    -- rescaleCycCRT
-   k ~ 'S k',
    PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
    RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Proxy rngs -> Tagged k (expr env (preTunnelPNoise (Cyc t h0 z2k) -> outputPNoise (Cyc t h5 z2)))
 khprf_5hop _ = do
   rescaleTree <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
   return $ rescaleTree .: tunnelDecToCRT_ .: tunnelDecToCRT_ @h4 .:
-    tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1 .: lam v0
+    tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1
 
 -- khprf_1hop', but without point-free style
-khprf_1hop'' :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs k' .
+khprf_1hop'' :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs .
   (z2 ~ Z2E 'O i,
     -- tunnel
    rngs ~ '[h4,h5], TunnelChainCtx expr t postTunnelPNoise z2k rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
    -- rescaleCycCRT
-   k ~ 'S k',
    PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
    RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
@@ -85,13 +83,12 @@ khprf_1hop'' = do
   return $ lam $ rescaleTree $: (tunnelDecToCRT_ $: v0)
 
 -- khprf_1hop, but with generalized tunneling constraints
-khprf_1hop' :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs k' .
+khprf_1hop' :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs .
   (z2 ~ Z2E 'O i,
     -- tunnel
    rngs ~ '[h4,h5], TunnelChainCtx expr t postTunnelPNoise z2k rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
    -- rescaleCycCRT
-   k ~ 'S k',
    PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
    RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
@@ -99,13 +96,12 @@ khprf_1hop' = do
   rescaleTree <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
   return $ rescaleTree .: tunnelDecToCRT_
 
-khprf_1hop :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise k' .
+khprf_1hop :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise .
   (z2 ~ Z2E 'O i, Lambda expr,
     -- tunnel
    TunnelDecToCRTCtx expr postTunnelPNoise t h4 h5 z2k,
    PreTunnelCyc expr postTunnelPNoise ~ preTunnelPNoise,
    -- rescaleCycCRT
-   k ~ 'S k',
    PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
    RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Tagged k (expr env (preTunnelPNoise (Cyc t h4 z2k) -> outputPNoise (Cyc t h5 z2)))
@@ -113,10 +109,9 @@ khprf_1hop = do
   rescaleTree <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
   return $ rescaleTree .: tunnelDecToCRT_
 
-khprf_0hop :: forall t h5 k outputPNoise i z2k env expr z2 postTunnelPNoise k' .
+khprf_0hop :: forall t h5 k outputPNoise i z2k env expr z2 postTunnelPNoise .
   (z2 ~ Z2E 'O i, Lambda expr,
    -- rescaleCycCRT
-   k ~ 'S k',
    PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
    RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Tagged k (expr env (postTunnelPNoise (Cyc t h5 z2k) -> outputPNoise (Cyc t h5 z2)))
