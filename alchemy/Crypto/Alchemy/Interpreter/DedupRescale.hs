@@ -23,9 +23,9 @@ import Crypto.Lol.Applications.SymmSHE (CT)
 import Data.Typeable
 
 data DedupRescale expr e a where
-  -- rescaleLinear_ itself
+  -- modSwitch_ itself
   --Rescale  :: expr e a -> DedupRescale expr e a
-  -- a result of rescaleLinear_
+  -- a result of modSwitch_
   Rescaled :: (Typeable b) => expr e b -> expr e a -> DedupRescale expr e a
   -- something else
   Unscaled :: expr e a -> DedupRescale expr e a
