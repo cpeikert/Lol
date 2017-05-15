@@ -57,7 +57,7 @@ instance MonadWriter_ S where
 
 instance SHE S where
   type ModSwitchPTCtx   S ct zp' = ()
-  type RescaleLinearCtx S ct zq' = ()
+  type ModSwitchCtx     S ct zq' = ()
   type AddPublicCtx     S ct     = ()
   type MulPublicCtx     S ct     = ()
   type KeySwitchQuadCtx S ct gad = ()
@@ -65,7 +65,7 @@ instance SHE S where
 
   modSwitchPT_ = S 1
 
-  rescaleLinear_ = S 1
+  modSwitch_ = S 1
 
   addPublic_ _ = S 1
 
