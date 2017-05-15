@@ -22,7 +22,8 @@ source-repository head
 library
   default-language:    Haskell2010
 
-  exposed-modules: Crypto.Alchemy.Interpreter.Dup
+  exposed-modules: Crypto.Alchemy.Interpreter.Depth
+                   Crypto.Alchemy.Interpreter.Dup
                    Crypto.Alchemy.Interpreter.ErrorRateWriter
                    Crypto.Alchemy.Interpreter.Eval
                    Crypto.Alchemy.Interpreter.KeysHints
