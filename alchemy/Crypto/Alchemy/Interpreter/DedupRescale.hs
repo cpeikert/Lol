@@ -73,10 +73,10 @@ instance (Add expr a) => Add (DedupRescale expr) a where
   neg_ = Unscaled neg_
 
 instance (AddLit expr a) => AddLit (DedupRescale expr) a where
-  x >+: y = Unscaled $ x >+: dr y
+  addLit_ x = Unscaled $ addLit_ x
 
 instance (MulLit expr a) => MulLit (DedupRescale expr) a where
-  x >*: y = Unscaled $ x >*: dr y
+  mulLit_ x = Unscaled $ mulLit_ x
 
 instance (Mul expr a) => Mul (DedupRescale expr) a where
   type PreMul (DedupRescale expr) a = PreMul expr a
@@ -86,10 +86,10 @@ instance (SHE expr, Lambda expr) => SHE (DedupRescale expr) where
 
   type ModSwitchPTCtx (DedupRescale expr) ct zp' =
     (ModSwitchPTCtx expr ct zp')
-  type RescaleLinearCtx (DedupRescale expr) (CT m zp (Cyc t m' zq)) zq' =
+  type ModSwitchCtx (DedupRescale expr) (CT m zp (Cyc t m' zq)) zq' =
     (Typeable (CT m zp (Cyc t m' zq)),
      Typeable (CT m zp (Cyc t m' zq')),
-     RescaleLinearCtx expr (CT m zp (Cyc t m' zq)) zq')
+     ModSwitchCtx expr (CT m zp (Cyc t m' zq)) zq')
   type AddPublicCtx (DedupRescale expr) ct = (AddPublicCtx expr ct)
   type MulPublicCtx (DedupRescale expr) ct = (MulPublicCtx expr ct)
   type KeySwitchQuadCtx (DedupRescale expr) ct gad =
@@ -99,15 +99,15 @@ instance (SHE expr, Lambda expr) => SHE (DedupRescale expr) where
 
   modSwitchPT_ = Unscaled modSwitchPT_
 
-  rescaleLinear_ :: forall ct zq' m zp t m' zq e .
-    (RescaleLinearCtx (DedupRescale expr) ct zq', ct ~ CT m zp (Cyc t m' zq))
+  modSwitch_ :: forall ct zq' m zp t m' zq e .
+    (ModSwitchCtx (DedupRescale expr) ct zq', ct ~ CT m zp (Cyc t m' zq))
     => (DedupRescale expr) e (ct -> CT m zp (Cyc t m' zq'))
 
-  rescaleLinear_ =
+  modSwitch_ =
     -- check if this rescale is a no-op
     case (eqT :: Maybe (ct :~: CT m zp (Cyc t m' zq'))) of
       Just Refl -> Unscaled $ lam v0 -- skip it, w/identity function
-      Nothing   -> Rescaled undefined rescaleLinear_
+      Nothing   -> Rescaled undefined modSwitch_
 
   addPublic_     p = Unscaled $ addPublic_ p
   mulPublic_     p = Unscaled $ mulPublic_ p
