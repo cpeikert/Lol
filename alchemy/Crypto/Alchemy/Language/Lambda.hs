@@ -45,13 +45,3 @@ v3 = s v2
 
 v4 :: Lambda expr => expr (((((f,e),d),c),b),a) e
 v4 = s v3
-
-class Weaken e e' where
-  -- | Weaken an expression from one environment to a larger one.
-  weaken :: (Lambda expr) => expr e a -> expr e' a
-
-instance Weaken e e where
-  weaken = id
-
-instance (Weaken e e') => Weaken e (e',x) where
-  weaken = s . weaken
