@@ -97,14 +97,14 @@ instance MonadWriter_ P where
 instance SHE P where
 
   type ModSwitchPTCtx   P a zp' = ()
-  type RescaleLinearCtx P a zq' = ()
+  type ModSwitchCtx     P a zq' = ()
   type AddPublicCtx     P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
   type MulPublicCtx     P (CT m zp (Cyc t m' zq)) = (Show (Cyc t m zp))
   type KeySwitchQuadCtx P a gad = ()
   type TunnelCtx        P t e r s e' r' s' zp zq gad = ()
 
   modSwitchPT_     = pureP   "modSwitchPT"
-  rescaleLinear_   = pureP   "rescaleLinear"
+  modSwitch_       = pureP   "modSwitch"
   addPublic_     p = pureP $ "addPublic (" ++ show p ++ ")"
   mulPublic_     p = pureP $ "mulPublic (" ++ show p ++ ")"
   keySwitchQuad_ _ = pureP   "keySwitchQuad <HINT>"
