@@ -48,10 +48,12 @@ instance (Div2 ex1 a, Div2 ex2 a, PreDiv2 ex1 a ~ PreDiv2 ex2 a)
 instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
   type ModSwitchPTCtx (Dup ex1 ex2) ct zp' = (ModSwitchPTCtx ex1 ct zp',
                                               ModSwitchPTCtx ex2 ct zp')
-  type RescaleLinearCtx (Dup ex1 ex2) ct zq' = (RescaleLinearCtx ex1 ct zq',
-                                                RescaleLinearCtx ex2 ct zq')
-  type AddPublicCtx (Dup ex1 ex2) ct = (AddPublicCtx ex1 ct, AddPublicCtx ex2 ct)
-  type MulPublicCtx (Dup ex1 ex2) ct = (MulPublicCtx ex1 ct, MulPublicCtx ex2 ct)
+  type ModSwitchCtx (Dup ex1 ex2) ct zq' = (ModSwitchCtx ex1 ct zq',
+                                            ModSwitchCtx ex2 ct zq')
+  type AddPublicCtx (Dup ex1 ex2) ct = (AddPublicCtx ex1 ct,
+                                        AddPublicCtx ex2 ct)
+  type MulPublicCtx (Dup ex1 ex2) ct = (MulPublicCtx ex1 ct,
+                                        MulPublicCtx ex2 ct)
   type KeySwitchQuadCtx (Dup ex1 ex2) ct gad = (KeySwitchQuadCtx ex1 ct gad,
                                                 KeySwitchQuadCtx ex2 ct gad)
   type TunnelCtx    (Dup ex1 ex2) t e r s e' r' s' zp zq gad =
@@ -59,7 +61,7 @@ instance (SHE ex1, SHE ex2) => SHE (Dup ex1 ex2) where
      TunnelCtx ex2 t e r s e' r' s' zp zq gad)
 
   modSwitchPT_     = Dup  modSwitchPT_       modSwitchPT_
-  rescaleLinear_   = Dup  rescaleLinear_     rescaleLinear_
+  modSwitch_       = Dup  modSwitch_         modSwitch_
   addPublic_     p = Dup (addPublic_ p)     (addPublic_ p)
   mulPublic_     p = Dup (mulPublic_ p)     (mulPublic_ p)
   keySwitchQuad_ h = Dup (keySwitchQuad_ h) (keySwitchQuad_ h)
