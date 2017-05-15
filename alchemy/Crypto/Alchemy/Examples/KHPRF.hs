@@ -25,7 +25,7 @@ import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.Eval
 import Crypto.Alchemy.Interpreter.Print
 import Crypto.Alchemy.Interpreter.PT2CT.Noise hiding (take)
-import Crypto.Alchemy.Interpreter.RescaleToTree
+import Crypto.Alchemy.Interpreter.RescaleTree
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.TunnelCyc
 
