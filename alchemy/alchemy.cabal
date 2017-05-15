@@ -30,6 +30,7 @@ library
                    Crypto.Alchemy.Interpreter.PT2CT.Noise
                    Crypto.Alchemy.Interpreter.Print
                    Crypto.Alchemy.Interpreter.RescaleTree
+                   Crypto.Alchemy.Interpreter.Size
                    Crypto.Alchemy.Language.Arithmetic
                    Crypto.Alchemy.Language.Lambda
                    Crypto.Alchemy.Language.List
