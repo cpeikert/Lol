@@ -11,6 +11,7 @@
 module Arithmetic where
 
 import Control.Monad.Reader
+import Control.Monad.Writer
 
 import Crypto.Alchemy.MonadAccumulator
 import Crypto.Alchemy.Interpreter.PT2CT
@@ -29,6 +30,7 @@ import Crypto.Lol                       hiding (Pos (..))
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
+import Data.Maybe
 import Data.Type.Natural (Nat (Z))
 
 -- EAC: We can get rid of signatures once #13524 is fixed (should be in 8.2)
@@ -55,8 +57,8 @@ main = do
 
     -- compile the un-applied function to CT, then print it out
     x <- argToReader (pt2ct
-           @'[ '(F4, F8) ]
-           @'[ Zq $(mkTLNatNat $ 2^(29 :: Int)+1), Zq $(mkTLNatNat $ 2^(29 :: Int)+3), Zq $(mkTLNatNat $ 2^(29 :: Int)+5) ]
+           @'[ '(F4, F512) ]
+           @'[ Zq $(mkTLNatNat 36097), Zq $(mkTLNatNat 36353), Zq $(mkTLNatNat 37633) ]
            @TrivGad
            @Int64
            @Double)
@@ -73,12 +75,17 @@ main = do
     -- if the first modulus is large enough, this will remove the rescales!
     liftIO $ putStrLn $ pprint $ w2 -- dedupRescale w2
     -- evaluate the compiled function, then apply it to encrypted inputs
-    let result = eval z2 arg1 arg2
+    --let result = eval z2 arg1 arg2
+
+    z2' <- readerToAccumulator $ writeErrorRates @_ @Int64 z2
+    let (result,errors) = runWriter $ eval z2' (return arg1) (return arg2)
+    liftIO $ print errors
+
     -- show the encrypted result
     liftIO $ putStrLn $ show result
     -- show the decrypted result
     decResult <- readerToAccumulator $ decrypt result
-    liftIO $ putStrLn $ show $ decResult
+    liftIO $ putStrLn $ show $ advisePow $ fromJust decResult
 
 -- EAC: TODO
 -- encapsulation for compile CTs? (CTWrapper?)
