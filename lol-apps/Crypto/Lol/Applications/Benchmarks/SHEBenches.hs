@@ -115,7 +115,7 @@ bench_rescale :: forall t m m' z zp (zq :: *) (zq' :: *) . (z ~ LiftOf zq, _)
   => PT (Cyc t m zp) -> SK (Cyc t m' z) -> Bench '(t,m,m',zp,zq,zq')
 bench_rescale pt sk = benchM $ do
   ct <- encrypt sk pt
-  return $ bench (rescaleLinear :: CT m zp (Cyc t m' zq') -> CT m zp (Cyc t m' zq)) ct
+  return $ bench (modSwitch :: CT m zp (Cyc t m' zq') -> CT m zp (Cyc t m' zq)) ct
 
 bench_keySwQ :: forall t m m' z zp zq (gad :: *) . (z ~ LiftOf zp, _)
   => PT (Cyc t m zp) -> SK (Cyc t m' z) -> Bench '(t,m,m',zp,zq,gad)
