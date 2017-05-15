@@ -547,11 +547,6 @@ instance (R.RescaleCyc (Cyc t) (b,c) c, Rescale (a,(b,c)) c,
           R.RescaleCyc (Cyc t) (a,(b,c)) (b,c))
          => R.RescaleCyc (Cyc t) (a,(b,c)) c where
 
-  -- optimized for subrings and powerful basis (see comments in other
-  -- instance for why this doesn't work for decoding basis)
-  rescaleCyc R.Pow (Scalar c) = Scalar $ rescale c
-  rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
-
   rescaleCyc bas (a :: Cyc t m (a,(b,c))) =
     R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,c))
   {-# INLINABLE rescaleCyc #-}
@@ -561,11 +556,6 @@ instance (R.RescaleCyc (Cyc t) (b,c) c, Rescale (a,(b,c)) c,
 instance (R.RescaleCyc (Cyc t) (b,(c,d)) d, Rescale (a,(b,(c,d))) d,
           R.RescaleCyc (Cyc t) (a,(b,(c,d))) (b,(c,d)))
          => R.RescaleCyc (Cyc t) (a,(b,(c,d))) d where
-
-  -- optimized for subrings and powerful basis (see comments in other
-  -- instance for why this doesn't work for decoding basis)
-  rescaleCyc R.Pow (Scalar c) = Scalar $ rescale c
-  rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
 
   rescaleCyc bas (a :: Cyc t m (a,(b,(c,d)))) =
     R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,(c,d)))
@@ -577,11 +567,6 @@ instance (R.RescaleCyc (Cyc t) (b,(c,(d,e))) e, Rescale (a,(b,(c,(d,e)))) e,
           R.RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) (b,(c,(d,e))))
          => R.RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) e where
 
-  -- optimized for subrings and powerful basis (see comments in other
-  -- instance for why this doesn't work for decoding basis)
-  rescaleCyc R.Pow (Scalar c) = Scalar $ rescale c
-  rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
-
   rescaleCyc bas (a :: Cyc t m (a,(b,(c,(d,e))))) =
     R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,(c,(d,e))))
   {-# INLINABLE rescaleCyc #-}
@@ -591,11 +576,6 @@ instance (R.RescaleCyc (Cyc t) (b,(c,(d,e))) e, Rescale (a,(b,(c,(d,e)))) e,
 instance (R.RescaleCyc (Cyc t) (b,(c,(d,(e,f)))) f, Rescale (a,(b,(c,(d,(e,f))))) f,
           R.RescaleCyc (Cyc t) (a,(b,(c,(d,(e,f))))) (b,(c,(d,(e,f)))))
          => R.RescaleCyc (Cyc t) (a,(b,(c,(d,(e,f))))) f where
-
-  -- optimized for subrings and powerful basis (see comments in other
-  -- instance for why this doesn't work for decoding basis)
-  rescaleCyc R.Pow (Scalar c) = Scalar $ rescale c
-  rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
 
   rescaleCyc bas (a :: Cyc t m (a,(b,(c,(d,(e,f)))))) =
     R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,(c,(d,(e,f)))))
