@@ -53,7 +53,7 @@ main = do
   -- evaluate a DSL function to a Haskell function, then apply to arguments
   putStrLn $ show $ eval (pt1 @Int) 7 11
 
-  evalKeysHints (1.0 :: Double) $ do
+  evalKeysHints (0.01 :: Double) $ do
 
     -- compile the un-applied function to CT, then print it out
     x <- argToReader (pt2ct
