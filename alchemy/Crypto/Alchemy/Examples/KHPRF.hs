@@ -72,8 +72,8 @@ khprf_5hop _ = do
     tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1 .: lam v0
 
 -- khprf_1hop', but without point-free style
-khprf_1hop'' :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs k' .
-  (z2 ~ Zq PP2,
+khprf_1hop'' :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs k' .
+  (z2 ~ Z2E 'O i,
     -- tunnel
    rngs ~ '[h4,h5], TunnelChainCtx expr t postTunnelPNoise z2k rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
@@ -87,8 +87,8 @@ khprf_1hop'' = do
   return $ lam $ rescale $: (tunnelDecToCRT_ $: v0)
 
 -- khprf_1hop, but with generalized tunneling constraints
-khprf_1hop' :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs k' .
-  (z2 ~ Zq PP2,
+khprf_1hop' :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs k' .
+  (z2 ~ Z2E 'O i,
     -- tunnel
    rngs ~ '[h4,h5], TunnelChainCtx expr t postTunnelPNoise z2k rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise,
@@ -101,8 +101,8 @@ khprf_1hop' = do
   rescale <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
   return $ rescale .: tunnelDecToCRT_
 
-khprf_1hop :: forall t h4 h5 k outputPNoise env z2k expr z2 postTunnelPNoise preTunnelPNoise k' .
-  (z2 ~ Zq PP2, Lambda expr,
+khprf_1hop :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise k' .
+  (z2 ~ Z2E 'O i, Lambda expr,
     -- tunnel
    TunnelDecToCRTCtx expr postTunnelPNoise t h4 h5 z2k,
    PreTunnelCyc expr postTunnelPNoise ~ preTunnelPNoise,
@@ -115,8 +115,8 @@ khprf_1hop = do
   rescale <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
   return $ rescale .: tunnelDecToCRT_
 
-khprf_0hop :: forall t h5 k outputPNoise z2k env expr z2 postTunnelPNoise k' .
-  (z2 ~ Zq PP2, Lambda expr,
+khprf_0hop :: forall t h5 k outputPNoise i z2k env expr z2 postTunnelPNoise k' .
+  (z2 ~ Z2E 'O i, Lambda expr,
    -- rescaleCycCRT
    k ~ 'S k',
    PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
@@ -128,15 +128,14 @@ main :: IO ()
 main = do
   -- example with rescale de-duplication when tunneling
   -- print the unapplied PT function
-  putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @(PNoise 'Z)
-  putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @Identity
-  putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3 @(PNoise 'Z)
-  putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3  @Identity
-  putStrLn $ pprint $ untag $ khprf_1hop' @CT @H0 @H1 @P3 @(PNoise 'Z)
-  putStrLn $ pprint $ untag $ khprf_1hop' @CT @H0 @H1 @P3 @Identity
-  putStrLn $ pprint $ untag $ khprf_1hop'' @CT @H0 @H1 @P3 @(PNoise 'Z)
-  putStrLn $ pprint $ untag $ khprf_1hop'' @CT @H0 @H1 @P3 @Identity
-  --putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) Proxy
+  putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @(PNoise 'Z) @Int64
+  putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @Identity @Int64
+  putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3 @(PNoise 'Z) @Int64
+  putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3  @Identity @Int64
+  putStrLn $ pprint $ untag $ khprf_1hop' @CT @H0 @H1 @P3 @(PNoise 'Z) @Int64
+  putStrLn $ pprint $ untag $ khprf_1hop' @CT @H0 @H1 @P3 @Identity @Int64
+  putStrLn $ pprint $ untag $ khprf_1hop'' @CT @H0 @H1 @P3 @(PNoise 'Z) @Int64
+  putStrLn $ pprint $ untag $ khprf_1hop'' @CT @H0 @H1 @P3 @Identity @Int64
   putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @Identity @Int64 Proxy
 
 
@@ -152,7 +151,8 @@ main = do
                          @TrivGad
                          @Int64
                          @Double)
-                         (untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy)
+                         (untag $ khprf_1hop @CT @H4 @H5 @P3 @(PNoise 'Z) @Int64)
+                         --(untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy)
     -- compile once, interpret with multiple ctexprs!!
     let (z1,z2) = dup y
     liftIO $ putStrLn $ pprint z1
