@@ -61,6 +61,7 @@ newtype PT2CT
 
 -- | Transform a plaintext expression to a ciphertext expression.
 pt2ct :: forall m'map zqs gad z v e ctex a mon .
+  (MonadAccumulator Keys mon, MonadAccumulator Hints mon) =>
       -- this forall is for use with TypeApplications at the top level
   v   -- | scaled variance to used for generating keys/hints
   -> PT2CT m'map zqs gad z v ctex (ReaderT v mon) e a -- | plaintext expression
