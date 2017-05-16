@@ -38,7 +38,7 @@ SK, PT, CT -- don't export constructors!
 -- * Arithmetic with public values
 , addPublic, mulPublic
 -- * Modulus switching
-, rescaleLinear, modSwitchPT
+, modSwitch, modSwitchPT
 -- * Key switching
 , KSLinearHint, KSQuadCircHint
 , ksLinearHint, ksQuadCircHint
@@ -232,23 +232,18 @@ toLSD = let (zpScale, zqScale) = msdToLSD
 
 ---------- Modulus switching ----------
 
--- | Rescale a linear polynomial in MSD encoding, for best noise behavior.
-rescaleLinearMSD :: (RescaleCyc (Cyc t) zq zq', Fact m')
-                    => Polynomial (Cyc t m' zq) -> Polynomial (Cyc t m' zq')
-rescaleLinearMSD c = case coeffs c of
+-- | Rescale a polynomial in MSD encoding, for best noise behavior.
+modSwitchMSD :: (RescaleCyc (Cyc t) zq zq', Fact m')
+             => Polynomial (Cyc t m' zq) -> Polynomial (Cyc t m' zq')
+modSwitchMSD c = case coeffs c of
   [] -> fromCoeffs []
-  [c0] -> fromCoeffs [rescaleDec c0]
-  [c0,c1] -> let c0' = rescaleDec c0
-                 c1' = rescalePow c1
-             in fromCoeffs [c0', c1']
-  _ -> error $ "rescaleLinearMSD: list too long (not linear): " ++
-       show (length $ coeffs c)
+  c0:c' -> fromCoeffs $ rescaleDec c0 : map rescalePow c'
 
--- | Rescale a linear ciphertext to a new modulus.
-rescaleLinear :: (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq)
+-- | Rescale a ciphertext to a new modulus.
+modSwitch :: (RescaleCyc (Cyc t) zq zq', ToSDCtx t m' zp zq)
               => CT m zp (Cyc t m' zq) -> CT m zp (Cyc t m' zq')
-rescaleLinear ct = let CT MSD k l c = toMSD ct
-                   in CT MSD k l $ rescaleLinearMSD c
+modSwitch ct = let CT MSD k l c = toMSD ct
+               in CT MSD k l $ modSwitchMSD c
 
 -- | Constraint synonym for modulus switching.
 type ModSwitchPTCtx t m' zp zp' zq =
@@ -357,8 +352,8 @@ ksQuadCircHint :: (KSHintCtx gad t m' z zq', MonadRandom rnd)
   -> rnd (KSQuadCircHint gad (Cyc t m' zq'))
 ksQuadCircHint sk@(SK _ s) = KSQHint <$> ksHint sk (s*s)
 
--- | Switch a quadratic ciphertext (i.e., one with three components)
--- to a linear one under the /same/ key, using the supplied hint.
+-- | Switch a ciphertext of degree two or less (i.e., one with no more than three components)
+-- to a ciphertext of degree one (or less) under the /same/ key, using the supplied hint.
 -- (The input ciphertext may first need to be rescaled so that its
 -- modulus matches that of the hint.)
 keySwitchQuadCirc :: (KeySwitchCtx gad t m' zp zq')
@@ -367,8 +362,11 @@ keySwitchQuadCirc :: (KeySwitchCtx gad t m' zp zq')
   -> CT m zp (Cyc t m' zq')
 keySwitchQuadCirc (KSQHint hint) ct =
   let CT MSD k l c = toMSD ct
-      [c0,c1,c2] = coeffs c
-  in CT MSD k l $ P.fromCoeffs [c0,c1] + switch hint c2
+  in case coeffs c of
+       []         -> []
+       [c0]       -> [c0]
+       [c0,c1]    -> [c0,c1]
+       [c0,c1,c2] -> CT MSD k l $ P.fromCoeffs [c0,c1] + switch hint c2
 
 ---------- Misc homomorphic operations ----------
 
