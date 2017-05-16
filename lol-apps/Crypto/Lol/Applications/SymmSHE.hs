@@ -363,9 +363,9 @@ keySwitchQuadCirc :: (KeySwitchCtx gad t m' zp zq')
 keySwitchQuadCirc (KSQHint hint) ct =
   let CT MSD k l c = toMSD ct
   in case coeffs c of
-       []         -> []
-       [c0]       -> [c0]
-       [c0,c1]    -> [c0,c1]
+       []         -> ct
+       [_]        -> ct
+       [_,_]      -> ct
        [c0,c1,c2] -> CT MSD k l $ P.fromCoeffs [c0,c1] + switch hint c2
 
 ---------- Misc homomorphic operations ----------
