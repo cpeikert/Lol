@@ -55,8 +55,9 @@ type ErrorRateLog = [Double]
 
 -- | Transform an expression into (a monadic) one that logs error
 -- rates, where the needed keys are obtained from the monad.
-writeErrorRates :: ErrorRateWriter expr z k w e a
-                -> k (expr (Monadify w e) (Monadify w a))
+writeErrorRates :: forall z e expr k w a .
+  (MonadWriter ErrorRateLog w, MonadReader Keys k)
+  => ErrorRateWriter expr z k w e a -> k (expr (Monadify w e) (Monadify w a))
 writeErrorRates = unERW
 
 -- | Perform the action, then perform the action given by the result,
@@ -159,16 +160,19 @@ instance (SHE expr, Applicative_ expr, Applicative k, Applicative w) =>
   type ModSwitchCtx     (ErrorRateWriter expr z k w) ct zq' = ModSwitchCtx expr ct zq'
   type AddPublicCtx     (ErrorRateWriter expr z k w) ct     = AddPublicCtx expr ct
   type MulPublicCtx     (ErrorRateWriter expr z k w) ct     = MulPublicCtx expr ct
-  type KeySwitchQuadCtx (ErrorRateWriter expr z k w) ct gad = KeySwitchQuadCtx expr ct gad
-  type TunnelCtx
-    (ErrorRateWriter expr z k w) t e r s e' r' s' zp zq gad = TunnelCtx expr t e r s e' r' s' zp zq gad
+  type KeySwitchQuadCtx (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) gad =
+    (KeySwitchQuadCtx expr (CT m zp (Cyc t m' zq)) gad,
+     WriteErrorCtx expr z k w (CT m zp (Cyc t m' zq)) t m m' zp zq)
+  type TunnelCtx (ErrorRateWriter expr z k w) t e r s e' r' s' zp zq gad =
+      (TunnelCtx expr t e r s e' r' s' zp zq gad,
+       WriteErrorCtx expr z k w (CT s zp (Cyc t s' zq)) t s s' zp zq)
 
   modSwitchPT_     = ERW $ pure $ liftA_ $: modSwitchPT_
   modSwitch_       = ERW $ pure $ liftA_ $: modSwitch_
   addPublic_     p = ERW $ pure $ liftA_ $: addPublic_ p
   mulPublic_     p = ERW $ pure $ liftA_ $: mulPublic_ p
-  keySwitchQuad_ h = ERW $ pure $ liftA_ $: keySwitchQuad_ h
-  tunnel_        h = ERW $ pure $ liftA_ $: tunnel_ h
+  keySwitchQuad_ h = ERW $ liftWriteError (Proxy::Proxy z) $ keySwitchQuad_ h
+  tunnel_        h = ERW $ liftWriteError (Proxy::Proxy z) $ tunnel_ h
 
 instance (ErrorRate expr, Applicative_ expr, Applicative k, Applicative w) =>
   ErrorRate (ErrorRateWriter expr z k w) where
