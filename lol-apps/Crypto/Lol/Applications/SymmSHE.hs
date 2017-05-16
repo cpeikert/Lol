@@ -352,8 +352,8 @@ ksQuadCircHint :: (KSHintCtx gad t m' z zq', MonadRandom rnd)
   -> rnd (KSQuadCircHint gad (Cyc t m' zq'))
 ksQuadCircHint sk@(SK _ s) = KSQHint <$> ksHint sk (s*s)
 
--- | Switch a quadratic ciphertext (i.e., one with three components)
--- to a linear one under the /same/ key, using the supplied hint.
+-- | Switch a ciphertext of degree two or less (i.e., one with no more than three components)
+-- to a ciphertext of degree one (or less) under the /same/ key, using the supplied hint.
 -- (The input ciphertext may first need to be rescaled so that its
 -- modulus matches that of the hint.)
 keySwitchQuadCirc :: (KeySwitchCtx gad t m' zp zq')
@@ -362,8 +362,11 @@ keySwitchQuadCirc :: (KeySwitchCtx gad t m' zp zq')
   -> CT m zp (Cyc t m' zq')
 keySwitchQuadCirc (KSQHint hint) ct =
   let CT MSD k l c = toMSD ct
-      [c0,c1,c2] = coeffs c
-  in CT MSD k l $ P.fromCoeffs [c0,c1] + switch hint c2
+  in case coeffs c of
+       []         -> []
+       [c0]       -> [c0]
+       [c0,c1]    -> [c0,c1]
+       [c0,c1,c2] -> CT MSD k l $ P.fromCoeffs [c0,c1] + switch hint c2
 
 ---------- Misc homomorphic operations ----------
 
