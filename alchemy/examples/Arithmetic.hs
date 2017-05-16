@@ -80,7 +80,7 @@ main = do
     liftIO $ putStrLn $ "CT expression: " ++ pprint w1
     liftIO $ putStrLn $ "CT expression size: " ++ (show $ size w2)
 
-    z2' <- readerToAccumulator $ writeErrorRates @_ @Int64 z2
+    z2' <- readerToAccumulator $ writeErrorRates @Int64 z2
     let (result,errors) = runWriter $ eval z2' (return arg1) (return arg2)
     liftIO $ print $ "Error rates: " ++ show errors
 
