@@ -32,6 +32,11 @@ import SHERepaMain ()
 
 import RLWEChallengesMain ()
 
-import Arithmetic
+import qualified Arithmetic
 --import HomomRLWR ()
 import Tunnel ()
+
+main :: IO ()
+main = Arithmetic.main
+
+-- \v0 -> modSwitchPT $ addPublic (Scalar ZqB 0) $ modSwitch $ keySwitchQuad $ modSwitch $ v0 * (addPublic (Scalar ZqB 1) v0)
