@@ -342,8 +342,10 @@ keySwitchLinear :: (KeySwitchCtx gad t m' zp zq')
   -> CT m zp (Cyc t m' zq')
 keySwitchLinear (KSLHint hint) ct =
   let CT MSD k l c = toMSD ct
-      [c0,c1] = coeffs c
-  in CT MSD k l $ P.const c0 + (switch hint c1)
+  in case coeffs c of
+       []      -> ct
+       [_]     -> ct
+       [c0,c1] -> CT MSD k l $ P.const c0 + (switch hint c1)
 
 -- | A hint to switch a quadratic ciphertext to a linear
 -- one under the same key.
