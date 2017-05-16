@@ -23,6 +23,7 @@ import Crypto.Lol.Types.ZPP                -- EAC: I shouldn't need to explicitl
 
 import Crypto.Alchemy.MonadAccumulator
 --import Crypto.Alchemy.Interpreter.DedupRescale
+import Crypto.Alchemy.Interpreter.Depth
 import Crypto.Alchemy.Interpreter.Dup
 import Crypto.Alchemy.Interpreter.ErrorRateWriter
 import Crypto.Alchemy.Interpreter.Eval
@@ -53,7 +54,7 @@ deriving instance (Ring a) => Ring.C (Identity a)
 -- EAC: This is a convenient function, but it needs a home.
 argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
 argToReader f a = flip f a =<< ask
-
+{-
 khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise .
   (z2 ~ Z2E 'O i,
    -- tunnel
@@ -109,7 +110,7 @@ khprf_1hop :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise p
 khprf_1hop = do
   rescaleTree <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
   return $ rescaleTree .: tunnelDecToCRT_
-
+-}
 khprf_0hop :: forall t h5 k outputPNoise i z2k env expr z2 postTunnelPNoise .
   (z2 ~ Z2E 'O i, Lambda expr,
    -- rescaleCycCRT
@@ -122,10 +123,21 @@ main :: IO ()
 main = do
   -- example with rescale de-duplication when tunneling
   -- print the unapplied PT function
-  putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @(PNoise 'Z) @Int64
+
   putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @Identity @Int64
-  putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3 @(PNoise 'Z) @Int64
-  putStrLn $ pprint $ untag $ khprf_1hop @CT @H0 @H1 @P3  @Identity @Int64
+  let (ex01,ex0) = dup $ untag $ khprf_0hop @CT @H5 @P3 @(PNoise 'Z) @Int64
+      (ex02,ex03) = dup ex0
+  putStrLn $ "PT expression0: " ++ pprint ex01
+  putStrLn $ "PT expression0 size: " ++ (show $ size ex02)
+  putStrLn $ "PT expression0 depth: " ++ (show $ depth ex03)
+
+  putStrLn $ pprint $ untag $ khprf_1hop @CT @H4 @H5 @P2 @Identity @Int64
+  let (ex11,ex1) = dup $ untag $ khprf_1hop @CT @H4 @H5 @P2 @(PNoise 'Z) @Int64
+      (ex12,ex13) = dup ex1
+  putStrLn $ "PT expression1: " ++ pprint ex11
+  putStrLn $ "PT expression1 size: " ++ (show $ size ex12)
+  putStrLn $ "PT expression1 depth: " ++ (show $ depth ex13)
+
   putStrLn $ pprint $ untag $ khprf_1hop' @CT @H0 @H1 @P3 @(PNoise 'Z) @Int64
   putStrLn $ pprint $ untag $ khprf_1hop' @CT @H0 @H1 @P3 @Identity @Int64
   putStrLn $ pprint $ untag $ khprf_1hop'' @CT @H0 @H1 @P3 @(PNoise 'Z) @Int64
@@ -138,23 +150,26 @@ main = do
   putStrLn $ show $ eval (untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy) 2
 
   -- compile the up-applied function to CT, then print it out
-  evalKeysHints (1.0 :: Double) $ do
+  evalKeysHints (0.01 :: Double) $ do
     y <- argToReader (pt2ct
-                         @RngList -- from HomoPRFParams
+                         @RngList
                          @ZqList
                          @TrivGad
                          @Int64
                          @Double)
-                         (untag $ khprf_1hop @CT @H4 @H5 @P3 @(PNoise 'Z) @Int64)
+                         (untag $ khprf_0hop @CT @H5 @P2 @(PNoise 'Z) @Int64)
+                         --(untag $ khprf_1hop @CT @H4 @H5 @P3 @(PNoise 'Z) @Int64)
                          --(untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy)
     -- compile once, interpret with multiple ctexprs!!
+
     let (z1,z2) = dup y
     liftIO $ putStrLn $ pprint z1
-    z2' <- readerToAccumulator $ writeErrorRates @_ @Int64 z2
+    z2' <- readerToAccumulator $ writeErrorRates @Int64 @() z2
     let (z2'',errors) = runWriter $ eval z2' $ return 2
     liftIO $ putStrLn $ show z2''
     liftIO $ print errors
     --liftIO $ putStrLn $ pprint $ dedupRescale z2
+
 
 type ZQ1 = Zq $(mkTLNatNat 18869761)
 type ZQ2 = Zq $(mkTLNatNat 19393921)
