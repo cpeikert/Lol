@@ -157,7 +157,8 @@ instance (SHE expr, Applicative_ expr, Applicative k, Applicative w) =>
   SHE (ErrorRateWriter expr z k w) where
 
   type ModSwitchPTCtx   (ErrorRateWriter expr z k w) ct zp' = ModSwitchPTCtx expr ct zp'
-  type ModSwitchCtx     (ErrorRateWriter expr z k w) ct zq' = ModSwitchCtx expr ct zq'
+  type ModSwitchCtx     (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) zq' =
+    (WriteErrorCtx expr z k w (CT m zp (Cyc t m' zq')) t m m' zp zq', ModSwitchCtx expr (CT m zp (Cyc t m' zq)) zq')
   type AddPublicCtx     (ErrorRateWriter expr z k w) ct     = AddPublicCtx expr ct
   type MulPublicCtx     (ErrorRateWriter expr z k w) ct     = MulPublicCtx expr ct
   type KeySwitchQuadCtx (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) gad =
@@ -168,7 +169,7 @@ instance (SHE expr, Applicative_ expr, Applicative k, Applicative w) =>
        WriteErrorCtx expr z k w (CT s zp (Cyc t s' zq)) t s s' zp zq)
 
   modSwitchPT_     = ERW $ pure $ liftA_ $: modSwitchPT_
-  modSwitch_       = ERW $ pure $ liftA_ $: modSwitch_
+  modSwitch_       = ERW $ liftWriteError (Proxy::Proxy z) $ modSwitch_
   addPublic_     p = ERW $ pure $ liftA_ $: addPublic_ p
   mulPublic_     p = ERW $ pure $ liftA_ $: mulPublic_ p
   keySwitchQuad_ h = ERW $ liftWriteError (Proxy::Proxy z) $ keySwitchQuad_ h
