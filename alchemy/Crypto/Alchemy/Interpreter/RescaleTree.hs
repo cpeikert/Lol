@@ -66,11 +66,11 @@ rescaleTreePow2_ = case (sing :: SPos k) of
 rescaleTreePow2_' :: forall r2 k expr e . (RescaleTreePow2Ctx expr ('S k) r2)
   => Tagged ('S k) (expr e (PreRescaleTreePow2 expr ('S k) r2 -> r2))
 rescaleTreePow2_' = tag $ lam $
-    let v'    = v0 *: (one >+: v0)
-        kval  = proxy value (Proxy::Proxy k) :: Int
-        pDiv4 = 2^(kval-1)
-    in treeMul (Proxy::Proxy k) $ take pDiv4 $
-         map ((div2_ $:) . (>+: v')) [fromInteger $ y * (-y+1) | y <- [1..]]
+  let v'    = v0 *: (one >+: v0)
+      kval  = proxy value (Proxy::Proxy k) :: Int
+      pDiv4 = 2^(kval-1)
+  in treeMul (Proxy::Proxy k) $ take pDiv4 $
+       map ((div2_ $:) . (>+: v')) [fromInteger $ y * (-y+1) | y <- [1..]]
 
 class TreeMul expr (k :: Pos) r2 where
   treeMul :: Proxy k

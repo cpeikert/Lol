@@ -15,7 +15,6 @@ import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor (TElt) -- EAC: I shouldn't need to explicitly import this
 import Crypto.Lol.Types.ZPP                -- EAC: I shouldn't need to explicitly import this...
 
-import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.TunnelCyc
 
