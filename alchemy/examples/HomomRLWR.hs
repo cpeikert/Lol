@@ -56,7 +56,6 @@ argToReader f a = flip f a =<< ask
 
 khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise .
   (z2 ~ Z2E 'O i,
-   Add expr (preTunnelPNoise (Cyc t h0 z2k)),
    -- tunnel
    rngs ~ '[h0,h1,h2,h3,h4,h5],
    TunnelChainCtx expr t postTunnelPNoise z2k rngs,

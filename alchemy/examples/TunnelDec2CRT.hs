@@ -24,24 +24,22 @@ import Data.Singletons.Prelude.List (Reverse)
 -- EAC: We can get rid of signatures once #13524 is fixed (should be in 8.2)
 
 tunn2 :: forall t r u s zp ms env expr mr mu .
-  (Add expr (mr (Cyc t r zp)),
-   TunnelCyc expr mu, TunnelCyc expr ms,
+  (TunnelCyc expr mu, TunnelCyc expr ms,
    TunnelCycCtx expr mu t (FGCD r u) r u zp,
    TunnelCycCtx expr ms t (FGCD u s) u s zp,
    mu ~ PreTunnelCyc expr ms, mr ~ PreTunnelCyc expr mu,
    Lambda expr, FunCtx t r u zp, FunCtx t u s zp)
   => Proxy u -> expr env (mr (Cyc t r zp) -> ms (Cyc t s zp))
-tunn2 _ = tunnelDecToCRT_ .: tunnelDecToCRT_ @u .: neg_
+tunn2 _ = tunnelDecToCRT_ .: tunnelDecToCRT_ @u
 
 tunn5 :: forall t rngs a postTunnelPNoise env expr h0 h1 h2 h3 h4 h5 preTunnelPNoise  .
-  (Add expr (preTunnelPNoise (Cyc t h0 a)),
-   -- tunnel
+  (-- tunnel
    rngs ~ '[h0,h1,h2,h3,h4,h5],
    TunnelChainCtx expr t postTunnelPNoise a rngs,
    PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise)
   => Proxy rngs -> expr env (preTunnelPNoise (Cyc t h0 a) -> postTunnelPNoise (Cyc t h5 a))
 tunn5 _ = tunnelDecToCRT_ .: tunnelDecToCRT_ @h4 .:
-    tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1 .: neg_
+    tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1
 
 -- given the output 'm' (Cyc wrapper) of a chain of tunnels, returns the input Cyc wrapper.
 type family PreTunnelM expr m (rngs :: [Factored]) where
