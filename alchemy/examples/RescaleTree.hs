@@ -6,7 +6,6 @@
 
 module RescaleTree where
 
-import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Lol

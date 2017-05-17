@@ -23,7 +23,7 @@ import Control.Monad.Random
 import Control.Monad.Writer
 import Data.Type.Natural
 
-import TunnelDec2CRT
+import LinearDec2CRT
 import Crypto.Alchemy.MonadAccumulator
 --import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Depth
@@ -55,7 +55,7 @@ deriving instance (Ring a) => Ring.C (Identity a)
 
 main :: IO ()
 main = do
-  let (exp1a, exp2a) = dup $ tunn2 @CT @H0 @H1 @H2 @(Zq PP8) @Identity Proxy
+  let (exp1a, exp2a) = dup $ linear2 @CT @H0 @H1 @H2 @(Zq PP8) @Identity Proxy
 
   -- example with rescale de-duplication when tunneling
   -- print the unapplied PT function
@@ -63,9 +63,9 @@ main = do
   putStrLn $ show $ eval exp2a 2
 
 
-  let ptexpr = tunn2 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy
-  --let ptexpr = tunn5 @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @(PNoise 'Z) Proxy
-  putStrLn $ "PT expression params:\n" ++ (params ptexpr $ tunn2 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy)
+  let ptexpr = linear2 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy
+  --let ptexpr = linear5 @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @(PNoise 'Z) Proxy
+  putStrLn $ "PT expression params:\n" ++ (params ptexpr $ linear2 @_ @_ @H1 Proxy)
 
   pt1 <- getRandom
 
@@ -117,4 +117,4 @@ type H2' = H2
 type H3' = H3
 type H4' = H4
 type H5' = H5
-type RngList = '[ '(H0,H0'), '(H1,H1'), '(H2,H2'), '(H3,H3'), '(H4,H4'), '(H5,H5') ]
+type RngList = '[ '(H0,H0'), '(H1,H1'), '(H2,H2')] -- , '(H3,H3'), '(H4,H4'), '(H5,H5') ]

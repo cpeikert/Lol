@@ -9,66 +9,67 @@
 {-# LANGUAGE TypeOperators        #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module TunnelDec2CRT where
+module LinearDec2CRT where
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor (TElt) -- EAC: I shouldn't need to explicitly import this
 import Crypto.Lol.Types.ZPP                -- EAC: I shouldn't need to explicitly import this...
 
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.TunnelCyc
+import Crypto.Alchemy.Language.LinearCyc
 
 import Data.Singletons.Prelude.List (Reverse)
 
 -- EAC: We can get rid of signatures once #13524 is fixed (should be in 8.2)
 
-tunn2 :: forall t r u s zp ms env expr mr mu .
-  (TunnelCyc expr mu, TunnelCyc expr ms,
-   TunnelCycCtx expr mu t (FGCD r u) r u zp,
-   TunnelCycCtx expr ms t (FGCD u s) u s zp,
-   mu ~ PreTunnelCyc expr ms, mr ~ PreTunnelCyc expr mu,
+linear2 :: forall t r u s zp ms env expr mr mu .
+  (LinearCyc expr mu, LinearCyc expr ms,
+   LinearCycCtx expr mu t (FGCD r u) r u zp,
+   LinearCycCtx expr ms t (FGCD u s) u s zp,
+   mu ~ PreLinearCyc expr ms, mr ~ PreLinearCyc expr mu,
    Lambda expr, FunCtx t r u zp, FunCtx t u s zp)
   => Proxy u -> expr env (mr (Cyc t r zp) -> ms (Cyc t s zp))
-tunn2 _ = tunnelDecToCRT_ .: tunnelDecToCRT_ @u
+linear2 _ = linearDecToCRT_ .: linearDecToCRT_ @u
 
-tunn5 :: forall t rngs a postTunnelPNoise env expr h0 h1 h2 h3 h4 h5 preTunnelPNoise  .
+linear5 :: forall t rngs a postTunnelPNoise env expr h0 h1 h2 h3 h4 h5 preTunnelPNoise  .
   (-- tunnel
    rngs ~ '[h0,h1,h2,h3,h4,h5],
-   TunnelChainCtx expr t postTunnelPNoise a rngs,
-   PreTunnelM expr postTunnelPNoise rngs ~ preTunnelPNoise)
+   LinearChainCtx expr t postTunnelPNoise a rngs,
+   PreLinearChainM expr postTunnelPNoise rngs ~ preTunnelPNoise)
   => Proxy rngs -> expr env (preTunnelPNoise (Cyc t h0 a) -> postTunnelPNoise (Cyc t h5 a))
-tunn5 _ = tunnelDecToCRT_ .: tunnelDecToCRT_ @h4 .:
-    tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1
+linear5 _ = linearDecToCRT_ .: linearDecToCRT_ @h4 .:
+    linearDecToCRT_ @h3 .: linearDecToCRT_ @h2 .: linearDecToCRT_ @h1
 
 -- given the output 'm' (Cyc wrapper) of a chain of tunnels, returns the input Cyc wrapper.
-type family PreTunnelM expr m (rngs :: [Factored]) where
-  PreTunnelM expr m '[x] = m
-  PreTunnelM expr m (r ': rngs) = PreTunnelM expr (PreTunnelCyc expr m) rngs
+type family PreLinearChainM expr m (rngs :: [Factored]) where
+  PreLinearChainM expr m '[x] = m
+  PreLinearChainM expr m (r ': rngs) = PreLinearChainM expr (PreLinearCyc expr m) rngs
 
 -- | Context for a chaini of tunnels using the decToCRT linear function.
-type TunnelChainCtx expr m t z2k (rngs :: [Factored]) = TunnelChainCtx' expr m t z2k (Reverse rngs)
+type LinearChainCtx expr m t z2k (rngs :: [Factored]) = LinearChainCtx' expr m t z2k (Reverse rngs)
 
--- | Helper family for TunnelChainCtx. Takes rings in *reverse* order so that
+-- | Helper family for LinearChainCtx. Takes rings in *reverse* order so that
 -- the Cyc wrapper `m` is applied appropriately.
-type family TunnelChainCtx' expr m t z2k (rngs :: [Factored]) where
-  TunnelChainCtx' expr t m z2k '[x] = (Lambda expr)
+type family LinearChainCtx' expr m t z2k (rngs :: [Factored]) where
+  LinearChainCtx' expr t m z2k '[x] = (Lambda expr)
   -- EAC: Reverse r and s here because they are applied in reverse
-  TunnelChainCtx' expr t m z2k (r ': s ': rngs) = (TunnelDecToCRTCtx expr m t s r z2k, TunnelChainCtx' expr t (PreTunnelCyc expr m) z2k (s ': rngs))
+  LinearChainCtx' expr t m z2k (r ': s ': rngs) =
+    (LinearDecToCRTCtx expr m t s r z2k, LinearChainCtx' expr t (PreLinearCyc expr m) z2k (s ': rngs))
 
 -- | Constraint synonym for tunnelCyc'
-type TunnelDecToCRTCtx expr m t r s zp =
-  (TunnelCyc expr m, TunnelCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
+type LinearDecToCRTCtx expr m t r s zp =
+  (LinearCyc expr m, LinearCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
 
-tunnelDecToCRT_ :: forall s expr env m t r zp .
-  (TunnelCyc expr m, TunnelCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
-  => expr env ((PreTunnelCyc expr m) (Cyc t r zp) -> m (Cyc t s zp))
-tunnelDecToCRT_ = tunnelCyc_ decToCRT
+linearDecToCRT_ :: forall s expr env m t r zp .
+  (LinearCyc expr m, LinearCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
+  => expr env ((PreLinearCyc expr m) (Cyc t r zp) -> m (Cyc t s zp))
+linearDecToCRT_ = linearCyc_ decToCRT
 
 -- | Tunnel with the decToCRT linear function.
-tunnelDecToCRT :: forall s expr env m t r zp .
-  (TunnelCyc expr m, TunnelCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
-  => expr env ((PreTunnelCyc expr m) (Cyc t r zp)) -> expr env (m (Cyc t s zp))
-tunnelDecToCRT a = tunnelCyc_ decToCRT $: a
+linearDecToCRT :: forall s expr env m t r zp .
+  (LinearCyc expr m, LinearCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
+  => expr env ((PreLinearCyc expr m) (Cyc t r zp)) -> expr env (m (Cyc t s zp))
+linearDecToCRT a = linearCyc_ decToCRT $: a
 
 -- | Constraint synonym for decToCRT
 type FunCtx t r s zp = FunCtx' t (FGCD r s) r s zp

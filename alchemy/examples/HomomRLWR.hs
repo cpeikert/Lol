@@ -20,7 +20,7 @@ import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
 import RescaleTree
-import TunnelDec2CRT
+import LinearDec2CRT
 import Crypto.Alchemy.MonadAccumulator
 --import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Depth
