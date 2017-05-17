@@ -35,7 +35,7 @@ import RLWEChallengesMain ()
 import Crypto.Alchemy.Interpreter.PT2CT
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import qualified Arithmetic
---import HomomRLWR ()
+import HomomRLWR ()
 --import qualified Tunnel
 
 main :: IO ()

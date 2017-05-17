@@ -19,6 +19,7 @@ import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
+import RescaleTree
 import TunnelDec2CRT
 import Crypto.Alchemy.MonadAccumulator
 --import Crypto.Alchemy.Interpreter.DedupRescale
@@ -53,7 +54,7 @@ deriving instance (Ring a) => Ring.C (Identity a)
 -- EAC: This is a convenient function, but it needs a home.
 argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
 argToReader f a = flip f a =<< ask
-
+{-
 khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise .
   (z2 ~ Z2E 'O i,
    -- tunnel
@@ -108,7 +109,7 @@ khprf_1hop :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise p
 khprf_1hop = do
   rescaleTree <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
   return $ rescaleTree .: tunnelDecToCRT_
-
+-}
 khprf_0hop :: forall t h5 k outputPNoise i z2k env expr z2 postTunnelPNoise .
   (z2 ~ Z2E 'O i, Lambda expr,
    -- rescaleCycCRT
@@ -155,7 +156,8 @@ main = do
                          @TrivGad
                          @Int64
                          @Double)
-                         (untag $ khprf_0hop @CT @H0 @P2 @(PNoise 'Z) @Int64)
+                         --(rescale4to2 @CT @H0 @(PNoise 'Z)) -- 1 minute, 8 sec
+                         (untag $ khprf_0hop @CT @H0 @P2 @(PNoise 'Z) @Int64) -- 1 minute, 6 sec
                          --(untag $ khprf_1hop @CT @H4 @H5 @P3 @(PNoise 'Z) @Int64)
                          --(untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy)
     -- compile once, interpret with multiple ctexprs!!
@@ -178,7 +180,7 @@ type ZQ5 = Zq $(mkTLNatNat 2149056001)
 -- for rounding off after the first hop
 type ZQ6 = Zq $(mkTLNatNat 3144961)
 type ZQ7 = Zq $(mkTLNatNat 7338241)
-type ZqList = '[ZQ1,ZQ2,ZQ3,ZQ4,ZQ5,ZQ6,ZQ7]
+type ZqList = '[ZQ1,ZQ2] -- ,ZQ3,ZQ4,ZQ5,ZQ6,ZQ7]
 
 type Zq (q :: TLNatNat) = ZqBasic q Int64
 
