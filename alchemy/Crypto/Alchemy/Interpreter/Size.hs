@@ -13,7 +13,7 @@ import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
-import Crypto.Alchemy.Language.TunnelCyc
+import Crypto.Alchemy.Language.LinearCyc
 
 newtype S expr a = S { size :: Int }
 
@@ -78,8 +78,8 @@ instance SHE S where
   keySwitchQuad_ _ = S 1
   tunnel_ _ = S 1
 
-instance TunnelCyc S rep where
-  type PreTunnelCyc S rep = rep
-  type TunnelCycCtx S rep t e r s zp = ()
+instance LinearCyc S rep where
+  type PreLinearCyc S rep = rep
+  type LinearCycCtx S rep t e r s zp = ()
 
-  tunnelCyc_ _ = S 1
+  linearCyc_ _ = S 1

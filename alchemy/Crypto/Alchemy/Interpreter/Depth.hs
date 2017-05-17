@@ -13,7 +13,7 @@ import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
-import Crypto.Alchemy.Language.TunnelCyc
+import Crypto.Alchemy.Language.LinearCyc
 
 newtype D expr a = D { depth :: Int }
 
@@ -78,8 +78,8 @@ instance SHE D where
   keySwitchQuad_ _ = D 0
   tunnel_ _ = D 0
 
-instance TunnelCyc D rep where
-  type PreTunnelCyc D rep = rep
-  type TunnelCycCtx D rep t e r s zp = ()
+instance LinearCyc D rep where
+  type PreLinearCyc D rep = rep
+  type LinearCycCtx D rep t e r s zp = ()
 
-  tunnelCyc_ _ = D 0
+  linearCyc_ _ = D 0

@@ -18,7 +18,7 @@
 module Crypto.Alchemy.Interpreter.PT2CT
 ( PT2CT, PNoise
 , pt2ct, encrypt, decrypt
-, pt2ctMul, pt2ctTunnelCyc, KSPNoise
+, pt2ctMul, pt2ctLinearCyc, KSPNoise
 ) where
 
 import Control.Monad.Random
@@ -41,7 +41,7 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.SHE            as LSHE
-import Crypto.Alchemy.Language.TunnelCyc
+import Crypto.Alchemy.Language.LinearCyc
 import Crypto.Alchemy.MonadAccumulator
 
 -- | Interprets plaintext operations as their corresponding
@@ -198,10 +198,10 @@ instance (SHE ctex, Applicative mon,
 
   div2_ = PC $ pure modSwitchPT_
 
-type PT2CTTunnelCtx ctex mon m'map zqs h t e r s r' s' z zp zq zqin v gad =
-  PT2CTTunnelCtx' ctex mon m'map zqs h t e r s r' s' z zp zq zqin (KSModulus gad zqs h) v gad
+type PT2CTLinearCtx ctex mon m'map zqs h t e r s r' s' z zp zq zqin v gad =
+  PT2CTLinearCtx' ctex mon m'map zqs h t e r s r' s' z zp zq zqin (KSModulus gad zqs h) v gad
 
-type PT2CTTunnelCtx' ctex mon m'map zqs h t e r s r' s' z zp zq zqin hintzq v gad =
+type PT2CTLinearCtx' ctex mon m'map zqs h t e r s r' s' z zp zq zqin hintzq v gad =
   (SHE ctex, Lambda ctex,
    MonadAccumulator Keys mon, MonadRandom mon, MonadReader v mon,
    -- output ciphertext type
@@ -215,42 +215,42 @@ type PT2CTTunnelCtx' ctex mon m'map zqs h t e r s r' s' z zp zq zqin hintzq v ga
    ModSwitchCtx ctex (CT s zp (Cyc t s' hintzq))  zq,
    Typeable t, Typeable r', Typeable s', Typeable z)
 
--- multiple TunnelCyc instances, one for each type of gad we might use
+-- multiple LinearCyc instances, one for each type of gad we might use
 
-instance TunnelCyc (PT2CT m'map zqs TrivGad z v ctex mon) (PNoise h) where
+instance LinearCyc (PT2CT m'map zqs TrivGad z v ctex mon) (PNoise h) where
 
   -- EAC: Danger: as far as GHC is concerned, ('S h) is not the same as (h :+: N1)
-  type PreTunnelCyc (PT2CT m'map zqs TrivGad z v ctex mon) (PNoise h) = PNoise (h :+: N1)
+  type PreLinearCyc (PT2CT m'map zqs TrivGad z v ctex mon) (PNoise h) = PNoise (h :+: N1)
 
-  type TunnelCycCtx (PT2CT m'map zqs TrivGad z v ctex mon) (PNoise h) t e r s zp =
-    (PT2CTTunnelCtx ctex mon m'map zqs h t e r s (Lookup r m'map) (Lookup s m'map)
+  type LinearCycCtx (PT2CT m'map zqs TrivGad z v ctex mon) (PNoise h) t e r s zp =
+    (PT2CTLinearCtx ctex mon m'map zqs h t e r s (Lookup r m'map) (Lookup s m'map)
       z zp (PNoise2Zq zqs h) (PNoise2Zq zqs (h :+: N1)) v TrivGad)
 
-  tunnelCyc_ = pt2ctTunnelCyc
+  linearCyc_ = pt2ctLinearCyc
 
-instance TunnelCyc (PT2CT m'map zqs (BaseBGad 2) z v ctex mon) (PNoise h) where
+instance LinearCyc (PT2CT m'map zqs (BaseBGad 2) z v ctex mon) (PNoise h) where
 
   -- EAC: Danger: as far as GHC is concerned, ('S h) is not the same as (h :+: N1)
-  type PreTunnelCyc (PT2CT m'map zqs (BaseBGad 2) z v ctex mon) (PNoise h) = PNoise (h :+: N1)
+  type PreLinearCyc (PT2CT m'map zqs (BaseBGad 2) z v ctex mon) (PNoise h) = PNoise (h :+: N1)
 
-  type TunnelCycCtx (PT2CT m'map zqs (BaseBGad 2) z v ctex mon) (PNoise h) t e r s zp =
-    (PT2CTTunnelCtx ctex mon m'map zqs h t e r s (Lookup r m'map) (Lookup s m'map)
+  type LinearCycCtx (PT2CT m'map zqs (BaseBGad 2) z v ctex mon) (PNoise h) t e r s zp =
+    (PT2CTLinearCtx ctex mon m'map zqs h t e r s (Lookup r m'map) (Lookup s m'map)
       z zp (PNoise2Zq zqs h) (PNoise2Zq zqs (h :+: N1)) v (BaseBGad 2))
 
-  tunnelCyc_ = pt2ctTunnelCyc
+  linearCyc_ = pt2ctLinearCyc
 
--- | Generic implementation of `tunnelCyc` for 'PT2CT' with any gadget.
-pt2ctTunnelCyc :: forall t zp e r s env expr rp r' zq h zqs m'map gad z v ctex mon .
+-- | Generic implementation of `linearCyc` for 'PT2CT' with any gadget.
+pt2ctLinearCyc :: forall t zp e r s env expr rp r' zq h zqs m'map gad z v ctex mon .
   (expr ~ PT2CT m'map zqs gad z v ctex mon,
-   PT2CTTunnelCtx ctex mon m'map zqs h t e r s (Lookup r m'map) (Lookup s m'map)
+   PT2CTLinearCtx ctex mon m'map zqs h t e r s (Lookup r m'map) (Lookup s m'map)
     z zp (PNoise2Zq zqs h) (PNoise2Zq zqs (h :+: N1)) v gad,
    Cyc2CT m'map zqs (PNoise h (Cyc t r zp)) ~ CT r zp (Cyc t r' zq), rp ~ Cyc t r zp)
     => Linear t zp e r s -> expr env (PNoise (h :+: N1) rp -> PNoise h (Cyc t s zp))
-pt2ctTunnelCyc f = PC $ do
+pt2ctLinearCyc f = PC $ do
   hint <- getTunnelHint @gad @(KSModulus gad zqs h) (Proxy::Proxy z) f
   return $ lam $
     modSwitch_ $:    -- then scale back to the target modulus zq
-    (tunnel_ hint $:     -- tunnel w/ the hint
+    (tunnel_ hint $:     -- linear w/ the hint
       (modSwitch_ $: -- then scale (up) to the hint modulus zq'
         (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise (h :+: N1) rp)))))
 

@@ -35,7 +35,7 @@ import Crypto.Alchemy.Interpreter.RescaleTree
 import Crypto.Alchemy.Interpreter.Size
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.TunnelCyc
+import Crypto.Alchemy.Language.LinearCyc
 
 import Algebra.Additive as Additive (C(..))
 import qualified Algebra.Ring as Ring (C(..))

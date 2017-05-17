@@ -14,7 +14,7 @@ import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
-import Crypto.Alchemy.Language.TunnelCyc
+import Crypto.Alchemy.Language.LinearCyc
 
 import Crypto.Lol                      (Cyc)
 import Crypto.Lol.Applications.SymmSHE (CT)
@@ -96,11 +96,11 @@ instance SHE P where
   keySwitchQuad_ _ = pureP   "keySwitchQuad <HINT>"
   tunnel_        _ = pureP   "tunnel <FUNC>"
 
-instance TunnelCyc P rep where
-  type PreTunnelCyc P rep = rep
-  type TunnelCycCtx P rep t e r s zp = ()
+instance LinearCyc P rep where
+  type PreLinearCyc P rep = rep
+  type LinearCycCtx P rep t e r s zp = ()
 
-  tunnelCyc_ _ = pureP "tunnelCyc <FUNC>"
+  linearCyc_ _ = pureP "linearCyc <FUNC>"
 
 instance ErrorRate P where
   type ErrorRateCtx P ct z = ()

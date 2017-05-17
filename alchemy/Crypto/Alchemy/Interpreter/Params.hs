@@ -16,7 +16,7 @@ import Crypto.Alchemy.Language.Lambda
 --import Crypto.Alchemy.Language.List
 --import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
-import Crypto.Alchemy.Language.TunnelCyc
+import Crypto.Alchemy.Language.LinearCyc
 
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
 
@@ -126,14 +126,14 @@ instance SHE (Params expr) where
        -> Params expr env (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq))
   tunnel_ _ = showCT @zq "tunnel"
 
-instance (SingI (h :: Nat)) => TunnelCyc (Params expr) (PNoise h) where
-  type PreTunnelCyc (Params expr) (PNoise h) = PreTunnelCyc expr (PNoise h)
-  type TunnelCycCtx (Params expr) (PNoise h) t e r s zp = ()
+instance (SingI (h :: Nat)) => LinearCyc (Params expr) (PNoise h) where
+  type PreLinearCyc (Params expr) (PNoise h) = PreLinearCyc expr (PNoise h)
+  type LinearCycCtx (Params expr) (PNoise h) t e r s zp = ()
 
-  tunnelCyc_ :: forall t e r s zp env . (TunnelCycCtx (Params expr) (PNoise h) t e r s zp)
+  linearCyc_ :: forall t e r s zp env . (LinearCycCtx (Params expr) (PNoise h) t e r s zp)
     => Linear t zp e r s
-    -> Params expr env ((PreTunnelCyc (Params expr) (PNoise h)) (Cyc t r zp) -> PNoise h (Cyc t s zp))
-  tunnelCyc_ _ = showPNoise @h "mul"
+    -> Params expr env ((PreLinearCyc (Params expr) (PNoise h)) (Cyc t r zp) -> PNoise h (Cyc t s zp))
+  linearCyc_ _ = showPNoise @h "linear"
 {-
 instance ErrorRate P where
   type ErrorRateCtx P ct z = ()

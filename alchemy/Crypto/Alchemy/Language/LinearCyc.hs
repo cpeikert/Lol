@@ -4,18 +4,18 @@
 {-# LANGUAGE TypeFamilies           #-}
 {-# LANGUAGE TypeFamilyDependencies #-}
 
-module Crypto.Alchemy.Language.TunnelCyc where
+module Crypto.Alchemy.Language.LinearCyc where
 
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Lol
 import GHC.Exts                       (Constraint)
 
--- | Symantics for ring-tunneling on cyclotomics.
+-- | Symantics for evaluating a linear function on cyclotomics.
 
-class TunnelCyc expr rep where
+class LinearCyc expr rep where
 
-  -- | Constraints needed to tunnel
-  type TunnelCycCtx
+  -- | Constraints needed to linear
+  type LinearCycCtx
          expr
          (rep :: * -> *)
          (t :: Factored -> * -> *)
@@ -24,16 +24,16 @@ class TunnelCyc expr rep where
          (s :: Factored)
          zp :: Constraint
 
-  -- | 'Cyc' wrapper for the input to tunneling
-  type PreTunnelCyc expr rep :: * -> *
+  -- | 'Cyc' wrapper for the input to linearing
+  type PreLinearCyc expr rep :: * -> *
 
   -- | An object-language expression representing the given linear function.
-  tunnelCyc_ :: (TunnelCycCtx expr rep t e r s zp)
+  linearCyc_ :: (LinearCycCtx expr rep t e r s zp)
     => Linear t zp e r s
-    -> expr env ((PreTunnelCyc expr rep) (Cyc t r zp) -> rep (Cyc t s zp))
+    -> expr env ((PreLinearCyc expr rep) (Cyc t r zp) -> rep (Cyc t s zp))
 
-tunnelCyc :: (TunnelCyc expr rep, TunnelCycCtx expr rep t e r s zp, Lambda expr)
+linearCyc :: (LinearCyc expr rep, LinearCycCtx expr rep t e r s zp, Lambda expr)
   => Linear t zp e r s
-  -> expr env ((PreTunnelCyc expr rep) (Cyc t r zp))
+  -> expr env ((PreLinearCyc expr rep) (Cyc t r zp))
   -> expr env (rep (Cyc t s zp))
-tunnelCyc f a = tunnelCyc_ f $: a
+linearCyc f a = linearCyc_ f $: a

@@ -29,7 +29,7 @@ import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
-import Crypto.Alchemy.Language.TunnelCyc
+import Crypto.Alchemy.Language.LinearCyc
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE as SHE
@@ -136,11 +136,11 @@ instance SHE E where
   keySwitchQuad_   = pureE . keySwitchQuadCirc
   tunnel_          = pureE . SHE.tunnel
 
-instance (Applicative rep) => TunnelCyc E rep where
-  type PreTunnelCyc E rep = rep
-  type TunnelCycCtx E rep t e r s zp = (e `Divides` r, e `Divides` s, CElt t zp)
+instance (Applicative rep) => LinearCyc E rep where
+  type PreLinearCyc E rep = rep
+  type LinearCycCtx E rep t e r s zp = (e `Divides` r, e `Divides` s, CElt t zp)
 
-  tunnelCyc_ f = pureE $ fmap (evalLin f)
+  linearCyc_ f = pureE $ fmap (evalLin f)
 
 -- | Uses 'SHE.errorTermUnrestricted' to compute 'errorRate'.
 instance ErrorRate E where
