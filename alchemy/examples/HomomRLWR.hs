@@ -16,11 +16,10 @@
 module HomomRLWR where
 
 import Crypto.Lol
-import Crypto.Lol.Cyclotomic.Tensor (TElt) -- EAC: I shouldn't need to explicitly import this
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
-import Crypto.Lol.Types.ZPP                -- EAC: I shouldn't need to explicitly import this...
 
+import TunnelDec2CRT
 import Crypto.Alchemy.MonadAccumulator
 --import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Depth
@@ -33,6 +32,7 @@ import Crypto.Alchemy.Interpreter.PT2CT
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Interpreter.RescaleTree
 import Crypto.Alchemy.Interpreter.Size
+import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.TunnelCyc
 
@@ -41,7 +41,6 @@ import qualified Algebra.Ring as Ring (C(..))
 import Control.Monad.Identity
 import Control.Monad.Reader
 import Control.Monad.Writer
-import Data.Singletons.Prelude.List (Reverse)
 import Data.Type.Natural (Nat(Z))
 
 -- a concrete Z_2^e data type
@@ -54,9 +53,10 @@ deriving instance (Ring a) => Ring.C (Identity a)
 -- EAC: This is a convenient function, but it needs a home.
 argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
 argToReader f a = flip f a =<< ask
-{-
+
 khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 preTunnelPNoise postTunnelPNoise .
   (z2 ~ Z2E 'O i,
+   Add expr (preTunnelPNoise (Cyc t h0 z2k)),
    -- tunnel
    rngs ~ '[h0,h1,h2,h3,h4,h5],
    TunnelChainCtx expr t postTunnelPNoise z2k rngs,
@@ -65,10 +65,9 @@ khprf_5hop :: forall t rngs k outputPNoise i env z2k expr z2 h0 h1 h2 h3 h4 h5 p
    PreRescaleTreePow2 expr k (outputPNoise (Cyc t h5 z2)) ~ postTunnelPNoise (Cyc t h5 z2k),
    RescaleTreePow2Ctx expr k (outputPNoise (Cyc t h5 z2)))
   => Proxy rngs -> Tagged k (expr env (preTunnelPNoise (Cyc t h0 z2k) -> outputPNoise (Cyc t h5 z2)))
-khprf_5hop _ = do
+khprf_5hop rngs = do
   rescaleTree <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
-  return $ rescaleTree .: tunnelDecToCRT_ .: tunnelDecToCRT_ @h4 .:
-    tunnelDecToCRT_ @h3 .: tunnelDecToCRT_ @h2 .: tunnelDecToCRT_ @h1
+  return $ rescaleTree .: tunn5 rngs
 
 -- khprf_1hop', but without point-free style
 khprf_1hop'' :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise preTunnelPNoise rngs .
@@ -110,7 +109,7 @@ khprf_1hop :: forall t h4 h5 k outputPNoise i env z2k expr z2 postTunnelPNoise p
 khprf_1hop = do
   rescaleTree <- rescaleTreePow2_ @(outputPNoise (Cyc t h5 z2))
   return $ rescaleTree .: tunnelDecToCRT_
--}
+
 khprf_0hop :: forall t h5 k outputPNoise i z2k env expr z2 postTunnelPNoise .
   (z2 ~ Z2E 'O i, Lambda expr,
    -- rescaleCycCRT
@@ -123,16 +122,16 @@ main :: IO ()
 main = do
   -- example with rescale de-duplication when tunneling
   -- print the unapplied PT function
-
-  putStrLn $ pprint $ untag $ khprf_0hop @CT @H5 @P3 @Identity @Int64
-  let (ex01,ex0) = dup $ untag $ khprf_0hop @CT @H5 @P3 @(PNoise 'Z) @Int64
+{-
+  putStrLn $ pprint $ untag $ khprf_0hop @CT @H0 @P3 @Identity @Int64
+  let (ex01,ex0) = dup $ untag $ khprf_0hop @CT @H0 @P3 @(PNoise 'Z) @Int64
       (ex02,ex03) = dup ex0
   putStrLn $ "PT expression0: " ++ pprint ex01
   putStrLn $ "PT expression0 size: " ++ (show $ size ex02)
   putStrLn $ "PT expression0 depth: " ++ (show $ depth ex03)
 
-  putStrLn $ pprint $ untag $ khprf_1hop @CT @H4 @H5 @P2 @Identity @Int64
-  let (ex11,ex1) = dup $ untag $ khprf_1hop @CT @H4 @H5 @P2 @(PNoise 'Z) @Int64
+  putStrLn $ pprint $ untag $ khprf_1hop @CT @H4 @H0 @P2 @Identity @Int64
+  let (ex11,ex1) = dup $ untag $ khprf_1hop @CT @H4 @H0 @P2 @(PNoise 'Z) @Int64
       (ex12,ex13) = dup ex1
   putStrLn $ "PT expression1: " ++ pprint ex11
   putStrLn $ "PT expression1 size: " ++ (show $ size ex12)
@@ -148,16 +147,16 @@ main = do
   -- EAC: It's terrible that we can't use Dup here: PreDiv2 P and PreDiv2 E disagree
   putStrLn $ pprint $ untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy
   putStrLn $ show $ eval (untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy) 2
-
+-}
   -- compile the up-applied function to CT, then print it out
   evalKeysHints (0.01 :: Double) $ do
     y <- argToReader (pt2ct
-                         @RngList
+                         @'[ '(H0,H0)]
                          @ZqList
                          @TrivGad
                          @Int64
                          @Double)
-                         (untag $ khprf_0hop @CT @H5 @P2 @(PNoise 'Z) @Int64)
+                         (untag $ khprf_0hop @CT @H0 @P2 @(PNoise 'Z) @Int64)
                          --(untag $ khprf_1hop @CT @H4 @H5 @P3 @(PNoise 'Z) @Int64)
                          --(untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy)
     -- compile once, interpret with multiple ctexprs!!
@@ -197,52 +196,3 @@ type H3' = H3
 type H4' = H4
 type H5' = H5
 type RngList = '[ '(H0,H0'), '(H1,H1'), '(H2,H2'), '(H3,H3'), '(H4,H4'), '(H5,H5') ]
-
--- given the output 'm' (Cyc wrapper) of a chain of tunnels, returns the input Cyc wrapper.
-type family PreTunnelM expr m (rngs :: [Factored]) where
-  PreTunnelM expr m '[x] = m
-  PreTunnelM expr m (r ': rngs) = PreTunnelM expr (PreTunnelCyc expr m) rngs
-
--- | Context for a chaini of tunnels using the decToCRT linear function.
-type TunnelChainCtx expr m t z2k (rngs :: [Factored]) = TunnelChainCtx' expr m t z2k (Reverse rngs)
-
--- | Helper family for TunnelChainCtx. Takes rings in *reverse* order so that
--- the Cyc wrapper `m` is applied appropriately.
-type family TunnelChainCtx' expr m t z2k (rngs :: [Factored]) where
-  TunnelChainCtx' expr t m z2k '[x] = (Lambda expr)
-  -- EAC: Reverse r and s here because they are applied in reverse
-  TunnelChainCtx' expr t m z2k (r ': s ': rngs) = (TunnelDecToCRTCtx expr m t s r z2k, TunnelChainCtx' expr t (PreTunnelCyc expr m) z2k (s ': rngs))
-
--- | Constraint synonym for tunnelCyc'
-type TunnelDecToCRTCtx expr m t r s zp =
-  (TunnelCyc expr m, TunnelCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
-
-tunnelDecToCRT_ :: forall s expr env m t r zp .
-  (TunnelCyc expr m, TunnelCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
-  => expr env ((PreTunnelCyc expr m) (Cyc t r zp) -> m (Cyc t s zp))
-tunnelDecToCRT_ = tunnelCyc_ decToCRT
-
--- | Tunnel with the decToCRT linear function.
-tunnelDecToCRT :: forall s expr env m t r zp .
-  (TunnelCyc expr m, TunnelCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
-  => expr env ((PreTunnelCyc expr m) (Cyc t r zp)) -> expr env (m (Cyc t s zp))
-tunnelDecToCRT a = tunnelCyc_ decToCRT $: a
-
--- | Constraint synonym for decToCRT
-type FunCtx t r s zp = FunCtx' t (FGCD r s) r s zp
-
-type FunCtx' t e r s zp =
-  (e `Divides` r, e `Divides` s, CElt t zp,  -- linearDec
-   ZPP zp, TElt t (ZpOf zp))
-
--- EAC: needs a home; currently replicated in several places
--- | Linear function mapping decoding basis coefficients to CRT slots
-decToCRT :: forall s t r zp e . (FunCtx t r s zp, e ~ FGCD r s) => Linear t zp e r s
-decToCRT =
-  let crts = proxy crtSet (Proxy::Proxy e)
-      r = proxy totientFact (Proxy::Proxy r)
-      e = proxy totientFact (Proxy::Proxy e)
-      dim = r `div` e
-      -- only take as many crts as we need
-      -- otherwise linearDec fails
-  in linearDec $ take dim crts

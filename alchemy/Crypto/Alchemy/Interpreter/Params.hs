@@ -16,12 +16,12 @@ import Crypto.Alchemy.Language.Lambda
 --import Crypto.Alchemy.Language.List
 --import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
---import Crypto.Alchemy.Language.TunnelCyc
+import Crypto.Alchemy.Language.TunnelCyc
 
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
 
-import Crypto.Lol                      (Cyc)
-import Crypto.Lol.Applications.SymmSHE (CT, KSQuadCircHint)
+import Crypto.Lol                      (Cyc, Linear)
+import Crypto.Lol.Applications.SymmSHE (CT, KSQuadCircHint, TunnelHint)
 import Crypto.Lol.Utils.ShowType
 
 import Data.Type.Natural
@@ -104,13 +104,13 @@ instance SHE (Params expr) where
   type AddPublicCtx     (Params expr) (CT m zp (Cyc t m' zq)) = ()
   type MulPublicCtx     (Params expr) (CT m zp (Cyc t m' zq)) = ()
   type KeySwitchQuadCtx (Params expr) (CT m zp (Cyc t m' zq)) gad = (Show (ArgType zq))
-  type TunnelCtx        (Params expr) t e r s e' r' s' zp zq gad = ()
+  type TunnelCtx        (Params expr) t e r s e' r' s' zp zq gad = (Show (ArgType zq))
 
   --modSwitchPT_     = pureP   "modSwitchPT"
   modSwitch_ :: forall ct zq' m zp t m' zq env .
     (ModSwitchCtx (Params expr) ct zq', ct ~ CT m zp (Cyc t m' zq))
     => Params expr env (ct -> CT m zp (Cyc t m' zq'))
-  modSwitch_       = showCT @zq' $ "modSwitch " ++ showType (Proxy::Proxy zq)
+  modSwitch_       = showCT @zq' $ "modSwitch " ++ showType (Proxy::Proxy zq) ++ " ->"
 
   --addPublic_     p = pureP $ "addPublic (" ++ show p ++ ")"
   --mulPublic_     p = pureP $ "mulPublic (" ++ show p ++ ")"
@@ -120,15 +120,21 @@ instance SHE (Params expr) where
     => KSQuadCircHint gad (Cyc t m' zq) -> Params expr env (ct -> ct)
   keySwitchQuad_ _ = showCT @zq "keySwitchQuad"
 
+  tunnel_ :: forall t e r s e' r' s' zp zq gad env .
+    (TunnelCtx (Params expr) t e r s e' r' s' zp zq gad)
+    => TunnelHint gad t e r s e' r' s' zp zq
+       -> Params expr env (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq))
+  tunnel_ _ = showCT @zq "tunnel"
 
-  --tunnel_        _ = pureP   "tunnel <FUNC>"
+instance (SingI (h :: Nat)) => TunnelCyc (Params expr) (PNoise h) where
+  type PreTunnelCyc (Params expr) (PNoise h) = PreTunnelCyc expr (PNoise h)
+  type TunnelCycCtx (Params expr) (PNoise h) t e r s zp = ()
+
+  tunnelCyc_ :: forall t e r s zp env . (TunnelCycCtx (Params expr) (PNoise h) t e r s zp)
+    => Linear t zp e r s
+    -> Params expr env ((PreTunnelCyc (Params expr) (PNoise h)) (Cyc t r zp) -> PNoise h (Cyc t s zp))
+  tunnelCyc_ _ = showPNoise @h "mul"
 {-
-instance TunnelCyc P rep where
-  type PreTunnelCyc P rep = rep
-  type TunnelCycCtx P rep t e r s zp = ()
-
-  tunnelCyc_ _ = pureP "tunnelCyc <FUNC>"
-
 instance ErrorRate P where
   type ErrorRateCtx P ct z = ()
   errorRate_ _ = pureP "errorRate"
