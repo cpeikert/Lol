@@ -1,4 +1,5 @@
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
@@ -30,6 +31,8 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 
 import Crypto.Lol                       hiding (Pos (..))
+import Crypto.Lol.Applications.SymmSHE  hiding (CT,encrypt,decrypt)
+import qualified Crypto.Lol.Applications.SymmSHE as SHE
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
@@ -41,11 +44,17 @@ import Data.Type.Natural (Nat (Z))
 -- EAC: We can get rid of signatures once #13524 is fixed (should be in 8.2)
 
 -- we give a type signature for easy partial type application
+
+addMul :: forall a e expr .
+  (Add expr a, Lambda expr)
+  => expr e (a -> a -> a)
+addMul = lam $ lam $ v0 +: v0
+{-
 addMul :: forall b e expr a .
   (a ~ PreMul expr b, Mul expr b, Add expr a, Lambda expr)
   => expr e (a -> a -> b)
 addMul = lam $ lam $ v0 *: (v0 +: v1)
-
+-}
 type Zq q = ZqBasic q Int64
 
 argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
@@ -58,7 +67,7 @@ main = do
   putStrLn $ "PT expression: " ++ pprint addMul
 
   putStrLn $ "PT expression size: " ++ (show $ size addMul)
-  putStrLn $ "Expression depth: " ++ (show $ depth addMul)
+  putStrLn $ "Expression depth: "   ++ (show $ depth addMul)
   -- evaluate a DSL function to a Haskell function, then apply to arguments
   pt1 <- getRandom
   pt2 <- getRandom
@@ -73,10 +82,14 @@ main = do
     -- compile the un-applied function to CT, then print it out
     x <- argToReader (pt2ct
            @'[ '(F4, F512) ]
-           -- @'[Zq $(mkTLNatNat 1312235009), Zq $(mkTLNatNat 37633) ] --
-           -- @'[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 36097), Zq $(mkTLNatNat 36353), Zq $(mkTLNatNat 37633) ] --  Zq $(mkTLNatNat 1073750017),
-           @'[Zq $(mkTLNatNat 36097), Zq $(mkTLNatNat 36353), Zq $(mkTLNatNat 37633) ]
-           @TrivGad
+           -- @'[Zq $(mkTLNatNat 1312235009), Zq $(mkTLNatNat 37633) ] -- (still) fails with TrivGad
+           -- @'[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 36097), Zq $(mkTLNatNat 36353), Zq $(mkTLNatNat 37633) ] --  (still) fails with TrivGad
+           -- @'[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 65537)] succeeded with TrivGad, even before changes
+           -- @'[Zq $(mkTLNatNat 36097), Zq $(mkTLNatNat 36353), Zq $(mkTLNatNat 37633) ] -- succeeds with TrivGad
+           @'[Zq $(mkTLNatNat 1312235011), Zq $(mkTLNatNat 36101) ] -- bad moduli (30.3 bits) = huge error, even after addition
+           -- @'[Zq $(mkTLNatNat 536870917), Zq $(mkTLNatNat 36101) ]  -- bad moduli = huge error, *only* after mul! (after addition, it's still 10^-5)
+           -- @'[Zq $(mkTLNatNat 36101), Zq $(mkTLNatNat 36355), Zq $(mkTLNatNat 37635) ] -- bad modulus, but works fine?
+           @TrivGad -- (BaseBGad 2)
            @Int64
            @Double)
            ptexpr
@@ -105,6 +118,16 @@ main = do
     liftIO $ putStrLn $ if decResult == ptresult then "PASS" else "FAIL"
 
 
--- EAC: TODO
--- encapsulation for compile CTs? (CTWrapper?)
--- tunneling example
+-- direct SHE computation
+  pt :: PT (Cyc CT F4 (Zq 7))  <- getRandom
+  sk :: SK (Cyc CT F512 Int64) <- genSK (0.01 :: Double)
+  ct :: SHE.CT F4 (Zq 7) (Cyc CT F512 (Zq $(mkTLNatNat 1312235011))) <- SHE.encrypt sk pt
+  print $ errorRate sk ct
+  print $ errorRate sk (ct+ct)
+
+
+errorRate :: forall t m' m z zp zq ct .
+  (ErrorTermUCtx t m' z zp zq, Mod zq, ToInteger (LiftOf zq), ct ~ SHE.CT m zp (Cyc t m' zq))
+  => SK (Cyc t m' z) -> ct -> Double
+errorRate sk ct =
+  (fromIntegral $ maximum $ fmap abs $ errorTermUnrestricted sk ct) / (fromIntegral $ proxy modulus (Proxy::Proxy zq))
