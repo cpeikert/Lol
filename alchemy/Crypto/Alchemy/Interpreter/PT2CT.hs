@@ -131,13 +131,13 @@ instance (SHE ctex, Applicative mon,
 
   mulLit_ (PN a) = PC $ pure $ mulPublic_ a
 
-type KSModulus gad zqs h = PNoise2Zq zqs (KSPNoise gad h)
+type KSModulus gad zqs h = PNoise2Zq zqs (KSPNoise gad zqs h)
 
 -- | pNoise of a key switch hint for a particular gadget,
 --   relative to the pNoise of the input ciphertext pNoise.
-type family KSPNoise gad (h :: Nat) :: Nat
-type instance KSPNoise TrivGad      h = h :+: N5
-type instance KSPNoise (BaseBGad 2) h = h :+: N1
+type family KSPNoise gad (zqs :: [*]) (h :: Nat) :: Nat
+type instance KSPNoise TrivGad      zqs h = h :+: N2 :+: (MaxComponentPNoise zqs h)
+type instance KSPNoise (BaseBGad 2) zqs h = h :+: N1
 
 -- The pNoise for the key-switch hint depnds on the gadget, so we define
 -- gadget-specifc instances below

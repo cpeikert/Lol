@@ -20,14 +20,15 @@
 
 -- should be a hidden/internal module
 module Crypto.Alchemy.Interpreter.PT2CT.Noise
-(PNoise(..), PNoise2Zq, TotalNoiseUnits
+(PNoise(..), PNoise2Zq
+,TotalNoiseUnits, MaxComponentPNoise
 ,TLNatNat, mkTLNatNat) where
 
 import           Algebra.Additive          as Additive (C)
 import           Algebra.Ring              as Ring (C)
 import           Data.Functor.Trans.Tagged
 import           Data.Singletons.Prelude   hiding ((:<))
-import           Data.Singletons.Prelude.List (Sum)
+import           Data.Singletons.Prelude.List (Sum, Maximum)
 import           Data.Singletons.TH        hiding ((:<))
 import           Data.Type.Natural
 import qualified GHC.TypeLits              as TL (Nat)
@@ -93,22 +94,26 @@ singletons [d|
                error "prefixLen: threshold is larger than sum of list entries"
            |]
 
+-- | The number of noise units of the largest modulus *component*
+-- in the smallest modulus with at least `h` total noise units.
+type MaxComponentPNoise zqs h = Maximum (MapNatOf (MapModulus (PNoise2ZqList zqs h)))
+
 -- | Given a list of moduli @zqs@, construct nested pairs representing
 -- a product of moduli large enough to contain the given pNoise @h@.
-type PNoise2Zq zqs h =
+type PNoise2Zq zqs h = List2Pairs (PNoise2ZqList zqs h)
+
+type PNoise2ZqList zqs h =
   PNoise2ZqError (h :<= (Sum (MapNatOf (MapModulus zqs)))) (Sum (MapNatOf (MapModulus zqs))) h zqs
 
 type family NatToLit x where
   NatToLit 'Z = 0
   NatToLit ('S n) = 1 + (NatToLit n)
 
-type TotalNoiseUnits zqs h = Sum (MapNatOf (MapModulus (ListOfZqs zqs h)))
-
-type ListOfZqs zqs h = Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs
+type TotalNoiseUnits zqs h = Sum (MapNatOf (MapModulus (PNoise2ZqList zqs h)))
 
 type family PNoise2ZqError b sum h zqs where
   -- h <= sum: we're good to go
-  PNoise2ZqError 'True sum h zqs = List2Pairs (ListOfZqs zqs h)
+  PNoise2ZqError 'True sum h zqs = Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs
   -- error if sum < h
   PNoise2ZqError 'False sum h zqs =
     TypeError ('Text "PNoise2Zq: Modulus needs to support at least " ':<>: 'ShowType (NatToLit h) ':<>:
