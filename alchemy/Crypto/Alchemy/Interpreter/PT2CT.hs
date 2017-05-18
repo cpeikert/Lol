@@ -180,15 +180,18 @@ instance (PT2CTMulCtx m'map h zqs m zp (BaseBGad 2) ctex t z mon)
 
 -- | Generic implementation of `mul_` for 'PT2CT' with any gadget.
 pt2ctMul :: forall m' m m'map zp t zqs h gad ctex z mon env hin hintzq .
-  (m' ~ Lookup m m'map, hin ~ TotalNoiseUnits zqs (h :+: N2), hintzq ~ KSModulus gad zqs h,
-   PT2CTMulCtx m'map h zqs m zp gad ctex t z mon)
-  => PT2CT m'map zqs gad z ctex mon env (PNoise hin (Cyc t m zp) -> PNoise hin (Cyc t m zp) -> PNoise h (Cyc t m zp))
+  (hin ~ TotalNoiseUnits zqs (h :+: N2),
+   hintzq ~ KSModulus gad zqs h,
+   m' ~ Lookup m m'map,
+   PT2CTMulCtx m'map h zqs m zp gad ctex t z mon) =>
+  PT2CT m'map zqs gad z ctex mon env
+  (PNoise hin (Cyc t m zp) -> PNoise hin (Cyc t m zp) -> PNoise h (Cyc t m zp))
 pt2ctMul = PC $ do
   hint :: KSQuadCircHint gad (Cyc t m' hintzq) <-
     -- the reader stores r, so use errors with svar = r/sqrt(phi(m'))
     local (svar (Proxy::Proxy m')) $ getQuadCircHint (Proxy::Proxy z)
   return $ lam $ lam $ modSwitch_ $: (keySwitchQuad_ hint $: (modSwitch_ $:
-    (v0 *: v1 :: ctex _ (CT m zp (Cyc t m' (PNoise2Zq zqs (TotalNoiseUnits zqs (h :+: N2)))))))
+    (v1 *: v0 :: ctex _ (CT m zp (Cyc t m' (PNoise2Zq zqs (TotalNoiseUnits zqs (h :+: N2)))))))
     :: ctex _ (CT m zp (Cyc t m' hintzq)))
 
 instance (SHE ctex, Applicative mon,
