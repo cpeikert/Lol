@@ -64,27 +64,22 @@ main :: IO ()
 main = do
 
   putStrLn $ "RescaleTree:"
-  let (ex01,ex0) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @P3
-      (ex02,ex03) = dup ex0
+  let (ex01,ex02) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @P2
   putStrLn $ "PT RescaleTree: " ++ pprint ex01
   putStrLn $ "PT RescaleTree size: " ++ (show $ size ex02)
-  putStrLn $ "PT RescaleTree depth: " ++ (show $ depth ex03)
 
-  let (ptrescale, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @P3
+  let (ptrescale, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @P2
   putStrLn $ "PT expression params:\n" ++ params ptrescale paramsexpr1
 
 
-{-
   putStrLn $ "Tunnel:"
-  let (ex11,ex1) = dup $ linear5 @CT @PTRngs @(PNoise 'Z (Cyc CT H5 (ZqBasic PP16 Int64))) Proxy
-      (ex12,ex13) = dup ex1
+  let (ex11,ex12) = dup $ linear5 @CT @PTRngs @(ZqBasic PP16 Int64) @(PNoise 'Z) Proxy
   putStrLn $ "PT Tunnel: " ++ pprint ex11
   putStrLn $ "PT Tunnel size: " ++ (show $ size ex12)
-  putStrLn $ "PT Tunnel depth: " ++ (show $ depth ex13)
 
-  let (pttunnel, paramsexpr2) = dup $ linear5 @CT @PTRngs @(PNoise 'Z (Cyc CT H5 (ZqBasic PP16 Int64))) Proxy
+  -- EAC: This needs to have a non-zero output pNoise level!!
+  let (pttunnel, paramsexpr2) = dup $ linear5 @CT @PTRngs @(ZqBasic PP16 Int64) @(PNoise 'Z) Proxy
   putStrLn $ "PT expression params:\n" ++ params pttunnel paramsexpr2
--}
 
   -- compile the un-applied function to CT, then print it out
   evalKeysHints (8.0 :: Double) $ do
@@ -96,7 +91,7 @@ main = do
                   @Int64
                   @Double)
                   ptrescale
-{-
+
     tunn <- argToReader (pt2ct
                   @CTRngs
                   @ZqList
@@ -105,21 +100,20 @@ main = do
                   @Double)
                   pttunnel
 
-    liftIO $ putStrLn $ show $ eval tunn 3
-    -}
+  --liftIO $ putStrLn $ show $ eval tunn 3
 
-    let (r1,r) = dup roundTree
+    let (r1,r) = dup tunn
         (r2,r3) = dup r
 
     liftIO $ putStrLn $ pprint r1
     liftIO $ putStrLn $ params r1 r2
 
-    --ptin <- liftIO $ getRandom
-    --arg1 <- argToReader encrypt ptin
+    ptin <- liftIO $ getRandom
+    arg1 <- argToReader encrypt ptin
 
     f <- readerToAccumulator $ writeErrorRates @Int64 @() r3
-    --g <- readerToAccumulator $ writeErrorRates @Int64 @() tunn
-    let (_,errors) = runWriter $ eval f (return 5)
+    g <- readerToAccumulator $ writeErrorRates @Int64 @() tunn
+    let (_,errors) = runWriter $ eval (f .: g) (return arg1)
 
     --liftIO $ putStrLn $ show r4
     liftIO $ print errors
@@ -131,7 +125,7 @@ type ZQ4 = Zq $(mkTLNatNat 284094721)
 type ZQ5 = Zq $(mkTLNatNat 286715521)
 type ZQ6 = Zq $(mkTLNatNat 287763841)
 type ZQ7 = Zq $(mkTLNatNat 289336321)
-type ZqList = '[ZQ1,ZQ2,ZQ3,ZQ4] -- ,ZQ5,ZQ6,ZQ7]
+type ZqList = '[ZQ1,ZQ2,ZQ3] --,ZQ4] -- ,ZQ5,ZQ6,ZQ7]
 
 type Zq (q :: TLNatNat) = ZqBasic q Int64
 
@@ -148,10 +142,9 @@ type H3' = H3
 type H4' = H4
 type H5' = H5
 
-type PTRngs = '[H4,H5]
+type PTRngs = '[H0,H1,H2,H3,H4,H5]
 
-type CTRngs = --'[ '(H0,H0'), '(H1,H1'), '(H2,H2'), '(H3,H3'),
-               '[ '(H4,H4'), '(H5,H5') ]
+type CTRngs = '[ '(H0,H0'), '(H1,H1'), '(H2,H2'), '(H3,H3'), '(H4,H4'), '(H5,H5') ]
 
 
 {-
