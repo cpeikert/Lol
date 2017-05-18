@@ -47,10 +47,10 @@ import Control.Monad.Random
 import Control.Monad.Reader
 import Control.Monad.State
 import Control.Monad.Writer
-import Data.Type.Natural (Nat(Z))
+import Data.Type.Natural hiding (Nat(S))
 
 -- a concrete Z_2^e data type
-type Z2E e i = ZqBasic ('PP '(Prime2, e)) i
+type Z2E e = ZqBasic ('PP '(Prime2, e)) Int64
 
 -- EAC: these instances need a home
 deriving instance (Additive a) => Additive.C (Identity a)
@@ -60,25 +60,27 @@ deriving instance (Ring a) => Ring.C (Identity a)
 argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
 argToReader f a = flip f a =<< ask
 
+type K = P4
+
 main :: IO ()
 main = do
 
   putStrLn $ "RescaleTree:"
-  let (ex01,ex02) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @P2
+  let (ex01,ex02) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K
   putStrLn $ "PT RescaleTree: " ++ pprint ex01
   putStrLn $ "PT RescaleTree size: " ++ (show $ size ex02)
 
-  let (ptrescale, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @P2
+  let (ptrescale, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K
   putStrLn $ "PT expression params:\n" ++ params ptrescale paramsexpr1
 
 
   putStrLn $ "Tunnel:"
-  let (ex11,ex12) = dup $ linear5 @CT @PTRngs @(ZqBasic PP16 Int64) @(PNoise 'Z) Proxy
+  let (ex11,ex12) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N9) Proxy
   putStrLn $ "PT Tunnel: " ++ pprint ex11
   putStrLn $ "PT Tunnel size: " ++ (show $ size ex12)
 
   -- EAC: This needs to have a non-zero output pNoise level!!
-  let (pttunnel, paramsexpr2) = dup $ linear5 @CT @PTRngs @(ZqBasic PP16 Int64) @(PNoise 'Z) Proxy
+  let (pttunnel, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N9) Proxy
   putStrLn $ "PT expression params:\n" ++ params pttunnel paramsexpr2
 
   -- compile the un-applied function to CT, then print it out
@@ -86,7 +88,7 @@ main = do
 
     roundTree <- argToReader (pt2ct
                   @'[ '(H5,H5)]
-                  @ZqList
+                  @'[Zq1,Zq2,Zq3,Zq4]
                   @TrivGad
                   @Int64
                   @Double)
@@ -100,9 +102,9 @@ main = do
                   @Double)
                   pttunnel
 
-  --liftIO $ putStrLn $ show $ eval tunn 3
+    --liftIO $ putStrLn $ show $ eval tunn 3
 
-    let (r1,r) = dup tunn
+    let (r1,r) = dup roundTree
         (r2,r3) = dup r
 
     liftIO $ putStrLn $ pprint r1
@@ -118,14 +120,16 @@ main = do
     --liftIO $ putStrLn $ show r4
     liftIO $ print errors
 
-type ZQ1 = Zq $(mkTLNatNat 275708161)
-type ZQ2 = Zq $(mkTLNatNat 281998081)
-type ZQ3 = Zq $(mkTLNatNat 283570561)
-type ZQ4 = Zq $(mkTLNatNat 284094721)
-type ZQ5 = Zq $(mkTLNatNat 286715521)
-type ZQ6 = Zq $(mkTLNatNat 287763841)
-type ZQ7 = Zq $(mkTLNatNat 289336321)
-type ZqList = '[ZQ1,ZQ2,ZQ3] --,ZQ4] -- ,ZQ5,ZQ6,ZQ7]
+-- these are ~ 2^15
+
+type Zq1 = Zq $(mkTLNatNat 3144961)
+type Zq2 = Zq $(mkTLNatNat 5241601)
+type Zq3 = Zq $(mkTLNatNat 7338241)
+type Zq4 = Zq $(mkTLNatNat 9959041)
+type Zq5 = Zq $(mkTLNatNat 10483201)
+type Zq6 = Zq $(mkTLNatNat 11531521)
+type Zq7 = Zq $(mkTLNatNat 12579841)
+type ZqList = '[Zq1,Zq2,Zq3,Zq4,Zq5,Zq6,Zq7]
 
 type Zq (q :: TLNatNat) = ZqBasic q Int64
 
