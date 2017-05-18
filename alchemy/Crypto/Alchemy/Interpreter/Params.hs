@@ -99,25 +99,29 @@ instance MonadWriter_ P where
 -}
 instance SHE (Params expr) where
 
-  type ModSwitchPTCtx   (Params expr) (CT m zp (Cyc t m' zq)) zp' = ()
+  type ModSwitchPTCtx   (Params expr) (CT m zp (Cyc t m' zq)) zp' = (Show (ArgType zq))
   type ModSwitchCtx     (Params expr) (CT m zp (Cyc t m' zq)) zq' = (Show (ArgType zq), Show (ArgType zq'))
   type AddPublicCtx     (Params expr) (CT m zp (Cyc t m' zq)) = (Show (ArgType zq))
   type MulPublicCtx     (Params expr) (CT m zp (Cyc t m' zq)) = (Show (ArgType zq))
   type KeySwitchQuadCtx (Params expr) (CT m zp (Cyc t m' zq)) gad = (Show (ArgType zq))
   type TunnelCtx        (Params expr) t e r s e' r' s' zp zq gad = (Show (ArgType zq))
 
-  --modSwitchPT_     = pureP   "modSwitchPT"
+  modSwitchPT_ :: forall ct m zp t m' zq zp' env .
+    (ModSwitchPTCtx (Params expr) ct zp', ct ~ CT m zp (Cyc t m' zq))
+    => Params expr env (ct -> CT m zp' (Cyc t m' zq))
+  modSwitchPT_     = showCT @zq "modSwitchPT"
+
   modSwitch_ :: forall ct zq' m zp t m' zq env .
     (ModSwitchCtx (Params expr) ct zq', ct ~ CT m zp (Cyc t m' zq))
     => Params expr env (ct -> CT m zp (Cyc t m' zq'))
   modSwitch_       = showCT @zq' $ "modSwitch " ++ showType (Proxy::Proxy zq) ++ " ->"
 
-  addPublic_ :: forall expr ct m zp t m' zq env .
+  addPublic_ :: forall ct m zp t m' zq env .
     (AddPublicCtx (Params expr) ct, ct ~ CT m zp (Cyc t m' zq))
     => Cyc t m zp -> (Params expr) env (ct -> ct)
   addPublic_     _ = showCT @zq "addPublic"
 
-  mulPublic_ :: forall expr ct m zp t m' zq env .
+  mulPublic_ :: forall ct m zp t m' zq env .
     (MulPublicCtx (Params expr) ct, ct ~ CT m zp (Cyc t m' zq))
     => Cyc t m zp -> (Params expr) env (ct -> ct)
   mulPublic_     _ = showCT @zq "mulPublic"
