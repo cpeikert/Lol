@@ -9,6 +9,7 @@ module Crypto.Alchemy.Interpreter.Print
 )
 where
 
+import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
@@ -16,8 +17,11 @@ import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
 import Crypto.Alchemy.Language.LinearCyc
 
-import Crypto.Lol                      (Cyc)
+import Crypto.Lol                      (Cyc,PrimePower(..), Prime2, Pos(..))
 import Crypto.Lol.Applications.SymmSHE (CT)
+import Crypto.Lol.Types
+
+import Control.Monad.Identity
 
 -- the Int is the nesting depth of lambdas outside the expression
 newtype P e a = P { unP :: Int -> String }
@@ -57,8 +61,24 @@ instance Mul P a where
 instance Show a => MulLit P a where
   mulLit_ a = pureP $ "mulLit (" ++ show a ++ ")"
 
-instance Div2 P a where
-  type PreDiv2 P a = a
+instance Div2 P (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) where
+  type PreDiv2 P (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) =
+    Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i)
+  div2_ = pureP "div2"
+
+instance Div2 P (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
+  type PreDiv2 P (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
+    PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
+  div2_ = pureP "div2"
+
+instance Div2 P (Identity (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
+  type PreDiv2 P (Identity (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
+    Identity (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
+  div2_ = pureP "div2"
+
+instance Div2 P (CT m (ZqBasic ('PP '(Prime2, k)) i) (Cyc t m' zq)) where
+  type PreDiv2 P (CT m (ZqBasic ('PP '(Prime2, k)) i) (Cyc t m' zq)) =
+    CT m (ZqBasic ('PP '(Prime2, 'S k)) i) (Cyc t m' zq)
 
   div2_ = pureP "div2"
 
