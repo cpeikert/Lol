@@ -75,13 +75,16 @@ main = do
 
 
   putStrLn $ "Tunnel:"
-  let (ex11,ex12) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N9) Proxy
+  -- EAC: 'Z noise is important here so that we can print the composition of P expressions
+  let (ex11,ex12) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise 'Z) Proxy
   putStrLn $ "PT Tunnel: " ++ pprint ex11
   putStrLn $ "PT Tunnel size: " ++ (show $ size ex12)
 
   -- EAC: This needs to have a non-zero output pNoise level!!
   let (pttunnel, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N9) Proxy
   putStrLn $ "PT expression params:\n" ++ params pttunnel paramsexpr2
+
+  putStrLn $ "PT Composition: " ++ pprint (ex01 .: ex11)
 
   -- compile the un-applied function to CT, then print it out
   evalKeysHints 8.0 $ do
@@ -100,22 +103,29 @@ main = do
                   @Int64)
                   pttunnel
 
-    --liftIO $ putStrLn $ show $ eval tunn 3
-
     let (r1,r) = dup roundTree
         (r2,r3) = dup r
+        (s1,s) = dup tunn
+        (s2,s3) = dup s
 
+    liftIO $ putStrLn "CT Tunneling:"
+    liftIO $ putStrLn $ pprint s1
+    liftIO $ putStrLn $ params s1 s2
+
+    liftIO $ putStrLn "CT Rounding Tree:"
     liftIO $ putStrLn $ pprint r1
     liftIO $ putStrLn $ params r1 r2
+
+    liftIO $ putStrLn "CT Composition:"
+    liftIO $ putStrLn $ pprint (r1 .: s1)
 
     ptin <- liftIO $ getRandom
     arg1 <- argToReader encrypt ptin
 
     f <- readerToAccumulator $ writeErrorRates @Int64 @() r3
-    g <- readerToAccumulator $ writeErrorRates @Int64 @() tunn
+    g <- readerToAccumulator $ writeErrorRates @Int64 @() s3
     let (_,errors) = runWriter $ eval (f .: g) (return arg1)
 
-    --liftIO $ putStrLn $ show r4
     liftIO $ print errors
 
 -- these are ~ 2^15
