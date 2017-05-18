@@ -21,14 +21,14 @@ import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE (CT, SK)
 import Crypto.Lol.Utils.ShowType
 
-import Crypto.Alchemy.Interpreter.KeysHints
-import Crypto.Alchemy.Language.Arithmetic
-import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.List
-import Crypto.Alchemy.Language.Monad
-import Crypto.Alchemy.Language.Pair
-import Crypto.Alchemy.Language.SHE
-import qualified Crypto.Alchemy.Language.String as LS
+import           Crypto.Alchemy.Interpreter.KeysHints
+import           Crypto.Alchemy.Language.Arithmetic
+import           Crypto.Alchemy.Language.Lambda
+import           Crypto.Alchemy.Language.List
+import           Crypto.Alchemy.Language.Monad
+import           Crypto.Alchemy.Language.Pair
+import           Crypto.Alchemy.Language.SHE
+import qualified Crypto.Alchemy.Language.String       as LS
 
 -- | A transformer that additionally logs the sizes of the noise terms
 -- of any ciphertexts created during interpretation.
@@ -118,7 +118,6 @@ instance (WriteErrorCtx expr z k w ct t m m' zp zq, Add expr ct) =>
 
   add_ = ERW $ liftWriteError2 (Proxy::Proxy z) "add_" add_
 
-  -- don't log error because it doesn't grow
   neg_ = ERW $ liftWriteError (Proxy::Proxy z) "neg_" neg_
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq, Mul expr ct,
