@@ -114,12 +114,12 @@ main = do
     liftIO $ putStrLn $ pprint r1
     liftIO $ putStrLn $ params r1 r2
 
-    ptin <- liftIO $ getRandom
-    arg1 <- argToReader encrypt ptin
+    --ptin <- liftIO $ getRandom
+    --arg1 <- argToReader encrypt ptin
 
     f <- readerToAccumulator $ writeErrorRates @Int64 @() r3
     --g <- readerToAccumulator $ writeErrorRates @Int64 @() tunn
-    let (_,errors) = runWriter $ eval f (return arg1)
+    let (_,errors) = runWriter $ eval f (return 5)
 
     --liftIO $ putStrLn $ show r4
     liftIO $ print errors
