@@ -31,8 +31,7 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 
 import Crypto.Lol                       hiding (Pos (..))
-import Crypto.Lol.Applications.SymmSHE  hiding (CT,encrypt,decrypt)
-import qualified Crypto.Lol.Applications.SymmSHE as SHE
+--import qualified Crypto.Lol.Applications.SymmSHE as SHE
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
@@ -92,8 +91,7 @@ main = do
            -- @'[Zq $(mkTLNatNat 536870917), Zq $(mkTLNatNat 36101) ]  -- bad moduli = huge error, *only* after mul! (after addition, it's still 10^-5)
            -- @'[Zq $(mkTLNatNat 36101), Zq $(mkTLNatNat 36355), Zq $(mkTLNatNat 37635) ] -- bad modulus, but works fine?
            @TrivGad -- (BaseBGad 2)
-           @Int64
-           @Double)
+           @Int64)
            ptexpr
 
     -- duplicate the compiled expression
