@@ -78,8 +78,8 @@ import qualified Algebra.ZeroTestable as ZeroTestable (C)
 import Control.Applicative    as A
 import Control.Arrow
 import Control.DeepSeq
-import Control.Monad.Identity (Identity(..))
-import Control.Monad.Random hiding (lift, ap)
+import Control.Monad.Identity (Identity (..))
+import Control.Monad.Random   hiding (ap, lift)
 import Data.Foldable          as F
 import Data.Maybe
 import Data.Traversable
@@ -549,11 +549,17 @@ crtSet =
   --          show (proxy valueFact (Proxy::Proxy m)) ++ ", m'= " ++
   --          show (proxy valueFact (Proxy::Proxy m'))) $
   let (p,e) = proxy modulusZPP (Proxy::Proxy r)
-      pp = Proxy::Proxy p
-      pm = Proxy::Proxy m
+      -- raise to the p^(e-1) power iteratively (one factor of p at a
+      -- time), switching back to pow basis each time so that we don't
+      -- lose precision!  (This fixes a bug witnessed for moderate
+      -- values of e.)
+      expon 1  = toPow
+      expon e' = toPowCE . (^p) . toCRT . expon (e'-1)
+      pp  = Proxy::Proxy p
+      pm  = Proxy::Proxy m
       pm' = Proxy::Proxy m'
   in retag (fmap (embedPow .
-                  (if e > 1 then toPowCE . (^(p^(e-1))) . toCRT else toPow) .
+                  expon e .
                   Dec . fmapT liftZp) <$>
             (crtSetDec :: Tagged mbar [t m'bar (ZpOf r)]))
      \\ pFreeDivides pp pm pm' \\ pSplitTheorems pp pm \\ pSplitTheorems pp pm'
