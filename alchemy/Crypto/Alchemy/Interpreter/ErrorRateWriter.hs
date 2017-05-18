@@ -182,7 +182,7 @@ instance (SHE expr, Applicative_ expr, Applicative k, Applicative w) =>
        WriteErrorCtx expr z k w (CT s zp (Cyc t s' zq)) t s s' zp zq)
 
   modSwitchPT_   = ERW $ liftWriteError (Proxy::Proxy z) "modSwitchPT_" $ modSwitchPT_
-  modSwitch_     = ERW $ liftWriteError (Proxy::Proxy z) "modSwitch" $ modSwitch_
+  modSwitch_     = ERW $ liftWriteError (Proxy::Proxy z) "modSwitch_" $ modSwitch_
   addPublic_     = ERW . liftWriteError (Proxy::Proxy z) "addPublic_" . addPublic_
   mulPublic_     = ERW . liftWriteError (Proxy::Proxy z) "mulPublic_" . mulPublic_
   keySwitchQuad_ = ERW . liftWriteError (Proxy::Proxy z) "keySwitchQuad_" . keySwitchQuad_
