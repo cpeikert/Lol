@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -8,12 +9,20 @@ module Crypto.Alchemy.Interpreter.Size
 ( S, size )
 where
 
+import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
 import Crypto.Alchemy.Language.LinearCyc
+
+import Crypto.Lol                      (Cyc,PrimePower(..), Prime2)
+import qualified Crypto.Lol as L
+import Crypto.Lol.Applications.SymmSHE (CT)
+import Crypto.Lol.Types
+
+import Control.Monad.Identity
 
 newtype S e a = S { size :: Int }
 
@@ -31,8 +40,31 @@ instance Mul S a where
 instance MulLit S a where
   mulLit_ _ = S 1
 
-instance Div2 S a where
-  type PreDiv2 S a = a
+-- EAC: ideas
+-- 1. Dis-associate PreDiv2. It shouldn't depend on expr, so make it an
+--    unassociated, open type family
+-- 2. Make this interpreter recursive. Could make sense (maybe I want to check
+--    the size of a computation, then do an optimization pass, then check the size again.)
+--    Of course this can be done already using dup. And, if we made (all) of the
+--    interpreters recursive, then we'd need a dummy interpreter for the bottom of the stack.
+instance Div2 S (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) where
+  type PreDiv2 S (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) =
+    Cyc t m (ZqBasic ('PP '(Prime2, 'L.S k)) i)
+  div2_ = S 1
+
+instance Div2 S (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
+  type PreDiv2 S (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
+    PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, 'L.S k)) i))
+  div2_ = S 1
+
+instance Div2 S (Identity (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
+  type PreDiv2 S (Identity (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
+    Identity (Cyc t m (ZqBasic ('PP '(Prime2, 'L.S k)) i))
+  div2_ = S 1
+
+instance Div2 S (CT m (ZqBasic ('PP '(Prime2, k)) i) (Cyc t m' zq)) where
+  type PreDiv2 S (CT m (ZqBasic ('PP '(Prime2, k)) i) (Cyc t m' zq)) =
+    CT m (ZqBasic ('PP '(Prime2, 'L.S k)) i) (Cyc t m' zq)
   div2_ = S 1
 
 instance Lambda S where
