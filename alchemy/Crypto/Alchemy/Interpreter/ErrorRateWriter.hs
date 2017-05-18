@@ -113,7 +113,7 @@ instance (WriteErrorCtx expr z k w ct t m m' zp zq, Add expr ct) =>
   add_ = ERW $ liftWriteError2 (Proxy::Proxy z) add_
 
   -- don't log error because it doesn't grow
-  neg_ = ERW $ pure $ liftA_ $: neg_
+  neg_ = ERW $ liftWriteError (Proxy::Proxy z) neg_
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq, Mul expr ct,
           -- needed because PreMul could take some crazy form
@@ -157,11 +157,18 @@ instance (Lambda expr, Applicative k)
 instance (SHE expr, Applicative_ expr, Applicative k, Applicative w) =>
   SHE (ErrorRateWriter expr z k w) where
 
-  type ModSwitchPTCtx   (ErrorRateWriter expr z k w) ct zp' = ModSwitchPTCtx expr ct zp'
+  type ModSwitchPTCtx   (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) zp' =
+    (WriteErrorCtx expr z k w (CT m zp (Cyc t m' zq)) t m m' zp' zq,
+     ModSwitchPTCtx expr (CT m zp (Cyc t m' zq)) zp')
   type ModSwitchCtx     (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) zq' =
-    (WriteErrorCtx expr z k w (CT m zp (Cyc t m' zq')) t m m' zp zq', ModSwitchCtx expr (CT m zp (Cyc t m' zq)) zq')
-  type AddPublicCtx     (ErrorRateWriter expr z k w) ct     = AddPublicCtx expr ct
-  type MulPublicCtx     (ErrorRateWriter expr z k w) ct     = MulPublicCtx expr ct
+    (WriteErrorCtx expr z k w (CT m zp (Cyc t m' zq')) t m m' zp zq',
+     ModSwitchCtx expr (CT m zp (Cyc t m' zq)) zq')
+  type AddPublicCtx     (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq))     =
+    (WriteErrorCtx expr z k w (CT m zp (Cyc t m' zq)) t m m' zp zq,
+     AddPublicCtx expr (CT m zp (Cyc t m' zq)))
+  type MulPublicCtx     (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq))     =
+    (WriteErrorCtx expr z k w (CT m zp (Cyc t m' zq)) t m m' zp zq,
+     MulPublicCtx expr (CT m zp (Cyc t m' zq)))
   type KeySwitchQuadCtx (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) gad =
     (KeySwitchQuadCtx expr (CT m zp (Cyc t m' zq)) gad,
      WriteErrorCtx expr z k w (CT m zp (Cyc t m' zq)) t m m' zp zq)
@@ -169,12 +176,12 @@ instance (SHE expr, Applicative_ expr, Applicative k, Applicative w) =>
       (TunnelCtx expr t e r s e' r' s' zp zq gad,
        WriteErrorCtx expr z k w (CT s zp (Cyc t s' zq)) t s s' zp zq)
 
-  modSwitchPT_     = ERW $ pure $ liftA_ $: modSwitchPT_
-  modSwitch_       = ERW $ liftWriteError (Proxy::Proxy z) $ modSwitch_
-  addPublic_     p = ERW $ pure $ liftA_ $: addPublic_ p
-  mulPublic_     p = ERW $ pure $ liftA_ $: mulPublic_ p
-  keySwitchQuad_ h = ERW $ liftWriteError (Proxy::Proxy z) $ keySwitchQuad_ h
-  tunnel_        h = ERW $ liftWriteError (Proxy::Proxy z) $ tunnel_ h
+  modSwitchPT_   = ERW $ liftWriteError (Proxy::Proxy z) $ modSwitchPT_
+  modSwitch_     = ERW $ liftWriteError (Proxy::Proxy z) $ modSwitch_
+  addPublic_     = ERW . liftWriteError (Proxy::Proxy z) . addPublic_
+  mulPublic_     = ERW . liftWriteError (Proxy::Proxy z) . mulPublic_
+  keySwitchQuad_ = ERW . liftWriteError (Proxy::Proxy z) . keySwitchQuad_
+  tunnel_        = ERW . liftWriteError (Proxy::Proxy z) . tunnel_
 
 instance (ErrorRate expr, Applicative_ expr, Applicative k, Applicative w) =>
   ErrorRate (ErrorRateWriter expr z k w) where
