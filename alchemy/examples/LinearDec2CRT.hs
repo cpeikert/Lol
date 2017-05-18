@@ -81,9 +81,9 @@ type FunCtx' t e r s zp =
 decToCRT :: forall s t r zp e . (FunCtx t r s zp, e ~ FGCD r s) => Linear t zp e r s
 decToCRT =
   let crts = proxy crtSet (Proxy::Proxy e)
-      r = proxy totientFact (Proxy::Proxy r)
-      e = proxy totientFact (Proxy::Proxy e)
-      dim = r `div` e
+      phir = proxy totientFact (Proxy::Proxy r)
+      phie = proxy totientFact (Proxy::Proxy e)
+      dim = phir `div` phie
       -- only take as many crts as we need
       -- otherwise linearDec fails
   in linearDec $ take dim crts
