@@ -87,22 +87,20 @@ main = do
 -}
 
   -- compile the un-applied function to CT, then print it out
-  evalKeysHints (8.0 :: Double) $ do
+  evalKeysHints 8.0 $ do
 
     roundTree <- argToReader (pt2ct
                   @'[ '(H5,H5)]
                   @ZqList
                   @TrivGad
-                  @Int64
-                  @Double)
+                  @Int64)
                   ptrescale
 {-
     tunn <- argToReader (pt2ct
                   @CTRngs
                   @ZqList
                   @TrivGad
-                  @Int64
-                  @Double)
+                  @Int64)
                   pttunnel
 
     liftIO $ putStrLn $ show $ eval tunn 3
@@ -192,8 +190,7 @@ type CTRngs = --'[ '(H0,H0'), '(H1,H1'), '(H2,H2'), '(H3,H3'),
                          @RngList
                          @ZqList
                          @TrivGad
-                         @Int64
-                         @Double)
+                         @Int64)
                          --(rescale4to2 @CT @H0 @(PNoise 'Z)) -- 1 minute, 8 sec
                          (untag $ khprf_0hop @CT @H0 @P2 @(PNoise 'Z) @Int64)
                          --(rescale4to2 @CT @H5 @(PNoise 'Z)) -- 1 minute, 8 sec
