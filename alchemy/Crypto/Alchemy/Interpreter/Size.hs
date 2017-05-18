@@ -15,7 +15,7 @@ import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
 import Crypto.Alchemy.Language.LinearCyc
 
-newtype S expr a = S { size :: Int }
+newtype S e a = S { size :: Int }
 
 instance Add S a where
   add_ = S 1
