@@ -32,9 +32,9 @@ import SHERepaMain ()
 
 import RLWEChallengesMain ()
 
-import qualified Arithmetic
-import HomomRLWR ()
+import qualified Arithmetic ()
+import qualified HomomRLWR
 import qualified Tunnel ()
 
 main :: IO ()
-main = Arithmetic.main
+main = HomomRLWR.main

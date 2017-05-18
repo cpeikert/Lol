@@ -59,10 +59,10 @@ instance (Show (ArgType zq)) => Add (Params expr) (CT m zp (Cyc t m' zq)) where
 instance (SingI (h :: Nat)) => Add (Params expr) (PNoise h a) where
   add_ = showPNoise @h "add"
   neg_ = showPNoise @h "neg"
-{-
-instance Show a => AddLit P a where
-  addLit_ a = pureP $ "addLit (" ++ show a ++ ")"
--}
+
+instance (SingI (h :: Nat)) => AddLit (Params expr) (PNoise h a) where
+  addLit_ _ = showPNoise @h "addLit"
+
 instance (Show (ArgType zq)) => Mul (Params expr) (CT m zp (Cyc t m' zq)) where
   type PreMul (Params expr) (CT m zp (Cyc t m' zq)) = (CT m zp (Cyc t m' zq))
   mul_ = showCT @zq "mul"
@@ -71,14 +71,14 @@ instance (SingI (h :: Nat)) => Mul (Params expr) (PNoise h a) where
   type PreMul (Params expr) (PNoise h a) = PreMul expr (PNoise h a)
   mul_ = showPNoise @h "mul"
 {-
-instance Show a => MulLit P a where
+instance Show a => MulLit (Params expr) a where
   mulLit_ a = pureP $ "mulLit (" ++ show a ++ ")"
+-}
+instance (SingI (h :: Nat)) => Div2 (Params expr) (PNoise h a) where
+  type PreDiv2 (Params expr) (PNoise h a) = PreDiv2 expr (PNoise h a)
 
-instance Div2 P a where
-  type PreDiv2 P a = a
-
-  div2_ = pureP "div2"
-
+  div2_ = showPNoise @h "div2"
+{-
 instance Functor_ P where
   fmap_ = pureP "fmap"
 
@@ -101,8 +101,8 @@ instance SHE (Params expr) where
 
   type ModSwitchPTCtx   (Params expr) (CT m zp (Cyc t m' zq)) zp' = ()
   type ModSwitchCtx     (Params expr) (CT m zp (Cyc t m' zq)) zq' = (Show (ArgType zq), Show (ArgType zq'))
-  type AddPublicCtx     (Params expr) (CT m zp (Cyc t m' zq)) = ()
-  type MulPublicCtx     (Params expr) (CT m zp (Cyc t m' zq)) = ()
+  type AddPublicCtx     (Params expr) (CT m zp (Cyc t m' zq)) = (Show (ArgType zq))
+  type MulPublicCtx     (Params expr) (CT m zp (Cyc t m' zq)) = (Show (ArgType zq))
   type KeySwitchQuadCtx (Params expr) (CT m zp (Cyc t m' zq)) gad = (Show (ArgType zq))
   type TunnelCtx        (Params expr) t e r s e' r' s' zp zq gad = (Show (ArgType zq))
 
@@ -112,8 +112,15 @@ instance SHE (Params expr) where
     => Params expr env (ct -> CT m zp (Cyc t m' zq'))
   modSwitch_       = showCT @zq' $ "modSwitch " ++ showType (Proxy::Proxy zq) ++ " ->"
 
-  --addPublic_     p = pureP $ "addPublic (" ++ show p ++ ")"
-  --mulPublic_     p = pureP $ "mulPublic (" ++ show p ++ ")"
+  addPublic_ :: forall expr ct m zp t m' zq env .
+    (AddPublicCtx (Params expr) ct, ct ~ CT m zp (Cyc t m' zq))
+    => Cyc t m zp -> (Params expr) env (ct -> ct)
+  addPublic_     _ = showCT @zq "addPublic"
+
+  mulPublic_ :: forall expr ct m zp t m' zq env .
+    (MulPublicCtx (Params expr) ct, ct ~ CT m zp (Cyc t m' zq))
+    => Cyc t m zp -> (Params expr) env (ct -> ct)
+  mulPublic_     _ = showCT @zq "mulPublic"
 
   keySwitchQuad_ :: forall ct gad m zp t m' zq env .
     (KeySwitchQuadCtx (Params expr) ct gad, ct ~ CT m zp (Cyc t m' zq))
