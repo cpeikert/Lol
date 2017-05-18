@@ -62,34 +62,33 @@ argToReader f a = flip f a =<< ask
 
 main :: IO ()
 main = do
+
   putStrLn $ "RescaleTree:"
-  let (ex01,ex0) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @P4
+  let (ex01,ex0) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @P3
       (ex02,ex03) = dup ex0
   putStrLn $ "PT RescaleTree: " ++ pprint ex01
   putStrLn $ "PT RescaleTree size: " ++ (show $ size ex02)
   putStrLn $ "PT RescaleTree depth: " ++ (show $ depth ex03)
 
-  let (ptrescale, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @P4
-  putStrLn $ "PT expression params:\n" ++
-    (params (ptrescale :: PT2CT '[ '(H5,H5)] ZqList TrivGad Int64 Double _ _ () _) paramsexpr1)
+  let (ptrescale, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @P3
+  putStrLn $ "PT expression params:\n" ++ params ptrescale paramsexpr1
 
 
 {-
   putStrLn $ "Tunnel:"
-  let (ex11,ex1) = dup $ linear5 @CT @RngList @(PNoise 'Z (Cyc CT H5 (ZqBasic PP16 Int64))) Proxy
+  let (ex11,ex1) = dup $ linear5 @CT @PTRngs @(PNoise 'Z (Cyc CT H5 (ZqBasic PP16 Int64))) Proxy
       (ex12,ex13) = dup ex1
   putStrLn $ "PT Tunnel: " ++ pprint ex11
   putStrLn $ "PT Tunnel size: " ++ (show $ size ex12)
   putStrLn $ "PT Tunnel depth: " ++ (show $ depth ex13)
 
-  let (pttunnel, paramsexpr2) = dup $ linear5 @CT @RngList @(PNoise 'Z (Cyc CT H5 (ZqBasic PP16 Int64))) Proxy
-  putStrLn $ "PT expression params:\n" ++ (params pttunnel paramsexpr2)
+  let (pttunnel, paramsexpr2) = dup $ linear5 @CT @PTRngs @(PNoise 'Z (Cyc CT H5 (ZqBasic PP16 Int64))) Proxy
+  putStrLn $ "PT expression params:\n" ++ params pttunnel paramsexpr2
 -}
 
-  ptin <- getRandom
-
-  -- compile the up-applied function to CT, then print it out
+  -- compile the un-applied function to CT, then print it out
   evalKeysHints (8.0 :: Double) $ do
+
     roundTree <- argToReader (pt2ct
                   @'[ '(H5,H5)]
                   @ZqList
@@ -99,31 +98,40 @@ main = do
                   ptrescale
 {-
     tunn <- argToReader (pt2ct
-                  @RngList
+                  @CTRngs
                   @ZqList
                   @TrivGad
                   @Int64
                   @Double)
                   pttunnel
--}
-    f <- readerToAccumulator $ writeErrorRates @Int64 @() roundTree
-    --g <- readerToAccumulator $ writeErrorRates @Int64 tunn
 
+    liftIO $ putStrLn $ show $ eval tunn 3
+    -}
+
+    let (r1,r) = dup roundTree
+        (r2,r3) = dup r
+
+    liftIO $ putStrLn $ pprint r1
+    liftIO $ putStrLn $ params r1 r2
+
+    ptin <- liftIO $ getRandom
     arg1 <- argToReader encrypt ptin
 
+    f <- readerToAccumulator $ writeErrorRates @Int64 @() r3
+    --g <- readerToAccumulator $ writeErrorRates @Int64 @() tunn
     let (_,errors) = runWriter $ eval f (return arg1)
 
-    --liftIO $ putStrLn $ show z2''
+    --liftIO $ putStrLn $ show r4
     liftIO $ print errors
 
-type ZQ1 = Zq $(mkTLNatNat 34594561)
-type ZQ2 = Zq $(mkTLNatNat 35642881)
-type ZQ3 = Zq $(mkTLNatNat 37215361)
-type ZQ4 = Zq $(mkTLNatNat 37739521)
-type ZQ5 = Zq $(mkTLNatNat 41408641)
-type ZQ6 = Zq $(mkTLNatNat 42456961)
-type ZQ7 = Zq $(mkTLNatNat 44553601)
-type ZqList = '[ZQ1,ZQ2,ZQ3,ZQ4,ZQ5,ZQ6,ZQ7]
+type ZQ1 = Zq $(mkTLNatNat 275708161)
+type ZQ2 = Zq $(mkTLNatNat 281998081)
+type ZQ3 = Zq $(mkTLNatNat 283570561)
+type ZQ4 = Zq $(mkTLNatNat 284094721)
+type ZQ5 = Zq $(mkTLNatNat 286715521)
+type ZQ6 = Zq $(mkTLNatNat 287763841)
+type ZQ7 = Zq $(mkTLNatNat 289336321)
+type ZqList = '[ZQ1,ZQ2,ZQ3,ZQ4] -- ,ZQ5,ZQ6,ZQ7]
 
 type Zq (q :: TLNatNat) = ZqBasic q Int64
 
@@ -139,7 +147,11 @@ type H2' = H2
 type H3' = H3
 type H4' = H4
 type H5' = H5
-type RngList = '[ '(H0,H0'), '(H1,H1'), '(H2,H2'), '(H3,H3'), '(H4,H4'), '(H5,H5') ]
+
+type PTRngs = '[H4,H5]
+
+type CTRngs = --'[ '(H0,H0'), '(H1,H1'), '(H2,H2'), '(H3,H3'),
+               '[ '(H4,H4'), '(H5,H5') ]
 
 
 {-
