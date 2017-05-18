@@ -122,7 +122,7 @@ type family PNoise2ZqError b sum h zqs where
 
 -- | "Bits" per noise unit.
 pNoiseUnit :: Double
-pNoiseUnit = 14
+pNoiseUnit = 7
 
 mkTypeNat :: Int -> TypeQ
 mkTypeNat x | x < 0 = error $ "mkTypeNat: negative argument " ++ show x
