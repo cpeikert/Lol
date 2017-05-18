@@ -91,6 +91,31 @@ defaultLolTests pt = [
     cycTests1    (Proxy::Proxy '(F42, ZQ2)),
     cycTests1    (Proxy::Proxy '(F89, Zq 179)),
 
+    cycTests2    (Proxy::Proxy '(H01, H1, Zq PP2)),
+    cycTests2    (Proxy::Proxy '(H01, H1, Zq PP4)),
+    cycTests2    (Proxy::Proxy '(H01, H1, Zq PP8)),
+    cycTests2    (Proxy::Proxy '(H01, H1, Zq PP16)),
+
+    cycTests2    (Proxy::Proxy '(H12, H2, Zq PP2)),
+    cycTests2    (Proxy::Proxy '(H12, H2, Zq PP4)),
+    cycTests2    (Proxy::Proxy '(H12, H2, Zq PP8)),
+    cycTests2    (Proxy::Proxy '(H12, H2, Zq PP16)),
+
+    cycTests2    (Proxy::Proxy '(H23, H3, Zq PP2)),
+    cycTests2    (Proxy::Proxy '(H23, H3, Zq PP4)),
+    cycTests2    (Proxy::Proxy '(H23, H3, Zq PP8)),
+    cycTests2    (Proxy::Proxy '(H23, H3, Zq PP16)),
+
+    cycTests2    (Proxy::Proxy '(H34, H4, Zq PP2)),
+    cycTests2    (Proxy::Proxy '(H34, H4, Zq PP4)),
+    cycTests2    (Proxy::Proxy '(H34, H4, Zq PP8)),
+    cycTests2    (Proxy::Proxy '(H34, H4, Zq PP16)),
+
+    cycTests2    (Proxy::Proxy '(H45, H5, Zq PP2)),
+    cycTests2    (Proxy::Proxy '(H45, H5, Zq PP4)),
+    cycTests2    (Proxy::Proxy '(H45, H5, Zq PP8)),
+    cycTests2    (Proxy::Proxy '(H45, H5, Zq PP16)),
+
     cycTests2    (Proxy::Proxy '(F4, F28, Zq PP2)),
     cycTests2    (Proxy::Proxy '(F4, F28, Zq PP4)),
     cycTests2    (Proxy::Proxy '(F4, F28, Zq PP8)),
