@@ -91,6 +91,11 @@ defaultLolTests pt = [
     cycTests1    (Proxy::Proxy '(F42, ZQ2)),
     cycTests1    (Proxy::Proxy '(F89, Zq 179)),
 
+    cycTests2    (Proxy::Proxy '(F4, F28, Zq PP2)),
+    cycTests2    (Proxy::Proxy '(F4, F28, Zq PP4)),
+    cycTests2    (Proxy::Proxy '(F4, F28, Zq PP8)),
+    cycTests2    (Proxy::Proxy '(F7, F7*F13, Zq PP2)),
+    cycTests2    (Proxy::Proxy '(F7, F7*F13, Zq PP4)),
     cycTests2    (Proxy::Proxy '(F1, F7, Zq PP8)),
     cycTests2    (Proxy::Proxy '(F1, F7, Zq PP2))]]
 
