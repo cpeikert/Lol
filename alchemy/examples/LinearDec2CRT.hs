@@ -60,14 +60,12 @@ type family LinearChainCtx' expr m t z2k (rngs :: [Factored]) where
 type LinearDecToCRTCtx expr m t r s zp =
   (LinearCyc expr m, LinearCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
 
-linearDecToCRT_ :: forall s expr env m t r zp .
-  (LinearCyc expr m, LinearCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
+linearDecToCRT_ :: forall s r expr env m t zp . (LinearDecToCRTCtx expr m t r s zp)
   => expr env ((PreLinearCyc expr m) (Cyc t r zp) -> m (Cyc t s zp))
 linearDecToCRT_ = linearCyc_ decToCRT
 
 -- | Tunnel with the decToCRT linear function.
-linearDecToCRT :: forall s expr env m t r zp .
-  (LinearCyc expr m, LinearCycCtx expr m t (FGCD r s) r s zp, Lambda expr, FunCtx t r s zp)
+linearDecToCRT :: forall s expr env m t r zp . (LinearDecToCRTCtx expr m t r s zp)
   => expr env ((PreLinearCyc expr m) (Cyc t r zp)) -> expr env (m (Cyc t s zp))
 linearDecToCRT a = linearCyc_ decToCRT $: a
 
