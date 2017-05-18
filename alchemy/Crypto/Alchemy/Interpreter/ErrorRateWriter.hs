@@ -135,13 +135,14 @@ instance (WriteErrorCtx expr z k w ct t m m' zp zq, MulLit expr ct) =>
 
   mulLit_ = ERW . liftWriteError (Proxy::Proxy z) . mulLit_
 
-instance (Monadify w (PreDiv2 expr ct) ~ w (PreDiv2 expr ct), ct ~ CT m zp (Cyc t m' zq),
+instance (WriteErrorCtx expr z k w ct t m m' zp zq,
+          Monadify w (PreDiv2 expr ct) ~ w (PreDiv2 expr ct), ct ~ CT m zp (Cyc t m' zq),
           Div2 expr ct, Lambda expr, Applicative_ expr, Applicative w, Applicative k)
   => Div2 (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) where
   type PreDiv2 (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) =
     PreDiv2 expr (CT m zp (Cyc t m' zq))
 
-  div2_ = ERW $ pure $ liftA_ $: div2_
+  div2_ = ERW $ liftWriteError (Proxy::Proxy z) div2_
 
 ----- TRIVIAL WRAPPER INSTANCES -----
 
