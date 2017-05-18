@@ -124,14 +124,18 @@ main = do
     --liftIO $ putStrLn $ show r4
     liftIO $ print errors
 
-type ZQ1 = Zq $(mkTLNatNat 275708161)
-type ZQ2 = Zq $(mkTLNatNat 281998081)
-type ZQ3 = Zq $(mkTLNatNat 283570561)
-type ZQ4 = Zq $(mkTLNatNat 284094721)
-type ZQ5 = Zq $(mkTLNatNat 286715521)
-type ZQ6 = Zq $(mkTLNatNat 287763841)
-type ZQ7 = Zq $(mkTLNatNat 289336321)
-type ZqList = '[ZQ1,ZQ2,ZQ3,ZQ4] -- ,ZQ5,ZQ6,ZQ7]
+
+
+-- these are ~ 2^15
+
+type Zq1 = Zq $(mkTLNatNat 3144961)
+type Zq2 = Zq $(mkTLNatNat 5241601)
+type Zq3 = Zq $(mkTLNatNat 7338241)
+type Zq4 = Zq $(mkTLNatNat 9959041)
+--type Zq5 = Zq $(mkTLNatNat 10483201)
+--type Zq6 = Zq $(mkTLNatNat 11531521)
+--type Zq7 = Zq $(mkTLNatNat 12579841)
+type ZqList = '[Zq1,Zq2,Zq3,Zq4] --,Zq5,Zq6,Zq7]
 
 type Zq (q :: TLNatNat) = ZqBasic q Int64
 
