@@ -5,6 +5,7 @@
 {-# LANGUAGE FlexibleInstances      #-}
 {-# LANGUAGE InstanceSigs           #-}
 {-# LANGUAGE MultiParamTypeClasses  #-}
+{-# LANGUAGE NoImplicitPrelude      #-}
 {-# LANGUAGE PartialTypeSignatures  #-}
 {-# LANGUAGE ScopedTypeVariables    #-}
 {-# LANGUAGE TypeApplications       #-}
@@ -21,6 +22,7 @@ module Crypto.Alchemy.Interpreter.PT2CT
 , pt2ctMul, pt2ctLinearCyc, KSPNoise
 ) where
 
+import Control.Applicative
 import Control.Monad.Random
 import Control.Monad.Reader
 import Data.Dynamic
@@ -63,10 +65,10 @@ newtype PT2CT
 pt2ct :: forall m'map zqs gad z v e ctex a mon .
   (MonadAccumulator Keys mon, MonadAccumulator Hints mon) =>
       -- this forall is for use with TypeApplications at the top level
-  v   -- | scaled variance to used for generating keys/hints
+  v   -- | scaled variance to used for generating keys/hints \( = \frac{s}{\sqrt{\phi(m')}} \)
   -> PT2CT m'map zqs gad z v ctex (ReaderT v mon) e a -- | plaintext expression
   -> mon (ctex (Cyc2CT m'map zqs e) (Cyc2CT m'map zqs a)) -- | (monadic) ctex expression
-pt2ct v = flip runReaderT v . unPC
+pt2ct s = flip runReaderT s . unPC
 
 -- | Encrypt a plaintext (using the given scaled variance) under an
 -- appropriate key (from the monad), generating one if necessary.
@@ -74,17 +76,16 @@ encrypt :: forall mon t m m' zp zq z v .
   (MonadRandom mon, MonadAccumulator Keys mon,
    -- CJP: DON'T LOVE THIS CHOICE OF z HERE; IT'S ARBITRARY
    EncryptCtx t m m' z zp zq, z ~ LiftOf zp, GenSKCtx t m' z v,
-   Typeable t, Typeable m', Typeable z)
-  => v                           -- | scaled variance for keys and error
+   Typeable t, Typeable m', Typeable z, Field v, Algebraic v)
+  => v                           -- | scaled variance for keys and error \( = \frac{s}{\sqrt{\phi(m')}} \)
   -> Cyc t m zp                  -- | plaintext
   -> mon (CT m zp (Cyc t m' zq)) -- | (monadic) ciphertext
-encrypt v x = flip runReaderT v $ do
-  -- generate key if necessary
-  (sk :: SK (Cyc t m' z)) <- getKey
-  SHE.encrypt sk x
-
---encrypt :: v -> Cyc t m zp -> PT2CT m'map zqs gad z v ctex mon e (PNoise h (Cyc t m zp))
---encrypt v = PC . encrypt' v
+encrypt s x =
+  let v = s2v (Proxy::Proxy m') s
+  in flip runReaderT v $ do
+    -- generate key if necessary
+    (sk :: SK (Cyc t m' z)) <- getKey
+    SHE.encrypt sk x
 
 -- | Decrypt a ciphertext under an appropriate key (from the monad),
 -- if one exists.
@@ -98,6 +99,8 @@ decrypt x = do
   sk :: Maybe (SK (Cyc t m' z)) <- lookupKey
   return $ flip SHE.decrypt x <$> sk
 
+s2v :: (Fact m', Field v, Algebraic v) => Proxy m' -> v -> v
+s2v pm' s = s / (sqrt $ fromIntegral $ proxy totientFact pm')
 
 instance (Lambda ctex, Applicative mon)
   => Lambda (PT2CT m'map zqs gad z v ctex mon) where
@@ -156,7 +159,8 @@ type PT2CTMulCtx'' h zqs gad hintzq ctex t z v mon m' ctin hintct =
    GenSKCtx t m' z v,
    Typeable (Cyc t m' z), Typeable (KSQuadCircHint gad (Cyc t m' hintzq)),
    MonadRandom mon, MonadReader v mon,
-   MonadAccumulator Keys mon, MonadAccumulator Hints mon)
+   MonadAccumulator Keys mon, MonadAccumulator Hints mon,
+   Field v, Algebraic v)
 
 instance (PT2CTMulCtx m'map h zqs m zp TrivGad ctex t z v mon)
   => Mul (PT2CT m'map zqs TrivGad z v ctex mon) (PNoise h (Cyc t m zp)) where
@@ -180,7 +184,9 @@ pt2ctMul :: forall m' m m'map zp t zqs h gad ctex z v mon env hin hintzq .
    PT2CTMulCtx m'map h zqs m zp gad ctex t z v mon)
   => PT2CT m'map zqs gad z v ctex mon env (PNoise hin (Cyc t m zp) -> PNoise hin (Cyc t m zp) -> PNoise h (Cyc t m zp))
 pt2ctMul = PC $ do
-  hint :: KSQuadCircHint gad (Cyc t m' hintzq) <- getQuadCircHint (Proxy::Proxy z)
+  hint :: KSQuadCircHint gad (Cyc t m' hintzq) <-
+    -- the reader stores s, so run the hint generation with s/sqrt(n)
+    local (s2v (Proxy::Proxy m')) $ getQuadCircHint (Proxy::Proxy z)
   return $ lam $ lam $ modSwitch_ $: (keySwitchQuad_ hint $: (modSwitch_ $:
     (v0 *: v1 :: ctex _ (CT m zp (Cyc t m' (PNoise2Zq zqs (TotalNoiseUnits zqs (h :+: N2)))))))
     :: ctex _ (CT m zp (Cyc t m' hintzq)))
@@ -202,7 +208,7 @@ type PT2CTLinearCtx ctex mon m'map zqs h t e r s r' s' z zp zq zqin v gad =
   PT2CTLinearCtx' ctex mon m'map zqs h t e r s r' s' z zp zq zqin (KSModulus gad zqs h) v gad
 
 type PT2CTLinearCtx' ctex mon m'map zqs h t e r s r' s' z zp zq zqin hintzq v gad =
-  (SHE ctex, Lambda ctex,
+  (SHE ctex, Lambda ctex, Field v, Algebraic v, Fact s',
    MonadAccumulator Keys mon, MonadRandom mon, MonadReader v mon,
    -- output ciphertext type
    CT s zp (Cyc t s' zq)   ~ Cyc2CT m'map zqs (PNoise h (Cyc t s zp)),
@@ -240,14 +246,15 @@ instance LinearCyc (PT2CT m'map zqs (BaseBGad 2) z v ctex mon) (PNoise h) where
   linearCyc_ = pt2ctLinearCyc
 
 -- | Generic implementation of `linearCyc` for 'PT2CT' with any gadget.
-pt2ctLinearCyc :: forall t zp e r s env expr rp r' zq h zqs m'map gad z v ctex mon .
-  (expr ~ PT2CT m'map zqs gad z v ctex mon,
+pt2ctLinearCyc :: forall t zp e r s env expr rp r' s' zq h zqs m'map gad z v ctex mon .
+  (expr ~ PT2CT m'map zqs gad z v ctex mon, s' ~ Lookup s m'map,
    PT2CTLinearCtx ctex mon m'map zqs h t e r s (Lookup r m'map) (Lookup s m'map)
     z zp (PNoise2Zq zqs h) (PNoise2Zq zqs (h :+: N1)) v gad,
    Cyc2CT m'map zqs (PNoise h (Cyc t r zp)) ~ CT r zp (Cyc t r' zq), rp ~ Cyc t r zp)
     => Linear t zp e r s -> expr env (PNoise (h :+: N1) rp -> PNoise h (Cyc t s zp))
 pt2ctLinearCyc f = PC $ do
-  hint <- getTunnelHint @gad @(KSModulus gad zqs h) (Proxy::Proxy z) f
+  -- the reader stores s, so run the hint generation with s/sqrt(n)
+  hint <- local (s2v (Proxy::Proxy s')) $ getTunnelHint @gad @(KSModulus gad zqs h) (Proxy::Proxy z) f
   return $ lam $
     modSwitch_ $:    -- then scale back to the target modulus zq
     (tunnel_ hint $:     -- linear w/ the hint

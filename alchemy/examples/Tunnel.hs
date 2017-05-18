@@ -70,7 +70,7 @@ main = do
   pt1 <- getRandom
 
   -- compile the up-applied function to CT, then print it out
-  evalKeysHints (0.01 :: Double) $ do
+  evalKeysHints (8.0 :: Double) $ do
     y <- argToReader (pt2ct
          @RngList
          @'[ Zq $(mkTLNatNat 537264001),

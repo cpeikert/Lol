@@ -32,11 +32,9 @@ import SHERepaMain ()
 
 import RLWEChallengesMain ()
 
-import Crypto.Alchemy.Interpreter.PT2CT
-import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import qualified Arithmetic
 import HomomRLWR ()
---import qualified Tunnel
+import qualified Tunnel ()
 
 main :: IO ()
 main = Arithmetic.main

@@ -149,7 +149,7 @@ main = do
   putStrLn $ show $ eval (untag $ khprf_5hop @CT @'[H0,H1,H2,H3,H4,H5] @P3 @(PNoise 'Z) @Int64 Proxy) 2
 -}
   -- compile the up-applied function to CT, then print it out
-  evalKeysHints (0.01 :: Double) $ do
+  evalKeysHints (8.0 :: Double) $ do
     y <- argToReader (pt2ct
                          @'[ '(H0,H0)]
                          @ZqList
