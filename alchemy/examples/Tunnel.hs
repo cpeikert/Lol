@@ -70,7 +70,7 @@ main = do
   pt1 <- getRandom
 
   -- compile the up-applied function to CT, then print it out
-  evalKeysHints (8.0 :: Double) $ do
+  evalKeysHints 8.0 $ do
     y <- argToReader (pt2ct
          @RngList
          @'[ Zq $(mkTLNatNat 537264001),
@@ -89,8 +89,7 @@ main = do
              Zq $(mkTLNatNat 9959041),
              Zq $(mkTLNatNat 10483201) ]-} -- good moduli, ~15 bits
          @(BaseBGad 2)
-         @Int64
-         @Double)
+         @Int64)
          ptexpr
          --(tunn5 @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @(PNoise 'Z) Proxy)
     -- compile once, interpret with multiple ctexprs!!
