@@ -37,7 +37,7 @@ instance Div2 S a where
 
 instance Lambda S where
   lam (S i) = S $ i+1
-  (S f) $: (S a) = S $ f + a + 1
+  (S f) $: (S a) = S $ f + a
   v0 = S 1
   s (S i) = S i
 
