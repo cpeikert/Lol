@@ -158,7 +158,7 @@ instance (SHE expr, Applicative_ expr, Applicative k, Applicative w) =>
   SHE (ErrorRateWriter expr z k w) where
 
   type ModSwitchPTCtx   (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) zp' =
-    (WriteErrorCtx expr z k w (CT m zp (Cyc t m' zq)) t m m' zp' zq,
+    (WriteErrorCtx expr z k w (CT m zp' (Cyc t m' zq)) t m m' zp' zq,
      ModSwitchPTCtx expr (CT m zp (Cyc t m' zq)) zp')
   type ModSwitchCtx     (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) zq' =
     (WriteErrorCtx expr z k w (CT m zp (Cyc t m' zq')) t m m' zp zq',
