@@ -69,8 +69,7 @@ main = do
                   @'[ '(H4,H4'), '(H5,H5)]
                   @ZqList
                   @TrivGad
-                  @Int64
-                  @Double)
+                  @Int64)
                   ptexpr
 
     let (r1,r) = dup roundTree
