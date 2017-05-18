@@ -8,10 +8,14 @@ module Crypto.Alchemy.Interpreter.Dup (Dup, dup) where
 
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.LinearCyc
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
+import Crypto.Alchemy.Language.Pair
 import Crypto.Alchemy.Language.SHE
-import Crypto.Alchemy.Language.LinearCyc
+import Crypto.Alchemy.Language.String
+
+import Prelude hiding (String)
 
 dup :: Dup expr1 expr2 e a -> (expr1 e a, expr2 e a)
 dup (Dup a b) = (a,b)
@@ -98,6 +102,12 @@ instance (MonadReader_ ex1, MonadReader_ ex2) => MonadReader_ (Dup ex1 ex2) wher
 instance (MonadWriter_ ex1, MonadWriter_ ex2) => MonadWriter_ (Dup ex1 ex2) where
   tell_   = Dup tell_ tell_
   listen_ = Dup listen_ listen_
+
+instance (String ex1, String ex2) => String (Dup ex1 ex2) where
+  string_ str = Dup (string_ str) (string_ str)
+
+instance (Pair ex1, Pair ex2) => Pair (Dup ex1 ex2) where
+  pair_ = Dup pair_ pair_
 
 {-
 

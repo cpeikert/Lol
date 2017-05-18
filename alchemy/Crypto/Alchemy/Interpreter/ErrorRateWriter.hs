@@ -19,13 +19,16 @@ import Data.Typeable
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE (CT, SK)
+import Crypto.Lol.Utils.ShowType
 
 import Crypto.Alchemy.Interpreter.KeysHints
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
+import Crypto.Alchemy.Language.Pair
 import Crypto.Alchemy.Language.SHE
+import qualified Crypto.Alchemy.Language.String as LS
 
 -- | A transformer that additionally logs the sizes of the noise terms
 -- of any ciphertexts created during interpretation.
@@ -51,7 +54,7 @@ type family Monadify w a where
 -- CJP: could generalize to (String, Double) to allow messages, but
 -- then we need pairs in the object language!  (We already need lists
 -- though...)
-type ErrorRateLog = [Double]
+type ErrorRateLog = [(String,Double)]
 
 -- | Transform an expression into (a monadic) one that logs error
 -- rates, where the needed keys are obtained from the monad.
@@ -67,53 +70,56 @@ after_ = lam $ lam $ bind_ $: v0 $:
          lam (bind_ $: (v2 $: v0) $:
                lam (return_ $: v1))
 
-tellError :: (MonadWriter ErrorRateLog mon,
-              List expr, MonadWriter_ expr, ErrorRate expr,
-              ErrorRateCtx expr (CT m zp (Cyc t m' zq)) z) =>
-  SK (Cyc t m' z) -> expr e (CT m zp (Cyc t m' zq) -> mon ())
-tellError sk = lam (tell_ $: (cons_ $: (errorRate_ sk $: v0) $: nil_))
-
+tellError :: forall mon expr m zp t m' zq z e .
+  (MonadWriter ErrorRateLog mon, Show (ArgType zq),
+   List expr, MonadWriter_ expr, ErrorRate expr, LS.String expr, Pair expr,
+   ErrorRateCtx expr (CT m zp (Cyc t m' zq)) z) =>
+  String -> SK (Cyc t m' z) -> expr e (CT m zp (Cyc t m' zq) -> mon ())
+tellError str sk = lam (tell_ $: (cons_ $: (pair_ $: (LS.string_ $ str ++ showType (Proxy::Proxy zq)) $: (errorRate_ sk $: v0)) $: nil_))
+--
 type WriteErrorCtx expr z k w ct t m m' zp zq =
   (MonadWriter ErrorRateLog w, MonadReader Keys k, Typeable (SK (Cyc t m' z)),
-   List expr, MonadWriter_ expr, ErrorRate expr,
-   ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z)
+   List expr, LS.String expr, Pair expr, MonadWriter_ expr, ErrorRate expr,
+   ct ~ (CT m zp (Cyc t m' zq)), ErrorRateCtx expr ct z, Show (ArgType zq))
 
 -- | Convert an object-language function to a (monadic) one that
 -- writes the error rate of its ciphertext output.
 liftWriteError :: forall expr z k w ct t m m' zp zq a e .
   (WriteErrorCtx expr z k w ct t m m' zp zq)
   => Proxy z
+  -> String                     -- | annotation
   -> expr e (a -> ct)           -- | the function to lift
   -> k (expr e (w a -> w ct))
-liftWriteError _ f_ =
+liftWriteError _ str f_ =
   let mf_ = liftA_ $: s f_      -- shift because we use between lam,v0
   in do
     key :: Maybe (SK (Cyc t m' z)) <- lookupKey
     case key of
-      Just sk -> return $ lam $ after_ $: tellError sk $: (mf_ $: v0)
+      Just sk -> return $ lam $ after_ $: tellError str sk $: (mf_ $: v0)
       Nothing -> return $ liftA_ $: f_
 
 liftWriteError2 :: forall expr z k w ct t m m' zp zq a b e .
   (WriteErrorCtx expr z k w ct t m m' zp zq)
   => Proxy z
+  -> String                     -- | annotation
   -> expr e (a -> b -> ct)      -- | the function to lift
   -> k (expr e (w a -> w b -> w ct))
 
-liftWriteError2 _ f_ =
+liftWriteError2 _ str f_ =
   let mf_ = liftA2_ $: s (s f_) -- shift because we use between lam/lam,v0/v1
   in do
     key :: Maybe (SK (Cyc t m' z)) <- lookupKey
     case key of
-      Just sk -> return $ lam $ lam $ after_ $: tellError sk $: (mf_ $: v1 $: v0)
+      Just sk -> return $ lam $ lam $ after_ $: tellError str sk $: (mf_ $: v1 $: v0)
       Nothing -> return $ liftA2_ $: f_
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq, Add expr ct) =>
   Add (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) where
 
-  add_ = ERW $ liftWriteError2 (Proxy::Proxy z) add_
+  add_ = ERW $ liftWriteError2 (Proxy::Proxy z) "add_" add_
 
   -- don't log error because it doesn't grow
-  neg_ = ERW $ liftWriteError (Proxy::Proxy z) neg_
+  neg_ = ERW $ liftWriteError (Proxy::Proxy z) "neg_" neg_
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq, Mul expr ct,
           -- needed because PreMul could take some crazy form
@@ -123,17 +129,17 @@ instance (WriteErrorCtx expr z k w ct t m m' zp zq, Mul expr ct,
   type PreMul (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) =
     PreMul expr (CT m zp (Cyc t m' zq))
 
-  mul_ = ERW $ liftWriteError2 (Proxy::Proxy z) mul_
+  mul_ = ERW $ liftWriteError2 (Proxy::Proxy z) "mul_" mul_
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq, AddLit expr ct) =>
   AddLit (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) where
 
-  addLit_ = ERW . liftWriteError (Proxy::Proxy z) . addLit_
+  addLit_ = ERW . liftWriteError (Proxy::Proxy z) "addLit_" . addLit_
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq, MulLit expr ct) =>
   MulLit (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) where
 
-  mulLit_ = ERW . liftWriteError (Proxy::Proxy z) . mulLit_
+  mulLit_ = ERW . liftWriteError (Proxy::Proxy z) "mulLit_" . mulLit_
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq,
           Monadify w (PreDiv2 expr ct) ~ w (PreDiv2 expr ct), ct ~ CT m zp (Cyc t m' zq),
@@ -142,7 +148,7 @@ instance (WriteErrorCtx expr z k w ct t m m' zp zq,
   type PreDiv2 (ErrorRateWriter expr z k w) (CT m zp (Cyc t m' zq)) =
     PreDiv2 expr (CT m zp (Cyc t m' zq))
 
-  div2_ = ERW $ liftWriteError (Proxy::Proxy z) div2_
+  div2_ = ERW $ liftWriteError (Proxy::Proxy z) "div2_" div2_
 
 ----- TRIVIAL WRAPPER INSTANCES -----
 
@@ -176,12 +182,12 @@ instance (SHE expr, Applicative_ expr, Applicative k, Applicative w) =>
       (TunnelCtx expr t e r s e' r' s' zp zq gad,
        WriteErrorCtx expr z k w (CT s zp (Cyc t s' zq)) t s s' zp zq)
 
-  modSwitchPT_   = ERW $ liftWriteError (Proxy::Proxy z) $ modSwitchPT_
-  modSwitch_     = ERW $ liftWriteError (Proxy::Proxy z) $ modSwitch_
-  addPublic_     = ERW . liftWriteError (Proxy::Proxy z) . addPublic_
-  mulPublic_     = ERW . liftWriteError (Proxy::Proxy z) . mulPublic_
-  keySwitchQuad_ = ERW . liftWriteError (Proxy::Proxy z) . keySwitchQuad_
-  tunnel_        = ERW . liftWriteError (Proxy::Proxy z) . tunnel_
+  modSwitchPT_   = ERW $ liftWriteError (Proxy::Proxy z) "modSwitchPT_" $ modSwitchPT_
+  modSwitch_     = ERW $ liftWriteError (Proxy::Proxy z) "modSwitch" $ modSwitch_
+  addPublic_     = ERW . liftWriteError (Proxy::Proxy z) "addPublic_" . addPublic_
+  mulPublic_     = ERW . liftWriteError (Proxy::Proxy z) "mulPublic_" . mulPublic_
+  keySwitchQuad_ = ERW . liftWriteError (Proxy::Proxy z) "keySwitchQuad_" . keySwitchQuad_
+  tunnel_        = ERW . liftWriteError (Proxy::Proxy z) "tunnel_" . tunnel_
 
 instance (ErrorRate expr, Applicative_ expr, Applicative k, Applicative w) =>
   ErrorRate (ErrorRateWriter expr z k w) where

@@ -26,12 +26,14 @@ import Algebra.Ring     as Ring
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.LinearCyc
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
+import Crypto.Alchemy.Language.Pair
 import Crypto.Alchemy.Language.SHE
-import Crypto.Alchemy.Language.LinearCyc
+import Crypto.Alchemy.Language.String
 
-import Crypto.Lol
+import Crypto.Lol hiding (String)
 import Crypto.Lol.Applications.SymmSHE as SHE
 import Crypto.Lol.Types
 
@@ -153,3 +155,9 @@ instance ErrorRate E where
   errorRate_ sk = pureE $
     (/ (fromIntegral $ proxy modulus (Proxy::Proxy zq))) .
     fromIntegral . maximum . fmap abs . SHE.errorTermUnrestricted sk
+
+instance String E where
+  string_ str = E $ const str
+
+instance Pair E where
+  pair_ = E $ const (,)
