@@ -60,7 +60,11 @@ deriving instance (Ring a) => Ring.C (Identity a)
 argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
 argToReader f a = flip f a =<< ask
 
-type K = P4
+type K = P2
+type Gad = TrivGad
+type RescaleM'Map = '[ '(H5,H5)]
+type RescaleZqs = '[Zq1,Zq2,Zq3,Zq4]
+type PT2CT' m'map zqs a = PT2CT m'map zqs Gad Int64 P (StateT Keys (StateT Hints (ReaderT Double IO))) () a
 
 main :: IO ()
 main = do
@@ -70,18 +74,22 @@ main = do
   putStrLn $ "PT RescaleTree: " ++ pprint ex01
   putStrLn $ "PT RescaleTree size: " ++ (show $ size ex02)
 
-  let (ptrescale, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K
+  -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
+  -- but this requires compiling PT2CT which takes a long time.
+  let (ptrescale :: PT2CT' RescaleM'Map RescaleZqs _, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K
   putStrLn $ "PT expression params:\n" ++ params ptrescale paramsexpr1
 
 
   putStrLn $ "Tunnel:"
-  -- EAC: 'Z noise is important here so that we can print the composition of P expressions
+  -- EAC: 'Z noise is important here so that we can print the composition of P expr
   let (ex11,ex12) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise 'Z) Proxy
   putStrLn $ "PT Tunnel: " ++ pprint ex11
   putStrLn $ "PT Tunnel size: " ++ (show $ size ex12)
 
   -- EAC: This needs to have a non-zero output pNoise level!!
-  let (pttunnel, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N9) Proxy
+  -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
+  -- but this requires compiling PT2CT which takes a long time.
+  let (pttunnel :: PT2CT' CTRngs ZqList _, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N9) Proxy
   putStrLn $ "PT expression params:\n" ++ params pttunnel paramsexpr2
 
   putStrLn $ "PT Composition: " ++ pprint (ex01 .: ex11)
@@ -90,18 +98,18 @@ main = do
   evalKeysHints 8.0 $ do
 
     roundTree <- argToReader (pt2ct
-                  @'[ '(H5,H5)]
-                  @'[Zq1,Zq2,Zq3,Zq4]
-                  @TrivGad
+                  @RescaleM'Map
+                  @RescaleZqs
+                  @Gad
                   @Int64)
-                  ptrescale
+                  (untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K)
 
     tunn <- argToReader (pt2ct
                   @CTRngs
                   @ZqList
-                  @TrivGad
+                  @Gad
                   @Int64)
-                  pttunnel
+                  (linear5 @CT @PTRngs @(Z2E K) @(PNoise N9) Proxy)
 
     let (r1,r) = dup roundTree
         (r2,r3) = dup r
