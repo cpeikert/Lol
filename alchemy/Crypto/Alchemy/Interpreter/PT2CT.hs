@@ -19,7 +19,7 @@
 module Crypto.Alchemy.Interpreter.PT2CT
 ( PT2CT, PNoise
 , pt2ct, encrypt, decrypt
-, pt2ctMul, pt2ctLinearCyc, KSPNoise
+, KSPNoise
 ) where
 
 import Control.Applicative
@@ -163,40 +163,29 @@ type PT2CTMulCtx'' p zqs gad hintzq ctex t z mon m' ctin hintct =
    MonadRandom mon, MonadReader Double mon,
    MonadAccumulator Keys mon, MonadAccumulator Hints mon)
 
-instance (PT2CTMulCtx m'map p zqs m zp TrivGad ctex t z mon)
-  => Mul (PT2CT m'map zqs TrivGad z ctex mon) (PNoise p (Cyc t m zp)) where
+instance (PT2CTMulCtx m'map p zqs m zp gad ctex t z mon)
+  => Mul (PT2CT m'map zqs gad z ctex mon) (PNoise p (Cyc t m zp)) where
 
-  type PreMul (PT2CT m'map zqs TrivGad z ctex mon) (PNoise p (Cyc t m zp)) =
+  type PreMul (PT2CT m'map zqs gad z ctex mon) (PNoise p (Cyc t m zp)) =
     PNoise (Units2PNoise (TotalUnits zqs (p :+: N3))) (Cyc t m zp)
 
-  mul_ = pt2ctMul
-
-instance (PT2CTMulCtx m'map p zqs m zp (BaseBGad 2) ctex t z mon)
-  => Mul (PT2CT m'map zqs (BaseBGad 2) z ctex mon) (PNoise p (Cyc t m zp)) where
-
-  type PreMul (PT2CT m'map zqs (BaseBGad 2) z ctex mon) (PNoise p (Cyc t m zp)) =
-    PNoise (Units2PNoise (TotalUnits zqs (p :+: N3))) (Cyc t m zp)
-
-  mul_ = pt2ctMul
-
--- | Generic implementation of `mul_` for 'PT2CT' with any gadget.
-pt2ctMul :: forall m' m m'map zp t zqs p gad ctex z mon env pin hintzq .
-  (pin ~ Units2PNoise (TotalUnits zqs (p :+: N3)),
-   hintzq ~ PNoise2KSZq gad zqs p,
-   m' ~ Lookup m m'map,
-   PT2CTMulCtx m'map p zqs m zp gad ctex t z mon) =>
-  PT2CT m'map zqs gad z ctex mon env
-  (PNoise pin (Cyc t m zp) -> PNoise pin (Cyc t m zp) -> PNoise p (Cyc t m zp))
-pt2ctMul = PC $ do
-  hint :: KSQuadCircHint gad (Cyc t m' hintzq) <-
-    -- the reader stores r, so use errors with svar = r/sqrt(phi(m'))
-    local (svar (Proxy::Proxy m')) $ getQuadCircHint (Proxy::Proxy z)
-  return $ lam $ lam $
-    modSwitch_ $:
-    (keySwitchQuad_ hint $:
-      (modSwitch_ $:
-       (v1 *: v0 :: ctex _ (CT m zp (Cyc t m' (PNoise2Zq zqs pin)))))
-      :: ctex _ (CT m zp (Cyc t m' hintzq)))
+  mul_ :: forall m' env pin hintzq .
+    (pin ~ Units2PNoise (TotalUnits zqs (p :+: N3)),
+     hintzq ~ PNoise2KSZq gad zqs p,
+     m' ~ Lookup m m'map,
+     PT2CTMulCtx m'map p zqs m zp gad ctex t z mon) =>
+    PT2CT m'map zqs gad z ctex mon env
+    (PNoise pin (Cyc t m zp) -> PNoise pin (Cyc t m zp) -> PNoise p (Cyc t m zp))
+  mul_ = PC $ do
+    hint :: KSQuadCircHint gad (Cyc t m' hintzq) <-
+      -- the reader stores r, so use errors with svar = r/sqrt(phi(m'))
+      local (svar (Proxy::Proxy m')) $ getQuadCircHint (Proxy::Proxy z)
+    return $ lam $ lam $
+      modSwitch_ $:
+      (keySwitchQuad_ hint $:
+        (modSwitch_ $:
+         (v1 *: v0 :: ctex _ (CT m zp (Cyc t m' (PNoise2Zq zqs pin)))))
+        :: ctex _ (CT m zp (Cyc t m' hintzq)))
 
 instance (SHE ctex, Applicative mon,
           LSHE.ModSwitchPTCtx ctex
@@ -230,46 +219,31 @@ type PT2CTLinearCtx' ctex mon m'map zqs p t e r s r' s' z zp zq zqin hintzq gad 
 
 -- multiple LinearCyc instances, one for each type of gad we might use
 
-instance LinearCyc (PT2CT m'map zqs TrivGad z ctex mon) (PNoise p) where
+instance LinearCyc (PT2CT m'map zqs gad z ctex mon) (PNoise p) where
 
   -- EAC: Danger: as far as GHC is concerned, ('S h) is not the same as (h :+: N1)
-  type PreLinearCyc (PT2CT m'map zqs TrivGad z ctex mon) (PNoise p) =
+  type PreLinearCyc (PT2CT m'map zqs gad z ctex mon) (PNoise p) =
     PNoise (p :+: N1)
 
-  type LinearCycCtx (PT2CT m'map zqs TrivGad z ctex mon) (PNoise p) t e r s zp =
+  type LinearCycCtx (PT2CT m'map zqs gad z ctex mon) (PNoise p) t e r s zp =
     (PT2CTLinearCtx ctex mon m'map zqs p t e r s (Lookup r m'map) (Lookup s m'map)
-      z zp (PNoise2Zq zqs p) (PNoise2Zq zqs (p :+: N1)) TrivGad)
+      z zp (PNoise2Zq zqs p) (PNoise2Zq zqs (p :+: N1)) gad)
 
-  linearCyc_ = pt2ctLinearCyc
-
-instance LinearCyc (PT2CT m'map zqs (BaseBGad 2) z ctex mon) (PNoise p) where
-
-  -- EAC: Danger: as far as GHC is concerned, ('S h) is not the same as (h :+: N1)
-  type PreLinearCyc (PT2CT m'map zqs (BaseBGad 2) z ctex mon) (PNoise p) =
-    PNoise (p :+: N1)
-
-  type LinearCycCtx (PT2CT m'map zqs (BaseBGad 2) z ctex mon) (PNoise p) t e r s zp =
-    (PT2CTLinearCtx ctex mon m'map zqs p t e r s (Lookup r m'map) (Lookup s m'map)
-      z zp (PNoise2Zq zqs p) (PNoise2Zq zqs (p :+: N1)) (BaseBGad 2))
-
-  linearCyc_ = pt2ctLinearCyc
-
--- | Generic implementation of `linearCyc` for 'PT2CT' with any gadget.
-pt2ctLinearCyc :: forall t zp e r s env expr rp r' s' zq p zqs m'map gad z ctex mon .
-  (expr ~ PT2CT m'map zqs gad z ctex mon, s' ~ Lookup s m'map,
-   PT2CTLinearCtx ctex mon m'map zqs p t e r s (Lookup r m'map) (Lookup s m'map)
-   z zp (PNoise2Zq zqs p) (PNoise2Zq zqs (p :+: N1)) gad,
-   Cyc2CT m'map zqs (PNoise p (Cyc t r zp)) ~ CT r zp (Cyc t r' zq), rp ~ Cyc t r zp)
-    => Linear t zp e r s -> expr env (PNoise (p :+: N1) rp -> PNoise p (Cyc t s zp))
-pt2ctLinearCyc f = PC $ do
-  -- the reader stores r, so run the hint generation with s/sqrt(n)
-  hint <- local (svar (Proxy::Proxy s')) $
-          getTunnelHint @gad @(PNoise2KSZq gad zqs p) (Proxy::Proxy z) f
-  return $ lam $
-    modSwitch_ $:    -- then scale back to the target modulus zq
-    (tunnel_ hint $:     -- linear w/ the hint
-      (modSwitch_ $: -- then scale (up) to the hint modulus zq'
-        (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise (p :+: N1) rp)))))
+  linearCyc_ :: forall t zp e r s env expr rp r' s' zq .
+    (expr ~ PT2CT m'map zqs gad z ctex mon, s' ~ Lookup s m'map,
+     PT2CTLinearCtx ctex mon m'map zqs p t e r s (Lookup r m'map) (Lookup s m'map)
+     z zp (PNoise2Zq zqs p) (PNoise2Zq zqs (p :+: N1)) gad,
+     Cyc2CT m'map zqs (PNoise p (Cyc t r zp)) ~ CT r zp (Cyc t r' zq), rp ~ Cyc t r zp)
+      => Linear t zp e r s -> expr env (PNoise (p :+: N1) rp -> PNoise p (Cyc t s zp))
+  linearCyc_ f = PC $ do
+    -- the reader stores r, so run the hint generation with s/sqrt(n)
+    hint <- local (svar (Proxy::Proxy s')) $
+            getTunnelHint @gad @(PNoise2KSZq gad zqs p) (Proxy::Proxy z) f
+    return $ lam $
+      modSwitch_ $:    -- then scale back to the target modulus zq
+      (tunnel_ hint $:     -- linear w/ the hint
+        (modSwitch_ $: -- then scale (up) to the hint modulus zq'
+          (v0 :: ctex _ (Cyc2CT m'map zqs (PNoise (p :+: N1) rp)))))
 
 ----- Type families -----
 
