@@ -20,9 +20,8 @@
 
 -- should be a hidden/internal module
 module Crypto.Alchemy.Interpreter.PT2CT.Noise
-(PNoise(..), PNoise2Zq
-,TotalNoiseUnits, MaxComponentPNoise
-,TLNatNat, mkTLNatNat) where
+( PNoise(..), ZqPairsWithUnits, TotalUnits, MaxUnits
+, TLNatNat, mkTLNatNat) where
 
 import           Algebra.Additive          as Additive (C)
 import           Algebra.Ring              as Ring (C)
@@ -94,35 +93,41 @@ singletons [d|
                error "prefixLen: threshold is larger than sum of list entries"
            |]
 
--- | The number of noise units of the largest modulus *component*
--- in the smallest modulus with at least `h` total noise units.
-type MaxComponentPNoise zqs h = Maximum (MapNatOf (MapModulus (PNoise2ZqList zqs h)))
-
--- | Given a list of moduli @zqs@, construct nested pairs representing
--- a product of moduli large enough to contain the given pNoise @h@.
-type PNoise2Zq zqs h = List2Pairs (PNoise2ZqList zqs h)
-
-type PNoise2ZqList zqs h =
-  PNoise2ZqError (h :<= (Sum (MapNatOf (MapModulus zqs)))) (Sum (MapNatOf (MapModulus zqs))) h zqs
-
 type family NatToLit x where
   NatToLit 'Z = 0
   NatToLit ('S n) = 1 + (NatToLit n)
 
-type TotalNoiseUnits zqs h = Sum (MapNatOf (MapModulus (PNoise2ZqList zqs h)))
+-- | The number of noise units of the largest modulus among the first
+-- of those that in total have at least @h@ units.
+type MaxUnits zqs h = Maximum (MapNatOf (MapModulus (ZqsWithUnits zqs h)))
 
-type family PNoise2ZqError b sum h zqs where
-  -- h <= sum: we're good to go
-  PNoise2ZqError 'True sum h zqs = Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs
-  -- error if sum < h
-  PNoise2ZqError 'False sum h zqs =
-    TypeError ('Text "PNoise2Zq: Modulus needs to support at least " ':<>: 'ShowType (NatToLit h) ':<>:
-      'Text " noise units, but it only supports " ':<>: 'ShowType (NatToLit sum) ':<>: 'Text " units." ':$$:
-      'Text "You need a bigger modulus!")
+-- | For a list of moduli @zqs@, nested pairs representing moduli that
+-- have a total of at least @h@ units.
+type ZqPairsWithUnits zqs h = List2Pairs (ZqsWithUnits zqs h)
+
+-- | For a list of moduli @zqs@, a list representing moduli that have
+-- a total of at least @h@ units.
+type ZqsWithUnits zqs h =
+  ZqsWithUnits' (h :<= (Sum (MapNatOf (MapModulus zqs)))) h zqs
+
+-- | The total noise units among the first of the moduli having at
+-- least @h@ units.
+type TotalUnits zqs h = Sum (MapNatOf (MapModulus (ZqsWithUnits zqs h)))
+
+type family ZqsWithUnits' b h zqs where
+  ZqsWithUnits' 'True h zqs = Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs
+  -- error case
+  ZqsWithUnits' 'False h zqs =
+    TypeError ('Text "ZqsWithUnits: Modulus needs to support at least " ':<>:
+               'ShowType (NatToLit h) ':<>:
+               'Text " noise units, but it only supports " ':<>:
+               'ShowType (NatToLit (Sum (MapNatOf (MapModulus zqs)))) ':<>:
+               'Text " units." ':$$:
+               'Text "You need more/bigger moduli!")
 
 -- | "Bits" per noise unit.
 pNoiseUnit :: Double
-pNoiseUnit = 7
+pNoiseUnit = 3
 
 mkTypeNat :: Int -> TypeQ
 mkTypeNat x | x < 0 = error $ "mkTypeNat: negative argument " ++ show x
