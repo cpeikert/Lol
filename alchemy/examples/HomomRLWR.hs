@@ -49,8 +49,6 @@ import Control.Monad.State
 import Control.Monad.Writer
 import Data.Type.Natural hiding (Nat(S))
 
-
-
 type K = P2
 type Gad = TrivGad
 type RescaleM'Map = '[ '(H5,H5)]
@@ -59,10 +57,10 @@ type RescaleZqs = '[Zq1,Zq2,Zq3,Zq4]
 main :: IO ()
 main = do
 
-  putStrLn $ "RescaleTree:"
+  putStrLn "RescaleTree:"
   let (ex01,ex02) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K
   putStrLn $ "PT RescaleTree: " ++ pprint ex01
-  putStrLn $ "PT RescaleTree size: " ++ (show $ size ex02)
+  putStrLn $ "PT RescaleTree size: " ++ show (size ex02)
 
   -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
   -- but this requires compiling PT2CT which takes a long time.
@@ -70,16 +68,16 @@ main = do
   putStrLn $ "PT expression params:\n" ++ params ptrescale paramsexpr1
 
 
-  putStrLn $ "Tunnel:"
+  putStrLn "Tunnel:"
   -- EAC: 'Z noise is important here so that we can print the composition of P expr
   let (ex11,ex12) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise 'Z) Proxy
   putStrLn $ "PT Tunnel: " ++ pprint ex11
-  putStrLn $ "PT Tunnel size: " ++ (show $ size ex12)
+  putStrLn $ "PT Tunnel size: " ++ show (size ex12)
 
   -- EAC: This needs to have a non-zero output pNoise level!!
   -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
   -- but this requires compiling PT2CT which takes a long time.
-  let (pttunnel :: PT2CT' CTRngs ZqList Gad _, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N9) Proxy
+  let (pttunnel :: PT2CT' CTRngs ZqList Gad _, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N4) Proxy
   putStrLn $ "PT expression params:\n" ++ params pttunnel paramsexpr2
 
   putStrLn $ "PT Composition: " ++ pprint (ex01 .: ex11)
@@ -87,24 +85,28 @@ main = do
   -- compile the un-applied function to CT, then print it out
   evalKeysHints 8.0 $ do
 
-    roundTree <- argToReader (pt2ct
-                  @RescaleM'Map
-                  @RescaleZqs
-                  @Gad
-                  @Int64)
-                  (untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K)
+    roundTree <- timeIO "Compiling rounding tree..." $
+                   argToReader (pt2ct
+                    @RescaleM'Map
+                    @RescaleZqs
+                    @Gad
+                    @Int64)
+                    (untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K)
 
-    tunn <- argToReader (pt2ct
+    tunn <- timeIO "Compiling tunnel sequence..." $
+               argToReader (pt2ct
                   @CTRngs
                   @ZqList
                   @Gad
                   @Int64)
-                  (linear5 @CT @PTRngs @(Z2E K) @(PNoise N9) Proxy)
+                  (linear5 @CT @PTRngs @(Z2E K) @(PNoise N4) Proxy)
 
-    let (r1,r) = dup roundTree
-        (r2,r3) = dup r
-        (s1,s) = dup tunn
-        (s2,s3) = dup s
+    let (r1,r)  = dup roundTree
+        (r2,r') = dup r
+        (r3,r4) = dup r'
+        (s1,s)  = dup tunn
+        (s2,s') = dup s
+        (s3,s4) = dup s'
 
     liftIO $ putStrLn "CT Tunneling:"
     liftIO $ putStrLn $ pprint s1
@@ -120,23 +122,29 @@ main = do
     ptin <- liftIO $ getRandom
     arg1 <- argToReader encrypt ptin
 
-    f <- readerToAccumulator $ writeErrorRates @Int64 @() r3
-    g <- readerToAccumulator $ writeErrorRates @Int64 @() s3
-    let (_,errors) = runWriter $ eval (f .: g) (return arg1)
+    timeIO "Evaluating with error rates..." $ do
+      f <- readerToAccumulator $ writeErrorRates @Int64 @() r3
+      g <- readerToAccumulator $ writeErrorRates @Int64 @() s3
+      let (_,errors) = runWriter $ eval (f .: g) (return arg1)
+      liftIO $ print errors
 
-    liftIO $ print errors
+    _ <- time "Evaluating without error rates..." $ eval (r4 .: s4) arg1
+
+    liftIO $ putStrLn "Done."
+
+
+
 
 -- these are ~ 2^15
 
-type Zq1 = Zq $(mkTLNatNat 3144961)
-type Zq2 = Zq $(mkTLNatNat 5241601)
-type Zq3 = Zq $(mkTLNatNat 7338241)
-type Zq4 = Zq $(mkTLNatNat 9959041)
-type Zq5 = Zq $(mkTLNatNat 10483201)
-type Zq6 = Zq $(mkTLNatNat 11531521)
-type Zq7 = Zq $(mkTLNatNat 12579841)
-type ZqList = '[Zq1,Zq2,Zq3,Zq4,Zq5,Zq6,Zq7]
-
+type Zq1 = Zq $(mkTLNatNat 1074003841)
+type Zq2 = Zq $(mkTLNatNat 1077672961)
+type Zq3 = Zq $(mkTLNatNat 1078197121)
+type Zq4 = Zq $(mkTLNatNat 1079245441)
+type Zq5 = Zq $(mkTLNatNat 1081342081)
+type Zq6 = Zq $(mkTLNatNat 1082914561)
+type Zq7 = Zq $(mkTLNatNat 1083438721)
+type ZqList = '[Zq1,Zq2,Zq3,Zq4,Zq5,Zq6] --,Zq7]
 
 
 {-
