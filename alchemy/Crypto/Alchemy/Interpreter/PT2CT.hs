@@ -140,8 +140,8 @@ type PNoise2KSZq gad zqs p = ZqPairsWithUnits zqs (KSPNoise gad zqs (PNoise2Unit
 -- | pNoise of a key-switch hint for a particular gadget, given the
 -- pNoise of the input ciphertext.
 type family KSPNoise gad (zqs :: [*]) (p :: Nat) :: Nat
-type instance KSPNoise TrivGad      zqs p = p :+: N4 :+: (MaxUnits zqs (PNoise2Units p))
-type instance KSPNoise (BaseBGad 2) zqs p = p :+: N4
+type instance KSPNoise TrivGad      zqs p = p :+: N2 :+: (MaxUnits zqs (PNoise2Units p))
+type instance KSPNoise (BaseBGad 2) zqs p = p :+: N2
 
 -- The pNoise for the key-switch hint depends on the gadget, so we define
 -- gadget-specifc instances of Mul below
@@ -150,7 +150,7 @@ type PT2CTMulCtx m'map p zqs m zp gad ctex t z mon =
   PT2CTMulCtx' m zp p zqs gad (PNoise2KSZq gad zqs p) ctex t z mon (Lookup m m'map)
 
 type PT2CTMulCtx' m zp p zqs gad hintzq ctex t z mon m' =
-  PT2CTMulCtx'' p zqs gad hintzq ctex t z mon m' (CT m zp (Cyc t m' (PNoise2Zq zqs (TotalUnits zqs (p :+: N3))))) (CT m zp (Cyc t m' hintzq))
+  PT2CTMulCtx'' p zqs gad hintzq ctex t z mon m' (CT m zp (Cyc t m' (PNoise2Zq zqs (Units2PNoise (TotalUnits zqs (p :+: N3)))))) (CT m zp (Cyc t m' hintzq))
 
 type PT2CTMulCtx'' p zqs gad hintzq ctex t z mon m' ctin hintct =
   (Lambda ctex, Mul ctex ctin, PreMul ctex ctin ~ ctin, SHE ctex,
@@ -167,7 +167,7 @@ instance (PT2CTMulCtx m'map p zqs m zp TrivGad ctex t z mon)
   => Mul (PT2CT m'map zqs TrivGad z ctex mon) (PNoise p (Cyc t m zp)) where
 
   type PreMul (PT2CT m'map zqs TrivGad z ctex mon) (PNoise p (Cyc t m zp)) =
-    PNoise (TotalUnits zqs (p :+: N3)) (Cyc t m zp)
+    PNoise (Units2PNoise (TotalUnits zqs (p :+: N3))) (Cyc t m zp)
 
   mul_ = pt2ctMul
 
@@ -175,13 +175,13 @@ instance (PT2CTMulCtx m'map p zqs m zp (BaseBGad 2) ctex t z mon)
   => Mul (PT2CT m'map zqs (BaseBGad 2) z ctex mon) (PNoise p (Cyc t m zp)) where
 
   type PreMul (PT2CT m'map zqs (BaseBGad 2) z ctex mon) (PNoise p (Cyc t m zp)) =
-    PNoise (TotalUnits zqs (p :+: N3)) (Cyc t m zp)
+    PNoise (Units2PNoise (TotalUnits zqs (p :+: N3))) (Cyc t m zp)
 
   mul_ = pt2ctMul
 
 -- | Generic implementation of `mul_` for 'PT2CT' with any gadget.
 pt2ctMul :: forall m' m m'map zp t zqs p gad ctex z mon env pin hintzq .
-  (pin ~ TotalUnits zqs (p :+: N3),
+  (pin ~ Units2PNoise (TotalUnits zqs (p :+: N3)),
    hintzq ~ PNoise2KSZq gad zqs p,
    m' ~ Lookup m m'map,
    PT2CTMulCtx m'map p zqs m zp gad ctex t z mon) =>
@@ -275,6 +275,10 @@ pt2ctLinearCyc f = PC $ do
 
 -- | The number of units a ciphertext with pNoise @p@ must have
 type PNoise2Units p = p :+: N2
+
+-- | (An upper bound on) the pNoise of a ciphertext whose modulus has
+-- exactly the given number of units
+type Units2PNoise h = h :-: N2
 
 -- | The modulus (nested pairs) for a ciphertext with pNoise @p@
 type PNoise2Zq zqs p = ZqPairsWithUnits zqs (PNoise2Units p)
