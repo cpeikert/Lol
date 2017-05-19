@@ -21,8 +21,10 @@ import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
-import RescaleTree
+import Common
 import LinearDec2CRT
+import RescaleTree
+
 import Crypto.Alchemy.MonadAccumulator
 --import Crypto.Alchemy.Interpreter.DedupRescale
 import Crypto.Alchemy.Interpreter.Depth
@@ -40,8 +42,6 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.LinearCyc
 
-import Algebra.Additive as Additive (C(..))
-import qualified Algebra.Ring as Ring (C(..))
 import Control.Monad.Identity
 import Control.Monad.Random
 import Control.Monad.Reader
@@ -49,22 +49,12 @@ import Control.Monad.State
 import Control.Monad.Writer
 import Data.Type.Natural hiding (Nat(S))
 
--- a concrete Z_2^e data type
-type Z2E e = ZqBasic ('PP '(Prime2, e)) Int64
 
--- EAC: these instances need a home
-deriving instance (Additive a) => Additive.C (Identity a)
-deriving instance (Ring a) => Ring.C (Identity a)
-
--- EAC: This is a convenient function, but it needs a home.
-argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
-argToReader f a = flip f a =<< ask
 
 type K = P2
 type Gad = TrivGad
 type RescaleM'Map = '[ '(H5,H5)]
 type RescaleZqs = '[Zq1,Zq2,Zq3,Zq4]
-type PT2CT' m'map zqs a = PT2CT m'map zqs Gad Int64 P (StateT Keys (StateT Hints (ReaderT Double IO))) () a
 
 main :: IO ()
 main = do
@@ -76,7 +66,7 @@ main = do
 
   -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
   -- but this requires compiling PT2CT which takes a long time.
-  let (ptrescale :: PT2CT' RescaleM'Map RescaleZqs _, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K
+  let (ptrescale :: PT2CT' RescaleM'Map RescaleZqs Gad _, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K
   putStrLn $ "PT expression params:\n" ++ params ptrescale paramsexpr1
 
 
@@ -89,7 +79,7 @@ main = do
   -- EAC: This needs to have a non-zero output pNoise level!!
   -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
   -- but this requires compiling PT2CT which takes a long time.
-  let (pttunnel :: PT2CT' CTRngs ZqList _, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N9) Proxy
+  let (pttunnel :: PT2CT' CTRngs ZqList Gad _, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N9) Proxy
   putStrLn $ "PT expression params:\n" ++ params pttunnel paramsexpr2
 
   putStrLn $ "PT Composition: " ++ pprint (ex01 .: ex11)
@@ -147,24 +137,6 @@ type Zq6 = Zq $(mkTLNatNat 11531521)
 type Zq7 = Zq $(mkTLNatNat 12579841)
 type ZqList = '[Zq1,Zq2,Zq3,Zq4,Zq5,Zq6,Zq7]
 
-type Zq (q :: TLNatNat) = ZqBasic q Int64
-
-type H0 = F128
-type H1 = F64 * F7
-type H2 = F32 * F7 * F13
-type H3 = F8 * F5 * F7 * F13
-type H4 = F4 * F3 * F5 * F7 * F13
-type H5 = F9 * F5 * F7 * F13
-type H0' = H0 * F7 * F13
-type H1' = H1 * F13
-type H2' = H2
-type H3' = H3
-type H4' = H4
-type H5' = H5
-
-type PTRngs = '[H0,H1,H2,H3,H4,H5]
-
-type CTRngs = '[ '(H0,H0'), '(H1,H1'), '(H2,H2'), '(H3,H3'), '(H4,H4'), '(H5,H5') ]
 
 
 {-

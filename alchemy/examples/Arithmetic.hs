@@ -13,6 +13,8 @@
 
 module Arithmetic where
 
+import Common
+
 import Control.Monad.Reader
 import Control.Monad.Writer
 
@@ -33,13 +35,10 @@ import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 
 import Crypto.Lol                       hiding (Pos (..))
---import qualified Crypto.Lol.Applications.SymmSHE as SHE
 import Crypto.Lol.Cyclotomic.Tensor.CPP
-import Crypto.Lol.Types
 
 import Control.Applicative
 import Control.Monad.Random
-import Control.Monad.State
 import Data.Maybe
 import Data.Type.Natural (Nat (Z))
 
@@ -57,16 +56,9 @@ addMul :: forall b e expr a .
   => expr e (a -> a -> b)
 addMul = lam $ lam $ v0 *: (v0 +: v1)
 
-type Zq q = ZqBasic q Int64
-
-argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
-argToReader f a = flip f a =<< ask
-
 type M = F512
 type M'Map = '[ '(F4, M) ]
-type Zqs = '[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 8392193)]
-
-
+type Zqs = '[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 8392193), Zq $(mkTLNatNat 1073750017)] -- ,1073753089)]
   -- @'[Zq $(mkTLNatNat 1312235009), Zq $(mkTLNatNat 37633) ] -- (still) fails with TrivGad
   -- @'[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 36353)]
    --, Zq $(mkTLNatNat 36353), Zq $(mkTLNatNat 37633) ] --  (still) fails with TrivGad
@@ -91,7 +83,7 @@ main = do
 
   -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
   -- but this requires compiling PT2CT which takes a long time.
-  let ptexpr = addMul @(PNoise 'Z (Cyc CT F4 (Zq 7))) ::  PT2CT M'Map Zqs TrivGad Int64 P (StateT Keys (StateT Hints (ReaderT Double IO))) () _
+  let ptexpr = addMul @(PNoise 'Z (Cyc CT F4 (Zq 7))) ::  PT2CT' M'Map Zqs TrivGad _
   putStrLn $ "PT expression params:\n" ++ (params ptexpr addMul)
 
   evalKeysHints (8.0 :: Double) $ do

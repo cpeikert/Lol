@@ -12,6 +12,8 @@
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
 module Tunnel where
 
 import Algebra.Additive as Additive (C(..))
@@ -23,6 +25,7 @@ import Control.Monad.Random
 import Control.Monad.Writer
 import Data.Type.Natural
 
+import Common
 import LinearDec2CRT
 import Crypto.Alchemy.MonadAccumulator
 --import Crypto.Alchemy.Interpreter.DedupRescale
@@ -41,17 +44,12 @@ import Crypto.Lol hiding (Pos(..))
 import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
-
-type Zq q = ZqBasic q Int64
-
-
--- EAC: This is a convenient function, but it needs a home.
-argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
-argToReader f a = flip f a =<< ask
-
--- EAC: these instances need a home
-deriving instance (Additive a) => Additive.C (Identity a)
-deriving instance (Ring a) => Ring.C (Identity a)
+type Gad = BaseBGad 2
+type Zqs = '[ Zq $(mkTLNatNat 537264001),
+              Zq $(mkTLNatNat 539360641),
+              Zq $(mkTLNatNat 539884801),
+              Zq $(mkTLNatNat 540933121),
+              Zq $(mkTLNatNat 541457281) ] -- good moduli, ~ 30 bits
 
 main :: IO ()
 main = do
@@ -63,7 +61,7 @@ main = do
   putStrLn $ show $ eval exp2a 2
 
 
-  let ptexpr = linear2 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy
+  let ptexpr = linear2 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy :: PT2CT' RngList Zqs Gad _
   --let ptexpr = linear5 @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @(PNoise 'Z) Proxy
   putStrLn $ "PT expression params:\n" ++ (params ptexpr $ linear2 @_ @_ @H1 Proxy)
 
@@ -73,24 +71,10 @@ main = do
   evalKeysHints 8.0 $ do
     y <- argToReader (pt2ct
          @RngList
-         @'[ Zq $(mkTLNatNat 537264001),
-             Zq $(mkTLNatNat 539360641),
-             Zq $(mkTLNatNat 539884801),
-             Zq $(mkTLNatNat 540933121),
-             Zq $(mkTLNatNat 541457281) ] -- good moduli, ~ 30 bits
-         {-@'[ Zq $(mkTLNatNat 537264003),
-             Zq $(mkTLNatNat 539360643),
-             Zq $(mkTLNatNat 539884803),
-             Zq $(mkTLNatNat 540933123),
-             Zq $(mkTLNatNat 541457283) ]-} -- bad moduli, ~30 bits
-         {-@'[ Zq $(mkTLNatNat 3144961),
-             Zq $(mkTLNatNat 5241601),
-             Zq $(mkTLNatNat 7338241),
-             Zq $(mkTLNatNat 9959041),
-             Zq $(mkTLNatNat 10483201) ]-} -- good moduli, ~15 bits
-         @(BaseBGad 2)
+         @Zqs
+         @Gad
          @Int64)
-         ptexpr
+         (linear2 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy)
          --(tunn5 @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @(PNoise 'Z) Proxy)
     -- compile once, interpret with multiple ctexprs!!
     let (z1,z2) = dup y
@@ -100,20 +84,8 @@ main = do
     arg1 <- argToReader encrypt pt1
 
     z2' <- readerToAccumulator $ writeErrorRates @Int64 @() z2
-    let (result,errors) = runWriter $ eval z2' $ return arg1
+    let (_,errors) = runWriter $ eval z2' $ return arg1
     liftIO $ print $ "Error rates: " ++ show errors
     --liftIO $ putStrLn $ pprint $ dedupRescale z2
 
-type H0 = F128
-type H1 = F64 * F7
-type H2 = F32 * F7 * F13
-type H3 = F8 * F5 * F7 * F13
-type H4 = F4 * F3 * F5 * F7 * F13
-type H5 = F9 * F5 * F7 * F13
-type H0' = H0 * F7 * F13
-type H1' = H1 * F13
-type H2' = H2
-type H3' = H3
-type H4' = H4
-type H5' = H5
 type RngList = '[ '(H0,H0'), '(H1,H1'), '(H2,H2')] -- , '(H3,H3'), '(H4,H4'), '(H5,H5') ]
