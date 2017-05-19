@@ -49,10 +49,22 @@ import Control.Monad.State
 import Control.Monad.Writer
 import Data.Type.Natural hiding (Nat(S))
 
-type K = P2
+
+
+type K = P4
 type Gad = TrivGad
 type RescaleM'Map = '[ '(H5,H5)]
-type RescaleZqs = '[Zq1,Zq2,Zq3,Zq4]
+
+type Zq1 = Zq $(mkTLNatNat 1520064001) -- last mul: > 2^30.5
+type Zq2 = Zq $(mkTLNatNat 3144961)    -- 3 rounding muls: > 2^19
+type Zq3 = Zq $(mkTLNatNat 5241601)
+type Zq4 = Zq $(mkTLNatNat 7338241)
+type Zq5 = Zq $(mkTLNatNat 1522160641) -- fit 5 hops: > (last mul)
+type Zq6 = Zq $(mkTLNatNat 1529498881) -- extra for KS: big
+--type Zq7 = Zq $(mkTLNatNat 12579841)
+type ZqList = '[Zq1,Zq2,Zq3,Zq4,Zq5,Zq6] --,Zq7]
+
+type RescaleZqs = '[Zq1,Zq2,Zq3,Zq4,Zq5]
 
 main :: IO ()
 main = do
@@ -77,7 +89,7 @@ main = do
   -- EAC: This needs to have a non-zero output pNoise level!!
   -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
   -- but this requires compiling PT2CT which takes a long time.
-  let (pttunnel :: PT2CT' CTRngs ZqList Gad _, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N4) Proxy
+  let (pttunnel :: PT2CT' CTRngs ZqList Gad _, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N11) Proxy
   putStrLn $ "PT expression params:\n" ++ params pttunnel paramsexpr2
 
   putStrLn $ "PT Composition: " ++ pprint (ex01 .: ex11)
@@ -100,7 +112,7 @@ main = do
                   @ZqList
                   @Gad
                   @Int64)
-                  (linear5 @CT @PTRngs @(Z2E K) @(PNoise N4) Proxy)
+                  (linear5 @CT @PTRngs @(Z2E K) @(PNoise N11) Proxy)
 
     let (r1,r)  = dup roundTree
         (r2,r') = dup r
@@ -139,18 +151,6 @@ main = do
     liftIO $ putStrLn "Done."
 
 
-
-
--- these are ~ 2^15
-
-type Zq1 = Zq $(mkTLNatNat 1074003841)
-type Zq2 = Zq $(mkTLNatNat 1077672961)
-type Zq3 = Zq $(mkTLNatNat 1078197121)
-type Zq4 = Zq $(mkTLNatNat 1079245441)
-type Zq5 = Zq $(mkTLNatNat 1081342081)
-type Zq6 = Zq $(mkTLNatNat 1082914561)
-type Zq7 = Zq $(mkTLNatNat 1083438721)
-type ZqList = '[Zq1,Zq2,Zq3,Zq4,Zq5,Zq6] --,Zq7]
 
 
 {-
