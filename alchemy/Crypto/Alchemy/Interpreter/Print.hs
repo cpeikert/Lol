@@ -12,12 +12,13 @@ where
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
+import Crypto.Alchemy.Language.LinearCyc
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
 import Crypto.Alchemy.Language.SHE
-import Crypto.Alchemy.Language.LinearCyc
 
-import Crypto.Lol                      (Cyc,PrimePower(..), Prime2, Pos(..))
+import Crypto.Lol                      (Cyc, Pos (..), Prime2,
+                                        PrimePower (..))
 import Crypto.Lol.Applications.SymmSHE (CT)
 import Crypto.Lol.Types
 
@@ -114,7 +115,7 @@ instance SHE P where
   addPublic_     p = pureP $ "addPublic (" ++ show p ++ ")"
   mulPublic_     p = pureP $ "mulPublic (" ++ show p ++ ")"
   keySwitchQuad_ _ = pureP   "keySwitchQuad <HINT>"
-  tunnel_        _ = pureP   "tunnel <FUNC>"
+  tunnel_        _ = pureP   "tunnel <HINT>"
 
 instance LinearCyc P rep where
   type PreLinearCyc P rep = rep
