@@ -132,7 +132,7 @@ type ZQ3 = Zq (19918081 ** 19393921 ** 18869761)
 type SmoothZQ1 = Zq 2148249601
 type SmoothZQ3 = Zq (2148854401 ** 2148249601 ** 2150668801)
 
-type H0 = F128
+--type H0 = F128
 type H01 = F64
 type H1 = F64 * F7
 type H12 = F32 * F7
