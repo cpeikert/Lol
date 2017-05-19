@@ -9,6 +9,8 @@
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
 module Arithmetic where
 
 import Control.Monad.Reader
@@ -37,6 +39,7 @@ import Crypto.Lol.Types
 
 import Control.Applicative
 import Control.Monad.Random
+import Control.Monad.State
 import Data.Maybe
 import Data.Type.Natural (Nat (Z))
 
@@ -60,6 +63,18 @@ argToReader :: (MonadReader v mon) => (v -> a -> mon b) -> a -> mon b
 argToReader f a = flip f a =<< ask
 
 type M = F512
+type M'Map = '[ '(F4, M) ]
+type Zqs = '[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 8392193)]
+
+
+  -- @'[Zq $(mkTLNatNat 1312235009), Zq $(mkTLNatNat 37633) ] -- (still) fails with TrivGad
+  -- @'[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 36353)]
+   --, Zq $(mkTLNatNat 36353), Zq $(mkTLNatNat 37633) ] --  (still) fails with TrivGad
+  -- @'[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 65537)] succeeded with TrivGad, even before changes
+  -- @'[Zq $(mkTLNatNat 36097), Zq $(mkTLNatNat 36353), Zq $(mkTLNatNat 37633) ] -- succeeds with TrivGad
+  -- @'[Zq $(mkTLNatNat 16777731), Zq $(mkTLNatNat 36101) ] -- bad moduli (30.3 bits) = huge error, even after addition
+  -- @'[Zq $(mkTLNatNat 536870917), Zq $(mkTLNatNat 36101) ]  -- bad moduli = huge error, *only* after mul! (after addition, it's still 10^-5)
+  -- @'[Zq $(mkTLNatNat 36101), Zq $(mkTLNatNat 36355), Zq $(mkTLNatNat 37635) ] -- bad modulus, but works fine?
 
 main :: IO ()
 main = do
@@ -74,25 +89,20 @@ main = do
   let ptresult = eval (addMul @(Cyc CT F4 (Zq 7))) pt1 pt2
   putStrLn $ "PT evaluation result: " ++ show ptresult
 
-  let ptexpr = addMul @(PNoise 'Z (Cyc CT F4 (Zq 7)))
+  -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
+  -- but this requires compiling PT2CT which takes a long time.
+  let ptexpr = addMul @(PNoise 'Z (Cyc CT F4 (Zq 7))) ::  PT2CT M'Map Zqs TrivGad Int64 P (StateT Keys (StateT Hints (ReaderT Double IO))) () _
   putStrLn $ "PT expression params:\n" ++ (params ptexpr addMul)
 
   evalKeysHints (8.0 :: Double) $ do
 
     -- compile the un-applied function to CT, then print it out
     x <- argToReader (pt2ct
-           @'[ '(F4, M) ]
-           -- @'[Zq $(mkTLNatNat 1312235009), Zq $(mkTLNatNat 37633) ] -- (still) fails with TrivGad
-           -- @'[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 36353)]
-           @'[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 8392193)] --, Zq $(mkTLNatNat 36353), Zq $(mkTLNatNat 37633) ] --  (still) fails with TrivGad
-           -- @'[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 65537)] succeeded with TrivGad, even before changes
-           -- @'[Zq $(mkTLNatNat 36097), Zq $(mkTLNatNat 36353), Zq $(mkTLNatNat 37633) ] -- succeeds with TrivGad
-           -- @'[Zq $(mkTLNatNat 16777731), Zq $(mkTLNatNat 36101) ] -- bad moduli (30.3 bits) = huge error, even after addition
-           -- @'[Zq $(mkTLNatNat 536870917), Zq $(mkTLNatNat 36101) ]  -- bad moduli = huge error, *only* after mul! (after addition, it's still 10^-5)
-           -- @'[Zq $(mkTLNatNat 36101), Zq $(mkTLNatNat 36355), Zq $(mkTLNatNat 37635) ] -- bad modulus, but works fine?
+           @M'Map
+           @Zqs
            @TrivGad -- (BaseBGad 2)
            @Int64)
-           ptexpr
+           (addMul @(PNoise 'Z (Cyc CT F4 (Zq 7))))
 
     -- duplicate the compiled expression
     let (z1,z2) = dup x
@@ -116,6 +126,7 @@ main = do
     liftIO $ putStrLn $ "Decrypted evaluation result: " ++ show decResult
 
     liftIO $ putStrLn $ if decResult == ptresult then "PASS" else "FAIL"
+
 
 {-
 -- direct SHE computation
