@@ -56,7 +56,7 @@ type Z = Int64
 lfuncPath, thintPath, rhintPath, tskPath, rskPath :: String -> Int -> String
 thintPath root p = root </> "p" ++ show p ++ "-tunnel.hint"
 rhintPath root p = root </> "p" ++ show p ++ "-round.hint"
-lfuncPath root p = root </> "p" ++ show p ++ "-unnelfuncs.lfuns"
+lfuncPath root p = root </> "p" ++ show p ++ "-tunnelfuncs.lfuns"
 -- | The key used as the input to tunneling; also used for encryption
 tskPath   root p = root </> "p" ++ show p ++ "-encKey.secret"
 -- | The output key of tunneling, used for rounding; also for decryption
