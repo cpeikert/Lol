@@ -93,6 +93,7 @@ main = do
   putStrLn $ "PT expression params:\n" ++ params pttunnel paramsexpr2
 
   putStrLn $ "PT Composition: " ++ pprint (ex01 .: ex11)
+  putStrLn $ "PT Composition size:" ++ show (size (ex02 .: ex12))
 
   -- compile the un-applied function to CT, then print it out
   evalKeysHints 8.0 $ do
@@ -115,21 +116,26 @@ main = do
 
     let (r1,r)  = dup roundTree
         (r2,r') = dup r
-        (r3,r4) = dup r'
+        (r3,r'') = dup r'
+        (r4,r5) = dup r''
         (s1,s)  = dup tunn
         (s2,s') = dup s
-        (s3,s4) = dup s'
+        (s3,s'') = dup s'
+        (s4,s5) = dup s''
 
     liftIO $ putStrLn "CT Tunneling:"
     liftIO $ putStrLn $ pprint s1
     liftIO $ putStrLn $ params s1 s2
+    liftIO $ putStrLn $ "Size: " ++ (show $ size s5)
 
     liftIO $ putStrLn "CT Rounding Tree:"
     liftIO $ putStrLn $ pprint r1
     liftIO $ putStrLn $ params r1 r2
+    liftIO $ putStrLn $ "Size: " ++ (show $ size r5)
 
     liftIO $ putStrLn "CT Composition:"
     liftIO $ putStrLn $ pprint (r1 .: s1)
+    liftIO $ putStrLn $ "Size: " ++ (show $ size (r5 .: s5))
 
     ptin <- liftIO $ getRandom
     arg1 <- argToReader encrypt ptin
