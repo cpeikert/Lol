@@ -21,14 +21,14 @@ import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE (CT, SK)
 import Crypto.Lol.Utils.ShowType
 
-import Crypto.Alchemy.Interpreter.KeysHints
-import Crypto.Alchemy.Language.Arithmetic
-import Crypto.Alchemy.Language.Lambda
-import Crypto.Alchemy.Language.List
-import Crypto.Alchemy.Language.Monad
-import Crypto.Alchemy.Language.Pair
-import Crypto.Alchemy.Language.SHE
-import qualified Crypto.Alchemy.Language.String as LS
+import           Crypto.Alchemy.Interpreter.KeysHints
+import           Crypto.Alchemy.Language.Arithmetic
+import           Crypto.Alchemy.Language.Lambda
+import           Crypto.Alchemy.Language.List
+import           Crypto.Alchemy.Language.Monad
+import           Crypto.Alchemy.Language.Pair
+import           Crypto.Alchemy.Language.SHE
+import qualified Crypto.Alchemy.Language.String       as LS
 
 -- | A transformer that additionally logs the sizes of the noise terms
 -- of any ciphertexts created during interpretation.
@@ -118,7 +118,6 @@ instance (WriteErrorCtx expr z k w ct t m m' zp zq, Add expr ct) =>
 
   add_ = ERW $ liftWriteError2 (Proxy::Proxy z) "add_" add_
 
-  -- don't log error because it doesn't grow
   neg_ = ERW $ liftWriteError (Proxy::Proxy z) "neg_" neg_
 
 instance (WriteErrorCtx expr z k w ct t m m' zp zq, Mul expr ct,
@@ -183,7 +182,7 @@ instance (SHE expr, Applicative_ expr, Applicative k, Applicative w) =>
        WriteErrorCtx expr z k w (CT s zp (Cyc t s' zq)) t s s' zp zq)
 
   modSwitchPT_   = ERW $ liftWriteError (Proxy::Proxy z) "modSwitchPT_" $ modSwitchPT_
-  modSwitch_     = ERW $ liftWriteError (Proxy::Proxy z) "modSwitch" $ modSwitch_
+  modSwitch_     = ERW $ liftWriteError (Proxy::Proxy z) "modSwitch_" $ modSwitch_
   addPublic_     = ERW . liftWriteError (Proxy::Proxy z) "addPublic_" . addPublic_
   mulPublic_     = ERW . liftWriteError (Proxy::Proxy z) "mulPublic_" . mulPublic_
   keySwitchQuad_ = ERW . liftWriteError (Proxy::Proxy z) "keySwitchQuad_" . keySwitchQuad_
