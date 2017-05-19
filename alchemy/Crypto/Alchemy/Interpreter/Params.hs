@@ -49,35 +49,38 @@ instance List P where
 showCT :: forall zq e a expr . (Show (ArgType zq)) => String -> Params expr e a
 showCT str = P $ str ++ " " ++ showType (Proxy::Proxy zq)
 
-showPNoise :: forall h e a expr . (SingI (h :: Nat)) => String -> Params expr e a
-showPNoise str = P $ str ++ " " ++ show (sNatToInt $ (sing :: SNat h) :: Int)
+showPNoise :: forall p e a expr . (SingI (p :: Nat)) => String -> Params expr e a
+showPNoise str = P $ str ++ " " ++ show (sNatToInt $ (sing :: SNat p) :: Int)
 
 instance (Show (ArgType zq)) => Add (Params expr) (CT m zp (Cyc t m' zq)) where
   add_ = showCT @zq "add"
   neg_ = showCT @zq "neg"
 
-instance (SingI (h :: Nat)) => Add (Params expr) (PNoise h a) where
-  add_ = showPNoise @h "add"
-  neg_ = showPNoise @h "neg"
+instance (SingI (p :: Nat)) => Add (Params expr) (PNoise p a) where
+  add_ = showPNoise @p "add"
+  neg_ = showPNoise @p "neg"
 
-instance (SingI (h :: Nat)) => AddLit (Params expr) (PNoise h a) where
-  addLit_ _ = showPNoise @h "addLit"
+instance (SingI (p :: Nat)) => AddLit (Params expr) (PNoise p a) where
+  addLit_ _ = showPNoise @p "addLit"
 
 instance (Show (ArgType zq)) => Mul (Params expr) (CT m zp (Cyc t m' zq)) where
   type PreMul (Params expr) (CT m zp (Cyc t m' zq)) = (CT m zp (Cyc t m' zq))
   mul_ = showCT @zq "mul"
 
-instance (SingI (h :: Nat)) => Mul (Params expr) (PNoise h a) where
-  type PreMul (Params expr) (PNoise h a) = PreMul expr (PNoise h a)
-  mul_ = showPNoise @h "mul"
+instance (SingI (p :: Nat)) => Mul (Params expr) (PNoise p a) where
+  type PreMul (Params expr) (PNoise p a) = PreMul expr (PNoise p a)
+  mul_ = showPNoise @p "mul"
+
 {-
 instance Show a => MulLit (Params expr) a where
   mulLit_ a = pureP $ "mulLit (" ++ show a ++ ")"
 -}
-instance (SingI (h :: Nat)) => Div2 (Params expr) (PNoise h a) where
-  type PreDiv2 (Params expr) (PNoise h a) = PreDiv2 expr (PNoise h a)
 
-  div2_ = showPNoise @h "div2"
+instance (SingI (p :: Nat)) => Div2 (Params expr) (PNoise p a) where
+  type PreDiv2 (Params expr) (PNoise p a) = PreDiv2 expr (PNoise p a)
+
+  div2_ = showPNoise @p "div2"
+
 {-
 instance Functor_ P where
   fmap_ = pureP "fmap"
@@ -97,6 +100,7 @@ instance MonadWriter_ P where
   tell_   = pureP "tell"
   listen_ = pureP "listen"
 -}
+
 instance SHE (Params expr) where
 
   type ModSwitchPTCtx   (Params expr) (CT m zp (Cyc t m' zq)) zp' = (Show (ArgType zq))
@@ -137,14 +141,14 @@ instance SHE (Params expr) where
        -> Params expr env (CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq))
   tunnel_ _ = showCT @zq "tunnel"
 
-instance (SingI (h :: Nat)) => LinearCyc (Params expr) (PNoise h) where
-  type PreLinearCyc (Params expr) (PNoise h) = PreLinearCyc expr (PNoise h)
-  type LinearCycCtx (Params expr) (PNoise h) t e r s zp = ()
+instance (SingI (p :: Nat)) => LinearCyc (Params expr) (PNoise p) where
+  type PreLinearCyc (Params expr) (PNoise p) = PreLinearCyc expr (PNoise p)
+  type LinearCycCtx (Params expr) (PNoise p) t e r s zp = ()
 
-  linearCyc_ :: forall t e r s zp env . (LinearCycCtx (Params expr) (PNoise h) t e r s zp)
+  linearCyc_ :: forall t e r s zp env . (LinearCycCtx (Params expr) (PNoise p) t e r s zp)
     => Linear t zp e r s
-    -> Params expr env ((PreLinearCyc (Params expr) (PNoise h)) (Cyc t r zp) -> PNoise h (Cyc t s zp))
-  linearCyc_ _ = showPNoise @h "linear"
+    -> Params expr env ((PreLinearCyc (Params expr) (PNoise p)) (Cyc t r zp) -> PNoise p (Cyc t s zp))
+  linearCyc_ _ = showPNoise @p "linear"
 {-
 instance ErrorRate P where
   type ErrorRateCtx P ct z = ()
