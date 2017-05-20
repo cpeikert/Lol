@@ -48,5 +48,5 @@ type ZP = Zq PP16
 type ZQ = ZQ5 -- if p=2^k, choose ZQ[k+1]
 
 -- these need not be the same
-type KSGad = BaseBGad 2
-type PRFGad = BaseBGad 2
+type KSGad = TrivGad
+type PRFGad = TrivGad
