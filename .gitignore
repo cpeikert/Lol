@@ -7,5 +7,9 @@ lol-cpp/lib
 **/*.pyc
 **/*.class
 **/*.o
+**/secret
+**/inst
+**/chall
 rlwe-challenges/parsers/python/sys
 rlwe-challenges/parsers/python/Challenges_pb2
+rlwe-challenges/parsers/cpp/challInstParser
