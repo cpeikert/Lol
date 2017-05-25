@@ -20,16 +20,19 @@
 
 -- should be a hidden/internal module
 module Crypto.Alchemy.Interpreter.PT2CT.Noise
-( PNoise(..), ZqPairsWithUnits, TotalUnits, MaxUnits
+( PNoise(..)--, PNoise2Nat
+, Units(..)--,  Units2Nat
+, (:+)
+, PNoiseTag(..),ZqPairsWithUnits, TotalUnits, MaxUnits
 , TLNatNat, mkTLNatNat) where
 
 import           Algebra.Additive          as Additive (C)
 import           Algebra.Ring              as Ring (C)
 import           Data.Functor.Trans.Tagged
-import           Data.Singletons.Prelude   hiding ((:<))
+import           Data.Singletons.Prelude   hiding ((:<), (:+))
 import           Data.Singletons.Prelude.List (Sum, Maximum)
 import           Data.Singletons.TH        hiding ((:<))
-import           Data.Type.Natural
+import           Data.Type.Natural         hiding ((:+))
 import qualified GHC.TypeLits              as TL (Nat)
 import           GHC.TypeLits              hiding (Nat)
 import           Language.Haskell.TH
@@ -38,15 +41,31 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic
 
 -- | A value tagged by @pNoise =~ -log(noise rate)@.
-newtype PNoise (h :: Nat) a = PN {unPN :: a}
+newtype PNoise = PN Nat
+
+--type family PNoise2Nat (p :: PNoise) where
+--  PNoise2Nat ('PN p) = p
+
+type family (:+) a b where
+  'PN a :+ b = 'PN (a :+: b)
+
+newtype Units = Units Nat
+
+type family Units2Nat (u :: Units) where
+  Units2Nat ('Units h) = h
+
+-- convenient synonym for Tagged. Useful for kind inference, and because we need
+-- the partially applied "PNoiseTag p" type, which we can't write niceyl with
+-- 'Tagged' because it is in fact a type synonym
+newtype PNoiseTag (p :: PNoise) a = PTag {unPTag :: a}
   -- EAC: Okay to derive Functor and Applicative? It makes life easier because
   -- we can define a single instance (e.g., of E) rather than one for Identity
   -- and one for (PNoise h)
   deriving (Additive.C, Ring.C, Functor, Show)
 
-instance Applicative (PNoise h) where
-  pure = PN
-  (PN f) <*> (PN a) = PN $ f a
+instance Applicative (PNoiseTag h) where
+  pure = PTag
+  (PTag f) <*> (PTag a) = PTag $ f a
 
 -- CJP: why should this be defined here?
 type family Modulus zq :: k
@@ -99,25 +118,26 @@ type family NatToLit x where
 
 -- | The number of noise units of the largest modulus among the first
 -- of those that in total have at least @h@ units.
-type MaxUnits zqs h = Maximum (MapNatOf (MapModulus (ZqsWithUnits zqs h)))
+type MaxUnits zqs (h :: Units) = Maximum (MapNatOf (MapModulus (ZqsWithUnits zqs h)))
 
 -- | For a list of moduli @zqs@, nested pairs representing moduli that
 -- have a total of at least @h@ units.
-type ZqPairsWithUnits zqs h = List2Pairs (ZqsWithUnits zqs h)
+type ZqPairsWithUnits zqs (h :: Units) = List2Pairs (ZqsWithUnits zqs h)
 
 -- | For a list of moduli @zqs@, a list representing moduli that have
 -- a total of at least @h@ units.
-type ZqsWithUnits zqs h =
-  ZqsWithUnits' (h :<= (Sum (MapNatOf (MapModulus zqs)))) h zqs
+type ZqsWithUnits zqs (h :: Units) =
+  ZqsWithUnits' ((Units2Nat h) :<= (Sum (MapNatOf (MapModulus zqs)))) h zqs
 
 -- | The total noise units among the first of the moduli having at
 -- least @h@ units.
-type TotalUnits zqs h = Sum (MapNatOf (MapModulus (ZqsWithUnits zqs h)))
+type TotalUnits zqs (h :: Units) = 'Units (Sum (MapNatOf (MapModulus (ZqsWithUnits zqs h))))
 
-type family ZqsWithUnits' b h zqs where
-  ZqsWithUnits' 'True h zqs = Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs
+
+type family ZqsWithUnits' b (h :: Units) zqs where
+  ZqsWithUnits' 'True ('Units h) zqs = Take (PrefixLen (MapNatOf (MapModulus zqs)) h) zqs
   -- error case
-  ZqsWithUnits' 'False h zqs =
+  ZqsWithUnits' 'False ('Units h) zqs =
     TypeError ('Text "ZqsWithUnits: Modulus needs to support at least " ':<>:
                'ShowType (NatToLit h) ':<>:
                'Text " noise units, but it only supports " ':<>:

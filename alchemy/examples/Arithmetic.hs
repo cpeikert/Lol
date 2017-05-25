@@ -56,9 +56,22 @@ addMul :: forall b e expr a .
   => expr e (a -> a -> b)
 addMul = lam $ lam $ v0 *: (v0 +: v1)
 
+{-
+addMul :: forall a e expr .
+  (Add expr a, Lambda expr)
+  => expr e (a -> a -> a)
+addMul = lam $ lam $ (lam $ v0 +: v0) $: (v1 +: v0)
+-}
 type M = F512
 type M'Map = '[ '(F4, M) ]
 type Zqs = '[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 8392193), Zq $(mkTLNatNat 1073750017)] -- ,1073753089)]
+{-
+type Zqs = '[ '(Zq 268440577,N4,N4),  -- pNoise 0
+              '(,,),  -- pNoise 1
+              '(,,),  -- pNoise 2
+              '(,,),  -- pNoise 3
+              '(,,) ] -- pNoise 4
+-}
   -- @'[Zq $(mkTLNatNat 1312235009), Zq $(mkTLNatNat 37633) ] -- (still) fails with TrivGad
   -- @'[Zq $(mkTLNatNat 268440577), Zq $(mkTLNatNat 36353)]
    --, Zq $(mkTLNatNat 36353), Zq $(mkTLNatNat 37633) ] --  (still) fails with TrivGad
@@ -83,7 +96,7 @@ main = do
 
   -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
   -- but this requires compiling PT2CT which takes a long time.
-  let ptexpr = addMul @(PNoise 'Z (Cyc CT F4 (Zq 7))) ::  PT2CT' M'Map Zqs TrivGad _
+  let ptexpr = addMul @(PNoiseTag ('PN 'Z) (Cyc CT F4 (Zq 7))) ::  PT2CT' M'Map Zqs TrivGad _
   putStrLn $ "PT expression params:\n" ++ (params ptexpr addMul)
 
   evalKeysHints (8.0 :: Double) $ do
@@ -94,7 +107,7 @@ main = do
            @Zqs
            @TrivGad -- (BaseBGad 2)
            @Int64)
-           (addMul @(PNoise 'Z (Cyc CT F4 (Zq 7))))
+           (addMul @(PNoiseTag ('PN 'Z) (Cyc CT F4 (Zq 7))))
 
     -- duplicate the compiled expression
     let (z1,z2) = dup x
