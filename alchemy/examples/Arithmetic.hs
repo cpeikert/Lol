@@ -86,8 +86,8 @@ main = do
   -- no types needed to show a function!
   putStrLn $ "PT expression: " ++ pprint addMul
 
-  putStrLn $ "PT expression size: " ++ (show $ size addMul)
-  putStrLn $ "Expression depth: "   ++ (show $ depth addMul)
+  putStrLn $ "PT expression size: " ++ show (size addMul)
+  putStrLn $ "Expression depth: "   ++ show (depth addMul)
   -- evaluate a DSL function to a Haskell function, then apply to arguments
   pt1 <- getRandom
   pt2 <- getRandom
@@ -97,7 +97,7 @@ main = do
   -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
   -- but this requires compiling PT2CT which takes a long time.
   let ptexpr = addMul @(PNoiseTag ('PN 'Z) (Cyc CT F4 (Zq 7))) ::  PT2CT' M'Map Zqs TrivGad _
-  putStrLn $ "PT expression params:\n" ++ (params ptexpr addMul)
+  putStrLn $ "PT expression params:\n" ++ params ptexpr addMul
 
   evalKeysHints (8.0 :: Double) $ do
 
@@ -127,7 +127,7 @@ main = do
     -- show the encrypted result
     --liftIO $ putStrLn $ "Encrypted evaluation result: " ++ show result
     -- show the decrypted result
-    decResult <- fromJust <$> (readerToAccumulator $ decrypt result)
+    decResult <- fromJust <$> readerToAccumulator (decrypt result)
     liftIO $ putStrLn $ "Decrypted evaluation result: " ++ show decResult
 
     liftIO $ putStrLn $ if decResult == ptresult then "PASS" else "FAIL"
