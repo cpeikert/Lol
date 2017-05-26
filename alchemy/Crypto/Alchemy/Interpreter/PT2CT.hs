@@ -17,7 +17,7 @@
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Alchemy.Interpreter.PT2CT
-( PT2CT
+( PT2CT, PNoiseTag
 , pt2ct, encrypt, decrypt
 , KSPNoise
 ) where
@@ -134,12 +134,17 @@ instance (SHE ctex, Applicative mon,
   MulLit (PT2CT m'map zqs gad z ctex mon) (PNoiseTag h (Cyc t m zp)) where
 
   mulLit_ (PTag a) = PC $ pure $ mulPublic_ a
-
+-- EAC: BUG!/FIXME
+-- Previously: ZqPairsWithUnits zqs (KSPNoise gad zqs (PNoise2Units p))
 type PNoise2KSZq gad zqs p = ZqPairsWithUnits zqs (PNoise2Units (KSPNoise gad zqs p))
 
 -- | pNoise of a key-switch hint for a particular gadget, given the
 -- pNoise of the input ciphertext.
-type family KSPNoise gad (zqs :: [*]) (p :: PNoise) :: PNoise
+type family KSPNoise gad (zqs :: [*]) p -- PNoise to PNoise
+-- EAC: FIXME: we are adding "units" to a PNoise here, not sure if that's what you meant.
+-- For simplicity, MaxUnits
+-- returns a Nat, but it should probably return Units for safety. Then we add 2
+-- to Units to get Units, and then we try to add a PNoise, which should be an error.
 type instance KSPNoise TrivGad      zqs p = p :+ (N2 :+: MaxUnits zqs (PNoise2Units p))
 type instance KSPNoise (BaseBGad 2) zqs p = p :+ N2
 
@@ -151,6 +156,9 @@ type PT2CTMulCtx m'map p zqs m zp gad ctex t z mon =
 
 type PT2CTMulCtx' m zp p zqs gad hintzq ctex t z mon m' =
   PT2CTMulCtx'' p zqs gad hintzq ctex t z mon m' (CT m zp (Cyc t m'
+  -- EAC: BUG!/FIXME
+  -- Previously: (PNoise2Zq zqs (Units2PNoise (TotalUnits zqs (p :+: N3))))))
+  -- but this asks for the TotalUnits of a PNoise
     (PNoise2Zq zqs (Units2PNoise (TotalUnits zqs (PNoise2Units (p :+ N3)))))))
     (CT m zp (Cyc t m' hintzq))
 
@@ -169,10 +177,15 @@ instance (PT2CTMulCtx m'map p zqs m zp gad ctex t z mon)
   => Mul (PT2CT m'map zqs gad z ctex mon) (PNoiseTag p (Cyc t m zp)) where
 
   type PreMul (PT2CT m'map zqs gad z ctex mon) (PNoiseTag p (Cyc t m zp)) =
+    -- EAC: BUG!/FIXME
+    -- Previously: (PNoise2Zq zqs (Units2PNoise (TotalUnits zqs (p :+: N3))))))
+    -- but this asks for the TotalUnits of a PNoise
+    -- Note that this must be fixed in the same way as the problem in PT2CTMulCtx'
     PNoiseTag (Units2PNoise (TotalUnits zqs (PNoise2Units (p :+ N3)))) (Cyc t m zp)
 
   mul_ :: forall m' env pin hintzq .
-    (pin ~ Units2PNoise (TotalUnits zqs (PNoise2Units (p :+ N3))),
+    (-- EAC: BUG! (same as previous two)
+     pin ~ Units2PNoise (TotalUnits zqs (PNoise2Units (p :+ N3))),
      hintzq ~ PNoise2KSZq gad zqs p,
      m' ~ Lookup m m'map,
      PT2CTMulCtx m'map p zqs m zp gad ctex t z mon) =>
