@@ -70,31 +70,31 @@ main :: IO ()
 main = do
 
   putStrLn "RescaleTree:"
-  let (ex01,ex02) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K
+  let (ex01,ex02) = dup $ untag $ rescaleTreePow2_ @(PNoiseTag ('PN N0) (Cyc CT H5 (ZqBasic PP2 Int64))) @K
   putStrLn $ "PT RescaleTree: " ++ pprint ex01
   putStrLn $ "PT RescaleTree size: " ++ show (size ex02)
 
   -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
   -- but this requires compiling PT2CT which takes a long time.
-  let (ptrescale :: PT2CT' RescaleM'Map RescaleZqs Gad _, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K
+  let (ptrescale :: PT2CT' RescaleM'Map RescaleZqs Gad _, paramsexpr1) = dup $ untag $ rescaleTreePow2_ @(PNoiseTag ('PN N0) (Cyc CT H5 (ZqBasic PP2 Int64))) @K
   putStrLn $ "PT expression params:\n" ++ params ptrescale paramsexpr1
 
 
   putStrLn "Tunnel:"
   -- EAC: 'Z noise is important here so that we can print the composition of P expr
-  let (ex11,ex12) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise 'Z) Proxy
+  let (ex11,ex12) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoiseTag ('PN N0)) Proxy
   putStrLn $ "PT Tunnel: " ++ pprint ex11
   putStrLn $ "PT Tunnel size: " ++ show (size ex12)
 
   -- EAC: This needs to have a non-zero output pNoise level!!
   -- EAC: can remove type sig and use ptexpr as the argument to pt2ct below (which infers the signature),
   -- but this requires compiling PT2CT which takes a long time.
-  let (pttunnel :: PT2CT' CTRngs ZqList Gad _, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoise N11) Proxy
+  let (pttunnel :: PT2CT' CTRngs ZqList Gad _, paramsexpr2) = dup $ linear5 @CT @PTRngs @(Z2E K) @(PNoiseTag ('PN N11)) Proxy
   putStrLn $ "PT expression params:\n" ++ params pttunnel paramsexpr2
 
   putStrLn $ "PT Composition: " ++ pprint (ex01 .: ex11)
   putStrLn $ "PT Composition size:" ++ show (size (ex02 .: ex12))
-
+{-
   -- compile the un-applied function to CT, then print it out
   evalKeysHints 8.0 $ do
 
@@ -104,7 +104,7 @@ main = do
                     @RescaleZqs
                     @Gad
                     @Int64)
-                    (untag $ rescaleTreePow2_ @(PNoise 'Z (Cyc CT H5 (ZqBasic PP2 Int64))) @K)
+                    (untag $ rescaleTreePow2_ @(PNoiseTag ('PN N0) (Cyc CT H5 (ZqBasic PP2 Int64))) @K)
 
     tunn <- timeIO "Compiling tunnel sequence..." $
                argToReader (pt2ct
@@ -112,7 +112,7 @@ main = do
                   @ZqList
                   @Gad
                   @Int64)
-                  (linear5 @CT @PTRngs @(Z2E K) @(PNoise N11) Proxy)
+                  (linear5 @CT @PTRngs @(Z2E K) @(PNoiseTag ('PN N11)) Proxy)
 
     let (r1,r)  = dup roundTree
         (r2,r') = dup r
@@ -149,7 +149,7 @@ main = do
     _ <- time "Evaluating without error rates..." $ eval (r4 .: s4) arg1
 
     liftIO $ putStrLn "Done."
-
+-}
 
 
 
