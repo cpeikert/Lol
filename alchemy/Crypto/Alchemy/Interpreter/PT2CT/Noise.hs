@@ -51,8 +51,8 @@ type family (:+) a b where
 
 newtype Units = Units Nat
 
-type family Units2Nat (u :: Units) where
-  Units2Nat ('Units h) = h
+type family UnitsToNat (u :: Units) where
+  UnitsToNat ('Units h) = h
 
 -- convenient synonym for Tagged. Useful for kind inference, and because we need
 -- the partially applied "PNoiseTag p" type, which we can't write niceyl with
@@ -127,7 +127,7 @@ type ZqPairsWithUnits zqs (h :: Units) = List2Pairs (ZqsWithUnits zqs h)
 -- | For a list of moduli @zqs@, a list representing moduli that have
 -- a total of at least @h@ units.
 type ZqsWithUnits zqs (h :: Units) =
-  ZqsWithUnits' ((Units2Nat h) :<= (Sum (MapNatOf (MapModulus zqs)))) h zqs
+  ZqsWithUnits' ((UnitsToNat h) :<= (Sum (MapNatOf (MapModulus zqs)))) h zqs
 
 -- | The total noise units among the first of the moduli having at
 -- least @h@ units.
