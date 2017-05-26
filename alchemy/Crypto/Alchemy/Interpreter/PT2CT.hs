@@ -140,7 +140,7 @@ type PNoise2KSZq gad zqs p = ZqPairsWithUnits zqs (PNoise2Units (KSPNoise gad zq
 
 -- | pNoise of a key-switch hint for a particular gadget, given the
 -- pNoise of the input ciphertext.
-type family KSPNoise gad (zqs :: [*]) p -- PNoise to PNoise
+type family KSPNoise gad (zqs :: [*]) (p :: PNoise) :: PNoise -- PNoise to PNoise
 -- EAC: FIXME: we are adding "units" to a PNoise here, not sure if that's what you meant.
 -- For simplicity, MaxUnits
 -- returns a Nat, but it should probably return Units for safety. Then we add 2
