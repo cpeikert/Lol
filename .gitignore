@@ -6,7 +6,4 @@ lol-cpp/lib
 **/rlwe-challenges.*
 **/*.pyc
 **/*.class
-**/TAGS
 **/*.o
-rlwe-challenges/parsers/python/sys
-rlwe-challenges/parsers/python/Challenges_pb2
