@@ -23,8 +23,9 @@ module Crypto.Alchemy.Interpreter.PT2CT.Noise
 ( PNoise(..)--, PNoise2Nat
 , Units(..)--,  Units2Nat
 , (:+)
+, pNoiseUnit
 , PNoiseTag(..),ZqPairsWithUnits, TotalUnits, MaxUnits
-, TLNatNat, mkTLNatNat) where
+, TLNatNat, mkTLNatNat, mkTypeNat) where
 
 import           Algebra.Additive          as Additive (C)
 import           Algebra.Ring              as Ring (C)
@@ -40,23 +41,28 @@ import           Language.Haskell.TH
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic
 
--- | A value tagged by @pNoise =~ -log(noise rate)@.
+-- | A type representing @pNoise =~ -log(noise rate)@ of a ciphertext.
+-- We use the promoted type @'PN@ of kind @PNoise@ to distinguish this value
+-- from @Units@.
 newtype PNoise = PN Nat
 
---type family PNoise2Nat (p :: PNoise) where
---  PNoise2Nat ('PN p) = p
-
+-- | Adds a @Nat@ to @PNoise@.
 type family (:+) a b where
   'PN a :+ b = 'PN (a :+: b)
 
+-- | A type representing the number of noise "units" in a modulus.
+-- We use the promoted type @'Units@ of kind @Units@ to distinguish this
+-- value from @PNoise@.
 newtype Units = Units Nat
 
+-- internal only: type destructor for Units
 type family UnitsToNat (u :: Units) where
   UnitsToNat ('Units h) = h
 
 -- convenient synonym for Tagged. Useful for kind inference, and because we need
 -- the partially applied "PNoiseTag p" type, which we can't write niceyl with
 -- 'Tagged' because it is in fact a type synonym
+-- | A value tagged by @pNoise =~ -log(noise rate)@.
 newtype PNoiseTag (p :: PNoise) a = PTag {unPTag :: a}
   -- EAC: Okay to derive Functor and Applicative? It makes life easier because
   -- we can define a single instance (e.g., of E) rather than one for Identity
@@ -112,6 +118,7 @@ singletons [d|
                error "prefixLen: threshold is larger than sum of list entries"
            |]
 
+-- converts a TypeNatural to a TypeLit for better type errors
 type family NatToLit x where
   NatToLit 'Z = 0
   NatToLit ('S n) = 1 + (NatToLit n)
