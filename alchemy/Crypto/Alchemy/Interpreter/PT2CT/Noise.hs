@@ -24,7 +24,7 @@ module Crypto.Alchemy.Interpreter.PT2CT.Noise
 , Units(..)--,  Units2Nat
 , (:+)
 , pNoiseUnit
-, PNoiseTag(..),ZqPairsWithUnits, TotalUnits, MaxUnits
+, PNoiseTag(..),ZqPairsWithUnits, TotalUnits
 , TLNatNat, mkTLNatNat, mkTypeNat) where
 
 import           Algebra.Additive          as Additive (C)
@@ -122,10 +122,6 @@ singletons [d|
 type family NatToLit x where
   NatToLit 'Z = 0
   NatToLit ('S n) = 1 + (NatToLit n)
-
--- | The number of noise units of the largest modulus among the first
--- of those that in total have at least @h@ units.
-type MaxUnits zqs (h :: Units) = Maximum (MapNatOf (MapModulus (ZqsWithUnits zqs h)))
 
 -- | For a list of moduli @zqs@, nested pairs representing moduli that
 -- have a total of at least @h@ units.
