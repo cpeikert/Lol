@@ -7,6 +7,3 @@ lol-cpp/lib
 **/*.pyc
 **/*.class
 **/*.o
-**/secret
-**/inst
-**/chall
