@@ -102,6 +102,8 @@ library
     Crypto.Proto.RLWE.SampleDisc
     Crypto.Proto.RLWE.SampleRLWR
 
+    Crypto.Lol.Utils.ShowType
+
     Crypto.Lol.Tests
     Crypto.Lol.Benchmarks
 
@@ -113,7 +115,6 @@ library
     Crypto.Lol.PosBinDefs
 
     Crypto.Lol.Utils.GenArgs
-    Crypto.Lol.Utils.ShowType
     Crypto.Lol.Utils.Tests
     Crypto.Lol.Utils.Benchmarks
     Crypto.Lol.Utils.PrettyPrint
