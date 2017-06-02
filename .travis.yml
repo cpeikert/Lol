@@ -45,4 +45,4 @@ install:
 script:
 # Build the package, its tests, benchmarks, executables, and its docs and run the tests
 # --fast is about 33% faster (compile time + test time) than without --fast
-- travis_wait 30 stack test --no-terminal --haddock --no-haddock-deps --fast --bench --no-run-benchmarks --flag lol-cpp:with-execs --flag lol-repa:with-execs
+- travis_wait 40 stack test --no-terminal --haddock --no-haddock-deps --fast --bench --no-run-benchmarks --flag lol-cpp:with-execs --flag lol-repa:with-execs
