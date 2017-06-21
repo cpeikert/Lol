@@ -7,3 +7,4 @@ lol-cpp/lib
 **/*.pyc
 **/*.class
 **/*.o
+**/TAGS
