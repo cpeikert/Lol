@@ -79,11 +79,11 @@ instance (RescaleCyc (Cyc t) (ZqBasic ('PP '(Prime2, 'S k)) i) (ZqBasic ('PP '(P
 
 instance (RescaleCyc (Cyc t) (ZqBasic ('PP '(Prime2, 'S k)) i) (ZqBasic ('PP '(Prime2, k)) i),
           Fact m)
-  => Div2 E (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
-  type PreDiv2 E (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
-    PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
+  => Div2 E (PNoiseTag h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
+  type PreDiv2 E (PNoiseTag h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
+    PNoiseTag h (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
   -- since input is divisible by two, it doesn't matter which basis we use
-  div2_ = pureE $ PN . rescalePow . unPN
+  div2_ = pureE $ PTag . rescalePow . unPTag
 
 instance (RescaleCyc (Cyc t) (ZqBasic ('PP '(Prime2, 'S k)) i) (ZqBasic ('PP '(Prime2, k)) i),
           Fact m)

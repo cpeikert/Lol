@@ -67,9 +67,9 @@ instance Div2 P (Cyc t m (ZqBasic ('PP '(Prime2, k)) i)) where
     Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i)
   div2_ = pureP "div2"
 
-instance Div2 P (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
-  type PreDiv2 P (PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
-    PNoise h (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
+instance Div2 P (PNoiseTag h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where
+  type PreDiv2 P (PNoiseTag h (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) =
+    PNoiseTag h (Cyc t m (ZqBasic ('PP '(Prime2, 'S k)) i))
   div2_ = pureP "div2"
 
 instance Div2 P (Identity (Cyc t m (ZqBasic ('PP '(Prime2, k)) i))) where

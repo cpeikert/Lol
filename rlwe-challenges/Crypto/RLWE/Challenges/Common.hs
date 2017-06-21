@@ -63,12 +63,13 @@ type InstanceID = Int32
 type InstDRBG = GenBuffered CtrDRBG
 
 -- | Holds an (untyped) proto-buf Ring-LWE/LWR challenge.
-data ChallengeU = CU !Challenge ![InstanceU]
+data ChallengeU = CU !Challenge ![InstanceU] deriving (Show)
 
 -- | Holds an (untyped) proto-buf Ring-LWE/LWR instance.
 data InstanceU = IC {secret :: !SecretProduct, instc :: !InstanceContProduct}
                | ID {secret :: !SecretProduct, instd :: !InstanceDiscProduct}
                | IR {secret :: !SecretProduct, instr :: !InstanceRLWRProduct}
+               deriving (Show)
 
 -- | Concrete type used to generate and verify instances
 type Zq q = ZqBasic q Int64
