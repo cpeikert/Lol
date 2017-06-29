@@ -7,6 +7,8 @@ License     : GPL-3
 Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
+
+Typedefs and data type for modular arithmetic.
 */
 
 #ifndef TENSORTYPES_H_
@@ -16,18 +18,19 @@ Portability : POSIX
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef int64_t hInt_t ;
-typedef int32_t hDim_t ;
-typedef int16_t hShort_t ;
-typedef int8_t hByte_t ;
+typedef int64_t hInt_t;
+typedef int32_t hDim_t;
+typedef int16_t hShort_t;
+typedef int8_t hByte_t;
 
+// data type for a prime/exponent pair
 typedef struct
 {
   hShort_t prime;
   hShort_t exponent;
 } PrimeExponent;
 
-
+// computes the reciprocal of b mod a
 hInt_t reciprocal (hInt_t a, hInt_t b);
 
 #define ASSERT(EXP) { \
@@ -37,16 +40,25 @@ hInt_t reciprocal (hInt_t a, hInt_t b);
   } \
 }
 
-//http://stackoverflow.com/questions/37572628
+// GHC can't handle C++ code in header files, so we must put guards around C++
+// code in header files: http://stackoverflow.com/questions/37572628
 #ifdef __cplusplus
 //http://stackoverflow.com/a/4421719
+
+// Class for integers modulo a number q.
+// For efficiency, all operators output values in the range -q < x < q.
+// This allows us to do the final conversion to canonical form only once at the
+// end.
 class Zq
 {
 public:
+  // value in the range -q < x < q
   hInt_t x;
 
-  static hInt_t q; // declared here, defined in generalfuncs.cpp
+  // global modulus, which allows us to cast values to a Zq type for efficiency.
+  static hInt_t q; // declared here, defined in common.cpp due to GHC #12152.
 
+  // turn an hInt_t into a Zq with modular reduction.
   Zq& operator=(const hInt_t& c)
   {
     this->x = c % q;
@@ -70,6 +82,7 @@ public:
     this->x %= q;
     return *this;
   }
+  // fails if b is not invertible mod q
   Zq& operator/=(const Zq& b)
   {
     Zq binv;
@@ -79,6 +92,8 @@ public:
     return *this;
   }
 };
+
+// binary operators defined in terms of the unary operators
 inline Zq operator+(Zq a, const Zq& b)
 {
   a += b;
@@ -100,6 +115,8 @@ inline Zq operator/(Zq a, const Zq& b)
   return a;
 }
 
+// Converts a Zq value into the range 0 <= x < q. This should be called
+// before returning to Haskell.
 void canonicalizeZq (Zq* y, hShort_t tupSize, hDim_t totm, hInt_t* qs);
 
 class Complex
