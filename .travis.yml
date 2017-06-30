@@ -40,9 +40,21 @@ before_install:
 
 install:
 # Build dependencies for libs, tests, benches, and executables
-- stack build --no-terminal --install-ghc --test --bench --flag lol-cpp:with-execs --flag lol-repa:with-execs --dependencies-only
+- stack build lol      --no-terminal --install-ghc --test --bench --dependencies-only
+- stack build lol-apps --no-terminal --install-ghc --test --bench --dependencies-only
+- stack build lol-cpp  --no-terminal --install-ghc --test --bench --dependencies-only --flag lol-cpp:with-execs
+- stack build lol-repa --no-terminal --install-ghc --test --bench --dependencies-only --flag lol-repa:with-execs
+- stack build rlwe-challenges --no-terminal --install-ghc --test --bench --dependencies-only
+
+env:
+  - TEST_SUITE=lol
+  - TEST_SUITE=lol-cpp
+  - TEST_SUITE=lol-repa
 
 script:
 # Build the package, its tests, benchmarks, executables, and its docs and run the tests
 # --fast is about 33% faster (compile time + test time) than without --fast
-- travis_wait 40 stack test --no-terminal --haddock --no-haddock-deps --fast --bench --no-run-benchmarks --flag lol-cpp:with-execs --flag lol-repa:with-execs
+#build docs and executables:
+- travis_wait 40 bundle exec stack build --haddock --no-haddock-deps --flag lol-cpp:with-execs --flag lol-repa:with-execs
+- travis_wait 40 bundle exec stack test  $TEST_SUITE --no-terminal --fast
+- travis_wait 40 bundle exec stack bench $TEST_SUITE --no-terminal --fast --no-run-benchmarks
