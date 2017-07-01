@@ -55,6 +55,6 @@ script:
 # Build the package, its tests, benchmarks, executables, and its docs and run the tests
 # --fast is about 33% faster (compile time + test time) than without --fast
 #build docs and executables:
-- travis_wait 40 bundle exec stack build --haddock --no-haddock-deps --flag lol-cpp:with-execs --flag lol-repa:with-execs
-- travis_wait 40 bundle exec stack test  $TEST_SUITE --no-terminal --fast
-- travis_wait 40 bundle exec stack bench $TEST_SUITE --no-terminal --fast --no-run-benchmarks
+- travis_wait 40 stack build --haddock --no-haddock-deps --flag lol-cpp:with-execs --flag lol-repa:with-execs
+- travis_wait 40 stack test  $TEST_SUITE --no-terminal --fast
+- travis_wait 40 exec stack bench $TEST_SUITE --no-terminal --fast --no-run-benchmarks
