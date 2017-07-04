@@ -24,7 +24,7 @@ class LinearCyc expr rep where
          (s :: Factored)
          zp :: Constraint
 
-  -- | 'Cyc' wrapper for the input to linearing
+  -- | 'Cyc' wrapper for the input to linearCyc_
   type PreLinearCyc expr rep :: * -> *
 
   -- | An object-language expression representing the given linear function.
