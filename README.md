@@ -1,7 +1,7 @@
 
-[![Build Status](https://travis-ci.org/cpeikert/Lol.svg?branch=master)](https://travis-ci.org/cpeikert/Lol)
+[![Build Status](https://travis-ci.org/cpeikert/Lol.svg?branch=alchemy-args-debruijn-monad)](https://travis-ci.org/cpeikert/Lol)
 
-This branch is master. It should always be compiling!
+This branch contains the most stable version of Alchemy.
 
 --------------------------------------------------------------------------------
 
