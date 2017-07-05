@@ -2,7 +2,6 @@
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE PartialTypeSignatures      #-}
 {-# LANGUAGE RebindableSyntax           #-}
@@ -17,7 +16,7 @@
   \( \def\Z{\mathbb{Z}} \)
 -}
 
-module Crypto.Alchemy.Interpreter.RescaleTree
+module Crypto.Alchemy.Language.RescaleTree
 ( rescaleTreePow2_, RescaleTreePow2Ctx, PreRescaleTreePow2 )
 where
 

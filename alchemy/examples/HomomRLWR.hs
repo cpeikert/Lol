@@ -36,11 +36,11 @@ import Crypto.Alchemy.Interpreter.Params
 import Crypto.Alchemy.Interpreter.Print
 import Crypto.Alchemy.Interpreter.PT2CT
 import Crypto.Alchemy.Interpreter.PT2CT.Noise
-import Crypto.Alchemy.Interpreter.RescaleTree
 import Crypto.Alchemy.Interpreter.Size
 import Crypto.Alchemy.Language.Arithmetic
 import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.LinearCyc
+import Crypto.Alchemy.Language.RescaleTree
 
 import Control.Monad.Identity
 import Control.Monad.Random
