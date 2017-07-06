@@ -51,9 +51,6 @@ type family Monadify w a where
   Monadify w (a -> b) = Monadify w a -> Monadify w b
   Monadify w a = w a
 
--- CJP: could generalize to (String, Double) to allow messages, but
--- then we need pairs in the object language!  (We already need lists
--- though...)
 type ErrorRateLog = [(String,Double)]
 
 -- | Transform an expression into (a monadic) one that logs error

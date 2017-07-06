@@ -61,8 +61,8 @@ main = do
   putStrLn $ show $ eval exp2a 2
 
 
-  let ptexpr = linear2 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy :: PT2CT' RngList Zqs Gad _
-  --let ptexpr = linear5 @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @(PNoise 'Z) Proxy
+  let ptexpr = linear2 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoiseTag PNZ) Proxy :: PT2CT' RngList Zqs Gad _
+  --let ptexpr = linear5 @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @(PNoiseTag PNZ) Proxy
   putStrLn $ "PT expression params:\n" ++ (params ptexpr $ linear2 @_ @_ @H1 Proxy)
 
   pt1 <- getRandom
@@ -74,8 +74,8 @@ main = do
          @Zqs
          @Gad
          @Int64)
-         (linear2 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoise 'Z) Proxy)
-         --(tunn5 @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @(PNoise 'Z) Proxy)
+         (linear2 @CT @H0 @H1 @H2 @(Zq PP8) @(PNoiseTag PNZ) Proxy)
+         --(tunn5 @CT @'[H0,H1,H2,H3,H4,H5] @(Zq PP8) @(PNoiseTag PNZ) Proxy)
     -- compile once, interpret with multiple ctexprs!!
     let (z1,z2) = dup y
         (w1,w2) = dup z1

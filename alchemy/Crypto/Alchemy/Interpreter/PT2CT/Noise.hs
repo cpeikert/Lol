@@ -23,6 +23,7 @@ module Crypto.Alchemy.Interpreter.PT2CT.Noise
 ( PNoise(..)--, PNoise2Nat
 , Units(..)--,  Units2Nat
 , (:+)
+, PNZ
 , pNoiseUnit
 , PNoiseTag(..),ZqPairsWithUnits, TotalUnits
 , TLNatNat, mkTLNatNat, mkTypeNat) where
@@ -31,7 +32,7 @@ import           Algebra.Additive          as Additive (C)
 import           Algebra.Ring              as Ring (C)
 import           Data.Functor.Trans.Tagged
 import           Data.Singletons.Prelude   hiding ((:<), (:+))
-import           Data.Singletons.Prelude.List (Sum, Maximum)
+import           Data.Singletons.Prelude.List (Sum)
 import           Data.Singletons.TH        hiding ((:<))
 import           Data.Type.Natural         hiding ((:+))
 import qualified GHC.TypeLits              as TL (Nat)
@@ -45,6 +46,9 @@ import Crypto.Lol.Types.Unsafe.ZqBasic
 -- We use the promoted type @'PN@ of kind @PNoise@ to distinguish this value
 -- from @Units@.
 newtype PNoise = PN Nat
+
+--
+type PNZ = 'PN 'Z
 
 -- | Adds a @Nat@ to @PNoise@.
 type family (:+) a b where
