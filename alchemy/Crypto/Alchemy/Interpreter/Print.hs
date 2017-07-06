@@ -15,7 +15,9 @@ import Crypto.Alchemy.Language.Lambda
 import Crypto.Alchemy.Language.LinearCyc
 import Crypto.Alchemy.Language.List
 import Crypto.Alchemy.Language.Monad
+import Crypto.Alchemy.Language.Pair
 import Crypto.Alchemy.Language.SHE
+import qualified Crypto.Alchemy.Language.String as DSL
 
 import Crypto.Lol                      (Cyc, Pos (..), Prime2,
                                         PrimePower (..))
@@ -47,6 +49,12 @@ instance Lambda P where
 instance List P where
   nil_  = pureP "nil"
   cons_ = pureP "cons"
+
+instance Pair P where
+  pair_ = pureP "pair"
+
+instance DSL.String P where
+  string_ = P . const
 
 instance Add P a where
   add_ = pureP "add"

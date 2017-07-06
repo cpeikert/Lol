@@ -1,7 +1,6 @@
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE FlexibleContexts           #-}
 {-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -33,7 +32,7 @@ import qualified Crypto.Alchemy.Language.String       as LS
 -- | A transformer that additionally logs the sizes of the noise terms
 -- of any ciphertexts created during interpretation.
 newtype ErrorRateWriter
-  expr                          -- | the underyling interpreter
+  expr                          -- | the underlying interpreter
   z                             -- | (phantom) integral type for secret keys
   k                             -- | (reader) monad that supplies the
                                 -- keys for extracting error

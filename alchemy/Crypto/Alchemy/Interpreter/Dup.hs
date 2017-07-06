@@ -109,6 +109,13 @@ instance (String ex1, String ex2) => String (Dup ex1 ex2) where
 instance (Pair ex1, Pair ex2) => Pair (Dup ex1 ex2) where
   pair_ = Dup pair_ pair_
 
+instance (ErrorRate ex1, ErrorRate ex2) => ErrorRate (Dup ex1 ex2) where
+
+  type ErrorRateCtx (Dup ex1 ex2) ct z = (ErrorRateCtx ex1 ct z,
+                                          ErrorRateCtx ex2 ct z)
+
+  errorRate_ sk = Dup (errorRate_ sk) (errorRate_ sk)
+
 {-
 
 -- OLD AND PROBABLY BUSTED ATTEMPT AT ALLOWING DIFFERENT REP TYPES
