@@ -31,6 +31,9 @@ module Crypto.RLWE.Challenges.Verify
 import Crypto.RLWE.Challenges.Beacon
 import Crypto.RLWE.Challenges.Common
 import Crypto.RLWE.Challenges.Generate
+import Crypto.RLWE.Challenges.Params   (epsDef)
+
+--import Control.DeepSeq (force, deepseq)
 
 import           Crypto.Lol
 import           Crypto.Lol.Cyclotomic.UCyc
@@ -88,30 +91,41 @@ verifyMain pt path = do
   -- get a list of challenges to reveal
   challNames <- challengeList path
 
-  beaconAddrs <- sequence <$> mapM (readAndVerifyChallenge pt path) challNames
+  tmp <- sequence <$> mapM (readAndVerifyChallenge pt path) challNames
+  let beaconAddrs = map fst <$> tmp
+      rats' = fromJust $ map snd <$> tmp
+      -- max ratio for each instance
+      maxrats = map (map maximum) rats'
+      -- min ratio for each instance
+      minrats = map (map minimum) rats'
+
+  print $ concat maxrats
+  putStrLn "\n\n\n"
+  print $ concat minrats
 
   -- verify that all beacon addresses are distinct
   case beaconAddrs of
     (Just addrs) -> do
       _ <- printPassFail "Checking for distinct beacon addresses... " "DISTINCT"
         $ throwErrorIf (length (nub addrs) /= length addrs) "NOT DISTINCT"
-      putStrLn "\nAttempting to regenerate challenges from random seeds. This will take awhile..."
+      {-putStrLn "\nAttempting to regenerate challenges from random seeds. This will take awhile..."
       regens <- sequence <$> mapM (regenChallenge pt path) challNames
       when (isNothing regens) $ printANSI Yellow "NOTE: one or more instances could not be\n \
         \regenerated from the provided PRG seed. This is NON-FATAL,\n \
         \and is likely due to the use of a different compiler/platform\n \
-        \than the one used to generate the challenges."
+        \than the one used to generate the challenges."-}
+      return ()
     Nothing -> return ()
 
 -- | Reads a challenge and verifies all instances.
 -- Returns the beacon address for the challenge.
 readAndVerifyChallenge :: (EntailTensor t, MonadIO m)
-  => Proxy t -> FilePath -> String -> m (Maybe BeaconAddr)
+  => Proxy t -> FilePath -> String -> m (Maybe (BeaconAddr, [[Double]]))
 readAndVerifyChallenge pt path challName =
   printPassFail ("Verifying " ++ challName) "VERIFIED" $ do
     (ba, insts) <- readChallenge path challName
-    mapM_ (verifyInstanceU pt) insts
-    return ba
+    ratios <- mapM (verifyInstanceU pt) insts
+    return (ba, ratios)
 
 -- | Reads a challenge and attempts to regenerate all instances from the
 -- provided seed.
@@ -296,7 +310,7 @@ regenInstance _ (IR (SecretProduct _ _ _ _ seed s) InstanceRLWRProduct{..}) =
           \\ proxy entailTensor (Proxy::Proxy '(t,m,p)))))
 
 -- | Verify an 'InstanceU'.
-verifyInstanceU :: forall t mon . (EntailTensor t, MonadError String mon) => Proxy t -> InstanceU -> mon ()
+verifyInstanceU :: forall t mon . (EntailTensor t, MonadError String mon) => Proxy t -> InstanceU -> mon [Double]
 
 verifyInstanceU _ (IC (SecretProduct _ _ _ _ _ s) InstanceContProduct{..}) =
   let ContParams {..} = params
@@ -305,8 +319,11 @@ verifyInstanceU _ (IC (SecretProduct _ _ _ _ _ s) InstanceContProduct{..}) =
       s' :: Cyc t m (Zq q) <- fromProto s
       samples' :: [C.Sample _ _ _ (RRq q)] <- fromProto $
         fmap (\(SampleContProduct a b) -> (a,b)) samples
-      throwErrorUnless (validInstanceCont bound s' samples')
-        "A continuous RLWE sample exceeded the error bound.")
+      let bound' = proxy (C.errorBound svar epsDef) (Proxy::Proxy m)
+          (pf,ratio) = validInstanceCont' bound' s' samples'
+      throwErrorUnless pf
+        "A continuous RLWE sample exceeded the error bound."
+      return ratio)
         \\ proxy entailTensor (Proxy::Proxy '(t,m,q))))
 
 verifyInstanceU _ (ID (SecretProduct _ _ _ _ _ s) InstanceDiscProduct{..}) =
@@ -315,10 +332,13 @@ verifyInstanceU _ (ID (SecretProduct _ _ _ _ _ s) InstanceDiscProduct{..}) =
     reify (fromIntegral q :: Int64) (\(_::Proxy q) -> (do
       s' :: Cyc t m (Zq q) <- fromProto s
       samples' <- fromProto $ fmap (\(SampleDiscProduct a b) -> (a,b)) samples
-      throwErrorUnless (validInstanceDisc bound s' samples')
-        "A discrete RLWE sample exceeded the error bound.")
+      let bound' = proxy (D.errorBound svar epsDef) (Proxy::Proxy m)
+          (pf,ratio) = validInstanceDisc' bound' s' samples'
+      --throwErrorUnless pf
+      -- "A discrete RLWE sample exceeded the error bound."
+      return ratio)
         \\ proxy entailTensor (Proxy::Proxy '(t,m,q))))
-
+{-
 verifyInstanceU _ (IR (SecretProduct _ _ _ _ _ s) InstanceRLWRProduct{..}) =
   let RLWRParams {..} = params
   in reifyFactI (fromIntegral m) (\(_::proxy m) ->
@@ -331,7 +351,7 @@ verifyInstanceU _ (IR (SecretProduct _ _ _ _ _ s) InstanceRLWRProduct{..}) =
           "An RLWR sample was invalid.")
           \\ proxy entailTensor (Proxy::Proxy '(t,m,q))
           \\ proxy entailTensor (Proxy::Proxy '(t,m,p)))))
-
+-}
 -- | Read an XML file for the beacon corresponding to the provided time.
 readBeacon :: (MonadIO m, MonadError String m)
               => FilePath -> BeaconEpoch -> m Record
@@ -348,11 +368,28 @@ validInstanceCont ::
   => LiftOf rrq -> Cyc t m zq -> [C.Sample t m zq rrq] -> Bool
 validInstanceCont bound s = all ((bound > ) . C.errorGSqNorm s)
 
+validInstanceCont' ::
+  (C.RLWECtx t m zq rrq, Ord (LiftOf rrq), Ring (LiftOf rrq), Field (LiftOf rrq))
+  => LiftOf rrq -> Cyc t m zq -> [C.Sample t m zq rrq] -> (Bool, [LiftOf rrq])
+validInstanceCont' bound s xs =
+  let bounds = C.errorGSqNorm s <$> xs
+      passfail = all (bound >) bounds
+      minFactor = map (bound /) bounds
+  in (passfail, minFactor)
+
 -- | Test if the 'gSqNorm' of the error for each RLWE sample in the
 -- instance (given the secret) is less than the given bound.
 validInstanceDisc :: (D.RLWECtx t m zq)
                      => LiftOf zq -> Cyc t m zq -> [D.Sample t m zq] -> Bool
 validInstanceDisc bound s = all ((bound > ) . D.errorGSqNorm s)
+
+validInstanceDisc' :: (D.RLWECtx t m zq)
+                     => LiftOf zq -> Cyc t m zq -> [D.Sample t m zq] -> (Bool, [Double])
+validInstanceDisc' bound s xs =
+  let bounds = D.errorGSqNorm s <$> xs
+      passfail = all (bound >) bounds
+      minFactor = map ((fromIntegral bound) /) (fromIntegral <$> bounds :: [Double])
+  in (passfail, minFactor)
 
 -- | Test if the given RLWR instance is valid for the given secret.
 validInstanceRLWR :: (R.RLWRCtx t m zq zp, Eq zp)

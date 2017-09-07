@@ -21,7 +21,7 @@ module Crypto.Lol.RLWE.Discrete where
 
 import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Prelude
-import Crypto.Lol.RLWE.Continuous as C (errorBound)
+import Crypto.Lol.RLWE.Continuous as C (errorBound, tailGaussian)
 
 import Control.Applicative
 import Control.Monad.Random
@@ -68,10 +68,9 @@ errorBound :: (RealRing v, Transcendental v, Fact m)
               -> Tagged m Int64
 errorBound v eps = do
   n <- fromIntegral <$> totientFact
-  cont <- C.errorBound v eps -- continuous bound
+  bsq <- C.errorBound v eps -- continuous bound
+  csq <- C.tailGaussian eps
   ps <- filter (/= 2) . fmap fst <$> ppsFact -- odd primes dividing m
-  let stabilize x =
-        let x' = (1/2 + log(2 * pi * x)/2 - log eps)/pi
-        in if x'-x < 0.0001 then x' else stabilize x'
-  return $ ceiling $ (2 ^ length ps) * n * stabilize (1/(2*pi)) + cont
+  let fsq = (2 ^ length ps) * n * csq
+  return $ ceiling $ fsq + bsq + 2*(sqrt bsq)*(sqrt fsq)
 
