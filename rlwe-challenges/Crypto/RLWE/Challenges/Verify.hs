@@ -70,7 +70,7 @@ import           Control.Monad.Except hiding (lift)
 import           Control.Monad.Random hiding (lift)
 import qualified Data.ByteString.Lazy as BS
 import           Data.Int
-import           Data.List            (nub)
+import           Data.List            (nub, sort)
 import           Data.Maybe
 import           Data.Reflection      hiding (D)
 import           Data.Sequence        (singleton)
@@ -86,7 +86,8 @@ import System.Directory    (doesFileExist)
 verifyMain :: (EntailTensor t) => Proxy t -> FilePath -> IO ()
 verifyMain pt path = do
   -- get a list of challenges to reveal
-  challNames <- challengeList path
+  challNames' <- challengeList path
+  let challNames = sort challNames'
 
   beaconAddrs <- sequence <$> mapM (readAndVerifyChallenge pt path) challNames
 
