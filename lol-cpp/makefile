@@ -3,9 +3,9 @@
 # For interactive development, you shouldn't need to explicitly use this file;
 # it is called from the ghci script included with this repository.
 
-CXX      ?= g++
+CXX      = g++
 AR       ?= ar
-CXXFLAGS ?= -Wall -O3 -std=c++11 -fPIC
+CXXFLAGS = -Wall -O3 -std=c++11 -fPIC
 
 CSRCPATH = Crypto/Lol/Cyclotomic/Tensor/CPP
 OBJPATH = lib
@@ -13,7 +13,7 @@ LIBPATH = $(OBJPATH)
 LIBNAME = libctensor
 CD = $(shell pwd)
 
-$(OBJPATH)/%.o: $(CSRCPATH)/%.cpp
+$(OBJPATH)/%.o: $(CSRCPATH)/%.cpp $(addprefix $(CSRCPATH)/,common.h tensor.h types.h)
 	@$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 # this makes the dst directory, then creates all of the individual object files
@@ -35,7 +35,7 @@ clean:
 	rm -f ./$(LIBPATH)/*.a
 	rm -f ./$(LIBPATH)/*.so
 	rm -f ./$(LIBPATH)/*.dylib
-	# make sure that cabal re-links with the new lib
+	@# make sure that cabal re-links with the new lib
 	rm -f ./dist/build/test-lol/test-lol
 	rm -f ./dist/build/bench-lol/bench-lol
 
