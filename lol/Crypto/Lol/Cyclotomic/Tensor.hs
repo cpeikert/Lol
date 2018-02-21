@@ -35,9 +35,13 @@ indexing.
 
 module Crypto.Lol.Cyclotomic.Tensor
 ( Tensor(..)
+, IFunctor, IFElt, fmapI, zipWithI
+, ForallFact1(..) , ForallFact2(..)
 -- * Top-level CRT functions
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
+, TensorCRTSet, crtSetDec
+, TensorGaussian, tGaussianDec
 -- * Special vectors/matrices
 , Kron, indexK, gCRTK, gInvCRTK, twCRTs
 -- * Tensor indexing
@@ -53,6 +57,7 @@ import Crypto.Lol.CRTrans
 import Crypto.Lol.Prelude           as LP hiding (lift, (*>))
 import Crypto.Lol.Types.FiniteField
 
+import           Algebra.Module          as Module (C)
 import           Control.Applicative
 import           Control.DeepSeq
 import           Control.Monad.Random
@@ -83,117 +88,91 @@ import qualified Data.Vector.Unboxed     as U
 -- inputs for each method is determined by the linear transform it
 -- implements.
 
-class (TElt t Double, TElt t (Complex Double)) => Tensor t where
+class (Tensor t q) => TensorGaussian t q where
+  -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\)
+  -- in the decoding basis, where \(D\) has scaled variance \(v\).
+  tGaussianDec :: (ToRational v, Fact m, MonadRandom rnd) => v -> rnd (t m q)
 
-  -- | Constraints needed by @t@ to hold type @r@.
-  type TElt t r :: Constraint
+class (Tensor t fp) => TensorCRTSet t fp where
+  crtSetDec :: (m `Divides` m', Coprime (PToF (CharOf fp)) m') => Tagged m [t m' fp]
 
-  -- | Properties that hold for any index. Use with '\\'.
-  entailIndexT :: Tagged (t m r)
-                  (Fact m :- (Applicative (t m), Traversable (t m)))
-  -- | Holds for any (legal) fully-applied tensor. Use with '\\'.
-  entailEqT :: Tagged (t m r)
-               ((Eq r, Fact m, TElt t r) :- Eq (t m r))
-  -- | Holds for any (legal) fully-applied tensor. Use with '\\'.
-  entailZTT :: Tagged (t m r)
-               ((ZeroTestable r, Fact m, TElt t r) :- ZeroTestable (t m r))
-  -- | Holds for any (legal) fully-applied tensor. Use with '\\'.
-  entailNFDataT :: Tagged (t m r)
-                   ((NFData r, Fact m, TElt t r) :- NFData (t m r))
-  -- | Holds for any (legal) fully-applied tensor. Use with '\\'.
-  entailRandomT :: Tagged (t m r)
-                   ((Random r, Fact m, TElt t r) :- Random (t m r))
-  -- | Holds for any (legal) fully-applied tensor. Use with '\\'.
-  entailShowT :: Tagged (t m r)
-                 ((Show r, Fact m, TElt t r) :- Show (t m r))
-  -- | Holds for any (legal) fully-applied tensor. Use with '\\'.
-  entailModuleT :: Tagged (GF fp d, t m fp)
-                   ((GFCtx fp d, Fact m, TElt t fp) :- Module (GF fp d) (t m fp))
+class IFunctor f where
+  type IFElt f a :: Constraint
+
+  fmapI :: (IFElt f a, IFElt f b, Fact m) => (a -> b) -> f m a -> f m b
+  zipWithI :: (IFElt f a, IFElt f b, IFElt f c, Fact m) => (a -> b -> c) -> f m a -> f m b -> f m c
+
+class (ForallFact1 Applicative t, ForallFact1 Traversable t, IFunctor t, IFElt t r,
+       Ring r, ForallFact2 (Module.C r) t r)
+  => Tensor t r where
 
   -- | Convert a scalar to a tensor in the powerful basis.
-  scalarPow :: (Additive r, Fact m, TElt t r) => r -> t m r
+  scalarPow :: Fact m => r -> t m r
 
   -- | 'l' converts from decoding-basis representation to
   -- powerful-basis representation; 'lInv' is its inverse.
-  l, lInv :: (Additive r, Fact m, TElt t r) => t m r -> t m r
+  l, lInv :: Fact m => t m r -> t m r
 
   -- | Multiply by \(g_m\) in the powerful/decoding basis
-  mulGPow, mulGDec :: (Ring r, Fact m, TElt t r) => t m r -> t m r
+  mulGPow, mulGDec :: Fact m => t m r -> t m r
 
   -- | Divide by \(g_m\) in the powerful/decoding basis.  The 'Maybe'
   -- output indicates that the operation may fail, which happens
   -- exactly when the input is not divisible by \(g_m\).
-  divGPow, divGDec :: (ZeroTestable r, IntegralDomain r, Fact m, TElt t r)
-                      => t m r -> Maybe (t m r)
+  divGPow, divGDec :: Fact m => t m r -> Maybe (t m r)
 
   -- | A tuple of all the operations relating to the CRT basis, in a
   -- single 'Maybe' value for safety.  Clients should typically not
   -- use this method directly, but instead call the corresponding
   -- top-level functions: the elements of the tuple correpond to the
   -- functions 'scalarCRT', 'mulGCRT', 'divGCRT', 'crt', 'crtInv'.
-  crtFuncs :: (CRTrans mon r, Fact m, TElt t r) =>
+  crtFuncs :: (CRTrans mon r, Fact m) =>
               mon (    r -> t m r, -- scalarCRT
                    t m r -> t m r, -- mulGCRT
                    t m r -> t m r, -- divGCRT
                    t m r -> t m r, -- crt
                    t m r -> t m r) -- crtInv
 
-  -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\)
-  -- in the decoding basis, where \(D\) has scaled variance \(v\).
-  tGaussianDec :: (OrdFloat q, Random q, TElt t q,
-                   ToRational v, Fact m, MonadRandom rnd)
-                  => v -> rnd (t m q)
-
   -- | Given the coefficient tensor of \(e\) with respect to the
   -- decoding basis of \(R\), yield the (scaled) squared norm of
   -- \(g_m \cdot e\) under the canonical embedding, namely,
   -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\).
-  gSqNormDec :: (Ring r, Fact m, TElt t r) => t m r -> r
+  gSqNormDec :: Fact m => t m r -> r
 
   -- | The @twace@ linear transformation, which is the same in both the
   -- powerful and decoding bases.
-  twacePowDec :: (Ring r, m `Divides` m', TElt t r) => t m' r -> t m r
+  twacePowDec :: m `Divides` m' => t m' r -> t m r
 
   -- | The @embed@ linear transformations, for the powerful and
   -- decoding bases.
-  embedPow, embedDec :: (Additive r, m `Divides` m', TElt t r)
-                        => t m r -> t m' r
+  embedPow, embedDec :: m `Divides` m' => t m r -> t m' r
 
   -- | A tuple of all the extension-related operations involving the
   -- CRT bases, for safety.  Clients should typically not use this
   -- method directly, but instead call the corresponding top-level
   -- functions: the elements of the tuple correpond to the functions
   -- 'twaceCRT', 'embedCRT'.
-  crtExtFuncs :: (CRTrans mon r, m `Divides` m', TElt t r) =>
+  crtExtFuncs :: (CRTrans mon r, m `Divides` m') =>
                  mon (t m' r -> t m  r, -- twaceCRT
                       t m  r -> t m' r) -- embedCRT
 
   -- | Map a tensor in the powerful\/decoding\/CRT basis, representing
   -- an \(\O_{m'}\) element, to a vector of tensors representing
   -- \(\O_m\) elements in the same kind of basis.
-  coeffs :: (Ring r, m `Divides` m', TElt t r) => t m' r -> [t m r]
+  coeffs :: m `Divides` m' => t m' r -> [t m r]
 
   -- | The powerful extension basis w.r.t. the powerful basis.
-  powBasisPow :: (Ring r, TElt t r, m `Divides` m') => Tagged m [t m' r]
+  powBasisPow :: m `Divides` m' => Tagged m [t m' r]
 
-  -- | A list of tensors representing the mod-@p@ CRT set of the extension.
-  crtSetDec :: (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m',
-                TElt t fp)
-               => Tagged m [t m' fp]
+-- TODO: Move these to its own module
+class ForallFact1 c t where
+  entailFact1 :: (Fact m) :- (c (t m))
 
-  -- | Potentially optimized version of 'fmap' for types that satisfy 'TElt'.
-  fmapT :: (Fact m, TElt t a, TElt t b) => (a -> b) -> t m a -> t m b
-
-  -- | Potentially optimized zipWith for types that satisfy 'TElt'.
-  zipWithT :: (Fact m, TElt t a, TElt t b, TElt t c)
-              => (a -> b -> c) -> t m a -> t m b -> t m c
-
-  -- | Potentially optimized unzip for types that satisfy 'TElt'.
-  unzipT :: (Fact m, TElt t (a,b), TElt t a, TElt t b)
-            => t m (a,b) -> (t m a, t m b)
+class ForallFact2 c t r where
+  entailFact2 :: (Fact m) :- (c (t m r))
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
-hasCRTFuncs :: forall t m mon r . (CRTrans mon r, Tensor t, Fact m, TElt t r)
+hasCRTFuncs :: forall t m mon r . (CRTrans mon r, Tensor t r, Fact m)
                => TaggedT (t m r) mon ()
 {-# INLINABLE hasCRTFuncs #-}
 hasCRTFuncs = tagT $ do
@@ -202,12 +181,12 @@ hasCRTFuncs = tagT $ do
 
 -- | Yield a tensor for a scalar in the CRT basis.  (This function is
 -- simply an appropriate entry from 'crtFuncs'.)
-scalarCRT :: (CRTrans mon r, Tensor t, Fact m, TElt t r) => mon (r -> t m r)
+scalarCRT :: (CRTrans mon r, Tensor t r, Fact m) => mon (r -> t m r)
 {-# INLINABLE scalarCRT #-}
 scalarCRT = (\(f,_,_,_,_) -> f) <$> crtFuncs
 
 mulGCRT, divGCRT, crt, crtInv ::
-  (CRTrans mon r, Tensor t, Fact m, TElt t r) => mon (t m r -> t m r)
+  (CRTrans mon r, Tensor t r, Fact m) => mon (t m r -> t m r)
 {-# INLINABLE mulGCRT #-}
 {-# INLINABLE divGCRT #-}
 {-# INLINABLE crt #-}
@@ -230,7 +209,7 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 -- For cyclotomic indices \(m \mid m'\),
 -- \(\Tw(x) = (\hat{m}/\hat{m}') \cdot \Tr((g'/g) \cdot x)\).
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-twaceCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t, m `Divides` m', TElt t r)
+twaceCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t r, m `Divides` m')
             => mon (t m' r -> t m r)
 {-# INLINABLE twaceCRT #-}
 twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
@@ -240,7 +219,7 @@ twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
 -- | Embed a tensor with index \(m\) in the CRT basis to a tensor with
 -- index \(m'\) in the CRT basis.
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-embedCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t, m `Divides` m', TElt t r)
+embedCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t r, m `Divides` m')
             => mon (t m r -> t m' r)
 embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>

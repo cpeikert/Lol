@@ -29,6 +29,7 @@ Wrapper for a C++ implementation of the 'Tensor' interface.
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE CPP                        #-}
 
 module Crypto.Lol.Cyclotomic.Tensor.CPP (CT) where
 
@@ -70,17 +71,19 @@ import Crypto.Lol.GaussRandom
 import Crypto.Lol.Prelude                             as LP hiding
                                                              (replicate,
                                                              unzip, zip)
+import Crypto.Lol.Reflects
 import Crypto.Lol.Tests
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.Unsafe.ZqBasic
 
 import Data.Foldable as F
 
 import System.IO.Unsafe (unsafePerformIO)
 
 -- | Newtype wrapper around a Vector.
-newtype CT' (m :: Factored) r = CT' { unCT :: Vector r }
+newtype CT' (m :: Factored) r = CT' { unCT' :: Vector r }
                               deriving (Show, Eq, NFData)
 
 -- the first argument, though phantom, affects representation
@@ -168,8 +171,7 @@ instance (Fact m, Ring r, Storable r, Dispatch r)
   fromInteger = CT . repl . fromInteger
 -}
 
-instance (ZeroTestable r, Storable r)
-         => ZeroTestable.C (CT m r) where
+instance (ZeroTestable r, Storable r) => ZeroTestable.C (CT m r) where
   --{-# INLINABLE isZero #-}
   isZero (CT (CT' a)) = SV.foldl' (\ b x -> b && isZero x) True a
   isZero (ZV v) = isZero v
@@ -201,94 +203,98 @@ instance Fact m => Traversable (CT m) where
   traverse f r@(CT _) = T.traverse f $ toZV r
   traverse f (ZV v) = ZV <$> T.traverse f v
 
-instance Tensor CT where
-
-  type TElt CT r = (Storable r, Dispatch r)
-
-  entailIndexT = tag $ Sub Dict
-  entailEqT = tag $ Sub Dict
-  entailZTT = tag $ Sub Dict
-  -- entailRingT = tag $ Sub Dict
-  entailNFDataT = tag $ Sub Dict
-  entailRandomT = tag $ Sub Dict
-  entailShowT = tag $ Sub Dict
-  entailModuleT = tag $ Sub Dict
-
-  scalarPow = CT . scalarPow' -- Vector code
-
-  l = wrap $ basicDispatch dl
-  lInv = wrap $ basicDispatch dlinv
-
-  mulGPow = wrap $ basicDispatch dmulgpow
-  mulGDec = wrap $ basicDispatch dmulgdec
-
-  divGPow = wrapM $ dispatchGInv dginvpow
-  divGDec = wrapM $ dispatchGInv dginvdec
-
-  crtFuncs = (,,,,) <$>
-    return (CT . repl) <*>
-    (wrap . untag (cZipDispatch dmul) <$> gCRT) <*>
-    (wrap . untag (cZipDispatch dmul) <$> gInvCRT) <*>
-    (wrap <$> untagT ctCRT) <*>
-    (wrap <$> untagT ctCRTInv)
-
-  twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
-  embedPow = wrap $ runIdentity $ coerceEm embedPow'
-  embedDec = wrap $ runIdentity $ coerceEm embedDec'
-
+instance TensorGaussian CT Double where
   tGaussianDec v = CT <$> cDispatchGaussian v
-  --tGaussianDec v = CT <$> coerceT' (gaussianDec v)
 
-  -- we do not wrap this function because (currently) it can only be called on lifted types
-  gSqNormDec (CT v) = untag gSqNormDec' v
-  gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
-
-  crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT')
-                    <*> (wrap <$> coerceEm embedCRT')
-
-  coeffs = wrapM $ coerceCoeffs coeffs'
-
-  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
-
+instance (Tensor CT (ZqBasic q Int64), PrimeField (ZqBasic q Int64))
+    => TensorCRTSet CT (ZqBasic q Int64) where
   crtSetDec = (CT <$>) <$> coerceBasis crtSetDec'
 
-  fmapT f = wrap $ coerce (SV.map f)
+instance IFunctor CT where
+  type IFElt CT a = Storable a
 
-  zipWithT f v1' v2' =
-    let (CT (CT' v1)) = toCT v1'
-        (CT (CT' v2)) = toCT v2'
-    in CT $ CT' $ SV.zipWith f v1 v2
+  fmapI f (CT (CT' sv)) = CT $ CT' $ SV.map f sv
+  fmapI f (ZV v) = fmapI f $ CT $ zvToCT' v
 
-  unzipT v =
-    let (CT (CT' x)) = toCT v
-    in (CT . CT') *** (CT . CT') $ unzip x
+  zipWithI f (CT (CT' sv1)) (CT (CT' sv2)) = CT $ CT' $ SV.zipWith f sv1 sv2
+  zipWithI f (CT sv) (ZV v) = zipWithI f (CT sv) (CT $ zvToCT' v)
+  zipWithI f (ZV v) (CT sv) = zipWithI f (CT $ zvToCT' v) (CT sv)
+  zipWithI f (ZV v1) (ZV v2) = zipWithI f (CT $ zvToCT' v1) (CT $ zvToCT' v2)
 
-  {-# INLINABLE entailIndexT #-}
-  {-# INLINABLE entailEqT #-}
-  {-# INLINABLE entailZTT #-}
-  {-# INLINABLE entailNFDataT #-}
-  {-# INLINABLE entailRandomT #-}
-  {-# INLINABLE entailShowT #-}
-  {-# INLINABLE scalarPow #-}
-  {-# INLINABLE l #-}
-  {-# INLINABLE lInv #-}
-  {-# INLINABLE mulGPow #-}
-  {-# INLINABLE mulGDec #-}
-  {-# INLINABLE divGPow #-}
-  {-# INLINABLE divGDec #-}
-  {-# INLINABLE crtFuncs #-}
-  {-# INLINABLE twacePowDec #-}
-  {-# INLINABLE embedPow #-}
-  {-# INLINABLE embedDec #-}
-  {-# INLINABLE tGaussianDec #-}
-  {-# INLINABLE gSqNormDec #-}
-  {-# INLINE crtExtFuncs #-}
-  {-# INLINABLE coeffs #-}
-  {-# INLINABLE powBasisPow #-}
-  {-# INLINABLE crtSetDec #-}
-  {-# INLINABLE fmapT #-}
-  {-# INLINE zipWithT #-}
-  {-# INLINE unzipT #-}
+#define TENSOR_DEF(ring_ty, ...) \
+    instance (__VA_ARGS__) => Tensor CT (ring_ty) where \
+      scalarPow = CT . scalarPow' ;\
+     \
+      l = wrap $ basicDispatch dl ;\
+      lInv = wrap $ basicDispatch dlinv ;\
+     \
+      mulGPow = wrap $ basicDispatch dmulgpow ;\
+      mulGDec = wrap $ basicDispatch dmulgdec ;\
+     \
+      divGPow = wrapM $ dispatchGInv dginvpow ;\
+      divGDec = wrapM $ dispatchGInv dginvdec ;\
+     \
+      crtFuncs = (,,,,) <$> \
+        return (CT . repl) <*> \
+        (wrap . untag (cZipDispatch dmul) <$> gCRT) <*> \
+        (wrap . untag (cZipDispatch dmul) <$> gInvCRT) <*> \
+        (wrap <$> untagT ctCRT) <*> \
+        (wrap <$> untagT ctCRTInv) ;\
+     \
+      gSqNormDec (CT v) = untag gSqNormDec' v ;\
+      gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v) ;\
+     \
+      twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec' ;\
+      embedPow = wrap $ runIdentity $ coerceEm embedPow' ;\
+      embedDec = wrap $ runIdentity $ coerceEm embedDec' ;\
+     \
+      crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT') ;\
+     \
+      coeffs = wrapM $ coerceCoeffs coeffs' ;\
+     \
+      powBasisPow = (CT <$>) <$> coerceBasis powBasisPow' ;\
+     \
+      {-# INLINABLE scalarPow #-} ;\
+      {-# INLINABLE l #-} ;\
+      {-# INLINABLE lInv #-} ;\
+      {-# INLINABLE mulGPow #-} ;\
+      {-# INLINABLE mulGDec #-} ;\
+      {-# INLINABLE divGPow #-} ;\
+      {-# INLINABLE divGDec #-} ;\
+      {-# INLINABLE crtFuncs #-} ;\
+      {-# INLINABLE twacePowDec #-} ;\
+      {-# INLINABLE embedPow #-} ;\
+      {-# INLINABLE embedDec #-} ;\
+      {-# INLINABLE gSqNormDec #-} ;\
+      {-# INLINE crtExtFuncs #-} ;\
+      {-# INLINABLE coeffs #-} ;\
+      {-# INLINABLE powBasisPow #-} ;\
+
+TENSOR_DEF(Int64)
+TENSOR_DEF(ZqBasic q Int64, Reflects q Int64)
+TENSOR_DEF(Double)
+
+-- TODO: Move this to a better place
+
+instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
+  (*>) r = wrap $ coerce $ SV.map (r*)
+
+-- TODO: Make a section for this
+
+instance (Ring r, Storable r) => ForallFact2 (Module.C r) CT r where
+  entailFact2 = Sub Dict
+
+instance ForallFact1 Applicative CT where
+  entailFact1 = Sub Dict
+
+instance ForallFact1 Traversable CT where
+  entailFact1 = Sub Dict
+
+instance (ZeroTestable r, Storable r) => ForallFact2 ZeroTestable.C CT r where
+  entailFact2 = Sub Dict
+
+instance (Additive fp, Storable fp, GFCtx fp d) => ForallFact2 (Module.C (GF fp d)) CT fp where
+  entailFact2 = Sub Dict
 
 coerceTw :: (Functor mon) => TaggedT '(m, m') mon (Vector r -> Vector r) -> mon (CT' m' r -> CT' m r)
 coerceTw = (coerce <$>) . untagT
@@ -343,7 +349,7 @@ basicDispatch f = unsafePerformIO . withBasicArgs f
 
 gSqNormDec' :: (Storable r, Fact m, Dispatch r)
                => Tagged m (CT' m r -> r)
-gSqNormDec' = return $ (!0) . unCT . unsafePerformIO . withBasicArgs dnorm
+gSqNormDec' = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnorm
 
 ctCRT :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
          => TaggedT m mon (CT' m r -> CT' m r)

@@ -8,3 +8,5 @@ lol-cpp/lib
 **/*.class
 **/*.o
 **/TAGS
+**/*.hi
+**/*.hspp

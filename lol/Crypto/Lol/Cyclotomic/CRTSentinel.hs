@@ -40,32 +40,32 @@ import Crypto.Lol.Factored
 data CSentinel t m r = CSentinel
 data ESentinel t m r = ESentinel
 
-crtSentinel :: (Tensor t, Fact m, CRTrans Maybe r, TElt t r)
+crtSentinel :: (Tensor t r, Fact m, CRTrans Maybe r)
                => Either (ESentinel t m r) (CSentinel t m r)
 crtSentinel = fromMaybe (Left ESentinel) (Right <$> crtCSentinel)
 {-# INLINABLE crtSentinel #-}
 
 crtCSentinel :: forall t m r .
-                (Tensor t, Fact m, CRTrans Maybe r, TElt t r)
+                (Tensor t r, Fact m, CRTrans Maybe r)
                 => Maybe (CSentinel t m r)
 crtCSentinel = proxyT hasCRTFuncs (Proxy::Proxy (t m r)) *>
                pure CSentinel
 {-# INLINABLE crtCSentinel #-}
 
-crtESentinel :: (Tensor t, Fact m, CRTrans Maybe r, TElt t r)
+crtESentinel :: (Tensor t r, Fact m, CRTrans Maybe r)
                 => Maybe (ESentinel t m r)
 crtESentinel = case crtSentinel of
   Left  s -> Just s
   Right _ -> Nothing
 {-# INLINABLE crtESentinel #-}
 
-scalarCRTCS :: (Tensor t, Fact m, CRTrans Maybe r, TElt t r)
+scalarCRTCS :: (Tensor t r, Fact m, CRTrans Maybe r)
               => CSentinel t m r -> r -> t m r
 scalarCRTCS _ = fromJust scalarCRT
 {-# INLINABLE scalarCRTCS #-}
 
 crtCS, crtInvCS, mulGCRTCS, divGCRTCS ::
-  (Tensor t, Fact m, CRTrans Maybe r, TElt t r)
+  (Tensor t r, Fact m, CRTrans Maybe r)
   => CSentinel t m r -> t m r -> t m r
 
 crtCS     _ = fromJust crt
@@ -78,12 +78,12 @@ divGCRTCS _ = fromJust divGCRT
 {-# INLINABLE mulGCRTCS #-}
 {-# INLINABLE divGCRTCS #-}
 
-embedCRTCS :: (Tensor t, m `Divides` m', CRTrans Maybe r, TElt t r)
+embedCRTCS :: (Tensor t r, m `Divides` m', CRTrans Maybe r)
               => CSentinel t m r -> CSentinel t m' r -> t m r -> t m' r
 embedCRTCS _ _ = fromJust embedCRT
 {-# INLINABLE embedCRTCS #-}
 
-twaceCRTCS :: (Tensor t, m `Divides` m', CRTrans Maybe r, TElt t r)
+twaceCRTCS :: (Tensor t r, m `Divides` m', CRTrans Maybe r)
               => CSentinel t m' r -> CSentinel t m r -> t m' r -> t m r
 twaceCRTCS _ _ = fromJust twaceCRT
 {-# INLINE twaceCRTCS #-}

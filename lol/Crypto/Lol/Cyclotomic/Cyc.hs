@@ -78,7 +78,7 @@ import Crypto.Lol.Cyclotomic.UCyc hiding (coeffsDec, coeffsPow, crtSet,
 
 import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.RescaleCyc as R
-import           Crypto.Lol.Cyclotomic.Tensor     (TElt, Tensor)
+import           Crypto.Lol.Cyclotomic.Tensor     (Tensor)
 import qualified Crypto.Lol.Cyclotomic.UCyc       as U
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.Prelude               as LP
@@ -114,7 +114,7 @@ data Cyc t m r where
   -- CJP: someday try to merge the above two
 
 -- | Constraints needed for most operations involving 'Cyc' data.
-type CElt t r = (UCRTElt t r, ZeroTestable r)
+type CElt t r = UCRTElt t r
 
 ---------- Constructors / deconstructors ----------
 
@@ -184,7 +184,7 @@ instance (Fact m, CElt t r) => ZeroTestable.C (Cyc t m r) where
   isZero (Sub c) = isZero c
   {-# INLINABLE isZero #-}
 
-instance (Eq r, Fact m, CElt t r) => Eq (Cyc t m r) where
+instance (Eq r, Fact m, CElt t r, Eq (t m r)) => Eq (Cyc t m r) where
   -- same representations
   (Scalar c1) == (Scalar c2) = c1 == c2
   (Pow u1) == (Pow u2) = u1 == u2
@@ -343,8 +343,7 @@ mulG (Sub c) = mulG $ embed' c   -- must go to full ring
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
-divG :: (Fact m, CElt t r, IntegralDomain r)
-        => Cyc t m r -> Maybe (Cyc t m r)
+divG :: (Fact m, CElt t r) => Cyc t m r -> Maybe (Cyc t m r)
 {-# INLINABLE divG #-}
 divG (Pow u) = Pow <$> U.divGPow u
 divG (Dec u) = Dec <$> U.divGDec u
@@ -355,8 +354,7 @@ divG (Sub c) = divG $ embed' c  -- must go to full ring
 
 -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\) in
 -- the decoding basis, where \(D\) has scaled variance \(v\).
-tGaussian :: (Fact m, OrdFloat q, Random q, Tensor t, TElt t q,
-              ToRational v, MonadRandom rnd)
+tGaussian :: (Fact m, OrdFloat q, Random q, Tensor t q, ToRational v, MonadRandom rnd)
              => v -> rnd (Cyc t m q)
 tGaussian = (Dec <$>) . U.tGaussian
 {-# INLINABLE tGaussian #-}
@@ -364,7 +362,7 @@ tGaussian = (Dec <$>) . U.tGaussian
 -- | Yield the scaled squared norm of \(g_m \cdot e\) under
 -- the canonical embedding, namely,
 -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\).
-gSqNorm :: forall t m r . (Fact m, CElt t r) => Cyc t m r -> r
+gSqNorm :: (Fact m, CElt t r) => Cyc t m r -> r
 {-# INLINABLE gSqNorm #-}
 gSqNorm (Dec u) = U.gSqNorm u
 gSqNorm c = gSqNorm $ toDec' c
@@ -375,8 +373,8 @@ gSqNorm c = gSqNorm $ toDec' c
 -- implementation uses 'Double' precision to generate the Gaussian
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
-errorRounded :: (ToInteger z, Tensor t, Fact m, TElt t z,
-                 ToRational v, MonadRandom rnd) => v -> rnd (Cyc t m z)
+errorRounded :: (ToInteger z, Tensor t z, Fact m, ToRational v, MonadRandom rnd)
+                => v -> rnd (Cyc t m z)
 {-# INLINABLE errorRounded #-}
 errorRounded = (Dec <$>) . U.errorRounded
 
@@ -416,8 +414,7 @@ embed' (Sub (c :: Cyc t k r)) = embed' c
 -- | The "tweaked trace" (twace) function
 -- \(\Tw(x) = (\hat{m} / \hat{m}') \cdot \Tr((g' / g) \cdot x)\),
 -- which fixes \(R\) pointwise (i.e., @twace . embed == id@).
-twace :: forall t m m' r . (m `Divides` m', UCRTElt t r, ZeroTestable r)
-         => Cyc t m' r -> Cyc t m r
+twace :: (m `Divides` m', UCRTElt t r) => Cyc t m' r -> Cyc t m r
 {-# INLINABLE twace #-}
 twace (Pow u) = Pow $ U.twacePow u
 twace (Dec u) = Dec $ U.twaceDec u
@@ -449,8 +446,7 @@ powBasis = (Pow <$>) <$> U.powBasis
 {-# INLINABLE powBasis #-}
 
 -- | The relative mod-@r@ CRT set of the extension.
-crtSet :: (m `Divides` m', ZPP r, CElt t r, TElt t (ZpOf r))
-          => Tagged m [Cyc t m' r]
+crtSet :: (m `Divides` m', ZPP r, CElt t r, Tensor t (ZpOf r)) => Tagged m [Cyc t m' r]
 crtSet = (Pow <$>) <$> U.crtSet
 {-# INLINABLE crtSet #-}
 
@@ -470,15 +466,13 @@ instance (Reduce a b, Fact m, CElt t a, CElt t b)
 type instance LiftOf (Cyc t m r) = Cyc t m (LiftOf r)
 
 -- | Lift using the specified basis.
-liftCyc :: (Lift b a, Fact m, TElt t a, CElt t b)
-           => R.Basis -> Cyc t m b -> Cyc t m a
+liftCyc :: (Lift b a, Fact m, Tensor t a, CElt t b) => R.Basis -> Cyc t m b -> Cyc t m a
 {-# INLINABLE liftCyc #-}
 
 liftCyc R.Pow = liftPow
 liftCyc R.Dec = liftDec
 
-liftPow, liftDec :: (Lift b a, Fact m, TElt t a, CElt t b)
-                    => Cyc t m b -> Cyc t m a
+liftPow, liftDec :: (Lift b a, Fact m, Tensor t a, CElt t b) => Cyc t m b -> Cyc t m a
 {-# INLINABLE liftPow #-}
 {-# INLINABLE liftDec #-}
 
@@ -494,18 +488,9 @@ liftPow (Sub c) = Sub $ liftPow c
 -- | Lift using the decoding basis.
 liftDec c = Dec $ lift $ uncycDec c
 
--- | Unzip for a pair base ring.
-unzipCyc :: (Fact m, CElt t (a,b), CElt t a, CElt t b)
-            => Cyc t m (a,b) -> (Cyc t m a, Cyc t m b)
-{-# INLINABLE unzipCyc #-}
-unzipCyc (Pow u) = Pow *** Pow $ U.unzipPow u
-unzipCyc (Dec u) = Dec *** Dec $ U.unzipDec u
-unzipCyc (CRT u) = either ((cycPE *** cycPE) . unzipCRTE)
-                   ((cycPC *** cycPC) . unzipCRTC) u
-unzipCyc (Scalar c) = Scalar *** Scalar $ c
-unzipCyc (Sub c) = Sub *** Sub $ unzipCyc c
+-- QUESTION: unzips are killed, right?
 
-instance {-# INCOHERENT #-} (Rescale a b, CElt t a, TElt t b)
+instance {-# INCOHERENT #-} (Rescale a b, CElt t a, Tensor t b)
     => R.RescaleCyc (Cyc t) a b where
 
   -- Optimized for subring constructors, for powerful basis.
@@ -656,15 +641,14 @@ toCRT' (Sub c) = toCRT' $ embed' $ toCRT' c
 
 ---------- Utility instances ----------
 
-instance (Tensor t, Fact m, NFData r, TElt t r,
-          NFData (CRTExt r), TElt t (CRTExt r)) => NFData (Cyc t m r) where
+instance (Fact m, NFData r, NFData (CRTExt r)) => NFData (Cyc t m r) where
   rnf (Pow u) = rnf u
   rnf (Dec u) = rnf u
   rnf (CRT u) = rnf u
   rnf (Scalar u) = rnf u
   rnf (Sub c) = rnf c
 
-instance (Random r, Tensor t, Fact m, UCRTElt t r) => Random (Cyc t m r) where
+instance (Random r, Tensor t r, Fact m, UCRTElt t r) => Random (Cyc t m r) where
   random g = let (u,g') = random g
              in (either Pow (CRT . Right) u, g')
   {-# INLINABLE random #-}
@@ -678,8 +662,7 @@ instance (Fact m, CElt t r, Protoable (UCyc t m D r))
   toProto x = toProto $ toDec' x
   fromProto x = Dec <$> fromProto x
 
-instance (Show r, Show (CRTExt r), Fact m, TElt t r, TElt t (CRTExt r), Tensor t)
-  => Show (Cyc t m r) where
+instance (Show r, Show (CRTExt r), Fact m, Tensor t r) => Show (Cyc t m r) where
   show (Pow x) = "Pow " ++ show x
   show (Dec x) = "Dec " ++ show x
   show (CRT (Left x)) = "CRT " ++ show x
