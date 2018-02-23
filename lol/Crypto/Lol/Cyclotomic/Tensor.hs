@@ -5,7 +5,7 @@ Description : Interface for cyclotomic tensors, and
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
@@ -35,13 +35,10 @@ indexing.
 
 module Crypto.Lol.Cyclotomic.Tensor
 ( Tensor(..)
-, IFunctor, IFElt, fmapI, zipWithI
-, ForallFact1(..) , ForallFact2(..)
 -- * Top-level CRT functions
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
-, TensorCRTSet, crtSetDec
-, TensorGaussian, tGaussianDec
+, TensorGaussian(..), TensorCRTSet(..)
 -- * Special vectors/matrices
 , Kron, indexK, gCRTK, gInvCRTK, twCRTs
 -- * Tensor indexing
@@ -55,21 +52,19 @@ where
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Prelude           as LP hiding (lift, (*>))
-import Crypto.Lol.Types.FiniteField
+import Crypto.Lol.Types.IFunctor
 
 import           Algebra.Module          as Module (C)
 import           Control.Applicative
-import           Control.DeepSeq
 import           Control.Monad.Random
-import           Data.Constraint
 import           Data.Singletons.Prelude hiding ((:-))
 import           Data.Traversable
 import           Data.Tuple              (swap)
 import qualified Data.Vector             as V
 import qualified Data.Vector.Unboxed     as U
 
--- | 'Tensor' encapsulates all the core linear transformations needed
--- for cyclotomic ring arithmetic.
+-- | 'Tensor' encapsulates linear transformations needed for
+-- cyclotomic ring arithmetic.
 
 -- | The type @t m r@ represents a cyclotomic coefficient tensor of
 -- index \(m\) over base ring \(r\).  Most of the methods represent linear
@@ -78,9 +73,6 @@ import qualified Data.Vector.Unboxed     as U
 -- well-defined only when a CRT basis exists over the ring \(r\) for
 -- index \(m\).
 
--- | The superclass constraints are for convenience, to ensure that we
--- can sample error tensors of 'Double's.
-
 -- | __WARNING:__ as with all fixed-point arithmetic, the methods
 -- in 'Tensor' may result in overflow (and thereby incorrect answers
 -- and potential security flaws) if the input arguments are too close
@@ -88,22 +80,8 @@ import qualified Data.Vector.Unboxed     as U
 -- inputs for each method is determined by the linear transform it
 -- implements.
 
-class (Tensor t q) => TensorGaussian t q where
-  -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\)
-  -- in the decoding basis, where \(D\) has scaled variance \(v\).
-  tGaussianDec :: (ToRational v, Fact m, MonadRandom rnd) => v -> rnd (t m q)
-
-class (Tensor t fp) => TensorCRTSet t fp where
-  crtSetDec :: (m `Divides` m', Coprime (PToF (CharOf fp)) m') => Tagged m [t m' fp]
-
-class IFunctor f where
-  type IFElt f a :: Constraint
-
-  fmapI :: (IFElt f a, IFElt f b, Fact m) => (a -> b) -> f m a -> f m b
-  zipWithI :: (IFElt f a, IFElt f b, IFElt f c, Fact m) => (a -> b -> c) -> f m a -> f m b -> f m c
-
-class (ForallFact1 Applicative t, ForallFact1 Traversable t, IFunctor t, IFElt t r,
-       Ring r, ForallFact2 (Module.C r) t r)
+class (ForallFact1 Applicative t, ForallFact1 Traversable t,
+       IFunctor t, IFElt t r, Ring r, ForallFact2 (Module.C r) t r)
   => Tensor t r where
 
   -- | Convert a scalar to a tensor in the powerful basis.
@@ -164,12 +142,19 @@ class (ForallFact1 Applicative t, ForallFact1 Traversable t, IFunctor t, IFElt t
   -- | The powerful extension basis w.r.t. the powerful basis.
   powBasisPow :: m `Divides` m' => Tagged m [t m' r]
 
--- TODO: Move these to its own module
-class ForallFact1 c t where
-  entailFact1 :: (Fact m) :- (c (t m))
+-- | A 'Tensor' that supports Gaussian sampling for the element type 'q'.
+class (Tensor t q) => TensorGaussian t q where
+  -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\)
+  -- in the decoding basis, where \(D\) has scaled variance \(v\).
+  tGaussianDec :: (ToRational v, Fact m, MonadRandom rnd) => v -> rnd (t m q)
 
-class ForallFact2 c t r where
-  entailFact2 :: (Fact m) :- (c (t m r))
+-- | A 'Tensor' that supports relative CRT sets for the element type
+-- 'fp' representing a prime-order finite field.
+class (Tensor t fp) => TensorCRTSet t fp where
+  -- | Relative mod-@p@ CRT set of \( \O_{m'}/\O_{m} \) in the
+  -- decoding basis.
+  crtSetDec :: (m `Divides` m', Coprime (PToF (CharOf fp)) m')
+    => Tagged m [t m' fp]
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
 hasCRTFuncs :: forall t m mon r . (CRTrans mon r, Tensor t r, Fact m)

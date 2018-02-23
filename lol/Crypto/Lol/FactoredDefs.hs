@@ -4,7 +4,7 @@ Description : Internal module.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
@@ -12,18 +12,19 @@ This sub-module exists only because we can't define and use
 template Haskell splices in the same module.
 -}
 
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE GADTs                #-}
-{-# LANGUAGE InstanceSigs         #-}
-{-# LANGUAGE KindSignatures       #-}
-{-# LANGUAGE PolyKinds            #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE RankNTypes           #-}
-{-# LANGUAGE TemplateHaskell      #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE InstanceSigs          #-}
+{-# LANGUAGE KindSignatures        #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 {-# OPTIONS_GHC -fno-warn-unused-binds          #-}
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
@@ -49,12 +50,15 @@ module Crypto.Lol.FactoredDefs
 , fGCD, FGCD, fLCM, FLCM, Coprime
 , fOddRadical, FOddRadical
 , pFree, PFree
--- * Convenient reflections
+-- * Entailments
+, ForallFact1(..), ForallFact2(..)
+-- * Reflections
 , ppsFact, valueFact, totientFact, radicalFact, oddRadicalFact, valueHatFact
 , ppPPow, primePPow, exponentPPow, valuePPow, totientPPow, radicalPPow, oddRadicalPPow, valueHatPPow
 , valuePrime
--- * Data-level equivalents of reflections for 'Factored' data
+-- * Operations on 'Factored' values
 , valueF, totientF, radicalF, oddRadicalF, valueHatF
+-- CJP: are the above actually used anywhere? Don't see that they're needed
 -- * Number-theoretic laws
 , transDivides, gcdDivides, lcmDivides, lcm2Divides
 , pSplitTheorems, pFreeDivides
@@ -222,6 +226,14 @@ singletons [d|
                       if p == p' then ps
                       else pp : (go ps)
             |]
+
+-- | Contraint 'c' holds for 't m' for any 'Fact m'.
+class ForallFact1 c t where
+  entailFact1 :: (Fact m) :- (c (t m))
+
+-- | Contraint 'c' holds for 't m r' for any 'Fact m'.
+class ForallFact2 c t r where
+  entailFact2 :: (Fact m) :- (c (t m r))
 
 -- | Type (family) synonym for division of 'Factored' types.
 type a / b = FDiv a b
