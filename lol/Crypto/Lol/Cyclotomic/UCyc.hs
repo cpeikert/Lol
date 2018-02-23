@@ -79,7 +79,6 @@ import Control.Applicative    as A
 import Control.DeepSeq
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.Random   hiding (ap, lift)
-import Data.Constraint
 import Data.Foldable          as F
 import Data.Traversable
 

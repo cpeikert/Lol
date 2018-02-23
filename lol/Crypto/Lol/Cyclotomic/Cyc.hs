@@ -77,11 +77,11 @@ import Crypto.Lol.Cyclotomic.UCyc hiding (coeffsDec, coeffsPow, crtSet,
                                    powBasis, tGaussian)
 
 import           Crypto.Lol.CRTrans
-import qualified Crypto.Lol.Cyclotomic.RescaleCyc as R
-import           Crypto.Lol.Cyclotomic.Tensor     (Tensor)
-import qualified Crypto.Lol.Cyclotomic.UCyc       as U
+import qualified Crypto.Lol.Cyclotomic.Language
+import           Crypto.Lol.Cyclotomic.Tensor   (Tensor)
+import qualified Crypto.Lol.Cyclotomic.UCyc     as U
 import           Crypto.Lol.Gadget
-import           Crypto.Lol.Prelude               as LP
+import           Crypto.Lol.Prelude             as LP
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.ZPP
@@ -91,7 +91,7 @@ import Control.Arrow
 import Control.DeepSeq
 -- GHC warning is wrong: https://ghc.haskell.org/trac/ghc/ticket/12067
 import Control.Monad.Identity
-import Control.Monad.Random hiding (lift)
+import Control.Monad.Random   hiding (lift)
 import Data.Coerce
 import Data.Traversable
 
