@@ -4,7 +4,7 @@ Description : A low-level implementation of cyclotomic rings.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
@@ -67,6 +67,7 @@ import           Crypto.Lol.Cyclotomic.CRTSentinel
 import qualified Crypto.Lol.Cyclotomic.Tensor      as T
 import           Crypto.Lol.Prelude                as LP
 import           Crypto.Lol.Types.FiniteField
+import           Crypto.Lol.Types.IFunctor
 import           Crypto.Lol.Types.ZPP
 
 import qualified Algebra.Additive     as Additive (C)
@@ -75,13 +76,11 @@ import qualified Algebra.Ring         as Ring (C)
 import qualified Algebra.ZeroTestable as ZeroTestable (C)
 
 import Control.Applicative    as A
-import Control.Arrow
-import Data.Constraint
 import Control.DeepSeq
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.Random   hiding (ap, lift)
+import Data.Constraint
 import Data.Foldable          as F
-import Data.Maybe
 import Data.Traversable
 
 import Crypto.Lol.Types.Proto
@@ -121,7 +120,6 @@ data UCyc t (m :: Factored) rep r where
   CRTE :: !(ESentinel t m r) -> !(t m (CRTExt r)) -> UCyc t m E r
 
 -- | Constraints needed for CRT-related operations on 'UCyc' data.
---type UCRTElt t r = (Tensor t r, Tensor t (CRTExt r), IFElt t r, IFElt t (CRTExt r),
 type UCRTElt t r = (Tensor t r, Tensor t (CRTExt r),
                     CRTEmbed r, CRTrans Maybe r, CRTrans Identity (CRTExt r))
 
@@ -157,17 +155,12 @@ instance (Eq (t m r), Fact m) => Eq (UCyc t m C r) where
 
 -- ZeroTestable instances
 
--- TODO: Make this look nicer
-instance (ForallFact2 ZeroTestable.C t r, Fact m) => ZeroTestable.C (UCyc t m P r) where
-  isZero (Pow v) = isZero v \\ (entailFact2 :: Fact m :- ZeroTestable.C (t m r))
+instance (ZeroTestable (t m r), Fact m) => ZeroTestable.C (UCyc t m P r) where
+  isZero (Pow v) = isZero v
   {-# INLINABLE isZero #-}
 
--- TODO: Kill this
-class (ZeroTestable.C (t m r)) => ZTReorder t r m
-
-instance (ForallFact2 ZeroTestable.C t r, Fact m) => ZeroTestable.C (UCyc t m D r) where
-  isZero (Dec v) = let c = entailFact2 :: Fact m :- ZeroTestable.C (t m r) in
-                   isZero v \\ c
+instance (ZeroTestable (t m r), Fact m) => ZeroTestable.C (UCyc t m D r) where
+  isZero (Dec v) = isZero v
   {-# INLINABLE isZero #-}
 
 instance (ZeroTestable (t m r), Fact m) => ZeroTestable.C (UCyc t m C r) where
@@ -377,7 +370,8 @@ tGaussian = fmap Dec . tGaussianDec
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
 errorRounded :: forall v rnd t m z .
-                (ToInteger z, IFunctor t, IFElt t Double, IFElt t z, TensorGaussian t Double,
+                (ToInteger z, IFunctor t, IFElt t Double, IFElt t z,
+                 TensorGaussian t Double,
                  Fact m, ToRational v, MonadRandom rnd)
                 => v -> rnd (UCyc t m D z)
 {-# INLINABLE errorRounded #-}
