@@ -51,20 +51,14 @@ the internal linear transforms and other operations it performs.
 
 module Crypto.Lol.Cyclotomic.Cyc
 (
--- * Data type and constraints
-  Cyc, CElt, U.NFElt
+-- * Data type
+  Cyc
 -- * Constructors/deconstructors
 , scalarCyc
 , cycPow, cycDec, cycCRT, cycCRTC, cycCRTE, cycPC, cycPE
 , uncycPow, uncycDec, uncycCRT, unzipCyc
--- * Core cyclotomic operations
-, mulG, divG, gSqNorm, liftCyc, liftPow, liftDec
--- * Representation advice
-, advisePow, adviseDec, adviseCRT
 -- * Error sampling
 , tGaussian, errorRounded, errorCoset
--- * Sub/extension rings
-, embed, twace, coeffsCyc, coeffsPow, coeffsDec, powBasis, crtSet
 ) where
 
 import qualified Algebra.Additive     as Additive (C)
@@ -77,7 +71,8 @@ import Crypto.Lol.Cyclotomic.UCyc hiding (coeffsDec, coeffsPow, crtSet,
                                    powBasis, tGaussian)
 
 import           Crypto.Lol.CRTrans
-import qualified Crypto.Lol.Cyclotomic.Language
+import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
+import qualified Crypto.Lol.Cyclotomic.Language as L
 import           Crypto.Lol.Cyclotomic.Tensor   (Tensor)
 import qualified Crypto.Lol.Cyclotomic.UCyc     as U
 import           Crypto.Lol.Gadget
@@ -93,6 +88,7 @@ import Control.DeepSeq
 import Control.Monad.Identity
 import Control.Monad.Random   hiding (lift)
 import Data.Coerce
+import Data.Constraint        ((:-), (\\))
 import Data.Traversable
 
 
@@ -114,7 +110,7 @@ data Cyc t m r where
   -- CJP: someday try to merge the above two
 
 -- | Constraints needed for most operations involving 'Cyc' data.
-type CElt t r = UCRTElt t r
+type CElt t r = (UCRTElt t r, ZeroTestable r, IntegralDomain r)
 
 ---------- Constructors / deconstructors ----------
 
@@ -153,11 +149,6 @@ cycPE :: Either (UCyc t m P r) (UCyc t m E r) -> Cyc t m r
 cycPE = either Pow (CRT . Left)
 {-# INLINABLE cycPE #-}
 
--- | Embed a scalar from the base ring as a cyclotomic element.
-scalarCyc :: r -> Cyc t m r
-scalarCyc = Scalar
-{-# INLINABLE scalarCyc #-}
-
 -- | Unwrap a 'Cyc' as a 'UCyc' in powerful-basis representation.
 uncycPow :: (Fact m, CElt t r) => Cyc t m r -> UCyc t m P r
 {-# INLINABLE uncycPow #-}
@@ -175,30 +166,37 @@ uncycCRT c = let (CRT u) = toCRT' c in u
 
 ---------- Algebraic instances ----------
 
-instance (Fact m, CElt t r) => ZeroTestable.C (Cyc t m r) where
-  isZero (Pow u) = isZero u
-  isZero (Dec u) = isZero u
-  isZero (CRT (Right u)) = isZero u
-  isZero c@(CRT _) = isZero $ toPow' c
-  isZero (Scalar c) = isZero c
-  isZero (Sub c) = isZero c
+instance (Fact m, CElt t r, ForallFact2 ZeroTestable.C t r)
+  => ZeroTestable.C (Cyc t m r) where
+  isZero = \x -> case x of
+                   (Pow u) -> isZero u
+                   (Dec u) -> isZero u
+                   (CRT (Right u)) -> isZero u
+                   c@(CRT _) -> isZero $ toPow' c
+                   (Scalar c) -> isZero c
+                   (Sub c) -> isZero c
+                 \\ (entailFact2 :: Fact m :- ZeroTestable.C (t m r))
   {-# INLINABLE isZero #-}
 
-instance (Eq r, Fact m, CElt t r, Eq (t m r)) => Eq (Cyc t m r) where
+instance (Eq r, Fact m, CElt t r, ForallFact2 Eq t r) => Eq (Cyc t m r) where
   -- same representations
   (Scalar c1) == (Scalar c2) = c1 == c2
-  (Pow u1) == (Pow u2) = u1 == u2
-  (Dec u1) == (Dec u2) = u1 == u2
-  (CRT (Right u1)) == (CRT (Right u2)) = u1 == u2
+  (Pow u1) == (Pow u2) = u1 == u2 \\ (entailFact2 :: Fact m :- Eq (t m r))
+  (Dec u1) == (Dec u2) = u1 == u2 \\ (entailFact2 :: Fact m :- Eq (t m r))
+  (CRT (Right u1)) == (CRT (Right u2)) =
+    u1 == u2 \\ (entailFact2 :: Fact m :- Eq (t m r))
+
   -- compare Subs in compositum
-  -- EAC: would like to convert c2 to basis of c1 before embedding
+  -- EAC: would like to convert c2 to basis of c1 *before* embedding
   (Sub (c1 :: Cyc t l1 r)) == (Sub (c2 :: Cyc t l2 r)) =
     (embed' c1 :: Cyc t (FLCM l1 l2) r) == embed' c2
     \\ lcmDivides (Proxy::Proxy l1) (Proxy::Proxy l2)
 
   -- some other relatively efficient comparisons
   (Scalar c1) == (Pow u2) = scalarPow c1 == u2
+                            \\ (entailFact2 :: Fact m :- Eq (t m r))
   (Pow u1) == (Scalar c2) = u1 == scalarPow c2
+                            \\ (entailFact2 :: Fact m :- Eq (t m r))
 
   -- otherwise: compare in powerful basis
   c1 == c2 = toPow' c1 == toPow' c2
@@ -299,58 +297,42 @@ instance (Fact m, CElt t r) => Ring.C (Cyc t m r) where
 -- | \(R_p\) is an \(\F_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
 -- applying \(d\)-dimensional \(\F_p\)-linear transform on \(d\)-dim chunks of
 -- powerful basis coeffs.
-instance (GFCtx fp d, Fact m, CElt t fp) => Module.C (GF fp d) (Cyc t m fp) where
+instance (GFCtx fp d, Fact m, CElt t fp, Module (GF fp d) (t m fp))
+  => Module.C (GF fp d) (Cyc t m fp) where
   -- CJP: optimize for Scalar if we can: r *> (Scalar c) is the tensor
   -- that has the coeffs of (r*c), followed by zeros.  (This assumes
   -- that the powerful basis has 1 as its first element, and that
   -- we're using pow to define the module mult.)
 
-  -- can use any r-basis to define module mult, but must be
-  -- consistent.
+  -- Can use any r-basis to define module mult, but must be
+  -- consistent. We use powerful basis.
   r *> (Pow v) = Pow $ r LP.*> v
   r *> x = r *> toPow' x
 
----------- Core cyclotomic operations ----------
+---------- Cyclotomic classes ----------
 
-advisePow, adviseDec, adviseCRT :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
-{-# INLINABLE advisePow #-}
-{-# INLINABLE adviseDec #-}
-{-# INLINABLE adviseCRT #-}
+instance (CElt t r) => Cyclotomic (Cyc t) r where
+  scalarCyc = Scalar
 
--- | Same as 'adviseCRT', but for the powerful-basis representation.
-advisePow = toPow'
+  mulG (Pow u) = Pow $ U.mulG u
+  mulG (Dec u) = Dec $ U.mulG u
+  mulG (CRT u) = CRT $ either (Left . U.mulG) (Right . U.mulG) u
+  mulG c@(Scalar _) = mulG $ toCRT' c
+  mulG (Sub c) = mulG $ embed' c   -- must go to full ring
 
--- | Same as 'adviseCRT', but for the powerful-basis representation.
-adviseDec = toDec'
+  divG (Pow u) = Pow <$> U.divGPow u
+  divG (Dec u) = Dec <$> U.divGDec u
+  divG (CRT (Left u)) = Pow <$> U.divGPow (U.toPow u)
+  divG (CRT (Right u)) = Just $ (CRT . Right) $ U.divGCRTC u
+  divG c@(Scalar _) = divG $ toCRT' c
+  divG (Sub c) = divG $ embed' c  -- must go to full ring
 
--- | Yield an equivalent element that /may/ be in a CRT
--- representation.  This can serve as an optimization hint. E.g.,
--- call 'adviseCRT' prior to multiplying the same value by many
--- other values.
-adviseCRT = toCRT'
+  gSqNorm (Dec u) = U.gSqNorm u
+  gSqNorm c = gSqNorm $ toDec' c
 
--- | Multiply by the special element \(g\) of the \(m\)th
--- cyclotomic.
-mulG :: (Fact m, CElt t r) => Cyc t m r -> Cyc t m r
-{-# INLINABLE mulG #-}
-mulG (Pow u) = Pow $ U.mulG u
-mulG (Dec u) = Dec $ U.mulG u
-mulG (CRT u) = CRT $ either (Left . U.mulG) (Right . U.mulG) u
-mulG c@(Scalar _) = mulG $ toCRT' c
-mulG (Sub c) = mulG $ embed' c   -- must go to full ring
-
--- | Divide by \(g\), returning 'Nothing' if not evenly divisible.
--- WARNING: this implementation is not a constant-time algorithm, so
--- information about the argument may be leaked through a timing
--- channel.
-divG :: (Fact m, CElt t r) => Cyc t m r -> Maybe (Cyc t m r)
-{-# INLINABLE divG #-}
-divG (Pow u) = Pow <$> U.divGPow u
-divG (Dec u) = Dec <$> U.divGDec u
-divG (CRT (Left u)) = Pow <$> U.divGPow (U.toPow u)
-divG (CRT (Right u)) = Just $ (CRT . Right) $ U.divGCRTC u
-divG c@(Scalar _) = divG $ toCRT' c
-divG (Sub c) = divG $ embed' c  -- must go to full ring
+  advisePow = toPow'
+  adviseDec = toDec'
+  adviseCRT = toCRT'
 
 -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\) in
 -- the decoding basis, where \(D\) has scaled variance \(v\).
@@ -358,14 +340,6 @@ tGaussian :: (Fact m, OrdFloat q, Random q, Tensor t q, ToRational v, MonadRando
              => v -> rnd (Cyc t m q)
 tGaussian = (Dec <$>) . U.tGaussian
 {-# INLINABLE tGaussian #-}
-
--- | Yield the scaled squared norm of \(g_m \cdot e\) under
--- the canonical embedding, namely,
--- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\).
-gSqNorm :: (Fact m, CElt t r) => Cyc t m r -> r
-{-# INLINABLE gSqNorm #-}
-gSqNorm (Dec u) = U.gSqNorm u
-gSqNorm c = gSqNorm $ toDec' c
 
 -- | Generate an LWE error term with given scaled variance,
 -- deterministically rounded with respect to the decoding basis.
@@ -393,13 +367,44 @@ errorCoset v = (Dec <$>) . U.errorCoset v . uncycDec
 
 ---------- Inter-ring operations ----------
 
--- | Embed (lazily) into an extension ring.
-embed :: forall t m m' r . (m `Divides` m') => Cyc t m r -> Cyc t m' r
-{-# INLINABLE embed #-}
-embed (Scalar c) = Scalar c           -- keep as scalar
-embed (Sub (c :: Cyc t l r)) = Sub c  -- keep as subring element
-  \\ transDivides (Proxy::Proxy l) (Proxy::Proxy m) (Proxy::Proxy m')
-embed c = Sub c
+instance (Tensor t r) => ExtensionCyc (Cyc t) r where
+  embed (Scalar c) = Scalar c           -- keep as scalar
+  embed (Sub (c :: Cyc t l r)) = Sub c  -- keep as subring element
+    \\ transDivides (Proxy::Proxy l) (Proxy::Proxy m) (Proxy::Proxy m')
+  embed c = Sub c
+
+  twace (Pow u) = Pow $ U.twacePow u
+  twace (Dec u) = Dec $ U.twaceDec u
+  twace (CRT u) = either (cycPE . twaceCRTE) (cycPC . twaceCRTC) u
+  twace (Scalar u) = Scalar u
+  twace (Sub (c :: Cyc t l r)) = Sub (twace c :: Cyc t (FGCD l m) r)
+                                 \\ gcdDivides (Proxy::Proxy l) (Proxy::Proxy m)
+
+  powBasis = (Pow <$>) <$> U.powBasis
+
+  coeffsCyc L.Pow c' = Pow <$> U.coeffsPow (uncycPow c')
+  coeffsCyc L.Dec c' = Dec <$> U.coeffsDec (uncycDec c')
+
+instance (Lift b a, CElt t b, Tensor t a) => LiftCyc (Cyc t) b a where
+  liftCyc L.Pow = cycLiftPow
+  liftCyc L.Dec = cycLiftDec
+
+type instance LiftOf (Cyc t m r) = Cyc t m (LiftOf r)
+
+cycLiftPow, cycLiftDec :: (Lift b a, Fact m, CElt t b, Tensor t a)
+  => Cyc t m b -> Cyc t m a
+
+-- | Lift using the powerful basis.
+cycLiftPow (Pow u) = Pow $ lift u
+cycLiftPow (Dec u) = Pow $ lift $ toPow u
+cycLiftPow (CRT u) = Pow $ lift $ either toPow toPow u
+-- optimized for subrings; these are correct for powerful basis but
+-- not for decoding
+cycLiftPow (Scalar c) = Scalar $ lift c
+cycLiftPow (Sub c) = Sub $ cycLiftPow c
+
+-- | Lift using the decoding basis.
+cycLiftDec c = Dec $ lift $ uncycDec c
 
 -- | Force to a non-'Sub' constructor (for internal use only).
 embed' :: forall t r l m . (l `Divides` m, CElt t r) => Cyc t l r -> Cyc t m r
@@ -410,40 +415,6 @@ embed' (CRT u) = either (cycPE . embedCRTE) (cycPC . embedCRTC) u
 embed' (Scalar c) = Scalar c
 embed' (Sub (c :: Cyc t k r)) = embed' c
   \\ transDivides (Proxy::Proxy k) (Proxy::Proxy l) (Proxy::Proxy m)
-
--- | The "tweaked trace" (twace) function
--- \(\Tw(x) = (\hat{m} / \hat{m}') \cdot \Tr((g' / g) \cdot x)\),
--- which fixes \(R\) pointwise (i.e., @twace . embed == id@).
-twace :: (m `Divides` m', UCRTElt t r) => Cyc t m' r -> Cyc t m r
-{-# INLINABLE twace #-}
-twace (Pow u) = Pow $ U.twacePow u
-twace (Dec u) = Dec $ U.twaceDec u
-twace (CRT u) = either (cycPE . twaceCRTE) (cycPC . twaceCRTC) u
-twace (Scalar u) = Scalar u
-twace (Sub (c :: Cyc t l r)) = Sub (twace c :: Cyc t (FGCD l m) r)
-                               \\ gcdDivides (Proxy::Proxy l) (Proxy::Proxy m)
-
--- | Return the given element's coefficient vector with respect to
--- the (relative) powerful/decoding basis of the cyclotomic
--- extension \(\O_{m'} / \O_m\).
--- See also 'coeffsPow', 'coeffsDec'.
-coeffsCyc :: (m `Divides` m', CElt t r) => R.Basis -> Cyc t m' r -> [Cyc t m r]
-{-# INLINABLE coeffsCyc #-}
-coeffsCyc R.Pow c' = Pow <$> U.coeffsPow (uncycPow c')
-coeffsCyc R.Dec c' = Dec <$> U.coeffsDec (uncycDec c')
-
-coeffsPow, coeffsDec :: (m `Divides` m', CElt t r) => Cyc t m' r -> [Cyc t m r]
-{-# INLINABLE coeffsPow #-}
-{-# INLINABLE coeffsDec #-}
--- | Specialized version of 'coeffsCyc' for powerful basis.
-coeffsPow = coeffsCyc R.Pow
--- | Specialized version of 'coeffsCyc' for decoding basis.
-coeffsDec = coeffsCyc R.Dec
-
--- | The relative powerful basis of \(\O_{m'} / \O_m\).
-powBasis :: (m `Divides` m', CElt t r) => Tagged m [Cyc t m' r]
-powBasis = (Pow <$>) <$> U.powBasis
-{-# INLINABLE powBasis #-}
 
 -- | The relative mod-@r@ CRT set of the extension.
 crtSet :: (m `Divides` m', ZPP r, CElt t r, Tensor t (ZpOf r)) => Tagged m [Cyc t m' r]
@@ -463,47 +434,20 @@ instance (Reduce a b, Fact m, CElt t a, CElt t b)
   reduce (Scalar c) = Scalar $ reduce c
   reduce (Sub (c :: Cyc t l a)) = Sub (reduce c :: Cyc t l b)
 
-type instance LiftOf (Cyc t m r) = Cyc t m (LiftOf r)
-
--- | Lift using the specified basis.
-liftCyc :: (Lift b a, Fact m, Tensor t a, CElt t b) => R.Basis -> Cyc t m b -> Cyc t m a
-{-# INLINABLE liftCyc #-}
-
-liftCyc R.Pow = liftPow
-liftCyc R.Dec = liftDec
-
-liftPow, liftDec :: (Lift b a, Fact m, Tensor t a, CElt t b) => Cyc t m b -> Cyc t m a
-{-# INLINABLE liftPow #-}
-{-# INLINABLE liftDec #-}
-
--- | Lift using the powerful basis.
-liftPow (Pow u) = Pow $ lift u
-liftPow (Dec u) = Pow $ lift $ toPow u
-liftPow (CRT u) = Pow $ lift $ either toPow toPow u
--- optimized for subrings; these are correct for powerful basis but
--- not for decoding
-liftPow (Scalar c) = Scalar $ lift c
-liftPow (Sub c) = Sub $ liftPow c
-
--- | Lift using the decoding basis.
-liftDec c = Dec $ lift $ uncycDec c
-
--- QUESTION: unzips are killed, right?
-
 instance {-# INCOHERENT #-} (Rescale a b, CElt t a, Tensor t b)
-    => R.RescaleCyc (Cyc t) a b where
+    => RescaleCyc (Cyc t) a b where
 
   -- Optimized for subring constructors, for powerful basis.
   -- Analogs for decoding basis are not quite correct, because (* -1)
   -- doesn't commute with 'rescale' due to tiebreakers!
-  rescaleCyc R.Pow (Scalar c) = Scalar $ rescale c
-  rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
+  rescaleCyc L.Pow (Scalar c) = Scalar $ rescale c
+  rescaleCyc L.Pow (Sub c) = Sub $ rescalePow c
 
-  rescaleCyc R.Pow c = Pow $ fmapPow rescale $ uncycPow c
-  rescaleCyc R.Dec c = Dec $ fmapDec rescale $ uncycDec c
+  rescaleCyc L.Pow c = Pow $ fmapPow rescale $ uncycPow c
+  rescaleCyc L.Dec c = Dec $ fmapDec rescale $ uncycDec c
   {-# INLINABLE rescaleCyc #-}
 
-instance R.RescaleCyc (Cyc t) a a where
+instance RescaleCyc (Cyc t) a a where
 
   -- No-op rescale
   rescaleCyc _ = id
@@ -513,12 +457,12 @@ instance R.RescaleCyc (Cyc t) a a where
 -- algorithm; removes one ring from the product.
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
          CElt t (a,b), CElt t a, CElt t b, CElt t (LiftOf a))
-         => R.RescaleCyc (Cyc t) (a,b) b where
+         => RescaleCyc (Cyc t) (a,b) b where
 
   -- optimized for subrings and powerful basis (see comments in other
   -- instance for why this doesn't work for decoding basis)
-  rescaleCyc R.Pow (Scalar c) = Scalar $ rescale c
-  rescaleCyc R.Pow (Sub c) = Sub $ R.rescalePow c
+  rescaleCyc L.Pow (Scalar c) = Scalar $ rescale c
+  rescaleCyc L.Pow (Sub c) = Sub $ rescalePow c
 
   rescaleCyc bas c = let aval = proxy modulus (Proxy::Proxy a)
                          (a,b) = unzipCyc c
@@ -528,42 +472,42 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes two rings from the product.
-instance (R.RescaleCyc (Cyc t) (b,c) c, Rescale (a,(b,c)) c,
-          R.RescaleCyc (Cyc t) (a,(b,c)) (b,c))
-         => R.RescaleCyc (Cyc t) (a,(b,c)) c where
+instance (RescaleCyc (Cyc t) (b,c) c, Rescale (a,(b,c)) c,
+          RescaleCyc (Cyc t) (a,(b,c)) (b,c))
+         => RescaleCyc (Cyc t) (a,(b,c)) c where
 
   rescaleCyc bas (a :: Cyc t m (a,(b,c))) =
-    R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,c))
+    rescaleCyc bas (rescaleCyc bas a :: Cyc t m (b,c))
   {-# INLINABLE rescaleCyc #-}
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes three rings from the product.
-instance (R.RescaleCyc (Cyc t) (b,(c,d)) d, Rescale (a,(b,(c,d))) d,
-          R.RescaleCyc (Cyc t) (a,(b,(c,d))) (b,(c,d)))
-         => R.RescaleCyc (Cyc t) (a,(b,(c,d))) d where
+instance (RescaleCyc (Cyc t) (b,(c,d)) d, Rescale (a,(b,(c,d))) d,
+          RescaleCyc (Cyc t) (a,(b,(c,d))) (b,(c,d)))
+         => RescaleCyc (Cyc t) (a,(b,(c,d))) d where
 
   rescaleCyc bas (a :: Cyc t m (a,(b,(c,d)))) =
-    R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,(c,d)))
+    rescaleCyc bas (rescaleCyc bas a :: Cyc t m (b,(c,d)))
   {-# INLINABLE rescaleCyc #-}
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes four rings from the product.
-instance (R.RescaleCyc (Cyc t) (b,(c,(d,e))) e, Rescale (a,(b,(c,(d,e)))) e,
-          R.RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) (b,(c,(d,e))))
-         => R.RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) e where
+instance (RescaleCyc (Cyc t) (b,(c,(d,e))) e, Rescale (a,(b,(c,(d,e)))) e,
+          RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) (b,(c,(d,e))))
+         => RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) e where
 
   rescaleCyc bas (a :: Cyc t m (a,(b,(c,(d,e))))) =
-    R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,(c,(d,e))))
+    rescaleCyc bas (rescaleCyc bas a :: Cyc t m (b,(c,(d,e))))
   {-# INLINABLE rescaleCyc #-}
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes five rings from the product.
-instance (R.RescaleCyc (Cyc t) (b,(c,(d,(e,f)))) f, Rescale (a,(b,(c,(d,(e,f))))) f,
-          R.RescaleCyc (Cyc t) (a,(b,(c,(d,(e,f))))) (b,(c,(d,(e,f)))))
-         => R.RescaleCyc (Cyc t) (a,(b,(c,(d,(e,f))))) f where
+instance (RescaleCyc (Cyc t) (b,(c,(d,(e,f)))) f, Rescale (a,(b,(c,(d,(e,f))))) f,
+          RescaleCyc (Cyc t) (a,(b,(c,(d,(e,f))))) (b,(c,(d,(e,f)))))
+         => RescaleCyc (Cyc t) (a,(b,(c,(d,(e,f))))) f where
 
   rescaleCyc bas (a :: Cyc t m (a,(b,(c,(d,(e,f)))))) =
-    R.rescaleCyc bas (R.rescaleCyc bas a :: Cyc t m (b,(c,(d,(e,f)))))
+    rescaleCyc bas (rescaleCyc bas a :: Cyc t m (b,(c,(d,(e,f)))))
   {-# INLINABLE rescaleCyc #-}
 
 -- | promoted from base ring

@@ -23,6 +23,7 @@ module Crypto.Lol.Cyclotomic.Language
 where
 
 import Crypto.Lol.Factored
+import Crypto.Lol.Types.Numeric
 
 import Control.Monad.Random      (MonadRandom)
 import Data.Functor.Trans.Tagged
@@ -63,7 +64,7 @@ class Cyclotomic c r where
 
 class GaussianCyc c q where
   tweakedGaussian :: (Fact m, ToRational v, MonadRandom rnd)
-    => v -> rnd (Cyc t m q)
+    => v -> rnd (c m q)
 
 -- | Cyclotomic extensions \( \O_{m'}/\O_m \).
 class ExtensionCyc c r where
@@ -88,11 +89,11 @@ coeffsPow = coeffsCyc Pow
 -- | 'coeffsCyc' specialized to the decoding basis.
 coeffsDec = coeffsCyc Dec
 
-class LiftCyc c a b where
+class LiftCyc c b a where
   -- | Lift using the specified basis.
-  liftCyc :: Fact m => Basis -> c m a -> c m b
+  liftCyc :: Fact m => Basis -> c m b -> c m a
 
-liftPow, liftDec :: (LiftCyc c a b, Fact m) => c m a -> c m b
+liftPow, liftDec :: (LiftCyc c b a, Fact m) => c m b -> c m a
 -- | 'liftCyc' specialized to the powerful basis.
 liftPow = liftCyc Pow
 -- | 'liftCyc' specialized to the decoding basis.
