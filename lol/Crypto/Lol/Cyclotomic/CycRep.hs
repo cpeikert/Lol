@@ -86,6 +86,15 @@ import Crypto.Lol.Types.Proto
 
 --import qualified Debug.Trace as DT
 
+-- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
+-- \(\Z_q[\zeta_m]\), and \(\Q(\zeta_m)\) in an explicit
+-- representation: @t@ is the 'Tensor' type for storing coefficient
+-- tensors; @m@ is the cyclotomic index; @rep@ is the representation
+-- (e.g., 'P', 'D', 'C', 'E'); @r@ is the base ring of the
+-- coefficients (e.g., \(\Z\), \(\Z_q\)).
+
+data family CycRep (t :: Factored -> * -> *) (m :: Factored) rep r
+
 -- | Nullary index type representing the powerful basis.
 data P
 -- | Nullary index type representing the decoding basis.
@@ -96,27 +105,18 @@ data C
 -- base ring.
 data E
 
+newtype instance CycRep t m P r = Pow  (t m r)
+newtype instance CycRep t m D r = Dec  (t m r)
+data    instance CycRep t m C r = CRTC !(CSentinel t m r) !(t m r)
+data    instance CycRep t m E r = CRTE !(ESentinel t m r) !(t m (CRTExt r))
+-- C/ESentinel enforces invariant that exactly one of these can be
+-- created for a given (t,m,r).
+
 -- | Convenient synonym for either CRT representation.
 type CycRepEC t m r = Either (CycRep t m E r) (CycRep t m C r)
 
 -- | Convenient synonym for random sampling.
 type CycRepPC t m r = Either (CycRep t m P r) (CycRep t m C r)
-
--- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
--- \(\Z_q[\zeta_m]\), and \(\Q(\zeta_m)\) in an explicit
--- representation: @t@ is the 'Tensor' type for storing coefficient
--- tensors; @m@ is the cyclotomic index; @rep@ is the representation
--- (e.g., 'P', 'D', 'C', 'E'); @r@ is the base ring of the
--- coefficients (e.g., \(\Z\), \(\Z_q\)).
-
-data family CycRep (t :: Factored -> * -> *) (m :: Factored) rep r
-
-newtype instance CycRep t m P r = Pow  (t m r)
-newtype instance CycRep t m D r = Dec  (t m r)
--- C/ESentinel enforces invariant that exactly one of these can be
--- created for a given (t,m,r).
-data    instance CycRep t m C r = CRTC !(CSentinel t m r) !(t m r)
-data    instance CycRep t m E r = CRTE !(ESentinel t m r) !(t m (CRTExt r))
 
 -- | Constraints needed for CRT-related operations on 'CycRep' data.
 type UCRTElt t r = (Tensor t r, Tensor t (CRTExt r),
@@ -441,8 +441,7 @@ twaceDec (Dec v) = Dec $ twacePowDec v
 
 -- | Twace into a subring, for the CRT basis.  (The output is an
 -- 'Either' because the subring might not support 'C'.)
-twaceCRTC :: (m `Divides` m', UCRTElt t r)
-             => CycRep t m' C r -> CycRepPC t m r
+twaceCRTC :: (m `Divides` m', UCRTElt t r) => CycRep t m' C r -> CycRepPC t m r
 {-# INLINE twaceCRTC #-}
 twaceCRTC x@(CRTC s' v) =
   case crtSentinel of
@@ -614,29 +613,22 @@ instance (Traversable (t m), Applicative (t m), IFunctor t, Fact m)
 ---------- Utility instances ----------
 
 instance (Random (t m r), UCRTElt t r, Fact m) => Random (CycRep t m P r) where
-
   random g = let (v,g') = random g
              in (Pow v, g')
-
   randomR _ = error "randomR non-sensical for CycRep"
 
 instance (Random (t m r), UCRTElt t r, Fact m) => Random (CycRep t m D r) where
-
   random g = let (v,g') = random g
              in (Dec v, g')
-
   randomR _ = error "randomR non-sensical for CycRep"
 
-instance (Random (t m r), UCRTElt t r, Fact m)
-         => Random (CycRepPC t m r) where
-
+instance (Random (t m r), UCRTElt t r, Fact m) => Random (CycRepPC t m r) where
   -- create in CRTC basis if possible, otherwise in powerful
   random = let cons = case crtSentinel of
                  Left  _ -> Left  . Pow
                  Right s -> Right . CRTC s
            in \g -> let (v,g') = random g
                     in (cons v, g')
-
   randomR _ = error "randomR non-sensical for CycRep"
 
 instance (Show (t m r), Fact m, Tensor t r) => Show (CycRep t m P r) where
