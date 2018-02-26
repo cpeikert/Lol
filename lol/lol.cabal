@@ -65,8 +65,8 @@ library
     Crypto.Lol.Prelude
 
     Crypto.Lol.Cyclotomic.Cyc
-    Crypto.Lol.Cyclotomic.UCyc
-    Crypto.Lol.Cyclotomic.RescaleCyc
+    Crypto.Lol.Cyclotomic.CycRep
+    Crypto.Lol.Cyclotomic.Language
     Crypto.Lol.Cyclotomic.Linear
 
     Crypto.Lol.RLWE.Continuous
@@ -129,7 +129,7 @@ library
     Crypto.Lol.Benchmarks.CycBenches
     Crypto.Lol.Benchmarks.Default
     Crypto.Lol.Benchmarks.TensorBenches
-    Crypto.Lol.Benchmarks.UCycBenches
+    Crypto.Lol.Benchmarks.CycRepBenches
 
   build-depends:
     ansi-terminal < 0.7,
