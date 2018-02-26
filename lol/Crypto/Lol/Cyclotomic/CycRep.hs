@@ -80,6 +80,7 @@ import Control.Applicative    as A
 import Control.DeepSeq
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.Random   hiding (ap, lift)
+import Data.Constraint
 import Data.Foldable          as F
 import Data.Traversable
 
@@ -615,43 +616,58 @@ instance (Traversable (t m), Applicative (t m), IFunctor t, Fact m)
 
 ---------- Utility instances ----------
 
-instance (Random (t m r), Fact m) => Random (CycRep t P m r) where
-  random g = let (v,g') = random g
+instance (Fact m, ForallFact2 Random t r) => Random (CycRep t P m r) where
+  random g = let (v,g') = random g \\ (entailFact2 :: Fact m :- Random (t m r))
              in (Pow v, g')
   randomR _ = error "randomR non-sensical for CycRep"
 
-instance (Random (t m r), Fact m) => Random (CycRep t D m r) where
-  random g = let (v,g') = random g
+instance (Fact m, ForallFact2 Random t r) => Random (CycRep t D m r) where
+  random g = let (v,g') = random g \\ (entailFact2 :: Fact m :- Random (t m r))
              in (Dec v, g')
   randomR _ = error "randomR non-sensical for CycRep"
 
-instance (Random (t m r), CRTElt t r, Fact m) => Random (CycRepPC t m r) where
+instance (Fact m, ForallFact2 Random t r, CRTElt t r) => Random (CycRepPC t m r) where
   -- create in CRTC basis if possible, otherwise in powerful
   random = let cons = case crtSentinel of
                  Left  _ -> Left  . Pow
                  Right s -> Right . CRTC s
            in \g -> let (v,g') = random g
+                                 \\ (entailFact2 :: Fact m :- Random (t m r))
                     in (cons v, g')
   randomR _ = error "randomR non-sensical for CycRep"
 
-instance (Show (t m r), Fact m) => Show (CycRep t P m r) where
+instance (Fact m, ForallFact2 Show t r) => Show (CycRep t P m r) where
   show (Pow x) = "CycRep.Pow " ++ show x
+                 \\ (entailFact2 :: Fact m :- Show (t m r))
 
-instance (Show (t m r), Fact m) => Show (CycRep t D m r) where
+instance (Fact m, ForallFact2 Show t r) => Show (CycRep t D m r) where
   show (Dec x) = "CycRep.Dec " ++ show x
+                 \\ (entailFact2 :: Fact m :- Show (t m r))
 
-instance (Show (t m r), Fact m) => Show (CycRep t C m r) where
+instance (Fact m, ForallFact2 Show t r) => Show (CycRep t C m r) where
   show (CRTC _ x) = "CycRep.CRTC " ++ show x
+                    \\ (entailFact2 :: Fact m :- Show (t m r))
 
-instance (Show (t m (CRTExt r)), Fact m) => Show (CycRep t E m r) where
+instance (Fact m, ForallFact2 Show t (CRTExt r)) => Show (CycRep t E m r) where
   show (CRTE _ x) = "CycRep.CRTE " ++ show x
+                    \\ (entailFact2 :: Fact m :- Show (t m (CRTExt r)))
 
-instance NFData (t m r) => NFData (CycRep t P m r) where rnf (Pow x) = rnf x
-instance NFData (t m r) => NFData (CycRep t D m r) where rnf (Dec x) = rnf x
-instance NFData (t m r) => NFData (CycRep t C m r) where rnf (CRTC _ x) = rnf x
-instance NFData (t m (CRTExt r)) => NFData (CycRep t E m r) where rnf (CRTE _ x) = rnf x
 
-instance (Protoable (t m r)) => Protoable (CycRep t D m r) where
+instance (Fact m, ForallFact2 NFData t r) => NFData (CycRep t P m r) where
+  rnf (Pow x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m r))
+
+instance (Fact m, ForallFact2 NFData t r) => NFData (CycRep t D m r) where
+  rnf (Dec x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m r))
+
+instance (Fact m, ForallFact2 NFData t r) => NFData (CycRep t C m r) where
+  rnf (CRTC _ x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m r))
+
+instance (Fact m, ForallFact2 NFData t (CRTExt r)) => NFData (CycRep t E m r) where
+  rnf (CRTE _ x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m (CRTExt r)))
+
+
+
+instance (Fact m, ForallFact2 Protoable t r) => Protoable (CycRep t D m r) where
   type ProtoType (CycRep t D m r) = ProtoType (t m r)
-  toProto (Dec t) = toProto t
-  fromProto t = Dec <$> fromProto t
+  toProto (Dec t) = toProto t \\ (entailFact2 :: Fact m :- Protoable (t m r))
+  fromProto t = Dec <$> fromProto t \\ (entailFact2 :: Fact m :- Protoable (t m r))
