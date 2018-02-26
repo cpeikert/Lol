@@ -104,19 +104,19 @@ type UCycPC t m r = Either (UCyc t m P r) (UCyc t m C r)
 
 -- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
 -- \(\Z_q[\zeta_m]\), and \(\Q(\zeta_m)\) in an explicit
--- representation: @t@ is the 'Tensor' type for storing coefficient tensors;
--- @m@ is the cyclotomic index; @rep@ is the representation ('P', 'D', or 'C');
--- @r@ is the base ring of the coefficients (e.g., \(\Z\), \(\Z_q\)).
---
--- The 'Functor', 'Applicative', 'Foldable' and 'Traversable'
--- instances all work coefficient-wise (in the specified basis).
-data UCyc t (m :: Factored) rep r where
-  Pow  :: !(t m r) -> UCyc t m P r
-  Dec  :: !(t m r) -> UCyc t m D r
-  -- Use CRTSentinel to enforce invariant that exactly one of these
-  -- can be created for a given (t,m,r).
-  CRTC :: !(CSentinel t m r) -> !(t m r) -> UCyc t m C r
-  CRTE :: !(ESentinel t m r) -> !(t m (CRTExt r)) -> UCyc t m E r
+-- representation: @t@ is the 'Tensor' type for storing coefficient
+-- tensors; @m@ is the cyclotomic index; @rep@ is the representation
+-- (e.g., 'P', 'D', 'C', 'E'); @r@ is the base ring of the
+-- coefficients (e.g., \(\Z\), \(\Z_q\)).
+
+data family UCyc (t :: Factored -> * -> *) (m :: Factored) rep r
+
+newtype instance UCyc t m P r = Pow  (t m r)
+newtype instance UCyc t m D r = Dec  (t m r)
+-- C/ESentinel enforces invariant that exactly one of these can be
+-- created for a given (t,m,r).
+data    instance UCyc t m C r = CRTC !(CSentinel t m r) !(t m r)
+data    instance UCyc t m E r = CRTE !(ESentinel t m r) !(t m (CRTExt r))
 
 -- | Constraints needed for CRT-related operations on 'UCyc' data.
 type UCRTElt t r = (Tensor t r, Tensor t (CRTExt r),
@@ -315,13 +315,14 @@ fmapDec :: (IFunctor t, IFElt t a, IFElt t b, Fact m) => (a -> b) -> UCyc t m D 
 fmapDec f (Dec v) = Dec $ fmapI f v
 {-# INLINABLE fmapDec #-}
 
--- | Multiply by the special element \(g_m\).
-mulG :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
-{-# INLINE mulG #-}
-mulG (Pow v) = Pow $ mulGPow v
-mulG (Dec v) = Dec $ mulGDec v
-mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
-mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
+class MulG rep where
+  -- | Multiply by the special element \(g_m\).
+  mulG :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m rep r
+
+instance MulG P where mulG (Pow v) = Pow $ mulGPow v
+instance MulG D where mulG (Dec v) = Dec $ mulGDec v
+instance MulG C where mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
+instance MulG E where mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 
 -- Note: We do not implement divGCRTE because we can't tell whether
 -- the element is actually divisible by g when using the CRT extension
@@ -507,43 +508,43 @@ crtSet =
      \\ pFreeDivides pp pm pm' \\ pSplitTheorems pp pm \\ pSplitTheorems pp pm'
 
 
---------- Conversion methods ------------------
+--------- Changing representation ------------------
 
--- | Convert to powerful-basis representation.
-toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
-{-# INLINABLE toPow #-}
-toPow x@(Pow _) = x
-toPow (Dec v) = Pow $ l v
-toPow (CRTC s v) = Pow $ crtInvCS s v
-toPow (CRTE _ v) = Pow $ fmapI fromExt $ runIdentity crtInv v
+class ConvertRep rep where
+  -- | Convert to powerful-basis representation.
+  toPow :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m P r
+  -- | Convert to decoding-basis representation.
+  toDec :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m D r
+  -- | Convert to an appropriate CRT-basis representation.
+  toCRT :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCycEC t m r
+
+instance ConvertRep P where
+  toPow = id
+  toDec (Pow v) = Dec $ lInv v
+  toCRT (Pow v) = case crtSentinel of
+                    Right s -> Right $ CRTC s $ crtCS s v
+                    Left  s -> Left  $ CRTE s $ runIdentity crt $ fmapI toExt v
+
+instance ConvertRep D where
+  toPow (Dec v) = Pow $ l v
+  toDec = id
+  toCRT = toCRT . toPow
+
+instance ConvertRep C where
+  toPow (CRTC s v) = Pow $ crtInvCS s v
+  toDec = toDec . toPow
+  toCRT = Right
+
+instance ConvertRep E where
+  toPow (CRTE _ v) = Pow $ fmapI fromExt $ runIdentity crtInv v
+  toDec = toDec . toPow
+  toCRT = Left
 
 -- | Convenient version of 'toPow' for 'Either' CRT basis type.
 toPowCE :: (Fact m, UCRTElt t r) => UCycEC t m r -> UCyc t m P r
 {-# INLINABLE toPowCE #-}
 toPowCE (Left u) = toPow u
 toPowCE (Right u) = toPow u
-
--- | Convert to decoding-basis representation.
-toDec :: (Fact m, UCRTElt t r) => UCyc t m rep r -> UCyc t m D r
-{-# INLINABLE toDec #-}
-toDec (Pow v) = Dec $ lInv v
-toDec x@(Dec _) = x
-toDec x@(CRTC _ _) = toDec $ toPow x
-toDec x@(CRTE _ _) = toDec $ toPow x
-
--- | Convert to a CRT-basis representation.
-toCRT :: forall t m rep r . (Fact m, UCRTElt t r)
-         => UCyc t m rep r -> UCycEC t m r
-{-# INLINABLE toCRT #-}
-toCRT = let fromPow :: t m r -> UCycEC t m r
-            fromPow = case crtSentinel of
-              Right s -> Right . CRTC s . crtCS s
-              Left  s -> Left  . CRTE s . runIdentity crt . fmapI toExt
-        in \x -> case x of
-                   (CRTC _ _) -> Right x
-                   (CRTE _ _) -> Left x
-                   (Pow v) -> fromPow v
-                   (Dec v) -> fromPow $ l v
 
 
 ---------- Category-theoretic instances ----------
@@ -638,18 +639,6 @@ instance (Random (t m r), UCRTElt t r, Fact m)
 
   randomR _ = error "randomR non-sensical for UCyc"
 
-instance (Tensor t r, Fact m, NFData (t m r), NFData (t m (CRTExt r)))
-         => NFData (UCyc t m rep r) where
-  rnf (Pow x)      = rnf x
-  rnf (Dec x)      = rnf x
-  rnf (CRTC _ x)   = rnf x
-  rnf (CRTE _ x)   = rnf x
-
-instance (Protoable (t m r)) => Protoable (UCyc t m D r) where
-  type ProtoType (UCyc t m D r) = ProtoType (t m r)
-  toProto (Dec t) = toProto t
-  fromProto t = Dec <$> fromProto t
-
 instance (Show (t m r), Fact m, Tensor t r) => Show (UCyc t m P r) where
   show (Pow x) = "UCyc.Pow " ++ show x
 
@@ -661,3 +650,20 @@ instance (Show (t m r), Fact m, Tensor t r) => Show (UCyc t m C r) where
 
 instance (Show (t m (CRTExt r)), Fact m, Tensor t (CRTExt r)) => Show (UCyc t m E r) where
   show (CRTE _ x) = "UCyc.CRTE " ++ show x
+
+instance (NFData (t m r)) => NFData (UCyc t m P r) where
+  rnf (Pow x)    = rnf x
+
+instance (NFData (t m r)) => NFData (UCyc t m D r) where
+  rnf (Dec x)    = rnf x
+
+instance (NFData (t m r)) => NFData (UCyc t m C r) where
+  rnf (CRTC _ x) = rnf x
+
+instance (NFData (t m (CRTExt r))) => NFData (UCyc t m E r) where
+  rnf (CRTE _ x) = rnf x
+
+instance (Protoable (t m r)) => Protoable (UCyc t m D r) where
+  type ProtoType (UCyc t m D r) = ProtoType (t m r)
+  toProto (Dec t) = toProto t
+  fromProto t = Dec <$> fromProto t
