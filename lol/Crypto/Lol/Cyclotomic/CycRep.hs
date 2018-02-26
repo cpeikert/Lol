@@ -68,6 +68,7 @@ import qualified Crypto.Lol.Cyclotomic.Tensor      as T
 import           Crypto.Lol.Prelude                as LP
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.IFunctor
+import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.ZPP
 
 import qualified Algebra.Additive     as Additive (C)
@@ -81,8 +82,6 @@ import Control.Monad.Identity (Identity (..))
 import Control.Monad.Random   hiding (ap, lift)
 import Data.Foldable          as F
 import Data.Traversable
-
-import Crypto.Lol.Types.Proto
 
 --import qualified Debug.Trace as DT
 
