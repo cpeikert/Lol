@@ -43,7 +43,7 @@ the internal linear transforms and other operations it performs.
 module Crypto.Lol.Cyclotomic.CycRep
 (
 -- * Data types and constraints
-  CycRep, P, D, C, E, CycRepEC, CycRepPC, UCRTElt
+  CycRep, P, D, C, E, CycRepEC, CycRepPC, CRTElt
 -- * Changing representation
 , toPow, toDec, toCRT, fmapPow, fmapDec
 -- * Scalars
@@ -118,8 +118,8 @@ type CycRepEC t m r = Either (CycRep t m E r) (CycRep t m C r)
 type CycRepPC t m r = Either (CycRep t m P r) (CycRep t m C r)
 
 -- | Constraints needed for CRT-related operations on 'CycRep' data.
-type UCRTElt t r = (Tensor t r, Tensor t (CRTExt r),
-                    CRTEmbed r, CRTrans Maybe r, CRTrans Identity (CRTExt r))
+type CRTElt t r = (Tensor t r, Tensor t (CRTExt r),
+                   CRTEmbed r, CRTrans Maybe r, CRTrans Identity (CRTExt r))
 
 -- | Embed a scalar from the base ring.
 scalarPow :: (Tensor t r, Fact m, Ring r) => r -> CycRep t m P r
@@ -127,7 +127,7 @@ scalarPow = Pow . T.scalarPow
 {-# INLINABLE scalarPow #-}
 
 -- | Embed a scalar from the base ring.
-scalarCRT :: (Fact m, UCRTElt t r) => r -> CycRepEC t m r
+scalarCRT :: (Fact m, CRTElt t r) => r -> CycRepEC t m r
 scalarCRT r = case crtSentinel of
   Right s -> Right $ CRTC s $ scalarCRTCS s r
   Left  s -> Left  $ CRTE s $ runIdentity T.scalarCRT $ toExt r
@@ -193,7 +193,7 @@ instance (Additive r, Tensor t r, IFunctor t, Fact m)
 
 -- | only for appropriate CRT representation (otherwise 'zero' would
 -- violate internal invariant)
-instance (Fact m, UCRTElt t r) => Additive.C (CycRepEC t m r) where
+instance (Fact m, CRTElt t r) => Additive.C (CycRepEC t m r) where
 
   zero = scalarCRT zero
 
@@ -216,7 +216,7 @@ instance (Fact m, UCRTElt t r) => Additive.C (CycRepEC t m r) where
   {-# INLINABLE negate #-}
 
 -- | only for appropriate CRT representation
-instance (Fact m, UCRTElt t r) => Ring.C (CycRepEC t m r) where
+instance (Fact m, CRTElt t r) => Ring.C (CycRepEC t m r) where
 
   one = scalarCRT one
   fromInteger c = scalarCRT $ fromInteger c
@@ -238,7 +238,7 @@ instance (Ring r, Tensor t r, Fact m) => Module.C r (CycRep t m D r) where
   r *> (Dec v) = Dec $ fmapI (r *) v
   {-# INLINABLE (*>) #-}
 
-instance (Ring r, Fact m, UCRTElt t r) => Module.C r (CycRepEC t m r) where
+instance (Ring r, Fact m, CRTElt t r) => Module.C r (CycRepEC t m r) where
 
   r *> (Right (CRTC s v)) = Right $ CRTC s $ fmapI (r *) v
   r *> (Left (CRTE s v)) = Left $ CRTE s $ fmapI (toExt r *) v
@@ -316,7 +316,7 @@ fmapDec f (Dec v) = Dec $ fmapI f v
 
 class MulG rep where
   -- | Multiply by the special element \(g_m\).
-  mulG :: (Fact m, UCRTElt t r) => CycRep t m rep r -> CycRep t m rep r
+  mulG :: (Fact m, CRTElt t r) => CycRep t m rep r -> CycRep t m rep r
 
 instance MulG P where mulG (Pow v) = Pow $ mulGPow v
 instance MulG D where mulG (Dec v) = Dec $ mulGDec v
@@ -331,19 +331,19 @@ instance MulG E where mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
-divGPow :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
+divGPow :: (Fact m, CRTElt t r, ZeroTestable r, IntegralDomain r)
         => CycRep t m P r -> Maybe (CycRep t m P r)
 {-# INLINABLE divGPow #-}
 divGPow (Pow v) = Pow <$> T.divGPow v
 
 -- | Similar to 'divGPow'.
-divGDec :: (Fact m, UCRTElt t r, ZeroTestable r, IntegralDomain r)
+divGDec :: (Fact m, CRTElt t r, ZeroTestable r, IntegralDomain r)
         => CycRep t m D r -> Maybe (CycRep t m D r)
 {-# INLINABLE divGDec #-}
 divGDec (Dec v) = Dec <$> T.divGDec v
 
 -- | Similar to 'divGPow'.
-divGCRTC :: (Fact m, UCRTElt t r)
+divGCRTC :: (Fact m, CRTElt t r)
         => CycRep t m C r -> CycRep t m C r
 {-# INLINE divGCRTC #-}
 divGCRTC (CRTC s v) = CRTC s $ divGCRTCS s v
@@ -408,7 +408,7 @@ embedDec (Dec v) = Dec $ T.embedDec v
 
 -- | Embed into an extension ring, for the CRT basis.  (The output is
 -- an 'Either' because the extension ring might not support 'C'.)
-embedCRTC :: (m `Divides` m', UCRTElt t r)
+embedCRTC :: (m `Divides` m', CRTElt t r)
              => CycRep t m C r -> Either (CycRep t m' P r) (CycRep t m' C r)
 {-# INLINABLE embedCRTC #-}
 embedCRTC x@(CRTC s v) =
@@ -419,7 +419,7 @@ embedCRTC x@(CRTC s v) =
 
 -- | Similar to 'embedCRTC'.  (The output is an 'Either' because the
 -- extension ring might support 'C', in which case we never use 'E'.)
-embedCRTE :: forall m m' t r . (m `Divides` m', UCRTElt t r)
+embedCRTE :: forall m m' t r . (m `Divides` m', CRTElt t r)
              => CycRep t m E r -> Either (CycRep t m' P r) (CycRep t m' E r)
 {-# INLINABLE embedCRTE #-}
 embedCRTE x@(CRTE _ v) =
@@ -440,7 +440,7 @@ twaceDec (Dec v) = Dec $ twacePowDec v
 
 -- | Twace into a subring, for the CRT basis.  (The output is an
 -- 'Either' because the subring might not support 'C'.)
-twaceCRTC :: (m `Divides` m', UCRTElt t r) => CycRep t m' C r -> CycRepPC t m r
+twaceCRTC :: (m `Divides` m', CRTElt t r) => CycRep t m' C r -> CycRepPC t m r
 {-# INLINE twaceCRTC #-}
 twaceCRTC x@(CRTC s' v) =
   case crtSentinel of
@@ -450,7 +450,7 @@ twaceCRTC x@(CRTC s' v) =
 
 -- | Similar to 'twaceCRTC'.  (The output is an 'Either' because the
 -- subring might support 'C', in which case we never use 'E'.)
-twaceCRTE :: forall t m m' r . (m `Divides` m', UCRTElt t r)
+twaceCRTE :: forall t m m' r . (m `Divides` m', CRTElt t r)
              => CycRep t m' E r -> Either (CycRep t m P r) (CycRep t m E r)
 {-# INLINABLE twaceCRTE #-}
 twaceCRTE x@(CRTE _ v) =
@@ -481,7 +481,7 @@ powBasis = (Pow <$>) <$> powBasisPow
 -- the best choice for typical use cases).
 crtSet :: forall t m m' r p mbar m'bar .
            (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r), mbar ~ PFree p m, m'bar ~ PFree p m',
-            UCRTElt t r, TensorCRTSet t (ZpOf r))
+            CRTElt t r, TensorCRTSet t (ZpOf r))
           => Tagged m [CycRep t m' P r]
 {-# INLINABLE crtSet #-}
 crtSet =
@@ -510,11 +510,11 @@ crtSet =
 
 class ConvertRep rep where
   -- | Convert to powerful-basis representation.
-  toPow :: (Fact m, UCRTElt t r) => CycRep t m rep r -> CycRep t m P r
+  toPow :: (Fact m, CRTElt t r) => CycRep t m rep r -> CycRep t m P r
   -- | Convert to decoding-basis representation.
-  toDec :: (Fact m, UCRTElt t r) => CycRep t m rep r -> CycRep t m D r
+  toDec :: (Fact m, CRTElt t r) => CycRep t m rep r -> CycRep t m D r
   -- | Convert to an appropriate CRT-basis representation.
-  toCRT :: (Fact m, UCRTElt t r) => CycRep t m rep r -> CycRepEC t m r
+  toCRT :: (Fact m, CRTElt t r) => CycRep t m rep r -> CycRepEC t m r
 
 instance ConvertRep P where
   toPow = id
@@ -539,7 +539,7 @@ instance ConvertRep E where
   toCRT = Left
 
 -- | Convenient version of 'toPow' for 'Either' CRT basis type.
-toPowCE :: (Fact m, UCRTElt t r) => CycRepEC t m r -> CycRep t m P r
+toPowCE :: (Fact m, CRTElt t r) => CycRepEC t m r -> CycRep t m P r
 {-# INLINABLE toPowCE #-}
 toPowCE (Left u) = toPow u
 toPowCE (Right u) = toPow u
@@ -611,17 +611,17 @@ instance (Traversable (t m), Applicative (t m), IFunctor t, Fact m)
 
 ---------- Utility instances ----------
 
-instance (Random (t m r), UCRTElt t r, Fact m) => Random (CycRep t m P r) where
+instance (Random (t m r), Fact m) => Random (CycRep t m P r) where
   random g = let (v,g') = random g
              in (Pow v, g')
   randomR _ = error "randomR non-sensical for CycRep"
 
-instance (Random (t m r), UCRTElt t r, Fact m) => Random (CycRep t m D r) where
+instance (Random (t m r), Fact m) => Random (CycRep t m D r) where
   random g = let (v,g') = random g
              in (Dec v, g')
   randomR _ = error "randomR non-sensical for CycRep"
 
-instance (Random (t m r), UCRTElt t r, Fact m) => Random (CycRepPC t m r) where
+instance (Random (t m r), CRTElt t r, Fact m) => Random (CycRepPC t m r) where
   -- create in CRTC basis if possible, otherwise in powerful
   random = let cons = case crtSentinel of
                  Left  _ -> Left  . Pow
