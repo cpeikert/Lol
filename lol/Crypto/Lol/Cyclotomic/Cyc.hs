@@ -47,8 +47,6 @@ the internal linear transforms and other operations it performs.
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-
-
 module Crypto.Lol.Cyclotomic.Cyc
 (
 -- * Data type
@@ -81,10 +79,9 @@ import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.ZPP
 
-import Control.Applicative hiding ((*>))
+import Control.Applicative    hiding ((*>))
 import Control.Arrow
 import Control.DeepSeq
--- GHC warning is wrong: https://ghc.haskell.org/trac/ghc/ticket/12067
 import Control.Monad.Identity
 import Control.Monad.Random   hiding (lift)
 import Data.Coerce
@@ -179,6 +176,7 @@ instance (Fact m, CElt t r, ForallFact2 ZeroTestable.C t r)
   {-# INLINABLE isZero #-}
 
 instance (Eq r, Fact m, CElt t r, ForallFact2 Eq t r) => Eq (Cyc t m r) where
+  {-# INLINABLE (==) #-}
   -- same representations
   (Scalar c1) == (Scalar c2) = c1 == c2
   (Pow u1) == (Pow u2) = u1 == u2 \\ (entailFact2 :: Fact m :- Eq (t m r))
@@ -200,8 +198,6 @@ instance (Eq r, Fact m, CElt t r, ForallFact2 Eq t r) => Eq (Cyc t m r) where
 
   -- otherwise: compare in powerful basis
   c1 == c2 = toPow' c1 == toPow' c2
-
-  {-# INLINABLE (==) #-}
 
 instance (Fact m, CElt t r) => Additive.C (Cyc t m r) where
   {-# INLINABLE zero #-}

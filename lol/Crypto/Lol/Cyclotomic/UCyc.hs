@@ -651,13 +651,13 @@ instance (Protoable (t m r)) => Protoable (UCyc t m D r) where
   fromProto t = Dec <$> fromProto t
 
 instance (Show (t m r), Fact m, Tensor t r) => Show (UCyc t m P r) where
-  show (Pow x) = "UPow " ++ show x
+  show (Pow x) = "UCyc.Pow " ++ show x
 
 instance (Show (t m r), Fact m, Tensor t r) => Show (UCyc t m D r) where
-  show (Dec x) = "UDec " ++ show x
+  show (Dec x) = "UCyc.Dec " ++ show x
 
 instance (Show (t m r), Fact m, Tensor t r) => Show (UCyc t m C r) where
-  show (CRTC _ x) = "UCRTC " ++ show x
+  show (CRTC _ x) = "UCyc.CRTC " ++ show x
 
 instance (Show (t m (CRTExt r)), Fact m, Tensor t (CRTExt r)) => Show (UCyc t m E r) where
-  show (CRTE _ x) = "UCRTE " ++ show x
+  show (CRTE _ x) = "UCyc.CRTE " ++ show x
