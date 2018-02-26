@@ -552,63 +552,69 @@ toPowCE (Right u) = toPow u
 
 ---------- Category-theoretic instances ----------
 
--- CJP: no instances for E because types (and math) don't make sense.
+-- No instances for E because types (and math) don't make sense.
 
 -- | apply coefficient-wise (with respect to powerful basis)
-instance (Applicative (t m), IFunctor t, Fact m) => Functor (CycRep t P m) where
+instance Applicative (CycRep t P m) => Functor (CycRep t P m) where
   -- Functor instance is implied by Applicative laws
   {-# INLINABLE fmap #-}
   fmap f x = pure f <*> x
 
 -- | apply coefficient-wise (with respect to decoding basis)
-instance (Applicative (t m), IFunctor t, Fact m) => Functor (CycRep t D m) where
+instance Applicative (CycRep t D m) => Functor (CycRep t D m) where
   -- Functor instance is implied by Applicative laws
   {-# INLINABLE fmap #-}
   fmap f x = pure f <*> x
 
--- CJP: no Functor instance for C, because CRTrans for a doesn't imply
--- it for b.
+-- No Functor instance for C, because CRTrans a doesn't imply CRTrans b.
 
-instance (IFunctor t, Applicative (t m), Fact m) => Applicative (CycRep t P m) where
-  pure = Pow . pure
+instance (Fact m, ForallFact1 Applicative t) => Applicative (CycRep t P m) where
+  pure = Pow . pure \\ (entailFact1 :: Fact m :- Applicative (t m))
   (Pow f) <*> (Pow v) = Pow $ f <*> v
-
+                        \\ (entailFact1 :: Fact m :- Applicative (t m))
   {-# INLINABLE pure #-}
   {-# INLINABLE (<*>) #-}
 
-instance (Applicative (t m), IFunctor t, Fact m) => Applicative (CycRep t D m) where
-  pure = Dec . pure
+instance (Fact m, ForallFact1 Applicative t) => Applicative (CycRep t D m) where
+  pure = Dec . pure \\ (entailFact1 :: Fact m :- Applicative (t m))
   (Dec f) <*> (Dec v) = Dec $ f <*> v
-
+                        \\ (entailFact1 :: Fact m :- Applicative (t m))
   {-# INLINABLE pure #-}
   {-# INLINABLE (<*>) #-}
 
 -- CJP: no Applicative instance for C, because 'pure' would circumvent
--- the invariant.  Moreover, having CRTrans for (a -> b) and for a
--- doesn't imply it for b.
+-- the invariant.  Moreover, `CRTrans (a -> b)` and `CRTrans a`
+-- doesn't imply `CRTrans b`.
 
-instance (Foldable (t m), IFunctor t, Fact m) => Foldable (CycRep t P m) where
-  {-# INLINABLE foldr #-}
-  foldr f b (Pow v) = F.foldr f b v
+instance Traversable (CycRep t P m) => Foldable (CycRep t P m) where
+  -- Foldable instance implied by Traversable instance
+  foldMap = foldMapDefault
 
-instance (Foldable (t m), IFunctor t, Fact m) => Foldable (CycRep t D m) where
-  {-# INLINABLE foldr #-}
-  foldr f b (Dec v) = F.foldr f b v
+instance Traversable (CycRep t D m) => Foldable (CycRep t D m) where
+  -- Foldable instance implied by Traversable instance
+  foldMap = foldMapDefault
 
-instance (Foldable (t m), IFunctor t, Fact m) => Foldable (CycRep t C m) where
-  {-# INLINABLE foldr #-}
-  foldr f b (CRTC _ v) = F.foldr f b v
+-- no Traversable for C, but it is Foldable
+instance (Fact m, ForallFact1 Foldable t) => Foldable (CycRep t C m) where
+  foldr f b (CRTC _ v) = foldr f b v
+                         \\ (entailFact1 :: Fact m :- Foldable (t m))
 
 
-instance (Traversable (t m), Applicative (t m), IFunctor t, Fact m)
-         => Traversable (CycRep t P m) where
+instance (Fact m, ForallFact1 Traversable t,
+          -- for superclass constraints of Traversable
+          ForallFact1 Applicative t, ForallFact1 Foldable t)
+  => Traversable (CycRep t P m) where
   {-# INLINABLE traverse #-}
   traverse f (Pow v) = Pow <$> traverse f v
+                       \\ (entailFact1 :: Fact m :- Traversable (t m))
 
-instance (Traversable (t m), Applicative (t m), IFunctor t, Fact m)
-         => Traversable (CycRep t D m) where
+instance (Fact m, ForallFact1 Traversable t,
+          -- for superclass constraints of Traversable
+          ForallFact1 Applicative t, ForallFact1 Foldable t)
+  => Traversable (CycRep t D m) where
   {-# INLINABLE traverse #-}
   traverse f (Dec v) = Dec <$> traverse f v
+                       \\ (entailFact1 :: Fact m :- Traversable (t m))
 
 -- CJP: no Traversable instance for C, because CRTrans for a doesn't
 -- imply it for b.
