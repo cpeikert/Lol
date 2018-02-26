@@ -646,17 +646,10 @@ instance (Show (t m r), Fact m) => Show (CycRep t C m r) where
 instance (Show (t m (CRTExt r)), Fact m) => Show (CycRep t E m r) where
   show (CRTE _ x) = "CycRep.CRTE " ++ show x
 
-instance (NFData (t m r)) => NFData (CycRep t P m r) where
-  rnf (Pow x)    = rnf x
-
-instance (NFData (t m r)) => NFData (CycRep t D m r) where
-  rnf (Dec x)    = rnf x
-
-instance (NFData (t m r)) => NFData (CycRep t C m r) where
-  rnf (CRTC _ x) = rnf x
-
-instance (NFData (t m (CRTExt r))) => NFData (CycRep t E m r) where
-  rnf (CRTE _ x) = rnf x
+instance NFData (t m r) => NFData (CycRep t P m r) where rnf (Pow x) = rnf x
+instance NFData (t m r) => NFData (CycRep t D m r) where rnf (Dec x) = rnf x
+instance NFData (t m r) => NFData (CycRep t C m r) where rnf (CRTC _ x) = rnf x
+instance NFData (t m (CRTExt r)) => NFData (CycRep t E m r) where rnf (CRTE _ x) = rnf x
 
 instance (Protoable (t m r)) => Protoable (CycRep t D m r) where
   type ProtoType (CycRep t D m r) = ProtoType (t m r)
