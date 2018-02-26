@@ -94,8 +94,8 @@ import Data.Traversable
 -- for storing coefficient tensors; @m@ is the cyclotomic index; @r@
 -- is the base ring of the coefficients (e.g., \(\Z\), \(\Z_q\)).
 data Cyc t m r where
-  Pow :: !(CycRep t m P r) -> Cyc t m r
-  Dec :: !(CycRep t m D r) -> Cyc t m r
+  Pow :: !(CycRep t P m r) -> Cyc t m r
+  Dec :: !(CycRep t D m r) -> Cyc t m r
   CRT :: !(CycRepEC t m r) -> Cyc t m r
   -- super-optimized storage of scalars
   Scalar :: !r -> Cyc t m r
@@ -109,12 +109,12 @@ type CycElt t r = (CRTElt t r, ZeroTestable r, IntegralDomain r)
 ---------- Constructors / deconstructors ----------
 
 -- | Wrap a 'CycRep' as a 'Cyc'.
-cycPow :: CycRep t m P r -> Cyc t m r
+cycPow :: CycRep t P m r -> Cyc t m r
 cycPow = Pow
 {-# INLINABLE cycPow #-}
 
 -- | Wrap a 'CycRep' as a 'Cyc'.
-cycDec :: CycRep t m D r -> Cyc t m r
+cycDec :: CycRep t D m r -> Cyc t m r
 cycDec = Dec
 {-# INLINABLE cycDec #-}
 
@@ -124,32 +124,32 @@ cycCRT = CRT
 {-# INLINABLE cycCRT #-}
 
 -- | Wrap a 'CycRep' as a 'Cyc'.
-cycCRTC :: CycRep t m C r -> Cyc t m r
+cycCRTC :: CycRep t C m r -> Cyc t m r
 cycCRTC = CRT . Right
 {-# INLINABLE cycCRTC #-}
 
 -- | Wrap a 'CycRep' as a 'Cyc'.
-cycCRTE :: CycRep t m E r -> Cyc t m r
+cycCRTE :: CycRep t E m r -> Cyc t m r
 cycCRTE = CRT . Left
 {-# INLINABLE cycCRTE #-}
 
 -- | Convenience wrapper.
-cycPC :: Either (CycRep t m P r) (CycRep t m C r) -> Cyc t m r
+cycPC :: Either (CycRep t P m r) (CycRep t C m r) -> Cyc t m r
 cycPC = either Pow (CRT . Right)
 {-# INLINABLE cycPC #-}
 
 -- | Convenience wrapper.
-cycPE :: Either (CycRep t m P r) (CycRep t m E r) -> Cyc t m r
+cycPE :: Either (CycRep t P m r) (CycRep t E m r) -> Cyc t m r
 cycPE = either Pow (CRT . Left)
 {-# INLINABLE cycPE #-}
 
 -- | Unwrap a 'Cyc' as a 'CycRep' in powerful-basis representation.
-uncycPow :: (Fact m, CycElt t r) => Cyc t m r -> CycRep t m P r
+uncycPow :: (Fact m, CycElt t r) => Cyc t m r -> CycRep t P m r
 {-# INLINABLE uncycPow #-}
 uncycPow c = let (Pow u) = toPow' c in u
 
 -- | Unwrap a 'Cyc' as a 'CycRep' in decoding-basis representation.
-uncycDec :: (Fact m, CycElt t r) => Cyc t m r -> CycRep t m D r
+uncycDec :: (Fact m, CycElt t r) => Cyc t m r -> CycRep t D m r
 {-# INLINABLE uncycDec #-}
 uncycDec c = let (Dec u) = toDec' c in u
 
@@ -521,7 +521,7 @@ instance (Decompose gad zq, Fact m, CycElt t zq, CycElt t (DecompOf zq))
   decompose (Scalar c) = pasteT $ Scalar <$> peelT (decompose c)
   decompose (Sub c) = pasteT $ Sub <$> peelT (decompose c)
 
-  -- traverse: Traversable (CycRep t m P) and Applicative (Tagged gad ZL)
+  -- traverse: Traversable (CycRep t P m) and Applicative (Tagged gad ZL)
   decompose (Pow u) = fromZL $ Pow <$> traverse (toZL . decompose) u
   decompose c = decompose $ toPow' c
 
@@ -535,8 +535,8 @@ fromZL = coerce
 
 -- | promoted from base ring, using the decoding basis for best geometry
 instance (Correct gad zq, Fact m, CycElt t zq) => Correct gad (Cyc t m zq) where
-  -- sequence: Monad [] and Traversable (CycRep t m D)
-  -- sequenceA: Applicative (CycRep t m D) and Traversable (TaggedT gad [])
+  -- sequence: Monad [] and Traversable (CycRep t D m)
+  -- sequenceA: Applicative (CycRep t D m) and Traversable (TaggedT gad [])
   correct bs = Dec *** (Dec <$>) $
                second sequence $ fmap fst &&& fmap snd $ (correct . pasteT) <$>
                sequenceA (uncycDec <$> peelT bs)
@@ -578,31 +578,36 @@ toCRT' (Sub c) = toCRT' $ embed' $ toCRT' c
 
 ---------- Utility instances ----------
 
-instance (Fact m, NFData r, NFData (CRTExt r)) => NFData (Cyc t m r) where
-  rnf (Pow u) = rnf u
-  rnf (Dec u) = rnf u
-  rnf (CRT u) = rnf u
-  rnf (Scalar u) = rnf u
-  rnf (Sub c) = rnf c
-
-instance (Random r, Tensor t r, Fact m, CRTElt t r) => Random (Cyc t m r) where
+instance (Fact m, ForallFact2 Random t r, CRTElt t r) => Random (Cyc t m r) where
   random g = let (u,g') = random g
              in (either Pow (CRT . Right) u, g')
   {-# INLINABLE random #-}
 
   randomR _ = error "randomR non-sensical for Cyc"
 
-instance (Fact m, CycElt t r, Protoable (CycRep t m D r))
-         => Protoable (Cyc t m r) where
-  type ProtoType (Cyc t m r) = ProtoType (CycRep t m D r)
-  toProto (Dec uc) = toProto uc
-  toProto x = toProto $ toDec' x
-  fromProto x = Dec <$> fromProto x
-
-instance (Show r, Show (CRTExt r), Fact m, Tensor t r) => Show (Cyc t m r) where
+instance (Fact m, ForallFact2 Show t r, ForallFact2 Show t (CRTExt r), Show r)
+  => Show (Cyc t m r) where
   show (Pow x) = "Cyc.Pow " ++ show x
   show (Dec x) = "Cyc.Dec " ++ show x
   show (CRT (Left x)) = "Cyc.CRT " ++ show x
   show (CRT (Right x)) = "Cyc.CRT " ++ show x
   show (Scalar x) = "Cyc.Scalar " ++ show x
   show (Sub x) = "Cyc.Sub " ++ show x
+
+instance (NFData r, Fact m,
+          ForallFact2 NFData t r, ForallFact2 NFData t (CRTExt r))
+  => NFData (Cyc t m r) where
+  rnf (Pow u) = rnf u
+  rnf (Dec u) = rnf u
+  rnf (CRT u) = rnf u
+  rnf (Scalar u) = rnf u
+  rnf (Sub c) = rnf c
+
+instance (Fact m, CycElt t r, Protoable (CycRep t D m r))
+         => Protoable (Cyc t m r) where
+
+  type ProtoType (Cyc t m r) = ProtoType (CycRep t D m r)
+  toProto (Dec uc) = toProto uc
+  toProto x = toProto $ toDec' x
+  fromProto x = Dec <$> fromProto x
+
