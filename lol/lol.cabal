@@ -78,6 +78,7 @@ library
     Crypto.Lol.Types.Unsafe.Complex
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
+    Crypto.Lol.Types.IFunctor
     Crypto.Lol.Types.IZipVector
     Crypto.Lol.Types.Proto
     Crypto.Lol.Types.Random
