@@ -72,7 +72,7 @@ import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
-import           Crypto.Lol.Cyclotomic.Tensor   (Tensor)
+import           Crypto.Lol.Cyclotomic.Tensor   (Tensor, TensorCRTSet)
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.Prelude             as LP
 import           Crypto.Lol.Types.FiniteField
@@ -86,6 +86,7 @@ import Control.Monad.Identity
 import Control.Monad.Random   hiding (lift)
 import Data.Coerce
 import Data.Constraint        ((:-), (\\))
+import Data.Foldable
 import Data.Traversable
 
 
@@ -360,23 +361,41 @@ errorCoset v = (Dec <$>) . R.errorCoset v . uncycDec
 
 ---------- Inter-ring operations ----------
 
-instance (Tensor t r) => ExtensionCyc (Cyc t) r where
-  embed (Scalar c) = Scalar c           -- keep as scalar
-  embed (Sub (c :: Cyc t l r)) = Sub c  -- keep as subring element
-    \\ transDivides (Proxy::Proxy l) (Proxy::Proxy m) (Proxy::Proxy m')
-  embed c = Sub c
-
-  twace (Pow u) = Pow $ R.twacePow u
-  twace (Dec u) = Dec $ R.twaceDec u
-  twace (CRT u) = either (cycPE . twaceCRTE) (cycPC . twaceCRTC) u
-  twace (Scalar u) = Scalar u
-  twace (Sub (c :: Cyc t l r)) = Sub (twace c :: Cyc t (FGCD l m) r)
-                                 \\ gcdDivides (Proxy::Proxy l) (Proxy::Proxy m)
+instance (CycElt t r) => ExtensionCyc (Cyc t) r where
+  -- use these because implementations need indices to be in scope
+  embed = embedLazy
+  twace = twace'
 
   powBasis = (Pow <$>) <$> R.powBasis
 
   coeffsCyc L.Pow c' = Pow <$> R.coeffsPow (uncycPow c')
   coeffsCyc L.Dec c' = Dec <$> R.coeffsDec (uncycDec c')
+
+twace' :: forall t m m' r . (CycElt t r, m `Divides` m')
+       => Cyc t m' r -> Cyc t m r
+twace' (Pow u) = Pow $ R.twacePow u
+twace' (Dec u) = Dec $ R.twaceDec u
+twace' (CRT u) = either (cycPE . twaceCRTE) (cycPC . twaceCRTC) u
+twace' (Scalar u) = Scalar u
+twace' (Sub (c :: Cyc t l r)) = Sub (twace c :: Cyc t (FGCD l m) r)
+                                \\ gcdDivides (Proxy::Proxy l) (Proxy::Proxy m)
+
+embedLazy :: forall t m m' r . (m `Divides` m')
+          => Cyc t m r -> Cyc t m' r
+embedLazy (Scalar c) = Scalar c           -- keep as scalar
+embedLazy (Sub (c :: Cyc t l r)) = Sub c  -- keep as subring element
+  \\ transDivides (Proxy::Proxy l) (Proxy::Proxy m) (Proxy::Proxy m')
+embedLazy c = Sub c
+
+-- | Force to a non-'Sub' constructor (for internal use only).
+embed' :: forall t r l m . (l `Divides` m, CycElt t r) => Cyc t l r -> Cyc t m r
+{-# INLINE embed' #-}
+embed' (Pow u) = Pow $ embedPow u
+embed' (Dec u) = Dec $ embedDec u
+embed' (CRT u) = either (cycPE . embedCRTE) (cycPC . embedCRTC) u
+embed' (Scalar c) = Scalar c
+embed' (Sub (c :: Cyc t k r)) = embed' c
+  \\ transDivides (Proxy::Proxy k) (Proxy::Proxy l) (Proxy::Proxy m)
 
 instance (Lift b a, CycElt t b, Tensor t a) => LiftCyc (Cyc t) b a where
   liftCyc L.Pow = cycLiftPow
@@ -399,18 +418,9 @@ cycLiftPow (Sub c) = Sub $ cycLiftPow c
 -- | Lift using the decoding basis.
 cycLiftDec c = Dec $ lift $ uncycDec c
 
--- | Force to a non-'Sub' constructor (for internal use only).
-embed' :: forall t r l m . (l `Divides` m, CycElt t r) => Cyc t l r -> Cyc t m r
-{-# INLINE embed' #-}
-embed' (Pow u) = Pow $ embedPow u
-embed' (Dec u) = Dec $ embedDec u
-embed' (CRT u) = either (cycPE . embedCRTE) (cycPC . embedCRTC) u
-embed' (Scalar c) = Scalar c
-embed' (Sub (c :: Cyc t k r)) = embed' c
-  \\ transDivides (Proxy::Proxy k) (Proxy::Proxy l) (Proxy::Proxy m)
-
 -- | The relative mod-@r@ CRT set of the extension.
-crtSet :: (m `Divides` m', ZPP r, CycElt t r, Tensor t (ZpOf r)) => Tagged m [Cyc t m' r]
+crtSet :: (m `Divides` m', ZPP r, CycElt t r, TensorCRTSet t (ZpOf r))
+       => Tagged m [Cyc t m' r]
 crtSet = (Pow <$>) <$> R.crtSet
 {-# INLINABLE crtSet #-}
 
@@ -446,6 +456,8 @@ instance RescaleCyc (Cyc t) a a where
   rescaleCyc _ = id
   {-# INLINABLE rescaleCyc #-}
 
+{- CJP: restore this when we have a data family instance for pairs
+
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes one ring from the product.
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
@@ -462,6 +474,7 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
                          z = liftCyc bas a
                      in Scalar (recip (reduce aval)) * (b - reduce z)
   {-# INLINABLE rescaleCyc #-}
+-}
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes two rings from the product.
@@ -511,7 +524,11 @@ instance (Gadget gad zq, Fact m, CycElt t zq) => Gadget gad (Cyc t m zq) where
   -- CJP: default 'encode' works because mul-by-Scalar is fast
 
 -- | promoted from base ring, using the powerful basis for best geometry
-instance (Decompose gad zq, Fact m, CycElt t zq, CycElt t (DecompOf zq))
+instance (Decompose gad zq, Fact m, CycElt t zq, CycElt t (DecompOf zq),
+          -- copied from Traversable (CycRep t P m) instance;
+          -- needed for Sub case of this instance
+          ForallFact1 Traversable t, ForallFact1 Applicative t,
+          ForallFact1 Foldable t)
          => Decompose gad (Cyc t m zq) where
 
   type DecompOf (Cyc t m zq) = Cyc t m (DecompOf zq)
@@ -534,7 +551,8 @@ fromZL :: TaggedT s ZipList a -> Tagged s [a]
 fromZL = coerce
 
 -- | promoted from base ring, using the decoding basis for best geometry
-instance (Correct gad zq, Fact m, CycElt t zq) => Correct gad (Cyc t m zq) where
+instance (Correct gad zq, Fact m, CycElt t zq, Traversable (CycRep t D m))
+  => Correct gad (Cyc t m zq) where
   -- sequence: Monad [] and Traversable (CycRep t D m)
   -- sequenceA: Applicative (CycRep t D m) and Traversable (TaggedT gad [])
   correct bs = Dec *** (Dec <$>) $
