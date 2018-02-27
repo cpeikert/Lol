@@ -365,7 +365,7 @@ tweakedGaussian = fmap Dec . tweakedGaussianDec
 {-# INLINABLE tweakedGaussian #-}
 
 -- | Sample from the tweaked Gaussian with given scaled variance,
--- deterministically rounded using the decoding basis. (Note: This
+-- deterministically rounded using the decoding basis. (This
 -- implementation uses 'Double' precision to generate the Gaussian
 -- sample, which might not be sufficient for rigorous proof-based
 -- security.)
@@ -380,7 +380,7 @@ roundedGaussian svar =
 
 -- | Sample from the tweaked Gaussian with scaled variance \(v \cdot
 -- p^2\), deterministically rounded to the given coset of \(R_p\)
--- using the decoding basis. (Note: This implementation uses 'Double'
+-- using the decoding basis. (This implementation uses 'Double'
 -- precision to generate the Gaussian sample, which may not be
 -- sufficient for rigorous proof-based security.)
 cosetGaussian :: forall t m zp z v rnd .
@@ -391,8 +391,8 @@ cosetGaussian :: forall t m zp z v rnd .
 cosetGaussian =
   let pval = fromIntegral $ proxy modulus (Proxy::Proxy zp)
   in \ svar (Dec c) ->
-    do e :: t m Double <- tweakedGaussianDec (svar*pval*pval)
-       return $ Dec $ zipWithI roundCoset c e
+    Dec . zipWithI roundCoset c <$>
+    (tweakedGaussianDec (svar*pval*pval) :: rnd (t m Double))
 
 
 ----- inter-ring operations
