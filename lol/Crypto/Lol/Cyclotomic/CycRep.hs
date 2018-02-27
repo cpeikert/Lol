@@ -370,8 +370,8 @@ tweakedGaussian = fmap Dec . tweakedGaussianDec
 -- sample, which might not be sufficient for rigorous proof-based
 -- security.)
 roundedGaussian :: forall v rnd t m z .
-                   (ToInteger z, IFunctor t, IFElt t Double, IFElt t z,
-                    TensorGaussian t Double,
+                   (TensorGaussian t Double, ToInteger z,
+                    IFElt t Double, IFElt t z,
                     Fact m, ToRational v, MonadRandom rnd)
                    => v -> rnd (CycRep t D m z)
 {-# INLINABLE roundedGaussian #-}
