@@ -364,11 +364,11 @@ tweakedGaussian :: (TensorGaussian t q, MonadRandom rnd, Fact m, ToRational v)
 tweakedGaussian = fmap Dec . tweakedGaussianDec
 {-# INLINABLE tweakedGaussian #-}
 
--- | Generate an "error" term from the tweaked Gaussian with given
--- scaled variance, deterministically rounded using the decoding
--- basis. (Note: This implementation uses 'Double' precision to
--- generate the Gaussian sample, which might not be sufficient for
--- rigorous proof-based security.)
+-- | Sample from the tweaked Gaussian with given scaled variance,
+-- deterministically rounded using the decoding basis. (Note: This
+-- implementation uses 'Double' precision to generate the Gaussian
+-- sample, which might not be sufficient for rigorous proof-based
+-- security.)
 roundedGaussian :: forall v rnd t m z .
                    (ToInteger z, IFunctor t, IFElt t Double, IFElt t z,
                     TensorGaussian t Double,
@@ -378,21 +378,21 @@ roundedGaussian :: forall v rnd t m z .
 roundedGaussian svar =
   Dec . fmapI (roundMult one) <$> (tweakedGaussianDec svar :: rnd (t m Double))
 
--- | Generate an "error" term from the tweaked Gaussian with scaled
--- variance \(v \cdot p^2\), deterministically rounded to the given
--- coset of \(R_p\) using the decoding basis. (Note: This
--- implementation uses 'Double' precision to generate the Gaussian
--- sample, which may not be sufficient for rigorous proof-based
--- security.)
+-- | Sample from the tweaked Gaussian with scaled variance \(v \cdot
+-- p^2\), deterministically rounded to the given coset of \(R_p\)
+-- using the decoding basis. (Note: This implementation uses 'Double'
+-- precision to generate the Gaussian sample, which may not be
+-- sufficient for rigorous proof-based security.)
 cosetGaussian :: forall t m zp z v rnd .
-                 (TensorGaussian t Double, Mod zp, z ~ ModRep zp, Lift zp z, Fact m,
-                  ToRational v, MonadRandom rnd, Applicative (t m))
+                 (TensorGaussian t Double, Mod zp, z ~ ModRep zp, Lift zp z,
+                  IFElt t zp, IFElt t z, Fact m, ToRational v, MonadRandom rnd)
                  => v -> CycRep t D m zp -> rnd (CycRep t D m z)
 {-# INLINABLE cosetGaussian #-}
 cosetGaussian =
   let pval = fromIntegral $ proxy modulus (Proxy::Proxy zp)
-  in \ svar c -> do err :: CycRep t D m Double <- tweakedGaussian (svar*pval*pval)
-                    return $! roundCoset <$> c <*> err
+  in \ svar (Dec c) ->
+    do (Dec e) :: CycRep t D m Double <- tweakedGaussian (svar*pval*pval)
+       return $ Dec $ zipWithI roundCoset c e
 
 
 ----- inter-ring operations
