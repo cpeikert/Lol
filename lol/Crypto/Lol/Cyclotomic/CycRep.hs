@@ -370,10 +370,9 @@ tweakedGaussian = fmap Dec . tweakedGaussianDec
 -- sample, which might not be sufficient for rigorous proof-based
 -- security.)
 roundedGaussian :: forall v rnd t m z .
-                   (TensorGaussian t Double, ToInteger z,
-                    IFElt t Double, IFElt t z,
-                    Fact m, ToRational v, MonadRandom rnd)
-                   => v -> rnd (CycRep t D m z)
+  (TensorGaussian t Double, ToInteger z, IFElt t z,
+   Fact m, ToRational v, MonadRandom rnd)
+  => v -> rnd (CycRep t D m z)
 {-# INLINABLE roundedGaussian #-}
 roundedGaussian svar =
   Dec . fmapI (roundMult one) <$> (tweakedGaussianDec svar :: rnd (t m Double))
@@ -384,9 +383,9 @@ roundedGaussian svar =
 -- precision to generate the Gaussian sample, which may not be
 -- sufficient for rigorous proof-based security.)
 cosetGaussian :: forall t m zp z v rnd .
-                 (TensorGaussian t Double, Mod zp, z ~ ModRep zp, Lift zp z,
-                  IFElt t zp, IFElt t z, Fact m, ToRational v, MonadRandom rnd)
-                 => v -> CycRep t D m zp -> rnd (CycRep t D m z)
+  (TensorGaussian t Double, Lift zp z, Mod zp, z ~ ModRep zp,
+   IFElt t zp, IFElt t z, Fact m, ToRational v, MonadRandom rnd)
+  => v -> CycRep t D m zp -> rnd (CycRep t D m z)
 {-# INLINABLE cosetGaussian #-}
 cosetGaussian =
   let pval = fromIntegral $ proxy modulus (Proxy::Proxy zp)

@@ -62,11 +62,31 @@ class Cyclotomic c r where
   -- | Same as 'adviseCRT', but for the decoding basis.
   adviseDec :: Fact m => c m r -> c m r
 
+-- | Sampling from tweaked Gaussian distributions over cyclotomic
+-- number fields.
 class GaussianCyc c q where
-  -- | Sample from the "tweaked" Gaussian error distribution \( t
-  -- \cdot D \), where \( D \) has scaled variance \( v \).
+  -- | Sample from the "tweaked" Gaussian distribution \( t \cdot D
+  -- \), where \( D \) has scaled variance \( v \).
   tweakedGaussian :: (Fact m, ToRational v, MonadRandom rnd)
     => v -> rnd (c m q)
+
+-- | Sampling from /discretized/ tweaked Gaussian distributions over
+-- cyclotomic number rings.
+class RoundedGaussianCyc c z where
+  -- | Sample from the tweaked Gaussian with given scaled variance,
+  -- deterministically rounded using the decoding basis.
+  roundedGaussian :: (Fact m, ToRational v, MonadRandom rnd)
+                  => v -> rnd (c m z)
+
+-- | Sampling from tweaked Gaussian distributions, discretized to
+-- mod-p cosets of cyclotomic number rings.
+class CosetGaussianCyc c zp z where
+  -- | Sample from the tweaked Gaussian with scaled variance \( v
+  -- \cdot p^2 \), deterministically rounded to the given coset of
+  -- \( R_p \) using the decoding basis.
+  cosetGaussian :: (Fact m, ToRational v, MonadRandom rnd)
+                => v -> c m zp -> rnd (c m z)
+
 
 -- | Cyclotomic extensions \( \O_{m'}/\O_m \).
 class ExtensionCyc c r where

@@ -54,9 +54,7 @@ module Crypto.Lol.Cyclotomic.Cyc
 -- * Constructors/deconstructors
 , scalarCyc
 , cycPow, cycDec, cycCRT, cycCRTC, cycCRTE, cycPC, cycPE
-, uncycPow, uncycDec, uncycCRT, unzipCyc
--- * Error sampling
-, errorRounded, errorCoset
+, uncycPow, uncycDec, uncycCRT
 ) where
 
 import qualified Algebra.Additive     as Additive (C)
@@ -64,9 +62,9 @@ import qualified Algebra.Module       as Module (C)
 import qualified Algebra.Ring         as Ring (C)
 import qualified Algebra.ZeroTestable as ZeroTestable (C)
 
+-- hide these due to name collisions
 import Crypto.Lol.Cyclotomic.CycRep hiding (coeffsDec, coeffsPow, crtSet,
-                                     errorCoset, errorRounded, gSqNorm,
-                                     mulG, powBasis, tweakedGaussian)
+                                     gSqNorm, mulG, powBasis)
 
 import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
@@ -77,6 +75,7 @@ import           Crypto.Lol.Cyclotomic.Tensor   (Tensor, TensorCRTSet,
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.Prelude             as LP
 import           Crypto.Lol.Types.FiniteField
+import           Crypto.Lol.Types.IFunctor
 import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.ZPP
 
@@ -332,29 +331,19 @@ instance (CycElt t r) => Cyclotomic (Cyc t) r where
 instance TensorGaussian t q => GaussianCyc (Cyc t) q where
   tweakedGaussian = fmap Dec . R.tweakedGaussian
 
--- | Generate an LWE error term with given scaled variance,
--- deterministically rounded with respect to the decoding basis.
--- (Note: This
--- implementation uses 'Double' precision to generate the Gaussian
--- sample, which may not be sufficient for rigorous proof-based
--- security.)
-errorRounded :: (ToInteger z, Tensor t z, Fact m, ToRational v, MonadRandom rnd)
-                => v -> rnd (Cyc t m z)
-{-# INLINABLE errorRounded #-}
-errorRounded = (Dec <$>) . R.errorRounded
+-- | uses 'Double' precision for the intermediate Gaussian samples
+instance (TensorGaussian t Double, ToInteger z, IFElt t z)
+  => RoundedGaussianCyc (Cyc t) z where
+  {-# INLINABLE roundedGaussian #-}
+  roundedGaussian = (Dec <$>) . R.roundedGaussian
 
--- | Generate an LWE error term with given scaled variance \(v \cdot p^2\) over
--- the given coset, deterministically rounded with respect to the
--- decoding basis. (Note: This
--- implementation uses 'Double' precision to generate the Gaussian
--- sample, which may not be sufficient for rigorous proof-based
--- security.)
-errorCoset ::
-  (Mod zp, z ~ ModRep zp, Lift zp z, Fact m,
-   CycElt t zp, ToRational v, MonadRandom rnd)
-  => v -> Cyc t m zp -> rnd (Cyc t m z)
-errorCoset v = (Dec <$>) . R.errorCoset v . uncycDec
-{-# INLINABLE errorCoset #-}
+-- | uses 'Double' precision for the intermediate Gaussian samples
+instance (TensorGaussian t Double, Mod zp, z ~ ModRep zp, Lift zp z,
+          CycElt t zp, IFElt t z)
+  => CosetGaussianCyc (Cyc t) zp z where
+  {-# INLINABLE cosetGaussian #-}
+  cosetGaussian v = (Dec <$>) . R.cosetGaussian v . uncycDec
+
 
 ---------- Inter-ring operations ----------
 
@@ -453,7 +442,7 @@ instance RescaleCyc (Cyc t) a a where
   rescaleCyc _ = id
   {-# INLINABLE rescaleCyc #-}
 
-{- CJP: restore this when we have a data family instance for pairs
+{- CJP: restore RescaleCyc instances when we have a data family instance for pairs
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes one ring from the product.
@@ -471,7 +460,6 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
                          z = liftCyc bas a
                      in Scalar (recip (reduce aval)) * (b - reduce z)
   {-# INLINABLE rescaleCyc #-}
--}
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes two rings from the product.
@@ -512,6 +500,8 @@ instance (RescaleCyc (Cyc t) (b,(c,(d,(e,f)))) f, Rescale (a,(b,(c,(d,(e,f))))) 
   rescaleCyc bas (a :: Cyc t m (a,(b,(c,(d,(e,f)))))) =
     rescaleCyc bas (rescaleCyc bas a :: Cyc t m (b,(c,(d,(e,f)))))
   {-# INLINABLE rescaleCyc #-}
+
+-}
 
 -- | promoted from base ring
 instance (Gadget gad zq, Fact m, CycElt t zq) => Gadget gad (Cyc t m zq) where
