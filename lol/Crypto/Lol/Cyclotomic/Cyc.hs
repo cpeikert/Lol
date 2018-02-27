@@ -56,7 +56,7 @@ module Crypto.Lol.Cyclotomic.Cyc
 , cycPow, cycDec, cycCRT, cycCRTC, cycCRTE, cycPC, cycPE
 , uncycPow, uncycDec, uncycCRT, unzipCyc
 -- * Error sampling
-, tGaussian, errorRounded, errorCoset
+, errorRounded, errorCoset
 ) where
 
 import qualified Algebra.Additive     as Additive (C)
@@ -66,13 +66,14 @@ import qualified Algebra.ZeroTestable as ZeroTestable (C)
 
 import Crypto.Lol.Cyclotomic.CycRep hiding (coeffsDec, coeffsPow, crtSet,
                                      errorCoset, errorRounded, gSqNorm,
-                                     mulG, powBasis, tGaussian)
+                                     mulG, powBasis, tweakedGaussian)
 
 import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
-import           Crypto.Lol.Cyclotomic.Tensor   (Tensor, TensorCRTSet)
+import           Crypto.Lol.Cyclotomic.Tensor   (Tensor, TensorCRTSet,
+                                                 TensorGaussian)
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.Prelude             as LP
 import           Crypto.Lol.Types.FiniteField
@@ -328,12 +329,8 @@ instance (CycElt t r) => Cyclotomic (Cyc t) r where
   adviseDec = toDec'
   adviseCRT = toCRT'
 
--- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\) in
--- the decoding basis, where \(D\) has scaled variance \(v\).
-tGaussian :: (Fact m, OrdFloat q, Random q, Tensor t q, ToRational v, MonadRandom rnd)
-             => v -> rnd (Cyc t m q)
-tGaussian = (Dec <$>) . R.tGaussian
-{-# INLINABLE tGaussian #-}
+instance TensorGaussian t q => GaussianCyc (Cyc t) q where
+  tweakedGaussian = fmap Dec . R.tweakedGaussian
 
 -- | Generate an LWE error term with given scaled variance,
 -- deterministically rounded with respect to the decoding basis.

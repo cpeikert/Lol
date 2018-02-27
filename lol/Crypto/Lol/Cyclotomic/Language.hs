@@ -63,6 +63,8 @@ class Cyclotomic c r where
   adviseDec :: Fact m => c m r -> c m r
 
 class GaussianCyc c q where
+  -- | Sample from the "tweaked" Gaussian error distribution \( t
+  -- \cdot D \), where \( D \) has scaled variance \( v \).
   tweakedGaussian :: (Fact m, ToRational v, MonadRandom rnd)
     => v -> rnd (c m q)
 

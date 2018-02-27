@@ -51,7 +51,7 @@ module Crypto.Lol.Cyclotomic.CycRep
 -- * Basic operations
 , mulG, divGPow, divGDec, divGCRTC, gSqNorm
 -- * Error sampling
-, tGaussian, errorRounded, errorCoset
+, tweakedGaussian, errorRounded, errorCoset
 -- * Inter-ring operations and values
 , embedPow, embedDec, embedCRTC, embedCRTE
 , twacePow, twaceDec, twaceCRTC, twaceCRTE
@@ -359,17 +359,16 @@ gSqNorm (Dec v) = gSqNormDec v
 
 -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\) in
 -- the decoding basis, where \(D\) has scaled variance \(v\).
-tGaussian :: (TensorGaussian t q, MonadRandom rnd, Fact m, ToRational v)
-             => v -> rnd (CycRep t D m q)
-tGaussian = fmap Dec . tGaussianDec
-{-# INLINABLE tGaussian #-}
+tweakedGaussian :: (TensorGaussian t q, MonadRandom rnd, Fact m, ToRational v)
+                   => v -> rnd (CycRep t D m q)
+tweakedGaussian = fmap Dec . tweakedGaussianDec
+{-# INLINABLE tweakedGaussian #-}
 
 -- | Generate an LWE error term from the "tweaked" Gaussian with given
 -- scaled variance, deterministically rounded using the decoding
--- basis. (Note: This
--- implementation uses 'Double' precision to generate the Gaussian
--- sample, which may not be sufficient for rigorous proof-based
--- security.)
+-- basis. (Note: This implementation uses 'Double' precision to
+-- generate the Gaussian sample, which may not be sufficient for
+-- rigorous proof-based security.)
 errorRounded :: forall v rnd t m z .
                 (ToInteger z, IFunctor t, IFElt t Double, IFElt t z,
                  TensorGaussian t Double,
@@ -377,7 +376,7 @@ errorRounded :: forall v rnd t m z .
                 => v -> rnd (CycRep t D m z)
 {-# INLINABLE errorRounded #-}
 errorRounded svar =
-  Dec . fmapI (roundMult one) <$> (tGaussianDec svar :: rnd (t m Double))
+  Dec . fmapI (roundMult one) <$> (tweakedGaussianDec svar :: rnd (t m Double))
 
 -- | Generate an LWE error term from the "tweaked" Gaussian with
 -- scaled variance \(v \cdot p^2\), deterministically rounded to the given
@@ -392,7 +391,7 @@ errorCoset :: forall t m zp z v rnd .
 {-# INLINABLE errorCoset #-}
 errorCoset =
   let pval = fromIntegral $ proxy modulus (Proxy::Proxy zp)
-  in \ svar c -> do err :: CycRep t D m Double <- tGaussian (svar*pval*pval)
+  in \ svar c -> do err :: CycRep t D m Double <- tweakedGaussian (svar*pval*pval)
                     return $! roundCoset <$> c <*> err
 
 

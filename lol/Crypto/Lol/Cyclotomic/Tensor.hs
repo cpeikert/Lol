@@ -34,11 +34,10 @@ indexing.
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Crypto.Lol.Cyclotomic.Tensor
-( Tensor(..)
+( Tensor(..), TensorGaussian(..), TensorCRTSet(..)
 -- * Top-level CRT functions
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
-, TensorGaussian(..), TensorCRTSet(..)
 -- * Special vectors/matrices
 , Kron, indexK, gCRTK, gInvCRTK, twCRTs
 -- * Tensor indexing
@@ -146,7 +145,8 @@ class (ForallFact1 Applicative t, ForallFact1 Traversable t,
 class (Tensor t q) => TensorGaussian t q where
   -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\)
   -- in the decoding basis, where \(D\) has scaled variance \(v\).
-  tGaussianDec :: (ToRational v, Fact m, MonadRandom rnd) => v -> rnd (t m q)
+  tweakedGaussianDec :: (ToRational v, Fact m, MonadRandom rnd)
+                        => v -> rnd (t m q)
 
 -- | A 'Tensor' that supports relative CRT sets for the element type
 -- 'fp' representing a prime-order finite field.
