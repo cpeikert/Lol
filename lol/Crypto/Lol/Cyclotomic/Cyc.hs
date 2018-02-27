@@ -344,9 +344,6 @@ instance (TensorGaussian t Double, Mod zp, z ~ ModRep zp, Lift zp z,
   {-# INLINABLE cosetGaussian #-}
   cosetGaussian v = (Dec <$>) . R.cosetGaussian v . uncycDec
 
-
----------- Inter-ring operations ----------
-
 instance (CycElt t r) => ExtensionCyc (Cyc t) r where
   -- use these because implementations need indices to be in scope
   embed = embedLazy
@@ -411,8 +408,9 @@ crtSet = (Pow <$>) <$> R.crtSet
 {-# INLINABLE crtSet #-}
 
 
----------- Lattice operations and instances ----------
+---------- Promoted lattice operations ----------
 
+-- | promoted from base ring
 instance (Reduce a b, Fact m, CycElt t a, CycElt t b)
   -- CJP: need these specific constraints to get Reduce instance for Sub case
          => Reduce (Cyc t m a) (Cyc t m b) where
@@ -437,12 +435,11 @@ instance {-# INCOHERENT #-} (Rescale a b, CycElt t a, Tensor t b)
   {-# INLINABLE rescaleCyc #-}
 
 instance RescaleCyc (Cyc t) a a where
-
   -- No-op rescale
   rescaleCyc _ = id
   {-# INLINABLE rescaleCyc #-}
 
-{- CJP: restore RescaleCyc instances when we have a data family instance for pairs
+{- CJP: restore this when we have a data family instance for pairs
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes one ring from the product.
@@ -460,6 +457,8 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
                          z = liftCyc bas a
                      in Scalar (recip (reduce aval)) * (b - reduce z)
   {-# INLINABLE rescaleCyc #-}
+
+-}
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes two rings from the product.
@@ -501,13 +500,10 @@ instance (RescaleCyc (Cyc t) (b,(c,(d,(e,f)))) f, Rescale (a,(b,(c,(d,(e,f))))) 
     rescaleCyc bas (rescaleCyc bas a :: Cyc t m (b,(c,(d,(e,f)))))
   {-# INLINABLE rescaleCyc #-}
 
--}
-
 -- | promoted from base ring
 instance (Gadget gad zq, Fact m, CycElt t zq) => Gadget gad (Cyc t m zq) where
   gadget = (scalarCyc <$>) <$> gadget
   {-# INLINABLE gadget #-}
-
   -- CJP: default 'encode' works because mul-by-Scalar is fast
 
 -- | promoted from base ring, using the powerful basis for best geometry
