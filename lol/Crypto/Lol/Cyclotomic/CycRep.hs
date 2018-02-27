@@ -391,7 +391,7 @@ cosetGaussian :: forall t m zp z v rnd .
 cosetGaussian =
   let pval = fromIntegral $ proxy modulus (Proxy::Proxy zp)
   in \ svar (Dec c) ->
-    do (Dec e) :: CycRep t D m Double <- tweakedGaussian (svar*pval*pval)
+    do e :: t m Double <- tweakedGaussianDec (svar*pval*pval)
        return $ Dec $ zipWithI roundCoset c e
 
 
