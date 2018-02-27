@@ -51,7 +51,7 @@ module Crypto.Lol.Cyclotomic.CycRep
 -- * Basic operations
 , mulG, divGPow, divGDec, divGCRTC, gSqNorm
 -- * Error sampling
-, tweakedGaussian, errorRounded, errorCoset
+, tweakedGaussian, roundedGaussian, cosetGaussian
 -- * Inter-ring operations and values
 , embedPow, embedDec, embedCRTC, embedCRTE
 , twacePow, twaceDec, twaceCRTC, twaceCRTE
@@ -364,32 +364,32 @@ tweakedGaussian :: (TensorGaussian t q, MonadRandom rnd, Fact m, ToRational v)
 tweakedGaussian = fmap Dec . tweakedGaussianDec
 {-# INLINABLE tweakedGaussian #-}
 
--- | Generate an LWE error term from the "tweaked" Gaussian with given
+-- | Generate an "error" term from the tweaked Gaussian with given
 -- scaled variance, deterministically rounded using the decoding
 -- basis. (Note: This implementation uses 'Double' precision to
--- generate the Gaussian sample, which may not be sufficient for
+-- generate the Gaussian sample, which might not be sufficient for
 -- rigorous proof-based security.)
-errorRounded :: forall v rnd t m z .
-                (ToInteger z, IFunctor t, IFElt t Double, IFElt t z,
-                 TensorGaussian t Double,
-                 Fact m, ToRational v, MonadRandom rnd)
-                => v -> rnd (CycRep t D m z)
-{-# INLINABLE errorRounded #-}
-errorRounded svar =
+roundedGaussian :: forall v rnd t m z .
+                   (ToInteger z, IFunctor t, IFElt t Double, IFElt t z,
+                    TensorGaussian t Double,
+                    Fact m, ToRational v, MonadRandom rnd)
+                   => v -> rnd (CycRep t D m z)
+{-# INLINABLE roundedGaussian #-}
+roundedGaussian svar =
   Dec . fmapI (roundMult one) <$> (tweakedGaussianDec svar :: rnd (t m Double))
 
--- | Generate an LWE error term from the "tweaked" Gaussian with
--- scaled variance \(v \cdot p^2\), deterministically rounded to the given
+-- | Generate an "error" term from the tweaked Gaussian with scaled
+-- variance \(v \cdot p^2\), deterministically rounded to the given
 -- coset of \(R_p\) using the decoding basis. (Note: This
 -- implementation uses 'Double' precision to generate the Gaussian
 -- sample, which may not be sufficient for rigorous proof-based
 -- security.)
-errorCoset :: forall t m zp z v rnd .
-              (TensorGaussian t Double, Mod zp, z ~ ModRep zp, Lift zp z, Fact m,
-               ToRational v, MonadRandom rnd, Applicative (t m))
-              => v -> CycRep t D m zp -> rnd (CycRep t D m z)
-{-# INLINABLE errorCoset #-}
-errorCoset =
+cosetGaussian :: forall t m zp z v rnd .
+                 (TensorGaussian t Double, Mod zp, z ~ ModRep zp, Lift zp z, Fact m,
+                  ToRational v, MonadRandom rnd, Applicative (t m))
+                 => v -> CycRep t D m zp -> rnd (CycRep t D m z)
+{-# INLINABLE cosetGaussian #-}
+cosetGaussian =
   let pval = fromIntegral $ proxy modulus (Proxy::Proxy zp)
   in \ svar c -> do err :: CycRep t D m Double <- tweakedGaussian (svar*pval*pval)
                     return $! roundCoset <$> c <*> err
