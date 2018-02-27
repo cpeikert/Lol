@@ -1,9 +1,10 @@
 {-|
 Module      : Crypto.Lol.Cyclotomic.Cyc
-Description : An implementation of cyclotomic rings that hides the
-              internal representations of ring elements.
-Copyright   : (c) Eric Crockett, 2011-2017
-                  Chris Peikert, 2011-2017
+Description : An implementation of cyclotomic rings that hides and
+              automatically manages the internal representations of
+              ring elements.
+Copyright   : (c) Eric Crockett, 2011-2018
+                  Chris Peikert, 2011-2018
 License     : GPL-3
 Maintainer  : ecrockett0@email.com
 Stability   : experimental
