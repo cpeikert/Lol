@@ -56,8 +56,9 @@ module Crypto.Lol.Prelude
 ) where
 
 import Crypto.Lol.Factored
-import Crypto.Lol.Types.Unsafe.Complex (Complex(), roundComplex, cis, real, imag, fromReal)
 import Crypto.Lol.Types.Numeric
+import Crypto.Lol.Types.Unsafe.Complex (Complex (), cis, fromReal, imag,
+                                        real, roundComplex)
 
 import Algebra.Field          as Field (C)
 import Algebra.IntegralDomain as IntegralDomain (C)
@@ -67,7 +68,7 @@ import Control.Applicative
 import Control.Arrow
 import Control.DeepSeq
 import Control.Monad.Identity
-import Control.Monad.Random hiding (lift)
+import Control.Monad.Random      hiding (lift)
 import Data.Coerce
 import Data.Default
 import Data.Functor.Trans.Tagged
@@ -152,7 +153,7 @@ rescaleMod =
     in \x -> let (quot',_) = divModCent (q'val * lift x) qval
              in fromIntegral quot'
 
--- | Deterministically round to a nearby value in the desired coset.
+-- | Deterministically round to the nearest value in the desired coset.
 roundCoset :: forall zp z r .
               (Mod zp, z ~ ModRep zp, Lift zp z, RealField r) => zp -> r -> z
 {-# INLINABLE roundCoset #-}
