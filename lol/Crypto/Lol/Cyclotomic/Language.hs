@@ -89,7 +89,7 @@ class CosetGaussianCyc c zp z where
 
 
 -- | Cyclotomic extensions \( \O_{m'}/\O_m \).
-class ExtensionCyc c r where
+class Cyclotomic c r => ExtensionCyc c r where
   -- | Embed into a cyclotomic extension.
   embed :: (m `Divides` m') => c m r -> c m' r
 
