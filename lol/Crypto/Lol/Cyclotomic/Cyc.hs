@@ -51,7 +51,7 @@ the internal linear transforms and other operations it performs.
 module Crypto.Lol.Cyclotomic.Cyc
 (
 -- * Data type
-  CycG
+  Cyc
 -- * Constructors/deconstructors
 , scalarCyc
 , cycPow, cycDec, cycCRT, cycCRTC, cycCRTE, cycPC, cycPE
@@ -75,6 +75,7 @@ import           Crypto.Lol.Cyclotomic.Tensor   (Tensor, TensorCRTSet,
                                                  TensorGaussian)
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.Prelude             as LP
+import           Crypto.Lol.Types               (ZqBasic)
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.IFunctor
 import           Crypto.Lol.Types.Proto
@@ -90,11 +91,20 @@ import Data.Constraint        ((:-), (\\))
 import Data.Foldable
 import Data.Traversable
 
+-- | A cyclotomic ring such as \( \Z[\zeta_m] \), \( \Z_q[\zeta_m] \),
+-- or \( \Q[\zeta_m] \): @t@ is the 'Tensor' type for storing
+-- coefficient tensors; @m@ is the cyclotomic index; @r@ is the base
+-- ring of the coefficients (e.g., \(\ \Q \), \( \Z \), \( \Z_q \)).
+data family Cyc (t :: Factored -> * -> *) (m :: Factored) r
 
--- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
--- \(\Z_q[\zeta_m]\), and \(\Q[\zeta_m]\): @t@ is the 'Tensor' type
--- for storing coefficient tensors; @m@ is the cyclotomic index; @r@
--- is the base ring of the coefficients (e.g., \(\Z\), \(\Z_q\)).
+newtype instance Cyc t m Double        = CycDouble { unCycDouble :: CycG t m Double }
+newtype instance Cyc t m Int64         = CycInt64  { unCycInt64  :: CycG t m Int64 }
+-- could also do an Int instance
+newtype instance Cyc t m (ZqBasic q z) = CycZqB    { unCycZqB    :: CycG t m (ZqBasic q z) }
+data    instance Cyc t m (a,b)         = CycPair   (Cyc t m a) (Cyc t m b)
+
+-- | Underlying GADT for a cyclotomic ring in one of several
+-- representations.
 data CycG t m r where
   Pow :: !(CycRep t P m r) -> CycG t m r
   Dec :: !(CycRep t D m r) -> CycG t m r
@@ -174,6 +184,21 @@ instance (Fact m, CycElt t r, ForallFact2 ZeroTestable.C t r)
                  \\ (entailFact2 :: Fact m :- ZeroTestable.C (t m r))
   {-# INLINABLE isZero #-}
 
+instance ZeroTestable (CycG t m Int64) => ZeroTestable.C (Cyc t m Int64) where
+  isZero = isZero . unCycInt64
+
+instance ZeroTestable (CycG t m Double) => ZeroTestable.C (Cyc t m Double) where
+  isZero = isZero . unCycDouble
+
+instance ZeroTestable (CycG t m (ZqBasic q z)) => ZeroTestable.C (Cyc t m (ZqBasic q z)) where
+  isZero = isZero . unCycZqB
+
+instance (ZeroTestable (Cyc t m a), ZeroTestable (Cyc t m b))
+  => ZeroTestable.C (Cyc t m (a,b)) where
+  isZero (CycPair a b) = isZero a && isZero b
+
+-----
+
 instance (Eq r, Fact m, CycElt t r, ForallFact2 Eq t r) => Eq (CycG t m r) where
   {-# INLINABLE (==) #-}
   -- same representations
@@ -197,6 +222,20 @@ instance (Eq r, Fact m, CycElt t r, ForallFact2 Eq t r) => Eq (CycG t m r) where
 
   -- otherwise: compare in powerful basis
   c1 == c2 = toPow' c1 == toPow' c2
+
+instance Eq (CycG t m Int64) => Eq (Cyc t m Int64) where
+  a == b = unCycInt64 a == unCycInt64 b
+
+instance Eq (CycG t m Double) => Eq (Cyc t m Double) where
+  a == b = unCycDouble a == unCycDouble b
+
+instance Eq (CycG t m (ZqBasic q z)) => Eq (Cyc t m (ZqBasic q z)) where
+  a == b = unCycZqB a == unCycZqB b
+
+instance (Eq (Cyc t m a), Eq (Cyc t m b)) => Eq (Cyc t m (a,b)) where
+  (CycPair a b) == (CycPair a' b') = a == a' && b == b'
+
+-----
 
 instance (Fact m, CycElt t r) => Additive.C (CycG t m r) where
   {-# INLINABLE zero #-}
