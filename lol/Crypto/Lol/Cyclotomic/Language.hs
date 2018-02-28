@@ -23,10 +23,9 @@ module Crypto.Lol.Cyclotomic.Language
 where
 
 import Crypto.Lol.Factored
-import Crypto.Lol.Types.Numeric
+import Crypto.Lol.Prelude
 
-import Control.Monad.Random      (MonadRandom)
-import Data.Functor.Trans.Tagged
+import Control.Monad.Random (MonadRandom)
 
 -- | Used to specify a basis for cyclotomic operations
 data Basis = Pow | Dec
@@ -80,12 +79,12 @@ class RoundedGaussianCyc c z where
 
 -- | Sampling from tweaked Gaussian distributions, discretized to
 -- mod-p cosets of cyclotomic number rings.
-class CosetGaussianCyc c zp z where
+class CosetGaussianCyc c zp where
   -- | Sample from the tweaked Gaussian with scaled variance \( v
   -- \cdot p^2 \), deterministically rounded to the given coset of
   -- \( R_p \) using the decoding basis.
   cosetGaussian :: (Fact m, ToRational v, MonadRandom rnd)
-                => v -> c m zp -> rnd (c m z)
+                => v -> c m zp -> rnd (c m (LiftOf zp))
 
 
 -- | Cyclotomic extensions \( \O_{m'}/\O_m \).
@@ -111,11 +110,11 @@ coeffsPow = coeffsCyc Pow
 -- | 'coeffsCyc' specialized to the decoding basis.
 coeffsDec = coeffsCyc Dec
 
-class LiftCyc c b a where
+class LiftCyc c r where
   -- | Lift using the specified basis.
-  liftCyc :: Fact m => Basis -> c m b -> c m a
+  liftCyc :: Fact m => Basis -> c m r -> c m (LiftOf r)
 
-liftPow, liftDec :: (LiftCyc c b a, Fact m) => c m b -> c m a
+liftPow, liftDec :: (LiftCyc c r, Fact m) => c m r -> c m (LiftOf r)
 -- | 'liftCyc' specialized to the powerful basis.
 liftPow = liftCyc Pow
 -- | 'liftCyc' specialized to the decoding basis.
