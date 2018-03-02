@@ -4,7 +4,7 @@ Description : Provides applicative-like functions for indexed vectors.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
@@ -15,9 +15,9 @@ Provides applicative-like functions for indexed vectors.
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE DeriveTraversable          #-}
 {-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE KindSignatures             #-}
-{-# LANGUAGE FlexibleInstances          #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RebindableSyntax           #-}
@@ -31,7 +31,7 @@ module Crypto.Lol.Types.IZipVector
 ( IZipVector, iZipVector, unIZipVector, unzipIZV
 ) where
 
-import Crypto.Lol.Prelude as LP
+import Crypto.Lol.Prelude              as LP
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Unsafe.RRq
@@ -50,11 +50,11 @@ import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Except
 
-import Data.Foldable as F
-import Data.Sequence as S
+import Data.Foldable    as F
+import Data.Sequence    as S
 import Data.Traversable
 
-import Data.Vector (Vector)
+import           Data.Vector (Vector)
 import qualified Data.Vector as V
 
 
@@ -134,14 +134,14 @@ instance (Fact m, Reflects q Int64) => Protoable (IZipVector m (ZqBasic q Int64)
     in RqProduct $ S.singleton Rq{..}
 
   fromProto (RqProduct xs') = do
-    let rqlist = F.toList xs'
+    let rqs = F.toList xs'
         m' = proxy valueFact (Proxy::Proxy m) :: Int
         q' = proxy value (Proxy::Proxy q) :: Int64
         n = proxy totientFact (Proxy::Proxy m)
-    unless (F.length rqlist == 1) $ throwError $
+    unless (F.length rqs == 1) $ throwError $
       "An error occurred while reading the proto type for CT.\n\
-      \Expected a list of one Rq, but list has length " ++ show (F.length rqlist)
-    let [Rq{..}] = rqlist
+      \Expected one Rq, but list has length " ++ show (F.length rqs)
+    let [Rq{..}] = rqs
         ys' = V.fromList $ F.toList xs
         len = F.length xs
     unless (m' == fromIntegral m) $ throwError $
@@ -165,14 +165,14 @@ instance (Fact m, Reflects q Double) => Protoable (IZipVector m (RRq q Double)) 
     in KqProduct $ S.singleton Kq{..}
 
   fromProto (KqProduct xs') = do
-    let rqlist = F.toList xs'
+    let rqs = F.toList xs'
         m' = proxy valueFact (Proxy::Proxy m) :: Int
         q' = round (proxy value (Proxy::Proxy q) :: Double)
         n = proxy totientFact (Proxy::Proxy m)
-    unless (F.length rqlist == 1) $ throwError $
+    unless (F.length rqs == 1) $ throwError $
       "An error occurred while reading the proto type for CT.\n\
-      \Expected a list of one Rq, but list has length " ++ show (F.length rqlist)
-    let [Kq{..}] = rqlist
+      \Expected one Rq, but list has length " ++ show (F.length rqs)
+    let [Kq{..}] = rqs
         ys' = V.fromList $ F.toList xs
         len = F.length xs
     unless (m' == fromIntegral m) $ throwError $
@@ -192,8 +192,8 @@ instance (Protoable (IZipVector m (ZqBasic q Int64)),
   => Protoable (IZipVector m (ZqBasic q Int64,b)) where
   type ProtoType (IZipVector m (ZqBasic q Int64, b)) = RqProduct
 
-  toProto = toProtoProduct RqProduct rqlist
-  fromProto = fromProtoNestRight RqProduct rqlist
+  toProto = toProtoProduct RqProduct rqs
+  fromProto = fromProtoNestRight RqProduct rqs
 
 instance (Protoable (IZipVector m (RRq q Double)),
           ProtoType (IZipVector m (RRq q Double)) ~ KqProduct,
@@ -201,8 +201,8 @@ instance (Protoable (IZipVector m (RRq q Double)),
   => Protoable (IZipVector m (RRq q Double,b)) where
   type ProtoType (IZipVector m (RRq q Double, b)) = KqProduct
 
-  toProto = toProtoProduct KqProduct kqlist
-  fromProto = fromProtoNestRight KqProduct kqlist
+  toProto = toProtoProduct KqProduct kqs
+  fromProto = fromProtoNestRight KqProduct kqs
 
 toProtoProduct :: forall m a b c .
   (Protoable (IZipVector m a), Protoable (IZipVector m b),

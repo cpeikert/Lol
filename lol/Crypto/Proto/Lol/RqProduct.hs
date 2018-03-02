@@ -9,7 +9,7 @@ import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 import qualified Crypto.Proto.Lol.Rq as Crypto.Proto.Lol (Rq)
 
-data RqProduct = RqProduct{rqlist :: !(P'.Seq Crypto.Proto.Lol.Rq)}
+data RqProduct = RqProduct{rqs :: !(P'.Seq Crypto.Proto.Lol.Rq)}
                deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
 
 instance P'.Mergeable RqProduct where
@@ -45,7 +45,7 @@ instance P'.Wire RqProduct where
     where
         update'Self wire'Tag old'Self
          = case wire'Tag of
-             10 -> Prelude'.fmap (\ !new'Field -> old'Self{rqlist = P'.append (rqlist old'Self) new'Field}) (P'.wireGet 11)
+             10 -> Prelude'.fmap (\ !new'Field -> old'Self{rqs = P'.append (rqs old'Self) new'Field}) (P'.wireGet 11)
              _ -> let (field'Number, wire'Type) = P'.splitWireTag wire'Tag in P'.unknown field'Number wire'Type old'Self
 
 instance P'.MessageAPI msg' (msg' -> RqProduct) RqProduct where
@@ -57,7 +57,7 @@ instance P'.ReflectDescriptor RqProduct where
   getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList []) (P'.fromDistinctAscList [10])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".crypto.proto.lol.RqProduct\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"Lol\"], baseName = MName \"RqProduct\"}, descFilePath = [\"Crypto\",\"Proto\",\"Lol\",\"RqProduct.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".crypto.proto.lol.RqProduct.rqlist\", haskellPrefix' = [], parentModule' = [MName \"Crypto\",MName \"Proto\",MName \"Lol\",MName \"RqProduct\"], baseName' = FName \"rqlist\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".crypto.proto.lol.Rq\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"Lol\"], baseName = MName \"Rq\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".crypto.proto.lol.RqProduct\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"Lol\"], baseName = MName \"RqProduct\"}, descFilePath = [\"Crypto\",\"Proto\",\"Lol\",\"RqProduct.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".crypto.proto.lol.RqProduct.rqs\", haskellPrefix' = [], parentModule' = [MName \"Crypto\",MName \"Proto\",MName \"Lol\",MName \"RqProduct\"], baseName' = FName \"rqs\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".crypto.proto.lol.Rq\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"Lol\"], baseName = MName \"Rq\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
 
 instance P'.TextType RqProduct where
   tellT = P'.tellSubMessage
@@ -66,14 +66,14 @@ instance P'.TextType RqProduct where
 instance P'.TextMsg RqProduct where
   textPut msg
    = do
-       P'.tellT "rqlist" (rqlist msg)
+       P'.tellT "rqs" (rqs msg)
   textGet
    = do
-       mods <- P'.sepEndBy (P'.choice [parse'rqlist]) P'.spaces
+       mods <- P'.sepEndBy (P'.choice [parse'rqs]) P'.spaces
        Prelude'.return (Prelude'.foldl (\ v f -> f v) P'.defaultValue mods)
     where
-        parse'rqlist
+        parse'rqs
          = P'.try
             (do
-               v <- P'.getT "rqlist"
-               Prelude'.return (\ o -> o{rqlist = P'.append (rqlist o) v}))
+               v <- P'.getT "rqs"
+               Prelude'.return (\ o -> o{rqs = P'.append (rqs o) v}))
