@@ -50,11 +50,11 @@ material for reading the documentation.
 
 -- EAC: See https://github.com/haskell/haddock/issues/563
 module Crypto.Lol
-(module Crypto.Lol.Cyclotomic.Cyc
-,module Crypto.Lol.Cyclotomic.Linear
-,module Crypto.Lol.Cyclotomic.RescaleCyc
-,module Crypto.Lol.Gadget
-,module Crypto.Lol.Prelude
+( module Crypto.Lol.Cyclotomic.Cyc
+, module Crypto.Lol.Cyclotomic.Linear
+, module Crypto.Lol.Cyclotomic.Language
+, module Crypto.Lol.Gadget
+, module Crypto.Lol.Prelude
 ) where
 
 import Crypto.Lol.Cyclotomic.Cyc
