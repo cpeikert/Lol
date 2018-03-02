@@ -4,7 +4,7 @@ Description : An implementation of modular arithmetic over the reals.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
@@ -42,7 +42,7 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
 -- invariant: 0 <= x < q
--- | The ring \(\R/(q\Z)\) of reals modulo 'q', using
+-- | The additive group \( \R/(q\Z) \) of reals modulo 'q', using
 -- underlying floating type 'r'.
 newtype RRq q r = RRq' r
     deriving (Eq, Ord, ZeroTestable.C, Show, NFData)
