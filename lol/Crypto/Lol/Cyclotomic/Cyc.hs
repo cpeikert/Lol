@@ -117,9 +117,6 @@ data CycG t m r where
   Sub :: (l `Divides` m) => !(CycG t l r) -> CycG t m r
   -- CJP: someday try to merge the above two
 
--- | Constraints needed for most operations involving 'Cyc' data.
-type CycElt t r = (CRTElt t r, ZeroTestable r, IntegralDomain r)
-
 ---------- Constructors / deconstructors ----------
 
 -- | Wrap a 'CycRep' as a 'Cyc'.
@@ -158,23 +155,23 @@ cycPE = either Pow (CRT . Left)
 {-# INLINABLE cycPE #-}
 
 -- | Unwrap a 'Cyc' as a 'CycRep' in powerful-basis representation.
-uncycPow :: (Fact m, CycElt t r) => CycG t m r -> CycRep t P m r
+uncycPow :: (Fact m, CRTElt t r) => CycG t m r -> CycRep t P m r
 {-# INLINABLE uncycPow #-}
 uncycPow c = let (Pow u) = toPow' c in u
 
 -- | Unwrap a 'Cyc' as a 'CycRep' in decoding-basis representation.
-uncycDec :: (Fact m, CycElt t r) => CycG t m r -> CycRep t D m r
+uncycDec :: (Fact m, CRTElt t r) => CycG t m r -> CycRep t D m r
 {-# INLINABLE uncycDec #-}
 uncycDec c = let (Dec u) = toDec' c in u
 
 -- | Unwrap a 'Cyc' as a 'CycRep' in a CRT-basis representation.
-uncycCRT :: (Fact m, CycElt t r) => CycG t m r -> CycRepEC t m r
+uncycCRT :: (Fact m, CRTElt t r) => CycG t m r -> CycRepEC t m r
 {-# INLINABLE uncycCRT #-}
 uncycCRT c = let (CRT u) = toCRT' c in u
 
 ---------- Algebraic instances ----------
 
-instance (Fact m, CycElt t r, ForallFact2 ZeroTestable.C t r)
+instance (Fact m, ZeroTestable r, CRTElt t r, ForallFact2 ZeroTestable.C t r)
   => ZeroTestable.C (CycG t m r) where
   isZero = \x -> case x of
                    (Pow u) -> isZero u
@@ -196,7 +193,7 @@ instance (ZeroTestable (Cyc t m a), ZeroTestable (Cyc t m b))
 
 -----
 
-instance (Eq r, Fact m, CycElt t r, ForallFact2 Eq t r) => Eq (CycG t m r) where
+instance (Eq r, Fact m, CRTElt t r, ForallFact2 Eq t r) => Eq (CycG t m r) where
   {-# INLINABLE (==) #-}
   -- same representations
   (Scalar c1) == (Scalar c2) = c1 == c2
@@ -229,7 +226,7 @@ instance (Eq (Cyc t m a), Eq (Cyc t m b)) => Eq (Cyc t m (a,b)) where
 
 -----
 
-instance (Fact m, CycElt t r) => Additive.C (CycG t m r) where
+instance (Fact m, CRTElt t r, ZeroTestable r) => Additive.C (CycG t m r) where
   {-# INLINABLE zero #-}
   zero = Scalar zero
 
@@ -295,7 +292,7 @@ instance (Additive (Cyc t m a), Additive (Cyc t m b))
 
 -----
 
-instance (Fact m, CycElt t r) => Ring.C (CycG t m r) where
+instance (Fact m, CRTElt t r, ZeroTestable r) => Ring.C (CycG t m r) where
   {-# INLINABLE one #-}
   one = Scalar one
 
@@ -346,7 +343,7 @@ instance (Ring (Cyc t m a), Ring (Cyc t m b)) => Ring.C (Cyc t m (a,b)) where
 -- | \(R_p\) is an \(\F_{p^d}\)-module when \(d\) divides
 -- \(\varphi(m)\), by applying \(d\)-dimensional \(\F_p\)-linear
 -- transform on \(d\)-dim chunks of powerful basis coeffs.
-instance (GFCtx fp d, Fact m, CycElt t fp, Module (GF fp d) (t m fp))
+instance (GFCtx fp d, Fact m, CRTElt t fp, Module (GF fp d) (t m fp))
   => Module.C (GF fp d) (CycG t m fp) where
   -- CJP: optimize for Scalar if we can: r *> (Scalar c) is the tensor
   -- that has the coeffs of (r*c), followed by zeros.  (This assumes
@@ -364,7 +361,8 @@ deriving instance (Ring (GF (ZqBasic q z) d),
 
 ---------- Cyclotomic classes ----------
 
-instance (CycElt t r) => Cyclotomic (CycG t) r where
+instance (CRTElt t r, ZeroTestable r, IntegralDomain r)
+  => Cyclotomic (CycG t) r where
   scalarCyc = Scalar
 
   mulG (Pow u) = Pow $ R.mulG u
@@ -450,7 +448,7 @@ instance RoundedGaussianCyc (CycG t) Int64 => RoundedGaussianCyc (Cyc t) Int64 w
 
 -- | uses 'Double' precision for the intermediate Gaussian samples
 instance (TensorGaussian t Double, Mod zp, Lift zp (ModRep zp),
-          CycElt t zp, IFElt t (LiftOf zp))
+          CRTElt t zp, IFElt t (LiftOf zp))
   => CosetGaussianCyc (CycG t) zp where
   {-# INLINABLE cosetGaussian #-}
   cosetGaussian v = (Dec <$>) . R.cosetGaussian v . uncycDec
@@ -463,7 +461,7 @@ instance (CosetGaussianCyc (CycG t) (ZqBasic q Int64))
 
 -----
 
-instance (CycElt t r) => ExtensionCyc (CycG t) r where
+instance (CRTElt t r) => ExtensionCyc (CycG t) r where
   -- use these because implementations need indices to be in scope
   embed = embedLazy
   twace = twace'
@@ -499,7 +497,7 @@ instance (ExtensionCyc (Cyc t) a, ExtensionCyc (Cyc t) b)
   coeffsCyc bas (CycPair a b) =
     zipWith CycPair (coeffsCyc bas a) (coeffsCyc bas b)
 
-twace' :: forall t m m' r . (CycElt t r, m `Divides` m')
+twace' :: forall t m m' r . (CRTElt t r, m `Divides` m')
        => CycG t m' r -> CycG t m r
 twace' (Pow u) = Pow $ R.twacePow u
 twace' (Dec u) = Dec $ R.twaceDec u
@@ -516,7 +514,7 @@ embedLazy (Sub (c :: CycG t l r)) = Sub c  -- keep as subring element
 embedLazy c = Sub c
 
 -- | Force to a non-'Sub' constructor (for internal use only).
-embed' :: forall t r l m . (l `Divides` m, CycElt t r) => CycG t l r -> CycG t m r
+embed' :: forall t r l m . (l `Divides` m, CRTElt t r) => CycG t l r -> CycG t m r
 {-# INLINE embed' #-}
 embed' (Pow u) = Pow $ embedPow u
 embed' (Dec u) = Dec $ embedDec u
@@ -530,7 +528,7 @@ embed' (Sub (c :: CycG t k r)) = embed' c
 type instance LiftOf (CycG t m r) = CycG t m (LiftOf r)
 type instance LiftOf (Cyc  t m r) = Cyc  t m (LiftOf r)
 
-instance (Lift b a, CycElt t b, Tensor t a) => LiftCyc (CycG t) b where
+instance (Lift b a, CRTElt t b, Tensor t a) => LiftCyc (CycG t) b where
   liftCyc L.Pow = cycLiftPow
   liftCyc L.Dec = cycLiftDec
 
@@ -538,7 +536,7 @@ instance (LiftCyc (CycG t) (ZqBasic q Int64))
   => LiftCyc (Cyc t) (ZqBasic q Int64) where
   liftCyc b = CycInt64 . liftCyc b . unCycZqB
 
-cycLiftPow, cycLiftDec :: (Lift b a, Fact m, CycElt t b, Tensor t a)
+cycLiftPow, cycLiftDec :: (Lift b a, Fact m, CRTElt t b, Tensor t a)
   => CycG t m b -> CycG t m a
 
 -- | Lift using the powerful basis.
@@ -554,17 +552,28 @@ cycLiftPow (Sub c) = Sub $ cycLiftPow c
 cycLiftDec c = Dec $ lift $ uncycDec c
 
 -- | The relative mod-@r@ CRT set of the extension.
-crtSet :: (m `Divides` m', ZPP r, CycElt t r, TensorCRTSet t (ZpOf r))
+crtSet :: (m `Divides` m', ZPP r, CRTElt t r, TensorCRTSet t (ZpOf r))
        => Tagged m [CycG t m' r]
 crtSet = (Pow <$>) <$> R.crtSet
 {-# INLINABLE crtSet #-}
 
 
+-----
+
+{-
+instance (IFunctor t, CRTElt t a => FunctorCyc (CycG t) a b where
+  fmapCyc L.Pow f (Pow u) = Pow (fmapI f u)
+  fmapCyc L.Pow f v = fmapCyc L.Pow f (toPow' v)
+
+  fmapCyc L.Dec f (Dec u) = Dec (fmapI f u)
+  fmapCyc L.Dec f v = fmapCyc L.Dec f (toDec' v)
+-}
+
 ---------- Promoted lattice operations ----------
 
 -- | promoted from base ring
-instance (Reduce a b, Fact m, CycElt t a, CycElt t b)
-  -- CJP: need these specific constraints to get Reduce instance for Sub case
+instance (Reduce a b, Fact m, CRTElt t a, CRTElt t b,
+          ZeroTestable a, ZeroTestable b) -- ZT just for Additive superclasses
          => Reduce (CycG t m a) (CycG t m b) where
   {-# INLINABLE reduce #-}
   reduce (Pow u) = Pow $ reduce u
@@ -580,7 +589,7 @@ instance Reduce (CycG t m Int64) (CycG t m (ZqBasic q Int64))
 
 -----
 
-instance {-# INCOHERENT #-} (Rescale a b, CycElt t a, Tensor t b)
+instance {-# INCOHERENT #-} (Rescale a b, CRTElt t a, Tensor t b)
     => RescaleCyc (CycG t) a b where
 
   -- Optimized for subring constructors, for powerful basis.
@@ -605,7 +614,7 @@ instance RescaleCyc (CycG t) a a where
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes one ring from the product.
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
-         CycElt t (a,b), CycElt t a, CycElt t b, CycElt t (LiftOf a))
+         CRTElt t (a,b), CRTElt t a, CRTElt t b, CRTElt t (LiftOf a))
          => RescaleCyc (CycG t) (a,b) b where
 
   -- optimized for subrings and powerful basis (see comments in other
@@ -659,7 +668,8 @@ instance (RescaleCyc (CycG t) (b,(c,(d,(e,f)))) f, Rescale (a,(b,(c,(d,(e,f)))))
 -----
 
 -- | promoted from base ring
-instance (Gadget gad zq, Fact m, CycElt t zq) => Gadget gad (CycG t m zq) where
+instance (Gadget gad zq, Fact m, CRTElt t zq, ZeroTestable zq, IntegralDomain zq)
+  => Gadget gad (CycG t m zq) where
   gadget = (scalarCyc <$>) <$> gadget
   {-# INLINABLE gadget #-}
   -- CJP: default 'encode' works because mul-by-Scalar is fast
@@ -670,7 +680,8 @@ deriving instance Gadget gad (CycG t m (ZqBasic q z))
 -----
 
 -- | promoted from base ring, using the powerful basis for best geometry
-instance (Decompose gad zq, Fact m, CycElt t zq, CycElt t (DecompOf zq),
+instance (Decompose gad zq, Fact m, CRTElt t zq, CRTElt t (DecompOf zq),
+          ZeroTestable zq, IntegralDomain zq, ZeroTestable (DecompOf zq),
           -- copied from Traversable (CycRep t P m) instance;
           -- needed for Sub case of this instance
           ForallFact1 Traversable t, ForallFact1 Applicative t,
@@ -705,7 +716,8 @@ fromZL = coerce
 -----
 
 -- | promoted from base ring, using the decoding basis for best geometry
-instance (Correct gad zq, Fact m, CycElt t zq, Traversable (CycRep t D m))
+instance (Correct gad zq, Fact m, CRTElt t zq,
+          ZeroTestable zq, IntegralDomain zq, Traversable (CycRep t D m))
   => Correct gad (CycG t m zq) where
   -- sequence: Monad [] and Traversable (CycRep t D m)
   -- sequenceA: Applicative (CycRep t D m) and Traversable (TaggedT gad [])
@@ -719,7 +731,7 @@ deriving instance Correct gad (CycG t m (ZqBasic q Int64))
 
 ---------- Change of representation (internal use only) ----------
 
-toPow', toDec', toCRT' :: (Fact m, CycElt t r) => CycG t m r -> CycG t m r
+toPow', toDec', toCRT' :: (Fact m, CRTElt t r) => CycG t m r -> CycG t m r
 {-# INLINABLE toPow' #-}
 {-# INLINABLE toDec' #-}
 {-# INLINABLE toCRT' #-}
@@ -807,7 +819,7 @@ instance (NFData (Cyc t m a), NFData (Cyc t m b)) => NFData (Cyc t m (a,b)) wher
 
 -----
 
-instance (Fact m, CycElt t r, Protoable (CycRep t D m r))
+instance (Fact m, CRTElt t r, Protoable (CycRep t D m r))
          => Protoable (CycG t m r) where
 
   type ProtoType (CycG t m r) = ProtoType (CycRep t D m r)
