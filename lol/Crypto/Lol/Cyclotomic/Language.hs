@@ -42,15 +42,6 @@ class Cyclotomic c r where
   -- the input is not evenly divisible.
   divG :: Fact m => c m r -> Maybe (c m r)
 
-  -- CJP: does the following make sense for arbitrary r? Or should be
-  -- it be put in its own class for specific choices, like Z and Q?
-  -- It's special and rarely used.
-
-  -- | Yield the scaled squared norm of \( g_m \cdot e \) under the
-  -- canonical embedding, namely, \(\hat{m}^{-1} \cdot \| \sigma(g_m
-  -- \cdot e) \|^2\).
-  gSqNorm :: Fact m => c m r -> r
-
   -- | Yield an equivalent element that /may/ be in a CRT
   -- representation.  This can serve as an optimization hint. E.g.,
   -- call 'adviseCRT' prior to multiplying the same value by many
@@ -60,6 +51,12 @@ class Cyclotomic c r where
   advisePow :: Fact m => c m r -> c m r
   -- | Same as 'adviseCRT', but for the decoding basis.
   adviseDec :: Fact m => c m r -> c m r
+
+class GSqNorm c r where
+  -- | Yield the scaled squared norm of \( g_m \cdot e \) under the
+  -- canonical embedding, namely, \( \hat{m}^{-1} \cdot \| \sigma(g_m
+  -- \cdot e) \|^2 \).
+  gSqNorm :: Fact m => c m r -> r
 
 -- | Sampling from tweaked Gaussian distributions over cyclotomic
 -- number fields.

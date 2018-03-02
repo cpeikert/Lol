@@ -380,9 +380,6 @@ instance (CycElt t r) => Cyclotomic (CycG t) r where
   divG c@(Scalar _) = divG $ toCRT' c
   divG (Sub c) = divG $ embed' c  -- must go to full ring
 
-  gSqNorm (Dec u) = R.gSqNorm u
-  gSqNorm c = gSqNorm $ toDec' c
-
   advisePow = toPow'
   adviseDec = toDec'
   adviseCRT = toCRT'
@@ -394,7 +391,6 @@ instance Cyclotomic (CycG t) Double => Cyclotomic (Cyc t) Double where
   scalarCyc = CycDouble . scalarCyc
   mulG      = CycDouble . mulG      . unCycDouble
   divG      = fmap CycDouble . divG . unCycDouble
-  gSqNorm   =             gSqNorm   . unCycDouble
   advisePow = CycDouble . advisePow . unCycDouble
   adviseDec = CycDouble . adviseDec . unCycDouble
   adviseCRT = CycDouble . adviseCRT . unCycDouble
@@ -403,7 +399,6 @@ instance Cyclotomic (CycG t) Int64 => Cyclotomic (Cyc t) Int64 where
   scalarCyc = CycInt64 . scalarCyc
   mulG      = CycInt64 . mulG      . unCycInt64
   divG      = fmap CycInt64 . divG . unCycInt64
-  gSqNorm   =            gSqNorm   . unCycInt64
   advisePow = CycInt64 . advisePow . unCycInt64
   adviseDec = CycInt64 . adviseDec . unCycInt64
   adviseCRT = CycInt64 . adviseCRT . unCycInt64
@@ -412,7 +407,6 @@ instance Cyclotomic (CycG t) (ZqBasic q z) => Cyclotomic (Cyc t) (ZqBasic q z) w
   scalarCyc = CycZqB . scalarCyc
   mulG      = CycZqB . mulG      . unCycZqB
   divG      = fmap CycZqB . divG . unCycZqB
-  gSqNorm   =          gSqNorm   . unCycZqB
   advisePow = CycZqB . advisePow . unCycZqB
   adviseDec = CycZqB . adviseDec . unCycZqB
   adviseCRT = CycZqB . adviseCRT . unCycZqB
@@ -421,10 +415,17 @@ instance (Cyclotomic (Cyc t) a, Cyclotomic (Cyc t) b) => Cyclotomic (Cyc t) (a,b
   scalarCyc (a,b) = CycPair (scalarCyc a) (scalarCyc b)
   mulG (CycPair a b) = CycPair (mulG a) (mulG b)
   divG (CycPair a b) = CycPair <$> divG a <*> divG b
-  gSqNorm (CycPair a b) = (gSqNorm a, gSqNorm b)
   advisePow (CycPair a b) = CycPair (advisePow a) (advisePow b)
   adviseDec (CycPair a b) = CycPair (adviseDec a) (adviseDec b)
   adviseCRT (CycPair a b) = CycPair (adviseCRT a) (adviseCRT b)
+
+-----
+
+instance (GSqNorm (CycG t) Double) => GSqNorm (Cyc t) Double where
+  gSqNorm = gSqNorm . unCycDouble
+
+instance (GSqNorm (CycG t) Int64) => GSqNorm (Cyc t) Int64 where
+  gSqNorm = gSqNorm . unCycInt64
 
 -----
 
