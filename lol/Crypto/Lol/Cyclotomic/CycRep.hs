@@ -45,7 +45,7 @@ module Crypto.Lol.Cyclotomic.CycRep
 -- * Data types and constraints
   CycRep, P, D, C, E, CycRepEC, CycRepPC, CRTElt
 -- * Changing representation
-, toPow, toDec, toCRT, fmapPow, fmapDec
+, toPow, toDec, toCRT
 -- * Scalars
 , scalarPow, scalarCRT
 -- * Basic operations
@@ -302,21 +302,6 @@ instance (Rescale a b, Tensor t a, Tensor t b, Fact m)
 -- wouldn't be efficient, and (2) their superclass constraints are not
 -- satisfied anyway (e.g., Ring for P rep).
 
-
--- | Type-restricted (and potentially more efficient) 'fmap' for
--- powerful-basis representation.
-fmapPow :: (IFunctor t, IFElt t a, IFElt t b, Fact m)
-        => (a -> b) -> CycRep t P m a -> CycRep t P m b
-fmapPow f (Pow v) = Pow $ fmapI f v
-{-# INLINABLE fmapPow #-}
-
--- | Type-restricted (and potentially more efficient) 'fmap' for
--- decoding-basis representation.
-fmapDec :: (IFunctor t, IFElt t a, IFElt t b, Fact m)
-        => (a -> b) -> CycRep t D m a -> CycRep t D m b
-fmapDec f (Dec v) = Dec $ fmapI f v
-{-# INLINABLE fmapDec #-}
-
 class MulG rep where
   -- | Multiply by the special element \(g_m\).
   mulG :: (Fact m, CRTElt t r) => CycRep t rep m r -> CycRep t rep m r
@@ -550,15 +535,27 @@ toPowCE (Right u) = toPow u
 
 ---------- Category-theoretic instances ----------
 
--- No instances for E because types (and math) don't make sense.
+----- No instances for E because types (and math) don't make sense.
 
--- | apply coefficient-wise (with respect to powerful basis)
+-- | apply coefficient-wise
+instance IFunctor t => IFunctor (CycRep t P) where
+  type IFElt (CycRep t P) a = IFElt t a
+  fmapI    f (Pow v)         = Pow $ fmapI f v
+  zipWithI f (Pow v) (Pow w) = Pow $ zipWithI f v w
+
+-- | apply coefficient-wise
+instance IFunctor t => IFunctor (CycRep t D) where
+  type IFElt (CycRep t D) a = IFElt t a
+  fmapI    f (Dec v)         = Dec $ fmapI f v
+  zipWithI f (Dec v) (Dec w) = Dec $ zipWithI f v w
+
+-- | apply coefficient-wise
 instance Applicative (CycRep t P m) => Functor (CycRep t P m) where
   -- Functor instance is implied by Applicative laws
   {-# INLINABLE fmap #-}
   fmap f x = pure f <*> x
 
--- | apply coefficient-wise (with respect to decoding basis)
+-- | apply coefficient-wise
 instance Applicative (CycRep t D m) => Functor (CycRep t D m) where
   -- Functor instance is implied by Applicative laws
   {-# INLINABLE fmap #-}

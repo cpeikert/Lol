@@ -558,17 +558,6 @@ crtSet = (Pow <$>) <$> R.crtSet
 {-# INLINABLE crtSet #-}
 
 
------
-
-{-
-instance (IFunctor t, CRTElt t a => FunctorCyc (CycG t) a b where
-  fmapCyc L.Pow f (Pow u) = Pow (fmapI f u)
-  fmapCyc L.Pow f v = fmapCyc L.Pow f (toPow' v)
-
-  fmapCyc L.Dec f (Dec u) = Dec (fmapI f u)
-  fmapCyc L.Dec f v = fmapCyc L.Dec f (toDec' v)
--}
-
 ---------- Promoted lattice operations ----------
 
 -- | promoted from base ring
@@ -598,8 +587,8 @@ instance {-# INCOHERENT #-} (Rescale a b, CRTElt t a, Tensor t b)
   rescaleCyc L.Pow (Scalar c) = Scalar $ rescale c
   rescaleCyc L.Pow (Sub c) = Sub $ rescalePow c
 
-  rescaleCyc L.Pow c = Pow $ fmapPow rescale $ uncycPow c
-  rescaleCyc L.Dec c = Dec $ fmapDec rescale $ uncycDec c
+  rescaleCyc L.Pow c = Pow $ fmapI rescale $ uncycPow c
+  rescaleCyc L.Dec c = Dec $ fmapI rescale $ uncycDec c
   {-# INLINABLE rescaleCyc #-}
 
 instance RescaleCyc (CycG t) a a where
