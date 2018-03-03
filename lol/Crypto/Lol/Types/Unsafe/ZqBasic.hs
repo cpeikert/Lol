@@ -58,7 +58,7 @@ import Data.Maybe
 import NumericPrelude.Numeric as NP (round)
 import System.Random
 
-import qualified Data.Vector                 as V
+import qualified Data.Vector as V
 
 import qualified Algebra.Additive       as Additive (C)
 import qualified Algebra.Field          as Field (C)
@@ -181,7 +181,7 @@ instance (Reflects q z, ToInteger z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q 
   type CRTExt (ZqBasic q z) = Complex Double
 
   toExt (ZqB x) = fromReal $ fromIntegral x
-  fromExt x = reduce' $ NP.round $ real x
+  fromExt = reduce' . NP.round . real
 
 -- instance of Additive
 instance (Reflects q z, ToInteger z, Additive z) => Additive.C (ZqBasic q z) where
