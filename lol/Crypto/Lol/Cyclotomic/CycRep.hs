@@ -136,15 +136,15 @@ scalarCRT r = case crtSentinel of
 
 -- Eq instances
 
-instance (Eq (t m r), Fact m) => Eq (CycRep t P m r) where
+instance Eq (t m r) => Eq (CycRep t P m r) where
   (Pow v1) == (Pow v2) = v1 == v2
   {-# INLINABLE (==) #-}
 
-instance (Eq (t m r), Fact m) => Eq (CycRep t D m r) where
+instance Eq (t m r) => Eq (CycRep t D m r) where
   (Dec v1) == (Dec v2) = v1 == v2
   {-# INLINABLE (==) #-}
 
-instance (Eq (t m r), Fact m) => Eq (CycRep t C m r) where
+instance Eq (t m r) => Eq (CycRep t C m r) where
   (CRTC _ v1) == (CRTC _ v2) = v1 == v2
   {-# INLINABLE (==) #-}
 
@@ -154,15 +154,15 @@ instance (Eq (t m r), Fact m) => Eq (CycRep t C m r) where
 
 -- ZeroTestable instances
 
-instance (ZeroTestable (t m r), Fact m) => ZeroTestable.C (CycRep t P m r) where
+instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t P m r) where
   isZero (Pow v) = isZero v
   {-# INLINABLE isZero #-}
 
-instance (ZeroTestable (t m r), Fact m) => ZeroTestable.C (CycRep t D m r) where
+instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t D m r) where
   isZero (Dec v) = isZero v
   {-# INLINABLE isZero #-}
 
-instance (ZeroTestable (t m r), Fact m) => ZeroTestable.C (CycRep t C m r) where
+instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
   isZero (CRTC _ v) = isZero v
   {-# INLINABLE isZero #-}
 
