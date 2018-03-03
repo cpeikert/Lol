@@ -93,18 +93,6 @@ import Data.Constraint        ((:-), (\\))
 import Data.Foldable
 import Data.Traversable
 
--- | A cyclotomic ring such as \( \Z[\zeta_m] \), \( \Z_q[\zeta_m] \),
--- or \( \Q[\zeta_m] \): @t@ is the 'Tensor' type for storing
--- coefficient tensors; @m@ is the cyclotomic index; @r@ is the base
--- ring of the coefficients (e.g., \(\ \Q \), \( \Z \), \( \Z_q \)).
-data family Cyc (t :: Factored -> * -> *) (m :: Factored) r
-
-newtype instance Cyc t m Double        = CycDouble { unCycDouble :: CycG t m Double }
-newtype instance Cyc t m Int64         = CycInt64  { unCycInt64  :: CycG t m Int64 }
--- could also do an Int instance
-newtype instance Cyc t m (ZqBasic q z) = CycZqB    { unCycZqB    :: CycG t m (ZqBasic q z) }
-data    instance Cyc t m (a,b)         = CycPair   !(Cyc t m a) !(Cyc t m b)
-
 -- | Underlying GADT for a cyclotomic ring in one of several
 -- representations.
 data CycG t m r where
@@ -116,6 +104,18 @@ data CycG t m r where
   -- optimized storage of subring elements
   Sub :: (l `Divides` m) => !(CycG t l r) -> CycG t m r
   -- CJP: someday try to merge the above two
+
+-- | A cyclotomic ring such as \( \Z[\zeta_m] \), \( \Z_q[\zeta_m] \),
+-- or \( \Q[\zeta_m] \): @t@ is the 'Tensor' type for storing
+-- coefficient tensors; @m@ is the cyclotomic index; @r@ is the base
+-- ring of the coefficients (e.g., \(\ \Q \), \( \Z \), \( \Z_q \)).
+data family Cyc (t :: Factored -> * -> *) (m :: Factored) r
+
+newtype instance Cyc t m Double        = CycDbl { unCycDbl :: CycG t m Double }
+newtype instance Cyc t m Int64         = CycI64 { unCycI64 :: CycG t m Int64 }
+-- could also do an Int instance
+newtype instance Cyc t m (ZqBasic q z) = CycZqB { unCycZqB :: CycG t m (ZqBasic q z) }
+data    instance Cyc t m (a,b)         = CycPair !(Cyc t m a) !(Cyc t m b)
 
 ---------- Constructors / deconstructors ----------
 
@@ -386,20 +386,20 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r)
 -- argument of the class
 
 instance Cyclotomic (CycG t) Double => Cyclotomic (Cyc t) Double where
-  scalarCyc = CycDouble . scalarCyc
-  mulG      = CycDouble . mulG      . unCycDouble
-  divG      = fmap CycDouble . divG . unCycDouble
-  advisePow = CycDouble . advisePow . unCycDouble
-  adviseDec = CycDouble . adviseDec . unCycDouble
-  adviseCRT = CycDouble . adviseCRT . unCycDouble
+  scalarCyc = CycDbl . scalarCyc
+  mulG      = CycDbl . mulG      . unCycDbl
+  divG      = fmap CycDbl . divG . unCycDbl
+  advisePow = CycDbl . advisePow . unCycDbl
+  adviseDec = CycDbl . adviseDec . unCycDbl
+  adviseCRT = CycDbl . adviseCRT . unCycDbl
 
 instance Cyclotomic (CycG t) Int64 => Cyclotomic (Cyc t) Int64 where
-  scalarCyc = CycInt64 . scalarCyc
-  mulG      = CycInt64 . mulG      . unCycInt64
-  divG      = fmap CycInt64 . divG . unCycInt64
-  advisePow = CycInt64 . advisePow . unCycInt64
-  adviseDec = CycInt64 . adviseDec . unCycInt64
-  adviseCRT = CycInt64 . adviseCRT . unCycInt64
+  scalarCyc = CycI64 . scalarCyc
+  mulG      = CycI64 . mulG      . unCycI64
+  divG      = fmap CycI64 . divG . unCycI64
+  advisePow = CycI64 . advisePow . unCycI64
+  adviseDec = CycI64 . adviseDec . unCycI64
+  adviseCRT = CycI64 . adviseCRT . unCycI64
 
 instance Cyclotomic (CycG t) (ZqBasic q z) => Cyclotomic (Cyc t) (ZqBasic q z) where
   scalarCyc = CycZqB . scalarCyc
@@ -420,10 +420,10 @@ instance (Cyclotomic (Cyc t) a, Cyclotomic (Cyc t) b) => Cyclotomic (Cyc t) (a,b
 -----
 
 instance (GSqNorm (CycG t) Double) => GSqNorm (Cyc t) Double where
-  gSqNorm = gSqNorm . unCycDouble
+  gSqNorm = gSqNorm . unCycDbl
 
 instance (GSqNorm (CycG t) Int64) => GSqNorm (Cyc t) Int64 where
-  gSqNorm = gSqNorm . unCycInt64
+  gSqNorm = gSqNorm . unCycI64
 
 -----
 
@@ -431,7 +431,7 @@ instance TensorGaussian t q => GaussianCyc (CycG t) q where
   tweakedGaussian = fmap Dec . R.tweakedGaussian
 
 instance GaussianCyc (CycG t) Double => GaussianCyc (Cyc t) Double where
-  tweakedGaussian = fmap CycDouble . L.tweakedGaussian
+  tweakedGaussian = fmap CycDbl . L.tweakedGaussian
 
 -- CJP: no GaussianCyc for Int64, ZqBasic, or pairs
 
@@ -442,7 +442,7 @@ instance (TensorGaussian t Double, ToInteger z, IFElt t z)
   roundedGaussian = (Dec <$>) . R.roundedGaussian
 
 instance RoundedGaussianCyc (CycG t) Int64 => RoundedGaussianCyc (Cyc t) Int64 where
-  roundedGaussian = fmap CycInt64 . L.roundedGaussian
+  roundedGaussian = fmap CycI64 . L.roundedGaussian
 
 -- CJP: no RoundedGaussianCyc for Double, ZqBasic, or pairs
 
@@ -455,7 +455,7 @@ instance (TensorGaussian t Double, Mod zp, Lift zp (ModRep zp),
 
 instance (CosetGaussianCyc (CycG t) (ZqBasic q Int64))
   => CosetGaussianCyc (Cyc t) (ZqBasic q Int64) where
-  cosetGaussian v = fmap CycInt64 . L.cosetGaussian v . unCycZqB
+  cosetGaussian v = fmap CycI64 . L.cosetGaussian v . unCycZqB
 
 -- CJP: no CosetGaussianCyc for Double, Int64, or pairs
 
@@ -472,16 +472,16 @@ instance (CRTElt t r) => ExtensionCyc (CycG t) r where
   coeffsCyc L.Dec c' = Dec <$> R.coeffsDec (uncycDec c')
 
 instance ExtensionCyc (CycG t) Double => ExtensionCyc (Cyc t) Double where
-  embed = CycDouble . embed . unCycDouble
-  twace = CycDouble . twace . unCycDouble
-  powBasis = fmap CycDouble <$> powBasis
-  coeffsCyc b = fmap CycDouble . coeffsCyc b . unCycDouble
+  embed = CycDbl . embed . unCycDbl
+  twace = CycDbl . twace . unCycDbl
+  powBasis = fmap CycDbl <$> powBasis
+  coeffsCyc b = fmap CycDbl . coeffsCyc b . unCycDbl
 
 instance ExtensionCyc (CycG t) Int64 => ExtensionCyc (Cyc t) Int64 where
-  embed = CycInt64 . embed . unCycInt64
-  twace = CycInt64 . twace . unCycInt64
-  powBasis = fmap CycInt64 <$> powBasis
-  coeffsCyc b = fmap CycInt64 . coeffsCyc b . unCycInt64
+  embed = CycI64 . embed . unCycI64
+  twace = CycI64 . twace . unCycI64
+  powBasis = fmap CycI64 <$> powBasis
+  coeffsCyc b = fmap CycI64 . coeffsCyc b . unCycI64
 
 instance ExtensionCyc (CycG t) (ZqBasic q z) => ExtensionCyc (Cyc t) (ZqBasic q z) where
   embed = CycZqB . embed . unCycZqB
@@ -534,7 +534,7 @@ instance (Lift b a, CRTElt t b, Tensor t a) => LiftCyc (CycG t) b where
 
 instance (LiftCyc (CycG t) (ZqBasic q Int64))
   => LiftCyc (Cyc t) (ZqBasic q Int64) where
-  liftCyc b = CycInt64 . liftCyc b . unCycZqB
+  liftCyc b = CycI64 . liftCyc b . unCycZqB
 
 cycLiftPow, cycLiftDec :: (Lift b a, Fact m, CRTElt t b, Tensor t a)
   => CycG t m b -> CycG t m a
@@ -574,7 +574,7 @@ instance (Reduce a b, Fact m, CRTElt t a, CRTElt t b,
 instance Reduce (CycG t m Int64) (CycG t m (ZqBasic q Int64))
   => Reduce (Cyc t m Int64) (Cyc t m (ZqBasic q Int64)) where
 
-  reduce = CycZqB . reduce . unCycInt64
+  reduce = CycZqB . reduce . unCycI64
 
 -----
 
@@ -694,7 +694,7 @@ instance Decompose gad (CycG t m (ZqBasic q Int64))
   => Decompose gad (Cyc t m (ZqBasic q Int64)) where
 
   type DecompOf (Cyc t m (ZqBasic q Int64)) = Cyc t m Int64
-  decompose = fmap (fmap CycInt64) . decompose . unCycZqB
+  decompose = fmap (fmap CycI64) . decompose . unCycZqB
 
 toZL :: Tagged s [a] -> TaggedT s ZipList a
 toZL = coerce
