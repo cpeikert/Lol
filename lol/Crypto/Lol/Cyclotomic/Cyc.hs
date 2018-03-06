@@ -365,15 +365,16 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r)
   => Cyclotomic (CycG t) r where
   scalarCyc = Scalar
 
-  mulG (Pow u) = Pow $ R.mulG u
-  mulG (Dec u) = Dec $ R.mulG u
-  mulG (CRT u) = CRT $ either (Left . R.mulG) (Right . R.mulG) u
+  mulG (Pow u) = Pow $ R.mulGPow u
+  mulG (Dec u) = Dec $ R.mulGPow u
+  mulG (CRT (Left u)) = Pow <$> R.mulGPow (R.toPow u) -- go to Pow for precision
+  mulG (CRT (Right u)) = CRT $ (CRT . Right) $ R.mulGCRTC u
   mulG c@(Scalar _) = mulG $ toCRT' c
   mulG (Sub c) = mulG $ embed' c   -- must go to full ring
 
   divG (Pow u) = Pow <$> R.divGPow u
   divG (Dec u) = Dec <$> R.divGDec u
-  divG (CRT (Left u)) = Pow <$> R.divGPow (R.toPow u)
+  divG (CRT (Left u)) = Pow <$> R.divGPow (R.toPow u) -- go to Pow for precision
   divG (CRT (Right u)) = Just $ (CRT . Right) $ R.divGCRTC u
   divG c@(Scalar _) = divG $ toCRT' c
   divG (Sub c) = divG $ embed' c  -- must go to full ring

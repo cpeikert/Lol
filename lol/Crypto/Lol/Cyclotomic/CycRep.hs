@@ -51,7 +51,7 @@ module Crypto.Lol.Cyclotomic.CycRep
 -- * Scalars
 , scalarPow, scalarCRT
 -- * Basic operations
-, mulG, divGPow, divGDec, divGCRTC, gSqNorm
+, mulGPow, mulGDec, mulGCRTC, divGPow, divGDec, divGCRTC, gSqNorm
 -- * Error sampling
 , tweakedGaussian, roundedGaussian, cosetGaussian
 -- * Inter-ring operations and values
@@ -61,8 +61,8 @@ module Crypto.Lol.Cyclotomic.CycRep
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor hiding (divGDec, divGPow, embedCRT,
-                                     embedDec, embedPow, scalarCRT,
-                                     scalarPow, twaceCRT)
+                                     embedDec, embedPow, mulGDec, mulGPow,
+                                     scalarCRT, scalarPow, twaceCRT)
 
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CRTSentinel
@@ -295,14 +295,14 @@ instance (Rescale a b, Tensor t a, Tensor t b, Fact m)
 -- wouldn't be efficient, and (2) their superclass constraints are not
 -- satisfied anyway (e.g., Ring for P rep).
 
-class MulG rep where
-  -- | Multiply by the special element \(g_m\).
-  mulG :: (Fact m, CRTElt t r) => CycRep t rep m r -> CycRep t rep m r
+mulGPow :: (Fact m, Tensor t r) => CycRep t P m r -> CycRep t P m r
+mulGPow (Pow v) = Pow $ T.mulGPow v
 
-instance MulG P where mulG (Pow v) = Pow $ mulGPow v
-instance MulG D where mulG (Dec v) = Dec $ mulGDec v
-instance MulG C where mulG (CRTC s v) = CRTC s $ mulGCRTCS s v
-instance MulG E where mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
+mulGDec :: (Fact m, Tensor t r) => CycRep t D m r -> CycRep t D m r
+mulGDec (Dec v) = Dec $ T.mulGDec v
+
+mulGCRTC :: (Fact m, Tensor t r, CRTrans Maybe r) => CycRep t C m r -> CycRep t C m r
+mulGCRTC (CRTC s v) = CRTC s $ mulGCRTCS s v
 
 -- Note: We do not implement divGCRTE because we can't tell whether
 -- the element is actually divisible by g when using the CRT extension
@@ -312,13 +312,13 @@ instance MulG E where mulG (CRTE s v) = CRTE s $ runIdentity mulGCRT v
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
-divGPow :: (Fact m, CRTElt t r, ZeroTestable r, IntegralDomain r)
+divGPow :: (Fact m, Tensor t r, ZeroTestable r, IntegralDomain r)
         => CycRep t P m r -> Maybe (CycRep t P m r)
 {-# INLINABLE divGPow #-}
 divGPow (Pow v) = Pow <$> T.divGPow v
 
 -- | Similar to 'divGPow'.
-divGDec :: (Fact m, CRTElt t r, ZeroTestable r, IntegralDomain r)
+divGDec :: (Fact m, Tensor t r, ZeroTestable r, IntegralDomain r)
         => CycRep t D m r -> Maybe (CycRep t D m r)
 {-# INLINABLE divGDec #-}
 divGDec (Dec v) = Dec <$> T.divGDec v
