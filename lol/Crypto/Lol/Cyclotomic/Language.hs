@@ -107,6 +107,11 @@ coeffsPow = coeffsCyc Pow
 -- | 'coeffsCyc' specialized to the decoding basis.
 coeffsDec = coeffsCyc Dec
 
+-- | Reduce from one base ring to another, for any cyclotomic index.
+class ReduceCyc c a b where
+  -- | Basis-independent reduce.
+  reduceCyc :: Fact m => c m a -> c m b
+
 class LiftCyc c r where
   -- | Lift using the specified basis.
   liftCyc :: Fact m => Basis -> c m r -> c m (LiftOf r)
