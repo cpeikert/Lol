@@ -366,9 +366,9 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r)
   scalarCyc = Scalar
 
   mulG (Pow u) = Pow $ R.mulGPow u
-  mulG (Dec u) = Dec $ R.mulGPow u
-  mulG (CRT (Left u)) = Pow <$> R.mulGPow (R.toPow u) -- go to Pow for precision
-  mulG (CRT (Right u)) = CRT $ (CRT . Right) $ R.mulGCRTC u
+  mulG (Dec u) = Dec $ R.mulGDec u
+  mulG (CRT (Left u)) = Pow $ R.mulGPow $ R.toPow u -- go to Pow for precision
+  mulG (CRT (Right u)) = CRT $ Right $ R.mulGCRTC u
   mulG c@(Scalar _) = mulG $ toCRT' c
   mulG (Sub c) = mulG $ embed' c   -- must go to full ring
 
