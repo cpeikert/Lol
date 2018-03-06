@@ -462,7 +462,8 @@ instance (CosetGaussianCyc (CycG t) (ZqBasic q Int64))
 
 -----
 
-instance (CRTElt t r) => ExtensionCyc (CycG t) r where
+instance (CRTElt t r, ZeroTestable r, IntegralDomain r) -- ZT, ID for superclass
+  => ExtensionCyc (CycG t) r where
   -- use these because implementations need indices to be in scope
   embed = embedLazy
   twace = twace'
@@ -498,7 +499,8 @@ instance (ExtensionCyc (Cyc t) a, ExtensionCyc (Cyc t) b)
   coeffsCyc bas (CycPair a b) =
     zipWith CycPair (coeffsCyc bas a) (coeffsCyc bas b)
 
-twace' :: forall t m m' r . (CRTElt t r, m `Divides` m')
+twace' :: forall t m m' r .
+          (CRTElt t r, ZeroTestable r, IntegralDomain r, m `Divides` m')
        => CycG t m' r -> CycG t m r
 twace' (Pow u) = Pow $ R.twacePow u
 twace' (Dec u) = Dec $ R.twaceDec u
