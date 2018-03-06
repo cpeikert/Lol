@@ -25,20 +25,22 @@ The acceptable range of inputs for each function is determined by
 the internal linear transforms and other operations it performs.
 -}
 
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE InstanceSigs          #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE RebindableSyntax      #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE ConstraintKinds            #-}
+{-# LANGUAGE DataKinds                  #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE FlexibleInstances          #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE InstanceSigs               #-}
+{-# LANGUAGE MultiParamTypeClasses      #-}
+{-# LANGUAGE PolyKinds                  #-}
+{-# LANGUAGE RankNTypes                 #-}
+{-# LANGUAGE RebindableSyntax           #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
+{-# LANGUAGE UndecidableInstances       #-}
 
 module Crypto.Lol.Cyclotomic.CycRep
 (
@@ -136,17 +138,9 @@ scalarCRT r = case crtSentinel of
 
 -- Eq instances
 
-instance Eq (t m r) => Eq (CycRep t P m r) where
-  (Pow v1) == (Pow v2) = v1 == v2
-  {-# INLINABLE (==) #-}
-
-instance Eq (t m r) => Eq (CycRep t D m r) where
-  (Dec v1) == (Dec v2) = v1 == v2
-  {-# INLINABLE (==) #-}
-
-instance Eq (t m r) => Eq (CycRep t C m r) where
-  (CRTC _ v1) == (CRTC _ v2) = v1 == v2
-  {-# INLINABLE (==) #-}
+deriving instance Eq (t m r) => Eq (CycRep t P m r)
+deriving instance Eq (t m r) => Eq (CycRep t D m r)
+deriving instance Eq (t m r) => Eq (CycRep t C m r)
 
 -- no Eq instance for E due to precision
 
@@ -154,21 +148,20 @@ instance Eq (t m r) => Eq (CycRep t C m r) where
 
 -- ZeroTestable instances
 
-instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t P m r) where
-  isZero (Pow v) = isZero v
-  {-# INLINABLE isZero #-}
+deriving instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t P m r)
+deriving instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t D m r)
 
-instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t D m r) where
-  isZero (Dec v) = isZero v
-  {-# INLINABLE isZero #-}
 
 instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
+  -- can't derive this because of sentinel
   isZero (CRTC _ v) = isZero v
-  {-# INLINABLE isZero #-}
 
 -- no ZT instance for E due to precision
 
 -- Additive instances
+
+-- TODO: replace these implementations to use Additive instance of
+-- underlying tensor? Would this require using ForallFact2 Additive.C?
 
 instance (Additive r, Tensor t r, IFunctor t, Fact m)
          => Additive.C (CycRep t P m r) where

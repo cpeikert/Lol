@@ -37,8 +37,8 @@ import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Factored
 
-data CSentinel t m r = CSentinel
-data ESentinel t m r = ESentinel
+data CSentinel t m r = CSentinel deriving (Eq, Show)
+data ESentinel t m r = ESentinel deriving (Eq, Show)
 
 crtSentinel :: (Tensor t r, Fact m, CRTrans Maybe r)
                => Either (ESentinel t m r) (CSentinel t m r)
