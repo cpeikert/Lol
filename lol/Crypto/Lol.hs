@@ -59,6 +59,6 @@ module Crypto.Lol
 
 import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Cyclotomic.Linear
-import Crypto.Lol.Cyclotomic.RescaleCyc
+import Crypto.Lol.Cyclotomic.Language
 import Crypto.Lol.Gadget
 import Crypto.Lol.Prelude

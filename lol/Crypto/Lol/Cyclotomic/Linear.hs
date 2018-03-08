@@ -65,7 +65,7 @@ type role Linear representational representational representational nominal nomi
 -- (in \(S\)) on the relative decoding basis of \(R/E\).  The number of
 -- elements in the list must not exceed the size of the basis.
 linearDec :: forall c e r s z .
-             (e `Divides` r, e `Divides` s, ExtensionCyc c z)
+             (e `Divides` r, e `Divides` s, Cyclotomic c z, ExtensionCyc c z)
              => [c s z] -> Linear c e r s z
 linearDec ys = let ps = proxy powBasis (Proxy::Proxy e) `asTypeOf` ys
                in if length ys <= length ps then RD (adviseCRT <$> ys)
