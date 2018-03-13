@@ -34,7 +34,7 @@ indexing.
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Crypto.Lol.Cyclotomic.Tensor
-( Tensor(..), TensorGaussian(..), TensorCRTSet(..)
+( Tensor(..), TensorCRT(..), TensorGaussian(..), TensorCRTSet(..)
 -- * Top-level CRT functions
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
@@ -62,8 +62,8 @@ import           Data.Tuple              (swap)
 import qualified Data.Vector             as V
 import qualified Data.Vector.Unboxed     as U
 
--- | 'Tensor' encapsulates linear transformations needed for
--- cyclotomic ring arithmetic.
+-- | Encapsulates linear transformations needed for cyclotomic ring
+-- arithmetic.
 
 -- | The type @t m r@ represents a cyclotomic coefficient tensor of
 -- index \(m\) over base ring \(r\).  Most of the methods represent linear
@@ -80,7 +80,7 @@ import qualified Data.Vector.Unboxed     as U
 -- implements.
 
 class (ForallFact1 Applicative t, ForallFact1 Traversable t,
-       IFunctor t, IFElt t r, Ring r, ForallFact2 (Module.C r) t r)
+       IFunctor t, IFElt t r, Additive r)
   => Tensor t r where
 
   -- | Convert a scalar to a tensor in the powerful basis.
@@ -98,18 +98,6 @@ class (ForallFact1 Applicative t, ForallFact1 Traversable t,
   -- exactly when the input is not divisible by \(g_m\).
   divGPow, divGDec :: Fact m => t m r -> Maybe (t m r)
 
-  -- | A tuple of all the operations relating to the CRT basis, in a
-  -- single 'Maybe' value for safety.  Clients should typically not
-  -- use this method directly, but instead call the corresponding
-  -- top-level functions: the elements of the tuple correpond to the
-  -- functions 'scalarCRT', 'mulGCRT', 'divGCRT', 'crt', 'crtInv'.
-  crtFuncs :: (CRTrans mon r, Fact m) =>
-              mon (    r -> t m r, -- scalarCRT
-                   t m r -> t m r, -- mulGCRT
-                   t m r -> t m r, -- divGCRT
-                   t m r -> t m r, -- crt
-                   t m r -> t m r) -- crtInv
-
   -- | Given the coefficient tensor of \(e\) with respect to the
   -- decoding basis of \(R\), yield the (scaled) squared norm of
   -- \(g_m \cdot e\) under the canonical embedding, namely,
@@ -124,6 +112,29 @@ class (ForallFact1 Applicative t, ForallFact1 Traversable t,
   -- decoding bases.
   embedPow, embedDec :: m `Divides` m' => t m r -> t m' r
 
+  -- | Map a tensor in the powerful\/decoding\/CRT basis, representing
+  -- an \(\O_{m'}\) element, to a vector of tensors representing
+  -- \(\O_m\) elements in the same kind of basis.
+  coeffs :: m `Divides` m' => t m' r -> [t m r]
+
+  -- | The powerful extension basis w.r.t. the powerful basis.
+  powBasisPow :: m `Divides` m' => Tagged m [t m' r]
+
+-- | Encapsulates functions related to the Chinese-remainder
+-- representation/transform.
+class (Tensor t r, Ring r, ForallFact2 (Module.C r) t r) => TensorCRT t r where
+  -- | A tuple of all the operations relating to the CRT basis, in a
+  -- single 'Maybe' value for safety.  Clients should typically not
+  -- use this method directly, but instead call the corresponding
+  -- top-level functions: the elements of the tuple correpond to the
+  -- functions 'scalarCRT', 'mulGCRT', 'divGCRT', 'crt', 'crtInv'.
+  crtFuncs :: (CRTrans mon r, Fact m) =>
+              mon (    r -> t m r, -- scalarCRT
+                   t m r -> t m r, -- mulGCRT
+                   t m r -> t m r, -- divGCRT
+                   t m r -> t m r, -- crt
+                   t m r -> t m r) -- crtInv
+
   -- | A tuple of all the extension-related operations involving the
   -- CRT bases, for safety.  Clients should typically not use this
   -- method directly, but instead call the corresponding top-level
@@ -132,14 +143,6 @@ class (ForallFact1 Applicative t, ForallFact1 Traversable t,
   crtExtFuncs :: (CRTrans mon r, m `Divides` m') =>
                  mon (t m' r -> t m  r, -- twaceCRT
                       t m  r -> t m' r) -- embedCRT
-
-  -- | Map a tensor in the powerful\/decoding\/CRT basis, representing
-  -- an \(\O_{m'}\) element, to a vector of tensors representing
-  -- \(\O_m\) elements in the same kind of basis.
-  coeffs :: m `Divides` m' => t m' r -> [t m r]
-
-  -- | The powerful extension basis w.r.t. the powerful basis.
-  powBasisPow :: m `Divides` m' => Tagged m [t m' r]
 
 -- | A 'Tensor' that supports Gaussian sampling for the element type 'q'.
 class (Tensor t q) => TensorGaussian t q where
@@ -157,7 +160,7 @@ class (Tensor t fp) => TensorCRTSet t fp where
     => Tagged m [t m' fp]
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
-hasCRTFuncs :: forall t m mon r . (CRTrans mon r, Tensor t r, Fact m)
+hasCRTFuncs :: forall t m mon r . (CRTrans mon r, TensorCRT t r, Fact m)
                => TaggedT (t m r) mon ()
 {-# INLINABLE hasCRTFuncs #-}
 hasCRTFuncs = tagT $ do
@@ -166,12 +169,12 @@ hasCRTFuncs = tagT $ do
 
 -- | Yield a tensor for a scalar in the CRT basis.  (This function is
 -- simply an appropriate entry from 'crtFuncs'.)
-scalarCRT :: (CRTrans mon r, Tensor t r, Fact m) => mon (r -> t m r)
+scalarCRT :: (CRTrans mon r, TensorCRT t r, Fact m) => mon (r -> t m r)
 {-# INLINABLE scalarCRT #-}
 scalarCRT = (\(f,_,_,_,_) -> f) <$> crtFuncs
 
 mulGCRT, divGCRT, crt, crtInv ::
-  (CRTrans mon r, Tensor t r, Fact m) => mon (t m r -> t m r)
+  (CRTrans mon r, TensorCRT t r, Fact m) => mon (t m r -> t m r)
 {-# INLINABLE mulGCRT #-}
 {-# INLINABLE divGCRT #-}
 {-# INLINABLE crt #-}
@@ -194,7 +197,7 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 -- For cyclotomic indices \(m \mid m'\),
 -- \(\Tw(x) = (\hat{m}/\hat{m}') \cdot \Tr((g'/g) \cdot x)\).
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-twaceCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t r, m `Divides` m')
+twaceCRT :: forall t m m' mon r . (CRTrans mon r, TensorCRT t r, m `Divides` m')
             => mon (t m' r -> t m r)
 {-# INLINABLE twaceCRT #-}
 twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
@@ -204,7 +207,7 @@ twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
 -- | Embed a tensor with index \(m\) in the CRT basis to a tensor with
 -- index \(m'\) in the CRT basis.
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-embedCRT :: forall t m m' mon r . (CRTrans mon r, Tensor t r, m `Divides` m')
+embedCRT :: forall t m m' mon r . (CRTrans mon r, TensorCRT t r, m `Divides` m')
             => mon (t m r -> t m' r)
 embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>

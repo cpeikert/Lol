@@ -121,7 +121,7 @@ type CycRepEC t m r = Either (CycRep t E m r) (CycRep t C m r)
 type CycRepPC t m r = Either (CycRep t P m r) (CycRep t C m r)
 
 -- | Constraints needed for CRT-related operations on 'CycRep' data.
-type CRTElt t r = (Tensor t r, Tensor t (CRTExt r),
+type CRTElt t r = (TensorCRT t r, TensorCRT t (CRTExt r),
                    CRTEmbed r, CRTrans Maybe r, CRTrans Identity (CRTExt r))
 
 -- | Embed a scalar from the base ring.
@@ -301,7 +301,8 @@ mulGPow (Pow v) = Pow $ T.mulGPow v
 mulGDec :: (Fact m, Tensor t r) => CycRep t D m r -> CycRep t D m r
 mulGDec (Dec v) = Dec $ T.mulGDec v
 
-mulGCRTC :: (Fact m, Tensor t r, CRTrans Maybe r) => CycRep t C m r -> CycRep t C m r
+mulGCRTC :: (Fact m, TensorCRT t r, CRTrans Maybe r)
+         => CycRep t C m r -> CycRep t C m r
 mulGCRTC (CRTC s v) = CRTC s $ mulGCRTCS s v
 
 -- Note: We do not implement divGCRTE because we can't tell whether
