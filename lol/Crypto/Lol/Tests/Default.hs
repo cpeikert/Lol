@@ -54,12 +54,6 @@ defaultLolTests pt = [
     tensorTests1 (Proxy::Proxy '(F21, Zq 8191)),
     tensorTests1 (Proxy::Proxy '(F42, Zq 8191)),
     tensorTests1 (Proxy::Proxy '(F42, ZQ1)),
-    tensorTests1 (Proxy::Proxy '(F2,  ZQ2)),
-    tensorTests1 (Proxy::Proxy '(F3,  ZQ2)),
-    tensorTests1 (Proxy::Proxy '(F7,  ZQ2)),
-    tensorTests1 (Proxy::Proxy '(F6,  ZQ2)),
-    tensorTests1 (Proxy::Proxy '(F42, SmoothZQ3)),
-    tensorTests1 (Proxy::Proxy '(F42, ZQ2)),
     tensorTests1 (Proxy::Proxy '(F89, Zq 179)),
 
     tensorTests2 (Proxy::Proxy '(F1, F7,  Zq 29)),
@@ -71,10 +65,7 @@ defaultLolTests pt = [
     tensorTests2 (Proxy::Proxy '(F4, F8,  Zq 17)),
     tensorTests2 (Proxy::Proxy '(F3, F21, Zq 8191)),
     tensorTests2 (Proxy::Proxy '(F7, F21, Zq 8191)),
-    tensorTests2 (Proxy::Proxy '(F3, F42, Zq 8191)),
-    tensorTests2 (Proxy::Proxy '(F3, F21, ZQ1)),
-    tensorTests2 (Proxy::Proxy '(F7, F21, ZQ2)),
-    tensorTests2 (Proxy::Proxy '(F3, F42, ZQ3))],
+    tensorTests2 (Proxy::Proxy '(F3, F42, Zq 8191))],
 
   testGroup "Cyc Tests" $ ($ pt) <$> [
     cycTests1    (Proxy::Proxy '(F7,  Zq 29)),
