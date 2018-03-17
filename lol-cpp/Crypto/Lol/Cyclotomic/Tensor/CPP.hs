@@ -74,6 +74,7 @@ import Crypto.Lol.Prelude                             as LP hiding
 import Crypto.Lol.Reflects
 import Crypto.Lol.Tests
 import Crypto.Lol.Types.FiniteField
+import Crypto.Lol.Types.IFunctor
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Unsafe.ZqBasic
@@ -204,7 +205,7 @@ instance Fact m => Traversable (CT m) where
   traverse f (ZV v) = ZV <$> T.traverse f v
 
 instance TensorGaussian CT Double where
-  tGaussianDec v = CT <$> cDispatchGaussian v
+  tweakedGaussianDec v = CT <$> cDispatchGaussian v
 
 instance (Tensor CT (ZqBasic q Int64), PrimeField (ZqBasic q Int64))
     => TensorCRTSet CT (ZqBasic q Int64) where
@@ -221,6 +222,7 @@ instance IFunctor CT where
   zipWithI f (ZV v) (CT sv) = zipWithI f (CT $ zvToCT' v) (CT sv)
   zipWithI f (ZV v1) (ZV v2) = zipWithI f (CT $ zvToCT' v1) (CT $ zvToCT' v2)
 
+-- TODO: make all of dispatched functions type-specific (kill the Dispatch' type class)
 #define TENSOR_DEF(ring_ty, ...) \
     instance (__VA_ARGS__) => Tensor CT (ring_ty) where \
       scalarPow = CT . scalarPow' ;\
@@ -234,21 +236,12 @@ instance IFunctor CT where
       divGPow = wrapM $ dispatchGInv dginvpow ;\
       divGDec = wrapM $ dispatchGInv dginvdec ;\
      \
-      crtFuncs = (,,,,) <$> \
-        return (CT . repl) <*> \
-        (wrap . untag (cZipDispatch dmul) <$> gCRT) <*> \
-        (wrap . untag (cZipDispatch dmul) <$> gInvCRT) <*> \
-        (wrap <$> untagT ctCRT) <*> \
-        (wrap <$> untagT ctCRTInv) ;\
-     \
       gSqNormDec (CT v) = untag gSqNormDec' v ;\
       gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v) ;\
      \
       twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec' ;\
       embedPow = wrap $ runIdentity $ coerceEm embedPow' ;\
       embedDec = wrap $ runIdentity $ coerceEm embedDec' ;\
-     \
-      crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT') ;\
      \
       coeffs = wrapM $ coerceCoeffs coeffs' ;\
      \
@@ -261,25 +254,42 @@ instance IFunctor CT where
       {-# INLINABLE mulGDec #-} ;\
       {-# INLINABLE divGPow #-} ;\
       {-# INLINABLE divGDec #-} ;\
-      {-# INLINABLE crtFuncs #-} ;\
       {-# INLINABLE twacePowDec #-} ;\
       {-# INLINABLE embedPow #-} ;\
       {-# INLINABLE embedDec #-} ;\
       {-# INLINABLE gSqNormDec #-} ;\
-      {-# INLINE crtExtFuncs #-} ;\
       {-# INLINABLE coeffs #-} ;\
       {-# INLINABLE powBasisPow #-} ;\
+
+#define TENSORCRT_DEF(ring_ty, ...) \
+    instance (__VA_ARGS__) => TensorCRT CT (ring_ty) where \
+      crtFuncs = (,,,,) <$> \
+        return (CT . repl) <*> \
+        (wrap . untag (cZipDispatch dmul) <$> gCRT) <*> \
+        (wrap . untag (cZipDispatch dmul) <$> gInvCRT) <*> \
+        (wrap <$> untagT ctCRT) <*> \
+        (wrap <$> untagT ctCRTInv) ;\
+     \
+      crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT') ;\
+     \
+      {-# INLINABLE crtFuncs #-} ;\
+      {-# INLINE crtExtFuncs #-} ;\
 
 TENSOR_DEF(Int64)
 TENSOR_DEF(ZqBasic q Int64, Reflects q Int64)
 TENSOR_DEF(Double)
 
--- TODO: Move this to a better place
+TENSORCRT_DEF(Int64)
+TENSORCRT_DEF(ZqBasic q Int64, Reflects q Int64)
+TENSORCRT_DEF(Double)
 
+-- Need this for the ForallFact2 Module entailment below
 instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
   (*>) r = wrap $ coerce $ SV.map (r*)
 
--- TODO: Make a section for this
+---------- Entailments for CT ----------
+
+-- TODO: Make ForallFact2 Protoable CT r that drops to CT'
 
 instance (Ring r, Storable r) => ForallFact2 (Module.C r) CT r where
   entailFact2 = Sub Dict
@@ -296,6 +306,8 @@ instance (ZeroTestable r, Storable r) => ForallFact2 ZeroTestable.C CT r where
 instance (Additive fp, Storable fp, GFCtx fp d) => ForallFact2 (Module.C (GF fp d)) CT fp where
   entailFact2 = Sub Dict
 
+---------- Helper functions for coercion ----------
+
 coerceTw :: (Functor mon) => TaggedT '(m, m') mon (Vector r -> Vector r) -> mon (CT' m' r -> CT' m r)
 coerceTw = (coerce <$>) . untagT
 
@@ -311,6 +323,8 @@ coerceCoeffs = coerce
 -- interface. Using 'coerce' alone is insufficient for type inference.
 coerceBasis :: Tagged '(m,m') [Vector r] -> Tagged m [CT' m' r]
 coerceBasis = coerce
+
+---------- Helper Functions for dispatch ----------
 
 dispatchGInv :: forall m r . (Storable r, Fact m)
              => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO Int16)
@@ -393,6 +407,8 @@ cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   yin <- T.lift $ realGaussians (var * fromIntegral (mval `div` rad)) totm
   return $ unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdec ruptr) (CT' yin))
+
+---------- Misc instances and arithmetic ----------
 
 instance (Storable r, Random r, Fact m) => Random (CT' m r) where
   --{-# INLINABLE random #-}
