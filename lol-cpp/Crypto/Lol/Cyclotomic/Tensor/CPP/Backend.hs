@@ -96,7 +96,6 @@ data Int64D
 data RRqD
 
 type family CTypeOf x where
-  CTypeOf (a,b) = EqCType a b (CTypeOf a) (CTypeOf b)
   CTypeOf (ZqBasic (q :: k) Int64) = ZqB64D
   CTypeOf Double = DoubleD
   CTypeOf Int64 = Int64D
@@ -123,6 +122,8 @@ class (Tuple a) => ZqTuple a where
   type ModPairs a
   getModuli :: Tagged a (ModPairs a)
 
+-- TODO: Kill all this pair crap
+
 instance (Reflects q Int64) => ZqTuple (ZqBasic q Int64) where
   type ModPairs (ZqBasic q Int64) = Int64
   getModuli = tag $ proxy value (Proxy::Proxy q)
@@ -148,11 +149,9 @@ instance {-# Overlappable #-} Tuple a where
 instance (Tuple a, Tuple b) => Tuple (a,b) where
   numComponents = tag $ proxy numComponents (Proxy::Proxy a) + proxy numComponents (Proxy::Proxy b)
 
--- | Single-argument synonym for @Dispatch'@.
-type Dispatch r = (Dispatch' (CTypeOf r) r)
-
+-- TODO: Fix docs
 -- | Class to safely match Haskell types with the appropriate C function.
-class (repr ~ CTypeOf r) => Dispatch' repr r where
+class Dispatch r where
   -- | Equivalent to 'Tensor's @crt@.
   dcrt      :: Ptr (Ptr r) ->           Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
   -- | Equivalent to 'Tensor's @crtInv@.
@@ -176,95 +175,79 @@ class (repr ~ CTypeOf r) => Dispatch' repr r where
   -- | Equivalent to @zipWith (*)@
   dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
 
-instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ RRqD)
-  => Dispatch' RRqD r where
-  dcrt = error "cannot call CT CRT on type RRq"
-  dcrtinv = error "cannot call CT CRTInv on type RRq"
-  dl = error "cannot call CT L on type RRq (though you probably should be able to)"
-  dlinv = error "cannot call CT LInv on type RRq (though you probably should be able to)"
-  dnorm = error "cannto call CT normSq on type RRq"
-  dmulgpow = error "cannot call CT mulGPow on type RRq"
-  dmulgdec = error "cannot call CT mulGDec on type RRq"
-  dginvpow = error "cannot call CT divGPow on type RRq"
-  dginvdec = error "cannot call CT divGDec on type RRq"
-  dmul = error "cannot call CT mul on type RRq"
-  dgaussdec = error "cannot call CT gaussianDec on type RRq"
+-- TODO: numPairs dies everywhere
+--       qs becomes a single q everywhere
+--       kill dgaussdec where it doesn't make sense
+--       kill castPtr
 
-instance (ZqTuple r, Storable (ModPairs r), CTypeOf r ~ ZqB64D)
-  => Dispatch' ZqB64D r where
+instance (Reflects q Int64) => Dispatch (ZqBasic q Int64) where
   dcrt ruptr pout totm pfac numFacts =
-    let qs = proxy getModuli (Proxy::Proxy r)
-        numPairs = proxy numComponents (Proxy::Proxy r)
-    in with qs $ \qsptr ->
-        tensorCRTRq numPairs (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr qsptr)
+    tensorCRTRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (proxy value (Proxy::Proxy q))
   dcrtinv ruptr minv pout totm pfac numFacts =
-    let qs = proxy getModuli (Proxy::Proxy r)
-        numPairs = proxy numComponents (Proxy::Proxy r)
-    in with qs $ \qsptr ->
-        tensorCRTInvRq numPairs (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv) (castPtr qsptr)
+        tensorCRTInvRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv) (proxy value (Proxy::Proxy q))
   dl pout totm pfac numFacts =
-    let qs = proxy getModuli (Proxy::Proxy r)
-        numPairs = proxy numComponents (Proxy::Proxy r)
-    in with qs $ \qsptr ->
+    let qs = [(proxy value (Proxy::Proxy q)) :: Int64]
+        numPairs = 1
+    in withArray qs $ \qsptr ->
         tensorLRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
   dlinv pout totm pfac numFacts =
-    let qs = proxy getModuli (Proxy::Proxy r)
-        numPairs = proxy numComponents (Proxy::Proxy r)
-    in with qs $ \qsptr ->
+    let qs = [(proxy value (Proxy::Proxy q)) :: Int64]
+        numPairs = 1
+    in withArray qs $ \qsptr ->
         tensorLInvRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
   dnorm = error "cannot call CT normSq on type ZqBasic"
   dmulgpow pout totm pfac numFacts =
-    let qs = proxy getModuli (Proxy::Proxy r)
-        numPairs = proxy numComponents (Proxy::Proxy r)
-    in with qs $ \qsptr ->
+    let qs = [(proxy value (Proxy::Proxy q)) :: Int64]
+        numPairs = 1
+    in withArray qs $ \qsptr ->
         tensorGPowRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
   dmulgdec pout totm pfac numFacts =
-    let qs = proxy getModuli (Proxy::Proxy r)
-        numPairs = proxy numComponents (Proxy::Proxy r)
-    in with qs $ \qsptr ->
+    let qs = [(proxy value (Proxy::Proxy q)) :: Int64]
+        numPairs = 1
+    in withArray qs $ \qsptr ->
         tensorGDecRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
   dginvpow pout totm pfac numFacts =
-    let qs = proxy getModuli (Proxy::Proxy r)
-        numPairs = proxy numComponents (Proxy::Proxy r)
-    in with qs $ \qsptr ->
+    let qs = [(proxy value (Proxy::Proxy q)) :: Int64]
+        numPairs = 1
+    in withArray qs $ \qsptr ->
         tensorGInvPowRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
   dginvdec pout totm pfac numFacts =
-    let qs = proxy getModuli (Proxy::Proxy r)
-        numPairs = proxy numComponents (Proxy::Proxy r)
-    in with qs $ \qsptr ->
+    let qs = [(proxy value (Proxy::Proxy q)) :: Int64]
+        numPairs = 1
+    in withArray qs $ \qsptr ->
         tensorGInvDecRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
   dmul aout bout totm =
-    let qs = proxy getModuli (Proxy::Proxy r)
-        numPairs = proxy numComponents (Proxy::Proxy r)
-    in with qs $ \qsptr ->
+    let qs = [(proxy value (Proxy::Proxy q)) :: Int64]
+        numPairs = 1
+    in withArray qs $ \qsptr ->
         mulRq numPairs (castPtr aout) (castPtr bout) totm (castPtr qsptr)
   dgaussdec = error "cannot call CT gaussianDec on type ZqBasic"
 
 -- products of Complex correspond to CRTExt of a Zq product
-instance (Tuple r, CTypeOf r ~ ComplexD) => Dispatch' ComplexD r where
+instance Dispatch (Complex Double) where
   dcrt ruptr pout totm pfac numFacts =
-    tensorCRTC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr)
+    tensorCRTC (castPtr pout) totm pfac numFacts (castPtr ruptr)
   dcrtinv ruptr minv pout totm pfac numFacts =
-    tensorCRTInvC (proxy numComponents (Proxy::Proxy r)) (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv)
+    tensorCRTInvC (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv)
   dl pout =
-    tensorLC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorLC 1 (castPtr pout)
   dlinv pout =
-    tensorLInvC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorLInvC 1 (castPtr pout)
   dnorm = error "cannot call CT normSq on type Complex Double"
   dmulgpow pout =
-    tensorGPowC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorGPowC 1 (castPtr pout)
   dmulgdec pout =
-    tensorGDecC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorGDecC 1 (castPtr pout)
   dginvpow pout =
-    tensorGInvPowC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorGInvPowC 1 (castPtr pout)
   dginvdec pout =
-    tensorGInvDecC (proxy numComponents (Proxy::Proxy r)) (castPtr pout)
+    tensorGInvDecC 1 (castPtr pout)
   dmul aout bout =
-    mulC (proxy numComponents (Proxy::Proxy r)) (castPtr aout) (castPtr bout)
-  dgaussdec = error "cannot call CT gaussianDec on type Comple Double"
+    mulC 1 (castPtr aout) (castPtr bout)
+  dgaussdec = error "cannot call CT gaussianDec on type Complex Double"
 
 -- no support for products of Double
-instance Dispatch' DoubleD Double where
+instance Dispatch Double where
   dcrt = error "cannot call CT Crt on type Double"
   dcrtinv = error "cannot call CT CrtInv on type Double"
   dl pout =
@@ -281,7 +264,7 @@ instance Dispatch' DoubleD Double where
     tensorGaussianDec 1 (castPtr pout) totm pfac numFacts (castPtr ruptr)
 
 -- no support for products of Z
-instance Dispatch' Int64D Int64 where
+instance Dispatch Int64 where
   dcrt = error "cannot call CT Crt on type Int64"
   dcrtinv = error "cannot call CT CrtInv on type Int64"
   dl pout =
@@ -326,10 +309,10 @@ foreign import ccall unsafe "tensorGInvDecR" tensorGInvDecR ::   Int16 -> Ptr In
 foreign import ccall unsafe "tensorGInvDecRq" tensorGInvDecRq :: Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO Int16
 foreign import ccall unsafe "tensorGInvDecC" tensorGInvDecC ::   Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO Int16
 
-foreign import ccall unsafe "tensorCRTRq" tensorCRTRq ::         Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (ZqBasic q Int64)) -> Ptr Int64 -> IO ()
-foreign import ccall unsafe "tensorCRTC" tensorCRTC ::           Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) -> IO ()
-foreign import ccall unsafe "tensorCRTInvRq" tensorCRTInvRq ::   Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (ZqBasic q Int64)) -> Ptr (ZqBasic q Int64) -> Ptr Int64 -> IO ()
-foreign import ccall unsafe "tensorCRTInvC" tensorCRTInvC ::     Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) -> Ptr (Complex Double) -> IO ()
+foreign import ccall unsafe "tensorCRTRq" tensorCRTRq ::         Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (ZqBasic q Int64)) -> Int64 -> IO ()
+foreign import ccall unsafe "tensorCRTC" tensorCRTC ::           Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) -> IO ()
+foreign import ccall unsafe "tensorCRTInvRq" tensorCRTInvRq ::   Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (ZqBasic q Int64)) -> Ptr (ZqBasic q Int64) -> Int64 -> IO ()
+foreign import ccall unsafe "tensorCRTInvC" tensorCRTInvC ::     Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) -> Ptr (Complex Double) -> IO ()
 
 foreign import ccall unsafe "tensorGaussianDec" tensorGaussianDec :: Int16 -> Ptr Double -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) ->  IO ()
 

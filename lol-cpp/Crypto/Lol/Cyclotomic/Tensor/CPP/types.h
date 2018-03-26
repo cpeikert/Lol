@@ -118,6 +118,7 @@ inline Zq operator/(Zq a, const Zq& b)
 // Converts a Zq value into the range 0 <= x < q. This should be called
 // before returning to Haskell.
 void canonicalizeZq (Zq* y, hShort_t tupSize, hDim_t totm, hInt_t* qs);
+void canonicalizeZqNew (Zq* y, hDim_t totm, hInt_t q);
 
 class Complex
 {

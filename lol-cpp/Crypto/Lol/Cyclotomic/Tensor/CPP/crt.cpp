@@ -559,40 +559,36 @@ template <typename ring> void ppcrtinv (ring* y, hShort_t tupSize, hDim_t lts, h
   }
 }
 
-extern "C" void tensorCRTRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Zq** ru, hInt_t* qs)
+extern "C" void tensorCRTRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Zq** ru, hInt_t q)
 {
-  tensorFuserCRT (y, tupSize, ppcrt, totm, peArr, sizeOfPE, ru, qs);
-  canonicalizeZq(y,tupSize,totm,qs);
+  tensorFuserCRTNew (y, ppcrt, totm, peArr, sizeOfPE, ru, q);
+  canonicalizeZqNew(y,totm,q);
 }
 
 //takes inverse rus
-extern "C" void tensorCRTInvRq (hShort_t tupSize, Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE,
-                    Zq** ruinv, Zq* mhatInv, hInt_t* qs)
+extern "C" void tensorCRTInvRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE,
+                    Zq** ruinv, Zq* mhatInv, hInt_t q)
 {
-  tensorFuserCRT (y, tupSize, ppcrtinv, totm, peArr, sizeOfPE, ruinv, qs);
-  for (hShort_t i = 0; i < tupSize; i++) {
-    Zq::q = qs[i];
-    for (hDim_t j = 0; j < totm; j++) {
-      //careful here! I'm not setting the global q, so I can't rely on Zq multiplication
-      y[j*tupSize+i] = y[j*tupSize+i]*mhatInv[i];
-    }
+  tensorFuserCRTNew (y, ppcrtinv, totm, peArr, sizeOfPE, ruinv, q);
+  Zq::q = q;
+  for (hDim_t j = 0; j < totm; j++) {
+    //careful here! I'm not setting the global q, so I can't rely on Zq multiplication
+    y[j] = y[j]*mhatInv[0];
   }
-  canonicalizeZq(y,tupSize,totm,qs);
+  canonicalizeZqNew(y,totm,q);
 }
 
-extern "C" void tensorCRTC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Complex** ru)
+extern "C" void tensorCRTC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Complex** ru)
 {
-  tensorFuserCRT (y, tupSize, ppcrt, totm, peArr, sizeOfPE, ru, (hInt_t*)0);
+  tensorFuserCRTNew (y, ppcrt, totm, peArr, sizeOfPE, ru, 0);
 }
 
 //takes inverse rus
-extern "C" void tensorCRTInvC (hShort_t tupSize, Complex* y, hDim_t totm, PrimeExponent* peArr,
+extern "C" void tensorCRTInvC (Complex* y, hDim_t totm, PrimeExponent* peArr,
                     hShort_t sizeOfPE, Complex** ruinv, Complex* mhatInv)
 {
-  tensorFuserCRT (y, tupSize, ppcrtinv, totm, peArr, sizeOfPE, ruinv, (hInt_t*)0);
-  for (hShort_t i = 0; i < tupSize; i++) {
-    for (hDim_t j = 0; j < totm; j++) {
-      y[j*tupSize+i] *= mhatInv[i];
-    }
+  tensorFuserCRTNew (y, ppcrtinv, totm, peArr, sizeOfPE, ruinv, 0);
+  for (hDim_t j = 0; j < totm; j++) {
+    y[j] *= mhatInv[0];
   }
 }

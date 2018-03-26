@@ -94,5 +94,25 @@ template <typename ringy, typename ringru> void tensorFuserCRT (ringy* y, hShort
   }
 }
 
+template <typename ringy, typename ringru> void tensorFuserCRTNew (ringy* y, primeCRTFunc<ringy,ringru> f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ringru** ru, hInt_t q)
+{
+  hDim_t lts = totm;
+  hDim_t rts = 1;
+  hShort_t i;
+
+  for (i = 0; i < sizeOfPE; ++i) {
+    PrimeExponent pe = peArr[i];
+    hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
+    hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
+    lts /= dim;
+    // TODO: Is q == 0 a good enough "not-defined" condition?
+    if(q) {
+      Zq::q = q; // global update
+    }
+    (*f) (y, 1, lts, rts, pe, ru[i]);
+    rts *= dim;
+  }
+}
+
 #endif /* __cplusplus */
 #endif /* TENSOR_CPP_ */
