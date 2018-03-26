@@ -28,7 +28,7 @@ using primeFunc = void (*) (ring*, hShort_t, hDim_t, hDim_t, hDim_t);
 // templated function pointer for prime-index CRT-style transformations, which
 // also have pointers to roots of unity
 template <typename ringy, typename ringru>
-using primeCRTFunc = void (*) (ringy*, hShort_t, hDim_t, hDim_t, PrimeExponent, ringru*);
+using primeCRTFunc = void (*) (ringy*, hDim_t, hDim_t, PrimeExponent, ringru*);
 
 // Turns a prime-index transformation A_p which satisfies into
 // A_{p^e} = I_{p^(e-1)} \otimes A_p into an arbitrary-index transformation.
@@ -73,28 +73,7 @@ template <typename ring> void
   }
 }
 
-template <typename ringy, typename ringru> void tensorFuserCRT (ringy* y, hShort_t tupSize, primeCRTFunc<ringy,ringru> f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ringru** ru, hInt_t* qs)
-{
-  hDim_t lts = totm;
-  hDim_t rts = 1;
-  hShort_t i;
-
-  for (i = 0; i < sizeOfPE; ++i) {
-    PrimeExponent pe = peArr[i];
-    hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
-    hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
-    lts /= dim;
-    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
-      if(qs) {
-        Zq::q = qs[tupIdx]; // global update
-      }
-      (*f) (y+tupIdx, tupSize, lts, rts, pe, ru[i]+tupIdx);
-    }
-    rts *= dim;
-  }
-}
-
-template <typename ringy, typename ringru> void tensorFuserCRTNew (ringy* y, primeCRTFunc<ringy,ringru> f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ringru** ru, hInt_t q)
+template <typename ringy, typename ringru> void tensorFuserCRT(ringy* y, primeCRTFunc<ringy,ringru> f, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, ringru** ru, hInt_t q)
 {
   hDim_t lts = totm;
   hDim_t rts = 1;
@@ -109,7 +88,7 @@ template <typename ringy, typename ringru> void tensorFuserCRTNew (ringy* y, pri
     if(q) {
       Zq::q = q; // global update
     }
-    (*f) (y, 1, lts, rts, pe, ru[i]);
+    (*f) (y, lts, rts, pe, ru[i]);
     rts *= dim;
   }
 }
