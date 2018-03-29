@@ -199,10 +199,7 @@ instance (Reflects q Int64) => Dispatch (ZqBasic q Int64) where
   dginvdec pout totm pfac numFacts =
     tensorGInvDecRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
   dmul aout bout totm =
-    let qs = [(proxy value (Proxy::Proxy q)) :: Int64]
-        numPairs = 1
-    in withArray qs $ \qsptr ->
-        mulRq numPairs (castPtr aout) (castPtr bout) totm (castPtr qsptr)
+    mulRq (castPtr aout) (castPtr bout) totm (proxy value (Proxy::Proxy q))
   dgaussdec = error "cannot call CT gaussianDec on type ZqBasic"
 
 -- products of Complex correspond to CRTExt of a Zq product
@@ -225,7 +222,7 @@ instance Dispatch (Complex Double) where
   dginvdec pout =
     tensorGInvDecC (castPtr pout)
   dmul aout bout =
-    mulC 1 (castPtr aout) (castPtr bout)
+    mulC (castPtr aout) (castPtr bout)
   dgaussdec = error "cannot call CT gaussianDec on type Complex Double"
 
 -- no support for products of Double
@@ -298,5 +295,5 @@ foreign import ccall unsafe "tensorCRTInvC" tensorCRTInvC ::     Ptr (Complex Do
 
 foreign import ccall unsafe "tensorGaussianDec" tensorGaussianDec :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) ->  IO ()
 
-foreign import ccall unsafe "mulRq" mulRq :: Int16 -> Ptr (ZqBasic q Int64) -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr Int64 -> IO ()
-foreign import ccall unsafe "mulC" mulC :: Int16 -> Ptr (Complex Double) -> Ptr (Complex Double) -> Int64 -> IO ()
+foreign import ccall unsafe "mulRq" mulRq :: Ptr (ZqBasic q Int64) -> Ptr (ZqBasic q Int64) -> Int64 -> Int64 -> IO ()
+foreign import ccall unsafe "mulC" mulC :: Ptr (Complex Double) -> Ptr (Complex Double) -> Int64 -> IO ()
