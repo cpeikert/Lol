@@ -110,7 +110,7 @@ template <typename ring> void lpInv (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
  */
 extern "C" void tensorLRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
-  tensorFuserPrimeNew2 (y, lp, totm, peArr, sizeOfPE, q);
+  tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, q);
   // Haskell expects each Z_q coefficient to be in the range 0 <= x < q_i, so
   // ensure that is the case.
   canonicalizeZqNew(y,totm,q);
@@ -126,17 +126,17 @@ extern "C" void tensorLRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t si
  */
 extern "C" void tensorLR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, lp, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
 }
 
 extern "C" void tensorLDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, lp, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
 }
 
 extern "C" void tensorLC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, lp, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
 }
 
 /* Arbitrary-index transformation that converts powerful basis coefficients
@@ -150,7 +150,7 @@ extern "C" void tensorLC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_
  */
 extern "C" void tensorLInvRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
-  tensorFuserPrimeNew2 (y, lpInv, totm, peArr, sizeOfPE, q);
+  tensorFuserPrime (y, lpInv, totm, peArr, sizeOfPE, q);
   // Haskell expects each Z_q coefficient to be in the range 0 <= x < q_i, so
   // ensure that is the case.
   canonicalizeZqNew(y,totm,q);
@@ -166,15 +166,15 @@ extern "C" void tensorLInvRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t
  */
 extern "C" void tensorLInvR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, lpInv, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, lpInv, totm, peArr, sizeOfPE, 0);
 }
 
 extern "C" void tensorLInvDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, lpInv, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, lpInv, totm, peArr, sizeOfPE, 0);
 }
 
 extern "C" void tensorLInvC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, lpInv, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, lpInv, totm, peArr, sizeOfPE, 0);
 }

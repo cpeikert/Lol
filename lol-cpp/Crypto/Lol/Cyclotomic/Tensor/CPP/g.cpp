@@ -124,34 +124,34 @@ template <typename ring> void gInvDec (ring* y, hDim_t lts, hDim_t rts, hDim_t p
 
 extern "C" void tensorGPowR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, gPow, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, gPow, totm, peArr, sizeOfPE, 0);
 }
 
 extern "C" void tensorGPowRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
-  tensorFuserPrimeNew2(y, gPow, totm, peArr, sizeOfPE, q);
+  tensorFuserPrime(y, gPow, totm, peArr, sizeOfPE, q);
   canonicalizeZqNew(y,totm,q);
 }
 
 extern "C" void tensorGPowC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, gPow, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, gPow, totm, peArr, sizeOfPE, 0);
 }
 
 extern "C" void tensorGDecR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, gDec, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, gDec, totm, peArr, sizeOfPE, 0);
 }
 
 extern "C" void tensorGDecRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
-  tensorFuserPrimeNew2 (y, gDec, totm, peArr, sizeOfPE, q);
+  tensorFuserPrime (y, gDec, totm, peArr, sizeOfPE, q);
   canonicalizeZqNew(y,totm,q);
 }
 
 extern "C" void tensorGDecC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, gDec, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, gDec, totm, peArr, sizeOfPE, 0);
 }
 
 hInt_t oddRad(PrimeExponent* peArr, hShort_t sizeOfPE) {
@@ -168,7 +168,7 @@ hInt_t oddRad(PrimeExponent* peArr, hShort_t sizeOfPE) {
 
 extern "C" hShort_t tensorGInvPowR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, gInvPow, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, gInvPow, totm, peArr, sizeOfPE, 0);
 
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
 
@@ -185,7 +185,7 @@ extern "C" hShort_t tensorGInvPowR (hInt_t* y, hDim_t totm, PrimeExponent* peArr
 
 extern "C" hShort_t tensorGInvPowRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
-  tensorFuserPrimeNew2 (y, gInvPow, totm, peArr, sizeOfPE, q);
+  tensorFuserPrime (y, gInvPow, totm, peArr, sizeOfPE, q);
 
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
 
@@ -207,7 +207,7 @@ extern "C" hShort_t tensorGInvPowRq (Zq* y, hDim_t totm, PrimeExponent* peArr, h
 
 extern "C" hShort_t tensorGInvPowC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, gInvPow, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, gInvPow, totm, peArr, sizeOfPE, 0);
 
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
   Complex oddradInv;
@@ -220,7 +220,7 @@ extern "C" hShort_t tensorGInvPowC (Complex* y, hDim_t totm, PrimeExponent* peAr
 
 extern "C" hShort_t tensorGInvDecR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, gInvDec, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, gInvDec, totm, peArr, sizeOfPE, 0);
 
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
 
@@ -237,7 +237,7 @@ extern "C" hShort_t tensorGInvDecR (hInt_t* y, hDim_t totm, PrimeExponent* peArr
 
 extern "C" hShort_t tensorGInvDecRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
-  tensorFuserPrimeNew2 (y, gInvDec, totm, peArr, sizeOfPE, q);
+  tensorFuserPrime (y, gInvDec, totm, peArr, sizeOfPE, q);
 
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
 
@@ -259,7 +259,7 @@ extern "C" hShort_t tensorGInvDecRq (Zq* y, hDim_t totm, PrimeExponent* peArr, h
 
 extern "C" hShort_t tensorGInvDecC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrimeNew2 (y, gInvDec, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, gInvDec, totm, peArr, sizeOfPE, 0);
 
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
   Complex oddradInv;

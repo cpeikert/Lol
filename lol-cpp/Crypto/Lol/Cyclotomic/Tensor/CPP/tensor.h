@@ -23,10 +23,7 @@ of the prime-index operator.
 
 // templated function pointer for prime-index transformations
 template <typename ring>
-using primeFunc = void (*) (ring*, hShort_t, hDim_t, hDim_t, hDim_t);
-
-template <typename ring>
-using primeFuncNew = void (*) (ring*, hDim_t, hDim_t, hDim_t);
+using primeFunc = void (*) (ring*, hDim_t, hDim_t, hDim_t);
 
 // templated function pointer for prime-index CRT-style transformations, which
 // also have pointers to roots of unity
@@ -40,81 +37,7 @@ using primeCRTFunc = void (*) (ringy*, hDim_t, hDim_t, PrimeExponent, ringru*);
 // factorization of m is pp1*pp2*...*ppk. It then applies turns each prime-power
 // component into a tensor of prime-index transformations.
 template <typename ring> void
-  tensorFuserPrime (ring* y, hShort_t tupSize, primeFunc<ring> f, hDim_t totm,
-                    PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t* qs)
-{
-  // The first matrix to be applied (starting on the right) is
-  // (I_totient(pp2..ppk) \otimes A_pp1 \otimes I_1).
-  // From there, we shift pp2 to the right tensor, then pp3, etc.
-  hDim_t lts = totm;
-  hDim_t rts = 1;
-  hShort_t i;
-
-  for (i = 0; i < sizeOfPE; ++i) {
-    PrimeExponent pe = peArr[i];
-    // compute p^(e-1)
-    hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
-    // totient(ppi)
-    hDim_t dim = (pe.prime-1) * ipow_pe;
-    // remove the totient for this operator from the left
-    lts /= dim;
-    // apply the matrix
-    // (I_totient((ppi+1)..ppk) \otimes A_ppi \otimes I_(pp1..(ppi-1)))
-    // for a prime power
-    for(int tupIdx = 0; tupIdx < tupSize; tupIdx++) {
-      // as we move through the tuple, update the global modulus (if available)
-      if(qs) {
-        Zq::q = qs[tupIdx]; // global update
-      }
-      // since A_ppi (where ppi = p^e) is I_{p^(e-1)} \otimes A_p,
-      // add an additional p^(e-1) factor to lts and use the function
-      // pointer to call the *prime*-index transform.
-      (*f) (y+tupIdx, tupSize, lts*ipow_pe, rts, pe.prime);
-    }
-    // Add the prime power for the transform we just applied to the right tensor.
-    rts *= dim;
-  }
-}
-
-template <typename ring> void
-  tensorFuserPrimeNew (ring* y, primeFunc<ring> f, hDim_t totm,
-                    PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
-{
-  // The first matrix to be applied (starting on the right) is
-  // (I_totient(pp2..ppk) \otimes A_pp1 \otimes I_1).
-  // From there, we shift pp2 to the right tensor, then pp3, etc.
-  hDim_t lts = totm;
-  hDim_t rts = 1;
-  hShort_t i;
-
-  for (i = 0; i < sizeOfPE; ++i) {
-    PrimeExponent pe = peArr[i];
-    // compute p^(e-1)
-    hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
-    // totient(ppi)
-    hDim_t dim = (pe.prime-1) * ipow_pe;
-    // remove the totient for this operator from the left
-    lts /= dim;
-    // apply the matrix
-    // (I_totient((ppi+1)..ppk) \otimes A_ppi \otimes I_(pp1..(ppi-1)))
-    // for a prime power
-
-    // as we move through the tuple, update the global modulus (if available)
-    if(q) {
-      Zq::q = q; // global update
-    }
-    // since A_ppi (where ppi = p^e) is I_{p^(e-1)} \otimes A_p,
-    // add an additional p^(e-1) factor to lts and use the function
-    // pointer to call the *prime*-index transform.
-    (*f) (y, 1, lts*ipow_pe, rts, pe.prime);
-
-    // Add the prime power for the transform we just applied to the right tensor.
-    rts *= dim;
-  }
-}
-
-template <typename ring> void
-  tensorFuserPrimeNew2 (ring* y, primeFuncNew<ring> f, hDim_t totm,
+  tensorFuserPrime(ring* y, primeFunc<ring> f, hDim_t totm,
                     PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
   // The first matrix to be applied (starting on the right) is
