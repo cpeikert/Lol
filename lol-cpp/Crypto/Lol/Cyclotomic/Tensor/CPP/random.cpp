@@ -16,7 +16,7 @@ Portability : POSIX
 
 // I had been negating the ru-idx, but this was causing a *negative* mod, resulting in a hard-to-find bug
 // current behavior (taking rus, rather than ruInv) matches RT
-void primeD (double *y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p, hDim_t rustride, Complex* ru)
+void primeD (double *y, hDim_t lts, hDim_t rts, hDim_t p, hDim_t rustride, Complex* ru)
 {
 	if(p == 2) {
     return;
@@ -33,32 +33,32 @@ void primeD (double *y, hShort_t tupSize, hDim_t lts, hDim_t rts, hDim_t p, hDim
       for(row = 0; row < p-1; row++) {
         double acc = 0;
         for(col = 1; col <= (p>>1); col++) {
-          acc += 2 * ru[((row*col) % p)*rustride*tupSize].real * y[(tensorOffset+rts*(col-1))*tupSize];
+          acc += 2 * ru[((row*col) % p)*rustride].real * y[(tensorOffset+rts*(col-1))];
         }
         for(col = (p>>1)+1; col <= p-1; col++) {
-          acc += 2 * ru[((row*col) % p)*rustride*tupSize].imag * y[(tensorOffset+rts*(col-1))*tupSize];
+          acc += 2 * ru[((row*col) % p)*rustride].imag * y[(tensorOffset+rts*(col-1))];
         }
         tempSpace[row] = acc/sqrt(2);
       }
 
       for(row = 0; row < p-1; row++) {
-        y[(tensorOffset+rts*row)*tupSize] = tempSpace[row];
+        y[(tensorOffset+rts*row)] = tempSpace[row];
       }
     }
   }
   free(tempSpace);
 }
 
-void ppD (double *y, hShort_t tupSize, hDim_t lts, hDim_t rts, PrimeExponent pe, Complex *ru)
+void ppD (double *y, hDim_t lts, hDim_t rts, PrimeExponent pe, Complex *ru)
 {
   hDim_t p = pe.prime;
   hDim_t e = pe.exponent;
   hDim_t mprime = ipow(p,e-1);
-  primeD (y, tupSize, lts*mprime, rts, p, mprime, ru);
+  primeD (y, lts*mprime, rts, p, mprime, ru);
 }
 
 //the contents of y will be destroyed, but should be initialized in Haskell-land to independent Guassians over the reals
-extern "C" void tensorGaussianDec (hShort_t tupSize, double *y, hDim_t totm, PrimeExponent *peArr, hShort_t sizeOfPE, Complex** ru)
+extern "C" void tensorGaussianDec (double *y, hDim_t totm, PrimeExponent *peArr, hShort_t sizeOfPE, Complex** ru)
 {
-	tensorFuserCRT (y, tupSize, ppD, totm, peArr, sizeOfPE, ru, (hInt_t*)0);
+	tensorFuserCRT (y, ppD, totm, peArr, sizeOfPE, ru, 0);
 }

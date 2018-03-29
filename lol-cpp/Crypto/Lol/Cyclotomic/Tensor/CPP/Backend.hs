@@ -184,7 +184,7 @@ instance (Reflects q Int64) => Dispatch (ZqBasic q Int64) where
   dcrt ruptr pout totm pfac numFacts =
     tensorCRTRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (proxy value (Proxy::Proxy q))
   dcrtinv ruptr minv pout totm pfac numFacts =
-        tensorCRTInvRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv) (proxy value (Proxy::Proxy q))
+    tensorCRTInvRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv) (proxy value (Proxy::Proxy q))
   dl pout totm pfac numFacts =
     let qs = [(proxy value (Proxy::Proxy q)) :: Int64]
         numPairs = 1
@@ -261,7 +261,7 @@ instance Dispatch Double where
   dginvdec = error "cannot call CT divGDec on type Double"
   dmul = error "cannot call CT (*) on type Double"
   dgaussdec ruptr pout totm pfac numFacts =
-    tensorGaussianDec 1 (castPtr pout) totm pfac numFacts (castPtr ruptr)
+    tensorGaussianDec (castPtr pout) totm pfac numFacts (castPtr ruptr)
 
 -- no support for products of Z
 instance Dispatch Int64 where
@@ -314,7 +314,7 @@ foreign import ccall unsafe "tensorCRTC" tensorCRTC ::           Ptr (Complex Do
 foreign import ccall unsafe "tensorCRTInvRq" tensorCRTInvRq ::   Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (ZqBasic q Int64)) -> Ptr (ZqBasic q Int64) -> Int64 -> IO ()
 foreign import ccall unsafe "tensorCRTInvC" tensorCRTInvC ::     Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) -> Ptr (Complex Double) -> IO ()
 
-foreign import ccall unsafe "tensorGaussianDec" tensorGaussianDec :: Int16 -> Ptr Double -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) ->  IO ()
+foreign import ccall unsafe "tensorGaussianDec" tensorGaussianDec :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> Ptr (Ptr (Complex Double)) ->  IO ()
 
 foreign import ccall unsafe "mulRq" mulRq :: Int16 -> Ptr (ZqBasic q Int64) -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr Int64 -> IO ()
 foreign import ccall unsafe "mulC" mulC :: Int16 -> Ptr (Complex Double) -> Ptr (Complex Double) -> Int64 -> IO ()
