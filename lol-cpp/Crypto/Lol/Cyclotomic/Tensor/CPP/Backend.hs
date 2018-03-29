@@ -186,15 +186,9 @@ instance (Reflects q Int64) => Dispatch (ZqBasic q Int64) where
   dcrtinv ruptr minv pout totm pfac numFacts =
     tensorCRTInvRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv) (proxy value (Proxy::Proxy q))
   dl pout totm pfac numFacts =
-    let qs = [(proxy value (Proxy::Proxy q)) :: Int64]
-        numPairs = 1
-    in withArray qs $ \qsptr ->
-        tensorLRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
+    tensorLRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
   dlinv pout totm pfac numFacts =
-    let qs = [(proxy value (Proxy::Proxy q)) :: Int64]
-        numPairs = 1
-    in withArray qs $ \qsptr ->
-        tensorLInvRq numPairs (castPtr pout) totm pfac numFacts (castPtr qsptr)
+    tensorLInvRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
   dnorm = error "cannot call CT normSq on type ZqBasic"
   dmulgpow pout totm pfac numFacts =
     tensorGPowRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
@@ -218,9 +212,9 @@ instance Dispatch (Complex Double) where
   dcrtinv ruptr minv pout totm pfac numFacts =
     tensorCRTInvC (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv)
   dl pout =
-    tensorLC 1 (castPtr pout)
+    tensorLC (castPtr pout)
   dlinv pout =
-    tensorLInvC 1 (castPtr pout)
+    tensorLInvC (castPtr pout)
   dnorm = error "cannot call CT normSq on type Complex Double"
   dmulgpow pout =
     tensorGPowC (castPtr pout)
@@ -239,9 +233,9 @@ instance Dispatch Double where
   dcrt = error "cannot call CT Crt on type Double"
   dcrtinv = error "cannot call CT CrtInv on type Double"
   dl pout =
-    tensorLDouble 1 (castPtr pout)
+    tensorLDouble (castPtr pout)
   dlinv pout =
-    tensorLInvDouble 1 (castPtr pout)
+    tensorLInvDouble (castPtr pout)
   dnorm pout = tensorNormSqD 1 (castPtr pout)
   dmulgpow = error "cannot call CT mulGPow on type Double"
   dmulgdec = error "cannot call CT mulGDec on type Double"
@@ -256,9 +250,9 @@ instance Dispatch Int64 where
   dcrt = error "cannot call CT Crt on type Int64"
   dcrtinv = error "cannot call CT CrtInv on type Int64"
   dl pout =
-    tensorLR 1 (castPtr pout)
+    tensorLR (castPtr pout)
   dlinv pout =
-    tensorLInvR 1 (castPtr pout)
+    tensorLInvR (castPtr pout)
   dnorm pout =
     tensorNormSqR 1 (castPtr pout)
   dmulgpow pout =
@@ -272,14 +266,14 @@ instance Dispatch Int64 where
   dmul = error "cannot call CT (*) on type Int64"
   dgaussdec = error "cannot call CT gaussianDec on type Int64"
 
-foreign import ccall unsafe "tensorLR" tensorLR ::                  Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorLInvR" tensorLInvR ::            Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorLRq" tensorLRq ::                Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO ()
-foreign import ccall unsafe "tensorLInvRq" tensorLInvRq ::          Int16 -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Ptr Int64 -> IO ()
-foreign import ccall unsafe "tensorLDouble" tensorLDouble ::       Int16 -> Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorLInvDouble" tensorLInvDouble :: Int16 -> Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorLC" tensorLC ::       Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorLInvC" tensorLInvC :: Int16 -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLR" tensorLR ::                  Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLInvR" tensorLInvR ::            Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLRq" tensorLRq ::                Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
+foreign import ccall unsafe "tensorLInvRq" tensorLInvRq ::          Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
+foreign import ccall unsafe "tensorLDouble" tensorLDouble ::       Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLInvDouble" tensorLInvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLC" tensorLC ::       Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLInvC" tensorLInvC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 
 foreign import ccall unsafe "tensorNormSqR" tensorNormSqR ::     Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorNormSqD" tensorNormSqD ::     Int16 -> Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
