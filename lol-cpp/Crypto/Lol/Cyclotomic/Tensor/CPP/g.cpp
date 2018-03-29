@@ -218,13 +218,13 @@ extern "C" hShort_t tensorGInvPowC (Complex* y, hDim_t totm, PrimeExponent* peAr
   return 1;
 }
 
-extern "C" hShort_t tensorGInvDecR (hShort_t tupSize, hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" hShort_t tensorGInvDecR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrime (y, tupSize, gInvDec, totm, peArr, sizeOfPE, (hInt_t*)0);
+  tensorFuserPrimeNew (y, gInvDec, totm, peArr, sizeOfPE, 0);
 
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
 
-  for(int i = 0; i < tupSize*totm; i++) {
+  for(int i = 0; i < totm; i++) {
     if (y[i] % oddrad) {
       y[i] /= oddrad;
     }
