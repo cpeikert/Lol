@@ -109,13 +109,13 @@ instance Eq r => Eq (CT m r) where
   x@(CT _) == y = x == toCT y
   y == x@(CT _) = x == toCT y
 
-instance (Protoable (IZipVector m r), Fact m, Storable r) => Protoable (CT m r) where
+instance (ForallFact2 Protoable IZipVector r, Fact m, Storable r) => Protoable (CT m r) where
   type ProtoType (CT m r) = ProtoType (IZipVector m r)
 
-  toProto x@(CT _) = toProto $ toZV x
-  toProto (ZV x) = toProto x
+  toProto x@(CT _) = toProto $ toZV x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
+  toProto (ZV x) = toProto x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
 
-  fromProto x = toCT <$> ZV <$> fromProto x
+  fromProto x = toCT <$> ZV <$> fromProto x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
@@ -289,8 +289,6 @@ instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
 
 ---------- Entailments for CT ----------
 
--- TODO: Make ForallFact2 Protoable CT r that drops to CT'
-
 instance (Ring r, Storable r) => ForallFact2 (Module.C r) CT r where
   entailFact2 = Sub Dict
 
@@ -304,6 +302,9 @@ instance (ZeroTestable r, Storable r) => ForallFact2 ZeroTestable.C CT r where
   entailFact2 = Sub Dict
 
 instance (Additive fp, Storable fp, GFCtx fp d) => ForallFact2 (Module.C (GF fp d)) CT fp where
+  entailFact2 = Sub Dict
+
+instance (ForallFact2 Protoable IZipVector r, Storable r) => ForallFact2 Protoable CT r where
   entailFact2 = Sub Dict
 
 ---------- Helper functions for coercion ----------
