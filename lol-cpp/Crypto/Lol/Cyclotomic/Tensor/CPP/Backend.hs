@@ -35,6 +35,12 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 , dmulgpow, dmulgdec
 , dginvpow, dginvdec
 , dmul
+,dcrtZq,dcrtinvZq
+,dlZq,dlinvZq
+,dnormZq
+,dmulgpowZq,dmulgdecZq
+,dginvpowZq,dginvdecZq
+,dmulZq
 , marshalFactors
 , CPP
 , withArray, withPtrArray
@@ -175,32 +181,46 @@ class Dispatch r where
   -- | Equivalent to @zipWith (*)@
   dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
 
--- TODO: numPairs dies everywhere
---       qs becomes a single q everywhere
---       kill dgaussdec where it doesn't make sense
---       kill castPtr
+-- TODO: kill dgaussdec where it doesn't make sense
 
-instance (Reflects q Int64) => Dispatch (ZqBasic q Int64) where
-  dcrt ruptr pout totm pfac numFacts =
-    tensorCRTRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (proxy value (Proxy::Proxy q))
-  dcrtinv ruptr minv pout totm pfac numFacts =
-    tensorCRTInvRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv) (proxy value (Proxy::Proxy q))
-  dl pout totm pfac numFacts =
-    tensorLRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
-  dlinv pout totm pfac numFacts =
-    tensorLInvRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
-  dnorm = error "cannot call CT normSq on type ZqBasic"
-  dmulgpow pout totm pfac numFacts =
-    tensorGPowRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
-  dmulgdec pout totm pfac numFacts =
-    tensorGDecRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
-  dginvpow pout totm pfac numFacts =
-    tensorGInvPowRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
-  dginvdec pout totm pfac numFacts =
-    tensorGInvDecRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
-  dmul aout bout totm =
-    mulRq (castPtr aout) (castPtr bout) totm (proxy value (Proxy::Proxy q))
-  dgaussdec = error "cannot call CT gaussianDec on type ZqBasic"
+dcrtZq :: forall q . Reflects q Int64 => Ptr (Ptr (ZqBasic q Int64)) -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dcrtZq ruptr pout totm pfac numFacts =
+  tensorCRTRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (proxy value (Proxy::Proxy q))
+
+dcrtinvZq :: forall q . Reflects q Int64 => Ptr (Ptr (ZqBasic q Int64)) -> Ptr (ZqBasic q Int64) ->  Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dcrtinvZq ruptr minv pout totm pfac numFacts =
+  tensorCRTInvRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv) (proxy value (Proxy::Proxy q))
+
+dlZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlZq pout totm pfac numFacts =
+  tensorLRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+
+dlinvZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlinvZq pout totm pfac numFacts =
+  tensorLInvRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+
+dnormZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dnormZq = error "cannot call CT normSq on type ZqBasic"
+
+dmulgpowZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dmulgpowZq pout totm pfac numFacts =
+  tensorGPowRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+
+dmulgdecZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dmulgdecZq pout totm pfac numFacts =
+  tensorGDecRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+
+dginvpowZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO Int16
+dginvpowZq pout totm pfac numFacts =
+  tensorGInvPowRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+
+dginvdecZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO Int16
+dginvdecZq pout totm pfac numFacts =
+  tensorGInvDecRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+
+dmulZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Ptr (ZqBasic q Int64) -> Int64 -> IO ()
+dmulZq aout bout totm =
+  mulRq (castPtr aout) (castPtr bout) totm (proxy value (Proxy::Proxy q))
 
 -- products of Complex correspond to CRTExt of a Zq product
 instance Dispatch (Complex Double) where

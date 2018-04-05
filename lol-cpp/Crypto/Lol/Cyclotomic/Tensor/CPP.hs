@@ -204,8 +204,9 @@ instance Fact m => Traversable (CT m) where
   traverse f r@(CT _) = T.traverse f $ toZV r
   traverse f (ZV v) = ZV <$> T.traverse f v
 
-instance TensorGaussian CT Double where
-  tweakedGaussianDec v = CT <$> cDispatchGaussian v
+-- TODO: Uncomment this when we reimplement Tensor CT Double
+--instance TensorGaussian CT Double where
+--  tweakedGaussianDec v = CT <$> cDispatchGaussian v
 
 instance (Tensor CT (ZqBasic q Int64), PrimeField (ZqBasic q Int64))
     => TensorCRTSet CT (ZqBasic q Int64) where
@@ -222,66 +223,63 @@ instance IFunctor CT where
   zipWithI f (ZV v) (CT sv) = zipWithI f (CT $ zvToCT' v) (CT sv)
   zipWithI f (ZV v1) (ZV v2) = zipWithI f (CT $ zvToCT' v1) (CT $ zvToCT' v2)
 
--- TODO: make all of dispatched functions type-specific (kill the Dispatch' type class)
-#define TENSOR_DEF(ring_ty, ...) \
-    instance (__VA_ARGS__) => Tensor CT (ring_ty) where \
-      scalarPow = CT . scalarPow' ;\
-     \
-      l = wrap $ basicDispatch dl ;\
-      lInv = wrap $ basicDispatch dlinv ;\
-     \
-      mulGPow = wrap $ basicDispatch dmulgpow ;\
-      mulGDec = wrap $ basicDispatch dmulgdec ;\
-     \
-      divGPow = wrapM $ dispatchGInv dginvpow ;\
-      divGDec = wrapM $ dispatchGInv dginvdec ;\
-     \
-      gSqNormDec (CT v) = untag gSqNormDec' v ;\
-      gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v) ;\
-     \
-      twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec' ;\
-      embedPow = wrap $ runIdentity $ coerceEm embedPow' ;\
-      embedDec = wrap $ runIdentity $ coerceEm embedDec' ;\
-     \
-      coeffs = wrapM $ coerceCoeffs coeffs' ;\
-     \
-      powBasisPow = (CT <$>) <$> coerceBasis powBasisPow' ;\
-     \
-      {-# INLINABLE scalarPow #-} ;\
-      {-# INLINABLE l #-} ;\
-      {-# INLINABLE lInv #-} ;\
-      {-# INLINABLE mulGPow #-} ;\
-      {-# INLINABLE mulGDec #-} ;\
-      {-# INLINABLE divGPow #-} ;\
-      {-# INLINABLE divGDec #-} ;\
-      {-# INLINABLE twacePowDec #-} ;\
-      {-# INLINABLE embedPow #-} ;\
-      {-# INLINABLE embedDec #-} ;\
-      {-# INLINABLE gSqNormDec #-} ;\
-      {-# INLINABLE coeffs #-} ;\
-      {-# INLINABLE powBasisPow #-} ;\
+instance Reflects q Int64 => Tensor CT (ZqBasic q Int64) where
+  scalarPow = CT . scalarPow'
 
-#define TENSORCRT_DEF(ring_ty, ...) \
-    instance (__VA_ARGS__) => TensorCRT CT (ring_ty) where \
-      crtFuncs = (,,,,) <$> \
-        return (CT . repl) <*> \
-        (wrap . untag (cZipDispatch dmul) <$> gCRT) <*> \
-        (wrap . untag (cZipDispatch dmul) <$> gInvCRT) <*> \
-        (wrap <$> untagT ctCRT) <*> \
-        (wrap <$> untagT ctCRTInv) ;\
-     \
-      crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT') ;\
-     \
-      {-# INLINABLE crtFuncs #-} ;\
-      {-# INLINE crtExtFuncs #-} ;\
+  l = wrap $ basicDispatch dlZq
+  lInv = wrap $ basicDispatch dlinvZq
 
-TENSOR_DEF(Int64)
-TENSOR_DEF(ZqBasic q Int64, Reflects q Int64)
-TENSOR_DEF(Double)
+  mulGPow = wrap $ basicDispatch dmulgpowZq
+  mulGDec = wrap $ basicDispatch dmulgdecZq
 
-TENSORCRT_DEF(Int64)
-TENSORCRT_DEF(ZqBasic q Int64, Reflects q Int64)
-TENSORCRT_DEF(Double)
+  divGPow = wrapM $ dispatchGInv dginvpowZq
+  divGDec = wrapM $ dispatchGInv dginvdecZq
+
+  gSqNormDec (CT v) = untag gSqNormDecZq v
+  gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
+
+  twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
+  embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+
+  coeffs = wrapM $ coerceCoeffs coeffs'
+
+  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+
+  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE l #-}
+  {-# INLINABLE lInv #-}
+  {-# INLINABLE mulGPow #-}
+  {-# INLINABLE mulGDec #-}
+  {-# INLINABLE divGPow #-}
+  {-# INLINABLE divGDec #-}
+  {-# INLINABLE twacePowDec #-}
+  {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
+  {-# INLINABLE gSqNormDec #-}
+  {-# INLINABLE coeffs #-}
+  {-# INLINABLE powBasisPow #-}
+
+instance Reflects q Int64 => TensorCRT CT (ZqBasic q Int64) where
+  crtFuncs = (,,,,) <$>
+    return (CT . repl) <*>
+    (wrap . untag (cZipDispatch dmulZq) <$> gCRT) <*>
+    (wrap . untag (cZipDispatch dmulZq) <$> gInvCRT) <*>
+    (wrap <$> untagT ctCRTZq) <*>
+    (wrap <$> untagT ctCRTInvZq)
+
+  crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT')
+
+  {-# INLINABLE crtFuncs #-}
+  {-# INLINE crtExtFuncs #-}
+
+--TENSOR_DEF(Int64)
+--TENSOR_DEF(ZqBasic q Int64, Reflects q Int64)
+--TENSOR_DEF(Double)
+--
+--TENSORCRT_DEF(Int64)
+--TENSORCRT_DEF(ZqBasic q Int64, Reflects q Int64)
+--TENSORCRT_DEF(Double)
 
 -- Need this for the ForallFact2 Module entailment below
 instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
@@ -366,6 +364,9 @@ gSqNormDec' :: (Storable r, Fact m, Dispatch r)
                => Tagged m (CT' m r -> r)
 gSqNormDec' = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnorm
 
+gSqNormDecZq :: (Reflects q Int64, Fact m) => Tagged m (CT' m (ZqBasic q Int64) -> (ZqBasic q Int64))
+gSqNormDecZq = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnormZq
+
 ctCRT :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
          => TaggedT m mon (CT' m r -> CT' m r)
 ctCRT = do
@@ -381,6 +382,22 @@ ctCRTInv = do
   ruinv' <- ruInv
   return $ \x -> unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinv ruptr))
+
+ctCRTZq :: (Fact m, Reflects q Int64, CRTrans mon (ZqBasic q Int64))
+           => TaggedT m mon (CT' m (ZqBasic q Int64) -> CT' m (ZqBasic q Int64))
+ctCRTZq = do
+  ru' <- ru
+  return $ \x -> unsafePerformIO $
+    withPtrArray ru' (flip withBasicArgs x . dcrtZq)
+
+-- CTensor CRT^(-1) functions take inverse rus
+ctCRTInvZq :: (Fact m, Reflects q Int64, CRTrans mon (ZqBasic q Int64))
+              => TaggedT m mon (CT' m (ZqBasic q Int64) -> CT' m (ZqBasic q Int64))
+ctCRTInvZq = do
+  mhatInv <- snd <$> crtInfo
+  ruinv' <- ruInv
+  return $ \x -> unsafePerformIO $
+    withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinvZq ruptr))
 
 cZipDispatch :: (Storable r, Fact m)
   => (Ptr r -> Ptr r -> Int64 -> IO ())
