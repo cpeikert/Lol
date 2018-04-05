@@ -10,7 +10,7 @@ import qualified Text.ProtocolBuffers.Header as P'
 import qualified Crypto.Proto.Lol.Kq as Crypto.Proto.Lol (Kq)
 
 data KqProduct = KqProduct{kqs :: !(P'.Seq Crypto.Proto.Lol.Kq)}
-               deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
+                 deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
 
 instance P'.Mergeable KqProduct where
   mergeAppend (KqProduct x'1) (KqProduct y'1) = KqProduct (P'.mergeAppend x'1 y'1)

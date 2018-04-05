@@ -64,15 +64,6 @@ library
     Crypto.Lol.Gadget
     Crypto.Lol.Prelude
 
-    Crypto.Lol.Cyclotomic.Cyc
-    Crypto.Lol.Cyclotomic.CycRep
-    Crypto.Lol.Cyclotomic.Language
-    Crypto.Lol.Cyclotomic.Linear
-
-    Crypto.Lol.RLWE.Continuous
-    Crypto.Lol.RLWE.Discrete
-    Crypto.Lol.RLWE.RLWR
-
     Crypto.Lol.Cyclotomic.Tensor
     Crypto.Lol.GaussRandom
     Crypto.Lol.Types.Unsafe.Complex
@@ -92,21 +83,14 @@ library
     Crypto.Proto.Lol.R
     Crypto.Proto.Lol.Rq
     Crypto.Proto.Lol.RqProduct
+    Crypto.Proto.Lol.K
     Crypto.Proto.Lol.Kq
     Crypto.Proto.Lol.KqProduct
     Crypto.Proto.Lol.TypeRep
-    Crypto.Proto.RLWE
-    Crypto.Proto.RLWE.SampleContProduct
-    Crypto.Proto.RLWE.SampleDiscProduct
-    Crypto.Proto.RLWE.SampleRLWRProduct
-    Crypto.Proto.RLWE.SampleCont
-    Crypto.Proto.RLWE.SampleDisc
-    Crypto.Proto.RLWE.SampleRLWR
 
     Crypto.Lol.Utils.ShowType
 
     Crypto.Lol.Tests
-    Crypto.Lol.Benchmarks
 
   other-modules:
     Crypto.Lol.Cyclotomic.CRTSentinel
@@ -122,15 +106,9 @@ library
     Crypto.Lol.Utils.PrettyPrint.Diagnostic
     Crypto.Lol.Utils.PrettyPrint.Table
 
-    Crypto.Lol.Tests.CycTests
     Crypto.Lol.Tests.Default
     Crypto.Lol.Tests.TensorTests
     Crypto.Lol.Tests.ZqTests
-
-    Crypto.Lol.Benchmarks.CycBenches
-    Crypto.Lol.Benchmarks.Default
-    Crypto.Lol.Benchmarks.TensorBenches
-    Crypto.Lol.Benchmarks.CycRepBenches
 
   build-depends:
     ansi-terminal < 0.7,

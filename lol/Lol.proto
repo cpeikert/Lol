@@ -32,6 +32,12 @@ message Rq {
   repeated sint64 xs = 3;
 }
 
+// Cyclotomic field
+message K {
+  required uint32 m  = 1;
+  repeated double xs = 2;
+}
+
 // cyclotomic field modulo a single modulus
 message Kq {
   required uint32 m  = 1;
