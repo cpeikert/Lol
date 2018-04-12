@@ -571,8 +571,7 @@ extern "C" void tensorCRTInvRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort
   tensorFuserCRT (y, ppcrtinv, totm, peArr, sizeOfPE, ruinv, q);
   Zq::q = q;
   for (hDim_t j = 0; j < totm; j++) {
-    //careful here! I'm not setting the global q, so I can't rely on Zq multiplication
-    y[j] = y[j]*mhatInv[0];
+    y[j] = y[j] * (*mhatInv);
   }
   canonicalizeZq(y,totm,q);
 }
@@ -588,6 +587,6 @@ extern "C" void tensorCRTInvC (Complex* y, hDim_t totm, PrimeExponent* peArr,
 {
   tensorFuserCRT (y, ppcrtinv, totm, peArr, sizeOfPE, ruinv, 0);
   for (hDim_t j = 0; j < totm; j++) {
-    y[j] *= mhatInv[0];
+    y[j] *= (*mhatInv);
   }
 }
