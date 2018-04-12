@@ -561,7 +561,7 @@ template <typename ring> void ppcrtinv (ring* y, hDim_t lts, hDim_t rts,
 extern "C" void tensorCRTRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Zq** ru, hInt_t q)
 {
   tensorFuserCRT (y, ppcrt, totm, peArr, sizeOfPE, ru, q);
-  canonicalizeZqNew(y,totm,q);
+  canonicalizeZq(y,totm,q);
 }
 
 //takes inverse rus
@@ -574,7 +574,7 @@ extern "C" void tensorCRTInvRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort
     //careful here! I'm not setting the global q, so I can't rely on Zq multiplication
     y[j] = y[j]*mhatInv[0];
   }
-  canonicalizeZqNew(y,totm,q);
+  canonicalizeZq(y,totm,q);
 }
 
 extern "C" void tensorCRTC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Complex** ru)

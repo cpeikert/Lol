@@ -130,7 +130,7 @@ extern "C" void tensorGPowR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShor
 extern "C" void tensorGPowRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
   tensorFuserPrime(y, gPow, totm, peArr, sizeOfPE, q);
-  canonicalizeZqNew(y,totm,q);
+  canonicalizeZq(y,totm,q);
 }
 
 extern "C" void tensorGPowC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
@@ -146,7 +146,7 @@ extern "C" void tensorGDecR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShor
 extern "C" void tensorGDecRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
   tensorFuserPrime (y, gDec, totm, peArr, sizeOfPE, q);
-  canonicalizeZqNew(y,totm,q);
+  canonicalizeZq(y,totm,q);
 }
 
 extern "C" void tensorGDecC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
@@ -201,7 +201,7 @@ extern "C" hShort_t tensorGInvPowRq (Zq* y, hDim_t totm, PrimeExponent* peArr, h
     y[j] *= oddradInv;
   }
 
-  canonicalizeZqNew(y,totm,q);
+  canonicalizeZq(y,totm,q);
   return 1;
 }
 
@@ -253,7 +253,7 @@ extern "C" hShort_t tensorGInvDecRq (Zq* y, hDim_t totm, PrimeExponent* peArr, h
     y[j] *= oddradInv;
   }
 
-  canonicalizeZqNew(y,totm,q);
+  canonicalizeZq(y,totm,q);
   return 1;
 }
 

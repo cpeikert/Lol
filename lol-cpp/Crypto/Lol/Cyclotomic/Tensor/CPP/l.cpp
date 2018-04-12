@@ -113,7 +113,7 @@ extern "C" void tensorLRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t si
   tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, q);
   // Haskell expects each Z_q coefficient to be in the range 0 <= x < q_i, so
   // ensure that is the case.
-  canonicalizeZqNew(y,totm,q);
+  canonicalizeZq(y,totm,q);
 }
 
 /* Arbitrary-index transformation that converts decoding basis coefficients
@@ -153,7 +153,7 @@ extern "C" void tensorLInvRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t
   tensorFuserPrime (y, lpInv, totm, peArr, sizeOfPE, q);
   // Haskell expects each Z_q coefficient to be in the range 0 <= x < q_i, so
   // ensure that is the case.
-  canonicalizeZqNew(y,totm,q);
+  canonicalizeZq(y,totm,q);
 }
 
 /* Arbitrary-index transformation that converts powerful basis coefficients

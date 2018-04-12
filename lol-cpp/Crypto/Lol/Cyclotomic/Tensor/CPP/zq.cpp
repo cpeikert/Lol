@@ -54,21 +54,7 @@ hInt_t reciprocal (hInt_t a, hInt_t b)
 }
 
 /* Put a Z_q coefficient in the range -q < x < q into the range 0 <= x < q*/
-void canonicalizeZq (Zq* y, hShort_t tupSize, hDim_t totm, hInt_t* qs) {
-  // canonicalize each coefficient in the type w.r.t. its modulus
-  for(int tupIdx = 0; tupIdx<tupSize; tupIdx++) {
-    hInt_t q = qs[tupIdx];
-    // canonicalize every coefficient with this modulus (spaced tupSize apart)
-    for(hDim_t j = 0; j < totm; j++) {
-      if(y[j*tupSize+tupIdx].x<0) {
-        y[j*tupSize+tupIdx].x+=q;
-      }
-    }
-  }
-}
-
-/* Put a Z_q coefficient in the range -q < x < q into the range 0 <= x < q*/
-void canonicalizeZqNew (Zq* y, hDim_t totm, hInt_t q) {
+void canonicalizeZq (Zq* y, hDim_t totm, hInt_t q) {
   // canonicalize every coefficient with this modulus (spaced tupSize apart)
   for(hDim_t j = 0; j < totm; j++) {
     if(y[j].x<0) {
