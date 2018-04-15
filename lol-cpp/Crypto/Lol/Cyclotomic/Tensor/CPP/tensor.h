@@ -59,10 +59,6 @@ template <typename ring> void
     // (I_totient((ppi+1)..ppk) \otimes A_ppi \otimes I_(pp1..(ppi-1)))
     // for a prime power
 
-    // as we move through the tuple, update the global modulus (if available)
-    if(q) {
-      Zq::q = q; // global update
-    }
     // since A_ppi (where ppi = p^e) is I_{p^(e-1)} \otimes A_p,
     // add an additional p^(e-1) factor to lts and use the function
     // pointer to call the *prime*-index transform.
@@ -84,10 +80,6 @@ template <typename ringy, typename ringru> void tensorFuserCRT(ringy* y, primeCR
     hDim_t ipow_pe = ipow(pe.prime, (pe.exponent-1));
     hDim_t dim = (pe.prime-1) * ipow_pe;  // the totient of pe
     lts /= dim;
-    // TODO: Is q == 0 a good enough "not-defined" condition?
-    if(q) {
-      Zq::q = q; // global update
-    }
     (*f) (y, lts, rts, pe, ru[i]);
     rts *= dim;
   }

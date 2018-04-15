@@ -13,9 +13,6 @@ Portability : POSIX
 
 template <typename ring> void zipWithStar (ring* a, ring* b, hDim_t totm, hInt_t q)
 {
-  if(q) {
-    Zq::q = q;
-  }
   for(int i = 0; i < totm; i++) {
     a[i] *= b[i];
   }

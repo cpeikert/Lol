@@ -560,6 +560,7 @@ template <typename ring> void ppcrtinv (ring* y, hDim_t lts, hDim_t rts,
 
 extern "C" void tensorCRTRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, Zq** ru, hInt_t q)
 {
+  Zq::q = q;
   tensorFuserCRT (y, ppcrt, totm, peArr, sizeOfPE, ru, q);
   canonicalizeZq(y,totm,q);
 }
@@ -568,8 +569,9 @@ extern "C" void tensorCRTRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t 
 extern "C" void tensorCRTInvRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE,
                     Zq** ruinv, Zq* mhatInv, hInt_t q)
 {
-  tensorFuserCRT (y, ppcrtinv, totm, peArr, sizeOfPE, ruinv, q);
   Zq::q = q;
+  // TODO: Make mhatInv not a pointer?
+  tensorFuserCRT (y, ppcrtinv, totm, peArr, sizeOfPE, ruinv, q);
   for (hDim_t j = 0; j < totm; j++) {
     y[j] = y[j] * (*mhatInv);
   }

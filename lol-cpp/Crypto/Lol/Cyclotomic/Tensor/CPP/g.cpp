@@ -129,6 +129,7 @@ extern "C" void tensorGPowR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShor
 
 extern "C" void tensorGPowRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
+  Zq::q = q;
   tensorFuserPrime(y, gPow, totm, peArr, sizeOfPE, q);
   canonicalizeZq(y,totm,q);
 }
@@ -145,6 +146,7 @@ extern "C" void tensorGDecR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShor
 
 extern "C" void tensorGDecRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
+  Zq::q = q;
   tensorFuserPrime (y, gDec, totm, peArr, sizeOfPE, q);
   canonicalizeZq(y,totm,q);
 }
@@ -183,14 +185,15 @@ extern "C" hShort_t tensorGInvPowR (hInt_t* y, hDim_t totm, PrimeExponent* peArr
   return 1;
 }
 
+// TODO: Note that not all global assignments Zq::q = q are necessary
+
 extern "C" hShort_t tensorGInvPowRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
+  Zq::q = q;
   tensorFuserPrime (y, gInvPow, totm, peArr, sizeOfPE, q);
 
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
 
-  // TODO: Should there be a check here?
-  Zq::q = q; // global update
   hInt_t ori = reciprocal(Zq::q, oddrad);
   Zq oddradInv;
   oddradInv = ori;
@@ -237,12 +240,11 @@ extern "C" hShort_t tensorGInvDecR (hInt_t* y, hDim_t totm, PrimeExponent* peArr
 
 extern "C" hShort_t tensorGInvDecRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
+  Zq::q = q;
   tensorFuserPrime (y, gInvDec, totm, peArr, sizeOfPE, q);
 
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
 
-  // TODO: Check if q == 0?
-  Zq::q = q; // global update
   hInt_t ori = reciprocal(Zq::q, oddrad);
   Zq oddradInv;
   oddradInv = ori;

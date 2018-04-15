@@ -95,40 +95,10 @@ instance (Storable a, Storable b)
     poke (castPtr p :: Ptr a) a
     poke (castPtr (plusPtr p (sizeOf a)) :: Ptr b) b
 
-data ZqB64D -- for type safety purposes
-data ComplexD
-data DoubleD
-data Int64D
-data RRqD
-
-type family CTypeOf x where
-  CTypeOf (ZqBasic (q :: k) Int64) = ZqB64D
-  CTypeOf Double = DoubleD
-  CTypeOf Int64 = Int64D
-  CTypeOf (Complex Double) = ComplexD
-  CTypeOf (RRq (q :: k) Double) = RRqD
-
-  -- EAC: See #12237 and #11990
-  CTypeOf (ZqBasic (q :: k) i) = TypeError (Text "Unsupported C type: " :<>: ShowType (ZqBasic q i) :$$: Text "Use Int64 as the base ring")
-  CTypeOf (Complex i) = TypeError (Text "Unsupported C type: " :<>: ShowType (Complex i) :$$: Text "Use Double as the base ring")
-  CTypeOf (RRq (q :: k) i) = TypeError (Text "Unsupported C type: " :<>: ShowType (RRq q i) :$$: Text "Use Double as the base ring")
-  CTypeOf a = TypeError (Text "Unsupported C type: " :<>: ShowType a)
-
-type family EqCType a b c d where
-  EqCType a b ZqB64D ZqB64D = ZqB64D
-  EqCType a b RRqD RRqD = RRqD
-  EqCType a b ComplexD ComplexD = ComplexD
-  EqCType a b c c = TypeError (Text "Cannot call C code on a tuple of type " :<>: ShowType a)
-  EqCType a b c d = TypeError (Text "You are trying to use CTensor on a tuple," :<>:
-                           Text " but the tuple contains two different C types: " :$$:
-                           ShowType a :<>: Text " and " :<>: ShowType b)
-
 -- returns the modulus as a nested list of moduli
 class (Tuple a) => ZqTuple a where
   type ModPairs a
   getModuli :: Tagged a (ModPairs a)
-
--- TODO: Kill all this pair crap
 
 instance (Reflects q Int64) => ZqTuple (ZqBasic q Int64) where
   type ModPairs (ZqBasic q Int64) = Int64
@@ -181,8 +151,6 @@ class Dispatch r where
   -- | Equivalent to @zipWith (*)@
   dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
 
--- TODO: kill dgaussdec where it doesn't make sense
-
 dcrtZq :: forall q . Reflects q Int64 => Ptr (Ptr (ZqBasic q Int64)) -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dcrtZq ruptr pout totm pfac numFacts =
   tensorCRTRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (proxy value (Proxy::Proxy q))
@@ -199,6 +167,7 @@ dlinvZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr 
 dlinvZq pout totm pfac numFacts =
   tensorLInvRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
 
+-- TODO: Kill this
 dnormZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dnormZq = error "cannot call CT normSq on type ZqBasic"
 
