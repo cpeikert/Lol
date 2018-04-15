@@ -27,15 +27,7 @@ calls in a type-safe way.
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 
 module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
-( Dispatch
-, dcrt, dcrtinv
-, dgaussdec
-, dl, dlinv
-, dnorm
-, dmulgpow, dmulgdec
-, dginvpow, dginvdec
-, dmul
-,dcrtZq,dcrtinvZq
+( dcrtZq,dcrtinvZq
 ,dlZq,dlinvZq
 ,dmulgpowZq,dmulgdecZq
 ,dginvpowZq,dginvdecZq
@@ -48,6 +40,7 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 ,dlDouble,dlinvDouble
 ,dmulgpowDouble,dmulgdecDouble
 ,dginvpowDouble,dginvdecDouble
+,dgaussdecDouble
 ,dmulDouble
 ,dnormDouble
 ,dlInt64,dlinvInt64
@@ -138,32 +131,6 @@ instance {-# Overlappable #-} Tuple a where
 
 instance (Tuple a, Tuple b) => Tuple (a,b) where
   numComponents = tag $ proxy numComponents (Proxy::Proxy a) + proxy numComponents (Proxy::Proxy b)
-
--- TODO: Fix docs
--- | Class to safely match Haskell types with the appropriate C function.
-class Dispatch r where
-  -- | Equivalent to 'Tensor's @crt@.
-  dcrt      :: Ptr (Ptr r) ->           Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  -- | Equivalent to 'Tensor's @crtInv@.
-  dcrtinv   :: Ptr (Ptr r) -> Ptr r ->  Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  -- | Equivalent to 'Tensor's @tGaussianDec@.
-  dgaussdec :: Ptr (Ptr (Complex r)) -> Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  -- | Equivalent to 'Tensor's @l@.
-  dl        :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  -- | Equivalent to 'Tensor's @lInv@.
-  dlinv     :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  -- | Equivalent to 'Tensor's @gSqNormDec@.
-  dnorm     :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  -- | Equivalent to 'Tensor's @mulGPow@.
-  dmulgpow  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  -- | Equivalent to 'Tensor's @mulGDec@.
-  dmulgdec  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ()
-  -- | Equivalent to 'Tensor's @divGPow@.
-  dginvpow  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO Int16
-  -- | Equivalent to 'Tensor's @divGDec@.
-  dginvdec  :: Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO Int16
-  -- | Equivalent to @zipWith (*)@
-  dmul :: Ptr r -> Ptr r -> Int64 -> IO ()
 
 dcrtZq :: forall q . Reflects q Int64 => Ptr (Ptr (ZqBasic q Int64)) -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dcrtZq ruptr pout totm pfac numFacts =

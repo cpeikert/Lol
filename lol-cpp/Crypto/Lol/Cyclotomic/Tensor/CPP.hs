@@ -204,9 +204,8 @@ instance Fact m => Traversable (CT m) where
   traverse f r@(CT _) = T.traverse f $ toZV r
   traverse f (ZV v) = ZV <$> T.traverse f v
 
--- TODO: Uncomment this when we reimplement Tensor CT Double
---instance TensorGaussian CT Double where
---  tweakedGaussianDec v = CT <$> cDispatchGaussian v
+instance TensorGaussian CT Double where
+  tweakedGaussianDec v = CT <$> cDispatchGaussianDouble v
 
 instance (Tensor CT (ZqBasic q Int64), PrimeField (ZqBasic q Int64))
     => TensorCRTSet CT (ZqBasic q Int64) where
@@ -473,31 +472,11 @@ basicDispatch :: (Storable r, Fact m)
                      -> CT' m r -> CT' m r
 basicDispatch f = unsafePerformIO . withBasicArgs f
 
-gSqNormDec' :: (Storable r, Fact m, Dispatch r)
-               => Tagged m (CT' m r -> r)
-gSqNormDec' = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnorm
-
 gSqNormDecDouble :: Fact m => Tagged m (CT' m Double -> Double)
 gSqNormDecDouble = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnormDouble
 
 gSqNormDecInt64 :: Fact m => Tagged m (CT' m Int64 -> Int64)
 gSqNormDecInt64 = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnormInt64
-
-ctCRT :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
-         => TaggedT m mon (CT' m r -> CT' m r)
-ctCRT = do
-  ru' <- ru
-  return $ \x -> unsafePerformIO $
-    withPtrArray ru' (flip withBasicArgs x . dcrt)
-
--- CTensor CRT^(-1) functions take inverse rus
-ctCRTInv :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
-         => TaggedT m mon (CT' m r -> CT' m r)
-ctCRTInv = do
-  mhatInv <- snd <$> crtInfo
-  ruinv' <- ruInv
-  return $ \x -> unsafePerformIO $
-    withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinv ruptr))
 
 ctCRTZq :: (Fact m, Reflects q Int64, CRTrans mon (ZqBasic q Int64))
            => TaggedT m mon (CT' m (ZqBasic q Int64) -> CT' m (ZqBasic q Int64))
@@ -543,11 +522,9 @@ cZipDispatch f = do -- in Tagged m
         f pout pin totm))
     unsafeFreeze yout
 
-cDispatchGaussian :: forall m r var rnd .
-         (Storable r, Transcendental r, Dispatch r, Ord r,
-          Fact m, ToRational var, Random r, MonadRandom rnd)
-         => var -> rnd (CT' m r)
-cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
+cDispatchGaussianDouble :: forall m var rnd . (Fact m, ToRational var, MonadRandom rnd)
+  => var -> rnd (CT' m Double)
+cDispatchGaussianDouble var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   -- get rus for (Complex r)
   -- takes ru (not ruInv) to match RT
   ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) ru
@@ -556,7 +533,7 @@ cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   rad <- pureT radicalFact
   yin <- T.lift $ realGaussians (var * fromIntegral (mval `div` rad)) totm
   return $ unsafePerformIO $
-    withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdec ruptr) (CT' yin))
+    withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdecDouble ruptr) (CT' yin))
 
 ---------- Misc instances and arithmetic ----------
 
