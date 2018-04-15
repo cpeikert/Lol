@@ -50,6 +50,11 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 ,dginvpowDouble,dginvdecDouble
 ,dmulDouble
 ,dnormDouble
+,dlInt64,dlinvInt64
+,dmulgpowInt64,dmulgdecInt64
+,dginvpowInt64,dginvdecInt64
+,dmulInt64
+,dnormInt64
 , marshalFactors
 , CPP
 , withArray, withPtrArray
@@ -255,26 +260,29 @@ dgaussdecDouble :: Ptr (Ptr (Complex Double)) -> Ptr Double -> Int64 -> Ptr CPP 
 dgaussdecDouble ruptr pout totm pfac numFacts =
   tensorGaussianDec (castPtr pout) totm pfac numFacts (castPtr ruptr)
 
--- no support for products of Z
-instance Dispatch Int64 where
-  dcrt = error "cannot call CT Crt on type Int64"
-  dcrtinv = error "cannot call CT CrtInv on type Int64"
-  dl pout =
-    tensorLR (castPtr pout)
-  dlinv pout =
-    tensorLInvR (castPtr pout)
-  dnorm pout =
-    tensorNormSqR 1 (castPtr pout)
-  dmulgpow pout =
-    tensorGPowR (castPtr pout)
-  dmulgdec pout =
-    tensorGDecR (castPtr pout)
-  dginvpow pout =
-    tensorGInvPowR (castPtr pout)
-  dginvdec pout =
-    tensorGInvDecR (castPtr pout)
-  dmul = error "cannot call CT (*) on type Int64"
-  dgaussdec = error "cannot call CT gaussianDec on type Int64"
+dlInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlInt64 pout = tensorLR (castPtr pout)
+
+dlinvInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlinvInt64 pout = tensorLInvR (castPtr pout)
+
+dnormInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dnormInt64 pout = tensorNormSqR 1 (castPtr pout)
+
+dmulgpowInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dmulgpowInt64 pout = tensorGPowR (castPtr pout)
+
+dmulgdecInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dmulgdecInt64 pout = tensorGDecR (castPtr pout)
+
+dginvpowInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO Int16
+dginvpowInt64 pout = tensorGInvPowR (castPtr pout)
+
+dginvdecInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO Int16
+dginvdecInt64 pout = tensorGInvDecR (castPtr pout)
+
+dmulInt64 :: Ptr Int64 -> Ptr Int64 -> Int64 -> IO ()
+dmulInt64 = error "cannot call CT (*) on type Int64"
 
 foreign import ccall unsafe "tensorLR" tensorLR ::                  Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorLInvR" tensorLInvR ::            Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()

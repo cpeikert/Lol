@@ -354,14 +354,45 @@ instance TensorGSqNorm CT Double where
 
   {-# INLINABLE gSqNormDec #-}
 
+instance Tensor CT Int64 where
+  scalarPow = CT . scalarPow'
 
---TENSOR_DEF(Int64)
---TENSOR_DEF(ZqBasic q Int64, Reflects q Int64)
---TENSOR_DEF(Double)
---
---TENSORCRT_DEF(Int64)
---TENSORCRT_DEF(ZqBasic q Int64, Reflects q Int64)
---TENSORCRT_DEF(Double)
+  l = wrap $ basicDispatch dlInt64
+  lInv = wrap $ basicDispatch dlinvInt64
+
+  mulGPow = wrap $ basicDispatch dmulgpowInt64
+  mulGDec = wrap $ basicDispatch dmulgdecInt64
+
+  divGPow = wrapM $ dispatchGInv dginvpowInt64
+  divGDec = wrapM $ dispatchGInv dginvdecInt64
+
+  twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
+  embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+
+  coeffs = wrapM $ coerceCoeffs coeffs'
+
+  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+
+  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE l #-}
+  {-# INLINABLE lInv #-}
+  {-# INLINABLE mulGPow #-}
+  {-# INLINABLE mulGDec #-}
+  {-# INLINABLE divGPow #-}
+  {-# INLINABLE divGDec #-}
+  {-# INLINABLE twacePowDec #-}
+  {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
+  {-# INLINABLE coeffs #-}
+  {-# INLINABLE powBasisPow #-}
+
+instance TensorGSqNorm CT Int64 where
+  gSqNormDec (CT v) = untag gSqNormDecInt64 v
+  gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
+
+  {-# INLINABLE gSqNormDec #-}
+
 
 -- Need this for the ForallFact2 Module entailment below
 instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
@@ -448,6 +479,9 @@ gSqNormDec' = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnorm
 
 gSqNormDecDouble :: Fact m => Tagged m (CT' m Double -> Double)
 gSqNormDecDouble = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnormDouble
+
+gSqNormDecInt64 :: Fact m => Tagged m (CT' m Int64 -> Int64)
+gSqNormDecInt64 = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnormInt64
 
 ctCRT :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
          => TaggedT m mon (CT' m r -> CT' m r)
