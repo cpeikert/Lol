@@ -34,7 +34,7 @@ indexing.
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Crypto.Lol.Cyclotomic.Tensor
-( Tensor(..), TensorCRT(..), TensorGaussian(..), TensorCRTSet(..)
+( Tensor(..), TensorCRT(..), TensorGaussian(..), TensorGSqNorm(..), TensorCRTSet(..)
 -- * Top-level CRT functions
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
@@ -98,12 +98,6 @@ class (ForallFact1 Applicative t, ForallFact1 Traversable t,
   -- exactly when the input is not divisible by \(g_m\).
   divGPow, divGDec :: Fact m => t m r -> Maybe (t m r)
 
-  -- | Given the coefficient tensor of \(e\) with respect to the
-  -- decoding basis of \(R\), yield the (scaled) squared norm of
-  -- \(g_m \cdot e\) under the canonical embedding, namely,
-  -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\).
-  gSqNormDec :: Fact m => t m r -> r
-
   -- | The @twace@ linear transformation, which is the same in both the
   -- powerful and decoding bases.
   twacePowDec :: m `Divides` m' => t m' r -> t m r
@@ -150,6 +144,14 @@ class (Tensor t q) => TensorGaussian t q where
   -- in the decoding basis, where \(D\) has scaled variance \(v\).
   tweakedGaussianDec :: (ToRational v, Fact m, MonadRandom rnd)
                         => v -> rnd (t m q)
+
+-- | A 'Tensor' that supports taking norms under the canonical embedding.
+class (Tensor t r) => TensorGSqNorm t r where
+  -- | Given the coefficient tensor of \(e\) with respect to the
+  -- decoding basis of \(R\), yield the (scaled) squared norm of
+  -- \(g_m \cdot e\) under the canonical embedding, namely,
+  -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\).
+  gSqNormDec :: Fact m => t m r -> r
 
 -- | A 'Tensor' that supports relative CRT sets for the element type
 -- 'fp' representing a prime-order finite field.
