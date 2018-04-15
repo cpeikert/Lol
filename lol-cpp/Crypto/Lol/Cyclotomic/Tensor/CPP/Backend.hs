@@ -37,10 +37,19 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 , dmul
 ,dcrtZq,dcrtinvZq
 ,dlZq,dlinvZq
-,dnormZq
 ,dmulgpowZq,dmulgdecZq
 ,dginvpowZq,dginvdecZq
 ,dmulZq
+,dcrtC,dcrtinvC
+,dlC,dlinvC
+,dmulgpowC,dmulgdecC
+,dginvpowC,dginvdecC
+,dmulC
+,dlDouble,dlinvDouble
+,dmulgpowDouble,dmulgdecDouble
+,dginvpowDouble,dginvdecDouble
+,dmulDouble
+,dnormDouble
 , marshalFactors
 , CPP
 , withArray, withPtrArray
@@ -167,10 +176,6 @@ dlinvZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr 
 dlinvZq pout totm pfac numFacts =
   tensorLInvRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
 
--- TODO: Kill this
-dnormZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
-dnormZq = error "cannot call CT normSq on type ZqBasic"
-
 dmulgpowZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dmulgpowZq pout totm pfac numFacts =
   tensorGPowRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
@@ -192,44 +197,63 @@ dmulZq aout bout totm =
   mulRq (castPtr aout) (castPtr bout) totm (proxy value (Proxy::Proxy q))
 
 -- products of Complex correspond to CRTExt of a Zq product
-instance Dispatch (Complex Double) where
-  dcrt ruptr pout totm pfac numFacts =
-    tensorCRTC (castPtr pout) totm pfac numFacts (castPtr ruptr)
-  dcrtinv ruptr minv pout totm pfac numFacts =
-    tensorCRTInvC (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv)
-  dl pout =
-    tensorLC (castPtr pout)
-  dlinv pout =
-    tensorLInvC (castPtr pout)
-  dnorm = error "cannot call CT normSq on type Complex Double"
-  dmulgpow pout =
-    tensorGPowC (castPtr pout)
-  dmulgdec pout =
-    tensorGDecC (castPtr pout)
-  dginvpow pout =
-    tensorGInvPowC (castPtr pout)
-  dginvdec pout =
-    tensorGInvDecC (castPtr pout)
-  dmul aout bout =
-    mulC (castPtr aout) (castPtr bout)
-  dgaussdec = error "cannot call CT gaussianDec on type Complex Double"
+dcrtC :: Ptr (Ptr (Complex Double)) -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dcrtC ruptr pout totm pfac numFacts =
+  tensorCRTC (castPtr pout) totm pfac numFacts (castPtr ruptr)
+
+dcrtinvC :: Ptr (Ptr (Complex Double)) -> Ptr (Complex Double) -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dcrtinvC ruptr minv pout totm pfac numFacts =
+  tensorCRTInvC (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv)
+
+dlC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlC pout = tensorLC (castPtr pout)
+
+dlinvC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlinvC pout = tensorLInvC (castPtr pout)
+
+dmulgpowC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dmulgpowC pout = tensorGPowC (castPtr pout)
+
+dmulgdecC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dmulgdecC pout = tensorGDecC (castPtr pout)
+
+dginvpowC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO Int16
+dginvpowC pout = tensorGInvPowC (castPtr pout)
+
+dginvdecC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO Int16
+dginvdecC pout = tensorGInvDecC (castPtr pout)
+
+dmulC :: Ptr (Complex Double) -> Ptr (Complex Double) -> Int64 -> IO ()
+dmulC aout bout = mulC (castPtr aout) (castPtr bout)
 
 -- no support for products of Double
-instance Dispatch Double where
-  dcrt = error "cannot call CT Crt on type Double"
-  dcrtinv = error "cannot call CT CrtInv on type Double"
-  dl pout =
-    tensorLDouble (castPtr pout)
-  dlinv pout =
-    tensorLInvDouble (castPtr pout)
-  dnorm pout = tensorNormSqD 1 (castPtr pout)
-  dmulgpow = error "cannot call CT mulGPow on type Double"
-  dmulgdec = error "cannot call CT mulGDec on type Double"
-  dginvpow = error "cannot call CT divGPow on type Double"
-  dginvdec = error "cannot call CT divGDec on type Double"
-  dmul = error "cannot call CT (*) on type Double"
-  dgaussdec ruptr pout totm pfac numFacts =
-    tensorGaussianDec (castPtr pout) totm pfac numFacts (castPtr ruptr)
+dlDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlDouble pout = tensorLDouble (castPtr pout)
+
+dlinvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlinvDouble pout = tensorLInvDouble (castPtr pout)
+
+dnormDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dnormDouble pout = tensorNormSqD 1 (castPtr pout)
+
+dmulgpowDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dmulgpowDouble = error "cannot call CT mulGPow on type Double"
+
+dmulgdecDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dmulgdecDouble = error "cannot call CT mulGDec on type Double"
+
+dginvpowDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO Int16
+dginvpowDouble = error "cannot call CT divGPow on type Double"
+
+dginvdecDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO Int16
+dginvdecDouble = error "cannot call CT divGDec on type Double"
+
+dmulDouble :: Ptr Double -> Ptr Double -> Int64 -> IO ()
+dmulDouble = error "cannot call CT (*) on type Double"
+
+dgaussdecDouble :: Ptr (Ptr (Complex Double)) -> Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dgaussdecDouble ruptr pout totm pfac numFacts =
+  tensorGaussianDec (castPtr pout) totm pfac numFacts (castPtr ruptr)
 
 -- no support for products of Z
 instance Dispatch Int64 where

@@ -235,8 +235,51 @@ instance Reflects q Int64 => Tensor CT (ZqBasic q Int64) where
   divGPow = wrapM $ dispatchGInv dginvpowZq
   divGDec = wrapM $ dispatchGInv dginvdecZq
 
-  gSqNormDec (CT v) = untag gSqNormDecZq v
-  gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
+  twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
+  embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+
+  coeffs = wrapM $ coerceCoeffs coeffs'
+
+  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+
+  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE l #-}
+  {-# INLINABLE lInv #-}
+  {-# INLINABLE mulGPow #-}
+  {-# INLINABLE mulGDec #-}
+  {-# INLINABLE divGPow #-}
+  {-# INLINABLE divGDec #-}
+  {-# INLINABLE twacePowDec #-}
+  {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
+  {-# INLINABLE coeffs #-}
+  {-# INLINABLE powBasisPow #-}
+
+instance Reflects q Int64 => TensorCRT CT (ZqBasic q Int64) where
+  crtFuncs = (,,,,) <$>
+    return (CT . repl) <*>
+    (wrap . untag (cZipDispatch dmulZq) <$> gCRT) <*>
+    (wrap . untag (cZipDispatch dmulZq) <$> gInvCRT) <*>
+    (wrap <$> untagT ctCRTZq) <*>
+    (wrap <$> untagT ctCRTInvZq)
+
+  crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT')
+
+  {-# INLINABLE crtFuncs #-}
+  {-# INLINE crtExtFuncs #-}
+
+instance Tensor CT (Complex Double) where
+  scalarPow = CT . scalarPow'
+
+  l = wrap $ basicDispatch dlC
+  lInv = wrap $ basicDispatch dlinvC
+
+  mulGPow = wrap $ basicDispatch dmulgpowC
+  mulGDec = wrap $ basicDispatch dmulgdecC
+
+  divGPow = wrapM $ dispatchGInv dginvpowC
+  divGDec = wrapM $ dispatchGInv dginvdecC
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
   embedPow = wrap $ runIdentity $ coerceEm embedPow'
@@ -256,22 +299,61 @@ instance Reflects q Int64 => Tensor CT (ZqBasic q Int64) where
   {-# INLINABLE twacePowDec #-}
   {-# INLINABLE embedPow #-}
   {-# INLINABLE embedDec #-}
-  {-# INLINABLE gSqNormDec #-}
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 
-instance Reflects q Int64 => TensorCRT CT (ZqBasic q Int64) where
+instance TensorCRT CT (Complex Double) where
   crtFuncs = (,,,,) <$>
     return (CT . repl) <*>
-    (wrap . untag (cZipDispatch dmulZq) <$> gCRT) <*>
-    (wrap . untag (cZipDispatch dmulZq) <$> gInvCRT) <*>
-    (wrap <$> untagT ctCRTZq) <*>
-    (wrap <$> untagT ctCRTInvZq)
+    (wrap . untag (cZipDispatch dmulC) <$> gCRT) <*>
+    (wrap . untag (cZipDispatch dmulC) <$> gInvCRT) <*>
+    (wrap <$> untagT ctCRTC) <*>
+    (wrap <$> untagT ctCRTInvC)
 
   crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT')
 
   {-# INLINABLE crtFuncs #-}
   {-# INLINE crtExtFuncs #-}
+
+instance Tensor CT Double where
+  scalarPow = CT . scalarPow'
+
+  l = wrap $ basicDispatch dlDouble
+  lInv = wrap $ basicDispatch dlinvDouble
+
+  mulGPow = wrap $ basicDispatch dmulgpowDouble
+  mulGDec = wrap $ basicDispatch dmulgdecDouble
+
+  divGPow = wrapM $ dispatchGInv dginvpowDouble
+  divGDec = wrapM $ dispatchGInv dginvdecDouble
+
+  twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
+  embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+
+  coeffs = wrapM $ coerceCoeffs coeffs'
+
+  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+
+  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE l #-}
+  {-# INLINABLE lInv #-}
+  {-# INLINABLE mulGPow #-}
+  {-# INLINABLE mulGDec #-}
+  {-# INLINABLE divGPow #-}
+  {-# INLINABLE divGDec #-}
+  {-# INLINABLE twacePowDec #-}
+  {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
+  {-# INLINABLE coeffs #-}
+  {-# INLINABLE powBasisPow #-}
+
+instance TensorGSqNorm CT Double where
+  gSqNormDec (CT v) = untag gSqNormDecDouble v
+  gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
+
+  {-# INLINABLE gSqNormDec #-}
+
 
 --TENSOR_DEF(Int64)
 --TENSOR_DEF(ZqBasic q Int64, Reflects q Int64)
@@ -364,8 +446,8 @@ gSqNormDec' :: (Storable r, Fact m, Dispatch r)
                => Tagged m (CT' m r -> r)
 gSqNormDec' = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnorm
 
-gSqNormDecZq :: (Reflects q Int64, Fact m) => Tagged m (CT' m (ZqBasic q Int64) -> (ZqBasic q Int64))
-gSqNormDecZq = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnormZq
+gSqNormDecDouble :: Fact m => Tagged m (CT' m Double -> Double)
+gSqNormDecDouble = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnormDouble
 
 ctCRT :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
          => TaggedT m mon (CT' m r -> CT' m r)
@@ -398,6 +480,22 @@ ctCRTInvZq = do
   ruinv' <- ruInv
   return $ \x -> unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinvZq ruptr))
+
+ctCRTC :: (CRTrans mon (Complex Double), Fact m)
+          => TaggedT m mon (CT' m (Complex Double) -> CT' m (Complex Double))
+ctCRTC = do
+  ru' <- ru
+  return $ \x -> unsafePerformIO $
+    withPtrArray ru' (flip withBasicArgs x . dcrtC)
+
+-- CTensor CRT^(-1) functions take inverse rus
+ctCRTInvC :: (CRTrans mon (Complex Double), Fact m)
+          => TaggedT m mon (CT' m (Complex Double) -> CT' m (Complex Double))
+ctCRTInvC = do
+  mhatInv <- snd <$> crtInfo
+  ruinv' <- ruInv
+  return $ \x -> unsafePerformIO $
+    withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinvC ruptr))
 
 cZipDispatch :: (Storable r, Fact m)
   => (Ptr r -> Ptr r -> Int64 -> IO ())
