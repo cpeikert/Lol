@@ -23,7 +23,7 @@ which can be used to verify a 'Crypto.Lol.Cyclotomic.Tensor' implementation.
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 --module Crypto.Lol.Tests.Default (complexDoubleTests, zqTensorTests, defaultZqTests) where
-module Crypto.Lol.Tests.Default (zqTensorTests) where
+module Crypto.Lol.Tests.Default (defaultZqTests, zqTensorTests) where
 
 import Crypto.Lol (Complex, Int64)
 import Crypto.Lol.Factored
@@ -38,8 +38,6 @@ import qualified Test.Framework as TF
 import qualified Test.QuickCheck as QC
 import Test.QuickCheck.Gen (chooseAny)
 
--- TODO: Uncomment this once zqTests are updated to QuickCheck
-{-
 -- | Default parameters for 'Crypto.Lol.Types.Unsafe.ZqBasic' tests.
 defaultZqTests :: TF.Test
 defaultZqTests = TF.testGroup "Zq Tests" $ [
@@ -47,7 +45,6 @@ defaultZqTests = TF.testGroup "Zq Tests" $ [
   zqTests (Proxy::Proxy (Zq 7)),
   zqTests (Proxy::Proxy (Zq (3 ** 5))),
   zqTests (Proxy::Proxy (Zq (3 ** 5 ** 7)))]
--}
 
 -- TODO: Rename this to something more like testSingleIndexWithCRT. Continuing the convention,
 --         tensorTests2 should be named testMultiIndexWithCRT. And the tests for Int64 should be the

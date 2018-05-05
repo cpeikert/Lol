@@ -30,4 +30,4 @@ main = defaultMainWithArgs
 -}
 
 main :: IO ()
-main = defaultMainWithArgs [zqTensorTests (Proxy::Proxy CT)] ["--maximum-generated-tests=100"]
+main = defaultMainWithArgs [defaultZqTests, zqTensorTests (Proxy::Proxy CT)] ["--maximum-generated-tests=100"]
