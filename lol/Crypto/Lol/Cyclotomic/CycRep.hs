@@ -332,7 +332,7 @@ divGCRTC (CRTC s v) = CRTC s $ divGCRTCS s v
 -- | Yield the scaled squared norm of \(g_m \cdot e\) under
 -- the canonical embedding, namely,
 -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\) .
-gSqNorm :: (Ring r, Tensor t r, Fact m) => CycRep t D m r -> r
+gSqNorm :: (TensorGSqNorm t r, Fact m) => CycRep t D m r -> r
 gSqNorm (Dec v) = gSqNormDec v
 {-# INLINABLE gSqNorm #-}
 
@@ -349,8 +349,8 @@ tweakedGaussian = fmap Dec . tweakedGaussianDec
 -- sample, which might not be sufficient for rigorous proof-based
 -- security.)
 roundedGaussian :: forall v rnd t m z .
-  (TensorGaussian t Double, ToInteger z, IFElt t z,
-   Fact m, ToRational v, MonadRandom rnd)
+  (TensorGaussian t Double, IFElt t Double, IFunctor t, ToInteger z,
+   IFElt t z, Fact m, ToRational v, MonadRandom rnd)
   => v -> rnd (CycRep t D m z)
 {-# INLINABLE roundedGaussian #-}
 roundedGaussian svar =
@@ -362,8 +362,8 @@ roundedGaussian svar =
 -- precision to generate the Gaussian sample, which may not be
 -- sufficient for rigorous proof-based security.)
 cosetGaussian :: forall t m zp z v rnd .
-  (TensorGaussian t Double, Lift zp z, Mod zp, z ~ ModRep zp,
-   IFElt t zp, IFElt t z, Fact m, ToRational v, MonadRandom rnd)
+  (TensorGaussian t Double, IFElt t Double, IFunctor t, Lift zp z, Mod zp,
+   z ~ ModRep zp, IFElt t zp, IFElt t z, Fact m, ToRational v, MonadRandom rnd)
   => v -> CycRep t D m zp -> rnd (CycRep t D m z)
 {-# INLINABLE cosetGaussian #-}
 cosetGaussian =

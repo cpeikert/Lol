@@ -130,11 +130,6 @@ extern "C" void tensorLR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t
   tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
 }
 
-extern "C" void tensorLDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
-{
-  tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
-}
-
 extern "C" void tensorLC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
   tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
@@ -167,11 +162,6 @@ extern "C" void tensorLInvRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t
  * from Haskell.
  */
 extern "C" void tensorLInvR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
-{
-  tensorFuserPrime (y, lpInv, totm, peArr, sizeOfPE, 0);
-}
-
-extern "C" void tensorLInvDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
   tensorFuserPrime (y, lpInv, totm, peArr, sizeOfPE, 0);
 }

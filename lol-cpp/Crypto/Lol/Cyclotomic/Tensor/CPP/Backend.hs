@@ -37,11 +37,7 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 ,dmulgpowC,dmulgdecC
 ,dginvpowC,dginvdecC
 ,dmulC
-,dlDouble,dlinvDouble
-,dmulgpowDouble,dmulgdecDouble
-,dginvpowDouble,dginvdecDouble
 ,dgaussdecDouble
-,dmulDouble
 ,dnormDouble
 ,dlInt64,dlinvInt64
 ,dmulgpowInt64,dmulgdecInt64
@@ -198,30 +194,8 @@ dginvdecC pout = tensorGInvDecC (castPtr pout)
 dmulC :: Ptr (Complex Double) -> Ptr (Complex Double) -> Int64 -> IO ()
 dmulC aout bout = mulC (castPtr aout) (castPtr bout)
 
--- no support for products of Double
-dlDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
-dlDouble pout = tensorLDouble (castPtr pout)
-
-dlinvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
-dlinvDouble pout = tensorLInvDouble (castPtr pout)
-
 dnormDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dnormDouble pout = tensorNormSqD 1 (castPtr pout)
-
-dmulgpowDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
-dmulgpowDouble = error "cannot call CT mulGPow on type Double"
-
-dmulgdecDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
-dmulgdecDouble = error "cannot call CT mulGDec on type Double"
-
-dginvpowDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO Int16
-dginvpowDouble = error "cannot call CT divGPow on type Double"
-
-dginvdecDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO Int16
-dginvdecDouble = error "cannot call CT divGDec on type Double"
-
-dmulDouble :: Ptr Double -> Ptr Double -> Int64 -> IO ()
-dmulDouble = error "cannot call CT (*) on type Double"
 
 dgaussdecDouble :: Ptr (Ptr (Complex Double)) -> Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dgaussdecDouble ruptr pout totm pfac numFacts =
@@ -255,8 +229,6 @@ foreign import ccall unsafe "tensorLR" tensorLR ::                  Ptr Int64 ->
 foreign import ccall unsafe "tensorLInvR" tensorLInvR ::            Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorLRq" tensorLRq ::                Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
 foreign import ccall unsafe "tensorLInvRq" tensorLInvRq ::          Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
-foreign import ccall unsafe "tensorLDouble" tensorLDouble ::       Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorLInvDouble" tensorLInvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorLC" tensorLC ::       Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorLInvC" tensorLInvC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 
