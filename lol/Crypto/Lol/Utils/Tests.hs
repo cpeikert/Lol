@@ -23,7 +23,7 @@ Infrastructure for testing Lol.
 module Crypto.Lol.Utils.Tests
 (test
 ,testIO
-,TF.testGroup
+,testWithGen
 ,nestGroup
 ,testGroupM
 ,genTestArgs
@@ -32,8 +32,10 @@ module Crypto.Lol.Utils.Tests
 import Crypto.Lol.Utils.GenArgs
 
 import qualified Test.Framework as TF
-import Test.Framework.Providers.QuickCheck2
-import Test.QuickCheck
+import Test.Framework.Providers.QuickCheck2 (testProperty)
+import qualified Test.QuickCheck as QC
+
+-- TODO: Kill all the old test framework stuff (or is it still used for benchmarks?)
 
 -- | Test a 'Bool' value.
 test :: Bool -> Test params
@@ -43,9 +45,13 @@ test = Test
 testIO :: IO Bool -> Test params
 testIO = TestIO
 
+-- Make a 'TF.Test' given a name, a testing function, and a parameter generator
+testWithGen :: (Show a, QC.Testable prop) => String -> (a -> prop) -> QC.Gen a -> TF.Test
+testWithGen name f gen = testProperty name $ QC.forAll gen f
+
 -- | Apply parameters to a list of 'TF.Test'.
-nestGroup :: String -> [proxy (a :: k) -> TF.Test] -> proxy a -> TF.Test
-nestGroup s ts p = TF.testGroup s $ map ($ p) ts
+nestGroup :: String -> [QC.Gen a -> TF.Test] -> QC.Gen a -> TF.Test
+nestGroup name ts gen = TF.testGroup name $ map ($ gen) ts
 
 -- | Wrapper around QuickCheck's 'TF.testGroup'.
 testGroupM :: String -> [IO TF.Test] -> TF.Test
@@ -55,7 +61,7 @@ testGroupM str = TF.buildTest . (TF.testGroup str <$>) . sequence
 -- by generating random inputs to the function.
 genTestArgs :: (GenArgs bnch, ResultOf bnch ~ Test a)
   => String -> bnch -> proxy a -> TF.Test
-genTestArgs s f _ = testProperty s $ ioProperty $ do
+genTestArgs s f _ = testProperty s $ QC.ioProperty $ do
   res <- genArgs f
   case res of
     Test b -> return b

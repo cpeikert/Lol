@@ -24,7 +24,7 @@ Tests for the 'Tensor' interface.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.TensorTests (tensorTests1, tensorTests2) where
+module Crypto.Lol.Tests.TensorTests (tensorTests1) where
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor
@@ -34,29 +34,41 @@ import Crypto.Lol.Utils.Tests
 import Control.Applicative
 import Data.Maybe
 import qualified Test.Framework as TF
+import Test.Framework.Providers.QuickCheck2 (testProperty)
+import qualified Test.QuickCheck as QC
 
--- | Tests for single-index 'Tensor' operations. There must be a CRT basis for \(O_m\) over @r@.
-tensorTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> TF.Test
-tensorTests1 _ _ =
-  let ptmr = Proxy :: Proxy '(t,m,r)
-  in testGroup (showType ptmr) $ ($ ptmr) <$> [
-      genTestArgs   "fmap comparison"  prop_fmap,
-      nestGroup  "GInv.G == id" [
-        genTestArgs "Pow basis"        prop_ginv_pow,
-        genTestArgs "Dec basis"        prop_ginv_dec,
-        genTestArgs "CRT basis"        prop_ginv_crt],
-      genTestArgs   "CRTInv.CRT == id" prop_crt_inv,
-      genTestArgs   "LInv.L == id"     prop_l_inv,
-      genTestArgs   "Scalar"           prop_scalar_crt,
-      nestGroup  "G commutes with L" [
-        genTestArgs "Dec basis"        prop_g_dec,
-        genTestArgs "CRT basis"        prop_g_crt],
-      genTestArgs "Tw and Em ID for equal indices" prop_twEmID
-      ]
+-- TODO: We don't test
+--         * Tensor::coeffs,
+--         * Tensor::powBasisPow,
+--         * TensorGSqNorm::gSqNormDec
+--
+-- TODO: Continue move to QuickCheck in tensorTests2. This means converting all the remaining prop_*
+--         functions to return a Bool, and probably writing some more helper functions
 
+-- Has to take two generators because prop_scalar_crt only takes ring elements as input
+tensorTests1 :: forall t m r . _ => QC.Gen r -> QC.Gen (t m r) -> TF.Test
+tensorTests1 ringGen tensorGen =
+  let ptmr  = Proxy::Proxy '(t,m,r)
+      tests = (($ tensorGen) <$> [
+        testWithGen   "fmap comparison"  prop_fmap,
+        nestGroup     "GInv.G == id" [
+          testWithGen "Pow basis"        prop_ginv_pow,
+          testWithGen "Dec basis"        prop_ginv_dec,
+          testWithGen "CRT basis"        prop_ginv_crt],
+        testWithGen   "CRTInv.CRT == id" prop_crt_inv,
+        testWithGen   "LInv.L == id"     prop_l_inv,
+        nestGroup     "G commutes with L" [
+          testWithGen "Dec basis"        prop_g_dec,
+          testWithGen "CRT basis"        prop_g_crt],
+        testWithGen "Tw and Em ID on Pow/Dec for equal indices" prop_twEmID,
+        testWithGen "Tw and Em ID on CRT for equal indices" prop_twEmIDCRT]) ++
+       [testWithGen "Scalar" (prop_scalar_crt ptmr) ringGen] in
+  TF.testGroup (showType $ ptmr) tests
+
+{-
 -- | Tests for inter-ring 'Tensor' operations. There must be a CRT basis for \(O_{m'}\) over @r@.
-tensorTests2 :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> TF.Test
-tensorTests2 _ _ =
+testMultiIndexWithCRT :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> TF.Test
+testMultiIndexWithCRT _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)
   in testGroup (showType ptmr) $ ($ ptmr) <$> [
       nestGroup  "Tw.Em == id" [
@@ -76,55 +88,60 @@ tensorTests2 _ _ =
         genTestArgs "Invar2 Pow/Dec basis"           prop_twace_invar2_powdec,
         genTestArgs "Invar2 CRT basis"               prop_twace_invar2_crt]
       ]
+-}
 
-prop_fmap :: _ => t m r -> Test '(t,m,r)
-prop_fmap x = test $ (fmap id x) == x
+-- TODO: Use fuzzy inequality for Complex Doubles
+--       Figure out why prop_ginv_pow fails with "could not divide by G" for all Int64
+
+prop_fmap :: _ => t m r -> Bool
+prop_fmap x = (fmap id x) == x
 
 -- divG . mulG == id in Pow basis
-prop_ginv_pow :: _ => t m r -> Test '(t,m,r)
-prop_ginv_pow x = test $ (fromMaybe (error "could not divide by G in prop_ginv_pow") $
+prop_ginv_pow :: _ => t m r -> Bool
+prop_ginv_pow x = (fromMaybe (error "could not divide by G in prop_ginv_pow") $
   divGPow $ mulGPow x) == x
 
 -- divG . mulG == id in Dec basis
-prop_ginv_dec :: _ => t m r -> Test '(t,m,r)
-prop_ginv_dec x = test $ (fromMaybe (error "could not divide by G in prop_ginv_dec") $
+prop_ginv_dec :: _ => t m r -> Bool
+prop_ginv_dec x = (fromMaybe (error "could not divide by G in prop_ginv_dec") $
   divGDec $ mulGDec x) == x
 
 -- divG . mulG == id in CRT basis
-prop_ginv_crt :: _ => t m r -> Test '(t,m,r)
-prop_ginv_crt x = test $ fromMaybe (error "no CRT in prop_ginv_crt") $ do
+prop_ginv_crt :: _ => t m r -> Bool
+prop_ginv_crt x = fromMaybe (error "no CRT in prop_ginv_crt") $ do
   divGCRT' <- divGCRT
   mulGCRT' <- mulGCRT
   return $ (divGCRT' $ mulGCRT' x) == x
 
 -- mulGDec == lInv. mulGPow . l
-prop_g_dec :: _ => t m r -> Test '(t,m,r)
-prop_g_dec x = test $ (mulGDec x) == (lInv $ mulGPow $ l x)
+prop_g_dec :: _ => t m r -> Bool
+prop_g_dec x = (mulGDec x) == (lInv $ mulGPow $ l x)
 
-prop_g_crt :: _ => t m r -> Test '(t,m,r)
-prop_g_crt x = test $ fromMaybe (error "no CRT in prop_g_crt") $ do
+prop_g_crt :: _ => t m r -> Bool
+prop_g_crt x = fromMaybe (error "no CRT in prop_g_crt") $ do
   mulGCRT' <- mulGCRT
   crt' <- crt
   crtInv' <- crtInv
   return $ (mulGCRT' x) == (crt' $ mulGPow $ crtInv' x)
 
 -- crtInv . crt == id
-prop_crt_inv :: _ => t m r -> Test '(t,m,r)
-prop_crt_inv x = test $ fromMaybe (error "no CRT in prop_crt_inv") $ do
+prop_crt_inv :: _ => t m r -> Bool
+prop_crt_inv x = fromMaybe (error "no CRT in prop_crt_inv") $ do
   crt' <- crt
   crtInv' <- crtInv
   return $ (crtInv' $ crt' x) == x
 
 -- lInv . l == id
-prop_l_inv :: _ => t m r -> Test '(t,m,r)
-prop_l_inv x = test $ (lInv $ l x) == x
+prop_l_inv :: _ => t m r -> Bool
+prop_l_inv x = (lInv $ l x) == x
 
 -- scalarCRT = crt . scalarPow
-prop_scalar_crt :: forall t m r . (Tensor t r, Fact m, _) => r -> Test '(t,m,r)
-prop_scalar_crt r = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
+-- This only requires Proxy '(t,m) to be fully determined, but this works too
+prop_scalar_crt :: forall t m r . (Tensor t r, Fact m, _) => Proxy '(t,m,r) -> r -> Bool
+prop_scalar_crt _ x = fromMaybe (error "no CRT in prop_scalar_crt") $ do
   scalarCRT' <- scalarCRT
   crt' <- crt
-  return $ (scalarCRT' r :: t m r) == (crt' $ scalarPow r)
+  return $ (scalarCRT' x :: t m r) == (crt' $ scalarPow x)
 
 -- tests that twace . embed == id in the Pow basis
 prop_trem_pow :: forall t m m' r . (Fact m, Fact m', _) => t m r -> Test '(t,m,m',r)
@@ -163,13 +180,14 @@ prop_twace_crt x = test $ fromMaybe (error "no CRT in prop_trace_crt") $ do
   crtInv' <- crtInv
   return $ (twaceCRT' x :: t m r) == (crt' $ twacePowDec $ crtInv' x)
 
-prop_twEmID :: forall t m r . _ => t m r -> Test '(t,m,r)
-prop_twEmID x = test $
-  ((twacePowDec x) == x) &&
-  (((fromMaybe (error "twemid_crt") twaceCRT) x) == x) &&
-  ((embedPow x) == x) &&
-  ((embedDec x) == x) &&
-  (((fromMaybe (error "twemid_crt") embedCRT) x) == x)
+prop_twEmIDCRT :: forall t m r . _ => t m r -> Bool
+prop_twEmIDCRT x = (((fromMaybe (error "twemid_crt") twaceCRT) x) == x) &&
+                   (((fromMaybe (error "twemid_crt") embedCRT) x) == x)
+
+prop_twEmID :: forall t m r . _ => t m r -> Bool
+prop_twEmID x = ((twacePowDec x) == x) &&
+                ((embedPow x) == x) &&
+                ((embedDec x) == x)
 
 -- twace mhat'/g' = mhat*totm'/totm/g (Pow basis)
 prop_twace_invar1_pow :: forall t m m' r . _ => Test '(t,m,m',r)

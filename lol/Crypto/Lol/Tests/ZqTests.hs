@@ -25,7 +25,10 @@ Tests for modular arithmetic.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.ZqTests (zqTests) where
+-- TODO: Update tests in this module to use QuickCheck
+
+--module Crypto.Lol.Tests.ZqTests (zqTests) where
+module Crypto.Lol.Tests.ZqTests where
 
 import Crypto.Lol
 import Crypto.Lol.CRTrans
@@ -37,6 +40,7 @@ import Control.Monad.Random
 
 import qualified Test.Framework as TF
 
+{-
 -- | Tests for modular arithmetic implementations.
 zqTests :: _ => Proxy r -> TF.Test
 zqTests p = testGroup (showType p) $ ($ p) <$> [
@@ -45,6 +49,7 @@ zqTests p = testGroup (showType p) $ ($ p) <$> [
   genTestArgs "^-1" prop_recip,
   genTestArgs "extension ring (*)" prop_mul_ext
   ]
+-}
 
 prop_add :: forall r . (Ring r, Eq r) => LiftedMod r -> LiftedMod r -> Test r
 prop_add (LMod x) (LMod y) = test $ fromIntegral (x + y) == (fromIntegral x + fromIntegral y :: r)
