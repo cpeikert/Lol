@@ -24,7 +24,7 @@ Tests for the 'Tensor' interface.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.TensorTests (tensorTests1) where
+module Crypto.Lol.Tests.TensorTests (tensorCrtTests1, tensorTests1) where
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor
@@ -46,23 +46,28 @@ import qualified Test.QuickCheck as QC
 --         functions to return a Bool, and probably writing some more helper functions
 
 -- Has to take two generators because prop_scalar_crt only takes ring elements as input
-tensorTests1 :: forall t m r . _ => QC.Gen r -> QC.Gen (t m r) -> TF.Test
-tensorTests1 ringGen tensorGen =
+tensorTests1 :: forall t m r . _ => QC.Gen (t m r) -> TF.Test
+tensorTests1 tensorGen =
   let ptmr  = Proxy::Proxy '(t,m,r)
-      tests = (($ tensorGen) <$> [
-        testWithGen   "fmap comparison"  prop_fmap,
+      tests = ($ tensorGen) <$> [
+        testWithGen   "fmap comparison"                           prop_fmap,
         nestGroup     "GInv.G == id" [
-          testWithGen "Pow basis"        prop_ginv_pow,
-          testWithGen "Dec basis"        prop_ginv_dec,
-          testWithGen "CRT basis"        prop_ginv_crt],
-        testWithGen   "CRTInv.CRT == id" prop_crt_inv,
-        testWithGen   "LInv.L == id"     prop_l_inv,
-        nestGroup     "G commutes with L" [
-          testWithGen "Dec basis"        prop_g_dec,
-          testWithGen "CRT basis"        prop_g_crt],
-        testWithGen "Tw and Em ID on Pow/Dec for equal indices" prop_twEmID,
-        testWithGen "Tw and Em ID on CRT for equal indices" prop_twEmIDCRT]) ++
-       [testWithGen "Scalar" (prop_scalar_crt ptmr) ringGen] in
+          testWithGen "Pow basis"                                 prop_ginv_pow,
+          testWithGen "Dec basis"                                 prop_ginv_dec],
+        testWithGen   "LInv.L == id"                              prop_l_inv,
+        testWithGen   "G commutes with L on Dec basis"            prop_g_dec,
+        testWithGen   "Tw and Em ID on Pow/Dec for equal indices" prop_twEmID] in
+  TF.testGroup (showType ptmr) tests
+
+tensorCrtTests1 :: forall t m r . _ => QC.Gen r -> QC.Gen (t m r) -> TF.Test
+tensorCrtTests1 ringGen tensorGen =
+  let ptmr = Proxy::Proxy '(t,m,r)
+      tests = [
+          testWithGen "GInv.G == id on CRT basis"             prop_ginv_crt tensorGen,
+          testWithGen "CRTInv.CRT == id"                      prop_crt_inv tensorGen,
+          testWithGen "G commutes with L on CRT basis"        prop_g_crt tensorGen,
+          testWithGen "Tw and Em ID on CRT for equal indices" prop_twEmIDCRT tensorGen,
+          testWithGen "Scalar"                               (prop_scalar_crt ptmr) ringGen] in
   TF.testGroup (showType $ ptmr) tests
 
 {-
