@@ -42,7 +42,6 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 ,dlInt64,dlinvInt64
 ,dmulgpowInt64,dmulgdecInt64
 ,dginvpowInt64,dginvdecInt64
-,dmulInt64
 ,dnormInt64
 , marshalFactors
 , CPP
@@ -65,8 +64,6 @@ import           Foreign.Marshal.Array   (withArray)
 import           Foreign.Marshal.Utils   (with)
 import           Foreign.Ptr             (Ptr, castPtr, plusPtr)
 import           Foreign.Storable        (Storable (..))
-
-import GHC.TypeLits -- for error message
 
 -- | Convert a list of prime powers to a suitable C representation.
 marshalFactors :: [PP] -> Vector CPP
@@ -221,9 +218,6 @@ dginvpowInt64 pout = tensorGInvPowR (castPtr pout)
 
 dginvdecInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO Int16
 dginvdecInt64 pout = tensorGInvDecR (castPtr pout)
-
-dmulInt64 :: Ptr Int64 -> Ptr Int64 -> Int64 -> IO ()
-dmulInt64 = error "cannot call CT (*) on type Int64"
 
 foreign import ccall unsafe "tensorLR" tensorLR ::                  Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorLInvR" tensorLInvR ::            Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
