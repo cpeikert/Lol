@@ -68,7 +68,35 @@ tensorCrtTests1 ringGen tensorGen =
           testWithGen "G commutes with L on CRT basis"        prop_g_crt tensorGen,
           testWithGen "Tw and Em ID on CRT for equal indices" prop_twEmIDCRT tensorGen,
           testWithGen "Scalar"                               (prop_scalar_crt ptmr) ringGen] in
-  TF.testGroup (showType $ ptmr) tests
+  TF.testGroup (showType ptmr) tests
+
+-- TODO: Continue this definition. Is it really necessary to take in a a Proxy '(t,m,m',r) and pass
+--       it to each and every test function?
+
+tensorTests2 :: forall t m m' r . ('True ~ FDivides m m', Fact m, Fact m', Tensor t r, _) => Proxy '(t,m,m',r) -> QC.Gen (t m r) -> TF.Test
+tensorTests2 _ tensorGen =
+  let ptmmr  = Proxy::Proxy '(t,m,m',r)
+      tests  = ($ tensorGen) <$> [
+        nestGroup  "Tw.Em == id" [
+          testWithGen "Pow basis"            (prop_trem_pow ptmmr)]] in
+      TF.testGroup (showType ptmmr) tests
+{-
+          testWithGen "Dec basis"            prop_trem_dec,
+          testWithGen "CRT basis"            prop_trem_crt],
+        nestGroup     "Em commutes with L" [
+          testWithGen "Dec basis"            prop_embed_dec,
+          testWithGen "CRT basis"            prop_embed_crt],
+        nestGroup     "Tw commutes with L" [
+          testWithGen "Dec basis"            prop_twace_dec,
+          testWithGen "CRT basis"            prop_twace_crt],
+        nestGroup     "Twace invariants" [
+          testWithGen "Invar1 Pow basis"     prop_twace_invar1_pow,
+          testWithGen "Invar1 Dec basis"     prop_twace_invar1_dec,
+          testWithGen "Invar1 CRT basis"     prop_twace_invar1_crt,
+          testWithGen "Invar2 Pow/Dec basis" prop_twace_invar2_powdec,
+          testWithGen "Invar2 CRT basis"     prop_twace_invar2_crt]
+  TF.testGroup (showType ptmr) tests
+-}
 
 {-
 -- | Tests for inter-ring 'Tensor' operations. There must be a CRT basis for \(O_{m'}\) over @r@.
@@ -148,9 +176,11 @@ prop_scalar_crt _ x = fromMaybe (error "no CRT in prop_scalar_crt") $ do
   crt' <- crt
   return $ (scalarCRT' x :: t m r) == (crt' $ scalarPow x)
 
+-- TODO: Continue to move from (Test params) to Bool
+
 -- tests that twace . embed == id in the Pow basis
-prop_trem_pow :: forall t m m' r . (Fact m, Fact m', _) => t m r -> Test '(t,m,m',r)
-prop_trem_pow x = test $ (twacePowDec $ (embedPow x :: t m' r)) == x
+prop_trem_pow :: forall t m m' r . (Fact m, Fact m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_trem_pow _ x = (twacePowDec $ (embedPow x :: t m' r)) == x
 
 -- tests that twace . embed == id in the Dec basis
 prop_trem_dec :: forall t m m' r . (Fact m, Fact m', _) => t m r -> Test '(t,m,m',r)
