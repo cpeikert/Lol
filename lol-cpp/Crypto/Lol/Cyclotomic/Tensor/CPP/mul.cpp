@@ -21,6 +21,7 @@ template <typename ring> void zipWithStar (ring* a, ring* b, hDim_t totm, hInt_t
 //a = zipWith (*) a b
 extern "C" void mulRq (Zq* a, Zq* b, hDim_t totm, hInt_t q)
 {
+  Zq::q = q;
   zipWithStar(a, b, totm, q);
 }
 
