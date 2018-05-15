@@ -50,12 +50,13 @@ module Crypto.Lol.Cyclotomic.Tensor
 where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Prelude           as LP hiding (lift, (*>))
+import Crypto.Lol.Prelude        as LP hiding (lift, (*>))
 import Crypto.Lol.Types.IFunctor
 
 import           Algebra.Module          as Module (C)
 import           Control.Applicative
 import           Control.Monad.Random
+import           Data.Foldable           (Foldable)
 import           Data.Singletons.Prelude hiding ((:-))
 import           Data.Traversable
 import           Data.Tuple              (swap)
@@ -79,7 +80,10 @@ import qualified Data.Vector.Unboxed     as U
 -- inputs for each method is determined by the linear transform it
 -- implements.
 
-class (ForallFact1 Applicative t, ForallFact1 Traversable t,
+class (ForallFact1 Functor  t, ForallFact1 Applicative t,
+       ForallFact1 Foldable t, ForallFact1 Traversable t,
+       -- include Functor and Foldable because the other ForallFact1
+       -- constraints don't imply them
        IFunctor t, IFElt t r, Additive r)
   => Tensor t r where
 
