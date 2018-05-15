@@ -636,9 +636,23 @@ instance RescaleCyc (CycG t) a a where
   rescaleCyc _ = id
   {-# INLINABLE rescaleCyc #-}
 
--- TODO: appropriate RescaleCyc instance for Cyc
+instance {-# INCOHERENT #-} (RescaleCyc (CycG t) (ZqBasic q z) (ZqBasic p z))
+  => RescaleCyc (Cyc t) (ZqBasic q z) (ZqBasic p z) where
+  rescaleCyc b = CycZqB . rescaleCyc b . unCycZqB
 
-{- CJP: restore this when we have a data family instance for pairs
+instance RescaleCyc (Cyc t) (ZqBasic q z) (ZqBasic q z) where
+  rescaleCyc b = CycZqB . rescaleCyc b . unCycZqB
+
+{-
+instance (LiftCyc (Cyc t) (ZqBasic q z),
+          Cyclotomic (Cyc t) b, Reflects q z, Reduce z b, Field b,
+          ReduceCyc (Cyc t) z b)
+  => RescaleCyc (Cyc t) (ZqBasic q z, b) b where
+  rescaleCyc bas (CycPair a b) =
+    let qval :: z = proxy value (Proxy::Proxy q)
+        z = liftCyc bas a
+    in scalarCyc (recip (reduce qval)) * (b - reduceCyc z)
+
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes one ring from the product.
