@@ -74,11 +74,13 @@ import           Crypto.Lol.CRTrans
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
-import           Crypto.Lol.Cyclotomic.Tensor   (Tensor, TensorCRTSet,
+import           Crypto.Lol.Cyclotomic.Tensor   (Tensor, TensorCRT,
+                                                 TensorCRTSet,
                                                  TensorGaussian)
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.Prelude             as LP
-import           Crypto.Lol.Types               (ZqBasic)
+import           Crypto.Lol.Reflects
+import           Crypto.Lol.Types               (RRq, ZqBasic)
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.IFunctor
 import           Crypto.Lol.Types.Proto
@@ -118,7 +120,13 @@ newtype instance Cyc t m Int64         = CycI64 { unCycI64 :: CycG t m Int64 }
 newtype instance Cyc t m (ZqBasic q z) = CycZqB { unCycZqB :: CycG t m (ZqBasic q z) }
 data    instance Cyc t m (a,b)         = CycPair !(Cyc t m a) !(Cyc t m b)
 
----------- Constructors / deconstructors ----------
+-- | additive group K/qR, limited to powerful- or decoding-basis
+-- representation
+data instance Cyc t m (RRq q r)
+  = PowRRq !(CycRep t P m (RRq q r))
+  | DecRRq !(CycRep t D m (RRq q r))
+
+---------- Constructors / destructors ----------
 
 -- | Wrap a 'CycRep' as a 'Cyc'.
 cycPow :: CycRep t P m r -> CycG t m r
@@ -191,6 +199,10 @@ deriving instance ZeroTestable (CycG t m (ZqBasic q z)) => ZeroTestable.C (Cyc t
 instance (ZeroTestable (Cyc t m a), ZeroTestable (Cyc t m b))
   => ZeroTestable.C (Cyc t m (a,b)) where
   isZero (CycPair a b) = isZero a && isZero b
+
+instance ZeroTestable (t m (RRq q r)) => ZeroTestable.C (Cyc t m (RRq q r)) where
+  isZero (PowRRq c) = isZero c
+  isZero (DecRRq c) = isZero c
 
 -----
 
@@ -290,6 +302,18 @@ instance (Additive (Cyc t m a), Additive (Cyc t m b))
   zero = CycPair zero zero
   (CycPair a b) + (CycPair a' b') = CycPair (a+a') (b+b')
   negate (CycPair a b) = CycPair (negate a) (negate b)
+
+instance (Additive (RRq q r), Tensor t (RRq q r), IFunctor t, Fact m)
+  => Additive.C (Cyc t m (RRq q r)) where
+  zero = PowRRq zero
+
+  (PowRRq u1) + (PowRRq u2) = PowRRq $ u1 + u2
+  (DecRRq u1) + (DecRRq u2) = DecRRq $ u1 + u2
+  (PowRRq u1) + (DecRRq u2) = PowRRq $ u1 + toPow u2
+  (DecRRq u1) + (PowRRq u2) = PowRRq $ toPow u1 + u2
+
+  negate (PowRRq u) = PowRRq $ negate u
+  negate (DecRRq u) = DecRRq $ negate u
 
 -----
 
