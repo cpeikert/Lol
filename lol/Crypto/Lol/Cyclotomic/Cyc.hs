@@ -464,9 +464,24 @@ instance (CosetGaussianCyc (CycG t) (ZqBasic q Int64))
 
 instance (CRTElt t r, ZeroTestable r, IntegralDomain r) -- ZT, ID for superclass
   => ExtensionCyc (CycG t) r where
-  -- use these because implementations need indices to be in scope
-  embed = embedLazy
-  twace = twace'
+
+  -- lazily embed
+  embed :: forall t m m' r . (m `Divides` m')
+            => CycG t m r -> CycG t m' r
+  embed (Scalar c) = Scalar c           -- keep as scalar
+  embed (Sub (c :: CycG t l r)) = Sub c -- keep as subring element
+    \\ transDivides (Proxy::Proxy l) (Proxy::Proxy m) (Proxy::Proxy m')
+  embed c = Sub c
+
+  twace :: forall t m m' r .
+          (CRTElt t r, ZeroTestable r, IntegralDomain r, m `Divides` m')
+       => CycG t m' r -> CycG t m r
+  twace (Pow u) = Pow $ R.twacePow u
+  twace (Dec u) = Dec $ R.twaceDec u
+  twace (CRT u) = either (cycPE . twaceCRTE) (cycPC . twaceCRTC) u
+  twace (Scalar u) = Scalar u
+  twace (Sub (c :: CycG t l r)) = Sub (twace c :: CycG t (FGCD l m) r)
+                                  \\ gcdDivides (Proxy::Proxy l) (Proxy::Proxy m)
 
   powBasis = (Pow <$>) <$> R.powBasis
 
@@ -499,25 +514,9 @@ instance (ExtensionCyc (Cyc t) a, ExtensionCyc (Cyc t) b)
   coeffsCyc bas (CycPair a b) =
     zipWith CycPair (coeffsCyc bas a) (coeffsCyc bas b)
 
-twace' :: forall t m m' r .
-          (CRTElt t r, ZeroTestable r, IntegralDomain r, m `Divides` m')
-       => CycG t m' r -> CycG t m r
-twace' (Pow u) = Pow $ R.twacePow u
-twace' (Dec u) = Dec $ R.twaceDec u
-twace' (CRT u) = either (cycPE . twaceCRTE) (cycPC . twaceCRTC) u
-twace' (Scalar u) = Scalar u
-twace' (Sub (c :: CycG t l r)) = Sub (twace c :: CycG t (FGCD l m) r)
-                                 \\ gcdDivides (Proxy::Proxy l) (Proxy::Proxy m)
-
-embedLazy :: forall t m m' r . (m `Divides` m')
-          => CycG t m r -> CycG t m' r
-embedLazy (Scalar c) = Scalar c           -- keep as scalar
-embedLazy (Sub (c :: CycG t l r)) = Sub c  -- keep as subring element
-  \\ transDivides (Proxy::Proxy l) (Proxy::Proxy m) (Proxy::Proxy m')
-embedLazy c = Sub c
-
 -- | Force to a non-'Sub' constructor (for internal use only).
-embed' :: forall t r l m . (l `Divides` m, CRTElt t r) => CycG t l r -> CycG t m r
+embed' :: forall t r l m . (l `Divides` m, CRTElt t r)
+       => CycG t l r -> CycG t m r
 {-# INLINE embed' #-}
 embed' (Pow u) = Pow $ embedPow u
 embed' (Dec u) = Dec $ embedDec u
