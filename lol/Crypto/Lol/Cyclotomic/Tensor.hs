@@ -110,19 +110,19 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
 
   -- | The @twace@ linear transformation, which is the same in both the
   -- powerful and decoding bases.
-  twacePowDec :: m `Divides` m' => t m' r -> t m r
+  twacePowDec :: (m `Divides` m') => t m' r -> t m r
 
   -- | The @embed@ linear transformations, for the powerful and
   -- decoding bases.
-  embedPow, embedDec :: m `Divides` m' => t m r -> t m' r
+  embedPow, embedDec :: (m `Divides` m') => t m r -> t m' r
 
   -- | Map a tensor in the powerful\/decoding\/CRT basis, representing
   -- an \(\O_{m'}\) element, to a vector of tensors representing
   -- \(\O_m\) elements in the same kind of basis.
-  coeffs :: m `Divides` m' => t m' r -> [t m r]
+  coeffs :: (m `Divides` m') => t m' r -> [t m r]
 
   -- | The powerful extension basis w.r.t. the powerful basis.
-  powBasisPow :: m `Divides` m' => Tagged m [t m' r]
+  powBasisPow :: (m `Divides` m') => Tagged m [t m' r]
 
 -- | Encapsulates functions related to the Chinese-remainder
 -- representation/transform.
