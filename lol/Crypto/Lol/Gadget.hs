@@ -44,6 +44,7 @@ data BaseBGad b
 
 -- | "Gadget" vectors, parameterized by an index type.
 
+-- CJP: is Ring superclass really necessary here?
 class Ring u => Gadget gad u where
   -- | The gadget vector over @u@.
   gadget :: Tagged gad [u]
@@ -57,7 +58,8 @@ class Ring u => Gadget gad u where
 
 -- | Decomposition relative to a gadget.
 
-class (Gadget gad u, Reduce (DecompOf u) u) => Decompose gad u where
+-- CJP: include a `Module (DecompOf u) u` superclass constraint?
+class (Gadget gad u) => Decompose gad u where
   -- | The ring that @u@ decomposes over.
   type DecompOf u
 
