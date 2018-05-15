@@ -10,7 +10,7 @@ import qualified Text.ProtocolBuffers.Header as P'
 import qualified Crypto.Proto.Lol.RqProduct as Crypto.Proto.Lol (RqProduct)
 
 data LinearRq = LinearRq{e :: !(P'.Word32), r :: !(P'.Word32), coeffs :: !(P'.Seq Crypto.Proto.Lol.RqProduct)}
-              deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
+                deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
 
 instance P'.Mergeable LinearRq where
   mergeAppend (LinearRq x'1 x'2 x'3) (LinearRq y'1 y'2 y'3)

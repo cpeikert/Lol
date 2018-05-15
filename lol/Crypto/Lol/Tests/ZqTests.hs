@@ -20,10 +20,13 @@ Tests for modular arithmetic.
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
+
+-- TODO: Update tests in this module to use QuickCheck
 
 module Crypto.Lol.Tests.ZqTests (zqTests) where
 
@@ -35,35 +38,44 @@ import Crypto.Lol.Utils.Tests
 import Control.Applicative
 import Control.Monad.Random
 
-import qualified Test.Framework as TF
+import qualified Test.Framework  as TF
+import qualified Test.QuickCheck as QC
+import Test.QuickCheck.Gen (chooseAny)
 
 -- | Tests for modular arithmetic implementations.
-zqTests :: _ => Proxy r -> TF.Test
-zqTests p = testGroup (showType p) $ ($ p) <$> [
-  genTestArgs "(+)" prop_add,
-  genTestArgs "(*)" prop_mul,
-  genTestArgs "^-1" prop_recip,
-  genTestArgs "extension ring (*)" prop_mul_ext
+zqTests :: forall r . (Mod r, _) => Proxy r -> TF.Test
+zqTests p =
+  let gen1 = chooseAny :: QC.Gen (LiftedMod r, LiftedMod r)
+      gen2 = chooseAny :: QC.Gen (LiftedInvertible r, LiftedInvertible r)
+      gen3 = chooseAny :: QC.Gen (Invertible r)
+      gen4 = chooseAny :: QC.Gen (Invertible r, Invertible r) in
+  TF.testGroup (showType p) [
+  testWithGen "(+)" prop_add gen1,
+  testWithGen "(*)" prop_mul gen2,
+  testWithGen "^-1" prop_recip gen3,
+  testWithGen "extension ring (*)" prop_mul_ext gen4
   ]
 
-prop_add :: forall r . (Ring r, Eq r) => LiftedMod r -> LiftedMod r -> Test r
-prop_add (LMod x) (LMod y) = test $ fromIntegral (x + y) == (fromIntegral x + fromIntegral y :: r)
+prop_add :: forall r . (Ring r, Eq r) => (LiftedMod r, LiftedMod r) -> Bool
+prop_add (LMod x, LMod y) = fromIntegral (x + y) == (fromIntegral x + fromIntegral y :: r)
 
-prop_mul :: forall r . (Ring r, Eq r) => LiftedInvertible r -> LiftedInvertible r -> Test r
-prop_mul (LInv x) (LInv y) = test $ fromIntegral (x * y) == (fromIntegral x * fromIntegral y :: r)
+prop_mul :: forall r . (Ring r, Eq r) => (LiftedInvertible r, LiftedInvertible r) -> Bool
+prop_mul (LInv x, LInv y) = fromIntegral (x * y) == (fromIntegral x * fromIntegral y :: r)
 
-prop_recip :: (Field r, Eq r) => Invertible r -> Test r
-prop_recip (Invertible x) = test $ one == (x * recip x)
+prop_recip :: (Field r, Eq r) => Invertible r -> Bool
+prop_recip (Invertible x) = one == (x * recip x)
 
 -- tests that multiplication in the extension ring matches CRT multiplication
-prop_mul_ext :: (CRTEmbed r, Eq r) => Invertible r -> Invertible r -> Test r
-prop_mul_ext (Invertible x) (Invertible y) = test $
+prop_mul_ext :: (CRTEmbed r, Eq r) => (Invertible r, Invertible r) -> Bool
+prop_mul_ext (Invertible x, Invertible y) =
   let z = x * y
       z' = fromExt $ toExt x * toExt y
   in z == z'
 
 data LiftedMod r where
   LMod :: (ToInteger (ModRep r)) => ModRep r -> LiftedMod r
+
+deriving instance Show (ModRep r) => Show (LiftedMod r)
 
 instance (Mod r, Random (ModRep r), ToInteger (ModRep r))
   => Random (LiftedMod r) where
@@ -76,6 +88,8 @@ instance (Mod r, Random (ModRep r), ToInteger (ModRep r))
 data LiftedInvertible r where
   LInv :: (ToInteger (ModRep r)) => ModRep r -> LiftedInvertible r
 
+deriving instance Show (ModRep r) => Show (LiftedInvertible r)
+
 instance (Mod r, Random (ModRep r), PID (ModRep r), ToInteger (ModRep r))
   => Random (LiftedInvertible r) where
   random =
@@ -85,6 +99,8 @@ instance (Mod r, Random (ModRep r), PID (ModRep r), ToInteger (ModRep r))
   randomR = error "randomR not defined for `LiftedInvertible`"
 
 newtype Invertible r = Invertible r
+
+deriving instance Show r => Show (Invertible r)
 
 instance (Random (LiftedInvertible r), Ring r, ToInteger (ModRep r))
   => Random (Invertible r) where

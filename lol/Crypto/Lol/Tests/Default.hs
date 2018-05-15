@@ -16,121 +16,159 @@ which can be used to verify a 'Crypto.Lol.Cyclotomic.Tensor' implementation.
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.Default (defaultLolTests, defaultZqTests) where
+--module Crypto.Lol.Tests.Default (complexDoubleTests, zqTensorTests, defaultZqTests) where
+module Crypto.Lol.Tests.Default (defaultZqTests, zqTensorTests) where
 
+import Crypto.Lol (Complex, Int64)
 import Crypto.Lol.Factored
-import Crypto.Lol.Tests.CycTests
 import Crypto.Lol.Tests.TensorTests
 import Crypto.Lol.Tests.ZqTests
 import Crypto.Lol.Utils.ShowType
 import Crypto.Lol.Types.IrreducibleChar2 ()
 
+import Control.Monad.Random
 import Data.Proxy
-import Test.Framework
+import qualified Test.Framework as TF
+import qualified Test.QuickCheck as QC
+import Test.QuickCheck.Gen (chooseAny)
 
 -- | Default parameters for 'Crypto.Lol.Types.Unsafe.ZqBasic' tests.
-defaultZqTests :: Test
-defaultZqTests = testGroup "Zq Tests" $ [
+defaultZqTests :: TF.Test
+defaultZqTests = TF.testGroup "Zq Tests" $ [
   zqTests (Proxy::Proxy (Zq 3)),
   zqTests (Proxy::Proxy (Zq 7)),
   zqTests (Proxy::Proxy (Zq (3 ** 5))),
   zqTests (Proxy::Proxy (Zq (3 ** 5 ** 7)))]
 
+-- TODO: Rename this to something more like testSingleIndexWithCRT. Continuing the convention,
+--         tensorTests2 should be named testMultiIndexWithCRT. And the tests for Int64 should be the
+--         same except "WithoutCRT"
+
+unifTensorTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> TF.Test
+unifTensorTests1 pmr pt =
+  let genTensor = chooseAny :: QC.Gen (t m r) in
+  tensorTests1 genTensor
+
+unifTensorCrtTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> TF.Test
+unifTensorCrtTests1 pmr pt =
+  let genRing   = chooseAny :: QC.Gen r
+      genTensor = chooseAny :: QC.Gen (t m r) in
+  tensorCrtTests1 genRing genTensor
+
+zqTensorTests :: _ => Proxy t -> TF.Test
+zqTensorTests pt =
+  let uniIndexWithoutCRT = TF.testGroup "Tensor Tests over ZqBasic" $ ($ pt) <$> [
+        unifTensorTests1 (Proxy::Proxy '(F7,  Zq 29)),
+        unifTensorTests1 (Proxy::Proxy '(F12, SmoothZQ1)),
+        unifTensorTests1 (Proxy::Proxy '(F1,  Zq 17)),
+        unifTensorTests1 (Proxy::Proxy '(F2,  Zq 17)),
+        unifTensorTests1 (Proxy::Proxy '(F4,  Zq 17)),
+        unifTensorTests1 (Proxy::Proxy '(F8,  Zq 17)),
+        unifTensorTests1 (Proxy::Proxy '(F21, Zq 8191)),
+        unifTensorTests1 (Proxy::Proxy '(F42, Zq 8191)),
+        unifTensorTests1 (Proxy::Proxy '(F42, ZQ1)),
+        unifTensorTests1 (Proxy::Proxy '(F89, Zq 179))]
+      uniIndexWithCRT = TF.testGroup "TensorCRT Tests over ZqBasic" $ ($ pt) <$> [
+        unifTensorCrtTests1 (Proxy::Proxy '(F7,  Zq 29)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F12, SmoothZQ1)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F1,  Zq 17)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F2,  Zq 17)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F4,  Zq 17)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F8,  Zq 17)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F21, Zq 8191)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F42, Zq 8191)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F42, ZQ1)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F89, Zq 179))] in
+  TF.testGroup "All Tensor-like Tests over ZqBasic" [uniIndexWithoutCRT, uniIndexWithCRT]
+
+{-
 -- | Default @m@/@r@ test parameters, for an arbitrary 'Crypto.Lol.Cyclotomic.Tensor'.
-defaultLolTests :: _ => Proxy t -> [Test]
-defaultLolTests pt = [
-  testGroup "Tensor Tests" $ ($ pt) <$> [
-    tensorTests1 (Proxy::Proxy '(F7,  Zq 29)),
-    tensorTests1 (Proxy::Proxy '(F12, SmoothZQ1)),
-    tensorTests1 (Proxy::Proxy '(F1,  Zq 17)),
-    tensorTests1 (Proxy::Proxy '(F2,  Zq 17)),
-    tensorTests1 (Proxy::Proxy '(F4,  Zq 17)),
-    tensorTests1 (Proxy::Proxy '(F8,  Zq 17)),
-    tensorTests1 (Proxy::Proxy '(F21, Zq 8191)),
-    tensorTests1 (Proxy::Proxy '(F42, Zq 8191)),
-    tensorTests1 (Proxy::Proxy '(F42, ZQ1)),
-    tensorTests1 (Proxy::Proxy '(F89, Zq 179)),
+zqTensorTests :: _ => Proxy t -> [Test]
+zqTensorTests pt = [
+  testGroup "Tensor Tests over ZqBasic" $ ($ pt) <$> [
+    testSingleIndexWithCRT (Proxy::Proxy '(F7,  Zq 29)),
+    testSingleIndexWithCRT (Proxy::Proxy '(F12, SmoothZQ1)),
+    testSingleIndexWithCRT (Proxy::Proxy '(F1,  Zq 17)),
+    testSingleIndexWithCRT (Proxy::Proxy '(F2,  Zq 17)),
+    testSingleIndexWithCRT (Proxy::Proxy '(F4,  Zq 17)),
+    testSingleIndexWithCRT (Proxy::Proxy '(F8,  Zq 17)),
+    testSingleIndexWithCRT (Proxy::Proxy '(F21, Zq 8191)),
+    testSingleIndexWithCRT (Proxy::Proxy '(F42, Zq 8191)),
+    testSingleIndexWithCRT (Proxy::Proxy '(F42, ZQ1)),
+    testSingleIndexWithCRT (Proxy::Proxy '(F89, Zq 179)),
 
-    tensorTests2 (Proxy::Proxy '(F1, F7,  Zq 29)),
-    tensorTests2 (Proxy::Proxy '(F4, F12, Zq 536871001)),
-    tensorTests2 (Proxy::Proxy '(F4, F12, SmoothZQ1)),
-    tensorTests2 (Proxy::Proxy '(F2, F8,  Zq 17)),
-    tensorTests2 (Proxy::Proxy '(F8, F8,  Zq 17)),
-    tensorTests2 (Proxy::Proxy '(F2, F8,  SmoothZQ1)),
-    tensorTests2 (Proxy::Proxy '(F4, F8,  Zq 17)),
-    tensorTests2 (Proxy::Proxy '(F3, F21, Zq 8191)),
-    tensorTests2 (Proxy::Proxy '(F7, F21, Zq 8191)),
-    tensorTests2 (Proxy::Proxy '(F3, F42, Zq 8191))],
+    testMultiIndexWithCRT (Proxy::Proxy '(F1, F7,  Zq 29)),
+    testMultiIndexWithCRT (Proxy::Proxy '(F4, F12, Zq 536871001)),
+    testMultiIndexWithCRT (Proxy::Proxy '(F4, F12, SmoothZQ1)),
+    testMultiIndexWithCRT (Proxy::Proxy '(F2, F8,  Zq 17)),
+    testMultiIndexWithCRT (Proxy::Proxy '(F8, F8,  Zq 17)),
+    testMultiIndexWithCRT (Proxy::Proxy '(F2, F8,  SmoothZQ1)),
+    testMultiIndexWithCRT (Proxy::Proxy '(F4, F8,  Zq 17)),
+    testMultiIndexWithCRT (Proxy::Proxy '(F3, F21, Zq 8191)),
+    testMultiIndexWithCRT (Proxy::Proxy '(F7, F21, Zq 8191)),
+    testMultiIndexWithCRT (Proxy::Proxy '(F3, F42, Zq 8191))]
+  ]
 
-  testGroup "Cyc Tests" $ ($ pt) <$> [
-    cycTests1    (Proxy::Proxy '(F7,  Zq 29)),
-    cycTests1    (Proxy::Proxy '(F7,  Zq 32)),
-    cycTests1    (Proxy::Proxy '(F12, SmoothZQ1)),
-    cycTests1    (Proxy::Proxy '(F1,  Zq 17)),
-    cycTests1    (Proxy::Proxy '(F2,  Zq 17)),
-    cycTests1    (Proxy::Proxy '(F4,  Zq 17)),
-    cycTests1    (Proxy::Proxy '(F8,  Zq 17)),
-    cycTests1    (Proxy::Proxy '(F21, Zq 8191)),
-    cycTests1    (Proxy::Proxy '(F42, Zq 8191)),
-    cycTests1    (Proxy::Proxy '(F42, ZQ1)),
-    cycTests1    (Proxy::Proxy '(F42, Zq 1024)),
-    cycTests1    (Proxy::Proxy '(F42, ZQ2)),
-    cycTests1    (Proxy::Proxy '(F89, Zq 179)),
+int64Tests :: _ => Proxy t -> [Test]
+int64Tests pt = [
+  testGroup "Tensor Tests over Int64" $ ($ pt) <$> [
+    testSingleIndexWithoutCRT (Proxy::Proxy '(F7,  Int64)),
+    testSingleIndexWithoutCRT (Proxy::Proxy '(F12, Int64)),
+    testSingleIndexWithoutCRT (Proxy::Proxy '(F1,  Int64)),
+    testSingleIndexWithoutCRT (Proxy::Proxy '(F2,  Int64)),
+    testSingleIndexWithoutCRT (Proxy::Proxy '(F4,  Int64)),
+    testSingleIndexWithoutCRT (Proxy::Proxy '(F8,  Int64)),
+    testSingleIndexWithoutCRT (Proxy::Proxy '(F21, Int64)),
+    testSingleIndexWithoutCRT (Proxy::Proxy '(F42, Int64)),
+    testSingleIndexWithoutCRT (Proxy::Proxy '(F42, Int64)),
+    testSingleIndexWithoutCRT (Proxy::Proxy '(F89, Int64)),
 
-    cycTests2    (Proxy::Proxy '(H01, H1, Zq PP2)),
-    cycTests2    (Proxy::Proxy '(H01, H1, Zq PP4)),
-    cycTests2    (Proxy::Proxy '(H01, H1, Zq PP8)),
-    cycTests2    (Proxy::Proxy '(H01, H1, Zq PP16)),
+    testMultiIndexWithoutCRT (Proxy::Proxy '(F1, F7,  Int64)),
+    testMultiIndexWithoutCRT (Proxy::Proxy '(F4, F12, Int64)),
+    testMultiIndexWithoutCRT (Proxy::Proxy '(F4, F12, Int64)),
+    testMultiIndexWithoutCRT (Proxy::Proxy '(F2, F8,  Int64)),
+    testMultiIndexWithoutCRT (Proxy::Proxy '(F8, F8,  Int64)),
+    testMultiIndexWithoutCRT (Proxy::Proxy '(F2, F8,  Int64)),
+    testMultiIndexWithoutCRT (Proxy::Proxy '(F4, F8,  Int64)),
+    testMultiIndexWithoutCRT (Proxy::Proxy '(F3, F21, Int64)),
+    testMultiIndexWithoutCRT (Proxy::Proxy '(F7, F21, Int64)),
+    testMultiIndexWithoutCRT (Proxy::Proxy '(F3, F42, Int64))]
+  ]
 
-    cycTests2    (Proxy::Proxy '(H12, H2, Zq PP2)),
-    cycTests2    (Proxy::Proxy '(H12, H2, Zq PP4)),
-    cycTests2    (Proxy::Proxy '(H12, H2, Zq PP8)),
-    cycTests2    (Proxy::Proxy '(H12, H2, Zq PP16)),
+complexDoubleTests :: _ => Proxy t -> [Test]
+complexDoubleTests pt = [
+  testGroup "Tensor Tests over Complex Double" $ ($ pt) <$> [
+    testSingleIndexWithCRT (Proxy::Proxy '(F7,  (Complex Double))),
+    testSingleIndexWithCRT (Proxy::Proxy '(F12, (Complex Double))),
+    testSingleIndexWithCRT (Proxy::Proxy '(F1,  (Complex Double))),
+    testSingleIndexWithCRT (Proxy::Proxy '(F2,  (Complex Double))),
+    testSingleIndexWithCRT (Proxy::Proxy '(F4,  (Complex Double))),
+    testSingleIndexWithCRT (Proxy::Proxy '(F8,  (Complex Double))),
+    testSingleIndexWithCRT (Proxy::Proxy '(F21, (Complex Double))),
+    testSingleIndexWithCRT (Proxy::Proxy '(F42, (Complex Double))),
+    testSingleIndexWithCRT (Proxy::Proxy '(F42, (Complex Double))),
+    testSingleIndexWithCRT (Proxy::Proxy '(F89, (Complex Double))),
 
-    cycTests2    (Proxy::Proxy '(H23, H3, Zq PP2)),
-    cycTests2    (Proxy::Proxy '(H23, H3, Zq PP4)),
-    cycTests2    (Proxy::Proxy '(H23, H3, Zq PP8)),
-    cycTests2    (Proxy::Proxy '(H23, H3, Zq PP16)),
-
-    cycTests2    (Proxy::Proxy '(H34, H4, Zq PP2)),
-    cycTests2    (Proxy::Proxy '(H34, H4, Zq PP4)),
-    cycTests2    (Proxy::Proxy '(H34, H4, Zq PP8)),
-    cycTests2    (Proxy::Proxy '(H34, H4, Zq PP16)),
-
-    cycTests2    (Proxy::Proxy '(H45, H5, Zq PP2)),
-    cycTests2    (Proxy::Proxy '(H45, H5, Zq PP4)),
-    cycTests2    (Proxy::Proxy '(H45, H5, Zq PP8)),
-    cycTests2    (Proxy::Proxy '(H45, H5, Zq PP16)),
-
-    cycTests2    (Proxy::Proxy '(F4, F28, Zq PP2)),
-    cycTests2    (Proxy::Proxy '(F4, F28, Zq PP4)),
-    cycTests2    (Proxy::Proxy '(F4, F28, Zq PP8)),
-    cycTests2    (Proxy::Proxy '(F7, F7*F13, Zq PP2)),
-    cycTests2    (Proxy::Proxy '(F7, F7*F13, Zq PP4)),
-    cycTests2    (Proxy::Proxy '(F1, F7, Zq PP8)),
-    cycTests2    (Proxy::Proxy '(F1, F7, Zq PP2))]]
+    testMultiIndexWithCRT (Proxy::Proxy '(F1, F7,  (Complex Double))),
+    testMultiIndexWithCRT (Proxy::Proxy '(F4, F12, (Complex Double))),
+    testMultiIndexWithCRT (Proxy::Proxy '(F4, F12, (Complex Double))),
+    testMultiIndexWithCRT (Proxy::Proxy '(F2, F8,  (Complex Double))),
+    testMultiIndexWithCRT (Proxy::Proxy '(F8, F8,  (Complex Double))),
+    testMultiIndexWithCRT (Proxy::Proxy '(F2, F8,  (Complex Double))),
+    testMultiIndexWithCRT (Proxy::Proxy '(F4, F8,  (Complex Double))),
+    testMultiIndexWithCRT (Proxy::Proxy '(F3, F21, (Complex Double))),
+    testMultiIndexWithCRT (Proxy::Proxy '(F7, F21, (Complex Double))),
+    testMultiIndexWithCRT (Proxy::Proxy '(F3, F42, (Complex Double)))]
+  ]
+-}
 
 -- three 24-bit moduli, enough to handle rounding for p=32 (depth-4 circuit at ~17 bits per mul)
 type ZQ1 = Zq 18869761
-type ZQ2 = Zq (19393921 ** 18869761)
-type ZQ3 = Zq (19918081 ** 19393921 ** 18869761)
 
 type SmoothZQ1 = Zq 2148249601
-type SmoothZQ3 = Zq (2148854401 ** 2148249601 ** 2150668801)
-
---type H0 = F128
-type H01 = F64
-type H1 = F64 * F7
-type H12 = F32 * F7
-type H2 = F32 * F7 * F13
-type H23 = F8 * F7 * F13
-type H3 = F8 * F5 * F7 * F13
-type H34 = F4 * F5 * F7 * F13
-type H4 = F4 * F3 * F5 * F7 * F13
-type H45 = F3 * F5 * F7 * F13
-type H5 = F9 * F5 * F7 * F13

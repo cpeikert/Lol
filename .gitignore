@@ -10,3 +10,4 @@ lol-cpp/lib
 **/TAGS
 **/*.hi
 **/*.hspp
+**/*.dyn_*

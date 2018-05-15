@@ -34,7 +34,7 @@ indexing.
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Crypto.Lol.Cyclotomic.Tensor
-( Tensor(..), TensorCRT(..), TensorGaussian(..), TensorCRTSet(..)
+( Tensor(..), TensorCRT(..), TensorGaussian(..), TensorGSqNorm(..), TensorCRTSet(..)
 -- * Top-level CRT functions
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
@@ -102,12 +102,6 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
   -- exactly when the input is not divisible by \(g_m\).
   divGPow, divGDec :: Fact m => t m r -> Maybe (t m r)
 
-  -- | Given the coefficient tensor of \(e\) with respect to the
-  -- decoding basis of \(R\), yield the (scaled) squared norm of
-  -- \(g_m \cdot e\) under the canonical embedding, namely,
-  -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\).
-  gSqNormDec :: Fact m => t m r -> r
-
   -- | The @twace@ linear transformation, which is the same in both the
   -- powerful and decoding bases.
   twacePowDec :: (m `Divides` m') => t m' r -> t m r
@@ -148,12 +142,20 @@ class (Tensor t r, Ring r, ForallFact2 (Module.C r) t r) => TensorCRT t r where
                  mon (t m' r -> t m  r, -- twaceCRT
                       t m  r -> t m' r) -- embedCRT
 
--- | A 'Tensor' that supports Gaussian sampling for the element type 'q'.
-class (Tensor t q) => TensorGaussian t q where
+-- | A coefficient tensor that supports Gaussian sampling.
+class TensorGaussian t q where
   -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\)
   -- in the decoding basis, where \(D\) has scaled variance \(v\).
   tweakedGaussianDec :: (ToRational v, Fact m, MonadRandom rnd)
                         => v -> rnd (t m q)
+
+-- | A coefficient tensor that supports taking norms under the canonical embedding.
+class TensorGSqNorm t r where
+  -- | Given the coefficient tensor of \(e\) with respect to the
+  -- decoding basis of \(R\), yield the (scaled) squared norm of
+  -- \(g_m \cdot e\) under the canonical embedding, namely,
+  -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\).
+  gSqNormDec :: Fact m => t m r -> r
 
 -- | A 'Tensor' that supports relative CRT sets for the element type
 -- 'fp' representing a prime-order finite field.

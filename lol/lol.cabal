@@ -92,6 +92,7 @@ library
     Crypto.Proto.Lol.R
     Crypto.Proto.Lol.Rq
     Crypto.Proto.Lol.RqProduct
+    Crypto.Proto.Lol.K
     Crypto.Proto.Lol.Kq
     Crypto.Proto.Lol.KqProduct
     Crypto.Proto.Lol.TypeRep

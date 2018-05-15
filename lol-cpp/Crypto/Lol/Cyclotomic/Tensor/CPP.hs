@@ -109,13 +109,13 @@ instance Eq r => Eq (CT m r) where
   x@(CT _) == y = x == toCT y
   y == x@(CT _) = x == toCT y
 
-instance (Protoable (IZipVector m r), Fact m, Storable r) => Protoable (CT m r) where
+instance (ForallFact2 Protoable IZipVector r, Fact m, Storable r) => Protoable (CT m r) where
   type ProtoType (CT m r) = ProtoType (IZipVector m r)
 
-  toProto x@(CT _) = toProto $ toZV x
-  toProto (ZV x) = toProto x
+  toProto x@(CT _) = toProto $ toZV x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
+  toProto (ZV x) = toProto x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
 
-  fromProto x = toCT <$> ZV <$> fromProto x
+  fromProto x = toCT <$> ZV <$> fromProto x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
@@ -205,7 +205,7 @@ instance Fact m => Traversable (CT m) where
   traverse f (ZV v) = ZV <$> T.traverse f v
 
 instance TensorGaussian CT Double where
-  tweakedGaussianDec v = CT <$> cDispatchGaussian v
+  tweakedGaussianDec v = CT <$> cDispatchGaussianDouble v
 
 instance (Tensor CT (ZqBasic q Int64), PrimeField (ZqBasic q Int64))
     => TensorCRTSet CT (ZqBasic q Int64) where
@@ -222,74 +222,149 @@ instance IFunctor CT where
   zipWithI f (ZV v) (CT sv) = zipWithI f (CT $ zvToCT' v) (CT sv)
   zipWithI f (ZV v1) (ZV v2) = zipWithI f (CT $ zvToCT' v1) (CT $ zvToCT' v2)
 
--- TODO: make all of dispatched functions type-specific (kill the Dispatch' type class)
-#define TENSOR_DEF(ring_ty, ...) \
-    instance (__VA_ARGS__) => Tensor CT (ring_ty) where \
-      scalarPow = CT . scalarPow' ;\
-     \
-      l = wrap $ basicDispatch dl ;\
-      lInv = wrap $ basicDispatch dlinv ;\
-     \
-      mulGPow = wrap $ basicDispatch dmulgpow ;\
-      mulGDec = wrap $ basicDispatch dmulgdec ;\
-     \
-      divGPow = wrapM $ dispatchGInv dginvpow ;\
-      divGDec = wrapM $ dispatchGInv dginvdec ;\
-     \
-      gSqNormDec (CT v) = untag gSqNormDec' v ;\
-      gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v) ;\
-     \
-      twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec' ;\
-      embedPow = wrap $ runIdentity $ coerceEm embedPow' ;\
-      embedDec = wrap $ runIdentity $ coerceEm embedDec' ;\
-     \
-      coeffs = wrapM $ coerceCoeffs coeffs' ;\
-     \
-      powBasisPow = (CT <$>) <$> coerceBasis powBasisPow' ;\
-     \
-      {-# INLINABLE scalarPow #-} ;\
-      {-# INLINABLE l #-} ;\
-      {-# INLINABLE lInv #-} ;\
-      {-# INLINABLE mulGPow #-} ;\
-      {-# INLINABLE mulGDec #-} ;\
-      {-# INLINABLE divGPow #-} ;\
-      {-# INLINABLE divGDec #-} ;\
-      {-# INLINABLE twacePowDec #-} ;\
-      {-# INLINABLE embedPow #-} ;\
-      {-# INLINABLE embedDec #-} ;\
-      {-# INLINABLE gSqNormDec #-} ;\
-      {-# INLINABLE coeffs #-} ;\
-      {-# INLINABLE powBasisPow #-} ;\
+instance Reflects q Int64 => Tensor CT (ZqBasic q Int64) where
+  scalarPow = CT . scalarPow'
 
-#define TENSORCRT_DEF(ring_ty, ...) \
-    instance (__VA_ARGS__) => TensorCRT CT (ring_ty) where \
-      crtFuncs = (,,,,) <$> \
-        return (CT . repl) <*> \
-        (wrap . untag (cZipDispatch dmul) <$> gCRT) <*> \
-        (wrap . untag (cZipDispatch dmul) <$> gInvCRT) <*> \
-        (wrap <$> untagT ctCRT) <*> \
-        (wrap <$> untagT ctCRTInv) ;\
-     \
-      crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT') ;\
-     \
-      {-# INLINABLE crtFuncs #-} ;\
-      {-# INLINE crtExtFuncs #-} ;\
+  l = wrap $ basicDispatch dlZq
+  lInv = wrap $ basicDispatch dlinvZq
 
-TENSOR_DEF(Int64)
-TENSOR_DEF(ZqBasic q Int64, Reflects q Int64)
-TENSOR_DEF(Double)
+  mulGPow = wrap $ basicDispatch dmulgpowZq
+  mulGDec = wrap $ basicDispatch dmulgdecZq
 
-TENSORCRT_DEF(Int64)
-TENSORCRT_DEF(ZqBasic q Int64, Reflects q Int64)
-TENSORCRT_DEF(Double)
+  divGPow = wrapM $ dispatchGInv dginvpowZq
+  divGDec = wrapM $ dispatchGInv dginvdecZq
+
+  twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
+  embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+
+  coeffs = wrapM $ coerceCoeffs coeffs'
+
+  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+
+  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE l #-}
+  {-# INLINABLE lInv #-}
+  {-# INLINABLE mulGPow #-}
+  {-# INLINABLE mulGDec #-}
+  {-# INLINABLE divGPow #-}
+  {-# INLINABLE divGDec #-}
+  {-# INLINABLE twacePowDec #-}
+  {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
+  {-# INLINABLE coeffs #-}
+  {-# INLINABLE powBasisPow #-}
+
+instance Reflects q Int64 => TensorCRT CT (ZqBasic q Int64) where
+  crtFuncs = (,,,,) <$>
+    return (CT . repl) <*>
+    (wrap . untag (cZipDispatch dmulZq) <$> gCRT) <*>
+    (wrap . untag (cZipDispatch dmulZq) <$> gInvCRT) <*>
+    (wrap <$> untagT ctCRTZq) <*>
+    (wrap <$> untagT ctCRTInvZq)
+
+  crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT')
+
+  {-# INLINABLE crtFuncs #-}
+  {-# INLINE crtExtFuncs #-}
+
+instance Tensor CT (Complex Double) where
+  scalarPow = CT . scalarPow'
+
+  l = wrap $ basicDispatch dlC
+  lInv = wrap $ basicDispatch dlinvC
+
+  mulGPow = wrap $ basicDispatch dmulgpowC
+  mulGDec = wrap $ basicDispatch dmulgdecC
+
+  divGPow = wrapM $ dispatchGInv dginvpowC
+  divGDec = wrapM $ dispatchGInv dginvdecC
+
+  twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
+  embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+
+  coeffs = wrapM $ coerceCoeffs coeffs'
+
+  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+
+  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE l #-}
+  {-# INLINABLE lInv #-}
+  {-# INLINABLE mulGPow #-}
+  {-# INLINABLE mulGDec #-}
+  {-# INLINABLE divGPow #-}
+  {-# INLINABLE divGDec #-}
+  {-# INLINABLE twacePowDec #-}
+  {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
+  {-# INLINABLE coeffs #-}
+  {-# INLINABLE powBasisPow #-}
+
+instance TensorCRT CT (Complex Double) where
+  crtFuncs = (,,,,) <$>
+    return (CT . repl) <*>
+    (wrap . untag (cZipDispatch dmulC) <$> gCRT) <*>
+    (wrap . untag (cZipDispatch dmulC) <$> gInvCRT) <*>
+    (wrap <$> untagT ctCRTC) <*>
+    (wrap <$> untagT ctCRTInvC)
+
+  crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT')
+
+  {-# INLINABLE crtFuncs #-}
+  {-# INLINE crtExtFuncs #-}
+
+instance TensorGSqNorm CT Double where
+  gSqNormDec (CT v) = untag gSqNormDecDouble v
+  gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
+
+  {-# INLINABLE gSqNormDec #-}
+
+instance Tensor CT Int64 where
+  scalarPow = CT . scalarPow'
+
+  l = wrap $ basicDispatch dlInt64
+  lInv = wrap $ basicDispatch dlinvInt64
+
+  mulGPow = wrap $ basicDispatch dmulgpowInt64
+  mulGDec = wrap $ basicDispatch dmulgdecInt64
+
+  divGPow = wrapM $ dispatchGInv dginvpowInt64
+  divGDec = wrapM $ dispatchGInv dginvdecInt64
+
+  twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
+  embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+
+  coeffs = wrapM $ coerceCoeffs coeffs'
+
+  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+
+  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE l #-}
+  {-# INLINABLE lInv #-}
+  {-# INLINABLE mulGPow #-}
+  {-# INLINABLE mulGDec #-}
+  {-# INLINABLE divGPow #-}
+  {-# INLINABLE divGDec #-}
+  {-# INLINABLE twacePowDec #-}
+  {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
+  {-# INLINABLE coeffs #-}
+  {-# INLINABLE powBasisPow #-}
+
+instance TensorGSqNorm CT Int64 where
+  gSqNormDec (CT v) = untag gSqNormDecInt64 v
+  gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
+
+  {-# INLINABLE gSqNormDec #-}
+
 
 -- Need this for the ForallFact2 Module entailment below
 instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
   (*>) r = wrap $ coerce $ SV.map (r*)
 
 ---------- Entailments for CT ----------
-
--- TODO: Make ForallFact2 Protoable CT r that drops to CT'
 
 instance (Ring r, Storable r) => ForallFact2 (Module.C r) CT r where
   entailFact2 = Sub Dict
@@ -304,6 +379,9 @@ instance (ZeroTestable r, Storable r) => ForallFact2 ZeroTestable.C CT r where
   entailFact2 = Sub Dict
 
 instance (Additive fp, Storable fp, GFCtx fp d) => ForallFact2 (Module.C (GF fp d)) CT fp where
+  entailFact2 = Sub Dict
+
+instance (ForallFact2 Protoable IZipVector r, Storable r) => ForallFact2 Protoable CT r where
   entailFact2 = Sub Dict
 
 ---------- Helper functions for coercion ----------
@@ -361,25 +439,43 @@ basicDispatch :: (Storable r, Fact m)
                      -> CT' m r -> CT' m r
 basicDispatch f = unsafePerformIO . withBasicArgs f
 
-gSqNormDec' :: (Storable r, Fact m, Dispatch r)
-               => Tagged m (CT' m r -> r)
-gSqNormDec' = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnorm
+gSqNormDecDouble :: Fact m => Tagged m (CT' m Double -> Double)
+gSqNormDecDouble = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnormDouble
 
-ctCRT :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
-         => TaggedT m mon (CT' m r -> CT' m r)
-ctCRT = do
+gSqNormDecInt64 :: Fact m => Tagged m (CT' m Int64 -> Int64)
+gSqNormDecInt64 = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnormInt64
+
+ctCRTZq :: (Fact m, Reflects q Int64, CRTrans mon (ZqBasic q Int64))
+           => TaggedT m mon (CT' m (ZqBasic q Int64) -> CT' m (ZqBasic q Int64))
+ctCRTZq = do
   ru' <- ru
   return $ \x -> unsafePerformIO $
-    withPtrArray ru' (flip withBasicArgs x . dcrt)
+    withPtrArray ru' (flip withBasicArgs x . dcrtZq)
 
 -- CTensor CRT^(-1) functions take inverse rus
-ctCRTInv :: (Storable r, CRTrans mon r, Dispatch r, Fact m)
-         => TaggedT m mon (CT' m r -> CT' m r)
-ctCRTInv = do
+ctCRTInvZq :: (Fact m, Reflects q Int64, CRTrans mon (ZqBasic q Int64))
+              => TaggedT m mon (CT' m (ZqBasic q Int64) -> CT' m (ZqBasic q Int64))
+ctCRTInvZq = do
   mhatInv <- snd <$> crtInfo
   ruinv' <- ruInv
   return $ \x -> unsafePerformIO $
-    withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinv ruptr))
+    withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinvZq ruptr))
+
+ctCRTC :: (CRTrans mon (Complex Double), Fact m)
+          => TaggedT m mon (CT' m (Complex Double) -> CT' m (Complex Double))
+ctCRTC = do
+  ru' <- ru
+  return $ \x -> unsafePerformIO $
+    withPtrArray ru' (flip withBasicArgs x . dcrtC)
+
+-- CTensor CRT^(-1) functions take inverse rus
+ctCRTInvC :: (CRTrans mon (Complex Double), Fact m)
+          => TaggedT m mon (CT' m (Complex Double) -> CT' m (Complex Double))
+ctCRTInvC = do
+  mhatInv <- snd <$> crtInfo
+  ruinv' <- ruInv
+  return $ \x -> unsafePerformIO $
+    withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinvC ruptr))
 
 cZipDispatch :: (Storable r, Fact m)
   => (Ptr r -> Ptr r -> Int64 -> IO ())
@@ -393,11 +489,9 @@ cZipDispatch f = do -- in Tagged m
         f pout pin totm))
     unsafeFreeze yout
 
-cDispatchGaussian :: forall m r var rnd .
-         (Storable r, Transcendental r, Dispatch r, Ord r,
-          Fact m, ToRational var, Random r, MonadRandom rnd)
-         => var -> rnd (CT' m r)
-cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
+cDispatchGaussianDouble :: forall m var rnd . (Fact m, ToRational var, MonadRandom rnd)
+  => var -> rnd (CT' m Double)
+cDispatchGaussianDouble var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   -- get rus for (Complex r)
   -- takes ru (not ruInv) to match RT
   ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) ru
@@ -406,7 +500,7 @@ cDispatchGaussian var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   rad <- pureT radicalFact
   yin <- T.lift $ realGaussians (var * fromIntegral (mval `div` rad)) totm
   return $ unsafePerformIO $
-    withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdec ruptr) (CT' yin))
+    withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdecDouble ruptr) (CT' yin))
 
 ---------- Misc instances and arithmetic ----------
 

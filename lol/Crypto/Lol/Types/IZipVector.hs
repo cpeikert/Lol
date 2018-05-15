@@ -37,6 +37,7 @@ import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Unsafe.RRq
 import Crypto.Lol.Types.Unsafe.ZqBasic
 
+import Crypto.Proto.Lol.K
 import Crypto.Proto.Lol.Kq
 import Crypto.Proto.Lol.KqProduct
 import Crypto.Proto.Lol.R
@@ -50,6 +51,7 @@ import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Except
 
+import Data.Constraint  hiding ((***))
 import Data.Foldable    as F
 import Data.Sequence    as S
 import Data.Traversable
@@ -112,6 +114,27 @@ instance (Fact m) => Protoable (IZipVector m Int64) where
     in R{..}
 
   fromProto R{..} = do
+    let m' = proxy valueFact (Proxy::Proxy m) :: Int
+        n = proxy totientFact (Proxy::Proxy m)
+        ys' = V.fromList $ F.toList xs
+        len = F.length xs
+    unless (m' == fromIntegral m) $ throwError $
+      "An error occurred while reading the proto type for CT.\n\
+      \Expected m=" ++ show m' ++ ", got " ++ show m
+    unless (len == n) $ throwError $
+      "An error occurred while reading the proto type for CT.\n\
+      \Expected n=" ++ show n  ++ ", got " ++ show len
+    return $ IZipVector ys'
+
+instance (Fact m) => Protoable (IZipVector m Double) where
+  type ProtoType (IZipVector m Double) = K
+
+  toProto (IZipVector xs') =
+    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+        xs = S.fromList $ V.toList xs'
+    in K{..}
+
+  fromProto K{..} = do
     let m' = proxy valueFact (Proxy::Proxy m) :: Int
         n = proxy totientFact (Proxy::Proxy m)
         ys' = V.fromList $ F.toList xs
@@ -234,3 +257,15 @@ fromProtoNestRight box unbox xs = do
   a' <- fromProto $ box $ singleton a
   bs' <- fromProto $ box bs
   return $ zipIZV a' bs'
+
+instance ForallFact2 Protoable IZipVector Int64 where
+  entailFact2 = Sub Dict
+
+instance Reflects q Int64 => ForallFact2 Protoable IZipVector (ZqBasic q Int64) where
+  entailFact2 = Sub Dict
+
+instance ForallFact2 Protoable IZipVector Double where
+  entailFact2 = Sub Dict
+
+instance Reflects q Double => ForallFact2 Protoable IZipVector (RRq q Double) where
+  entailFact2 = Sub Dict

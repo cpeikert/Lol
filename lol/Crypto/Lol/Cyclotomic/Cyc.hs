@@ -465,10 +465,10 @@ instance GaussianCyc (CycG t) Double => GaussianCyc (Cyc t) Double where
 -- CJP: no GaussianCyc for Int64, ZqBasic, or pairs
 
 -- | uses 'Double' precision for the intermediate Gaussian samples
-instance (TensorGaussian t Double, ToInteger z, IFElt t z)
+instance (TensorGaussian t Double, IFElt t Double, IFunctor t, ToInteger z, IFElt t z)
   => RoundedGaussianCyc (CycG t) z where
   {-# INLINABLE roundedGaussian #-}
-  roundedGaussian = (Dec <$>) . R.roundedGaussian
+  roundedGaussian = fmap Dec . R.roundedGaussian
 
 -- | uses 'Double' precision for the intermediate Gaussian samples
 instance RoundedGaussianCyc (CycG t) Int64 => RoundedGaussianCyc (Cyc t) Int64 where
@@ -477,8 +477,8 @@ instance RoundedGaussianCyc (CycG t) Int64 => RoundedGaussianCyc (Cyc t) Int64 w
 -- CJP: no RoundedGaussianCyc for Double, ZqBasic, or pairs
 
 -- | uses 'Double' precision for the intermediate Gaussian samples
-instance (TensorGaussian t Double, Mod zp, Lift zp (ModRep zp),
-          CRTElt t zp, IFElt t (LiftOf zp))
+instance (TensorGaussian t Double, IFElt t Double, IFunctor t, Mod zp,
+          Lift zp (ModRep zp), CRTElt t zp, IFElt t (LiftOf zp))
   => CosetGaussianCyc (CycG t) zp where
   {-# INLINABLE cosetGaussian #-}
   cosetGaussian v = (Dec <$>) . R.cosetGaussian v . uncycDec
