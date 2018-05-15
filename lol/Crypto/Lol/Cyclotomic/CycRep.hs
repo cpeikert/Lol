@@ -590,16 +590,14 @@ instance (Fact m, ForallFact1 Foldable t) => Foldable (CycRep t C m) where
 
 
 instance (Fact m, ForallFact1 Traversable t,
-          -- for superclass constraints of Traversable
-          ForallFact1 Applicative t, ForallFact1 Foldable t)
+          ForallFact1 Applicative t) -- satisfy superclass
   => Traversable (CycRep t P m) where
   {-# INLINABLE traverse #-}
   traverse f (Pow v) = Pow <$> traverse f v
                        \\ (entailFact1 :: Fact m :- Traversable (t m))
 
 instance (Fact m, ForallFact1 Traversable t,
-          -- for superclass constraints of Traversable
-          ForallFact1 Applicative t, ForallFact1 Foldable t)
+          ForallFact1 Applicative t) -- satisfy superclass
   => Traversable (CycRep t D m) where
   {-# INLINABLE traverse #-}
   traverse f (Dec v) = Dec <$> traverse f v
