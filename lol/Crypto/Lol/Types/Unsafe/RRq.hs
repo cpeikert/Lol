@@ -37,6 +37,7 @@ import Algebra.ZeroTestable as ZeroTestable (C)
 
 import Control.DeepSeq
 
+
 import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
@@ -44,19 +45,19 @@ import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 -- invariant: 0 <= x < q
 -- | The additive group \( \R/(q\Z) \) of reals modulo 'q', using
 -- underlying floating type 'r'.
-newtype RRq q r = RRq' r
+newtype RRq q r = RRq r
     deriving (Eq, Ord, ZeroTestable.C, Show, NFData)
 
 {-# INLINABLE reduce' #-}
 reduce' :: forall q r . (Reflects q r, RealField r) => r -> RRq q r
 reduce' = let q = proxy value (Proxy::Proxy q)
-          in \x -> RRq' $ x - q * floor (x / q)
+          in \x -> RRq $ x - q * floor (x / q)
 
 -- puts value in range [-q/2, q/2)
 decode' :: forall q r . (Reflects q r, Ord r, Ring r)
            => RRq q r -> r
 decode' = let qval = proxy value (Proxy::Proxy q)
-          in \(RRq' x) -> if x + x < qval then x else x - qval
+          in \(RRq x) -> if x + x < qval then x else x - qval
 
 instance (Reflects q r, RealField r, Additive (RRq q r))
   => Reduce r (RRq q r) where
@@ -72,16 +73,16 @@ instance (Reflects q r, Reduce r (RRq q r), Ord r, Ring r)
 instance (Reflects q r, RealField r, Ord r) => Additive.C (RRq q r) where
 
   {-# INLINABLE zero #-}
-  zero = RRq' zero
+  zero = RRq zero
 
   {-# INLINABLE (+) #-}
   (+) = let qval = proxy value (Proxy::Proxy q)
-        in \ (RRq' x) (RRq' y) ->
+        in \ (RRq x) (RRq y) ->
         let z = x + y
-        in RRq' (if z >= qval then z - qval else z)
+        in RRq (if z >= qval then z - qval else z)
 
   {-# INLINABLE negate #-}
-  negate (RRq' x) = reduce' $ negate x
+  negate (RRq x) = reduce' $ negate x
 
 instance (ToInteger i, RealField r, Reflects q i, Reflects q r)
   => Subgroup (ZqBasic q i) (RRq q r) where
