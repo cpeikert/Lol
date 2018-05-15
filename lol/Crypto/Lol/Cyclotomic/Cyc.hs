@@ -93,7 +93,7 @@ import Control.Monad.Identity
 import Control.Monad.Random   hiding (lift)
 import Data.Coerce
 import Data.Constraint        ((:-), (\\))
-import Data.Foldable
+
 import Data.Traversable
 
 -- | Underlying GADT for a cyclotomic ring in one of several
@@ -230,12 +230,13 @@ instance (Eq r, Fact m, CRTElt t r, ForallFact2 Eq t r) => Eq (CycG t m r) where
   -- otherwise: compare in powerful basis
   c1 == c2 = toPow' c1 == toPow' c2
 
-deriving instance Eq (CycG t m Double) => Eq (Cyc t m Double)
-deriving instance Eq (CycG t m Int64) => Eq (Cyc t m Int64)
+deriving instance Eq (CycG t m Int64)         => Eq (Cyc t m Int64)
 deriving instance Eq (CycG t m (ZqBasic q z)) => Eq (Cyc t m (ZqBasic q z))
 
 instance (Eq (Cyc t m a), Eq (Cyc t m b)) => Eq (Cyc t m (a,b)) where
   (CycPair a b) == (CycPair a' b') = a == a' && b == b'
+
+-- no Eq for Double or RRq due to precision
 
 -----
 
@@ -354,14 +355,16 @@ instance (Fact m, CRTElt t r, ZeroTestable r) => Ring.C (CycG t m r) where
   -- ELSE: work in appropriate CRT rep
   c1 * c2 = toCRT' c1 * toCRT' c2
 
-deriving instance Ring (CycG t m Double) => Ring.C (Cyc t m Double)
-deriving instance Ring (CycG t m Int64) => Ring.C (Cyc t m Int64)
+deriving instance Ring (CycG t m Double)        => Ring.C (Cyc t m Double)
+deriving instance Ring (CycG t m Int64)         => Ring.C (Cyc t m Int64)
 deriving instance Ring (CycG t m (ZqBasic q z)) => Ring.C (Cyc t m (ZqBasic q z))
 
 instance (Ring (Cyc t m a), Ring (Cyc t m b)) => Ring.C (Cyc t m (a,b)) where
   one = CycPair one one
   fromInteger z = CycPair (fromInteger z) (fromInteger z)
   (CycPair a b) * (CycPair a' b') = CycPair (a*a') (b*b')
+
+-- no instance for RRq because it's not a ring
 
 -----
 
@@ -467,6 +470,7 @@ instance (TensorGaussian t Double, ToInteger z, IFElt t z)
   {-# INLINABLE roundedGaussian #-}
   roundedGaussian = (Dec <$>) . R.roundedGaussian
 
+-- | uses 'Double' precision for the intermediate Gaussian samples
 instance RoundedGaussianCyc (CycG t) Int64 => RoundedGaussianCyc (Cyc t) Int64 where
   roundedGaussian = fmap CycI64 . L.roundedGaussian
 
@@ -479,6 +483,7 @@ instance (TensorGaussian t Double, Mod zp, Lift zp (ModRep zp),
   {-# INLINABLE cosetGaussian #-}
   cosetGaussian v = (Dec <$>) . R.cosetGaussian v . uncycDec
 
+-- | uses 'Double' precision for the intermediate Gaussian samples
 instance (CosetGaussianCyc (CycG t) (ZqBasic q Int64))
   => CosetGaussianCyc (Cyc t) (ZqBasic q Int64) where
   cosetGaussian v = fmap CycI64 . L.cosetGaussian v . unCycZqB
@@ -578,6 +583,8 @@ cycLiftPow (Sub c) = Sub $ cycLiftPow c
 -- | Lift using the decoding basis.
 cycLiftDec c = Dec $ lift $ uncycDec c
 
+-- CJP TODO: set up a class for crtSet
+
 -- | The relative mod-@r@ CRT set of the extension.
 crtSet :: (m `Divides` m', ZPP r, CRTElt t r, TensorCRTSet t (ZpOf r))
        => Tagged m [CycG t m' r]
@@ -600,13 +607,19 @@ instance (Reduce a b, Fact m, CRTElt t a, CRTElt t b,
 
 instance Reduce (CycG t m Int64) (CycG t m (ZqBasic q Int64))
   => Reduce (Cyc t m Int64) (Cyc t m (ZqBasic q Int64)) where
-
   reduce = CycZqB . reduce . unCycI64
+
+instance (Reduce (Cyc t m r) (Cyc t m a), Reduce (Cyc t m r) (Cyc t m b))
+  => Reduce (Cyc t m r) (Cyc t m (a,b)) where
+  reduce r = CycPair (reduce r) (reduce r)
 
 -----
 
+-- CJP: can we avoid incoherent instances by changing instance heads
+-- and using overlapping instances with isomorphism constraints?
+
 instance {-# INCOHERENT #-} (Rescale a b, CRTElt t a, Tensor t b)
-    => RescaleCyc (CycG t) a b where
+  => RescaleCyc (CycG t) a b where
 
   -- Optimized for subring constructors, for powerful basis.
   -- Analogs for decoding basis are not quite correct, because (* -1)
@@ -646,6 +659,8 @@ instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
 
 -}
 
+{-
+
 -- CJP: do we really need these? Just have client call rescaleCyc
 -- multiple times?
 
@@ -681,11 +696,16 @@ instance (RescaleCyc (CycG t) (b,(c,(d,(e,f)))) f, Rescale (a,(b,(c,(d,(e,f)))))
     rescaleCyc bas (rescaleCyc bas a :: CycG t m (b,(c,(d,(e,f)))))
   {-# INLINABLE rescaleCyc #-}
 
+-}
+
 -----
 
 -- | promoted from base ring
-instance (Gadget gad zq, Fact m, CRTElt t zq, ZeroTestable zq, IntegralDomain zq)
-  => Gadget gad (CycG t m zq) where
+instance (Gadget gad (ZqBasic q z),
+          -- satisfy Cyclotomic instance and Gadget's Ring superclass (needed?)
+          Fact m, CRTElt t (ZqBasic q z), ZeroTestable (ZqBasic q z),
+          IntegralDomain (ZqBasic q z))
+  => Gadget gad (CycG t m (ZqBasic q z)) where
   gadget = (scalarCyc <$>) <$> gadget
   {-# INLINABLE gadget #-}
   -- CJP: default 'encode' works because mul-by-Scalar is fast
@@ -843,4 +863,4 @@ instance (Fact m, CRTElt t r, Protoable (CycRep t D m r))
   toProto x = toProto $ toDec' x
   fromProto x = Dec <$> fromProto x
 
--- TODO: define Protoable instances for Cyc
+-- TODO: define Protoable instances for Cyc?
