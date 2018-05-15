@@ -716,20 +716,17 @@ deriving instance Gadget gad (CycG t m (ZqBasic q z))
 -----
 
 -- | promoted from base ring, using the powerful basis for best geometry
-instance (Decompose gad zq, Fact m, CRTElt t zq, CRTElt t (DecompOf zq),
-          ZeroTestable zq, IntegralDomain zq, ZeroTestable (DecompOf zq),
-          -- copied from Traversable (CycRep t P m) instance;
-          -- needed for Sub case of this instance
-          ForallFact1 Traversable t, ForallFact1 Applicative t,
-          ForallFact1 Foldable t)
-         => Decompose gad (CycG t m zq) where
+instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
+          -- satisfy Gadget superclass
+          ZeroTestable (ZqBasic q z), IntegralDomain (ZqBasic q z))
+         => Decompose gad (CycG t m (ZqBasic q z)) where
 
-  type DecompOf (CycG t m zq) = CycG t m (DecompOf zq)
+  type DecompOf (CycG t m (ZqBasic q z)) = CycG t m z
 
   -- faster implementations: decompose directly in subring, which is
   -- correct because we decompose in powerful basis
-  decompose (Scalar c) = pasteT $ Scalar <$> peelT (decompose c)
-  decompose (Sub c) = pasteT $ Sub <$> peelT (decompose c)
+  decompose (Scalar c) = (Scalar <$>) <$> (decompose c)
+  decompose (Sub c) = (Sub <$>) <$> (decompose c)
 
   -- traverse: Traversable (CycRep t P m) and Applicative (Tagged gad ZL)
   decompose (Pow u) = fromZL $ Pow <$> traverse (toZL . decompose) u
@@ -737,11 +734,12 @@ instance (Decompose gad zq, Fact m, CRTElt t zq, CRTElt t (DecompOf zq),
 
   {-# INLINABLE decompose #-}
 
-instance Decompose gad (CycG t m (ZqBasic q Int64))
+instance (Decompose gad (CycG t m (ZqBasic q Int64)),
+          Ring (Cyc t m (ZqBasic q Int64)))
   => Decompose gad (Cyc t m (ZqBasic q Int64)) where
 
   type DecompOf (Cyc t m (ZqBasic q Int64)) = Cyc t m Int64
-  decompose = fmap (fmap CycI64) . decompose . unCycZqB
+  decompose (CycZqB c) = (CycI64 <$>) <$> decompose c
 
 toZL :: Tagged s [a] -> TaggedT s ZipList a
 toZL = coerce
@@ -752,9 +750,11 @@ fromZL = coerce
 -----
 
 -- | promoted from base ring, using the decoding basis for best geometry
-instance (Correct gad zq, Fact m, CRTElt t zq,
-          ZeroTestable zq, IntegralDomain zq, Traversable (CycRep t D m))
-  => Correct gad (CycG t m zq) where
+instance (Correct gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
+          -- satisfy Gadget superclass
+          ZeroTestable (ZqBasic q z), IntegralDomain (ZqBasic q z),
+          Traversable (CycRep t D m))
+  => Correct gad (CycG t m (ZqBasic q z)) where
   -- sequence: Monad [] and Traversable (CycRep t D m)
   -- sequenceA: Applicative (CycRep t D m) and Traversable (TaggedT gad [])
   correct bs = Dec *** (Dec <$>) $
