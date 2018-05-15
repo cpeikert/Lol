@@ -490,34 +490,45 @@ crtSet =
 
 --------- Changing representation ------------------
 
-class ConvertRep rep where
+class ToPowDec c rep r where
   -- | Convert to powerful-basis representation.
-  toPow :: (Fact m, CRTElt t r) => CycRep t rep m r -> CycRep t P m r
+  toPow :: (Fact m) => c rep m r -> c P m r
   -- | Convert to decoding-basis representation.
-  toDec :: (Fact m, CRTElt t r) => CycRep t rep m r -> CycRep t D m r
-  -- | Convert to an appropriate CRT-basis representation.
-  toCRT :: (Fact m, CRTElt t r) => CycRep t rep m r -> CycRepEC t m r
+  toDec :: (Fact m) => c rep m r -> c D m r
 
-instance ConvertRep P where
+-- | separate class because some base rings don't have a CRT basis
+class ToCRT c rep r where
+  -- | Convert to an appropriate CRT-basis representation.
+  toCRT :: (Fact m) => c rep m r -> Either (c E m r) (c C m r)
+
+instance Tensor t r => ToPowDec (CycRep t) P r where
   toPow = id
   toDec (Pow v) = Dec $ lInv v
+
+instance CRTElt t r => ToCRT (CycRep t) P r where
   toCRT (Pow v) = case crtSentinel of
                     Right s -> Right $ CRTC s $ crtCS s v
                     Left  s -> Left  $ CRTE s $ runIdentity crt $ fmapI toExt v
 
-instance ConvertRep D where
+instance Tensor t r => ToPowDec (CycRep t) D r where
   toPow (Dec v) = Pow $ l v
   toDec = id
+
+instance CRTElt t r => ToCRT (CycRep t) D r where
   toCRT = toCRT . toPow
 
-instance ConvertRep C where
+instance CRTElt t r => ToPowDec (CycRep t) C r where
   toPow (CRTC s v) = Pow $ crtInvCS s v
   toDec = toDec . toPow
+
+instance ToCRT (CycRep t) C r where
   toCRT = Right
 
-instance ConvertRep E where
+instance CRTElt t r => ToPowDec (CycRep t) E r where
   toPow (CRTE _ v) = Pow $ fmapI fromExt $ runIdentity crtInv v
   toDec = toDec . toPow
+
+instance ToCRT (CycRep t) E r where
   toCRT = Left
 
 -- | Convenient version of 'toPow' for 'Either' CRT basis type.
