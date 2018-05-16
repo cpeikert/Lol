@@ -316,6 +316,26 @@ instance (Additive (RRq q r), Tensor t (RRq q r), IFunctor t, Fact m)
   negate (PowRRq u) = PowRRq $ negate u
   negate (DecRRq u) = DecRRq $ negate u
 
+-- ForallFact2 instances needed for RescaleCyc instance
+
+instance (CRTElt t Int64) => ForallFact2 Additive.C (Cyc t) Int64 where
+  entailFact2 = C.Sub Dict
+
+instance (CRTElt t Double) => ForallFact2 Additive.C (Cyc t) Double where
+  entailFact2 = C.Sub Dict
+
+instance (CRTElt t (ZqBasic q z), ZeroTestable z)
+  => ForallFact2 Additive.C (Cyc t) (ZqBasic q z) where
+  entailFact2 = C.Sub Dict
+
+instance (ForallFact2 Additive.C (Cyc t) a,
+          ForallFact2 Additive.C (Cyc t) b)
+  => ForallFact2 Additive.C (Cyc t) (a,b) where
+  entailFact2 :: forall m . Fact m :- Additive.C (Cyc t m (a,b))
+  entailFact2 = C.Sub (Dict
+                       \\ (entailFact2 :: Fact m :- Additive.C (Cyc t m a))
+                       \\ (entailFact2 :: Fact m :- Additive.C (Cyc t m b)))
+
 -----
 
 instance (Fact m, CRTElt t r, ZeroTestable r) => Ring.C (CycG t m r) where
@@ -367,6 +387,45 @@ instance (Ring (Cyc t m a), Ring (Cyc t m b)) => Ring.C (Cyc t m (a,b)) where
 -- no instance for RRq because it's not a ring
 
 -----
+
+instance (Fact m, CRTElt t r, ZeroTestable r) => Module.C r (CycG t m r) where
+  r *> (Scalar c) = Scalar $ r * c
+  r *> (Pow v)    = Pow $ r *> v
+  r *> (Dec v)    = Dec $ r *> v
+  r *> (Sub c)    = Sub $ r *> c
+  r *> x          = r *> toPow' x
+
+deriving instance Module Int64 (CycG t m Int64) => Module.C Int64 (Cyc t m Int64)
+deriving instance Module Double (CycG t m Double) => Module.C Double (Cyc t m Double)
+deriving instance (Module (ZqBasic q z) (CycG t m (ZqBasic q z)),
+                   Ring (ZqBasic q z)) -- satisfy superclass
+  => Module.C (ZqBasic q z) (Cyc t m (ZqBasic q z))
+
+instance (Module a (Cyc t m a), Module b (Cyc t m b))
+  => Module.C (a,b) (Cyc t m (a,b)) where
+  (a,b) *> (CycPair ca cb) = CycPair (a *> ca) (b *> cb)
+
+-- ForallFact2 instances needed for special RescaleCyc instance
+
+instance (CRTElt t Int64) => ForallFact2 (Module.C Int64) (Cyc t) Int64 where
+  entailFact2 = C.Sub Dict
+
+instance (CRTElt t Double) => ForallFact2 (Module.C Double) (Cyc t) Double where
+  entailFact2 = C.Sub Dict
+
+instance (CRTElt t (ZqBasic q z), ZeroTestable z)
+  => ForallFact2 (Module.C (ZqBasic q z)) (Cyc t) (ZqBasic q z) where
+  entailFact2 = C.Sub Dict
+
+instance (ForallFact2 (Module.C a) (Cyc t) a,
+          ForallFact2 (Module.C b) (Cyc t) b)
+  => ForallFact2 (Module.C (a,b)) (Cyc t) (a,b) where
+  entailFact2 :: forall m . Fact m :- Module.C (a,b) (Cyc t m (a,b))
+  entailFact2 = C.Sub (Dict
+                       \\ (entailFact2 :: Fact m :- Module.C a (Cyc t m a))
+                       \\ (entailFact2 :: Fact m :- Module.C b (Cyc t m b)))
+
+-- Module over finite field
 
 -- | \(R_p\) is an \(\F_{p^d}\)-module when \(d\) divides
 -- \(\varphi(m)\), by applying \(d\)-dimensional \(\F_p\)-linear
@@ -643,16 +702,23 @@ instance {-# INCOHERENT #-} (RescaleCyc (CycG t) (ZqBasic q z) (ZqBasic p z))
 instance RescaleCyc (Cyc t) (ZqBasic q z) (ZqBasic q z) where
   rescaleCyc b = CycZqB . rescaleCyc b . unCycZqB
 
-{-
-instance (LiftCyc (Cyc t) (ZqBasic q z),
+instance (LiftCyc (Cyc t) (ZqBasic q z), ReduceCyc (Cyc t) z b,
           Cyclotomic (Cyc t) b, Reflects q z, Reduce z b, Field b,
-          ReduceCyc (Cyc t) z b)
+          ForallFact2 Additive.C (Cyc t) b, ForallFact2 (Module.C b) (Cyc t) b)
   => RescaleCyc (Cyc t) (ZqBasic q z, b) b where
+
+  -- bring m into scope
+  rescaleCyc :: forall m . Fact m
+    => Basis -> Cyc t m (ZqBasic q z, b) -> Cyc t m b
+
   rescaleCyc bas (CycPair a b) =
     let qval :: z = proxy value (Proxy::Proxy q)
         z = liftCyc bas a
-    in scalarCyc (recip (reduce qval)) * (b - reduceCyc z)
+    in recip (reduce qval :: b) *> (b - reduceCyc z)
+       \\ (entailFact2 :: Fact m :- Module.C b (Cyc t m b))
+       \\ (entailFact2 :: Fact m :- Additive.C (Cyc t m b))
 
+{-
 
 -- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
 -- algorithm; removes one ring from the product.
