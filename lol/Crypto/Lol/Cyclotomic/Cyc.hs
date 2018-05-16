@@ -654,23 +654,28 @@ crtSet = (Pow <$>) <$> R.crtSet
 ---------- Promoted lattice operations ----------
 
 -- | promoted from base ring
-instance (Reduce a b, Fact m, CRTElt t a, CRTElt t b,
+instance (Reduce a b, CRTElt t a, CRTElt t b,
           ZeroTestable a, ZeroTestable b) -- ZT just for Additive superclasses
-         => Reduce (CycG t m a) (CycG t m b) where
-  {-# INLINABLE reduce #-}
-  reduce (Pow u) = Pow $ reduce u
-  reduce (Dec u) = Dec $ reduce u
-  reduce (CRT u) = Pow $ reduce $ either toPow toPow u
-  reduce (Scalar c) = Scalar $ reduce c
-  reduce (Sub (c :: CycG t l a)) = Sub (reduce c :: CycG t l b)
+         => ReduceCyc (CycG t) a b where
+  {-# INLINABLE reduceCyc #-}
+  reduceCyc (Pow u)    = Pow    $ reduce u
+  reduceCyc (Dec u)    = Dec    $ reduce u
+  reduceCyc (CRT u)    = Pow    $ reduce $ either toPow toPow u
+  reduceCyc (Scalar c) = Scalar $ reduce c
+  reduceCyc (Sub c)    = Sub (reduceCyc c)
 
-instance Reduce (CycG t m Int64) (CycG t m (ZqBasic q Int64))
-  => Reduce (Cyc t m Int64) (Cyc t m (ZqBasic q Int64)) where
-  reduce = CycZqB . reduce . unCycI64
+instance ReduceCyc (CycG t) Int64 (ZqBasic q Int64)
+  => ReduceCyc (Cyc t) Int64 (ZqBasic q Int64) where
+  reduceCyc = CycZqB . reduceCyc . unCycI64
 
-instance (Reduce (Cyc t m r) (Cyc t m a), Reduce (Cyc t m r) (Cyc t m b))
-  => Reduce (Cyc t m r) (Cyc t m (a,b)) where
-  reduce r = CycPair (reduce r) (reduce r)
+instance (ReduceCyc (Cyc t) r a, ReduceCyc (Cyc t) r b)
+  => ReduceCyc (Cyc t) r (a,b) where
+  reduceCyc r = CycPair (reduceCyc r) (reduceCyc r)
+
+instance (ReduceCyc (Cyc t) a b, Fact m,
+          Additive (Cyc t m a), Additive (Cyc t m b)) -- Reduce superclasses
+  => Reduce (Cyc t m a) (Cyc t m b) where
+  reduce = reduceCyc
 
 -----
 
