@@ -695,11 +695,8 @@ instance RescaleCyc (CycG t) a a where
   rescaleCyc _ = id
   {-# INLINABLE rescaleCyc #-}
 
-instance {-# INCOHERENT #-} (RescaleCyc (CycG t) (ZqBasic q z) (ZqBasic p z))
+instance (RescaleCyc (CycG t) (ZqBasic q z) (ZqBasic p z))
   => RescaleCyc (Cyc t) (ZqBasic q z) (ZqBasic p z) where
-  rescaleCyc b = CycZqB . rescaleCyc b . unCycZqB
-
-instance RescaleCyc (Cyc t) (ZqBasic q z) (ZqBasic q z) where
   rescaleCyc b = CycZqB . rescaleCyc b . unCycZqB
 
 instance (LiftCyc (Cyc t) (ZqBasic q z), ReduceCyc (Cyc t) z b,
