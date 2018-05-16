@@ -239,6 +239,22 @@ instance (Eq (Cyc t m a), Eq (Cyc t m b)) => Eq (Cyc t m (a,b)) where
 
 -- no Eq for Double or RRq due to precision
 
+instance (CRTElt t Int64, ForallFact2 Eq t Int64)
+  => ForallFact2 Eq (Cyc t) Int64 where
+  entailFact2 = C.Sub Dict
+
+instance (Eq (ZqBasic q z), CRTElt t (ZqBasic q z),
+          ForallFact2 Eq t (ZqBasic q z))
+  => ForallFact2 Eq (Cyc t) (ZqBasic q z) where
+  entailFact2 = C.Sub Dict
+
+instance (ForallFact2 Eq (Cyc t) a, ForallFact2 Eq (Cyc t) b)
+  => ForallFact2 Eq (Cyc t) (a,b) where
+  entailFact2 :: forall m . Fact m :- Eq (Cyc t m (a,b))
+  entailFact2 = C.Sub (Dict
+                       \\ (entailFact2 :: Fact m :- Eq (Cyc t m a))
+                       \\ (entailFact2 :: Fact m :- Eq (Cyc t m b)))
+
 -----
 
 instance (Fact m, CRTElt t r, ZeroTestable r) => Additive.C (CycG t m r) where
@@ -386,6 +402,26 @@ instance (Ring (Cyc t m a), Ring (Cyc t m b)) => Ring.C (Cyc t m (a,b)) where
   (CycPair a b) * (CycPair a' b') = CycPair (a*a') (b*b')
 
 -- no instance for RRq because it's not a ring
+
+-- ForallFact2 instances in case they're useful
+
+instance (CRTElt t Int64) => ForallFact2 Ring.C (Cyc t) Int64 where
+  entailFact2 = C.Sub Dict
+
+instance (CRTElt t Double) => ForallFact2 Ring.C (Cyc t) Double where
+  entailFact2 = C.Sub Dict
+
+instance (CRTElt t (ZqBasic q z), ZeroTestable z)
+  => ForallFact2 Ring.C (Cyc t) (ZqBasic q z) where
+  entailFact2 = C.Sub Dict
+
+instance (ForallFact2 Ring.C (Cyc t) a,
+          ForallFact2 Ring.C (Cyc t) b)
+  => ForallFact2 Ring.C (Cyc t) (a,b) where
+  entailFact2 :: forall m . Fact m :- Ring.C (Cyc t m (a,b))
+  entailFact2 = C.Sub (Dict
+                       \\ (entailFact2 :: Fact m :- Ring.C (Cyc t m a))
+                       \\ (entailFact2 :: Fact m :- Ring.C (Cyc t m b)))
 
 -----
 
@@ -789,12 +825,18 @@ instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
 
   {-# INLINABLE decompose #-}
 
-instance (Decompose gad (CycG t m (ZqBasic q Int64)),
-          Ring (Cyc t m (ZqBasic q Int64)))
+-- specific to Int64 because we need to know constructor for lift type
+instance (Decompose gad (CycG t m (ZqBasic q Int64)))
   => Decompose gad (Cyc t m (ZqBasic q Int64)) where
 
   type DecompOf (Cyc t m (ZqBasic q Int64)) = Cyc t m Int64
   decompose (CycZqB c) = (CycI64 <$>) <$> decompose c
+
+instance (Decompose gad (ZqBasic q Int64), CRTElt t (ZqBasic q Int64),
+          -- copied from Decompose instance above
+          IntegralDomain (ZqBasic q Int64))
+  => ForallFact2 (Decompose gad) (Cyc t) (ZqBasic q Int64) where
+  entailFact2 = C.Sub Dict
 
 toZL :: Tagged s [a] -> TaggedT s ZipList a
 toZL = coerce
@@ -817,8 +859,12 @@ instance (Correct gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
                sequenceA (uncycDec <$> peelT bs)
   {-# INLINABLE correct #-}
 
+-- specific to Int64 due to LiftOf
 deriving instance Correct gad (CycG t m (ZqBasic q Int64))
   => Correct gad (Cyc t m (ZqBasic q Int64))
+
+-- no ForallFact2 instance due to Traversable (CycRep t D m)
+-- constraint in Correct instance, but maybe that can be replaced
 
 ---------- Change of representation (internal use only) ----------
 
