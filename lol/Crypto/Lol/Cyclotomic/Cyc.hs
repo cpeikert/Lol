@@ -43,6 +43,7 @@ the internal linear transforms and other operations it performs.
 {-# LANGUAGE InstanceSigs               #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE NoImplicitPrelude          #-}
+{-# LANGUAGE PartialTypeSignatures      #-}
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
@@ -704,15 +705,15 @@ instance (RescaleCyc (CycG t) (ZqBasic q z) (ZqBasic p z))
   => RescaleCyc (Cyc t) (ZqBasic q z) (ZqBasic p z) where
   rescaleCyc b = CycZqB . rescaleCyc b . unCycZqB
 
+-- | specialized instance for product rings of \(\Z_q\)s
 instance (LiftCyc (Cyc t) (ZqBasic q z), ReduceCyc (Cyc t) z b,
-          Cyclotomic (Cyc t) b, Reflects q z, Reduce z b, Field b,
+          Reflects q z, Reduce z b, Field b,
           ForallFact2 Additive.C (Cyc t) b, ForallFact2 (Module.C b) (Cyc t) b)
   => RescaleCyc (Cyc t) (ZqBasic q z, b) b where
 
   -- bring m into scope
   rescaleCyc :: forall m . Fact m
     => Basis -> Cyc t m (ZqBasic q z, b) -> Cyc t m b
-
   rescaleCyc bas (CycPair a b) =
     let qval :: z = proxy value (Proxy::Proxy q)
         z = liftCyc bas a
@@ -720,86 +721,58 @@ instance (LiftCyc (Cyc t) (ZqBasic q z), ReduceCyc (Cyc t) z b,
        \\ (entailFact2 :: Fact m :- Module.C b (Cyc t m b))
        \\ (entailFact2 :: Fact m :- Additive.C (Cyc t m b))
 
-{-
-
--- | specialized instance for product rings of \(\Z_q\)s: ~2x faster
--- algorithm; removes one ring from the product.
-instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b,
-         CRTElt t (a,b), CRTElt t a, CRTElt t b, CRTElt t (LiftOf a))
-         => RescaleCyc (CycG t) (a,b) b where
-
-  -- optimized for subrings and powerful basis (see comments in other
-  -- instance for why this doesn't work for decoding basis)
-  rescaleCyc L.Pow (Scalar c) = Scalar $ rescale c
-  rescaleCyc L.Pow (Sub c) = Sub $ rescalePow c
-
-  rescaleCyc bas c = let aval = proxy modulus (Proxy::Proxy a)
-                         (a,b) = unzipCyc c
-                         z = liftCyc bas a
-                     in Scalar (recip (reduce aval)) * (b - reduce z)
-  {-# INLINABLE rescaleCyc #-}
-
--}
-
-{-
-
 -- CJP: do we really need these? Just have client call rescaleCyc
 -- multiple times?
 
-instance (RescaleCyc (CycG t) (b,c) c, Rescale (a,(b,c)) c,
-          RescaleCyc (CycG t) (a,(b,c)) (b,c))
-         => RescaleCyc (CycG t) (a,(b,c)) c where
+instance (RescaleCyc (Cyc t) (b,c) c, RescaleCyc (Cyc t) (a,(b,c)) (b,c))
+         => RescaleCyc (Cyc t) (a,(b,c)) c where
 
-  rescaleCyc bas (a :: CycG t m (a,(b,c))) =
-    rescaleCyc bas (rescaleCyc bas a :: CycG t m (b,c))
+  rescaleCyc bas a = rescaleCyc bas (rescaleCyc bas a :: Cyc t _ (b,c))
   {-# INLINABLE rescaleCyc #-}
 
-instance (RescaleCyc (CycG t) (b,(c,d)) d, Rescale (a,(b,(c,d))) d,
-          RescaleCyc (CycG t) (a,(b,(c,d))) (b,(c,d)))
-         => RescaleCyc (CycG t) (a,(b,(c,d))) d where
+instance (RescaleCyc (Cyc t) (b,(c,d)) d,
+          RescaleCyc (Cyc t) (a,(b,(c,d))) (b,(c,d)))
+         => RescaleCyc (Cyc t) (a,(b,(c,d))) d where
 
-  rescaleCyc bas (a :: CycG t m (a,(b,(c,d)))) =
-    rescaleCyc bas (rescaleCyc bas a :: CycG t m (b,(c,d)))
+  rescaleCyc bas a = rescaleCyc bas (rescaleCyc bas a :: Cyc t _ (b,(c,d)))
   {-# INLINABLE rescaleCyc #-}
 
-instance (RescaleCyc (CycG t) (b,(c,(d,e))) e, Rescale (a,(b,(c,(d,e)))) e,
-          RescaleCyc (CycG t) (a,(b,(c,(d,e)))) (b,(c,(d,e))))
-         => RescaleCyc (CycG t) (a,(b,(c,(d,e)))) e where
+instance (RescaleCyc (Cyc t) (b,(c,(d,e))) e,
+          RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) (b,(c,(d,e))))
+         => RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) e where
 
-  rescaleCyc bas (a :: CycG t m (a,(b,(c,(d,e))))) =
-    rescaleCyc bas (rescaleCyc bas a :: CycG t m (b,(c,(d,e))))
+  rescaleCyc bas a = rescaleCyc bas (rescaleCyc bas a :: Cyc t _ (b,(c,(d,e))))
   {-# INLINABLE rescaleCyc #-}
-
-instance (RescaleCyc (CycG t) (b,(c,(d,(e,f)))) f, Rescale (a,(b,(c,(d,(e,f))))) f,
-          RescaleCyc (CycG t) (a,(b,(c,(d,(e,f))))) (b,(c,(d,(e,f)))))
-         => RescaleCyc (CycG t) (a,(b,(c,(d,(e,f))))) f where
-
-  rescaleCyc bas (a :: CycG t m (a,(b,(c,(d,(e,f)))))) =
-    rescaleCyc bas (rescaleCyc bas a :: CycG t m (b,(c,(d,(e,f)))))
-  {-# INLINABLE rescaleCyc #-}
-
--}
 
 -----
 
 -- | promoted from base ring
 instance (Gadget gad (ZqBasic q z),
-          -- satisfy Cyclotomic instance and Gadget's Ring superclass (needed?)
-          Fact m, CRTElt t (ZqBasic q z), ZeroTestable (ZqBasic q z),
-          IntegralDomain (ZqBasic q z))
+          -- satisfy Gadget's Ring superclass; remove if it goes away
+          Fact m, CRTElt t (ZqBasic q z),
+          ZeroTestable (ZqBasic q z), IntegralDomain (ZqBasic q z))
   => Gadget gad (CycG t m (ZqBasic q z)) where
-  gadget = (scalarCyc <$>) <$> gadget
+  gadget = (Scalar <$>) <$> gadget
   {-# INLINABLE gadget #-}
   -- CJP: default 'encode' works because mul-by-Scalar is fast
 
 deriving instance Gadget gad (CycG t m (ZqBasic q z))
   => Gadget gad (Cyc t m (ZqBasic q z))
 
+-- ForallFact2 in case it's useful
+
+instance (Gadget gad (ZqBasic q z),
+          -- remove these if they go away from above
+          CRTElt t (ZqBasic q z), ZeroTestable (ZqBasic q z),
+          IntegralDomain (ZqBasic q z))
+  => ForallFact2 (Gadget gad) (Cyc t) (ZqBasic q z) where
+  entailFact2 = C.Sub Dict
+
 -----
 
 -- | promoted from base ring, using the powerful basis for best geometry
 instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
-          -- satisfy Gadget superclass
+          -- for satisfying Decompose's Gadget superclass
           ZeroTestable (ZqBasic q z), IntegralDomain (ZqBasic q z))
          => Decompose gad (CycG t m (ZqBasic q z)) where
 
