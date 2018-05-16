@@ -67,10 +67,10 @@ import qualified Algebra.Ring         as Ring (C)
 import qualified Algebra.ZeroTestable as ZeroTestable (C)
 
 -- hide these due to name collisions
-import Crypto.Lol.Cyclotomic.CycRep hiding (coeffsDec, coeffsPow, crtSet,
-                                     gSqNorm, mulG, powBasis)
-
 import           Crypto.Lol.CRTrans
+import           Crypto.Lol.Cyclotomic.CycRep   hiding (coeffsDec,
+                                                 coeffsPow, crtSet,
+                                                 gSqNorm, mulG, powBasis)
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
@@ -86,15 +86,15 @@ import           Crypto.Lol.Types.IFunctor
 import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.ZPP
 
-import Control.Applicative    hiding ((*>))
-import Control.Arrow
-import Control.DeepSeq
-import Control.Monad.Identity
-import Control.Monad.Random   hiding (lift)
-import Data.Coerce
-import Data.Constraint        ((:-), (\\))
-
-import Data.Traversable
+import           Control.Applicative    hiding ((*>))
+import           Control.Arrow
+import           Control.DeepSeq
+import           Control.Monad.Identity
+import           Control.Monad.Random   hiding (lift)
+import           Data.Coerce
+import           Data.Constraint        ((:-), Dict (..), (\\))
+import qualified Data.Constraint        as C
+import           Data.Traversable
 
 -- | Underlying GADT for a cyclotomic ring in one of several
 -- representations.
@@ -106,7 +106,7 @@ data CycG t m r where
   Scalar :: !r -> CycG t m r
   -- optimized storage of subring elements
   Sub :: (l `Divides` m) => !(CycG t l r) -> CycG t m r
-  -- CJP: someday try to merge the above two
+  -- CJP: someday try to merge the above two?
 
 -- | A cyclotomic ring such as \( \Z[\zeta_m] \), \( \Z_q[\zeta_m] \),
 -- or \( \Q[\zeta_m] \): @t@ is the 'Tensor' type for storing
@@ -114,9 +114,9 @@ data CycG t m r where
 -- ring of the coefficients (e.g., \(\ \Q \), \( \Z \), \( \Z_q \)).
 data family Cyc (t :: Factored -> * -> *) (m :: Factored) r
 
+-- could also do an Int instance
 newtype instance Cyc t m Double        = CycDbl { unCycDbl :: CycG t m Double }
 newtype instance Cyc t m Int64         = CycI64 { unCycI64 :: CycG t m Int64 }
--- could also do an Int instance
 newtype instance Cyc t m (ZqBasic q z) = CycZqB { unCycZqB :: CycG t m (ZqBasic q z) }
 data    instance Cyc t m (a,b)         = CycPair !(Cyc t m a) !(Cyc t m b)
 
@@ -380,7 +380,7 @@ instance (GFCtx fp d, Fact m, CRTElt t fp, Module (GF fp d) (t m fp))
 
   -- Can use any r-basis to define module mult, but must be
   -- consistent. We use powerful basis.
-  r *> (Pow v) = Pow $ r LP.*> v
+  r *> (Pow v) = Pow $ r *> v
   r *> x = r *> toPow' x
 
 deriving instance (Ring (GF (ZqBasic q z) d),
