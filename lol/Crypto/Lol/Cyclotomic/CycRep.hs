@@ -125,7 +125,7 @@ type CRTElt t r = (TensorCRT t r, TensorCRT t (CRTExt r),
                    CRTEmbed r, CRTrans Maybe r, CRTrans Identity (CRTExt r))
 
 -- | Embed a scalar from the base ring.
-scalarPow :: (Tensor t r, Fact m, Ring r) => r -> CycRep t P m r
+scalarPow :: (Tensor t r, Fact m) => r -> CycRep t P m r
 scalarPow = Pow . T.scalarPow
 {-# INLINABLE scalarPow #-}
 
