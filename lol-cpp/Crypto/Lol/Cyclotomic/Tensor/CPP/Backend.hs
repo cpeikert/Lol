@@ -48,8 +48,9 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 , withArray, withPtrArray
 ) where
 
-import Crypto.Lol.Prelude       as LP (Complex, PP, Proxy (..), Tagged,
-                                       map, mapM_, proxy, tag)
+import Crypto.Lol.Prelude              as LP (Complex, PP, Proxy (..),
+                                              Tagged, map, mapM_, proxy,
+                                              tag)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.RRq
 import Crypto.Lol.Types.Unsafe.ZqBasic
@@ -59,11 +60,10 @@ import Data.Vector.Storable          as SV (Vector, fromList,
                                             unsafeToForeignPtr0)
 import Data.Vector.Storable.Internal (getPtr)
 
-import           Foreign.ForeignPtr      (touchForeignPtr)
-import           Foreign.Marshal.Array   (withArray)
-import           Foreign.Marshal.Utils   (with)
-import           Foreign.Ptr             (Ptr, castPtr, plusPtr)
-import           Foreign.Storable        (Storable (..))
+import Foreign.ForeignPtr    (touchForeignPtr)
+import Foreign.Marshal.Array (withArray)
+import Foreign.Ptr           (Ptr, castPtr, plusPtr)
+import Foreign.Storable      (Storable (..))
 
 -- | Convert a list of prime powers to a suitable C representation.
 marshalFactors :: [PP] -> Vector CPP

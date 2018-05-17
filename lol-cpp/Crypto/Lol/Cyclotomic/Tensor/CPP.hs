@@ -11,6 +11,7 @@ Portability : POSIX
 Wrapper for a C++ implementation of the 'Tensor' interface.
 -}
 
+{-# LANGUAGE CPP                        #-}
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -29,7 +30,6 @@ Wrapper for a C++ implementation of the 'Tensor' interface.
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
-{-# LANGUAGE CPP                        #-}
 
 module Crypto.Lol.Cyclotomic.Tensor.CPP (CT) where
 
@@ -52,10 +52,9 @@ import Data.Maybe
 import Data.Traversable             as T
 import Data.Vector.Generic          as V (fromList, toList, unzip)
 import Data.Vector.Storable         as SV (Vector, convert, foldl',
-                                           fromList, generate,
-                                           length, map, replicate,
-                                           replicateM, thaw, thaw, toList,
-                                           unsafeFreeze,
+                                           fromList, generate, length, map,
+                                           replicate, replicateM, thaw,
+                                           thaw, toList, unsafeFreeze,
                                            unsafeWith, zipWith, (!))
 import Data.Vector.Storable.Mutable as SM hiding (replicate)
 
@@ -68,9 +67,8 @@ import Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 import Crypto.Lol.Cyclotomic.Tensor.CPP.Extension
 import Crypto.Lol.Cyclotomic.Tensor.CPP.Instances ()
 import Crypto.Lol.GaussRandom
-import Crypto.Lol.Prelude                             as LP hiding
-                                                             (replicate,
-                                                             unzip, zip)
+import Crypto.Lol.Prelude                         as LP hiding (replicate,
+                                                         unzip, zip)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Tests
 import Crypto.Lol.Types.FiniteField
@@ -379,6 +377,9 @@ instance (ZeroTestable r, Storable r) => ForallFact2 ZeroTestable.C CT r where
   entailFact2 = Sub Dict
 
 instance (Additive fp, Storable fp, GFCtx fp d) => ForallFact2 (Module.C (GF fp d)) CT fp where
+  entailFact2 = Sub Dict
+
+instance (Random r, Storable r) => ForallFact2 Random CT r where
   entailFact2 = Sub Dict
 
 instance (ForallFact2 Protoable IZipVector r, Storable r) => ForallFact2 Protoable CT r where
