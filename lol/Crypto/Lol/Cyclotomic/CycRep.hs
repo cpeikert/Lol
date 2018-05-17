@@ -151,7 +151,6 @@ deriving instance Eq (t m r) => Eq (CycRep t C m r)
 deriving instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t P m r)
 deriving instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t D m r)
 
-
 instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
   -- can't derive this because of sentinel
   isZero (CRTC _ v) = isZero v
@@ -163,7 +162,7 @@ instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
 -- TODO: replace these implementations to use Additive instance of
 -- underlying tensor? Would this require using ForallFact2 Additive.C?
 
-instance (Additive r, Tensor t r, Fact m) => Additive.C (CycRep t P m r) where
+instance (Tensor t r, Fact m) => Additive.C (CycRep t P m r) where
   zero = Pow $ T.scalarPow zero
   (Pow v1) + (Pow v2) = Pow $ zipWithI (+) v1 v2
   (Pow v1) - (Pow v2) = Pow $ zipWithI (-) v1 v2
@@ -173,7 +172,7 @@ instance (Additive r, Tensor t r, Fact m) => Additive.C (CycRep t P m r) where
   {-# INLINABLE (-) #-}
   {-# INLINABLE negate #-}
 
-instance (Additive r, Tensor t r, Fact m) => Additive.C (CycRep t D m r) where
+instance (Tensor t r, Fact m) => Additive.C (CycRep t D m r) where
   zero = Dec $ T.scalarPow zero -- scalarPow works because it's zero
   (Dec v1) + (Dec v2) = Dec $ zipWithI (+) v1 v2
   (Dec v1) - (Dec v2) = Dec $ zipWithI (-) v1 v2
@@ -230,7 +229,7 @@ instance (Ring r, Tensor t r, Fact m) => Module.C r (CycRep t D m r) where
   r *> (Dec v) = Dec $ fmapI (r *) v
   {-# INLINABLE (*>) #-}
 
-instance (Ring r, Fact m, CRTElt t r) => Module.C r (CycRepEC t m r) where
+instance (CRTElt t r, Fact m) => Module.C r (CycRepEC t m r) where
 
   r *> (Right (CRTC s v)) = Right $ CRTC s $ fmapI (r *) v
   r *> (Left (CRTE s v)) = Left $ CRTE s $ fmapI (toExt r *) v
@@ -311,14 +310,12 @@ mulGCRTC (CRTC s v) = CRTC s $ mulGCRTCS s v
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
-divGPow :: (Fact m, Tensor t r, ZeroTestable r, IntegralDomain r)
-        => CycRep t P m r -> Maybe (CycRep t P m r)
+divGPow :: (Fact m, Tensor t r) => CycRep t P m r -> Maybe (CycRep t P m r)
 {-# INLINABLE divGPow #-}
 divGPow (Pow v) = Pow <$> T.divGPow v
 
 -- | Similar to 'divGPow'.
-divGDec :: (Fact m, Tensor t r, ZeroTestable r, IntegralDomain r)
-        => CycRep t D m r -> Maybe (CycRep t D m r)
+divGDec :: (Fact m, Tensor t r) => CycRep t D m r -> Maybe (CycRep t D m r)
 {-# INLINABLE divGDec #-}
 divGDec (Dec v) = Dec <$> T.divGDec v
 
@@ -374,14 +371,12 @@ cosetGaussian =
 ----- inter-ring operations
 
 -- | Embed into an extension ring, for the powerful basis.
-embedPow :: (Additive r, Tensor t r, m `Divides` m')
-         => CycRep t P m r -> CycRep t P m' r
+embedPow :: (Tensor t r, m `Divides` m') => CycRep t P m r -> CycRep t P m' r
 embedPow (Pow v) = Pow $ T.embedPow v
 {-# INLINABLE embedPow #-}
 
 -- | Embed into an extension ring, for the decoding basis.
-embedDec :: (Additive r, Tensor t r, m `Divides` m')
-         => CycRep t D m r -> CycRep t D m' r
+embedDec :: (Tensor t r, m `Divides` m') => CycRep t D m r -> CycRep t D m' r
 embedDec (Dec v) = Dec $ T.embedDec v
 {-# INLINABLE embedDec #-}
 
@@ -408,13 +403,13 @@ embedCRTE x@(CRTE _ v) =
     Right _ -> Left $ embedPow $ toPow x
 
 -- | Twace into a subring, for the powerful basis.
-twacePow :: (Ring r, Tensor t r, m `Divides` m')
+twacePow :: (Tensor t r, m `Divides` m')
          => CycRep t P m' r -> CycRep t P m r
 twacePow (Pow v) = Pow $ twacePowDec v
 {-# INLINABLE twacePow #-}
 
 -- | Twace into a subring, for the decoding basis.
-twaceDec :: (Ring r, Tensor t r, m `Divides` m') => CycRep t D m' r -> CycRep t D m r
+twaceDec :: (Tensor t r, m `Divides` m') => CycRep t D m' r -> CycRep t D m r
 twaceDec (Dec v) = Dec $ twacePowDec v
 {-# INLINABLE twaceDec #-}
 
@@ -441,18 +436,18 @@ twaceCRTE x@(CRTE _ v) =
 
 -- | Yield the \(\O_m\)-coefficients of an \(\O_{m'}\)-element,
 -- with respect to the relative powerful \(\O_m\)-basis.
-coeffsPow :: (Ring r, Tensor t r, m `Divides` m') => CycRep t P m' r -> [CycRep t P m r]
+coeffsPow :: (Tensor t r, m `Divides` m') => CycRep t P m' r -> [CycRep t P m r]
 {-# INLINABLE coeffsPow #-}
 coeffsPow (Pow v) = LP.map Pow $ coeffs v
 
 -- | Yield the \(\O_m\)-coefficients of an \(\O_{m'}\) element,
 -- with respect to the relative decoding \(\O_m\)-basis.
-coeffsDec :: (Ring r, Tensor t r, m `Divides` m') => CycRep t D m' r -> [CycRep t D m r]
+coeffsDec :: (Tensor t r, m `Divides` m') => CycRep t D m' r -> [CycRep t D m r]
 {-# INLINABLE coeffsDec #-}
 coeffsDec (Dec v) = LP.map Dec $ coeffs v
 
 -- | The relative powerful basis of \(\O_{m'} / \O_m\).
-powBasis :: (Ring r, Tensor t r, m `Divides` m') => Tagged m [CycRep t P m' r]
+powBasis :: (Tensor t r, m `Divides` m') => Tagged m [CycRep t P m' r]
 {-# INLINABLE powBasis #-}
 powBasis = (Pow <$>) <$> powBasisPow
 
