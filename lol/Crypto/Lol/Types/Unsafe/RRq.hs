@@ -36,28 +36,30 @@ import Algebra.Additive     as Additive (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
 import Control.DeepSeq
-
+import System.Random
 
 import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
--- invariant: 0 <= x < q
+-- invariant: 0 <= x < 1, scaled
 -- | The additive group \( \R/(q\Z) \) of reals modulo 'q', using
--- underlying floating type 'r'.
+-- underlying floating-point type 'r'.
 newtype RRq q r = RRq r
-    deriving (Eq, Ord, ZeroTestable.C, Show, NFData)
+    deriving (Eq, ZeroTestable.C, Show, NFData)
 
-{-# INLINABLE reduce' #-}
+instance (Reflects q r, RealField r) => Additive.C (RRq q r) where
+  {-# INLINABLE zero #-}
+  zero = RRq zero
+
+  {-# INLINABLE (+) #-}
+  (RRq x) + (RRq y) = RRq $ fraction $ x + y
+
+  {-# INLINABLE negate #-}
+  negate (RRq x) = RRq $ fraction $ negate x
+
 reduce' :: forall q r . (Reflects q r, RealField r) => r -> RRq q r
-reduce' = let q = proxy value (Proxy::Proxy q)
-          in \x -> RRq $ x - q * floor (x / q)
-
--- puts value in range [-q/2, q/2)
-decode' :: forall q r . (Reflects q r, Ord r, Ring r)
-           => RRq q r -> r
-decode' = let qval = proxy value (Proxy::Proxy q)
-          in \(RRq x) -> if x + x < qval then x else x - qval
+reduce' r = RRq $ fraction $ r / proxy value (Proxy::Proxy q) -- scale down
 
 instance (Reflects q r, RealField r, Additive (RRq q r))
   => Reduce r (RRq q r) where
@@ -65,25 +67,18 @@ instance (Reflects q r, RealField r, Additive (RRq q r))
 
 type instance LiftOf (RRq q r) = r
 
-instance (Reflects q r, Reduce r (RRq q r), Ord r, Ring r)
+instance (Reflects q r, Field r, Reduce r (RRq q r))
   => Lift' (RRq q r) where
-  lift = decode'
+  lift (RRq r) = (r-0.5) * proxy value (Proxy::Proxy q)
 
--- instance of Additive
-instance (Reflects q r, RealField r, Ord r) => Additive.C (RRq q r) where
+instance (Additive (RRq q r), Additive (RRq p r))
+  => Rescale (RRq q r) (RRq p r) where
+  rescale (RRq r) = RRq r
 
-  {-# INLINABLE zero #-}
-  zero = RRq zero
+instance Random (RRq q Double) where
+  random g = let (r,g') = random g in (RRq r, g')
+  randomR = error "randomR is nonsensical for RRq"
 
-  {-# INLINABLE (+) #-}
-  (+) = let qval = proxy value (Proxy::Proxy q)
-        in \ (RRq x) (RRq y) ->
-        let z = x + y
-        in RRq (if z >= qval then z - qval else z)
-
-  {-# INLINABLE negate #-}
-  negate (RRq x) = reduce' $ negate x
-
-instance (ToInteger i, RealField r, Reflects q i, Reflects q r)
-  => Subgroup (ZqBasic q i) (RRq q r) where
+instance (ToInteger z, RealField r, Reflects q z, Reflects q r)
+  => Subgroup (ZqBasic q z) (RRq q r) where
   fromSubgroup = reduce' . fromIntegral . lift
