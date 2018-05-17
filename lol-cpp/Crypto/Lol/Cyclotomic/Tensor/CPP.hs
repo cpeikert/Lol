@@ -382,6 +382,9 @@ instance (Additive fp, Storable fp, GFCtx fp d) => ForallFact2 (Module.C (GF fp 
 instance (Random r, Storable r) => ForallFact2 Random CT r where
   entailFact2 = Sub Dict
 
+instance (NFData r) => ForallFact2 NFData CT r where
+  entailFact2 = Sub Dict
+
 instance (ForallFact2 Protoable IZipVector r, Storable r) => ForallFact2 Protoable CT r where
   entailFact2 = Sub Dict
 
