@@ -279,14 +279,14 @@ instance (Fact m, CRTElt t r, ZeroTestable r) => Additive.C (CycG t m r) where
 
   -- SCALAR PLUS SOMETHING ELSE
 
-  (Scalar c) + (Pow u) = Pow $ scalarPow c + u
-  (Scalar c) + (Dec u) = Pow $ scalarPow c + toPow u -- workaround scalarDec
-  (Scalar c) + (CRT u) = CRT $ scalarCRT c + u
+  (Scalar c)  + (Pow u)  = Pow $ scalarPow c + u
+  (Scalar c)  + (Dec u)  = Pow $ scalarPow c + toPow u -- workaround scalarDec
+  (Scalar c)  + (CRT u)  = CRT $ scalarCRT c + u
   (Scalar c1) + (Sub c2) = Sub $ Scalar c1 + c2 -- must re-wrap Scalar!
 
-  (Pow u) + (Scalar c) = Pow $ u + scalarPow c
-  (Dec u) + (Scalar c) = Pow $ toPow u + scalarPow c -- workaround scalarDec
-  (CRT u) + (Scalar c) = CRT $ u + scalarCRT c
+  (Pow u)  + (Scalar c)  = Pow $ u + scalarPow c
+  (Dec u)  + (Scalar c)  = Pow $ toPow u + scalarPow c -- workaround scalarDec
+  (CRT u)  + (Scalar c)  = CRT $ u + scalarCRT c
   (Sub c1) + (Scalar c2) = Sub $ c1 + Scalar c2
 
   -- SUB PLUS NON-SUB, NON-SCALAR: work in full ring
@@ -442,6 +442,8 @@ instance (Module a (Cyc t m a), Module b (Cyc t m b))
   => Module.C (a,b) (Cyc t m (a,b)) where
   (a,b) *> (CycPair ca cb) = CycPair (a *> ca) (b *> cb)
 
+-- no instance for RRq because it's not, mathematically
+
 -- ForallFact2 instances needed for special RescaleCyc instance
 
 instance (CRTElt t Int64) => ForallFact2 (Module.C Int64) (Cyc t) Int64 where
@@ -491,14 +493,14 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r)
 
   mulG (Pow u) = Pow $ R.mulGPow u
   mulG (Dec u) = Dec $ R.mulGDec u
-  mulG (CRT (Left u)) = Pow $ R.mulGPow $ R.toPow u -- go to Pow for precision
+  mulG (CRT (Left u)) = Pow $ R.mulGPow $ toPow u -- go to Pow for precision
   mulG (CRT (Right u)) = CRT $ Right $ R.mulGCRTC u
   mulG c@(Scalar _) = mulG $ toCRT' c
   mulG (Sub c) = mulG $ embed' c   -- must go to full ring
 
   divG (Pow u) = Pow <$> R.divGPow u
   divG (Dec u) = Dec <$> R.divGDec u
-  divG (CRT (Left u)) = Pow <$> R.divGPow (R.toPow u) -- go to Pow for precision
+  divG (CRT (Left u)) = Pow <$> R.divGPow (toPow u) -- go to Pow for precision
   divG (CRT (Right u)) = Just $ (CRT . Right) $ R.divGCRTC u
   divG c@(Scalar _) = divG $ toCRT' c
   divG (Sub c) = divG $ embed' c  -- must go to full ring
@@ -534,13 +536,26 @@ instance Cyclotomic (CycG t) (ZqBasic q z) => Cyclotomic (Cyc t) (ZqBasic q z) w
   adviseDec = CycZqB . adviseDec . unCycZqB
   adviseCRT = CycZqB . adviseCRT . unCycZqB
 
-instance (Cyclotomic (Cyc t) a, Cyclotomic (Cyc t) b) => Cyclotomic (Cyc t) (a,b) where
+instance (Cyclotomic (Cyc t) a, Cyclotomic (Cyc t) b)
+  => Cyclotomic (Cyc t) (a,b) where
   scalarCyc (a,b) = CycPair (scalarCyc a) (scalarCyc b)
   mulG (CycPair a b) = CycPair (mulG a) (mulG b)
   divG (CycPair a b) = CycPair <$> divG a <*> divG b
   advisePow (CycPair a b) = CycPair (advisePow a) (advisePow b)
   adviseDec (CycPair a b) = CycPair (adviseDec a) (adviseDec b)
   adviseCRT (CycPair a b) = CycPair (adviseCRT a) (adviseCRT b)
+
+instance (Tensor t (RRq q r)) => Cyclotomic (Cyc t) (RRq q r) where
+  scalarCyc = PowRRq . scalarPow
+  mulG (PowRRq c) = PowRRq $ mulGPow c
+  mulG (DecRRq c) = DecRRq $ mulGDec c
+  divG (PowRRq c) = PowRRq <$> divGPow c
+  divG (DecRRq c) = DecRRq <$> divGDec c
+  advisePow (DecRRq c) = PowRRq $ toPow c
+  advisePow c = c
+  adviseDec (PowRRq c) = DecRRq $ toDec c
+  adviseDec c = c
+  adviseCRT = id
 
 -----
 
@@ -558,7 +573,7 @@ instance TensorGaussian t q => GaussianCyc (CycG t) q where
 instance GaussianCyc (CycG t) Double => GaussianCyc (Cyc t) Double where
   tweakedGaussian = fmap CycDbl . L.tweakedGaussian
 
--- CJP: no GaussianCyc for Int64, ZqBasic, or pairs
+-- CJP: no GaussianCyc for Int64, ZqBasic, pairs, or RRq
 
 -- | uses 'Double' precision for the intermediate Gaussian samples
 instance (TensorGaussian t Double, IFElt t Double, IFunctor t, ToInteger z, IFElt t z)
@@ -602,8 +617,8 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r) -- ZT, ID for superclass
   twace :: forall t m m' r .
           (CRTElt t r, ZeroTestable r, IntegralDomain r, m `Divides` m')
        => CycG t m' r -> CycG t m r
-  twace (Pow u) = Pow $ R.twacePow u
-  twace (Dec u) = Dec $ R.twaceDec u
+  twace (Pow u) = Pow $ twacePow u
+  twace (Dec u) = Dec $ twaceDec u
   twace (CRT u) = either (cycPE . twaceCRTE) (cycPC . twaceCRTC) u
   twace (Scalar u) = Scalar u
   twace (Sub (c :: CycG t l r)) = Sub (twace c :: CycG t (FGCD l m) r)
@@ -617,19 +632,19 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r) -- ZT, ID for superclass
 instance ExtensionCyc (CycG t) Double => ExtensionCyc (Cyc t) Double where
   embed = CycDbl . embed . unCycDbl
   twace = CycDbl . twace . unCycDbl
-  powBasis = fmap CycDbl <$> powBasis
+  powBasis = (CycDbl <$>) <$> powBasis
   coeffsCyc b = fmap CycDbl . coeffsCyc b . unCycDbl
 
 instance ExtensionCyc (CycG t) Int64 => ExtensionCyc (Cyc t) Int64 where
   embed = CycI64 . embed . unCycI64
   twace = CycI64 . twace . unCycI64
-  powBasis = fmap CycI64 <$> powBasis
+  powBasis = (CycI64 <$>) <$> powBasis
   coeffsCyc b = fmap CycI64 . coeffsCyc b . unCycI64
 
 instance ExtensionCyc (CycG t) (ZqBasic q z) => ExtensionCyc (Cyc t) (ZqBasic q z) where
   embed = CycZqB . embed . unCycZqB
   twace = CycZqB . twace . unCycZqB
-  powBasis = fmap CycZqB <$> powBasis
+  powBasis = (CycZqB <$>) <$> powBasis
   coeffsCyc b = fmap CycZqB . coeffsCyc b . unCycZqB
 
 instance (ExtensionCyc (Cyc t) a, ExtensionCyc (Cyc t) b)
@@ -639,6 +654,17 @@ instance (ExtensionCyc (Cyc t) a, ExtensionCyc (Cyc t) b)
   powBasis = zipWith CycPair <$> powBasis <*> powBasis
   coeffsCyc bas (CycPair a b) =
     zipWith CycPair (coeffsCyc bas a) (coeffsCyc bas b)
+
+instance (Tensor t (RRq q r)) => ExtensionCyc (Cyc t) (RRq q r) where
+  embed (PowRRq u) = PowRRq $ embedPow u
+  embed (DecRRq u) = DecRRq $ embedDec u
+  twace (PowRRq u) = PowRRq $ twacePow u
+  twace (DecRRq u) = DecRRq $ twaceDec u
+  powBasis = (PowRRq <$>) <$> R.powBasis
+  coeffsCyc L.Pow (PowRRq c) = PowRRq <$> R.coeffsPow c
+  coeffsCyc L.Dec (DecRRq c) = DecRRq <$> R.coeffsDec c
+  coeffsCyc L.Pow (DecRRq c) = PowRRq <$> (R.coeffsPow $ toPow c)
+  coeffsCyc L.Dec (PowRRq c) = DecRRq <$> (R.coeffsDec $ toDec c)
 
 -- | Force to a non-'Sub' constructor (for internal use only).
 embed' :: forall t r l m . (l `Divides` m, CRTElt t r)
@@ -657,27 +683,27 @@ type instance LiftOf (CycG t m r) = CycG t m (LiftOf r)
 type instance LiftOf (Cyc  t m r) = Cyc  t m (LiftOf r)
 
 instance (Lift b a, CRTElt t b, Tensor t a) => LiftCyc (CycG t) b where
-  liftCyc L.Pow = cycLiftPow
-  liftCyc L.Dec = cycLiftDec
+  liftCyc L.Pow (Pow u) = Pow $ lift u
+  liftCyc L.Pow (Dec u) = Pow $ lift $ toPow u
+  liftCyc L.Pow (CRT u) = Pow $ lift $ either toPow toPow u
+  -- optimized for subrings; these are correct for powerful basis but
+  -- not for decoding
+  liftCyc L.Pow (Scalar c) = Scalar $ lift c
+  liftCyc L.Pow (Sub c) = Sub $ liftCyc L.Pow c
+
+  liftCyc L.Dec c = Dec $ lift $ uncycDec c
 
 instance (LiftCyc (CycG t) (ZqBasic q Int64))
   => LiftCyc (Cyc t) (ZqBasic q Int64) where
   liftCyc b = CycI64 . liftCyc b . unCycZqB
 
-cycLiftPow, cycLiftDec :: (Lift b a, Fact m, CRTElt t b, Tensor t a)
-  => CycG t m b -> CycG t m a
-
--- | Lift using the powerful basis.
-cycLiftPow (Pow u) = Pow $ lift u
-cycLiftPow (Dec u) = Pow $ lift $ toPow u
-cycLiftPow (CRT u) = Pow $ lift $ either toPow toPow u
--- optimized for subrings; these are correct for powerful basis but
--- not for decoding
-cycLiftPow (Scalar c) = Scalar $ lift c
-cycLiftPow (Sub c) = Sub $ cycLiftPow c
-
--- | Lift using the decoding basis.
-cycLiftDec c = Dec $ lift $ uncycDec c
+-- specialized to Double so we know the target base type
+instance (Lift' (RRq q Double), Tensor t (RRq q Double), Tensor t Double)
+  => LiftCyc (Cyc t) (RRq q Double) where
+  liftCyc L.Pow (PowRRq u) = CycDbl $ Pow $ lift u
+  liftCyc L.Dec (DecRRq u) = CycDbl $ Dec $ lift u
+  liftCyc L.Dec (PowRRq u) = CycDbl $ Dec $ lift $ toDec $ u
+  liftCyc L.Pow (DecRRq u) = CycDbl $ Pow $ lift $ toPow $ u
 
 -- CJP TODO: set up a class for crtSet
 
@@ -694,7 +720,6 @@ crtSet = (Pow <$>) <$> R.crtSet
 instance (Reduce a b, CRTElt t a, CRTElt t b,
           ZeroTestable a, ZeroTestable b) -- ZT just for Additive superclasses
          => ReduceCyc (CycG t) a b where
-  {-# INLINABLE reduceCyc #-}
   reduceCyc (Pow u)    = Pow    $ reduce u
   reduceCyc (Dec u)    = Dec    $ reduce u
   reduceCyc (CRT u)    = Pow    $ reduce $ either toPow toPow u
@@ -713,6 +738,13 @@ instance (ReduceCyc (Cyc t) a b, Fact m,
           Additive (Cyc t m a), Additive (Cyc t m b)) -- Reduce superclasses
   => Reduce (Cyc t m a) (Cyc t m b) where
   reduce = reduceCyc
+
+-- specialized to Double so we know the source base type
+instance (Reduce Double (RRq q Double), CRTElt t Double, Tensor t (RRq q Double))
+  => ReduceCyc (Cyc t) Double (RRq q Double) where
+  reduceCyc (CycDbl (Pow u)) = PowRRq $ reduce u
+  reduceCyc (CycDbl (Dec u)) = DecRRq $ reduce u
+  reduceCyc (CycDbl c)       = reduceCyc $ CycDbl $ toPow' c
 
 -----
 
@@ -740,6 +772,11 @@ instance RescaleCyc (CycG t) a a where
 instance (RescaleCyc (CycG t) (ZqBasic q z) (ZqBasic p z))
   => RescaleCyc (Cyc t) (ZqBasic q z) (ZqBasic p z) where
   rescaleCyc b = CycZqB . rescaleCyc b . unCycZqB
+
+instance (Rescale (RRq q r) (RRq p r), Tensor t (RRq q r), Tensor t (RRq p r))
+  => RescaleCyc (Cyc t) (RRq q r) (RRq p r) where
+  rescaleCyc L.Pow (PowRRq u) = PowRRq $ rescale u
+  rescaleCyc L.Dec (DecRRq u) = DecRRq $ rescale u
 
 -- | specialized instance for product rings of \(\Z_q\)s
 instance (LiftCyc (Cyc t) (ZqBasic q z), ReduceCyc (Cyc t) z b,
@@ -919,6 +956,11 @@ instance (Random (Cyc t m a), Random (Cyc t m b)) => Random (Cyc t m (a,b)) wher
                  in (CycPair a b, g'')
   randomR _ = error "randomR non-sensical for Cyc"
 
+instance (Fact m, ForallFact2 Random t (RRq q r))
+  => Random (Cyc t m (RRq q r)) where
+  random g = let (u,g') = random g in (PowRRq u, g')
+  randomR = error "randomR nonsensical for Cyc over (RRq q r)"
+
 -----
 
 instance (Fact m, ForallFact2 Show t r, ForallFact2 Show t (CRTExt r), Show r)
@@ -938,7 +980,7 @@ deriving instance (Show (Cyc t m a), Show (Cyc t m b))
 
 -----
 
-instance (NFData r, Fact m,
+instance (Fact m, NFData r,
           ForallFact2 NFData t r, ForallFact2 NFData t (CRTExt r))
          => NFData (CycG t m r) where
   rnf (Pow u) = rnf u
@@ -953,6 +995,11 @@ deriving instance NFData (CycG t m (ZqBasic q z)) => NFData (Cyc t m (ZqBasic q 
 
 instance (NFData (Cyc t m a), NFData (Cyc t m b)) => NFData (Cyc t m (a,b)) where
   rnf (CycPair a b) = rnf a `seq` rnf b
+
+instance (Fact m, ForallFact2 NFData t (RRq q r))
+  => NFData (Cyc t m (RRq q r)) where
+  rnf (PowRRq u) = rnf u
+  rnf (DecRRq u) = rnf u
 
 -----
 
