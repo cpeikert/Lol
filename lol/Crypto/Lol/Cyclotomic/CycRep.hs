@@ -163,8 +163,7 @@ instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
 -- TODO: replace these implementations to use Additive instance of
 -- underlying tensor? Would this require using ForallFact2 Additive.C?
 
-instance (Additive r, Tensor t r, IFunctor t, Fact m)
-         => Additive.C (CycRep t P m r) where
+instance (Additive r, Tensor t r, Fact m) => Additive.C (CycRep t P m r) where
   zero = Pow $ T.scalarPow zero
   (Pow v1) + (Pow v2) = Pow $ zipWithI (+) v1 v2
   (Pow v1) - (Pow v2) = Pow $ zipWithI (-) v1 v2
@@ -174,8 +173,7 @@ instance (Additive r, Tensor t r, IFunctor t, Fact m)
   {-# INLINABLE (-) #-}
   {-# INLINABLE negate #-}
 
-instance (Additive r, Tensor t r, IFunctor t, Fact m)
-         => Additive.C (CycRep t D m r) where
+instance (Additive r, Tensor t r, Fact m) => Additive.C (CycRep t D m r) where
   zero = Dec $ T.scalarPow zero -- scalarPow works because it's zero
   (Dec v1) + (Dec v2) = Dec $ zipWithI (+) v1 v2
   (Dec v1) - (Dec v2) = Dec $ zipWithI (-) v1 v2
@@ -248,12 +246,12 @@ instance (GFCtx fp d, Fact m, Tensor t fp, Module (GF fp d) (t m fp))
   r *> (Pow v) = Pow $ r LP.*> v
 
 
-instance (Reduce a b, Tensor t a, Tensor t b, IFunctor t, Fact m)
+instance (Reduce a b, Tensor t a, Tensor t b, Fact m)
          => Reduce (CycRep t P m a) (CycRep t P m b) where
   reduce (Pow v) = Pow $ fmapI reduce v
   {-# INLINABLE reduce #-}
 
-instance (Reduce a b, Tensor t a, Tensor t b, IFunctor t, Fact m)
+instance (Reduce a b, Tensor t a, Tensor t b, Fact m)
     => Reduce (CycRep t D m a) (CycRep t D m b) where
   reduce (Dec v) = Dec $ fmapI reduce v
   {-# INLINABLE reduce #-}
@@ -264,7 +262,7 @@ instance (Reduce a b, Tensor t a, Tensor t b, IFunctor t, Fact m)
 type instance LiftOf (CycRep t P m r) = CycRep t P m (LiftOf r)
 type instance LiftOf (CycRep t D m r) = CycRep t D m (LiftOf r)
 
-instance (Lift' r, Tensor t r, Tensor t (LiftOf r), IFunctor t, Fact m)
+instance (Lift' r, Tensor t r, Tensor t (LiftOf r), Fact m)
          => Lift' (CycRep t P m r) where
   lift (Pow v) = Pow $ fmapI lift v
   {-# INLINABLE lift #-}
