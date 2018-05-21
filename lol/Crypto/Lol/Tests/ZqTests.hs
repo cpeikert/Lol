@@ -26,8 +26,6 @@ Tests for modular arithmetic.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
--- TODO: Update tests in this module to use QuickCheck
-
 module Crypto.Lol.Tests.ZqTests (zqTests) where
 
 import Crypto.Lol

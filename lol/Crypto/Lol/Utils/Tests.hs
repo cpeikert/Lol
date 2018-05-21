@@ -24,6 +24,7 @@ module Crypto.Lol.Utils.Tests
 (test
 ,testIO
 ,testWithGen
+,testWithoutGen
 ,nestGroup
 ,testGroupM
 ,genTestArgs
@@ -48,6 +49,10 @@ testIO = TestIO
 -- Make a 'TF.Test' given a name, a testing function, and a parameter generator
 testWithGen :: (Show a, QC.Testable prop) => String -> (a -> prop) -> QC.Gen a -> TF.Test
 testWithGen name f gen = testProperty name $ QC.forAll gen f
+
+-- Make a 'TF.Test' given a name and a 'QC.Testable' value
+testWithoutGen :: (QC.Testable prop) => String -> prop -> TF.Test
+testWithoutGen name p = testProperty name $ QC.property p
 
 -- | Apply parameters to a list of 'TF.Test'.
 nestGroup :: String -> [QC.Gen a -> TF.Test] -> QC.Gen a -> TF.Test

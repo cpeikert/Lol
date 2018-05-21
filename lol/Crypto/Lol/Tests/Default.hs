@@ -46,14 +46,20 @@ defaultZqTests = TF.testGroup "Zq Tests" $ [
   zqTests (Proxy::Proxy (Zq (3 ** 5))),
   zqTests (Proxy::Proxy (Zq (3 ** 5 ** 7)))]
 
--- TODO: Rename this to something more like testSingleIndexWithCRT. Continuing the convention,
---         tensorTests2 should be named testMultiIndexWithCRT. And the tests for Int64 should be the
---         same except "WithoutCRT"
-
 unifTensorTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> TF.Test
 unifTensorTests1 pmr pt =
   let genTensor = chooseAny :: QC.Gen (t m r) in
   tensorTests1 genTensor
+
+unifTensorTests2 :: forall t m m' r . (Random r, Random (t m r), _) => Proxy '(m,m',r) -> Proxy t -> TF.Test
+unifTensorTests2 pmmr pt =
+  let genTensor = chooseAny :: QC.Gen (t m r) in
+  tensorTests2 (Proxy::Proxy '(t,m,m',r)) genTensor
+
+unifTensorCrtTests2 :: forall t m m' r . (Random r, Random (t m r), _) => Proxy '(m,m',r) -> Proxy t -> TF.Test
+unifTensorCrtTests2 pmmr pt =
+  let genTensor = chooseAny :: QC.Gen (t m r) in
+  tensorCrtTests2 (Proxy::Proxy '(t,m,m',r)) genTensor
 
 unifTensorCrtTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> TF.Test
 unifTensorCrtTests1 pmr pt =
@@ -63,7 +69,7 @@ unifTensorCrtTests1 pmr pt =
 
 zqTensorTests :: _ => Proxy t -> TF.Test
 zqTensorTests pt =
-  let uniIndexWithoutCRT = TF.testGroup "Tensor Tests over ZqBasic" $ ($ pt) <$> [
+  let uniIndexWithoutCrt = TF.testGroup "Tensor Tests over ZqBasic" $ ($ pt) <$> [
         unifTensorTests1 (Proxy::Proxy '(F7,  Zq 29)),
         unifTensorTests1 (Proxy::Proxy '(F12, SmoothZQ1)),
         unifTensorTests1 (Proxy::Proxy '(F1,  Zq 17)),
@@ -74,7 +80,7 @@ zqTensorTests pt =
         unifTensorTests1 (Proxy::Proxy '(F42, Zq 8191)),
         unifTensorTests1 (Proxy::Proxy '(F42, ZQ1)),
         unifTensorTests1 (Proxy::Proxy '(F89, Zq 179))]
-      uniIndexWithCRT = TF.testGroup "TensorCRT Tests over ZqBasic" $ ($ pt) <$> [
+      uniIndexWithCrt = TF.testGroup "TensorCRT Tests over ZqBasic" $ ($ pt) <$> [
         unifTensorCrtTests1 (Proxy::Proxy '(F7,  Zq 29)),
         unifTensorCrtTests1 (Proxy::Proxy '(F12, SmoothZQ1)),
         unifTensorCrtTests1 (Proxy::Proxy '(F1,  Zq 17)),
@@ -84,8 +90,31 @@ zqTensorTests pt =
         unifTensorCrtTests1 (Proxy::Proxy '(F21, Zq 8191)),
         unifTensorCrtTests1 (Proxy::Proxy '(F42, Zq 8191)),
         unifTensorCrtTests1 (Proxy::Proxy '(F42, ZQ1)),
-        unifTensorCrtTests1 (Proxy::Proxy '(F89, Zq 179))] in
-  TF.testGroup "All Tensor-like Tests over ZqBasic" [uniIndexWithoutCRT, uniIndexWithCRT]
+        unifTensorCrtTests1 (Proxy::Proxy '(F89, Zq 179))]
+      multiIndexWithoutCrt = TF.testGroup "Multi-Index Tensor Tests over ZqBasic" $ ($ pt) <$> [
+        unifTensorTests2 (Proxy::Proxy '(F1, F7,  Zq 29)),
+        unifTensorTests2 (Proxy::Proxy '(F4, F12, Zq 536871001)),
+        unifTensorTests2 (Proxy::Proxy '(F4, F12, SmoothZQ1)),
+        unifTensorTests2 (Proxy::Proxy '(F2, F8,  Zq 17)),
+        unifTensorTests2 (Proxy::Proxy '(F8, F8,  Zq 17)),
+        unifTensorTests2 (Proxy::Proxy '(F2, F8,  SmoothZQ1)),
+        unifTensorTests2 (Proxy::Proxy '(F4, F8,  Zq 17)),
+        unifTensorTests2 (Proxy::Proxy '(F3, F21, Zq 8191)),
+        unifTensorTests2 (Proxy::Proxy '(F7, F21, Zq 8191)),
+        unifTensorTests2 (Proxy::Proxy '(F3, F42, Zq 8191))]
+      multiIndexWithCrt = TF.testGroup "Multi-Index TensorCRT Tests over ZqBasic" $ ($ pt) <$> [
+        unifTensorCrtTests2 (Proxy::Proxy '(F1, F7,  Zq 29)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F4, F12, Zq 536871001)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F4, F12, SmoothZQ1)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F2, F8,  Zq 17)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F8, F8,  Zq 17)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F2, F8,  SmoothZQ1)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F4, F8,  Zq 17)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F3, F21, Zq 8191)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F7, F21, Zq 8191)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F3, F42, Zq 8191))] in
+  TF.testGroup "All Tensor-like Tests over ZqBasic" [
+    uniIndexWithoutCrt, uniIndexWithCrt, multiIndexWithoutCrt, multiIndexWithCrt]
 
 {-
 -- | Default @m@/@r@ test parameters, for an arbitrary 'Crypto.Lol.Cyclotomic.Tensor'.
