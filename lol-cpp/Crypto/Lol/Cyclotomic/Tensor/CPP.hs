@@ -367,6 +367,12 @@ instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
 instance (Ring r, Storable r) => ForallFact2 (Module.C r) CT r where
   entailFact2 = Sub Dict
 
+instance ForallFact1 Functor CT where
+  entailFact1 = Sub Dict
+
+instance ForallFact1 Foldable CT where
+  entailFact1 = Sub Dict
+
 instance ForallFact1 Applicative CT where
   entailFact1 = Sub Dict
 
