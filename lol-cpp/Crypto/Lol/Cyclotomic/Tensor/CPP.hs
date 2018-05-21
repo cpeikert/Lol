@@ -312,6 +312,39 @@ instance TensorCRT CT (Complex Double) where
   {-# INLINABLE crtFuncs #-}
   {-# INLINE crtExtFuncs #-}
 
+instance Tensor CT Double where
+  scalarPow = CT . scalarPow'
+
+  l = wrap $ basicDispatch dlDouble
+  lInv = wrap $ basicDispatch dlinvDouble
+
+  mulGPow = wrap $ basicDispatch dmulgpowDouble
+  mulGDec = wrap $ basicDispatch dmulgdecDouble
+
+  divGPow = wrapM $ dispatchGInv dginvpowDouble
+  divGDec = wrapM $ dispatchGInv dginvdecDouble
+
+  twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
+  embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+
+  coeffs = wrapM $ coerceCoeffs coeffs'
+
+  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+
+  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE l #-}
+  {-# INLINABLE lInv #-}
+  {-# INLINABLE mulGPow #-}
+  {-# INLINABLE mulGDec #-}
+  {-# INLINABLE divGPow #-}
+  {-# INLINABLE divGDec #-}
+  {-# INLINABLE twacePowDec #-}
+  {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
+  {-# INLINABLE coeffs #-}
+  {-# INLINABLE powBasisPow #-}
+
 instance TensorGSqNorm CT Double where
   gSqNormDec (CT v) = untag gSqNormDecDouble v
   gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
