@@ -22,21 +22,21 @@ which can be used to verify a 'Crypto.Lol.Cyclotomic.Tensor' implementation.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
---module Crypto.Lol.Tests.Default (complexDoubleTests, zqTensorTests, defaultZqTests) where
-module Crypto.Lol.Tests.Default (defaultZqTests, zqTensorTests) where
+module Crypto.Lol.Tests.Default (defaultZqTests, int64TensorTests, zqTensorTests) where
 
 import Crypto.Lol (Complex, Int64)
 import Crypto.Lol.Factored
 import Crypto.Lol.Tests.TensorTests
 import Crypto.Lol.Tests.ZqTests
+import Crypto.Lol.Utils.BuildGen
 import Crypto.Lol.Utils.ShowType
 import Crypto.Lol.Types.IrreducibleChar2 ()
 
 import Control.Monad.Random
 import Data.Proxy
-import qualified Test.Framework as TF
+import qualified Test.Framework  as TF
 import qualified Test.QuickCheck as QC
-import Test.QuickCheck.Gen (chooseAny)
+import Test.QuickCheck.Gen (choose, chooseAny)
 
 -- | Default parameters for 'Crypto.Lol.Types.Unsafe.ZqBasic' tests.
 defaultZqTests :: TF.Test
@@ -47,25 +47,41 @@ defaultZqTests = TF.testGroup "Zq Tests" $ [
   zqTests (Proxy::Proxy (Zq (3 ** 5 ** 7)))]
 
 unifTensorTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> TF.Test
-unifTensorTests1 pmr pt =
+unifTensorTests1 _ _ =
   let genTensor = chooseAny :: QC.Gen (t m r) in
   tensorTests1 genTensor
 
 unifTensorTests2 :: forall t m m' r . (Random r, Random (t m r), _) => Proxy '(m,m',r) -> Proxy t -> TF.Test
-unifTensorTests2 pmmr pt =
+unifTensorTests2 _ _ =
   let genTensor = chooseAny :: QC.Gen (t m r) in
   tensorTests2 (Proxy::Proxy '(t,m,m',r)) genTensor
 
 unifTensorCrtTests2 :: forall t m m' r . (Random r, Random (t m r), _) => Proxy '(m,m',r) -> Proxy t -> TF.Test
-unifTensorCrtTests2 pmmr pt =
+unifTensorCrtTests2 _ _ =
   let genTensor = chooseAny :: QC.Gen (t m r) in
   tensorCrtTests2 (Proxy::Proxy '(t,m,m',r)) genTensor
 
 unifTensorCrtTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> TF.Test
-unifTensorCrtTests1 pmr pt =
+unifTensorCrtTests1 _ _ =
   let genRing   = chooseAny :: QC.Gen r
       genTensor = chooseAny :: QC.Gen (t m r) in
   tensorCrtTests1 genRing genTensor
+
+-- Calls tensorTests1 with an Int64 generator for values in [-100, 100]
+boundedTensorTests1 :: forall t m . (Random (t m Int64), BuildGen Int64 (t m), _)
+                    => Proxy m -> Proxy t -> TF.Test
+boundedTensorTests1 _ _ =
+  let genRange  = choose (-100, 100) :: QC.Gen Int64
+      genTensor = buildGen genRange :: QC.Gen (t m Int64) in
+  tensorTests1 genTensor
+
+-- Calls tensorTests2 with an Int64 generator for values in [-100, 100]
+boundedTensorTests2 :: forall t m m' . (Random (t m Int64), BuildGen Int64 (t m), _)
+                    => Proxy '(m,m') -> Proxy t -> TF.Test
+boundedTensorTests2 _ _ =
+  let genRange  = choose (-100, 100) :: QC.Gen Int64
+      genTensor = buildGen genRange :: QC.Gen (t m Int64) in
+  tensorTests2 (Proxy::Proxy '(t,m,m',Int64)) genTensor
 
 zqTensorTests :: _ => Proxy t -> TF.Test
 zqTensorTests pt =
@@ -115,6 +131,32 @@ zqTensorTests pt =
         unifTensorCrtTests2 (Proxy::Proxy '(F3, F42, Zq 8191))] in
   TF.testGroup "All Tensor-like Tests over ZqBasic" [
     uniIndexWithoutCrt, uniIndexWithCrt, multiIndexWithoutCrt, multiIndexWithCrt]
+
+int64TensorTests :: _ => Proxy t -> TF.Test
+int64TensorTests pt =
+  let uniIndexWithoutCrt = TF.testGroup "Tensor Tests over Int64" $ ($ pt) <$> [
+        boundedTensorTests1 (Proxy::Proxy F7),
+        boundedTensorTests1 (Proxy::Proxy F12),
+        boundedTensorTests1 (Proxy::Proxy F1),
+        boundedTensorTests1 (Proxy::Proxy F2),
+        boundedTensorTests1 (Proxy::Proxy F4),
+        boundedTensorTests1 (Proxy::Proxy F8),
+        boundedTensorTests1 (Proxy::Proxy F21),
+        boundedTensorTests1 (Proxy::Proxy F42),
+        boundedTensorTests1 (Proxy::Proxy F42),
+        boundedTensorTests1 (Proxy::Proxy F89)]
+      multiIndexWithoutCrt = TF.testGroup "Multi-Index Tensor Tests over Int64" $ ($ pt) <$> [
+        boundedTensorTests2 (Proxy::Proxy '(F1, F7)),
+        boundedTensorTests2 (Proxy::Proxy '(F4, F12)),
+        boundedTensorTests2 (Proxy::Proxy '(F4, F12)),
+        boundedTensorTests2 (Proxy::Proxy '(F2, F8)),
+        boundedTensorTests2 (Proxy::Proxy '(F8, F8)),
+        boundedTensorTests2 (Proxy::Proxy '(F2, F8)),
+        boundedTensorTests2 (Proxy::Proxy '(F4, F8)),
+        boundedTensorTests2 (Proxy::Proxy '(F3, F21)),
+        boundedTensorTests2 (Proxy::Proxy '(F7, F21)),
+        boundedTensorTests2 (Proxy::Proxy '(F3, F42))] in
+  TF.testGroup "All Tensor-like Tests over Int64" [uniIndexWithoutCrt, multiIndexWithoutCrt]
 
 {-
 -- | Default @m@/@r@ test parameters, for an arbitrary 'Crypto.Lol.Cyclotomic.Tensor'.

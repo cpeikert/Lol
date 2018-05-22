@@ -48,6 +48,7 @@ import Control.Monad.Trans    as T (lift)
 import Data.Coerce
 import Data.Constraint              hiding ((***))
 import Data.Int
+import qualified Test.QuickCheck    as QC
 import Data.Maybe
 import Data.Traversable             as T
 import Data.Vector.Generic          as V (fromList, toList, unzip)
@@ -390,6 +391,9 @@ instance TensorGSqNorm CT Int64 where
 
   {-# INLINABLE gSqNormDec #-}
 
+instance (Fact m, Storable r) => BuildGen r (CT m) where
+  buildGen gen = (CT . CT' . SV.fromList) <$> QC.vectorOf n gen
+    where n = proxy totientFact (Proxy::Proxy m)
 
 -- Need this for the ForallFact2 Module entailment below
 instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
