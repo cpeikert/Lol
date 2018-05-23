@@ -31,5 +31,8 @@ main = defaultMainWithArgs
 
 main :: IO ()
 main = defaultMainWithArgs
-         [defaultZqTests, zqTensorTests (Proxy::Proxy CT), int64TensorTests (Proxy::Proxy CT)]
+          [defaultZqTests
+          ,zqTensorTests (Proxy::Proxy CT)
+          ,int64TensorTests (Proxy::Proxy CT)
+          ,cpxTensorTests (Proxy::Proxy CT)]
          ["--maximum-generated-tests=100"]
