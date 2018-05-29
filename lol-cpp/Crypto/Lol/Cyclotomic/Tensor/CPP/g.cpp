@@ -175,7 +175,7 @@ extern "C" hShort_t tensorGInvPowR (hInt_t* y, hDim_t totm, PrimeExponent* peArr
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
 
   for(int i = 0; i < totm; i++) {
-    if (y[i] % oddrad) {
+    if (y[i] % oddrad == 0) {
       y[i] /= oddrad;
     }
     else {
@@ -228,7 +228,7 @@ extern "C" hShort_t tensorGInvDecR (hInt_t* y, hDim_t totm, PrimeExponent* peArr
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
 
   for(int i = 0; i < totm; i++) {
-    if (y[i] % oddrad) {
+    if (y[i] % oddrad == 0) {
       y[i] /= oddrad;
     }
     else {
