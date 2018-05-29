@@ -69,7 +69,7 @@ tensorCrtTests1 ringGen tensorGen =
 
 -- TODO: Is it really necessary to take in a a Proxy '(t,m,m',r) and pass it to each and every test?
 
-tensorTests2 :: forall t m m' r . ('True ~ FDivides m m', Fact m, Fact m', Tensor t r, _)
+tensorTests2 :: forall t m m' r . _
              => Proxy '(t,m,m',r) -> QC.Gen (t m r) -> TF.Test
 tensorTests2 _ tensorGen =
   let ptmmr  = Proxy::Proxy '(t,m,m',r)
@@ -86,7 +86,7 @@ tensorTests2 _ tensorGen =
           testWithoutGen "Invar2 Pow/Dec basis"         (prop_twace_invar2_powdec ptmmr)]] in
       TF.testGroup (showType ptmmr) (randTests ++ deterministicTests)
 
-tensorCrtTests2 :: forall t m m' r . ('True ~ FDivides m m', Fact m, Fact m', Tensor t r, TensorCRT t r, _)
+tensorCrtTests2 :: forall t m m' r . _
                 => Proxy '(t,m,m',r) -> QC.Gen (t m r) -> TF.Test
 tensorCrtTests2 _ tensorGen =
   let ptmmr  = Proxy::Proxy '(t,m,m',r)
@@ -153,27 +153,25 @@ prop_scalar_crt _ x = fromMaybe (error "no CRT in prop_scalar_crt") $ do
   crt' <- crt
   return $ (scalarCRT' x :: t m r) == (crt' $ scalarPow x)
 
--- TODO: Continue to move from (Test params) to Bool
-
 -- tests that twace . embed == id in the Pow basis
-prop_trem_pow :: forall t m m' r . (Fact m, Fact m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_trem_pow :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_trem_pow _ x = (twacePowDec $ (embedPow x :: t m' r)) == x
 
 -- tests that twace . embed == id in the Dec basis
-prop_trem_dec :: forall t m m' r . (Fact m, Fact m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_trem_dec :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_trem_dec _ x = (twacePowDec $ (embedDec x :: t m' r)) == x
 
 -- tests that twace . embed == id in the CRT basis
-prop_trem_crt :: forall t m m' r . (Fact m, Fact m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_trem_crt :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_trem_crt _ x = fromMaybe (error "no CRT in prop_trem_crt") $
   (x==) <$> (twaceCRT <*> (embedCRT <*> pure x :: Maybe (t m' r)))
 
 -- embedDec == lInv . embedPow . l
-prop_embed_dec :: forall t m m' r . (Fact m, Fact m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_embed_dec :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_embed_dec _ x = (embedDec x :: t m' r) == (lInv $ embedPow $ l x)
 
 -- embedCRT = crt . embedPow . crtInv
-prop_embed_crt :: forall t m m' r . (Fact m, Fact m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_embed_crt :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_embed_crt _ x = fromMaybe (error "no CRT in prop_embed_crt") $ do
   crt' <- crt
   crtInv' <- crtInv
@@ -181,11 +179,11 @@ prop_embed_crt _ x = fromMaybe (error "no CRT in prop_embed_crt") $ do
   return $ (embedCRT' x :: t m' r) == (crt' $ embedPow $ crtInv' x)
 
 -- twacePowDec = lInv . twacePowDec . l
-prop_twace_dec :: forall t m m' r . (Fact m, Fact m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_twace_dec :: forall t m m' r . _ => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_twace_dec _ x = (twacePowDec x :: t m r) == (lInv $ twacePowDec $ l x)
 
 -- twaceCRT = crt . twacePowDec . crtInv
-prop_twace_crt :: forall t m m' r . (Fact m, Fact m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_twace_crt :: forall t m m' r . _ => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_twace_crt _ x = fromMaybe (error "no CRT in prop_trace_crt") $ do
   twaceCRT' <- twaceCRT
   crt' <- crt
@@ -240,7 +238,7 @@ prop_twace_invar1_crt _ = fromMaybe (error "no CRT in prop_twace_invar1_crt") $ 
   return $ (twaceCRT' input) == output
 
 -- twace preserves scalars in Pow/Dec basis
-prop_twace_invar2_powdec :: forall t m m' r . (Tensor t r, Fact m, Fact m', Ring r, _)
+prop_twace_invar2_powdec :: forall t m m' r . (Tensor t r, m `Divides` m', _)
                          => Proxy '(t,m,m',r) -> Bool
 prop_twace_invar2_powdec _ =
   let output = scalarPow $ one :: t m r
@@ -248,7 +246,7 @@ prop_twace_invar2_powdec _ =
   in (twacePowDec input) == output
 
 -- twace preserves scalars in Pow/Dec basis
-prop_twace_invar2_crt :: forall t m m' r . (Tensor t r, Fact m, Fact m', Ring r, _)
+prop_twace_invar2_crt :: forall t m m' r . (Tensor t r, m `Divides` m', _)
                       => Proxy '(t,m,m',r) -> Bool
 prop_twace_invar2_crt _ = fromMaybe (error "no CRT in prop_twace_invar2_crt") $ do
   scalarCRT1 <- scalarCRT
