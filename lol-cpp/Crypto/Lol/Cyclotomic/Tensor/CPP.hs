@@ -52,7 +52,7 @@ import Data.Int
 import Data.Maybe
 import Data.Traversable             as T
 import Data.Vector.Generic          as V (fromList, toList, unzip)
-import Data.Vector.Storable         as SV (Vector, convert, foldl',
+import Data.Vector.Storable         as SV (Vector, and, convert, foldl',
                                            fromList, generate, length, map,
                                            replicate, replicateM, thaw,
                                            thaw, toList, unsafeFreeze,
@@ -182,6 +182,11 @@ instance (Fact m, Ring r, Storable r) => Ring.C (CT m r) where
 -- Need this for the ForallFact2 Module entailment below
 instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
   (*>) r = wrap $ coerce $ SV.map (r*)
+
+-- x is approximately equal to y iff all their components are approximately equal
+instance (ApproxEqual r, Storable r) => ApproxEqual (CT m r) where
+  (CT (CT' x)) =~= (CT (CT' y)) = SV.and $ SV.zipWith (=~=) x y
+  x@_ =~= y@_ = (toCT x) =~= (toCT y)
 
 ---------- Category-theoretic instances ----------
 
