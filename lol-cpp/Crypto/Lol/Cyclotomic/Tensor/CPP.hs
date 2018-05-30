@@ -163,14 +163,6 @@ instance (Additive r, Storable r, Fact m)
 
   zero = CT $ repl zero
 
-{-
-instance (Fact m, Ring r, Storable r, Dispatch r)
-  => Ring.C (CT m r) where
-  (CT a@(CT' _)) * (CT b@(CT' _)) = CT $ (untag $ cZipDispatch dmul) a b
-
-  fromInteger = CT . repl . fromInteger
--}
-
 instance (ZeroTestable r, Storable r) => ZeroTestable.C (CT m r) where
   --{-# INLINABLE isZero #-}
   isZero (CT (CT' a)) = SV.foldl' (\ b x -> b && isZero x) True a
@@ -182,6 +174,14 @@ instance (GFCtx fp d, Fact m, Additive (CT m fp))
   r *> v = case v of
     CT (CT' arr) -> CT $ CT' $ SV.fromList $ unCoeffs $ r *> Coeffs $ SV.toList arr
     ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $ unCoeffs $ r *> Coeffs $ V.toList $ unIZipVector zv
+
+instance (Fact m, Ring r, Storable r) => Ring.C (CT m r) where
+  (*) a b = zipWithI (*) a b
+  fromInteger i = CT $ repl $ fromInteger i
+
+-- Need this for the ForallFact2 Module entailment below
+instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
+  (*>) r = wrap $ coerce $ SV.map (r*)
 
 ---------- Category-theoretic instances ----------
 
@@ -220,6 +220,8 @@ instance IFunctor CT where
   zipWithI f (CT sv) (ZV v) = zipWithI f (CT sv) (CT $ zvToCT' v)
   zipWithI f (ZV v) (CT sv) = zipWithI f (CT $ zvToCT' v) (CT sv)
   zipWithI f (ZV v1) (ZV v2) = zipWithI f (CT $ zvToCT' v1) (CT $ zvToCT' v2)
+
+---------- Tensor instances ----------
 
 instance Reflects q Int64 => Tensor CT (ZqBasic q Int64) where
   scalarPow = CT . scalarPow'
@@ -390,14 +392,6 @@ instance TensorGSqNorm CT Int64 where
   gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
 
   {-# INLINABLE gSqNormDec #-}
-
-instance (Fact m, Ring r, Storable r) => Ring.C (CT m r) where
-  (*) a b = zipWithI (*) a b
-  fromInteger i = CT $ repl $ fromInteger i
-
--- Need this for the ForallFact2 Module entailment below
-instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
-  (*>) r = wrap $ coerce $ SV.map (r*)
 
 ---------- Entailments for CT ----------
 
