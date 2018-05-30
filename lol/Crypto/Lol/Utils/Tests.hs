@@ -63,7 +63,7 @@ instance ApproxEqual Double where
     | isNaN x || isNaN y = False
     -- Calculate the distance of x/y and y/x from 1 and take the minimum
     | otherwise          = let minDist = minimum $ map (\r -> abs $ (abs r) - 1) [(x/y), (y/x)] in
-                               minDist  < approxEqualEpsilon
+                               minDist < approxEqualEpsilon
 
 instance ApproxEqual (Complex Double) where
   x =~= y = (real x =~= real y) && (imag x =~= imag y)

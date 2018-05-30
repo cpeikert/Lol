@@ -125,6 +125,16 @@ public:
   double real;
   double imag;
 
+  Complex() {
+      this->real = 0.0;
+      this->imag = 0.0;
+  }
+
+  Complex(const double& a, const double& b) {
+      this->real = a;
+      this->imag = b;
+  }
+
   Complex& operator=(const hInt_t& c)
   {
     this->real = c;

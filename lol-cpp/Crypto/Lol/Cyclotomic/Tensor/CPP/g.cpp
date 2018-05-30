@@ -213,10 +213,10 @@ extern "C" hShort_t tensorGInvPowC (Complex* y, hDim_t totm, PrimeExponent* peAr
   tensorFuserPrime (y, gInvPow, totm, peArr, sizeOfPE, 0);
 
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
-  Complex oddradInv;
-  oddradInv = 1 / oddrad;
+  Complex oddradC = Complex((double)oddrad, 0.0);
+
   for(int i = 0; i < totm; i++) {
-    y[i] *= oddradInv;
+    y[i] /= oddradC;
   }
   return 1;
 }
@@ -264,10 +264,10 @@ extern "C" hShort_t tensorGInvDecC (Complex* y, hDim_t totm, PrimeExponent* peAr
   tensorFuserPrime (y, gInvDec, totm, peArr, sizeOfPE, 0);
 
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
-  Complex oddradInv;
-  oddradInv = 1 / oddrad;
+  Complex oddradC = Complex((double)oddrad, 0.0);
+
   for(int i = 0; i < totm; i++) {
-    y[i] *= oddradInv;
+    y[i] /= oddradC;
   }
   return 1;
 }
