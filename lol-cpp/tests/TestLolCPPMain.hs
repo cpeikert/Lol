@@ -29,6 +29,8 @@ main = defaultMainWithArgs
   ["--maximum-generated-tests=100"]
 -}
 
+-- TODO: Make an ApproxEqual class and implement it for CT m r
+
 main :: IO ()
 main = defaultMainWithArgs
           [defaultZqTests

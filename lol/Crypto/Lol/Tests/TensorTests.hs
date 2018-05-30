@@ -86,8 +86,7 @@ tensorTests2 _ tensorGen =
           testWithoutGen "Invar2 Pow/Dec basis"         (prop_twace_invar2_powdec ptmmr)]] in
       TF.testGroup (showType ptmmr) (randTests ++ deterministicTests)
 
-tensorCrtTests2 :: forall t m m' r . _
-                => Proxy '(t,m,m',r) -> QC.Gen (t m r) -> TF.Test
+tensorCrtTests2 :: forall t m m' r . _ => Proxy '(t,m,m',r) -> QC.Gen (t m r) -> TF.Test
 tensorCrtTests2 _ tensorGen =
   let ptmmr  = Proxy::Proxy '(t,m,m',r)
       randTests  = ($ tensorGen) <$> [

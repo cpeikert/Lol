@@ -35,6 +35,7 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP (CT) where
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Module       as Module (C)
+import Algebra.Ring         as Ring (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
 import Control.Applicative    hiding ((*>))
@@ -48,7 +49,6 @@ import Control.Monad.Trans    as T (lift)
 import Data.Coerce
 import Data.Constraint              hiding ((***))
 import Data.Int
-import qualified Test.QuickCheck    as QC
 import Data.Maybe
 import Data.Traversable             as T
 import Data.Vector.Generic          as V (fromList, toList, unzip)
@@ -391,9 +391,9 @@ instance TensorGSqNorm CT Int64 where
 
   {-# INLINABLE gSqNormDec #-}
 
-instance (Fact m, Storable r) => BuildGen r (CT m) where
-  buildGen gen = (CT . CT' . SV.fromList) <$> QC.vectorOf n gen
-    where n = proxy totientFact (Proxy::Proxy m)
+instance (Fact m, Ring r, Storable r) => Ring.C (CT m r) where
+  (*) a b = zipWithI (*) a b
+  fromInteger i = CT $ repl $ fromInteger i
 
 -- Need this for the ForallFact2 Module entailment below
 instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
@@ -555,13 +555,17 @@ instance (Storable r, Random r, Fact m) => Random (CT' m r) where
   --{-# INLINABLE random #-}
   random = runRand $ replM (liftRand random)
 
-  randomR = error "randomR nonsensical for CT'"
+  -- Interpret the range component-wise
+  randomR (CT' a, CT' b) = runRand $ (CT' . SV.fromList) <$> l
+    where l = zipWithM (\x y -> liftRand $ randomR (x, y)) (SV.toList a) (SV.toList b)
 
 instance (Storable r, Random (CT' m r)) => Random (CT m r) where
   --{-# INLINABLE random #-}
   random = runRand $ CT <$> liftRand random
 
-  randomR = error "randomR nonsensical for CT"
+  -- Drop to the CT' instance
+  randomR (CT a, CT b) = runRand $ CT <$> (liftRand $ randomR (a, b))
+  randomR (a@_, b@_) = randomR (toCT a, toCT b)
 
 instance (NFData r) => NFData (CT m r) where
   rnf (CT v) = rnf v
