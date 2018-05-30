@@ -24,7 +24,7 @@ which can be used to verify a 'Crypto.Lol.Cyclotomic.Tensor' implementation.
 
 module Crypto.Lol.Tests.Default (defaultZqTests, cpxTensorTests, int64TensorTests, zqTensorTests) where
 
-import Crypto.Lol (Int64, Ring)
+import Crypto.Lol (Int64)
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Factored
 import Crypto.Lol.Tests.TensorTests
