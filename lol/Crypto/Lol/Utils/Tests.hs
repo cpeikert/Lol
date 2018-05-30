@@ -45,7 +45,7 @@ import qualified Test.QuickCheck as QC
 -- to be considered "approximately equal". That is, x =~= y iff -1-ε < x/y < 1+ε
 -- In the case that x == 0, we just measure that abs y < ε, and vice-versa for y == 0
 approxEqualEpsilon :: Double
-approxEqualEpsilon = 1e-10
+approxEqualEpsilon = 1e-8
 
 class ApproxEqual a where
   (=~=) :: a -> a -> Bool
