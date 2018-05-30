@@ -61,7 +61,7 @@ instance ApproxEqual Double where
     | x == 0             = abs y < approxEqualEpsilon
     | y == 0             = abs x < approxEqualEpsilon
     | isNaN x || isNaN y = False
-    | otherwise          = let ratio = min (abs x/y) (abs y/x) in
+    | otherwise          = let ratio = min (abs $ x/y) (abs $ y/x) in
                            abs (ratio - 1) < approxEqualEpsilon
 
 instance ApproxEqual (Complex Double) where
