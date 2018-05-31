@@ -34,7 +34,6 @@ import Crypto.Lol.Utils.Tests
 import Control.Applicative
 import Data.Maybe
 import qualified Test.Framework  as TF
-import Test.Framework.Providers.QuickCheck2 (testProperty)
 import qualified Test.QuickCheck as QC
 
 -- TODO: We don't test:
