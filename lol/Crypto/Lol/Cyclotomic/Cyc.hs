@@ -164,17 +164,17 @@ cycPE :: Either (CycRep t P m r) (CycRep t E m r) -> CycG t m r
 cycPE = either Pow (CRT . Left)
 {-# INLINABLE cycPE #-}
 
--- | Unwrap a 'Cyc' as a 'CycRep' in powerful-basis representation.
+-- | Unwrap a 'CycG' as a 'CycRep' in powerful-basis representation.
 uncycPow :: (Fact m, CRTElt t r) => CycG t m r -> CycRep t P m r
 {-# INLINABLE uncycPow #-}
 uncycPow c = let (Pow u) = toPow' c in u
 
--- | Unwrap a 'Cyc' as a 'CycRep' in decoding-basis representation.
+-- | Unwrap a 'CycG' as a 'CycRep' in decoding-basis representation.
 uncycDec :: (Fact m, CRTElt t r) => CycG t m r -> CycRep t D m r
 {-# INLINABLE uncycDec #-}
 uncycDec c = let (Dec u) = toDec' c in u
 
--- | Unwrap a 'Cyc' as a 'CycRep' in a CRT-basis representation.
+-- | Unwrap a 'CycG' as a 'CycRep' in a CRT-basis representation.
 uncycCRT :: (Fact m, CRTElt t r) => CycG t m r -> CycRepEC t m r
 {-# INLINABLE uncycCRT #-}
 uncycCRT c = let (CRT u) = toCRT' c in u
