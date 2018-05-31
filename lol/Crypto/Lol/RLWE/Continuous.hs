@@ -47,8 +47,7 @@ type Sample c (m :: Factored) zq rrq = (c m zq, c m rrq)
 type RLWECtx c m zq rrq =
   (Fact m, Cyclotomic c zq, Subgroup zq rrq, Lift' rrq, LiftCyc c rrq,
    Ring (c m zq), Additive.C (c m rrq),
-   IFElt c zq, IFElt c rrq, IFunctor c
-  )
+   IFElt c zq, IFElt c rrq, IFunctor c)
 
 -- | A continuous RLWE sample with the given scaled variance and secret.
 sample :: forall rnd v c m zq rrq .

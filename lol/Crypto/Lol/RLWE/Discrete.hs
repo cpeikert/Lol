@@ -20,7 +20,6 @@ Functions and types for working with discretized ring-LWE samples.
 module Crypto.Lol.RLWE.Discrete where
 
 import Crypto.Lol.Cyclotomic.Cyc
-import Crypto.Lol.Cyclotomic.CycRep (CRTElt)
 import Crypto.Lol.Cyclotomic.Language
 import Crypto.Lol.Prelude
 import Crypto.Lol.RLWE.Continuous as C (errorBound)
@@ -36,7 +35,6 @@ type Sample t m zq = (Cyc t m zq, Cyc t m zq)
 -- | Common constraints for working with discrete RLWE.
 type RLWECtx t m zq =
   (Fact m, Ring zq, Lift' zq, ToInteger (LiftOf zq),
-   CRTElt t zq, CRTElt t (LiftOf zq),
    Cyclotomic (Cyc t) zq, Random (Cyc t m zq), RoundedGaussianCyc (Cyc t) (LiftOf zq),
    ReduceCyc (Cyc t) (LiftOf zq) zq, LiftCyc (Cyc t) zq,
    Ring (Cyc t m zq), Additive.C (Cyc t m (LiftOf zq)))

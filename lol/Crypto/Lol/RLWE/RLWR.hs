@@ -20,7 +20,6 @@ Functions and types for working with ring-LWR samples.
 module Crypto.Lol.RLWE.RLWR where
 
 import Crypto.Lol
-import Crypto.Lol.Cyclotomic.CycRep (CRTElt)
 
 import Control.Monad.Random
 
@@ -29,7 +28,7 @@ type Sample t m zq zp = (Cyc t m zq, Cyc t m zp)
 
 -- | Common constraints for working with RLWR.
 type RLWRCtx t m zq zp =
-  (Fact m, Ring zq, RescaleCyc (Cyc t) zq zp, CRTElt t zq, CRTElt t zp,
+  (Fact m, Ring zq, RescaleCyc (Cyc t) zq zp,
    Cyclotomic (Cyc t) zq, Random (Cyc t m zq),
    Ring (Cyc t m zq))
 
