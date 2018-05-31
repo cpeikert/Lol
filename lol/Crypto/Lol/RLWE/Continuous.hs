@@ -26,6 +26,9 @@ module Crypto.Lol.RLWE.Continuous where
 
 import Crypto.Lol.Cyclotomic.Language
 import Crypto.Lol.Prelude
+import Crypto.Lol.Types.IFunctor
+
+import qualified Algebra.Additive     as Additive (C)
 
 import Control.Applicative
 import Control.Monad.Random hiding (lift)
@@ -42,26 +45,30 @@ type Sample c (m :: Factored) zq rrq = (c m zq, c m rrq)
 
 -- | Common constraints for working with continuous RLWE.
 type RLWECtx c m zq rrq =
-  (Fact m, Cyclotomic c zq, Subgroup zq rrq, Lift' rrq)
+  (Fact m, Cyclotomic c zq, Subgroup zq rrq, Lift' rrq, LiftCyc c rrq,
+   Ring (c m zq), Additive.C (c m rrq),
+   IFElt c zq, IFElt c rrq, IFunctor c
+  )
 
 -- | A continuous RLWE sample with the given scaled variance and secret.
 sample :: forall rnd v c m zq rrq .
   (RLWECtx c m zq rrq, Random zq, Random (LiftOf rrq), OrdFloat (LiftOf rrq),
-   MonadRandom rnd, ToRational v)
+   GaussianCyc c (LiftOf rrq),
+   Reduce (c m (LiftOf rrq)) (c m rrq),
+   Random (c m zq), MonadRandom rnd, ToRational v)
   => v -> c m zq -> rnd (Sample c m zq rrq)
 {-# INLINABLE sample #-}
 sample svar s = let s' = adviseCRT s in do
   a <- getRandom
   e :: c m (LiftOf rrq) <- tweakedGaussian svar
-  let as = fmapDec fromSubgroup (a * s')
+  let as = fmapI fromSubgroup (a * s')
   return (a, as + reduce e)
 
 -- | The error term of an RLWE sample, given the purported secret.
-errorTerm :: (RLWECtx c m zq rrq)
-             => c m zq -> Sample c m zq rrq -> c m (LiftOf rrq)
+errorTerm :: RLWECtx c m zq rrq => c m zq -> Sample c m zq rrq -> c m (LiftOf rrq)
 {-# INLINABLE errorTerm #-}
 errorTerm s = let s' = adviseCRT s
-              in \(a,b) -> liftDec $ b - fmapDec fromSubgroup (a * s')
+              in \(a,b) -> liftDec $ b - fmapI fromSubgroup (a * s')
 
 -- | The 'gSqNorm' of the error term of an RLWE sample, given the
 -- purported secret.
