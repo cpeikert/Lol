@@ -18,17 +18,6 @@ import Crypto.Lol.Tests
 import Data.Proxy
 import Test.Framework
 
-{-
-main :: IO ()
-main = defaultMainWithArgs
-  (complexDoubleTests (Proxy::Proxy CT) ++
-   doubleTests (Proxy::Proxy CT) ++
-   int64Tests (Proxy::Proxy CT) ++
-   zqTensorTests (Proxy::Proxy CT)
-  )
-  ["--maximum-generated-tests=100"]
--}
-
 main :: IO ()
 main = defaultMainWithArgs
           [defaultZqTests
