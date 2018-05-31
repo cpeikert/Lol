@@ -185,8 +185,6 @@ extern "C" hShort_t tensorGInvPowR (hInt_t* y, hDim_t totm, PrimeExponent* peArr
   return 1;
 }
 
-// TODO: Note that not all global assignments Zq::q = q are necessary
-
 extern "C" hShort_t tensorGInvPowRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
   Zq::q = q;

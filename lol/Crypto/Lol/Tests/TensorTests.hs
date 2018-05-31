@@ -67,8 +67,6 @@ tensorCrtTests1 ringGen tensorGen =
           testWithGen "Scalar"                               (prop_scalar_crt ptmr) ringGen] in
   TF.testGroup (showType ptmr) tests
 
--- TODO: Is it really necessary to take in a a Proxy '(t,m,m',r) and pass it to each and every test?
-
 tensorTests2 :: forall t m m' r . _
              => Proxy '(t,m,m',r) -> QC.Gen (t m r) -> TF.Test
 tensorTests2 _ tensorGen =
@@ -98,9 +96,6 @@ tensorCrtTests2 _ tensorGen =
           testWithoutGen "Invar1 CRT basis"           (prop_twace_invar1_crt ptmmr),
           testWithoutGen "Invar2 CRT basis"           (prop_twace_invar2_crt ptmmr)]] in
       TF.testGroup (showType ptmmr) (randTests ++ deterministicTests)
-
--- TODO: * Use fuzzy inequality for Complex Doubles
---       * Figure out why prop_ginv_pow fails with "could not divide by G" for all Int64
 
 prop_fmap :: _ => t m r -> Bool
 prop_fmap x = (fmap id x) =~= x
