@@ -113,27 +113,27 @@ bench_liftPow = bench lift
 {-# INLINABLE bench_mulgPow #-}
 -- multiply by g when input is in Pow basis
 bench_mulgPow :: _ => CycRep t P m r -> Bench '(t,m,r)
-bench_mulgPow = bench mulG
+bench_mulgPow = bench mulGPow
 
 {-# INLINABLE bench_mulgDec #-}
 -- multiply by g when input is in Dec basis
 bench_mulgDec :: _ => CycRep t D m r -> Bench '(t,m,r)
-bench_mulgDec = bench mulG
+bench_mulgDec = bench mulGDec
 
 {-# INLINABLE bench_mulgCRT #-}
 -- multiply by g when input is in CRT basis
 bench_mulgCRT :: _ => CycRepPC t m r -> Bench '(t,m,r)
-bench_mulgCRT (Right a) = bench mulG a
+bench_mulgCRT (Right a) = bench mulGCRTC a
 
 {-# INLINABLE bench_divgPow #-}
 -- divide by g when input is in Pow basis
 bench_divgPow :: _ => CycRep t P m r -> Bench '(t,m,r)
-bench_divgPow = bench divGPow . mulG
+bench_divgPow = bench divGPow . mulGPow
 
 {-# INLINABLE bench_divgDec #-}
 -- divide by g when input is in Dec basis
 bench_divgDec :: _ => CycRep t D m r -> Bench '(t,m,r)
-bench_divgDec = bench divGDec . mulG
+bench_divgDec = bench divGDec . mulGDec
 
 {-# INLINABLE bench_divgCRT #-}
 -- divide by g when input is in CRT basis
