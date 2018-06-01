@@ -23,7 +23,7 @@ performance for 'Cyc' in some cases.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Benchmarks.CycRepBenches (ucycBenches1, ucycBenches2) where
+module Crypto.Lol.Benchmarks.CycRepBenches (cycRepBenches1, cycRepBenches2) where
 
 import Control.Applicative
 import Control.Monad.Random hiding (lift)
@@ -40,9 +40,9 @@ import Crypto.Random
 -- There must be a CRT basis for \(O_m\) over @r@.
 -- These cover the same functions as @cycBenches1@, but may have different
 -- performance due to how GHC interacts with Lol.
-{-# INLINABLE ucycBenches1 #-}
-ucycBenches1 :: (Monad rnd, _) => Proxy '(t,m,r) -> Proxy gen -> rnd Benchmark
-ucycBenches1 ptmr pgen = benchGroup "CycRep" $ ($ ptmr) <$> [
+{-# INLINABLE cycRepBenches1 #-}
+cycRepBenches1 :: (Monad rnd, _) => Proxy '(t,m,r) -> Proxy gen -> rnd Benchmark
+cycRepBenches1 ptmr pgen = benchGroup "CycRep" $ ($ ptmr) <$> [
   genBenchArgs "zipWith (*)" bench_mul,
   genBenchArgs "crt" bench_crt,
   genBenchArgs "crtInv" bench_crtInv,
@@ -62,9 +62,9 @@ ucycBenches1 ptmr pgen = benchGroup "CycRep" $ ($ ptmr) <$> [
 -- There must be a CRT basis for \(O_{m'}\) over @r@.
 -- These cover the same functions as @cycBenches2@, but may have different
 -- performance due to how GHC interacts with Lol.
-{-# INLINE ucycBenches2 #-}
-ucycBenches2 :: (Monad rnd, _) => Proxy '(t,m,m',r) -> rnd Benchmark
-ucycBenches2 p = benchGroup "CycRep" $ ($ p) <$> [
+{-# INLINE cycRepBenches2 #-}
+cycRepBenches2 :: (Monad rnd, _) => Proxy '(t,m,m',r) -> rnd Benchmark
+cycRepBenches2 p = benchGroup "CycRep" $ ($ p) <$> [
   genBenchArgs "twacePow" bench_twacePow,
   genBenchArgs "twaceDec" bench_twaceDec,
   genBenchArgs "twaceCRT" bench_twaceCRT,

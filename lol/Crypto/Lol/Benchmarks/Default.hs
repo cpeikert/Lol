@@ -54,10 +54,8 @@ oneIdxBenches :: forall t m r gen . _ => Proxy '(m,r) -> Proxy t -> Proxy gen ->
 oneIdxBenches _ _ pgen =
   let ptmr = Proxy :: Proxy '(t,m,r)
   in benchGroup (showType ptmr) $ (($ pgen) . ($ ptmr)) <$> [
-      --simpleTensorBenches1,
       tensorBenches1,
-      --simpleUCycBenches1,
-      ucycBenches1,
+      cycRepBenches1,
       cycBenches1
       ]
 
@@ -67,9 +65,7 @@ twoIdxBenches :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> IO Benchma
 twoIdxBenches _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)
   in benchGroup (showType ptmr) $ ($ ptmr) <$> [
-      --simpleTensorBenches2,
       tensorBenches2,
-      --simpleUCycBenches2,
-      ucycBenches2,
+      cycRepBenches2,
       cycBenches2
       ]
