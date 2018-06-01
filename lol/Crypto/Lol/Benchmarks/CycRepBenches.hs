@@ -29,8 +29,9 @@ import Control.Applicative
 import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol.Utils.Benchmarks
-import Crypto.Lol.Cyclotomic.Tensor (Tensor)
 import Crypto.Lol.Cyclotomic.CycRep
+import Crypto.Lol.Cyclotomic.Language (mulG)
+import Crypto.Lol.Cyclotomic.Tensor (Tensor)
 import Crypto.Lol.Prelude
 import Crypto.Lol.Types
 import Crypto.Random
@@ -42,9 +43,6 @@ import Crypto.Random
 {-# INLINABLE ucycBenches1 #-}
 ucycBenches1 :: (Monad rnd, _) => Proxy '(t,m,r) -> Proxy gen -> rnd Benchmark
 ucycBenches1 ptmr pgen = benchGroup "CycRep" $ ($ ptmr) <$> [
-  --genBenchArgs "unzipPow" bench_unzipCycRepPow,
-  --genBenchArgs "unzipDec" bench_unzipCycRepDec,
-  --genBenchArgs "unzipCRT" bench_unzipCycRepCRT,
   genBenchArgs "zipWith (*)" bench_mul,
   genBenchArgs "crt" bench_crt,
   genBenchArgs "crtInv" bench_crtInv,
@@ -75,20 +73,6 @@ ucycBenches2 p = benchGroup "CycRep" $ ($ p) <$> [
   genBenchArgs "embedCRT" bench_embedCRT
   ]
 
-{-
-{-# INLINE bench_unzipCycRepPow #-}
-bench_unzipCycRepPow :: _ => CycRep t m P (r,r) -> Bench '(t,m,r)
-bench_unzipCycRepPow = bench unzipPow
-
-{-# INLINE bench_unzipCycRepDec #-}
-bench_unzipCycRepDec :: _ => CycRep t m D (r,r) -> Bench '(t,m,r)
-bench_unzipCycRepDec = bench unzipDec
-
-{-# INLINE bench_unzipCycRepCRT #-}
-bench_unzipCycRepCRT :: _ => CycRepPC t m (r,r) -> Bench '(t,m,r)
-bench_unzipCycRepCRT = either (const $ error "bench_unzipCycRepCRT expected a CRTC") (bench unzipCRTC)
--}
-
 pcToEC :: CycRepPC t m r -> CycRepEC t m r
 pcToEC (Right x) = (Right x)
 
@@ -102,38 +86,38 @@ bench_mul a b =
 
 {-# INLINE bench_crt #-}
 -- convert input from Pow basis to CRT basis
-bench_crt :: _ => CycRep t m P r -> Bench '(t,m,r)
+bench_crt :: _ => CycRep t P m r -> Bench '(t,m,r)
 bench_crt = bench toCRT
 
 {-# INLINABLE bench_crtInv #-}
 -- convert input from CRT basis to Pow basis
--- EAC: This is slow without explicitly mentioning UCRTElt. Possibly related to constraint synonym issues?
-bench_crtInv :: (UCRTElt t r, _) => CycRepPC t m r -> Bench '(t,m,r)
+-- EAC: This is slow without explicitly mentioning CRTElt. Possibly related to constraint synonym issues?
+bench_crtInv :: (CRTElt t r, _) => CycRepPC t m r -> Bench '(t,m,r)
 bench_crtInv (Right a) = bench toPow a
 
 {-# INLINE bench_l #-}
 -- convert input from Dec basis to Pow basis
-bench_l :: _ => CycRep t m D r -> Bench '(t,m,r)
+bench_l :: _ => CycRep t D m r -> Bench '(t,m,r)
 bench_l = bench toPow
 
 {-# INLINE bench_lInv #-}
 -- convert input from Pow basis to Dec basis
-bench_lInv :: _ => CycRep t m P r -> Bench '(t,m,r)
+bench_lInv :: _ => CycRep t P m r -> Bench '(t,m,r)
 bench_lInv = bench toDec
 
 {-# INLINABLE bench_liftPow #-}
 -- lift an element in the Pow basis
-bench_liftPow :: _ => CycRep t m P r -> Bench '(t,m,r)
+bench_liftPow :: _ => CycRep t P m r -> Bench '(t,m,r)
 bench_liftPow = bench lift
 
 {-# INLINABLE bench_mulgPow #-}
 -- multiply by g when input is in Pow basis
-bench_mulgPow :: _ => CycRep t m P r -> Bench '(t,m,r)
+bench_mulgPow :: _ => CycRep t P m r -> Bench '(t,m,r)
 bench_mulgPow = bench mulG
 
 {-# INLINABLE bench_mulgDec #-}
 -- multiply by g when input is in Dec basis
-bench_mulgDec :: _ => CycRep t m D r -> Bench '(t,m,r)
+bench_mulgDec :: _ => CycRep t D m r -> Bench '(t,m,r)
 bench_mulgDec = bench mulG
 
 {-# INLINABLE bench_mulgCRT #-}
@@ -143,12 +127,12 @@ bench_mulgCRT (Right a) = bench mulG a
 
 {-# INLINABLE bench_divgPow #-}
 -- divide by g when input is in Pow basis
-bench_divgPow :: _ => CycRep t m P r -> Bench '(t,m,r)
+bench_divgPow :: _ => CycRep t P m r -> Bench '(t,m,r)
 bench_divgPow = bench divGPow . mulG
 
 {-# INLINABLE bench_divgDec #-}
 -- divide by g when input is in Dec basis
-bench_divgDec :: _ => CycRep t m D r -> Bench '(t,m,r)
+bench_divgDec :: _ => CycRep t D m r -> Bench '(t,m,r)
 bench_divgDec = bench divGDec . mulG
 
 {-# INLINABLE bench_divgCRT #-}
@@ -162,34 +146,34 @@ bench_errRounded :: forall t m r gen . (Tensor t r, Fact m, CryptoRandomGen gen,
   => Double -> Bench '(t,m,r,gen)
 bench_errRounded v = benchIO $ do
   gen <- newGenIO
-  return $ evalRand (errorRounded v :: Rand (CryptoRand gen) (CycRep t m D (LiftOf r))) gen
+  return $ evalRand (roundedGaussian v :: Rand (CryptoRand gen) (CycRep t D m (LiftOf r))) gen
 
 {-# INLINE bench_twacePow #-}
 bench_twacePow :: forall t m m' r . (Fact m, _)
-  => CycRep t m' P r -> Bench '(t,m,m',r)
-bench_twacePow = bench (twacePow :: CycRep t m' P r -> CycRep t m P r)
+  => CycRep t P m' r -> Bench '(t,m,m',r)
+bench_twacePow = bench (twacePow :: CycRep t P m' r -> CycRep t P m r)
 
 {-# INLINE bench_twaceDec #-}
 bench_twaceDec :: forall t m m' r . (Fact m, _)
-  => CycRep t m' D r -> Bench '(t,m,m',r)
-bench_twaceDec = bench (twaceDec :: CycRep t m' D r -> CycRep t m D r)
+  => CycRep t D m' r -> Bench '(t,m,m',r)
+bench_twaceDec = bench (twaceDec :: CycRep t D m' r -> CycRep t D m r)
 
 {-# INLINE bench_twaceCRT #-}
 bench_twaceCRT :: forall t m m' r . (Fact m, _)
   => CycRepPC t m' r -> Bench '(t,m,m',r)
-bench_twaceCRT (Right a) = bench (twaceCRTC :: CycRep t m' C r -> CycRepPC t m r) a
+bench_twaceCRT (Right a) = bench (twaceCRTC :: CycRep t C m' r -> CycRepPC t m r) a
 
 {-# INLINE bench_embedPow #-}
 bench_embedPow :: forall t m m' r . (Fact m', _)
-  => CycRep t m P r -> Bench '(t,m,m',r)
-bench_embedPow = bench (embedPow :: CycRep t m P r -> CycRep t m' P r)
+  => CycRep t P m r -> Bench '(t,m,m',r)
+bench_embedPow = bench (embedPow :: CycRep t P m r -> CycRep t P m' r)
 
 {-# INLINE bench_embedDec #-}
 bench_embedDec :: forall t m m' r . (Fact m', _)
-  => CycRep t m D r -> Bench '(t,m,m',r)
-bench_embedDec = bench (embedDec :: CycRep t m D r -> CycRep t m' D r)
+  => CycRep t D m r -> Bench '(t,m,m',r)
+bench_embedDec = bench (embedDec :: CycRep t D m r -> CycRep t D m' r)
 
 {-# INLINE bench_embedCRT #-}
 bench_embedCRT :: forall t m m' r . (Fact m', _)
   => CycRepPC t m r -> Bench '(t,m,m',r)
-bench_embedCRT (Right a) = bench (embedCRTC :: CycRep t m C r -> CycRepPC t m' r) a
+bench_embedCRT (Right a) = bench (embedCRTC :: CycRep t C m r -> CycRepPC t m' r) a
