@@ -32,6 +32,7 @@ import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Prelude
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Types
+import Crypto.Lol.Types.IFunctor
 import Crypto.Random
 
 -- | Benchmarks for single-index 'Tensor' operations.
@@ -41,9 +42,6 @@ import Crypto.Random
 {-# INLINABLE tensorBenches1 #-}
 tensorBenches1 :: (Monad rnd, _) => Proxy '(t,m,r) -> Proxy gen -> rnd Benchmark
 tensorBenches1 ptmr pgen = benchGroup "Tensor" $ ($ ptmr) <$> [
-  genBenchArgs "unzipPow" bench_unzip,
-  genBenchArgs "unzipDec" bench_unzip,
-  genBenchArgs "unzipCRT" bench_unzip,
   genBenchArgs "zipWith (*)" bench_mul,
   genBenchArgs "crt" bench_crt,
   genBenchArgs "crtInv" bench_crtInv,
@@ -74,14 +72,10 @@ tensorBenches2 p = benchGroup "Tensor" $ ($ p) <$> [
   genBenchArgs "embedCRT" bench_embedCRT
   ]
 
-{-# INLINABLE bench_unzip #-}
-bench_unzip :: _ => t m (r,r) -> Bench '(t,m,r)
-bench_unzip = bench unzipT
-
 {-# INLINABLE bench_mul #-}
 -- no CRT conversion, just coefficient-wise multiplication
 bench_mul :: _ => t m r -> t m r -> Bench '(t,m,r)
-bench_mul a = bench (zipWithT (*) a)
+bench_mul a = bench (zipWithI (*) a)
 
 {-# INLINABLE bench_crt #-}
 -- convert input from Pow basis to CRT basis
@@ -106,7 +100,7 @@ bench_lInv = bench lInv
 {-# INLINABLE bench_liftPow #-}
 -- lift an element in the Pow basis
 bench_liftPow :: _ => t m r -> Bench '(t,m,r)
-bench_liftPow = bench (fmapT lift)
+bench_liftPow = bench (fmapI lift)
 
 {-# INLINABLE bench_mulgPow #-}
 -- multiply by g when input is in Pow basis
@@ -140,37 +134,38 @@ bench_divgCRT = bench (fromJust' "TensorBenches.bench_divgCRT" divGCRT)
 
 {-# INLINABLE bench_errRounded #-}
 -- generate a rounded error term
-bench_errRounded :: forall t m r gen . (TElt t r, Fact m, CryptoRandomGen gen, _)
+bench_errRounded :: forall t m r gen . (Fact m, CryptoRandomGen gen, Tensor t r, _)
   => Double -> Bench '(t,m,r,gen)
 bench_errRounded v = benchIO $ do
   gen <- newGenIO
   return $ evalRand
-    (fmapT (roundMult one) <$>
-      (tGaussianDec v :: Rand (CryptoRand gen) (t m Double)) :: Rand (CryptoRand gen) (t m (LiftOf r))) gen
+    (fmapI (roundMult one) <$>
+      (tweakedGaussianDec v :: Rand (CryptoRand gen) (t m Double)) :: Rand (CryptoRand gen)
+                                                                           (t m (LiftOf r))) gen
 
 -- EAC: due to GHC bug #12634, I have to give these a little more help than the corresponding functions
 -- in UCyc and Cyc benches. Not a huge deal.
 {-# INLINABLE bench_twacePow #-}
-bench_twacePow :: forall t m m' r . (Tensor t, TElt t r, Fact m, _)
+bench_twacePow :: forall t m m' r . (Tensor t r, Fact m, _)
   => t m' r -> Bench '(t,m,m',r)
 bench_twacePow = bench (twacePowDec :: t m' r -> t m r)
 
 {-# INLINABLE bench_twaceCRT #-}
-bench_twaceCRT :: forall t m m' r . (Tensor t, TElt t r, Fact m, _)
+bench_twaceCRT :: forall t m m' r . (Tensor t r, Fact m, _)
   => t m' r -> Bench '(t,m,m',r)
 bench_twaceCRT = bench (fromJust' "TensorBenches.bench_twaceCRT" twaceCRT :: t m' r -> t m r)
 
 {-# INLINABLE bench_embedPow #-}
-bench_embedPow :: forall t m m' r . (Tensor t, TElt t r, Fact m', _)
+bench_embedPow :: forall t m m' r . (Tensor t r, Fact m', _)
   => t m r -> Bench '(t,m,m',r)
 bench_embedPow = bench (embedPow :: t m r -> t m' r)
 
 {-# INLINABLE bench_embedDec #-}
-bench_embedDec :: forall t m m' r . (Tensor t, TElt t r, Fact m', _)
+bench_embedDec :: forall t m m' r . (Tensor t r, Fact m', _)
   => t m r -> Bench '(t,m,m',r)
 bench_embedDec = bench (embedDec :: t m r -> t m' r)
 
 {-# INLINABLE bench_embedCRT #-}
-bench_embedCRT :: forall t m m' r . (Tensor t, TElt t r, Fact m', _)
+bench_embedCRT :: forall t m m' r . (Tensor t r, Fact m', _)
   => t m r -> Bench '(t,m,m',r)
 bench_embedCRT = bench (fromJust' "TensorBenches.bench_embedCRT" embedCRT :: t m r -> t m' r)
