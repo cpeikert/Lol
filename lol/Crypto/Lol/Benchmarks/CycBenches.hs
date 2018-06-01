@@ -27,7 +27,6 @@ import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol
 import Crypto.Lol.Utils.Benchmarks
-import Crypto.Lol.Cyclotomic.Tensor (TElt)
 import Crypto.Lol.Types
 import Crypto.Random
 
@@ -36,9 +35,6 @@ import Crypto.Random
 {-# INLINABLE cycBenches1 #-}
 cycBenches1 :: (Monad rnd, _) => Proxy '(t,m,r) -> Proxy gen -> rnd Benchmark
 cycBenches1 ptmr pgen = benchGroup "Cyc" $ ($ ptmr) <$> [
-  genBenchArgs "unzipPow" bench_unzipCycPow,
-  genBenchArgs "unzipDec" bench_unzipCycDec,
-  genBenchArgs "unzipCRT" bench_unzipCycCRT,
   genBenchArgs "zipWith (*)" bench_mul,
   genBenchArgs "crt" bench_crt,
   genBenchArgs "crtInv" bench_crtInv,
@@ -66,18 +62,6 @@ cycBenches2 p = benchGroup "Cyc" $ ($ p) <$> [
   genBenchArgs "embedDec" bench_embedDec,
   genBenchArgs "embedCRT" bench_embedCRT
   ]
-
-{-# INLINE bench_unzipCycPow #-}
-bench_unzipCycPow :: _ => Cyc t m (r,r) -> Bench '(t,m,r)
-bench_unzipCycPow = bench unzipCyc . advisePow
-
-{-# INLINE bench_unzipCycDec #-}
-bench_unzipCycDec :: _ => Cyc t m (r,r) -> Bench '(t,m,r)
-bench_unzipCycDec = bench unzipCyc . adviseDec
-
-{-# INLINE bench_unzipCycCRT #-}
-bench_unzipCycCRT :: _ => Cyc t m (r,r) -> Bench '(t,m,r)
-bench_unzipCycCRT = bench unzipCyc . adviseCRT
 
 {-# INLINABLE bench_mul #-}
 -- no CRT conversion, just coefficient-wise multiplication
@@ -144,11 +128,11 @@ bench_divgCRT = bench divG . adviseCRT
 
 {-# INLINABLE bench_errRounded #-}
 -- generate a rounded error term
-bench_errRounded :: forall t m r gen . (TElt t r, Fact m, CryptoRandomGen gen, _)
+bench_errRounded :: forall (t :: Factored -> * -> *) m (r :: *) gen . (Fact m, CryptoRandomGen gen, _)
   => Double -> Bench '(t,m,r,gen)
 bench_errRounded v = benchIO $ do
   gen <- newGenIO
-  return $ evalRand (errorRounded v :: Rand (CryptoRand gen) (Cyc t m (LiftOf r))) gen
+  return $ evalRand (roundedGaussian v :: Rand (CryptoRand gen) (Cyc t m (LiftOf r))) gen
 
 -- These need a hint on the kind of the output index. Could use a kind annotation on the forall'd var.
 {-# INLINE bench_twacePow #-}

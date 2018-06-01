@@ -24,10 +24,8 @@ Default high-level benchmarks for 'Crypto.Lol.Cyclotomic.Tensor' implementations
 module Crypto.Lol.Benchmarks.Default (defaultLolBenches, oneIdxBenches, twoIdxBenches) where
 
 import Crypto.Lol
---import Crypto.Lol.Benchmarks.SimpleTensorBenches
 import Crypto.Lol.Benchmarks.TensorBenches
---import Crypto.Lol.Benchmarks.SimpleUCycBenches
-import Crypto.Lol.Benchmarks.UCycBenches
+import Crypto.Lol.Benchmarks.CycRepBenches
 import Crypto.Lol.Benchmarks.CycBenches
 import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Utils.ShowType
