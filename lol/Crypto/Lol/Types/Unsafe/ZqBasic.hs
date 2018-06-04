@@ -68,7 +68,7 @@ import qualified Algebra.ZeroTestable   as ZeroTestable (C)
 
 -- | An infinite list of primes greater than @lower@ and congruent to
 -- 1 mod @m@.
-goodQs :: (IntegralDomain a, ToInteger a) => a -> a -> [a]
+goodQs :: (ToInteger a) => a -> a -> [a]
 goodQs m lower = filter (isPrime . toInteger) $
   iterate (+m) $ lower + ((m-lower) `mod` m) + 1
 
