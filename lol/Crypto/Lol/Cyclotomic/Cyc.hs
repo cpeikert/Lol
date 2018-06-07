@@ -857,6 +857,12 @@ instance (ForallFact2 (Gadget gad) (Cyc t) a,
 
 -----
 
+toZL :: Tagged s [a] -> TaggedT s ZipList a
+toZL = coerce
+
+fromZL :: TaggedT s ZipList a -> Tagged s [a]
+fromZL = coerce
+
 -- | promoted from base ring, using the powerful basis for best geometry
 instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
           -- for satisfying Decompose's Gadget superclass
@@ -883,17 +889,23 @@ instance (Decompose gad (CycG t m (ZqBasic q Int64)))
   type DecompOf (Cyc t m (ZqBasic q Int64)) = Cyc t m Int64
   decompose (CycZqB c) = (CycI64 <$>) <$> decompose c
 
+instance (Decompose gad (Cyc t m a), Decompose gad (Cyc t m b),
+         DecompOf (Cyc t m a) ~ DecompOf (Cyc t m b))
+  => Decompose gad (Cyc t m (a,b)) where
+  type DecompOf (Cyc t m (a,b)) = DecompOf (Cyc t m a)
+  decompose (CycPair a b) = (++) <$> decompose a <*> decompose b
+
+-- ForallFact2 in case they're useful
+
 instance (Decompose gad (ZqBasic q Int64), CRTElt t (ZqBasic q Int64),
           -- copied from Decompose instance above
           IntegralDomain (ZqBasic q Int64))
   => ForallFact2 (Decompose gad) (Cyc t) (ZqBasic q Int64) where
   entailFact2 = C.Sub Dict
 
-toZL :: Tagged s [a] -> TaggedT s ZipList a
-toZL = coerce
-
-fromZL :: TaggedT s ZipList a -> Tagged s [a]
-fromZL = coerce
+-- can't do ForallFact2 for pairs because we'll need equality
+-- constraint for DecompOf (Cyc t m a) and (Cyc t m b), but m isn't in
+-- scope.
 
 -----
 
@@ -913,6 +925,10 @@ instance (Correct gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
 -- specific to Int64 due to LiftOf
 deriving instance Correct gad (CycG t m (ZqBasic q Int64))
   => Correct gad (Cyc t m (ZqBasic q Int64))
+
+-- TODO: instance Correct gad (Cyc t m (a,b)) where
+-- seems hard; see Correct instance for pairs in Gadget.hs
+
 
 -- no ForallFact2 instance due to Traversable (CycRep t D m)
 -- constraint in Correct instance, but maybe that can be replaced
