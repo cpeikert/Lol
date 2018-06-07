@@ -832,7 +832,12 @@ instance (Gadget gad (ZqBasic q z),
 deriving instance Gadget gad (CycG t m (ZqBasic q z))
   => Gadget gad (Cyc t m (ZqBasic q z))
 
--- ForallFact2 in case it's useful
+instance (Gadget gad (Cyc t m a), Gadget gad (Cyc t m b))
+  => Gadget gad (Cyc t m (a,b)) where
+  gadget = (++) <$> (map (flip CycPair zero) <$> gadget)
+                <*> (map (CycPair zero) <$> gadget)
+
+-- ForallFact2 in case they're useful
 
 instance (Gadget gad (ZqBasic q z),
           -- remove these if they go away from above
@@ -840,6 +845,15 @@ instance (Gadget gad (ZqBasic q z),
           IntegralDomain (ZqBasic q z))
   => ForallFact2 (Gadget gad) (Cyc t) (ZqBasic q z) where
   entailFact2 = C.Sub Dict
+
+instance (ForallFact2 (Gadget gad) (Cyc t) a,
+          ForallFact2 (Gadget gad) (Cyc t) b)
+  => ForallFact2 (Gadget gad) (Cyc t) (a,b) where
+  -- bring m into scope
+  entailFact2 :: forall m . Fact m :- Gadget gad (Cyc t m (a,b))
+  entailFact2 = C.Sub (Dict
+                       \\ (entailFact2 :: Fact m :- Gadget gad (Cyc t m a))
+                       \\ (entailFact2 :: Fact m :- Gadget gad (Cyc t m b)))
 
 -----
 
