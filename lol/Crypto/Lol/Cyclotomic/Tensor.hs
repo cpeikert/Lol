@@ -62,7 +62,6 @@ import           Data.Traversable
 import           Data.Tuple              (swap)
 import qualified Data.Vector             as V
 import qualified Data.Vector.Unboxed     as U
-import qualified Test.QuickCheck         as QC
 
 -- | Encapsulates linear transformations needed for cyclotomic ring
 -- arithmetic.
