@@ -27,6 +27,7 @@ module Crypto.Lol.Benchmarks.TensorBenches (tensorBenches1, tensorBenches2) wher
 
 import Control.Applicative
 import Control.Monad.Random hiding (lift)
+import qualified Criterion as C
 
 import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Prelude
@@ -35,108 +36,119 @@ import Crypto.Lol.Types
 import Crypto.Lol.Types.IFunctor
 import Crypto.Random
 
+mkBench :: forall a b . _ => String -> (a -> b) -> a -> C.Benchmark
+mkBench name f input = C.bench name $ C.nf f input
+
 -- | Benchmarks for single-index 'Tensor' operations.
 -- There must be a CRT basis for \(O_m\) over @r@.
 -- These cover the same functions as @cycBenches1@, but may have different
 -- performance due to how GHC interacts with Lol.
 {-# INLINABLE tensorBenches1 #-}
-tensorBenches1 :: (Monad rnd, _) => Proxy '(t,m,r) -> Proxy gen -> rnd Benchmark
-tensorBenches1 ptmr pgen = benchGroup "Tensor" $ ($ ptmr) <$> [
-  genBenchArgs "zipWith (*)" bench_mul,
-  genBenchArgs "crt" bench_crt,
-  genBenchArgs "crtInv" bench_crtInv,
-  genBenchArgs "l" bench_l,
-  genBenchArgs "lInv" bench_lInv,
-  genBenchArgs "*g Pow" bench_mulgPow,
-  genBenchArgs "*g Dec" bench_mulgDec,
-  genBenchArgs "*g CRT" bench_mulgCRT,
-  genBenchArgs "divg Pow" bench_divgPow,
-  genBenchArgs "divg Dec" bench_divgDec,
-  genBenchArgs "divg CRT" bench_divgCRT,
-  genBenchArgs "lift" bench_liftPow,
-  genBenchArgs "error" (bench_errRounded 0.1) . addGen pgen
-  ]
+tensorBenches1 :: forall (t :: Factored -> * -> *) (m :: Factored) (r :: *) gen . (Fact m, _)
+               => Proxy '(t,m,r) -> Proxy gen -> C.Benchmark
+tensorBenches1 ptmr pgen =
+    let z = zero :: t m r
+        benches = ($ z) <$> [
+          mkBench "zipWith (*)" (bench_mul z),
+          mkBench "crt" bench_crt,
+          mkBench "crtInv" bench_crtInv,
+          mkBench "l" bench_l,
+          mkBench "lInv" bench_lInv,
+          mkBench "*g Pow" bench_mulGPow,
+          mkBench "*g Dec" bench_mulGDec,
+          mkBench "*g CRT" bench_mulGCRT,
+          mkBench "divG Pow" bench_divGPow,
+          mkBench "divG Dec" bench_divGDec,
+          mkBench "divG CRT" bench_divGCRT,
+          mkBench "lift" bench_liftPow]
+        -- This is different because it lives in IO
+        errorBench = C.bench "error" (C.nfIO $ bench_errRounded ptmr pgen 0.1) in
+    C.bgroup "Tensor" (benches ++ [errorBench])
 
 -- | Benchmarks for inter-ring 'Tensor' operations.
 -- There must be a CRT basis for \(O_{m'}\) over @r@.
 -- These cover the same functions as @cycBenches1@, but may have different
 -- performance due to how GHC interacts with Lol.
 {-# INLINABLE tensorBenches2 #-}
-tensorBenches2 :: (Monad rnd, _) => Proxy '(t,m,m',r) -> rnd Benchmark
-tensorBenches2 p = benchGroup "Tensor" $ ($ p) <$> [
-  genBenchArgs "twacePow" bench_twacePow,
-  genBenchArgs "twaceDec" bench_twacePow, -- yes, twacePow is correct here. It's the same function!
-  genBenchArgs "twaceCRT" bench_twaceCRT,
-  genBenchArgs "embedPow" bench_embedPow,
-  genBenchArgs "embedDec" bench_embedDec,
-  genBenchArgs "embedCRT" bench_embedCRT
-  ]
+tensorBenches2 :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (r :: *) . _
+  => Proxy '(t,m,m',r) -> C.Benchmark
+tensorBenches2 ptmmr =
+  let z = zero :: t m r
+      z' = zero :: t m' r
+      benches = [
+        mkBench "twacePow" (bench_twacePow ptmmr) z',
+        mkBench "twaceDec" (bench_twacePow ptmmr) z',
+        mkBench "twaceCRT" (bench_twaceCRT ptmmr) z',
+        mkBench "embedPow" (bench_embedPow ptmmr) z,
+        mkBench "embedDec" (bench_embedDec ptmmr) z,
+        mkBench "embedCRT" (bench_embedCRT ptmmr) z] in
+  C.bgroup "Tensor" benches
 
 {-# INLINABLE bench_mul #-}
 -- no CRT conversion, just coefficient-wise multiplication
-bench_mul :: _ => t m r -> t m r -> Bench '(t,m,r)
-bench_mul a = bench (zipWithI (*) a)
+bench_mul :: _ => t m r -> t m r -> t m r
+bench_mul = zipWithI (*)
 
 {-# INLINABLE bench_crt #-}
 -- convert input from Pow basis to CRT basis
-bench_crt :: _ => t m r -> Bench '(t,m,r)
-bench_crt = bench (fromJust' "TensorBenches.bench_crt" crt)
+bench_crt :: _ => t m r -> t m r
+bench_crt = fromJust' "TensorBenches.bench_crt" crt
 
 {-# INLINABLE bench_crtInv #-}
 -- convert input from CRT basis to Pow basis
-bench_crtInv :: _ => t m r -> Bench '(t,m,r)
-bench_crtInv = bench (fromJust' "TensorBenches.bench_crtInv" crtInv)
+bench_crtInv :: _ => t m r -> t m r
+bench_crtInv = fromJust' "TensorBenches.bench_crtInv" crtInv
 
 {-# INLINABLE bench_l #-}
 -- convert input from Dec basis to Pow basis
-bench_l :: _ => t m r -> Bench '(t,m,r)
-bench_l = bench l
+bench_l :: _ => t m r -> t m r
+bench_l = l
 
 {-# INLINABLE bench_lInv #-}
 -- convert input from Dec basis to Pow basis
-bench_lInv :: _ => t m r -> Bench '(t,m,r)
-bench_lInv = bench lInv
+bench_lInv :: _ => t m r -> t m r
+bench_lInv = lInv
 
 {-# INLINABLE bench_liftPow #-}
 -- lift an element in the Pow basis
-bench_liftPow :: _ => t m r -> Bench '(t,m,r)
-bench_liftPow = bench (fmapI lift)
+bench_liftPow :: _ => t m r -> t m r'
+bench_liftPow = fmapI lift
 
-{-# INLINABLE bench_mulgPow #-}
+{-# INLINABLE bench_mulGPow #-}
 -- multiply by g when input is in Pow basis
-bench_mulgPow :: _ => t m r -> Bench '(t,m,r)
-bench_mulgPow = bench mulGPow
+bench_mulGPow :: _ => t m r -> t m r
+bench_mulGPow = mulGPow
 
-{-# INLINABLE bench_mulgDec #-}
+{-# INLINABLE bench_mulGDec #-}
 -- multiply by g when input is in Dec basis
-bench_mulgDec :: _ => t m r -> Bench '(t,m,r)
-bench_mulgDec = bench mulGDec
+bench_mulGDec :: _ => t m r -> t m r
+bench_mulGDec = mulGDec
 
-{-# INLINABLE bench_mulgCRT #-}
+{-# INLINABLE bench_mulGCRT #-}
 -- multiply by g when input is in CRT basis
-bench_mulgCRT :: _ => t m r -> Bench '(t,m,r)
-bench_mulgCRT = bench (fromJust' "TensorBenches.bench_mulgCRT" mulGCRT)
+bench_mulGCRT :: _ => t m r -> t m r
+bench_mulGCRT = fromJust' "TensorBenches.bench_mulGCRT" mulGCRT
 
-{-# INLINABLE bench_divgPow #-}
+{-# INLINABLE bench_divGPow #-}
 -- divide by g when input is in Pow basis
-bench_divgPow :: _ => t m r -> Bench '(t,m,r)
-bench_divgPow = bench divGPow . mulGPow
+bench_divGPow :: _ => t m r -> Maybe (t m r)
+bench_divGPow = divGPow . mulGPow
 
-{-# INLINABLE bench_divgDec #-}
+{-# INLINABLE bench_divGDec #-}
 -- divide by g when input is in Dec basis
-bench_divgDec :: _ => t m r -> Bench '(t,m,r)
-bench_divgDec = bench divGDec . mulGDec
+bench_divGDec :: _ => t m r -> Maybe (t m r)
+bench_divGDec = divGDec . mulGDec
 
-{-# INLINABLE bench_divgCRT #-}
+{-# INLINABLE bench_divGCRT #-}
 -- divide by g when input is in CRT basis
-bench_divgCRT :: _ => t m r -> Bench '(t,m,r)
-bench_divgCRT = bench (fromJust' "TensorBenches.bench_divgCRT" divGCRT)
+bench_divGCRT :: _ => t m r -> t m r
+bench_divGCRT = fromJust' "TensorBenches.bench_divGCRT" divGCRT
 
 {-# INLINABLE bench_errRounded #-}
 -- generate a rounded error term
 bench_errRounded :: forall t m r gen . (Fact m, CryptoRandomGen gen, Tensor t r, _)
-  => Double -> Bench '(t,m,r,gen)
-bench_errRounded v = benchIO $ do
+  => Proxy '(t,m,r) -> Proxy gen -> Double -> IO (t m (LiftOf r))
+bench_errRounded _ _ v = do
   gen <- newGenIO
   return $ evalRand
     (fmapI (roundMult one) <$>
@@ -146,26 +158,26 @@ bench_errRounded v = benchIO $ do
 -- EAC: due to GHC bug #12634, I have to give these a little more help than the corresponding functions
 -- in UCyc and Cyc benches. Not a huge deal.
 {-# INLINABLE bench_twacePow #-}
-bench_twacePow :: forall t m m' r . (Tensor t r, Fact m, _)
-  => t m' r -> Bench '(t,m,m',r)
-bench_twacePow = bench (twacePowDec :: t m' r -> t m r)
+bench_twacePow :: forall t (m :: Factored) (m' :: Factored) r . (Tensor t r, Fact m, _)
+  => Proxy '(t,m,m',r) -> t m' r -> t m r
+bench_twacePow _ = twacePowDec
 
 {-# INLINABLE bench_twaceCRT #-}
 bench_twaceCRT :: forall t m m' r . (Tensor t r, Fact m, _)
-  => t m' r -> Bench '(t,m,m',r)
-bench_twaceCRT = bench (fromJust' "TensorBenches.bench_twaceCRT" twaceCRT :: t m' r -> t m r)
+  => Proxy '(t,m,m',r) -> t m' r -> t m r
+bench_twaceCRT _ = fromJust' "TensorBenches.bench_twaceCRT" twaceCRT
 
 {-# INLINABLE bench_embedPow #-}
 bench_embedPow :: forall t m m' r . (Tensor t r, Fact m', _)
-  => t m r -> Bench '(t,m,m',r)
-bench_embedPow = bench (embedPow :: t m r -> t m' r)
+  => Proxy '(t,m,m',r) -> t m r -> t m' r
+bench_embedPow _ = embedPow
 
 {-# INLINABLE bench_embedDec #-}
 bench_embedDec :: forall t m m' r . (Tensor t r, Fact m', _)
-  => t m r -> Bench '(t,m,m',r)
-bench_embedDec = bench (embedDec :: t m r -> t m' r)
+  => Proxy '(t,m,m',r) -> t m r -> t m' r
+bench_embedDec _ = embedDec
 
 {-# INLINABLE bench_embedCRT #-}
 bench_embedCRT :: forall t m m' r . (Tensor t r, Fact m', _)
-  => t m r -> Bench '(t,m,m',r)
-bench_embedCRT = bench (fromJust' "TensorBenches.bench_embedCRT" embedCRT :: t m r -> t m' r)
+  => Proxy '(t,m,m',r) -> t m r -> t m' r
+bench_embedCRT _ = fromJust' "TensorBenches.bench_embedCRT" embedCRT

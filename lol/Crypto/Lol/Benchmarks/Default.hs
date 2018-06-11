@@ -53,10 +53,10 @@ defaultLolBenches pt phash = sequence [
 oneIdxBenches :: forall t m r gen . _ => Proxy '(m,r) -> Proxy t -> Proxy gen -> IO Benchmark
 oneIdxBenches _ _ pgen =
   let ptmr = Proxy :: Proxy '(t,m,r)
-  in benchGroup (showType ptmr) $ (($ pgen) . ($ ptmr)) <$> [
-      tensorBenches1,
-      cycRepBenches1,
-      cycBenches1
+  in benchGroup (showType ptmr) [
+      (return $ tensorBenches1 ptmr pgen),
+      (cycRepBenches1 ptmr pgen),
+      (cycBenches1 ptmr pgen)
       ]
 
 -- | Collection of all inter-ring operations at all levels of the library.
@@ -65,7 +65,7 @@ twoIdxBenches :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> IO Benchma
 twoIdxBenches _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)
   in benchGroup (showType ptmr) $ ($ ptmr) <$> [
-      tensorBenches2,
+      (return . tensorBenches2),
       cycRepBenches2,
       cycBenches2
       ]
