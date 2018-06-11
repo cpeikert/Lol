@@ -219,12 +219,10 @@ instance IFunctor CT where
   type IFElt CT a = Storable a
 
   fmapI f (CT (CT' sv)) = CT $ CT' $ SV.map f sv
-  fmapI f (ZV v) = fmapI f $ CT $ zvToCT' v
+  fmapI f a = fmapI f $ toCT a
 
   zipWithI f (CT (CT' sv1)) (CT (CT' sv2)) = CT $ CT' $ SV.zipWith f sv1 sv2
-  zipWithI f (CT sv) (ZV v) = zipWithI f (CT sv) (CT $ zvToCT' v)
-  zipWithI f (ZV v) (CT sv) = zipWithI f (CT $ zvToCT' v) (CT sv)
-  zipWithI f (ZV v1) (ZV v2) = zipWithI f (CT $ zvToCT' v1) (CT $ zvToCT' v2)
+  zipWithI f a b = zipWithI f (toCT a) (toCT b)
 
 ---------- Tensor instances ----------
 
