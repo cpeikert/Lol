@@ -28,19 +28,14 @@ import Data.Proxy
 -- choose which layers of Lol to benchmark
 ls :: [String]
 ls = [
-  "STensor",
   "Tensor",
-  "SUCyc",
-  "UCyc",
-  "Cyc"
+  "Cyc",
+  "CycRep"
   ]
 
 -- choose which operations to benchmark
 bs :: [String]
 bs = [
-  "unzipPow",
-  "unzipDec",
-  "unzipCRT",
   "zipWith (*)",
   "crt",
   "crtInv",
