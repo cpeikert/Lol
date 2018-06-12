@@ -205,10 +205,10 @@ decryptUnrestricted :: DecryptUCtx c m m' z zp zq
   => SK (c m' z) -> CT m zp (c m' zq) -> PT (c m zp)
 decryptUnrestricted (SK _ s) = let sq = reduce s in
   \ct -> let (CT LSD k l c) = toLSD ct
-         in let eval = evaluate c sq
-                e = cycDec $ fmap (reduce . lift) $ uncycDec eval
-                l' = scalarCyc l
-            in l' * twace (iterate divG' e !! k)
+             eval = evaluate c sq
+             e = cycDec $ fmap (reduce . lift) $ uncycDec eval
+             l' = scalarCyc l
+         in l' * twace (iterate divG' e !! k)
 
 ---------- LSD/MSD switching ----------
 
