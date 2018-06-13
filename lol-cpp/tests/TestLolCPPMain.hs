@@ -23,5 +23,6 @@ main = defaultMainWithArgs
           [defaultZqTests
           ,zqTensorTests (Proxy::Proxy CT)
           ,int64TensorTests (Proxy::Proxy CT)
-          ,cpxTensorTests (Proxy::Proxy CT)]
+          ,cpxTensorTests (Proxy::Proxy CT)
+          ,cycTests (Proxy::Proxy CT)]
          ["--maximum-generated-tests=100"]

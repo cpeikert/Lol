@@ -398,6 +398,12 @@ instance TensorGSqNorm CT Int64 where
 
 ---------- Entailments for CT ----------
 
+instance Show r => ForallFact2 Show CT r where
+  entailFact2 = Sub Dict
+
+instance Eq r => ForallFact2 Eq CT r where
+  entailFact2 = Sub Dict
+
 instance (Ring r, Storable r) => ForallFact2 (Module.C r) CT r where
   entailFact2 = Sub Dict
 
