@@ -11,3 +11,4 @@ lol-cpp/lib
 **/*.hi
 **/*.hspp
 **/*.dyn_*
+**/.DS_Store
