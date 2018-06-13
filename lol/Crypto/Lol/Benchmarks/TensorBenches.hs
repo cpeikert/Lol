@@ -77,7 +77,7 @@ tensorBenches2 ptmmr =
       z' = zero :: t m' r
       benches = [
         mkBench "twacePow" (bench_twacePow ptmmr) z',
-        mkBench "twaceDec" (bench_twacePow ptmmr) z',
+        mkBench "twaceDec" (bench_twacePow ptmmr) z', -- yes, twacePow is correct here. It's the same function!
         mkBench "twaceCRT" (bench_twaceCRT ptmmr) z',
         mkBench "embedPow" (bench_embedPow ptmmr) z,
         mkBench "embedDec" (bench_embedDec ptmmr) z,
