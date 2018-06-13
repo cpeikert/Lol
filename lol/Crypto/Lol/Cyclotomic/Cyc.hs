@@ -776,7 +776,9 @@ instance (RescaleCyc (CycG t) (ZqBasic q z) (ZqBasic p z))
 instance (Rescale (RRq q r) (RRq p r), Tensor t (RRq q r), Tensor t (RRq p r))
   => RescaleCyc (Cyc t) (RRq q r) (RRq p r) where
   rescaleCyc L.Pow (PowRRq u) = PowRRq $ rescale u
+  rescaleCyc L.Pow (DecRRq u) = PowRRq $ rescale $ toPow u
   rescaleCyc L.Dec (DecRRq u) = DecRRq $ rescale u
+  rescaleCyc L.Dec (PowRRq u) = DecRRq $ rescale $ toDec u
 
 -- | specialized instance for product rings of \(\Z_q\)s
 instance (LiftCyc (Cyc t) (ZqBasic q z), ReduceCyc (Cyc t) z b,
