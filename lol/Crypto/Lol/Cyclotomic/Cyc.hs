@@ -71,12 +71,11 @@ import qualified Algebra.ZeroTestable as ZeroTestable (C)
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CycRep   hiding (coeffsDec,
                                                  coeffsPow, crtSet,
-                                                 gSqNorm, mulG, powBasis)
+                                                 gSqNorm, powBasis)
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
-import           Crypto.Lol.Cyclotomic.Tensor   (Tensor, TensorCRT,
-                                                 TensorCRTSet,
+import           Crypto.Lol.Cyclotomic.Tensor   (Tensor, TensorCRTSet,
                                                  TensorGaussian)
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.Prelude             as LP
@@ -183,14 +182,14 @@ uncycCRT c = let (CRT u) = toCRT' c in u
 
 instance (Fact m, ZeroTestable r, CRTElt t r, ForallFact2 ZeroTestable.C t r)
   => ZeroTestable.C (CycG t m r) where
-  isZero = \x -> case x of
-                   (Pow u) -> isZero u
-                   (Dec u) -> isZero u
-                   (CRT (Right u)) -> isZero u
-                   c@(CRT _) -> isZero $ toPow' c
-                   (Scalar c) -> isZero c
-                   (Sub c) -> isZero c
-                 \\ (entailFact2 :: Fact m :- ZeroTestable.C (t m r))
+  isZero x = case x of
+    (Pow u) -> isZero u
+    (Dec u) -> isZero u
+    (CRT (Right u)) -> isZero u
+    c@(CRT _) -> isZero $ toPow' c
+    (Scalar c) -> isZero c
+    (Sub c) -> isZero c
+    \\ (entailFact2 :: Fact m :- ZeroTestable.C (t m r))
   {-# INLINABLE isZero #-}
 
 deriving instance ZeroTestable (CycG t m Double) => ZeroTestable.C (Cyc t m Double)
@@ -663,8 +662,8 @@ instance (Tensor t (RRq q r)) => ExtensionCyc (Cyc t) (RRq q r) where
   powBasis = (PowRRq <$>) <$> R.powBasis
   coeffsCyc L.Pow (PowRRq c) = PowRRq <$> R.coeffsPow c
   coeffsCyc L.Dec (DecRRq c) = DecRRq <$> R.coeffsDec c
-  coeffsCyc L.Pow (DecRRq c) = PowRRq <$> (R.coeffsPow $ toPow c)
-  coeffsCyc L.Dec (PowRRq c) = DecRRq <$> (R.coeffsDec $ toDec c)
+  coeffsCyc L.Pow (DecRRq c) = PowRRq <$> R.coeffsPow (toPow c)
+  coeffsCyc L.Dec (PowRRq c) = DecRRq <$> R.coeffsDec (toDec c)
 
 -- | Force to a non-'Sub' constructor (for internal use only).
 embed' :: forall t r l m . (l `Divides` m, CRTElt t r)
@@ -879,8 +878,8 @@ instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
 
   -- faster implementations: decompose directly in subring, which is
   -- correct because we decompose in powerful basis
-  decompose (Scalar c) = (Scalar <$>) <$> (decompose c)
-  decompose (Sub c) = (Sub <$>) <$> (decompose c)
+  decompose (Scalar c) = (Scalar <$>) <$> decompose c
+  decompose (Sub c) = (Sub <$>) <$> decompose c
 
   -- traverse: Traversable (CycRep t P m) and Applicative (Tagged gad ZL)
   decompose (Pow u) = fromZL $ Pow <$> traverse (toZL . decompose) u
