@@ -679,6 +679,19 @@ embed' (Sub (c :: CycG t k r)) = embed' c
 
 -----
 
+instance (ZPP r, CRTElt t r, TensorCRTSet t (ZpOf r), ExtensionCyc (CycG t) r)
+  => CRTSetCyc (CycG t) r where
+  crtSet = (Pow <$>) <$> R.crtSet
+  {-# INLINABLE crtSet #-}
+
+instance (CRTSetCyc (CycG t) (ZqBasic q z))
+  => CRTSetCyc (Cyc t) (ZqBasic q z) where
+  crtSet = (CycZqB <$>) <$> crtSet
+
+-- TODO?: instance CRTSetCyc (Cyc t) (a,b)
+
+-----
+
 type instance LiftOf (CycG t m r) = CycG t m (LiftOf r)
 type instance LiftOf (Cyc  t m r) = Cyc  t m (LiftOf r)
 
@@ -702,17 +715,8 @@ instance (Lift' (RRq q Double), Tensor t (RRq q Double), Tensor t Double)
   => LiftCyc (Cyc t) (RRq q Double) where
   liftCyc L.Pow (PowRRq u) = CycDbl $ Pow $ lift u
   liftCyc L.Dec (DecRRq u) = CycDbl $ Dec $ lift u
-  liftCyc L.Dec (PowRRq u) = CycDbl $ Dec $ lift $ toDec $ u
-  liftCyc L.Pow (DecRRq u) = CycDbl $ Pow $ lift $ toPow $ u
-
--- CJP TODO: set up a class for crtSet
-
--- | The relative mod-@r@ CRT set of the extension.
-crtSet :: (m `Divides` m', ZPP r, CRTElt t r, TensorCRTSet t (ZpOf r))
-       => Tagged m [CycG t m' r]
-crtSet = (Pow <$>) <$> R.crtSet
-{-# INLINABLE crtSet #-}
-
+  liftCyc L.Dec (PowRRq u) = CycDbl $ Dec $ lift $ toDec u
+  liftCyc L.Pow (DecRRq u) = CycDbl $ Pow $ lift $ toPow u
 
 ---------- Promoted lattice operations ----------
 

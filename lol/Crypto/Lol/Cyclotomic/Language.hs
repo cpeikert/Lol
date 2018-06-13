@@ -107,6 +107,11 @@ coeffsPow = coeffsCyc Pow
 -- | 'coeffsCyc' specialized to the decoding basis.
 coeffsDec = coeffsCyc Dec
 
+-- | Relative CRT sets of cyclotomic extensions.
+class ExtensionCyc c r => CRTSetCyc c r where
+  -- | The relative mod-@r@ CRT set of the extension.
+  crtSet :: (m `Divides` m') => Tagged m [c m' r]
+
 -- | Reduce from one base ring to another, for any cyclotomic index.
 class ReduceCyc c a b where
   -- | Basis-independent reduce.
