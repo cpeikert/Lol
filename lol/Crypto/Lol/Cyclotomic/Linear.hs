@@ -89,9 +89,9 @@ instance Additive (c s z) => Additive.C (Linear c e r s z) where
 
   negate (RD as) = RD $ negate <$> as
 
-instance (Reduce (c s z) (c s zp))
-         => Reduce (Linear c e r s z) (Linear c e r s zp) where
-  reduce (RD ys) = RD $ reduce <$> ys
+instance (Fact s, Additive.C (c s z), Additive.C (c s zp), ReduceCyc c z zp)
+  => Reduce (Linear c e r s z) (Linear c e r s zp) where
+  reduce (RD ys) = RD $ reduceCyc <$> ys
 
 type instance LiftOf (Linear c e r s zp) = Linear c e r s (LiftOf zp)
 
