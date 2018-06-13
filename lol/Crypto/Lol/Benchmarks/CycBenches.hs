@@ -43,9 +43,9 @@ cycBenches1 ptmr pgen = benchGroup "Cyc" $ ($ ptmr) <$> [
   genBenchArgs "*g Pow" bench_mulgPow,
   genBenchArgs "*g Dec" bench_mulgDec,
   genBenchArgs "*g CRT" bench_mulgCRT,
-  genBenchArgs "divg Pow" bench_divgPow,
-  genBenchArgs "divg Dec" bench_divgDec,
-  genBenchArgs "divg CRT" bench_divgCRT,
+  genBenchArgs "divG Pow" bench_divGPow,
+  genBenchArgs "divG Dec" bench_divGDec,
+  genBenchArgs "divG CRT" bench_divGCRT,
   genBenchArgs "lift" bench_liftPow,
   genBenchArgs "error" (bench_errRounded 0.1) . addGen pgen
   ]
@@ -111,20 +111,20 @@ bench_mulgDec = bench mulG . adviseDec
 bench_mulgCRT :: _ => Cyc t m r -> Bench '(t,m,r)
 bench_mulgCRT = bench mulG . adviseCRT
 
-{-# INLINABLE bench_divgPow #-}
+{-# INLINABLE bench_divGPow #-}
 -- divide by g when input is in Pow basis
-bench_divgPow :: _ => Cyc t m r -> Bench '(t,m,r)
-bench_divgPow = bench divG . advisePow . mulG
+bench_divGPow :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_divGPow = bench divG . advisePow . mulG
 
-{-# INLINABLE bench_divgDec #-}
+{-# INLINABLE bench_divGDec #-}
 -- divide by g when input is in Dec basis
-bench_divgDec :: _ => Cyc t m r -> Bench '(t,m,r)
-bench_divgDec = bench divG . adviseDec . mulG
+bench_divGDec :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_divGDec = bench divG . adviseDec . mulG
 
-{-# INLINABLE bench_divgCRT #-}
+{-# INLINABLE bench_divGCRT #-}
 -- divide by g when input is in CRT basis
-bench_divgCRT :: _ => Cyc t m r -> Bench '(t,m,r)
-bench_divgCRT = bench divG . adviseCRT
+bench_divGCRT :: _ => Cyc t m r -> Bench '(t,m,r)
+bench_divGCRT = bench divG . adviseCRT
 
 {-# INLINABLE bench_errRounded #-}
 -- generate a rounded error term
