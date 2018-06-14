@@ -55,7 +55,7 @@ oneIdxBenches _ _ pgen =
   let ptmr = Proxy :: Proxy '(t,m,r)
   in benchGroup (showType ptmr) [
       (return $ tensorBenches1 ptmr pgen),
-      (cycRepBenches1 ptmr pgen),
+      (return $ cycRepBenches1 ptmr pgen),
       (return $ cycBenches1 ptmr pgen)
       ]
 
@@ -66,6 +66,6 @@ twoIdxBenches _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)
   in benchGroup (showType ptmr) $ ($ ptmr) <$> [
       (return . tensorBenches2),
-      cycRepBenches2,
+      (return . cycRepBenches2),
       (return . cycBenches2)
       ]

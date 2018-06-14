@@ -31,7 +31,7 @@ import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Types
 import Crypto.Random
 
-import Criterion as C
+import qualified Criterion as C
 
 -- | Benchmarks for single-index 'Cyc' operations.
 -- There must be a CRT basis for \(O_m\) over @r@.
