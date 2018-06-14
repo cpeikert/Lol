@@ -27,6 +27,7 @@ module Crypto.Lol.Utils.Benchmarks
 ,benchIO
 ,benchGroup
 ,genBenchArgs
+,mkBench
 ,Bench
 ,Benchmark
 ,addGen) where
@@ -40,6 +41,11 @@ import Data.Proxy
 -- | Convenience function for benchmarks with an extra parameter.
 addGen :: Proxy gen -> Proxy '(t,m,r) -> Proxy '(t,m,r,gen)
 addGen _ _ = Proxy
+
+-- | Make a `Benchmark` from a function and its input
+mkBench :: forall a b . NFData b => String -> (a -> b) -> a -> C.Benchmark
+mkBench name f input = C.bench name $ C.nf f input
+
 
 -- | Wrapper for criterion's 'nf'.
 {-# INLINABLE bench #-}

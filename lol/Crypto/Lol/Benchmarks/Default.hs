@@ -56,7 +56,7 @@ oneIdxBenches _ _ pgen =
   in benchGroup (showType ptmr) [
       (return $ tensorBenches1 ptmr pgen),
       (cycRepBenches1 ptmr pgen),
-      (cycBenches1 ptmr pgen)
+      (return $ cycBenches1 ptmr pgen)
       ]
 
 -- | Collection of all inter-ring operations at all levels of the library.
@@ -67,5 +67,5 @@ twoIdxBenches _ _ =
   in benchGroup (showType ptmr) $ ($ ptmr) <$> [
       (return . tensorBenches2),
       cycRepBenches2,
-      cycBenches2
+      (return . cycBenches2)
       ]
