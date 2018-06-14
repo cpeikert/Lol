@@ -31,15 +31,14 @@ import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Types
 import Crypto.Random
 
-import qualified Criterion as C
-
 -- | Benchmarks for single-index 'Cyc' operations.
 -- There must be a CRT basis for \(O_m\) over @r@.
 {-# INLINABLE cycBenches1 #-}
 cycBenches1 :: forall (t :: Factored -> * -> *) (m :: Factored) (r :: *) gen . _
-            => Proxy '(t,m,r) -> Proxy gen -> C.Benchmark
+            => Proxy '(t,m,r) -> Proxy gen -> Benchmark
 cycBenches1 ptmr pgen =
   let z = zero :: Cyc t m r
+      errorBench = mkBenchIO "error" (bench_errRounded ptmr pgen 0.1)
       benches = ($ z) <$> [
         mkBench "zipWith (*)" (bench_mul z),
         mkBench "crt" bench_crt,
@@ -52,17 +51,15 @@ cycBenches1 ptmr pgen =
         mkBench "divG Pow" bench_divGPow,
         mkBench "divG Dec" bench_divGDec,
         mkBench "divG CRT" bench_divGCRT,
-        mkBench "lift" bench_liftPow]
-      -- This is different because it lives in IO
-      errorBench = C.bench "error" (C.nfIO $ bench_errRounded ptmr pgen 0.1) in
-  C.bgroup "Cyc" (benches ++ [errorBench])
+        mkBench "lift" bench_liftPow] in
+  benchGroup "Cyc" (benches ++ [errorBench])
 
 -- | Benchmarks for inter-ring 'Cyc' operations.
 -- There must be a CRT basis for \(O_{m'}\) over @r@.
 {-# INLINABLE cycBenches2 #-}
 cycBenches2 :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (r :: *) .
                (m `Divides` m', _)
-            => Proxy '(t,m,m',r) -> C.Benchmark
+            => Proxy '(t,m,m',r) -> Benchmark
 cycBenches2 ptmmr =
   let z' = zero :: Cyc t m' r
       z = zero :: Cyc t m r
@@ -73,7 +70,7 @@ cycBenches2 ptmmr =
         mkBench "embedPow" (bench_embedPow ptmmr) z,
         mkBench "embedDec" (bench_embedDec ptmmr) z,
         mkBench "embedCRT" (bench_embedCRT ptmmr) z] in
-  C.bgroup "Cyc" benches
+  benchGroup "Cyc" benches
 
 {-# INLINABLE bench_mul #-}
 -- no CRT conversion, just coefficient-wise multiplication

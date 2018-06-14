@@ -27,7 +27,6 @@ module Crypto.Lol.Benchmarks.TensorBenches (tensorBenches1, tensorBenches2) wher
 
 import Control.Applicative
 import Control.Monad.Random hiding (lift)
-import qualified Criterion as C
 
 import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Prelude
@@ -42,9 +41,10 @@ import Crypto.Random
 -- performance due to how GHC interacts with Lol.
 {-# INLINABLE tensorBenches1 #-}
 tensorBenches1 :: forall (t :: Factored -> * -> *) (m :: Factored) (r :: *) gen . (Fact m, _)
-               => Proxy '(t,m,r) -> Proxy gen -> C.Benchmark
+               => Proxy '(t,m,r) -> Proxy gen -> Benchmark
 tensorBenches1 ptmr pgen =
     let z = zero :: t m r
+        errorBench = mkBenchIO "error" (bench_errRounded ptmr pgen 0.1)
         benches = ($ z) <$> [
           mkBench "zipWith (*)" (bench_mul z),
           mkBench "crt" bench_crt,
@@ -57,10 +57,8 @@ tensorBenches1 ptmr pgen =
           mkBench "divG Pow" bench_divGPow,
           mkBench "divG Dec" bench_divGDec,
           mkBench "divG CRT" bench_divGCRT,
-          mkBench "lift" bench_liftPow]
-        -- This is different because it lives in IO
-        errorBench = C.bench "error" (C.nfIO $ bench_errRounded ptmr pgen 0.1) in
-    C.bgroup "Tensor" (benches ++ [errorBench])
+          mkBench "lift" bench_liftPow] in
+    benchGroup "Tensor" (benches ++ [errorBench])
 
 -- | Benchmarks for inter-ring 'Tensor' operations.
 -- There must be a CRT basis for \(O_{m'}\) over @r@.
@@ -68,7 +66,7 @@ tensorBenches1 ptmr pgen =
 -- performance due to how GHC interacts with Lol.
 {-# INLINABLE tensorBenches2 #-}
 tensorBenches2 :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (r :: *) . _
-  => Proxy '(t,m,m',r) -> C.Benchmark
+  => Proxy '(t,m,m',r) -> Benchmark
 tensorBenches2 ptmmr =
   let z = zero :: t m r
       z' = zero :: t m' r
@@ -79,7 +77,7 @@ tensorBenches2 ptmmr =
         mkBench "embedPow" (bench_embedPow ptmmr) z,
         mkBench "embedDec" (bench_embedDec ptmmr) z,
         mkBench "embedCRT" (bench_embedCRT ptmmr) z] in
-  C.bgroup "Tensor" benches
+  benchGroup "Tensor" benches
 
 {-# INLINABLE bench_mul #-}
 -- no CRT conversion, just coefficient-wise multiplication

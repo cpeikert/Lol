@@ -37,15 +37,13 @@ import Crypto.Lol.Prelude
 import Crypto.Lol.Types
 import Crypto.Random
 
-import qualified Criterion as C
-
 -- | Benchmarks for single-index 'CycRep' operations.
 -- There must be a CRT basis for \(O_m\) over @r@.
 -- These cover the same functions as @cycBenches1@, but may have different
 -- performance due to how GHC interacts with Lol.
 {-# INLINABLE cycRepBenches1 #-}
 cycRepBenches1 :: forall (t :: Factored -> * -> *) (m :: Factored) (r :: *) gen . _
-            => Proxy '(t,m,r) -> Proxy gen -> C.Benchmark
+            => Proxy '(t,m,r) -> Proxy gen -> Benchmark
 cycRepBenches1 ptmr pgen =
   let zDec = zero :: CycRep t D m r
       zPow = zero :: CycRep t P m r
@@ -65,8 +63,8 @@ cycRepBenches1 ptmr pgen =
         mkBench "divG CRT"    bench_divGCRT   zPC,
         mkBench "lift"        bench_liftPow   zPow]
       -- This is different because it lives in IO
-      errorBench = C.bench "error" (C.nfIO $ bench_errRounded ptmr pgen 0.1) in
-  C.bgroup "CycRep" benches
+      errorBench = mkBenchIO "error" (bench_errRounded ptmr pgen 0.1) in
+  benchGroup "CycRep" benches
 
 -- | Benchmarks for inter-ring 'CycRep' operations.
 -- There must be a CRT basis for \(O_{m'}\) over @r@.
@@ -75,7 +73,7 @@ cycRepBenches1 ptmr pgen =
 {-# INLINE cycRepBenches2 #-}
 cycRepBenches2 :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (r :: *) .
                   (m `Divides` m', _)
-               => Proxy '(t,m,m',r) -> C.Benchmark
+               => Proxy '(t,m,m',r) -> Benchmark
 cycRepBenches2 ptmmr =
   let zPow' = zero :: CycRep t P m' r
       benches = [
@@ -87,7 +85,7 @@ cycRepBenches2 ptmmr =
   genBenchArgs "embedDec" bench_embedDec,
   genBenchArgs "embedCRT" bench_embedCRT
   -}
-  C.bgroup "CycRep" benches
+  benchGroup "CycRep" benches
 
 pcToEC :: CycRepPC t m r -> CycRepEC t m r
 pcToEC (Right x) = (Right x)
