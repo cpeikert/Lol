@@ -28,11 +28,11 @@ import qualified Criterion as C
 import Data.Proxy
 
 -- | Make a `Benchmark` from a function and its input
-mkBench :: NFData b => String -> (a -> b) -> a -> C.Benchmark
+mkBench :: NFData b => String -> (a -> b) -> a -> Benchmark
 mkBench name f input = C.bench name $ C.nf f input
 
 -- | Make a `Benchmark` from an IO function and its input
-mkBenchIO :: NFData b => String -> IO b -> C.Benchmark
+mkBenchIO :: NFData b => String -> IO b -> Benchmark
 mkBenchIO name i = C.bench name $ C.nfIO i
 
 -- | Synonym for Criterion's `bgroup`
