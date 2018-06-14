@@ -26,7 +26,6 @@ module Crypto.Lol.Tests
 ,module Crypto.Lol.Tests.ZqTests
 -- * Utilities for creating tests
 ,module Crypto.Lol.Utils.Tests
-,module Crypto.Lol.Utils.GenArgs
 -- * Utilities for showing benchmark results
 ,module Crypto.Lol.Utils.ShowType) where
 
@@ -35,5 +34,4 @@ import Crypto.Lol.Tests.TensorTests
 import Crypto.Lol.Tests.CycTests
 import Crypto.Lol.Tests.ZqTests
 import Crypto.Lol.Utils.Tests
-import Crypto.Lol.Utils.GenArgs
 import Crypto.Lol.Utils.ShowType

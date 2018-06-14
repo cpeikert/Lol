@@ -28,7 +28,6 @@ module Crypto.Lol.Benchmarks
 ,module Crypto.Lol.Benchmarks.CycBenches
 -- * Utilities for creating benchmarks
 ,module Crypto.Lol.Utils.Benchmarks
-,module Crypto.Lol.Utils.GenArgs
 -- * Utilities for showing benchmark results
 ,module Crypto.Lol.Utils.ShowType
 ,Verb(..)
@@ -40,7 +39,6 @@ import Crypto.Lol.Benchmarks.CycRepBenches
 import Crypto.Lol.Benchmarks.Default
 import Crypto.Lol.Benchmarks.TensorBenches
 import Crypto.Lol.Utils.Benchmarks
-import Crypto.Lol.Utils.GenArgs
 import Crypto.Lol.Utils.PrettyPrint            (Verb (..))
 import Crypto.Lol.Utils.PrettyPrint.Diagnostic
 import Crypto.Lol.Utils.PrettyPrint.Table

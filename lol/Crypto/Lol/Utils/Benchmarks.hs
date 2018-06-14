@@ -25,7 +25,6 @@ module Crypto.Lol.Utils.Benchmarks (benchGroup, mkBench, mkBenchIO, Benchmark) w
 import Control.DeepSeq
 import Control.Monad.Random
 import qualified Criterion as C
-import Crypto.Lol.Utils.GenArgs
 import Data.Proxy
 
 -- | Make a `Benchmark` from a function and its input

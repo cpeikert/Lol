@@ -116,7 +116,6 @@ library
     Crypto.Lol.PosBin
     Crypto.Lol.PosBinDefs
 
-    Crypto.Lol.Utils.GenArgs
     Crypto.Lol.Utils.Tests
     Crypto.Lol.Utils.Benchmarks
     Crypto.Lol.Utils.PrettyPrint
