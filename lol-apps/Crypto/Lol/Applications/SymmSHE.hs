@@ -34,7 +34,7 @@ SK, PT, CT -- don't export constructors!
 -- * Keygen, encryption, decryption
 , genSK, genSKWithVar
 , encrypt
-, errorTerm, errorTermUnrestricted, decrypt, decryptUnrestricted
+, errorTerm, decrypt-- errorTermUnrestricted, decrypt, decryptUnrestricted
 -- * Arithmetic with public values
 , addPublic, mulPublic
 -- * Modulus switching
@@ -109,6 +109,14 @@ instance (NFData zp, NFData r'q) => NFData (CT m zp r'q) where
 instance (NFData r) => NFData (SK r) where
   rnf (SK v s) = rnf v `seq` rnf s
 
+instance (Random r) => Random (SK r) where
+  random g =
+    let (r, g) = random g in
+    (SK (0.5 :: Double) r, g)
+
+  randomR = error "randomR not defined for SK"
+
+
 ---------- Basic functions: Gen, Enc, Dec ----------
 
 -- | Constraint synonym for generating a secret key.
@@ -179,6 +187,7 @@ type DecryptUCtx c m m' z zp zq = (Fact m, ToSDCtx c m' zp zq)
 
 -- TODO: What to do with this?
 
+{-
 -- | More general form of 'errorTerm' that works for unrestricted
 -- output coefficient types.
 errorTermUnrestricted :: ErrorTermUCtx c m' z zp zq
@@ -198,6 +207,7 @@ decryptUnrestricted (SK _ s) = let sq = reduce s in
              e = cycDec $ fmap (reduce . lift) $ uncycDec eval
              l' = scalarCyc l
          in l' * twace (iterate divG' e !! k)
+-}
 
 ---------- LSD/MSD switching ----------
 

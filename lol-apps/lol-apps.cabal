@@ -98,4 +98,5 @@ library
                 singletons < 2.3,
                 split < 0.3,
                 test-framework < 0.9,
-                time < 1.9
+                time < 1.9,
+                QuickCheck < 3.0

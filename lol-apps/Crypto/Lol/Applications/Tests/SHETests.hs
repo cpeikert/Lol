@@ -22,7 +22,8 @@ Tests for SymmSHE.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Applications.Tests.SHETests (sheTests, decTest, modSwPTTest, ksTests, twemTests, tunnelTests) where
+--module Crypto.Lol.Applications.Tests.SHETests (sheTests, decTest, modSwPTTest, ksTests, twemTests, tunnelTests) where
+module Crypto.Lol.Applications.Tests.SHETests (decTest) where
 
 import Control.Applicative
 import Control.Monad
@@ -33,7 +34,13 @@ import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Tests
 
 import qualified Test.Framework as TF
+import qualified Test.QuickCheck as QC
+import qualified Test.QuickCheck.Gen as QC
 
+joinGens :: QC.Gen a -> QC.Gen b -> QC.Gen (a, b)
+joinGens g h = liftA2 (\x y -> (x, y)) g h
+
+{-
 sheTests :: forall t m m' zp zq . (_)
   => Proxy '(m,m',zp,zq) -> Proxy t -> TF.Test
 sheTests _ _ =
@@ -47,15 +54,20 @@ sheTests _ _ =
    genTestArgs "CTMul"      prop_ctmul,
    genTestArgs "CT zero"    prop_ctzero,
    genTestArgs "CT one"     prop_ctone]
+-}
 
 -- zq must be liftable
-decTest :: forall t m m' zp zq . (_)
-  => Proxy '(m,m',zp,zq) -> Proxy t -> TF.Test
+decTest :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (zp :: *) (zq :: *) . _
+        => Proxy '(m,m',zp,zq) -> Proxy t -> TF.Test
 decTest _ _ =
-  let ptmr = Proxy::Proxy '(t,m,m',zp,zq)
-  in testGroup (showType ptmr)
-       [genTestArgs "Dec . Enc" prop_encDec ptmr]
+  let ptmmrr = Proxy::Proxy '(t,m,m',zp,zq)
+      g1 = QC.chooseAny :: QC.Gen (SK (Cyc t m' (LiftOf zp)))
+      g2 = QC.chooseAny :: QC.Gen (Cyc t m zp)
+      tupGen = joinGens g1 g2
+  in TF.testGroup (showType ptmmrr)
+                  [testIOWithGen "Dec . Enc" (prop_encDec ptmmrr) tupGen]
 
+{-
 modSwPTTest :: forall t m m' zp zp' zq . (_)
   => Proxy '(m,m',zp,zp',zq) -> Proxy t -> TF.Test
 modSwPTTest _ _ =
@@ -168,14 +180,16 @@ prop_ctone :: forall t m m' z zp (zq :: *) . (z ~ LiftOf zp, Fact m, _)
 prop_ctone sk =
   let z = decryptUnrestricted sk (one :: CT m zp (Cyc t m' zq)) :: Cyc t m zp
   in test $ one == z
+-}
 
 prop_encDec :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
-  => SK (Cyc t m' z) -> Cyc t m zp -> Test '(t,m,m',zp,zq)
-prop_encDec sk x = testIO $ do
+  => Proxy '(t,m,m',zp,zq) -> (SK (Cyc t m' z), Cyc t m zp) -> IO Bool
+prop_encDec _ (sk, x) = do
   y :: CT m zp (Cyc t m' zq) <- encrypt sk x
   let x' = decrypt sk $ y
   return $ x == x'
 
+{-
 prop_modSwPT :: forall t m m' z zp (zp' :: *) (zq :: *) . (z ~ LiftOf zp, _)
   => PT (Cyc t m zp) -> SK (Cyc t m' z) -> Test '(t,m,m',zp,zp',zq)
 prop_modSwPT pt sk = testIO $ do
@@ -246,3 +260,4 @@ prop_ringTunnel x skin skout = testIO $ do
   let y' = tunnel hints y :: CT s zp (Cyc t s' zq)
       actual = decryptUnrestricted skout y' :: Cyc t s zp
   return $ expected == actual
+-}

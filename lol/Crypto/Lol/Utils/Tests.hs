@@ -21,9 +21,10 @@ Infrastructure for testing Lol.
 {-# LANGUAGE TypeFamilies          #-}
 
 module Crypto.Lol.Utils.Tests
-(testWithGen
+(nestGroup
+,testIOWithGen
+,testWithGen
 ,testWithoutGen
-,nestGroup
 ,ApproxEqual(..)) where
 
 import Crypto.Lol.Prelude (imag, real, Complex, Int64)
@@ -32,6 +33,7 @@ import Crypto.Lol.Types.Unsafe.ZqBasic
 import qualified Test.Framework as TF
 import Test.Framework.Providers.QuickCheck2 (testProperty)
 import qualified Test.QuickCheck as QC
+import qualified Test.QuickCheck.Monadic as QCM
 
 -- TODO: Kill all the old test framework stuff (or is it still used for benchmarks?)
 
@@ -65,6 +67,10 @@ instance ApproxEqual (Complex Double) where
 -- Make a 'TF.Test' given a name, a testing function, and a parameter generator
 testWithGen :: (Show a, QC.Testable prop) => String -> (a -> prop) -> QC.Gen a -> TF.Test
 testWithGen name f gen = testProperty name $ QC.forAll gen f
+
+-- Make a 'TF.Test' given a name, a monadic (IO only) testing function, and a parameter generator
+testIOWithGen :: (Show a, QC.Testable prop) => String -> (a -> IO prop) -> QC.Gen a -> TF.Test
+testIOWithGen name f gen = testProperty name $ QCM.monadicIO $ QCM.forAllM gen (QCM.run . f)
 
 -- Make a 'TF.Test' given a name and a 'QC.Testable' value
 testWithoutGen :: (QC.Testable prop) => String -> prop -> TF.Test
