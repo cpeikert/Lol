@@ -13,6 +13,7 @@ Tests for SymmSHE.
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
@@ -36,6 +37,12 @@ import Crypto.Lol.Tests
 import qualified Test.Framework as TF
 import qualified Test.QuickCheck as QC
 import qualified Test.QuickCheck.Gen as QC
+
+-- EAC: is there a simple way to parameterize the variance?
+-- generates a secret key with scaled variance 1.0
+instance (GenSKCtx c m' z Double) => Random (SK (c m' z)) where
+  random = runRand $ genSK (1 :: Double)
+  randomR = error "randomR not defined for SK"
 
 joinGens :: QC.Gen a -> QC.Gen b -> QC.Gen (a, b)
 joinGens g h = liftA2 (\x y -> (x, y)) g h

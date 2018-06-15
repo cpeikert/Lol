@@ -109,14 +109,6 @@ instance (NFData zp, NFData r'q) => NFData (CT m zp r'q) where
 instance (NFData r) => NFData (SK r) where
   rnf (SK v s) = rnf v `seq` rnf s
 
-instance (Random r) => Random (SK r) where
-  random g =
-    let (r, g) = random g in
-    (SK (0.5 :: Double) r, g)
-
-  randomR = error "randomR not defined for SK"
-
-
 ---------- Basic functions: Gen, Enc, Dec ----------
 
 -- | Constraint synonym for generating a secret key.

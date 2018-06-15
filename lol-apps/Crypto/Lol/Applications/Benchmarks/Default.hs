@@ -13,7 +13,6 @@ Mostly-monomorphized benchmarks for lol-apps.
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -86,9 +85,3 @@ defaultKHPRFBenches pt _ = benchGroup "KHPRF Table"
    benchGroup "right/KHPRF"    $ benches' rightSpineTree]
   where
     benches' = khPRFBenches 5 pt (Proxy::Proxy F128) (Proxy::Proxy '(Zq 8, Zq 2, gad))
-
--- EAC: is there a simple way to parameterize the variance?
--- generates a secret key with scaled variance 1.0
-instance (GenSKCtx t m' z Double) => Random (SK (Cyc t m' z)) where
-  random = runRand $ genSK (1 :: Double)
-  randomR = error "randomR not defined for SK"
