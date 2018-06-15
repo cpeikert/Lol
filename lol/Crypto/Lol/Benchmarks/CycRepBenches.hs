@@ -49,6 +49,7 @@ cycRepBenches1 ptmr pgen =
       zPow = zero :: CycRep t P m r
       zEC = zero :: CycRepEC t m r
       zPC = ecToPC zEC
+      errorBench = mkBenchIO "error" (bench_errRounded ptmr pgen 0.1)
       benches = [
         mkBench "zipWith (*)" (bench_mul zPC) zPC,
         mkBench "crt"         bench_crt       zPow,
@@ -61,10 +62,9 @@ cycRepBenches1 ptmr pgen =
         mkBench "divG Pow"    bench_divGPow   zPow,
         mkBench "divG Dec"    bench_divGDec   zDec,
         mkBench "divG CRT"    bench_divGCRT   zPC,
-        mkBench "lift"        bench_liftPow   zPow]
+        mkBench "lift"        bench_liftPow   zPow] in
       -- This is different because it lives in IO
-      errorBench = mkBenchIO "error" (bench_errRounded ptmr pgen 0.1) in
-  benchGroup "CycRep" benches
+  benchGroup "CycRep" (benches ++ [errorBench])
 
 -- | Benchmarks for inter-ring 'CycRep' operations.
 -- There must be a CRT basis for \(O_{m'}\) over @r@.
@@ -76,15 +76,20 @@ cycRepBenches2 :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factor
                => Proxy '(t,m,m',r) -> Benchmark
 cycRepBenches2 ptmmr =
   let zPow' = zero :: CycRep t P m' r
+      zDec' = zero :: CycRep t D m' r
+      zEC' = zero :: CycRepEC t m' r
+      zPC' = ecToPC zEC'
+      zPow = zero :: CycRep t P m r
+      zDec = zero :: CycRep t D m r
+      zEC = zero :: CycRepEC t m r
+      zPC = ecToPC zEC
       benches = [
-        mkBench "twacePow" (bench_twacePow ptmmr) zPow'] in
-  {-
-  genBenchArgs "twaceDec" bench_twaceDec,
-  genBenchArgs "twaceCRT" bench_twaceCRT,
-  genBenchArgs "embedPow" bench_embedPow,
-  genBenchArgs "embedDec" bench_embedDec,
-  genBenchArgs "embedCRT" bench_embedCRT
-  -}
+        mkBench "twacePow" (bench_twacePow ptmmr) zPow',
+        mkBench "twaceDec" (bench_twaceDec ptmmr) zDec',
+        mkBench "twaceCRT" (bench_twaceCRT ptmmr) zPC',
+        mkBench "embedPow" (bench_embedPow ptmmr) zPow,
+        mkBench "embedDec" (bench_embedDec ptmmr) zDec,
+        mkBench "embedCRT" (bench_embedCRT ptmmr) zPC] in
   benchGroup "CycRep" benches
 
 pcToEC :: CycRepPC t m r -> CycRepEC t m r
