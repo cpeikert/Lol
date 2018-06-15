@@ -31,11 +31,9 @@ import Crypto.Lol.Applications.Tests.KHPRFTests
 import Crypto.Lol.Applications.Tests.SHETests
 import Crypto.Lol.Factored
 import Crypto.Lol.Gadget
-import Crypto.Lol.Tests hiding (Test)
+import Crypto.Lol.Tests
 
 import Data.Proxy
-
-import Test.Framework
 
 defaultAppsTests :: _ => Proxy t -> Proxy gad -> [Test]
 defaultAppsTests pt pgad  =
