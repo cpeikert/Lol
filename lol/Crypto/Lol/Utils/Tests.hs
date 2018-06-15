@@ -22,7 +22,9 @@ Infrastructure for testing Lol.
 
 module Crypto.Lol.Utils.Tests
 (nestGroup
+,testGroup
 ,testIOWithGen
+,testIOWithoutGen
 ,testWithGen
 ,testWithoutGen
 ,ApproxEqual(..)) where
@@ -75,6 +77,13 @@ testIOWithGen name f gen = testProperty name $ QCM.monadicIO $ QCM.forAllM gen (
 -- Make a 'TF.Test' given a name and a 'QC.Testable' value
 testWithoutGen :: (QC.Testable prop) => String -> prop -> TF.Test
 testWithoutGen name p = testProperty name $ QC.property p
+
+-- Make a 'TF.Test' given a name and a monadic (IO only) 'QC.Testable' value
+testIOWithoutGen :: (QC.Testable prop) => String -> IO prop -> TF.Test
+testIOWithoutGen name p = testProperty name $ QCM.monadicIO $ QCM.run p
+
+-- Synonym for Test.Framework.testGroup
+testGroup = TF.testGroup
 
 -- | Apply parameters to a list of 'TF.Test'.
 nestGroup :: String -> [QC.Gen a -> TF.Test] -> QC.Gen a -> TF.Test

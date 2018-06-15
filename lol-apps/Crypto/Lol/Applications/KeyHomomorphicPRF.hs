@@ -104,7 +104,7 @@ instance (NFData rq) => NFData (PRFState rq rp) where
 -- | Given PRF parameters and an optional inital input value (default is 0),
 --   produces an initial PRF state which can be quickly updated when the
 --   difference between adjacent inputs ha low Hamming weight.
-prfState :: forall gad rq rp . (Decompose gad rq)
+prfState :: forall gad rq rp . (Decompose gad rq, Reduce (DecompOf rq) rq)
   => PRFFamily gad rq rp -> Maybe Int -> PRFState rq rp
 prfState p@(Params a0 a1 t) initInput =
   let treelen = case t of
@@ -123,7 +123,7 @@ prfState p@(Params a0 a1 t) initInput =
 -- Helper function for prfState. This constructs the initial internal state for
 -- a given initial input value and family parameters. The input must have as
 -- many bits as the tree (in the PRFFamily) has leaves.
-buildDecTree :: (Decompose gad rq)
+buildDecTree :: (Decompose gad rq, Reduce (DecompOf rq) rq)
   => Proxy gad -> Int -> PRFFamily gad rq rp -> DecoratedTree rq
 buildDecTree pgad y (Params a0 a1 t) =
   let -- number of leaves in a subtree
@@ -154,7 +154,7 @@ buildDecTree pgad y (Params a0 a1 t) =
 
 -- | Evaluates the tree at the new input, reusing as much prior work as
 -- possible. Ouptuts the PRF output and the new PRF state.
-evalTree :: Int -> PRFState rq rp -> (Matrix rq, PRFState rq rp)
+evalTree :: Reduce (DecompOf rq) rq => Int -> PRFState rq rp -> (Matrix rq, PRFState rq rp)
 evalTree y (PRFState pgad a0 a1 t) =
   let getNumLeaves (DL _ _) = 1
       getNumLeaves (DI i _ _ _ _ _) = i
@@ -186,7 +186,7 @@ evalTree y (PRFState pgad a0 a1 t) =
   in (res, PRFState pgad a0 a1 t')
 
 -- | Equation (2.3) in <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [BP14]>.
-latticePRF' :: (Rescale zq zp)
+latticePRF' :: (Rescale zq zp, Reduce (DecompOf zq) zq)
   => Matrix zq -> Int -> PRFState zq zp -> (Matrix zp, PRFState zq zp)
 latticePRF' s x state1@(PRFState _ a0 _ _)
   | numRows s /= 1 = error "Secret key must have one row."
@@ -197,33 +197,33 @@ latticePRF' s x state1@(PRFState _ a0 _ _)
                 in (rescale <$> s*res, state2)
 
 -- | Single-ouptut lattice PRF.
-latticePRF :: (Rescale zq zp)
+latticePRF :: (Rescale zq zp, Reduce (DecompOf zq) zq)
   => Matrix zq -> Int -> PRFState zq zp -> Matrix zp
 latticePRF s x = fst. latticePRF' s x
 
 -- | Multi-output lattice PRF with monadic memoized internal state.
-latticePRFM :: (MonadState (PRFState zq zp) mon, Rescale zq zp)
+latticePRFM :: (MonadState (PRFState zq zp) mon, Rescale zq zp, Reduce (DecompOf zq) zq)
   => Matrix zq -> Int -> mon (Matrix zp)
 latticePRFM s x = state $ latticePRF' s x
 
 -- | Equation (2.10) in <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [BP14]>.
-ringPRF' :: (Fact m, RescaleCyc (Cyc t) zq zp, Ring rq,
-            rq ~ Cyc t m zq, rp ~ Cyc t m zp)
+ringPRF' :: (Fact m, RescaleCyc c zq zp, Ring rq,
+            rq ~ c m zq, rp ~ c m zp, Reduce (DecompOf (c m zq)) (c m zq))
     => rq -> Int -> PRFState rq rp -> (Matrix rp, PRFState rq rp)
 ringPRF' s x state1 =
   let (res,state2) = evalTree x state1
   in ((rescaleDec . (s*)) <$> res, state2)
 
 -- | Single-use ring PRF. Discards the state, so future evaluations are slow.
-ringPRF :: (Fact m, RescaleCyc (Cyc t) zq zp, Ring rq,
-            rq ~ Cyc t m zq, rp ~ Cyc t m zp)
+ringPRF :: (Fact m, RescaleCyc c zq zp, Reduce (DecompOf (c m zq)) (c m zq),
+            Ring rq, rq ~ c m zq, rp ~ c m zp)
     => rq -> Int -> PRFState rq rp -> Matrix rp
 ringPRF s x = fst . ringPRF' s x
 
 -- | Ring PRF with monadic memoized internal state for fast incremental evaluation.
-ringPRFM :: (MonadState (PRFState rq rp) mon, Fact m,
-             RescaleCyc (Cyc t) zq zp, Ring rq,
-             rq ~ Cyc t m zq, rp ~ Cyc t m zp)
+ringPRFM :: (MonadState (PRFState rq rp) mon, Fact m, RescaleCyc c zq zp,
+             Reduce (DecompOf (c m zq)) (c m zq), Ring rq,
+             rq ~ c m zq, rp ~ c m zp)
   => rq -> Int -> mon (Matrix rp)
 ringPRFM s x = state $ ringPRF' s x
 

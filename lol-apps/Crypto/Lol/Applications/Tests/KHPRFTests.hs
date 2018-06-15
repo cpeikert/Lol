@@ -26,7 +26,7 @@ import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
-import Crypto.Lol.Cyclotomic.UCyc
+import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Tests
 
 import MathObj.Matrix
@@ -36,15 +36,16 @@ import qualified Test.Framework as TF
 khprfTests :: forall t m zp zq gad . (_)
   => Proxy '(m,zp,zq,gad) -> Proxy t -> TF.Test
 khprfTests _ _ =
-  let ptmr = Proxy::Proxy '(t,m,zp,zq,gad)
-  in testGroup (showType ptmr) $ ($ ptmr) <$> [
-   genTestArgs "PRF_3bits" (prop_keyHomom 3),
-   genTestArgs "PRF_5bits" (prop_keyHomom 5)]
+  let ptmrrg = Proxy::Proxy '(t,m,zp,zq,gad) in
+  testGroup (showType ptmrrg) [
+    testIOWithoutGen "PRF_3bits" (prop_keyHomom ptmrrg 3),
+    testIOWithoutGen "PRF_5bits" (prop_keyHomom ptmrrg 5)]
+
+-- TODO: Fix the uncycPow here
 
 -- +/-1 in every coefficient of the rounding basis
-prop_keyHomom :: forall t m zp zq gad . (Fact m, CElt t zq, CElt t zp, _)
-  => Int -> Test '(t,m,zp,zq,gad)
-prop_keyHomom size = testIO $ do
+prop_keyHomom :: forall t m zp zq gad . _ => Proxy '(t,m,zp,zq,gad) -> Int -> IO Bool
+prop_keyHomom _ size = do
   family :: PRFFamily gad (Cyc t m zq) (Cyc t m zp) <- randomFamily size
   s1 <- getRandom
   s2 <- getRandom
