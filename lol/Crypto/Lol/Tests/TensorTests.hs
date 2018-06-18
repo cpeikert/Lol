@@ -29,12 +29,11 @@ module Crypto.Lol.Tests.TensorTests (tensorCrtTests1, tensorCrtTests2, tensorTes
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Utils.ShowType
-import Crypto.Lol.Utils.Tests
+import Crypto.Lol.Utils.Tests (nestGroup, testGroup, testWithGen, testWithoutGen,
+                               (=~=), ApproxEqual, Gen, Test)
 
 import Control.Applicative
 import Data.Maybe
-import qualified Test.Framework  as TF
-import qualified Test.QuickCheck as QC
 
 -- TODO: We don't test:
 --         * Tensor::coeffs,
@@ -42,7 +41,7 @@ import qualified Test.QuickCheck as QC
 --         * TensorGSqNorm::gSqNormDec
 
 -- Has to take two generators because prop_scalar_crt only takes ring elements as input
-tensorTests1 :: forall t m r . _ => QC.Gen (t m r) -> TF.Test
+tensorTests1 :: forall t m r . _ => Gen (t m r) -> Test
 tensorTests1 tensorGen =
   let ptmr  = Proxy::Proxy '(t,m,r)
       tests = ($ tensorGen) <$> [
@@ -53,9 +52,9 @@ tensorTests1 tensorGen =
         testWithGen   "LInv.L == id"                              prop_l_inv,
         testWithGen   "G commutes with L on Dec basis"            prop_g_dec,
         testWithGen   "Tw and Em ID on Pow/Dec for equal indices" prop_twEmID] in
-  TF.testGroup (showType ptmr) tests
+  testGroup (showType ptmr) tests
 
-tensorCrtTests1 :: forall t m r . _ => QC.Gen r -> QC.Gen (t m r) -> TF.Test
+tensorCrtTests1 :: forall t m r . _ => Gen r -> Gen (t m r) -> Test
 tensorCrtTests1 ringGen tensorGen =
   let ptmr = Proxy::Proxy '(t,m,r)
       tests = [
@@ -64,10 +63,10 @@ tensorCrtTests1 ringGen tensorGen =
           testWithGen "G commutes with L on CRT basis"        prop_g_crt tensorGen,
           testWithGen "Tw and Em ID on CRT for equal indices" prop_twEmIDCRT tensorGen,
           testWithGen "Scalar"                               (prop_scalar_crt ptmr) ringGen] in
-  TF.testGroup (showType ptmr) tests
+  testGroup (showType ptmr) tests
 
 tensorTests2 :: forall t m m' r . _
-             => Proxy '(t,m,m',r) -> QC.Gen (t m r) -> TF.Test
+             => Proxy '(t,m,m',r) -> Gen (t m r) -> Test
 tensorTests2 _ tensorGen =
   let ptmmr  = Proxy::Proxy '(t,m,m',r)
       randTests  = ($ tensorGen) <$> [
@@ -77,13 +76,13 @@ tensorTests2 _ tensorGen =
         testWithGen   "Em commutes with L in Dec basis" (prop_embed_dec ptmmr),
         testWithGen   "Tw commutes with L in Dec basis" (prop_twace_dec ptmmr)]
       deterministicTests = [
-        TF.testGroup  "Twace invariants" [
+        testGroup  "Twace invariants" [
           testWithoutGen "Invar1 Pow basis"             (prop_twace_invar1_pow ptmmr),
           testWithoutGen "Invar1 Dec basis"             (prop_twace_invar1_dec ptmmr),
           testWithoutGen "Invar2 Pow/Dec basis"         (prop_twace_invar2_powdec ptmmr)]] in
-      TF.testGroup (showType ptmmr) (randTests ++ deterministicTests)
+      testGroup (showType ptmmr) (randTests ++ deterministicTests)
 
-tensorCrtTests2 :: forall t m m' r . _ => Proxy '(t,m,m',r) -> QC.Gen (t m r) -> TF.Test
+tensorCrtTests2 :: forall t m m' r . _ => Proxy '(t,m,m',r) -> Gen (t m r) -> Test
 tensorCrtTests2 _ tensorGen =
   let ptmmr  = Proxy::Proxy '(t,m,m',r)
       randTests  = ($ tensorGen) <$> [
@@ -91,10 +90,10 @@ tensorCrtTests2 _ tensorGen =
         testWithGen "Em commutes with L in CRT basis" (prop_embed_crt ptmmr),
         testWithGen "Tw commutes with L in CRT basis" (prop_twace_crt ptmmr)]
       deterministicTests = [
-        TF.testGroup "Twace invariants" [
+        testGroup "Twace invariants" [
           testWithoutGen "Invar1 CRT basis"           (prop_twace_invar1_crt ptmmr),
           testWithoutGen "Invar2 CRT basis"           (prop_twace_invar2_crt ptmmr)]] in
-      TF.testGroup (showType ptmmr) (randTests ++ deterministicTests)
+      testGroup (showType ptmmr) (randTests ++ deterministicTests)
 
 prop_fmap :: _ => t m r -> Bool
 prop_fmap x = (fmap id x) =~= x

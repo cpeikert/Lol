@@ -22,20 +22,25 @@ Infrastructure for testing Lol.
 
 module Crypto.Lol.Utils.Tests
 (nestGroup
-,testGroup
 ,testIOWithGen
 ,testIOWithoutGen
 ,testWithGen
 ,testWithoutGen
 ,ApproxEqual(..)
-,Test) where
+-- Re-exports
+,QCG.choose
+,QCG.chooseAny
+,TF.testGroup
+,QC.Gen
+,TF.Test) where
 
 import Crypto.Lol.Prelude (imag, real, Complex, Int64)
 import Crypto.Lol.Types.Unsafe.ZqBasic
 
 import qualified Test.Framework as TF
-import Test.Framework.Providers.QuickCheck2 (testProperty)
+import qualified Test.Framework.Providers.QuickCheck2 as QC2
 import qualified Test.QuickCheck as QC
+import qualified Test.QuickCheck.Gen as QCG
 import qualified Test.QuickCheck.Monadic as QCM
 
 -- The allowable distance from 1 the ratio of two Doubles is allowed to be in order for the numbers
@@ -67,26 +72,20 @@ instance ApproxEqual (Complex Double) where
 
 -- | Make a 'Test' given a name, a testing function, and a parameter generator
 testWithGen :: (Show a, QC.Testable prop) => String -> (a -> prop) -> QC.Gen a -> TF.Test
-testWithGen name f gen = testProperty name $ QC.forAll gen f
+testWithGen name f gen = QC2.testProperty name $ QC.forAll gen f
 
 -- | Make a 'Test' given a name, a monadic (IO only) testing function, and a parameter generator
 testIOWithGen :: (Show a, QC.Testable prop) => String -> (a -> IO prop) -> QC.Gen a -> TF.Test
-testIOWithGen name f gen = testProperty name $ QCM.monadicIO $ QCM.forAllM gen (QCM.run . f)
+testIOWithGen name f gen = QC2.testProperty name $ QCM.monadicIO $ QCM.forAllM gen (QCM.run . f)
 
 -- | Make a 'Test' given a name and a 'QC.Testable' value
 testWithoutGen :: (QC.Testable prop) => String -> prop -> TF.Test
-testWithoutGen name p = testProperty name $ QC.property p
+testWithoutGen name p = QC2.testProperty name $ QC.property p
 
 -- | Make a 'Test' given a name and a monadic (IO only) 'QC.Testable' value
 testIOWithoutGen :: (QC.Testable prop) => String -> IO prop -> TF.Test
-testIOWithoutGen name p = testProperty name $ QCM.monadicIO $ QCM.run p
-
--- | Synonym for 'TF.testGroup'
-testGroup = TF.testGroup
+testIOWithoutGen name p = QC2.testProperty name $ QCM.monadicIO $ QCM.run p
 
 -- | Apply parameters to a list of 'Test'.
 nestGroup :: String -> [QC.Gen a -> TF.Test] -> QC.Gen a -> TF.Test
 nestGroup name ts gen = TF.testGroup name $ map ($ gen) ts
-
--- | Synonym for 'TF.Test'
-type Test = TF.Test

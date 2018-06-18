@@ -31,27 +31,23 @@ module Crypto.Lol.Tests.ZqTests (zqTests) where
 import Crypto.Lol
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Utils.ShowType
-import Crypto.Lol.Utils.Tests
+import Crypto.Lol.Utils.Tests (chooseAny, testGroup, testWithGen, Gen, Test)
 
 import Control.Applicative
 import Control.Monad.Random
 
-import qualified Test.Framework  as TF
-import qualified Test.QuickCheck as QC
-import Test.QuickCheck.Gen (chooseAny)
-
 -- | Tests for modular arithmetic implementations.
-zqTests :: forall r . (Mod r, _) => Proxy r -> TF.Test
+zqTests :: forall r . (Mod r, _) => Proxy r -> Test
 zqTests p =
-  let gen1 = chooseAny :: QC.Gen (LiftedMod r, LiftedMod r)
-      gen2 = chooseAny :: QC.Gen (LiftedInvertible r, LiftedInvertible r)
-      gen3 = chooseAny :: QC.Gen (Invertible r)
-      gen4 = chooseAny :: QC.Gen (Invertible r, Invertible r) in
-  TF.testGroup (showType p) [
-  testWithGen "(+)" prop_add gen1,
-  testWithGen "(*)" prop_mul gen2,
-  testWithGen "^-1" prop_recip gen3,
-  testWithGen "extension ring (*)" prop_mul_ext gen4
+  let gen1 = chooseAny :: Gen (LiftedMod r, LiftedMod r)
+      gen2 = chooseAny :: Gen (LiftedInvertible r, LiftedInvertible r)
+      gen3 = chooseAny :: Gen (Invertible r)
+      gen4 = chooseAny :: Gen (Invertible r, Invertible r) in
+  testGroup (showType p) [
+    testWithGen "(+)" prop_add gen1,
+    testWithGen "(*)" prop_mul gen2,
+    testWithGen "^-1" prop_recip gen3,
+    testWithGen "extension ring (*)" prop_mul_ext gen4
   ]
 
 prop_add :: forall r . (Ring r, Eq r) => (LiftedMod r, LiftedMod r) -> Bool

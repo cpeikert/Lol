@@ -29,7 +29,7 @@ module Crypto.Lol.Benchmarks.CycRepBenches (cycRepBenches1, cycRepBenches2) wher
 import Control.Applicative
 import Control.Monad.Random hiding (lift)
 
-import Crypto.Lol.Utils.Benchmarks
+import Crypto.Lol.Utils.Benchmarks (bgroup, mkBench, mkBenchIO, Benchmark)
 import Crypto.Lol.Cyclotomic.CycRep
 import Crypto.Lol.Cyclotomic.Language (mulG)
 import Crypto.Lol.Cyclotomic.Tensor (Tensor)
@@ -64,7 +64,7 @@ cycRepBenches1 ptmr pgen =
         mkBench "divG CRT"    bench_divGCRT   zPC,
         mkBench "lift"        bench_liftPow   zPow] in
       -- This is different because it lives in IO
-  benchGroup "CycRep" (benches ++ [errorBench])
+  bgroup "CycRep" (benches ++ [errorBench])
 
 -- | Benchmarks for inter-ring 'CycRep' operations.
 -- There must be a CRT basis for \(O_{m'}\) over @r@.
@@ -90,7 +90,7 @@ cycRepBenches2 ptmmr =
         mkBench "embedPow" (bench_embedPow ptmmr) zPow,
         mkBench "embedDec" (bench_embedDec ptmmr) zDec,
         mkBench "embedCRT" (bench_embedCRT ptmmr) zPC] in
-  benchGroup "CycRep" benches
+  bgroup "CycRep" benches
 
 pcToEC :: CycRepPC t m r -> CycRepEC t m r
 pcToEC (Right x) = (Right x)

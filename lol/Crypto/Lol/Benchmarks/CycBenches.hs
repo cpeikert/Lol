@@ -27,7 +27,7 @@ import Control.Applicative
 import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol
-import Crypto.Lol.Utils.Benchmarks
+import Crypto.Lol.Utils.Benchmarks (bgroup, mkBench, mkBenchIO, Benchmark)
 import Crypto.Lol.Types
 import Crypto.Random
 
@@ -52,7 +52,7 @@ cycBenches1 ptmr pgen =
         mkBench "divG Dec" bench_divGDec,
         mkBench "divG CRT" bench_divGCRT,
         mkBench "lift" bench_liftPow] in
-  benchGroup "Cyc" (benches ++ [errorBench])
+  bgroup "Cyc" (benches ++ [errorBench])
 
 -- | Benchmarks for inter-ring 'Cyc' operations.
 -- There must be a CRT basis for \(O_{m'}\) over @r@.
@@ -70,7 +70,7 @@ cycBenches2 ptmmr =
         mkBench "embedPow" (bench_embedPow ptmmr) z,
         mkBench "embedDec" (bench_embedDec ptmmr) z,
         mkBench "embedCRT" (bench_embedCRT ptmmr) z] in
-  benchGroup "Cyc" benches
+  bgroup "Cyc" benches
 
 {-# INLINABLE bench_mul #-}
 -- no CRT conversion, just coefficient-wise multiplication

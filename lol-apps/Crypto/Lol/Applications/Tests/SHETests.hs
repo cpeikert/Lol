@@ -32,11 +32,7 @@ import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Tests
-
-import qualified Test.Framework as TF
-import qualified Test.QuickCheck as QC
-import qualified Test.QuickCheck.Gen as QC
+import Crypto.Lol.Tests (chooseAny, showType, testIOWithGen, testGroup, Test, Gen)
 
 -- EAC: is there a simple way to parameterize the variance?
 -- generates a secret key with scaled variance 1.0
@@ -44,12 +40,12 @@ instance (GenSKCtx c m' z Double) => Random (SK (c m' z)) where
   random = runRand $ genSK (1 :: Double)
   randomR = error "randomR not defined for SK"
 
-joinGens :: QC.Gen a -> QC.Gen b -> QC.Gen (a, b)
+joinGens :: Gen a -> Gen b -> Gen (a, b)
 joinGens g h = liftA2 (\x y -> (x, y)) g h
 
 {-
 sheTests :: forall t m m' zp zq . (_)
-  => Proxy '(m,m',zp,zq) -> Proxy t -> TF.Test
+  => Proxy '(m,m',zp,zq) -> Proxy t -> Test
 sheTests _ _ =
   let ptmr = Proxy::Proxy '(t,m,m',zp,zq)
   in testGroup (showType ptmr) $ ($ ptmr) <$> [
@@ -65,25 +61,25 @@ sheTests _ _ =
 
 -- zq must be liftable
 decTest :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (zp :: *) (zq :: *) . _
-        => Proxy '(m,m',zp,zq) -> Proxy t -> TF.Test
+        => Proxy '(m,m',zp,zq) -> Proxy t -> Test
 decTest _ _ =
   let ptmmrr = Proxy::Proxy '(t,m,m',zp,zq)
-      g1 = QC.chooseAny :: QC.Gen (SK (Cyc t m' (LiftOf zp)))
-      g2 = QC.chooseAny :: QC.Gen (Cyc t m zp)
+      g1 = chooseAny :: Gen (SK (Cyc t m' (LiftOf zp)))
+      g2 = chooseAny :: Gen (Cyc t m zp)
       tupGen = joinGens g1 g2
-  in TF.testGroup (showType ptmmrr)
-                  [testIOWithGen "Dec . Enc" (prop_encDec ptmmrr) tupGen]
+  in testGroup (showType ptmmrr)
+               [testIOWithGen "Dec . Enc" (prop_encDec ptmmrr) tupGen]
 
 {-
 modSwPTTest :: forall t m m' zp zp' zq . (_)
-  => Proxy '(m,m',zp,zp',zq) -> Proxy t -> TF.Test
+  => Proxy '(m,m',zp,zp',zq) -> Proxy t -> Test
 modSwPTTest _ _ =
   let ptmr = Proxy::Proxy '(t,m,m',zp,zp',zq)
   in testGroup (showType ptmr)
        [genTestArgs "ModSwitch PT" prop_modSwPT ptmr]
 
 ksTests :: forall t m m' zp zq gad . (_)
-  => Proxy '(m,m',zp,zq) -> Proxy gad -> Proxy t -> TF.Test
+  => Proxy '(m,m',zp,zq) -> Proxy gad -> Proxy t -> Test
 ksTests _ _ _ =
   let ptmr = Proxy::Proxy '(t,m,m',zp,zq,gad)
   in testGroup (showType ptmr) $ ($ ptmr) <$> [
@@ -91,7 +87,7 @@ ksTests _ _ _ =
     genTestArgs "KSQuad" prop_ksQuad]
 
 twemTests :: forall t r r' s s' zp zq . (_)
-  => Proxy '(r,r',s,s',zp,zq) -> Proxy t -> TF.Test
+  => Proxy '(r,r',s,s',zp,zq) -> Proxy t -> Test
 twemTests _ _ =
   let ptmr = Proxy::Proxy '(t,r,r',s,s',zp,zq)
   in testGroup (showType ptmr) [
@@ -99,7 +95,7 @@ twemTests _ _ =
       genTestArgs "Twace" prop_cttwace ptmr]
 
 tunnelTests :: forall t r r' s s' zp zq gad . (_)
-  => Proxy '(r,r',s,s',zp,zq) -> Proxy gad -> Proxy t -> TF.Test
+  => Proxy '(r,r',s,s',zp,zq) -> Proxy gad -> Proxy t -> Test
 tunnelTests _ _ _ =
   let ptmr = Proxy::Proxy '(t,r,r',s,s',zp,zq,gad)
   in testGroup (showType ptmr)
