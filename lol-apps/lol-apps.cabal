@@ -65,10 +65,8 @@ library
     Crypto.Lol.Applications.Examples
 
   other-modules:
-    Crypto.Lol.Applications.Tests.KHPRFTests
     Crypto.Lol.Applications.Tests.SHETests
     Crypto.Lol.Applications.Tests.Default
-    Crypto.Lol.Applications.Benchmarks.KHPRFBenches
     Crypto.Lol.Applications.Benchmarks.SHEBenches
     Crypto.Lol.Applications.Benchmarks.Default
     Crypto.Lol.Applications.Examples.KHPRF

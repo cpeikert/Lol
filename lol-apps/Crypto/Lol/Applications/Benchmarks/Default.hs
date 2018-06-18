@@ -23,14 +23,12 @@ Mostly-monomorphized benchmarks for lol-apps.
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Applications.Benchmarks.Default
- (defaultSHEBenches, defaultKHPRFBenches) where
+ (defaultSHEBenches) where
 
 import Control.Monad.Random
 
 import Crypto.Lol
-import Crypto.Lol.Applications.Benchmarks.KHPRFBenches
 import Crypto.Lol.Applications.Benchmarks.SHEBenches
-import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Benchmarks
 
@@ -79,13 +77,6 @@ defaultSHEBenches pt pgad pgen  = [
                                                   Zq PP32,
                                                   Zq 3144961)) pgad]]
 
-defaultKHPRFBenches :: forall t gad rnd . (_) => Proxy t -> Proxy gad -> rnd Benchmark
-defaultKHPRFBenches pt _ = benchGroup "KHPRF Table"
-  [benchGroup "left/KHPRF"     $ benches' leftSpineTree,
-   benchGroup "balanced/KHPRF" $ benches' balancedTree,
-   benchGroup "right/KHPRF"    $ benches' rightSpineTree]
-  where
-    benches' = khPRFBenches 5 pt (Proxy::Proxy F128) (Proxy::Proxy '(Zq 8, Zq 2, gad))
 
 -- EAC: is there a simple way to parameterize the variance?
 -- generates a secret key with scaled variance 1.0
