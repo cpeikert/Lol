@@ -56,10 +56,11 @@ module Crypto.Lol.Cyclotomic.Cyc
 (
 -- * Data type
   Cyc
+{-
 -- * Constructors/deconstructors
-, scalarCyc
 , cycPow, cycDec, cycCRT, cycCRTC, cycCRTE, cycPC, cycPE
 , uncycPow, uncycDec, uncycCRT
+-}
 ) where
 
 import qualified Algebra.Additive     as Additive (C)
@@ -67,7 +68,6 @@ import qualified Algebra.Module       as Module (C)
 import qualified Algebra.Ring         as Ring (C)
 import qualified Algebra.ZeroTestable as ZeroTestable (C)
 
--- hide these due to name collisions
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CycRep   hiding (coeffsDec,
                                                  coeffsPow, crtSet,
@@ -120,13 +120,20 @@ newtype instance Cyc t m Int64         = CycI64 { unCycI64 :: CycG t m Int64 }
 newtype instance Cyc t m (ZqBasic q z) = CycZqB { unCycZqB :: CycG t m (ZqBasic q z) }
 data    instance Cyc t m (a,b)         = CycPair !(Cyc t m a) !(Cyc t m b)
 
--- | additive group K/qR, limited to powerful- or decoding-basis
+-- | additive group \( K/qR \), limited to powerful- or decoding-basis
 -- representation
 data instance Cyc t m (RRq q r)
   = PowRRq !(CycRep t P m (RRq q r))
   | DecRRq !(CycRep t D m (RRq q r))
 
+-- | cyclotomic ring of integers with unbounded precision, limited to
+-- the decoding-basis representation.
+newtype instance Cyc t m Integer
+  = DecInteger { unDecInteger :: CycRep t D m Integer}
+
 ---------- Constructors / destructors ----------
+
+{-
 
 -- | Wrap a 'CycRep' as a 'Cyc'.
 cycPow :: CycRep t P m r -> CycG t m r
@@ -153,6 +160,8 @@ cycCRTE :: CycRep t E m r -> CycG t m r
 cycCRTE = CRT . Left
 {-# INLINABLE cycCRTE #-}
 
+-}
+
 -- | Convenience wrapper.
 cycPC :: Either (CycRep t P m r) (CycRep t C m r) -> CycG t m r
 cycPC = either Pow (CRT . Right)
@@ -173,10 +182,14 @@ uncycDec :: (Fact m, CRTElt t r) => CycG t m r -> CycRep t D m r
 {-# INLINABLE uncycDec #-}
 uncycDec c = let (Dec u) = toDec' c in u
 
+{-
+
 -- | Unwrap a 'CycG' as a 'CycRep' in a CRT-basis representation.
 uncycCRT :: (Fact m, CRTElt t r) => CycG t m r -> CycRepEC t m r
 {-# INLINABLE uncycCRT #-}
 uncycCRT c = let (CRT u) = toCRT' c in u
+
+-}
 
 ---------- Algebraic instances ----------
 
@@ -195,6 +208,7 @@ instance (Fact m, ZeroTestable r, CRTElt t r, ForallFact2 ZeroTestable.C t r)
 deriving instance ZeroTestable (CycG t m Double) => ZeroTestable.C (Cyc t m Double)
 deriving instance ZeroTestable (CycG t m Int64) => ZeroTestable.C (Cyc t m Int64)
 deriving instance ZeroTestable (CycG t m (ZqBasic q z)) => ZeroTestable.C (Cyc t m (ZqBasic q z))
+deriving instance ZeroTestable (CycRep t D m Integer) => ZeroTestable.C (Cyc t m Integer)
 
 instance (ZeroTestable (Cyc t m a), ZeroTestable (Cyc t m b))
   => ZeroTestable.C (Cyc t m (a,b)) where
@@ -232,6 +246,7 @@ instance (Eq r, Fact m, CRTElt t r, ForallFact2 Eq t r) => Eq (CycG t m r) where
 
 deriving instance Eq (CycG t m Int64)         => Eq (Cyc t m Int64)
 deriving instance Eq (CycG t m (ZqBasic q z)) => Eq (Cyc t m (ZqBasic q z))
+deriving instance Eq (CycRep t D m Integer)   => Eq (Cyc t m Integer)
 
 instance (Eq (Cyc t m a), Eq (Cyc t m b)) => Eq (Cyc t m (a,b)) where
   (CycPair a b) == (CycPair a' b') = a == a' && b == b'
@@ -313,6 +328,7 @@ instance (Fact m, CRTElt t r, ZeroTestable r) => Additive.C (CycG t m r) where
 deriving instance Additive (CycG t m Double) => Additive.C (Cyc t m Double)
 deriving instance Additive (CycG t m Int64) => Additive.C (Cyc t m Int64)
 deriving instance Additive (CycG t m (ZqBasic q z)) => Additive.C (Cyc t m (ZqBasic q z))
+deriving instance Additive (CycRep t D m Integer) => Additive.C (Cyc t m Integer)
 
 instance (Additive (Cyc t m a), Additive (Cyc t m b))
   => Additive.C (Cyc t m (a,b)) where
@@ -572,7 +588,7 @@ instance TensorGaussian t q => GaussianCyc (CycG t) q where
 instance GaussianCyc (CycG t) Double => GaussianCyc (Cyc t) Double where
   tweakedGaussian = fmap CycDbl . L.tweakedGaussian
 
--- CJP: no GaussianCyc for Int64, ZqBasic, pairs, or RRq
+-- CJP: no GaussianCyc for Int64, Integer, ZqBasic, pairs, or RRq
 
 -- | uses 'Double' precision for the intermediate Gaussian samples
 instance (TensorGaussian t Double, IFElt t Double, IFunctor t, ToInteger z, IFElt t z)
@@ -584,7 +600,7 @@ instance (TensorGaussian t Double, IFElt t Double, IFunctor t, ToInteger z, IFEl
 instance RoundedGaussianCyc (CycG t) Int64 => RoundedGaussianCyc (Cyc t) Int64 where
   roundedGaussian = fmap CycI64 . L.roundedGaussian
 
--- CJP: no RoundedGaussianCyc for Double, ZqBasic, or pairs
+-- CJP: no RoundedGaussianCyc for Integer, Double, ZqBasic, or pairs
 
 -- | uses 'Double' precision for the intermediate Gaussian samples
 instance (TensorGaussian t Double, IFElt t Double, IFunctor t, Mod zp,
@@ -598,7 +614,7 @@ instance (CosetGaussianCyc (CycG t) (ZqBasic q Int64))
   => CosetGaussianCyc (Cyc t) (ZqBasic q Int64) where
   cosetGaussian v = fmap CycI64 . L.cosetGaussian v . unCycZqB
 
--- CJP: no CosetGaussianCyc for Double, Int64, or pairs
+-- CJP: no CosetGaussianCyc for Double, Int64, Integer, or pairs
 
 -----
 
@@ -687,7 +703,7 @@ instance (CRTSetCyc (CycG t) (ZqBasic q z))
   => CRTSetCyc (Cyc t) (ZqBasic q z) where
   crtSet = (CycZqB <$>) <$> crtSet
 
--- TODO?: instance CRTSetCyc (Cyc t) (a,b)
+-- CJP TODO?: instance CRTSetCyc (Cyc t) (a,b)
 
 -----
 
@@ -716,6 +732,10 @@ instance (Lift' (RRq q Double), Tensor t (RRq q Double), Tensor t Double)
   liftCyc L.Dec (DecRRq u) = CycDbl $ Dec $ lift u
   liftCyc L.Dec (PowRRq u) = CycDbl $ Dec $ lift $ toDec u
   liftCyc L.Pow (DecRRq u) = CycDbl $ Pow $ lift $ toPow u
+
+-- CJP TODO: Lift from pairs (ZqBasic?) to Integer
+
+
 
 ---------- Promoted lattice operations ----------
 
@@ -984,6 +1004,7 @@ instance (Fact m, ForallFact2 Random t r, CRTElt t r) => Random (CycG t m r) whe
 deriving instance Random (CycG t m Double)        => Random (Cyc t m Double)
 deriving instance Random (CycG t m Int64)         => Random (Cyc t m Int64)
 deriving instance Random (CycG t m (ZqBasic q z)) => Random (Cyc t m (ZqBasic q z))
+deriving instance Random (CycRep t D m Integer)   => Random (Cyc t m Integer)
 
 instance (Random (Cyc t m a), Random (Cyc t m b)) => Random (Cyc t m (a,b)) where
   random g = let (a,g') = random g
@@ -1012,6 +1033,7 @@ deriving instance Show (CycG t m Int64)         => Show (Cyc t m Int64)
 deriving instance Show (CycG t m (ZqBasic q z)) => Show (Cyc t m (ZqBasic q z))
 deriving instance (Show (Cyc t m a), Show (Cyc t m b))
                   => Show (Cyc t m (a,b))
+deriving instance Show (CycRep t D m Integer)   => Show (Cyc t m Integer)
 
 -----
 
@@ -1027,6 +1049,7 @@ instance (Fact m, NFData r,
 deriving instance NFData (CycG t m Double)        => NFData (Cyc t m Double)
 deriving instance NFData (CycG t m Int64)         => NFData (Cyc t m Int64)
 deriving instance NFData (CycG t m (ZqBasic q z)) => NFData (Cyc t m (ZqBasic q z))
+deriving instance NFData (CycRep t D m Integer)   => NFData (Cyc t m Integer)
 
 instance (NFData (Cyc t m a), NFData (Cyc t m b)) => NFData (Cyc t m (a,b)) where
   rnf (CycPair a b) = rnf a `seq` rnf b
