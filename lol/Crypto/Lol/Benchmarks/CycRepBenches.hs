@@ -170,29 +170,29 @@ bench_errRounded _ _ v = do
 {-# INLINE bench_twacePow #-}
 bench_twacePow :: forall t m m' r . (Fact m, _)
   => Proxy '(t,m,m',r) -> CycRep t P m' r -> CycRep t P m r
-bench_twacePow _ = (twacePow :: CycRep t P m' r -> CycRep t P m r)
+bench_twacePow _ = twacePow
 
 {-# INLINE bench_twaceDec #-}
 bench_twaceDec :: forall t m m' r . (Fact m, _)
   => Proxy '(t,m,m',r) -> CycRep t D m' r -> CycRep t D m r
-bench_twaceDec _ = (twaceDec :: CycRep t D m' r -> CycRep t D m r)
+bench_twaceDec _ = twaceDec
 
 {-# INLINE bench_twaceCRT #-}
 bench_twaceCRT :: forall t m m' r . (Fact m, _)
   => Proxy '(t,m,m',r) -> CycRepPC t m' r -> CycRepPC t m r
-bench_twaceCRT _ (Right a) = (twaceCRTC :: CycRep t C m' r -> CycRepPC t m r) a
+bench_twaceCRT _ (Right a) = twaceCRTC a
 
 {-# INLINE bench_embedPow #-}
 bench_embedPow :: forall t m m' r . (Fact m', _)
   => Proxy '(t,m,m',r) -> CycRep t P m r -> CycRep t P m' r
-bench_embedPow _ = (embedPow :: CycRep t P m r -> CycRep t P m' r)
+bench_embedPow _ = embedPow
 
 {-# INLINE bench_embedDec #-}
 bench_embedDec :: forall t m m' r . (Fact m', _)
   => Proxy '(t,m,m',r) -> CycRep t D m r -> CycRep t D m' r
-bench_embedDec _ = (embedDec :: CycRep t D m r -> CycRep t D m' r)
+bench_embedDec _ = embedDec
 
 {-# INLINE bench_embedCRT #-}
 bench_embedCRT :: forall t m m' r . (Fact m', _)
   => Proxy '(t,m,m',r) -> CycRepPC t m r -> CycRepPC t m' r
-bench_embedCRT _ (Right a) = (embedCRTC :: CycRep t C m r -> CycRepPC t m' r) a
+bench_embedCRT _ (Right a) = embedCRTC a
