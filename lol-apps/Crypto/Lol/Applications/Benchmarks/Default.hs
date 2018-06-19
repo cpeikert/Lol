@@ -77,6 +77,14 @@ defaultSHEBenches pt pgad pgen  = [
                                                   Zq PP32,
                                                   Zq 3144961)) pgad]]
 
+defaultKHPRFBenches :: forall t rnd gad . (MonadRandom rnd)
+                    =>
+                    -> rnd Benchmark
+defaultKHPRFBenches ______ = benchGroup "KHPRF Table"
+   [benchGroup "left/KHPRF"     $
+    benchGroup "complete/KHPRF" $
+    benchGroup "right/KHPRF"    $ ]
+
 
 -- EAC: is there a simple way to parameterize the variance?
 -- generates a secret key with scaled variance 1.0
