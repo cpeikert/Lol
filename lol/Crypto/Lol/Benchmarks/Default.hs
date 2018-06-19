@@ -27,7 +27,7 @@ import Crypto.Lol
 import Crypto.Lol.Benchmarks.TensorBenches
 import Crypto.Lol.Benchmarks.CycRepBenches
 import Crypto.Lol.Benchmarks.CycBenches
-import Crypto.Lol.Utils.Benchmarks
+import Crypto.Lol.Utils.Benchmarks (bgroup, Benchmark)
 import Crypto.Lol.Utils.ShowType
 
 -- | Benchmark parameters reported in the paper. We suggest running these benchmarks
@@ -36,13 +36,13 @@ import Crypto.Lol.Utils.ShowType
 {-# INLINABLE defaultLolBenches #-}
 defaultLolBenches :: _ => Proxy t -> Proxy h -> [Benchmark]
 defaultLolBenches pt phash = [
-  benchGroup "Single Index" $ (($ phash) . ($ pt)) <$> [
+  bgroup "Single Index" $ (($ phash) . ($ pt)) <$> [
     oneIdxBenches (Proxy::Proxy '(F1024,        Zq 12289)),
     oneIdxBenches (Proxy::Proxy '(F2048,        Zq 12289)),
     oneIdxBenches (Proxy::Proxy '(F64*F27,      Zq 3457)),
     oneIdxBenches (Proxy::Proxy '(F64*F81,      Zq 10369)),
     oneIdxBenches (Proxy::Proxy '(F64*F9*F25,   Zq 14401))],
-  benchGroup"Twace-Embed" $ ($ pt) <$> [
+  bgroup"Twace-Embed" $ ($ pt) <$> [
     twoIdxBenches (Proxy::Proxy '(F8*F7*F13,  F32*F7*F13,   Zq 8737)),
     twoIdxBenches (Proxy::Proxy '(F8*F7*F13,  F8*F5*F7*F13, Zq 14561)),
     twoIdxBenches (Proxy::Proxy '(F128,       F128*F7*F13,  Zq 23297))]]
@@ -52,11 +52,11 @@ defaultLolBenches pt phash = [
 oneIdxBenches :: forall t m r gen . _ => Proxy '(m,r) -> Proxy t -> Proxy gen -> Benchmark
 oneIdxBenches _ _ pgen =
   let ptmr = Proxy :: Proxy '(t,m,r)
-  in benchGroup (showType ptmr) $ (($ pgen) . ($ ptmr)) <$> [tensorBenches1, cycRepBenches1, cycBenches1]
+  in bgroup (showType ptmr) $ (($ pgen) . ($ ptmr)) <$> [tensorBenches1, cycRepBenches1, cycBenches1]
 
 -- | Collection of all inter-ring operations at all levels of the library.
 {-# INLINABLE twoIdxBenches #-}
 twoIdxBenches :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> Benchmark
 twoIdxBenches _ _ =
   let ptmr = Proxy :: Proxy '(t,m,m',r)
-  in benchGroup (showType ptmr) $ ($ ptmr) <$> [tensorBenches2, cycRepBenches2, cycBenches2]
+  in bgroup (showType ptmr) $ ($ ptmr) <$> [tensorBenches2, cycRepBenches2, cycBenches2]

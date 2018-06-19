@@ -30,25 +30,22 @@ import Control.Monad (liftM2,join)
 import Crypto.Lol
 
 import Crypto.Lol.Utils.ShowType
-import Crypto.Lol.Utils.Tests
-
-import qualified Test.Framework as TF
-import qualified Test.QuickCheck as QC
+import Crypto.Lol.Utils.Tests (testGroup, testWithGen, testWithoutGen, Gen, Test)
 
 -- | Tests for single-index 'Cyc' operations. There must be a CRT basis for \(O_m\) over @r@.
-cycTests1 :: forall t m r . (Fact m, _) => QC.Gen (Cyc t m r) -> TF.Test
+cycTests1 :: forall t m r . (Fact m, _) => Gen (Cyc t m r) -> Test
 cycTests1 cycGen =
   let ptmr = Proxy :: Proxy '(t,m,r) in
-  TF.testGroup (showType ptmr) $ ($ cycGen) <$> [
+  testGroup (showType ptmr) $ ($ cycGen) <$> [
    testWithGen "mulGPow" prop_mulgPow,
    testWithGen "mulGDec" prop_mulgDec,
    testWithGen "mulGCRT" prop_mulgCRT]
 
 -- | Tests for inter-ring 'Cyc' operations. There must be a CRT basis for \(O_{m'}\) over @r@.
-cycTests2 :: forall t m m' r . _ => Proxy '(t,m,m',r) -> QC.Gen (Cyc t m' r) -> TF.Test
+cycTests2 :: forall t m m' r . _ => Proxy '(t,m,m',r) -> Gen (Cyc t m' r) -> Test
 cycTests2 _ cycGen =
   let ptmmr = Proxy::Proxy '(t,m,m',r)
-  in TF.testGroup (showType ptmmr) [
+  in testGroup (showType ptmmr) [
       testWithoutGen "crtSet" (prop_crtSet_pairs ptmmr),
       testWithGen "coeffsPow" (prop_coeffsBasis ptmmr) cycGen]
 

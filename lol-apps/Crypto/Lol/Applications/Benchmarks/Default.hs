@@ -31,23 +31,23 @@ import Crypto.Lol.Applications.Benchmarks.KHPRFBenches
 import Crypto.Lol.Applications.Benchmarks.SHEBenches
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Benchmarks
+import Crypto.Lol.Benchmarks (
 
 defaultSHEBenches :: _ => Proxy t -> Proxy gad -> Proxy gen -> [rnd Benchmark]
 defaultSHEBenches pt pgad pgen  = [
-  benchGroup "SHE" $ ($ pt) <$>
+  bgroup "SHE" $ ($ pt) <$>
     [sheBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)) pgen,
      sheBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857)) pgen],
-  benchGroup "Dec" $ ($ pt) <$>
+  bgroup "Dec" $ ($ pt) <$>
     [decBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
      decBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
-  benchGroup "Rescale" $ ($ pt) <$>
+  bgroup "Rescale" $ ($ pt) <$>
     [rescaleBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq 1017857, Zq (1017857 ** 1032193))) pgad,
      rescaleBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq 1008001, Zq (1008001 ** 1065601))) pgad],
-  benchGroup "KeySwitch" $ ($ pt) <$>
+  bgroup "KeySwitch" $ ($ pt) <$>
     [keySwitchBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq (1017857 ** 1032193))) pgad,
      keySwitchBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq (1008001 ** 1065601))) pgad],
-  benchGroup "Tunnel" $ ($ pt) <$>
+  bgroup "Tunnel" $ ($ pt) <$>
     [tunnelBenches {- H0 -> H1 -} (Proxy::Proxy '(F128,
                                                   F128 * F7 * F13,
                                                   F64 * F7, F64 * F7 * F13,
@@ -79,9 +79,9 @@ defaultSHEBenches pt pgad pgen  = [
                                                   Zq 3144961)) pgad]]
 
 defaultKHPRFBenches :: forall t gad rnd . (_) => Proxy t -> Proxy gad -> rnd Benchmark
-defaultKHPRFBenches pt _ = benchGroup "KHPRF Table"
-  [benchGroup "left/KHPRF"     $ benches' leftSpineTree,
-   benchGroup "balanced/KHPRF" $ benches' balancedTree,
-   benchGroup "right/KHPRF"    $ benches' rightSpineTree]
+defaultKHPRFBenches pt _ = bgroup "KHPRF Table"
+  [bgroup "left/KHPRF"     $ benches' leftSpineTree,
+   bgroup "balanced/KHPRF" $ benches' balancedTree,
+   bgroup "right/KHPRF"    $ benches' rightSpineTree]
   where
     benches' = khPRFBenches 5 pt (Proxy::Proxy F128) (Proxy::Proxy '(Zq 8, Zq 2, gad))

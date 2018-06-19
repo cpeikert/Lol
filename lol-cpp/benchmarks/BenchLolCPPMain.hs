@@ -69,8 +69,8 @@ tableMain = do
 diagnosticMain :: IO ()
 diagnosticMain = do
   let opts = defaultDiagnosticOpts{levels=ls, benches=bs}
-  let b1 = benchGroup "Single Index"
+  let b1 = bgroup "Single Index"
              [oneIdxBenches (Proxy::Proxy '(F64*F9*F25, Zq 14401)) (Proxy::Proxy CT) (Proxy::Proxy HashDRBG)]
-  let b2 = benchGroup "Twace-Embed"
+  let b2 = bgroup "Twace-Embed"
              [twoIdxBenches (Proxy::Proxy '(F64*F9*F25, F64*F9*F25, Zq 14401)) (Proxy::Proxy CT)]
   mapM_ (prettyBenchesDiagnostic opts) [b1,b2]

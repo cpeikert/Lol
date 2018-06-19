@@ -33,6 +33,7 @@ import Crypto.Lol.Tests.CycTests
 import Crypto.Lol.Tests.TensorTests
 import Crypto.Lol.Tests.ZqTests
 import Crypto.Lol.Utils.ShowType
+import Crypto.Lol.Utils.Tests (choose, chooseAny, testGroup, Test, Gen)
 import Crypto.Lol.Types.IrreducibleChar2 ()
 import Crypto.Lol.Types.Unsafe.Complex (Complex)
 
@@ -40,74 +41,71 @@ import qualified Algebra.Ring    as Ring (fromInteger)
 import Control.Monad.Random
 import Control.Applicative (liftA2)
 import Data.Proxy
-import qualified Test.Framework  as TF
-import qualified Test.QuickCheck as QC
-import Test.QuickCheck.Gen (choose, chooseAny)
 
 type CpxDbl = Complex Double
 
 -- Gens a complex number in [0,1) + [0,i)
-cpxDblGen :: QC.Gen CpxDbl
+cpxDblGen :: Gen CpxDbl
 cpxDblGen = chooseAny
 
 -- Gens an Int64 in [-100,100]
-boundedInt64Gen :: QC.Gen Int64
+boundedInt64Gen :: Gen Int64
 boundedInt64Gen = choose (-100, 100)
 
 -- Gens a Tensor over Int64s in the range [-100,100]
-int64TensorGen :: forall t m . _ => QC.Gen (t m Int64)
+int64TensorGen :: forall t m . _ => Gen (t m Int64)
 int64TensorGen = choose (Ring.fromInteger (-100), Ring.fromInteger 100)
 
-unifTensorTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> TF.Test
+unifTensorTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> Test
 unifTensorTests1 _ _ =
-  let tensorGen = chooseAny :: QC.Gen (t m r) in
+  let tensorGen = chooseAny :: Gen (t m r) in
   tensorTests1 tensorGen
 
-unifTensorTests2 :: forall t m m' r . (Random (t m r), _) => Proxy '(m,m',r) -> Proxy t -> TF.Test
+unifTensorTests2 :: forall t m m' r . (Random (t m r), _) => Proxy '(m,m',r) -> Proxy t -> Test
 unifTensorTests2 _ _ =
-  let tensorGen = chooseAny :: QC.Gen (t m r) in
+  let tensorGen = chooseAny :: Gen (t m r) in
   tensorTests2 (Proxy::Proxy '(t,m,m',r)) tensorGen
 
-unifTensorCrtTests2 :: forall t m m' r . (Random (t m r), _) => Proxy '(m,m',r) -> Proxy t -> TF.Test
+unifTensorCrtTests2 :: forall t m m' r . (Random (t m r), _) => Proxy '(m,m',r) -> Proxy t -> Test
 unifTensorCrtTests2 _ _ =
-  let tensorGen = chooseAny :: QC.Gen (t m r) in
+  let tensorGen = chooseAny :: Gen (t m r) in
   tensorCrtTests2 (Proxy::Proxy '(t,m,m',r)) tensorGen
 
-unifTensorCrtTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> TF.Test
+unifTensorCrtTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> Test
 unifTensorCrtTests1 _ _ =
-  let ringGen   = chooseAny :: QC.Gen r
-      tensorGen = chooseAny :: QC.Gen (t m r) in
+  let ringGen   = chooseAny :: Gen r
+      tensorGen = chooseAny :: Gen (t m r) in
   tensorCrtTests1 ringGen tensorGen
 
-boundedInt64TensorTests1 :: forall t m . (Tensor t Int64, Fact m, _) => Proxy m -> Proxy t -> TF.Test
-boundedInt64TensorTests1 _ _ = tensorTests1 (int64TensorGen :: QC.Gen (t m Int64))
+boundedInt64TensorTests1 :: forall t m . (Tensor t Int64, Fact m, _) => Proxy m -> Proxy t -> Test
+boundedInt64TensorTests1 _ _ = tensorTests1 (int64TensorGen :: Gen (t m Int64))
 
-boundedInt64TensorTests2 :: forall t m m' . _ => Proxy '(m,m') -> Proxy t -> TF.Test
+boundedInt64TensorTests2 :: forall t m m' . _ => Proxy '(m,m') -> Proxy t -> Test
 boundedInt64TensorTests2 _ _ = tensorTests2
                                  (Proxy::Proxy '(t,m,m',Int64))
-                                 (int64TensorGen :: QC.Gen (t m Int64))
+                                 (int64TensorGen :: Gen (t m Int64))
 
-unifCycTests1 :: forall t m r . (Random (Cyc t m r), _) => Proxy '(m,r) -> Proxy t -> TF.Test
+unifCycTests1 :: forall t m r . (Random (Cyc t m r), _) => Proxy '(m,r) -> Proxy t -> Test
 unifCycTests1 _ _ =
-  let cycGen = chooseAny :: QC.Gen (Cyc t m r) in
+  let cycGen = chooseAny :: Gen (Cyc t m r) in
   cycTests1 cycGen
 
-unifCycTests2 :: forall t m m' r . (Random (Cyc t m' r), _) => Proxy '(m,m',r) -> Proxy t -> TF.Test
+unifCycTests2 :: forall t m m' r . (Random (Cyc t m' r), _) => Proxy '(m,m',r) -> Proxy t -> Test
 unifCycTests2 _ _ =
-  let cycGen = chooseAny :: QC.Gen (Cyc t m' r) in
+  let cycGen = chooseAny :: Gen (Cyc t m' r) in
   cycTests2 (Proxy::Proxy '(t,m,m',r)) cycGen
 
 -- | Default parameters for 'Crypto.Lol.Types.Unsafe.ZqBasic' tests.
-defaultZqTests :: TF.Test
-defaultZqTests = TF.testGroup "Zq Tests" $ [
+defaultZqTests :: Test
+defaultZqTests = testGroup "Zq Tests" $ [
   zqTests (Proxy::Proxy (Zq 3)),
   zqTests (Proxy::Proxy (Zq 7)),
   zqTests (Proxy::Proxy (Zq (3 ** 5))),
   zqTests (Proxy::Proxy (Zq (3 ** 5 ** 7)))]
 
-zqTensorTests :: _ => Proxy t -> TF.Test
+zqTensorTests :: _ => Proxy t -> Test
 zqTensorTests pt =
-  let uniIndexWithoutCrt = TF.testGroup "Single-Index Tensor Tests over ZqBasic" $ ($ pt) <$> [
+  let uniIndexWithoutCrt = testGroup "Single-Index Tensor Tests over ZqBasic" $ ($ pt) <$> [
         unifTensorTests1 (Proxy::Proxy '(F7,  Zq 29)),
         unifTensorTests1 (Proxy::Proxy '(F12, SmoothZQ1)),
         unifTensorTests1 (Proxy::Proxy '(F1,  Zq 17)),
@@ -118,7 +116,7 @@ zqTensorTests pt =
         unifTensorTests1 (Proxy::Proxy '(F42, Zq 8191)),
         unifTensorTests1 (Proxy::Proxy '(F42, ZQ1)),
         unifTensorTests1 (Proxy::Proxy '(F89, Zq 179))]
-      uniIndexWithCrt = TF.testGroup "Single-Index TensorCRT Tests over ZqBasic" $ ($ pt) <$> [
+      uniIndexWithCrt = testGroup "Single-Index TensorCRT Tests over ZqBasic" $ ($ pt) <$> [
         unifTensorCrtTests1 (Proxy::Proxy '(F7,  Zq 29)),
         unifTensorCrtTests1 (Proxy::Proxy '(F12, SmoothZQ1)),
         unifTensorCrtTests1 (Proxy::Proxy '(F1,  Zq 17)),
@@ -129,7 +127,7 @@ zqTensorTests pt =
         unifTensorCrtTests1 (Proxy::Proxy '(F42, Zq 8191)),
         unifTensorCrtTests1 (Proxy::Proxy '(F42, ZQ1)),
         unifTensorCrtTests1 (Proxy::Proxy '(F89, Zq 179))]
-      multiIndexWithoutCrt = TF.testGroup "Multi-Index Tensor Tests over ZqBasic" $ ($ pt) <$> [
+      multiIndexWithoutCrt = testGroup "Multi-Index Tensor Tests over ZqBasic" $ ($ pt) <$> [
         unifTensorTests2 (Proxy::Proxy '(F1, F7,  Zq 29)),
         unifTensorTests2 (Proxy::Proxy '(F4, F12, Zq 536871001)),
         unifTensorTests2 (Proxy::Proxy '(F4, F12, SmoothZQ1)),
@@ -140,7 +138,7 @@ zqTensorTests pt =
         unifTensorTests2 (Proxy::Proxy '(F3, F21, Zq 8191)),
         unifTensorTests2 (Proxy::Proxy '(F7, F21, Zq 8191)),
         unifTensorTests2 (Proxy::Proxy '(F3, F42, Zq 8191))]
-      multiIndexWithCrt = TF.testGroup "Multi-Index TensorCRT Tests over ZqBasic" $ ($ pt) <$> [
+      multiIndexWithCrt = testGroup "Multi-Index TensorCRT Tests over ZqBasic" $ ($ pt) <$> [
         unifTensorCrtTests2 (Proxy::Proxy '(F1, F7,  Zq 29)),
         unifTensorCrtTests2 (Proxy::Proxy '(F4, F12, Zq 536871001)),
         unifTensorCrtTests2 (Proxy::Proxy '(F4, F12, SmoothZQ1)),
@@ -151,12 +149,12 @@ zqTensorTests pt =
         unifTensorCrtTests2 (Proxy::Proxy '(F3, F21, Zq 8191)),
         unifTensorCrtTests2 (Proxy::Proxy '(F7, F21, Zq 8191)),
         unifTensorCrtTests2 (Proxy::Proxy '(F3, F42, Zq 8191))] in
-  TF.testGroup "All Tensor-like Tests over ZqBasic" [
+  testGroup "All Tensor-like Tests over ZqBasic" [
     uniIndexWithoutCrt, uniIndexWithCrt, multiIndexWithoutCrt, multiIndexWithCrt]
 
-int64TensorTests :: _ => Proxy t -> TF.Test
+int64TensorTests :: _ => Proxy t -> Test
 int64TensorTests pt =
-  let uniIndexWithoutCrt = TF.testGroup "Single-Index Tensor Tests over Int64" $ ($ pt) <$> [
+  let uniIndexWithoutCrt = testGroup "Single-Index Tensor Tests over Int64" $ ($ pt) <$> [
         boundedInt64TensorTests1 (Proxy::Proxy F7),
         boundedInt64TensorTests1 (Proxy::Proxy F12),
         boundedInt64TensorTests1 (Proxy::Proxy F1),
@@ -167,7 +165,7 @@ int64TensorTests pt =
         boundedInt64TensorTests1 (Proxy::Proxy F42),
         boundedInt64TensorTests1 (Proxy::Proxy F42),
         boundedInt64TensorTests1 (Proxy::Proxy F89)]
-      multiIndexWithoutCrt = TF.testGroup "Multi-Index Tensor Tests over Int64" $ ($ pt) <$> [
+      multiIndexWithoutCrt = testGroup "Multi-Index Tensor Tests over Int64" $ ($ pt) <$> [
         boundedInt64TensorTests2 (Proxy::Proxy '(F1, F7)),
         boundedInt64TensorTests2 (Proxy::Proxy '(F4, F12)),
         boundedInt64TensorTests2 (Proxy::Proxy '(F4, F12)),
@@ -178,11 +176,11 @@ int64TensorTests pt =
         boundedInt64TensorTests2 (Proxy::Proxy '(F3, F21)),
         boundedInt64TensorTests2 (Proxy::Proxy '(F7, F21)),
         boundedInt64TensorTests2 (Proxy::Proxy '(F3, F42))] in
-  TF.testGroup "All Tensor-like Tests over Int64" [uniIndexWithoutCrt, multiIndexWithoutCrt]
+  testGroup "All Tensor-like Tests over Int64" [uniIndexWithoutCrt, multiIndexWithoutCrt]
 
-cpxTensorTests :: _ => Proxy t -> TF.Test
+cpxTensorTests :: _ => Proxy t -> Test
 cpxTensorTests pt =
-  let uniIndexWithoutCrt = TF.testGroup "Single-Index Tensor Tests over Complex Double" $ ($ pt) <$> [
+  let uniIndexWithoutCrt = testGroup "Single-Index Tensor Tests over Complex Double" $ ($ pt) <$> [
         unifTensorTests1 (Proxy::Proxy '(F7, CpxDbl)),
         unifTensorTests1 (Proxy::Proxy '(F12, CpxDbl)),
         unifTensorTests1 (Proxy::Proxy '(F1, CpxDbl)),
@@ -193,7 +191,7 @@ cpxTensorTests pt =
         unifTensorTests1 (Proxy::Proxy '(F42, CpxDbl)),
         unifTensorTests1 (Proxy::Proxy '(F42, CpxDbl)),
         unifTensorTests1 (Proxy::Proxy '(F89, CpxDbl))]
-      uniIndexWithCrt = TF.testGroup "Single-Index TensorCRT Tests over Complex Double" $ ($ pt) <$> [
+      uniIndexWithCrt = testGroup "Single-Index TensorCRT Tests over Complex Double" $ ($ pt) <$> [
         unifTensorCrtTests1 (Proxy::Proxy '(F7, CpxDbl)),
         unifTensorCrtTests1 (Proxy::Proxy '(F12, CpxDbl)),
         unifTensorCrtTests1 (Proxy::Proxy '(F1, CpxDbl)),
@@ -204,7 +202,7 @@ cpxTensorTests pt =
         unifTensorCrtTests1 (Proxy::Proxy '(F42, CpxDbl)),
         unifTensorCrtTests1 (Proxy::Proxy '(F42, CpxDbl)),
         unifTensorCrtTests1 (Proxy::Proxy '(F89, CpxDbl))]
-      multiIndexWithoutCrt = TF.testGroup "Multi-Index Tensor Tests over Complex Double" $ ($ pt) <$> [
+      multiIndexWithoutCrt = testGroup "Multi-Index Tensor Tests over Complex Double" $ ($ pt) <$> [
         unifTensorTests2 (Proxy::Proxy '(F1, F7, CpxDbl)),
         unifTensorTests2 (Proxy::Proxy '(F4, F12, CpxDbl)),
         unifTensorTests2 (Proxy::Proxy '(F4, F12, CpxDbl)),
@@ -215,7 +213,7 @@ cpxTensorTests pt =
         unifTensorTests2 (Proxy::Proxy '(F3, F21, CpxDbl)),
         unifTensorTests2 (Proxy::Proxy '(F7, F21, CpxDbl)),
         unifTensorTests2 (Proxy::Proxy '(F3, F42, CpxDbl))]
-      multiIndexWithCrt = TF.testGroup "Multi-Index TensorCRT Tests over Complex Double" $ ($ pt) <$> [
+      multiIndexWithCrt = testGroup "Multi-Index TensorCRT Tests over Complex Double" $ ($ pt) <$> [
         unifTensorCrtTests2 (Proxy::Proxy '(F1, F7, CpxDbl)),
         unifTensorCrtTests2 (Proxy::Proxy '(F4, F12, CpxDbl)),
         unifTensorCrtTests2 (Proxy::Proxy '(F4, F12, CpxDbl)),
@@ -226,12 +224,12 @@ cpxTensorTests pt =
         unifTensorCrtTests2 (Proxy::Proxy '(F3, F21, CpxDbl)),
         unifTensorCrtTests2 (Proxy::Proxy '(F7, F21, CpxDbl)),
         unifTensorCrtTests2 (Proxy::Proxy '(F3, F42, CpxDbl))] in
-  TF.testGroup "All Tensor-like Tests over Complex Double" [
+  testGroup "All Tensor-like Tests over Complex Double" [
     uniIndexWithoutCrt, uniIndexWithCrt, multiIndexWithoutCrt, multiIndexWithCrt]
 
-cycTests :: _ => Proxy t -> TF.Test
+cycTests :: _ => Proxy t -> Test
 cycTests pt =
-  let uniIndex = TF.testGroup "Single-Index Cyc Tests over ZqBasic" $ ($ pt) <$> [
+  let uniIndex = testGroup "Single-Index Cyc Tests over ZqBasic" $ ($ pt) <$> [
         unifCycTests1 (Proxy::Proxy '(F7,  Zq 29)),
         unifCycTests1 (Proxy::Proxy '(F7,  Zq 32)),
         unifCycTests1 (Proxy::Proxy '(F12, SmoothZQ1)),
@@ -245,7 +243,7 @@ cycTests pt =
         unifCycTests1 (Proxy::Proxy '(F42, Zq 1024)),
         unifCycTests1 (Proxy::Proxy '(F42, ZQ2)),
         unifCycTests1 (Proxy::Proxy '(F89, Zq 179))]
-      multiIndex = TF.testGroup "Multi-Index Cyc Tests over ZqBasic" $ ($ pt) <$> [
+      multiIndex = testGroup "Multi-Index Cyc Tests over ZqBasic" $ ($ pt) <$> [
         unifCycTests2 (Proxy::Proxy '(H01, H1, Zq PP2)),
         unifCycTests2 (Proxy::Proxy '(H01, H1, Zq PP4)),
         unifCycTests2 (Proxy::Proxy '(H01, H1, Zq PP8)),
@@ -273,7 +271,7 @@ cycTests pt =
         unifCycTests2 (Proxy::Proxy '(F7, F7*F13, Zq PP4)),
         unifCycTests2 (Proxy::Proxy '(F1, F7, Zq PP8)),
         unifCycTests2 (Proxy::Proxy '(F1, F7, Zq PP2))] in
-      TF.testGroup "All Cyc Tests over ZqBasic" [uniIndex, multiIndex]
+      testGroup "All Cyc Tests over ZqBasic" [uniIndex, multiIndex]
 
 -- three 24-bit moduli, enough to handle rounding for p=32 (depth-4 circuit at ~17 bits per mul)
 type ZQ1 = Zq 18869761

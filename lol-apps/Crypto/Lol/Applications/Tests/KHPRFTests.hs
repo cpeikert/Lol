@@ -27,17 +27,15 @@ import Control.Monad.Random hiding (lift)
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Cyclotomic.Cyc
-import Crypto.Lol.Tests
+import Crypto.Lol.Tests (showType, testIOWithoutGen, testGroup, Test)
 
 import MathObj.Matrix
 
-import qualified Test.Framework as TF
-
 khprfTests :: forall t m zp zq gad . (_)
-  => Proxy '(m,zp,zq,gad) -> Proxy t -> TF.Test
+  => Proxy '(m,zp,zq,gad) -> Proxy t -> Test
 khprfTests _ _ =
   let ptmrrg = Proxy::Proxy '(t,m,zp,zq,gad) in
-  testGroup (showType ptmrrg) [
+  testGroup (showType ptmrrg) []
     testIOWithoutGen "PRF_3bits" (prop_keyHomom ptmrrg 3),
     testIOWithoutGen "PRF_5bits" (prop_keyHomom ptmrrg 5)]
 
