@@ -38,7 +38,7 @@ import Control.Monad.Reader
 import Control.Monad.State
 
 type Top = 'Intern ('Intern 'Leaf 'Leaf) 'Leaf
-type N = 'O
+type N = 16
 type Q = 256
 type P = 2
 type Rq = ZqBasic Q Int64

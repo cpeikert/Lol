@@ -38,6 +38,7 @@ import Control.Monad.Reader
 import Control.Monad.Identity
 
 import Crypto.Lol hiding (replicate, head)
+import Crypto.Lol.Reflects
 
 import Data.Singletons.TH
 import Data.Maybe
@@ -117,19 +118,19 @@ randomMtx r c = M.fromList r c <$> replicateM (r*c) getRandom
 -- \mathbf{A}_1 \)) for @n@-dimensional secret keys over a ring @rq@
 -- for gadget indicated by @gad@.
 genParams :: forall gad rq rnd n .
-            (MonadRandom rnd, Random rq, PosC n, Gadget gad rq)
+            (MonadRandom rnd, Random rq, Reflects n Int, Gadget gad rq)
           => rnd (PRFParams n gad rq)
 genParams = let len = length $ untag (gadget :: Tagged gad [rq])
-                n   = posToInt $ fromSing (sing :: Sing n)
+                n   = proxy value (Proxy :: Proxy n)
             in do
                 a0 <- randomMtx n $ n * len
                 a1 <- randomMtx n $ n * len
                 return $ Params a0 a1
 
 -- | Generate an @n@-dimensional secret key over @rq@.
-genKey :: forall rq rnd n . (MonadRandom rnd, Random rq, PosC n)
+genKey :: forall rq rnd n . (MonadRandom rnd, Random rq, Reflects n Int)
        => rnd (PRFKey n rq)
-genKey = fmap Key $ randomMtx 1 $ posToInt $ fromSing (sing :: Sing n)
+genKey = fmap Key $ randomMtx 1 $ proxy value (Proxy :: Proxy n)
 
 -- | Given a secret key and a PRF input, compute the PRF output. The
 -- output is in a monadic context that needs to be able to access
