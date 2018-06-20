@@ -28,6 +28,7 @@ Key-homomorphic PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [B
 module Crypto.Lol.Applications.KeyHomomorphicPRF
 ( FBTTop(..), FBT, PRFKey, PRFParams
 , prf, genKey, genParams, run, runT
+, Vector, replicate, fromList, split
 ) where
 
 import Control.Applicative ((<$>))
@@ -41,7 +42,7 @@ import Crypto.Lol hiding (replicate, head)
 import Data.Singletons.TH
 import Data.Maybe
 
-import MathObj.Matrix hiding (zero)
+import qualified MathObj.Matrix as M
 
 singletons [d|
 
@@ -110,7 +111,7 @@ updateFBT p@(Params a0 a1) fbt x = case (sing :: Sing t) of
 
 -- | A random matrix having a given number of rows and columns.
 randomMtx :: (MonadRandom rnd, Random a) => Int -> Int -> rnd (Matrix a)
-randomMtx r c = fromList r c <$> replicateM (r*c) getRandom
+randomMtx r c = M.fromList r c <$> replicateM (r*c) getRandom
 
 -- | Generate public parameters (\( \mathbf{A}_0 \) and \(
 -- \mathbf{A}_1 \)) for @n@-dimensional secret keys over a ring @rq@
@@ -134,9 +135,8 @@ genKey = fmap Key $ randomMtx 1 $ posToInt $ fromSing (sing :: Sing n)
 -- output is in a monadic context that needs to be able to access
 -- 'PRFParams' public parameters and to keep an 'FBT' as state for
 -- efficient amortization across calls.
-prf :: forall gad rq rp t n m .
-      (Rescale rq rp, Decompose gad rq, SingI t,
-       MonadState (FBT t n gad rq) m, MonadReader (PRFParams n gad rq) m)
+prf :: (Rescale rq rp, Decompose gad rq, SingI t,
+        MonadState (FBT t n gad rq) m, MonadReader (PRFParams n gad rq) m)
     => PRFKey n rq              -- | secret key
     -> BitString (SizeFBTTop t) -- | input \( x \)
     -> m (Matrix rp)            -- | PRF output
@@ -146,21 +146,24 @@ prf s x = do
   fbt <- get
   return $ let at = bsmMatrix $ root fbt in  rescale <$> (unKey s) * at
 
--- | Run a PRF computation with some public parameters. E.g.: @run
--- params (prf key x)@
+-- | Run a PRF computation with some public parameters.
+-- E.g.: @run top params (prf key x)@
 run :: (Decompose gad rq, SingI t, PosC (SizeFBTTop t))
-  => PRFParams n gad rq
+  => proxy t                       -- | proxy for tree topology
+  -> PRFParams n gad rq            -- | public parameters
   -> StateT (FBT t n gad rq) (Reader (PRFParams n gad rq)) a
+                                   -- | prf computation
   -> a
-run p = runIdentity . runT p
+run pt p = runIdentity . runT pt p
 
 -- | More general (monad transformer) version of 'run'.
 runT :: (Decompose gad rq, SingI t, PosC (SizeFBTTop t), Monad m)
-  => PRFParams n gad rq
+  => proxy t
+  -> PRFParams n gad rq
   -> StateT (FBT t n gad rq) (ReaderT (PRFParams n gad rq) m) a
   -> m a
-runT p = flip runReaderT p .
-         (flip evalStateT $ updateFBT p Nothing (replicate False))
+runT _ p = flip runReaderT p .
+           (flip evalStateT $ updateFBT p Nothing (replicate False))
 
 -- | Type-safe sized vector from blog post "Part 1: Dependent Types in
 -- Haskell"
@@ -176,24 +179,31 @@ instance Eq a => Eq (Vector n a) where
   Lone a1  == Lone a2  = a1 == a2
   h1 :- t1 == h2 :- t2 = h1 == h2 && t1 == t2
 
--- | 'False', then 'True'
-instance Enum (Vector 'O Bool) where
-  toEnum x          = Lone (odd x)
-  fromEnum (Lone x) = if x then 1 else 0
+-- | Enumerates according to the n-bit Gray code, starting with all 'False'
+instance PosC n => Enum (Vector n Bool) where
+  toEnum = case (sing :: Sing n) of
+             SO   -> Lone . odd
+             SS m -> withSingI m $
+                     let thresh = 2^(sPosToInt m)
+                         modulus = 2 * thresh
+                     in  \x -> let x' = x `mod` modulus
+                               in if x' < thresh
+                                  then False :- toEnum x'
+                                  else True  :- toEnum (modulus - 1 - x')
+  fromEnum = case (sing :: Sing n) of
+               SO   -> \(Lone x) -> if x then 1 else 0
+               SS m -> withSingI m $
+                       let modulus :: Int = 2^(1 + sPosToInt m)
+                       in \(x:-xs) -> if x
+                                      then modulus - 1 - fromEnum xs
+                                      else fromEnum xs
 
--- | Enumerates according to the @n@-bit Gray code, starting from
--- all-'False'
-instance (PosC n, Enum (Vector n Bool)) => Enum (Vector ('S n) Bool) where
-  toEnum = let thresh = 2^(posToInt $ fromSing (sing :: Sing n) :: Int)
-               modulus = 2 * thresh
-           in  \x -> let x' = x `mod` modulus in
-                       if x' < thresh
-                       then False :- toEnum x'
-                       else True  :- toEnum (modulus - 1 - x')
-
-  fromEnum (x:-xs) =
-    let modulus = 2 * 2^(posToInt $ fromSing (sing :: Sing n) :: Int)
-    in if x then modulus - 1 - fromEnum xs else fromEnum xs
+instance (PosC n) => Enumerable (Vector n Bool) where
+  values = case (sing :: Sing n) of
+    SO   -> [Lone False, Lone True]
+    SS m -> withSingI m $
+            let num = 2^(1 + sPosToInt m)
+            in  take num [replicate False ..]
 
 -- | An @n@-dimensional 'Vector' of 'Bool's
 type BitString n = Vector n Bool
@@ -202,6 +212,7 @@ head :: Vector n a -> a
 head (Lone a) = a
 head (a :- _) = a
 
+-- | Split a 'Vector' into two
 split :: forall m n a . PosC m
       => Vector (m `AddPos` n) a -> (Vector m a, Vector n a)
 split (h :- t) = case (sing :: Sing m) of
@@ -209,18 +220,35 @@ split (h :- t) = case (sing :: Sing m) of
   SS pm -> withSingI pm $ let (b, e) = split t in (h :- b, e)
 split (Lone _) = error "split: internal error; can't split a Lone"
 
+-- | Create a 'Vector' full of given value
 replicate :: forall n a . PosC n => a -> Vector n a
 replicate a = case (sing :: Sing n) of
   SO   -> Lone a
   SS n -> withSingI n $ a :- replicate a
 
+
+-- | Convert a list to a 'Vector', return 'Nothing' if lengths don't match
+fromList :: forall n a . PosC n => [a] -> Maybe (Vector n a)
+fromList xs = case (sing :: Sing n) of
+  SO   -> case xs of
+            (x:[])   -> Just (Lone x)
+            _        -> Nothing
+  SS n -> withSingI n $ case xs of
+            (x:rest) -> (:-) x <$> fromList rest
+            _        -> Nothing
+
+sPosToInt :: SPos n -> Int
+sPosToInt SO     = 1
+sPosToInt (SS a) = 1 + sPosToInt a
+
+
 {-|
-Note: Making `Vector` an instance of `Additive.C`
+Note: Making 'Vector' an instance of 'Additive.C'
 Option 1: Two separate instances for Vector `O Bool and Vector (`S n) Bool
     Recursive instance requires recursive restraint
-    Use of `zero` would require extra `Additive.C` constraint in `defaultFBT`
-Option 2: One instance, using singletons and `case` to distinguish
+    Use of `zero` would require extra 'Additive.C' constraint in 'defaultFBT'
+Option 2: One instance, using singletons and 'case' to distinguish
     Ugly syntax
-    Didn't implement (functionality replaced by `replicate`)
-    May need to do something similar for `Enum` if it causes errors
+    Didn't implement (functionality replaced by 'replicate')
+    May need to do something similar for 'Enum' if it causes errors
 -}

@@ -39,7 +39,7 @@ import Control.Monad.State
 
 type Top = 'Intern ('Intern 'Leaf 'Leaf) 'Leaf
 type N = 'O
-type Q = 257
+type Q = 256
 type P = 2
 type Rq = ZqBasic Q Int64
 type Rp = ZqBasic P Int64
@@ -47,9 +47,8 @@ type Gad = BaseBGad 2
 
 khprfMain :: IO ()
 khprfMain = do
-    key    <- genKey
-    params <- genParams
-    let tree :: FBT Top N Gad Rq = defaultFBT params
-    let result :: [Matrix Rp] = flip evalState tree $ flip runReaderT params $
-                                sequence $ prf key <$> take 8 [replicate False ..]
-    print result
+  key    <- genKey
+  params :: PRFParams N Gad Rq <- genParams
+  let result :: [Matrix Rp] = run (Proxy :: Proxy Top) params $
+                              sequence $ prf key <$> values
+  print result
