@@ -27,13 +27,14 @@ Key-homomorphic PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [B
 
 module Crypto.Lol.Applications.KeyHomomorphicPRF
 ( FBTTop(..), FBT, PRFKey, PRFParams
-, prf, genKey, runPRF
+, prf, genKey, genParams, run, runT
 ) where
 
 import Control.Applicative ((<$>))
 import Control.Monad.Random hiding (fromList, split)
 import Control.Monad.State
 import Control.Monad.Reader
+import Control.Monad.Identity
 
 import Crypto.Lol hiding (replicate, head)
 
@@ -130,25 +131,36 @@ genKey :: forall rq rnd n . (MonadRandom rnd, Random rq, PosC n)
 genKey = fmap Key $ randomMtx 1 $ posToInt $ fromSing (sing :: Sing n)
 
 -- | Given a secret key and a PRF input, compute the PRF output. The
--- output is in a monadic context that allows reading 'PRFParams'
--- public parameters and keeps an 'FBT' for efficient amortization
--- across calls.
+-- output is in a monadic context that needs to be able to access
+-- 'PRFParams' public parameters and to keep an 'FBT' as state for
+-- efficient amortization across calls.
 prf :: forall gad rq rp t n m .
       (Rescale rq rp, Decompose gad rq, SingI t,
        MonadState (FBT t n gad rq) m, MonadReader (PRFParams n gad rq) m)
-    => PRFKey n rq              -- | the secret key
-    -> BitString (SizeFBTTop t) -- | the input \( x \)
-    -> m (Matrix rp)            -- | the PRF output
+    => PRFKey n rq              -- | secret key
+    -> BitString (SizeFBTTop t) -- | input \( x \)
+    -> m (Matrix rp)            -- | PRF output
 prf s x = do
-    params <- ask
-    modify (\fbt -> updateFBT params (Just fbt) x)
-    fbt    <- get
-    return $ let at = bsmMatrix $ root fbt
-             in  rescale <$> (unKey s) * at
+  p <- ask
+  modify (\fbt -> updateFBT p (Just fbt) x)
+  fbt <- get
+  return $ let at = bsmMatrix $ root fbt in  rescale <$> (unKey s) * at
 
-runPRF :: (Decompose gad rq, SingI t, PosC (SizeFBTTop t))
-  => PRFParams n gad rq -> State (FBT t n gad rq) a -> a
-runPRF p = flip evalState $ updateFBT p Nothing $ replicate False
+-- | Run a PRF computation with some public parameters. E.g.: @run
+-- params (prf key x)@
+run :: (Decompose gad rq, SingI t, PosC (SizeFBTTop t))
+  => PRFParams n gad rq
+  -> StateT (FBT t n gad rq) (Reader (PRFParams n gad rq)) a
+  -> a
+run p = runIdentity . runT p
+
+-- | More general (monad transformer) version of 'run'.
+runT :: (Decompose gad rq, SingI t, PosC (SizeFBTTop t), Monad m)
+  => PRFParams n gad rq
+  -> StateT (FBT t n gad rq) (ReaderT (PRFParams n gad rq) m) a
+  -> m a
+runT p = flip runReaderT p .
+         (flip evalStateT $ updateFBT p Nothing (replicate False))
 
 -- | Type-safe sized vector from blog post "Part 1: Dependent Types in
 -- Haskell"
