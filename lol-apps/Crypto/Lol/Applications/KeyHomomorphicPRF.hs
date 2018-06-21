@@ -26,9 +26,11 @@ Key-homomorphic PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [B
 {-# LANGUAGE UndecidableInstances #-}
 
 module Crypto.Lol.Applications.KeyHomomorphicPRF
-( FBTTop(..), FBT, PRFKey, PRFParams
+( FBTTop(..), SFBTTop(..), SizeFBTTop, FBT
+, PRFKey, PRFParams
 , prf, genKey, genParams, run, runT
-, Vector, replicate, fromList, split
+, Vector, BitString
+, replicate, replicateS, fromList, fromListS, split, splitS
 ) where
 
 import Control.Applicative ((<$>))
@@ -91,20 +93,20 @@ subtrees (I _ l r) = (l, r)
 -- given public parameters, the input \( x \), and (optionally) an
 -- 'FBT' from a previous call, to amortize the computation across many
 -- inputs.
-updateFBT :: forall gad rq t n . (SingI t, Decompose gad rq)
-          => PRFParams n gad rq
-          -> Maybe (FBT t n gad rq)
-          -> BitString (SizeFBTTop t)
-          -> FBT t n gad rq
-updateFBT p@(Params a0 a1) fbt x = case (sing :: Sing t) of
+updateFBT :: forall gad rq t n . Decompose gad rq
+  => SFBTTop t
+  -> PRFParams n gad rq
+  -> Maybe (FBT t n gad rq)
+  -> BitString (SizeFBTTop t)
+  -> FBT t n gad rq
+updateFBT s p@(Params a0 a1) fbt x = case s of
     SLeaf       -> L $ BSM x $ if head x then a1 else a0
     SIntern _ _  | isJust fbt && x == bsmBitString (root $ fromJust fbt)
                 -> fromJust fbt
-    SIntern l r -> withSingI l $ withSingI r $ withSingI (sSizeFBTTop l) $
-                   let (xl, xr) = split x
+    SIntern l r -> let (xl, xr) = splitS (sSizeFBTTop l) x
                        children = subtrees <$> fbt
-                       fbtl = updateFBT p (fst <$> children) xl
-                       fbtr = updateFBT p (snd <$> children) xr
+                       fbtl = updateFBT l p (fst <$> children) xl
+                       fbtr = updateFBT r p (snd <$> children) xr
                        al = bsmMatrix $ root fbtl
                        ar = bsmMatrix $ root fbtr
                        ar' = reduce <$> proxy (decomposeMatrix ar) (Proxy :: Proxy gad)
@@ -136,21 +138,22 @@ genKey = fmap Key $ randomMtx 1 $ proxy value (Proxy :: Proxy n)
 -- output is in a monadic context that needs to be able to access
 -- 'PRFParams' public parameters and to keep an 'FBT' as state for
 -- efficient amortization across calls.
-prf :: (Rescale rq rp, Decompose gad rq, SingI t,
-        MonadState (FBT t n gad rq) m, MonadReader (PRFParams n gad rq) m)
-    => PRFKey n rq              -- | secret key
-    -> BitString (SizeFBTTop t) -- | input \( x \)
-    -> m (Matrix rp)            -- | PRF output
+prf :: forall t n gad rq rp m .
+  (Rescale rq rp, Decompose gad rq, SingI t,
+   MonadState (FBT t n gad rq) m, MonadReader (PRFParams n gad rq) m)
+  => PRFKey n rq                -- | secret key
+  -> BitString (SizeFBTTop t)   -- | input \( x \)
+  -> m (Matrix rp)              -- | PRF output
 prf s x = do
   p <- ask
-  modify (\fbt -> updateFBT p (Just fbt) x)
+  modify (\fbt -> updateFBT (sing :: Sing t) p (Just fbt) x)
   fbt <- get
-  return $ let at = bsmMatrix $ root fbt in  rescale <$> (unKey s) * at
+  return $ let at = bsmMatrix $ root fbt in rescale <$> (unKey s) * at
 
 -- | Run a PRF computation with some public parameters.
 -- E.g.: @run top params (prf key x)@
-run :: (Decompose gad rq, SingI t, PosC (SizeFBTTop t))
-  => proxy t                       -- | proxy for tree topology
+run :: Decompose gad rq
+  => SFBTTop t                     -- | singleton for tree topology
   -> PRFParams n gad rq            -- | public parameters
   -> StateT (FBT t n gad rq) (Reader (PRFParams n gad rq)) a
                                    -- | prf computation
@@ -158,13 +161,14 @@ run :: (Decompose gad rq, SingI t, PosC (SizeFBTTop t))
 run pt p = runIdentity . runT pt p
 
 -- | More general (monad transformer) version of 'run'.
-runT :: (Decompose gad rq, SingI t, PosC (SizeFBTTop t), Monad m)
-  => proxy t
+runT :: (Decompose gad rq, Monad m)
+  => SFBTTop t
   -> PRFParams n gad rq
   -> StateT (FBT t n gad rq) (ReaderT (PRFParams n gad rq) m) a
   -> m a
-runT _ p = flip runReaderT p .
-           (flip evalStateT $ updateFBT p Nothing (replicate False))
+runT s p = flip runReaderT p .
+           (flip evalStateT $ updateFBT s p Nothing
+                             (replicateS (sSizeFBTTop s) False))
 
 -- | Type-safe sized vector from blog post "Part 1: Dependent Types in
 -- Haskell"
@@ -186,20 +190,20 @@ instance PosC n => Enum (Vector n Bool) where
              SO   -> Lone . odd
              SS m -> withSingI m $
                      let thresh = 2^(sPosToInt m)
-                         modulus = 2 * thresh
-                     in  \x -> let x' = x `mod` modulus
+                         num = 2 * thresh
+                     in  \x -> let x' = x `mod` num
                                in if x' < thresh
                                   then False :- toEnum x'
-                                  else True  :- toEnum (modulus - 1 - x')
+                                  else True  :- toEnum (num - 1 - x')
   fromEnum = case (sing :: Sing n) of
                SO   -> \(Lone x) -> if x then 1 else 0
                SS m -> withSingI m $
-                       let modulus :: Int = 2^(1 + sPosToInt m)
+                       let num :: Int = 2^(1 + sPosToInt m)
                        in \(x:-xs) -> if x
-                                      then modulus - 1 - fromEnum xs
+                                      then num - 1 - fromEnum xs
                                       else fromEnum xs
 
-instance (PosC n) => Enumerable (Vector n Bool) where
+instance PosC n => Enumerable (Vector n Bool) where
   values = case (sing :: Sing n) of
     SO   -> [Lone False, Lone True]
     SS m -> withSingI m $
@@ -216,27 +220,39 @@ head (a :- _) = a
 -- | Split a 'Vector' into two
 split :: forall m n a . PosC m
       => Vector (m `AddPos` n) a -> (Vector m a, Vector n a)
-split (h :- t) = case (sing :: Sing m) of
-  SO    -> (Lone h, t)
-  SS pm -> withSingI pm $ let (b, e) = split t in (h :- b, e)
-split (Lone _) = error "split: internal error; can't split a Lone"
+split = splitS (sing :: Sing m)
+
+-- | Alternative form of 'split'
+splitS :: SPos m -> Vector (m `AddPos` n) a -> (Vector m a, Vector n a)
+splitS s (h :- t) = case s of
+  SO   -> (Lone h, t)
+  SS k -> let (b, e) = splitS k t in (h :- b, e)
+splitS _ (Lone _) = error "splitS: internal error; can't split a Lone"
 
 -- | Create a 'Vector' full of given value
 replicate :: forall n a . PosC n => a -> Vector n a
-replicate a = case (sing :: Sing n) of
-  SO   -> Lone a
-  SS n -> withSingI n $ a :- replicate a
+replicate = replicateS (sing :: Sing n)
 
+-- | Alternative form of 'replicate'
+replicateS :: SPos n -> a -> Vector n a
+replicateS s a = case s of
+  SO   -> Lone a
+  SS k -> a :- replicateS k a
 
 -- | Convert a list to a 'Vector', return 'Nothing' if lengths don't match
 fromList :: forall n a . PosC n => [a] -> Maybe (Vector n a)
-fromList xs = case (sing :: Sing n) of
+fromList = fromListS (sing :: Sing n)
+
+fromListS :: SPos n -> [a] -> Maybe (Vector n a)
+fromListS s xs = case s of
   SO   -> case xs of
             (x:[])   -> Just (Lone x)
             _        -> Nothing
-  SS n -> withSingI n $ case xs of
-            (x:rest) -> (:-) x <$> fromList rest
+  SS k -> case xs of
+            (x:rest) -> (:-) x <$> fromListS k rest
             _        -> Nothing
+
+
 
 sPosToInt :: SPos n -> Int
 sPosToInt SO     = 1
