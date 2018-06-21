@@ -84,6 +84,10 @@ import MathObj.Polynomial as P
 data SK r where
   SK  :: (ToRational v, NFData v) => v -> r -> SK r
 
+-- Need this for running tests
+instance Show r => Show (SK r) where
+  show (SK v r) = "(SK " ++ (show $ toRational v) ++ " " ++ (show r) ++ ")"
+
 -- | plaintext
 type PT rp = rp
 
