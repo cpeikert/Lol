@@ -12,10 +12,8 @@ Tensor-polymorphic example cryptographic applications.
 -}
 
 module Crypto.Lol.Applications.Examples
-( module Crypto.Lol.Applications.Examples.HomomPRF
-, module Crypto.Lol.Applications.Examples.KHPRF
+( module Crypto.Lol.Applications.Examples.KHPRF
 , module Crypto.Lol.Applications.Examples.SymmSHE) where
 
-import Crypto.Lol.Applications.Examples.HomomPRF
 import Crypto.Lol.Applications.Examples.KHPRF
 import Crypto.Lol.Applications.Examples.SymmSHE

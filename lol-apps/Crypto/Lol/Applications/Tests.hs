@@ -16,11 +16,8 @@ module Crypto.Lol.Applications.Tests
 (
 -- * Default tests and parameters
  module Crypto.Lol.Applications.Tests.Default
--- * Tests for the key-homomorphic PRF
-,module Crypto.Lol.Applications.Tests.KHPRFTests
 -- * Tests for various types of functions in SymmSHE
 ,module Crypto.Lol.Applications.Tests.SHETests) where
 
 import Crypto.Lol.Applications.Tests.Default
-import Crypto.Lol.Applications.Tests.KHPRFTests
 import Crypto.Lol.Applications.Tests.SHETests

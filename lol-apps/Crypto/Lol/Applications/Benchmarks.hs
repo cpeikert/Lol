@@ -16,11 +16,8 @@ module Crypto.Lol.Applications.Benchmarks
 (
 -- * Default benchmarks and parameters
  module Crypto.Lol.Applications.Benchmarks.Default
--- * Benchmarks for the key-homomorphic PRF
-,module Crypto.Lol.Applications.Benchmarks.KHPRFBenches
 -- * Benchmarks for various types of functions in SymmSHE
 ,module Crypto.Lol.Applications.Benchmarks.SHEBenches) where
 
 import Crypto.Lol.Applications.Benchmarks.Default
-import Crypto.Lol.Applications.Benchmarks.KHPRFBenches
 import Crypto.Lol.Applications.Benchmarks.SHEBenches

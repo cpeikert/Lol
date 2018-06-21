@@ -27,7 +27,6 @@ import Control.Monad.Random
 
 import Crypto.Lol (Cyc)
 import Crypto.Lol.Applications.SymmSHE hiding (CT)
-import Crypto.Lol.Applications.Tests.KHPRFTests
 import Crypto.Lol.Applications.Tests.SHETests
 import Crypto.Lol.Factored
 import Crypto.Lol.Gadget
@@ -83,11 +82,7 @@ defaultAppsTests pt pgad  =
 
     twemTests (Proxy::Proxy '(F1, F7, F3, F21, Zq 2, Zq 18869761)),
 
-    tunnelTests (Proxy::Proxy '(F8,F40,F20,F60,Zq 4,Zq (18869761 ** 19393921))) pgad],
-  testGroup "KHPRF" $ ($ pt) <$> [
-    khprfTests (Proxy::Proxy '(F32, Zq 2, Zq 8, BaseBGad 2)),
-    khprfTests (Proxy::Proxy '(F32, Zq 2, Zq 8, TrivGad)),
-    khprfTests (Proxy::Proxy '(F32, Zq 32, Zq 257, BaseBGad 2))]
+    tunnelTests (Proxy::Proxy '(F8,F40,F20,F60,Zq 4,Zq (18869761 ** 19393921))) pgad]    
   ]
 
 -- EAC: is there a simple way to parameterize the variance?
