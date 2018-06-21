@@ -34,7 +34,7 @@ SK, PT, CT -- don't export constructors!
 -- * Keygen, encryption, decryption
 , genSK, genSKWithVar
 , encrypt
-, errorTerm, decrypt-- errorTermUnrestricted, decrypt, decryptUnrestricted
+, errorTerm, errorTermUnrestricted, decrypt, decryptUnrestricted
 -- * Arithmetic with public values
 , addPublic, mulPublic
 -- * Modulus switching
@@ -126,8 +126,8 @@ genSKWithVar (SK v _) = genSK v
 
 -- | Constraint synonym for encryption.
 type EncryptCtx c m m' z zp zq =
-  (Ring zp, Ring zq, Lift zp (ModRep zp),
-   Cyclotomic c zq, ReduceCyc c z zq, ReduceCyc c (ModRep zp) zq,
+  (Ring zp, Lift' zp,
+   Cyclotomic c zq, ReduceCyc c z zq, ReduceCyc c (LiftOf zp) zq,
    CosetGaussianCyc c zp, ExtensionCyc c zp, Random (c m' zq),
    Ring (c m' zq), m `Divides` m')
 
@@ -152,14 +152,14 @@ errorTerm (SK _ s) = let sq = reduceCyc s in
          in liftCyc Dec $ evaluate c sq
 
 -- for when we know the division must succeed
-divG' :: (Cyclotomic c r, Fact m, IntegralDomain r) => c m r -> c m r
+divG' :: (Cyclotomic c r, Fact m) => c m r -> c m r
 divG' = fromJust . divG
 
 -- | Constraint synonym for decryption.
 type DecryptCtx c m m' z zp zq =
-  (ErrorTermCtx c m' z zp zq, IntegralDomain zp,
-   ExtensionCyc c zp, ReduceCyc c (LiftOf zq) zp,
-   Ring (c m zp), m `Divides` m')
+  (ErrorTermCtx c m' z zp zq, m `Divides` m',
+   ReduceCyc c (LiftOf zq) zp, ExtensionCyc c zp,
+   Module zp (c m zp))
 
 -- | Decrypt a ciphertext.
 decrypt :: forall c m m' z zp zq . DecryptCtx c m m' z zp zq
@@ -167,39 +167,36 @@ decrypt :: forall c m m' z zp zq . DecryptCtx c m m' z zp zq
 decrypt sk ct =
   let ct'@(CT LSD k l _) = toLSD ct
   in let e :: c m' zp = reduceCyc $ errorTerm sk ct'
-     in (scalarCyc l) * twace (iterate divG' e !! k)
+     in l *> twace (iterate divG' e !! k)
 
 --- unrestricted versions ---
 
 -- | Constraint synonym for unrestricted error term.
-type ErrorTermUCtx c m' z zp zq = ToSDCtx c m' zp zq
+type ErrorTermUCtx c m' z zp zq = (ToSDCtx c m' zp zq, ReduceCyc c z zq, LiftCyc c zq)
 
 -- | Constraint synonym for unrestricted decryption.
-type DecryptUCtx c m m' z zp zq = (Fact m, ToSDCtx c m' zp zq)
+type DecryptUCtx c m m' z zp zq =
+  (ErrorTermUCtx c m' z zp zq, m `Divides` m',
+   ReduceCyc c (LiftOf zq) zp, ExtensionCyc c zp, Module zp (c m zp))
 
--- TODO: What to do with this?
-
-{-
 -- | More general form of 'errorTerm' that works for unrestricted
 -- output coefficient types.
 errorTermUnrestricted :: ErrorTermUCtx c m' z zp zq
-  => SK (c m' z) -> CT m zp (c m' zq) -> CycRep t D m' (LiftOf zq)
-errorTermUnrestricted (SK _ s) = let sq = reduce s in
+  => SK (c m' z) -> CT m zp (c m' zq) -> c m' (LiftOf zq)
+errorTermUnrestricted (SK _ s) = let sq = reduceCyc s in
   \ct -> let (CT LSD _ _ c) = toLSD ct
              eval = evaluate c sq
-         in fmap lift $ uncycDec eval
+         in liftDec eval
 
 -- | More general form of 'decrypt' that works for unrestricted output
 -- coefficient types.
 decryptUnrestricted :: DecryptUCtx c m m' z zp zq
   => SK (c m' z) -> CT m zp (c m' zq) -> PT (c m zp)
-decryptUnrestricted (SK _ s) = let sq = reduce s in
+decryptUnrestricted (SK _ s) = let sq = reduceCyc s in
   \ct -> let (CT LSD k l c) = toLSD ct
              eval = evaluate c sq
-             e = cycDec $ fmap (reduce . lift) $ uncycDec eval
-             l' = scalarCyc l
-         in l' * twace (iterate divG' e !! k)
--}
+             e = reduceCyc $ liftDec eval
+         in l *> twace (iterate divG' e !! k)
 
 ---------- LSD/MSD switching ----------
 
@@ -268,7 +265,7 @@ lweSample (SK svar s) =
     return $ fromCoeffs [c1 * sq + reduceCyc (e `asTypeOf` s), c1]
 
 -- | Constraint synonym for generating key-switch hints.
-type KSHintCtx gad c m' z zq = (LWECtx c m' z zq, Gadget gad (c m' zq), NFData (c m' zq))
+type KSHintCtx gad c m' z zq = (LWECtx c m' z zq, Gadget gad (c m' zq))
 
 -- | Generate a hint that "encrypts" a value under a secret key, in
 -- the sense required for key-switching.  The hint works for any
@@ -282,7 +279,7 @@ ksHint skout val = do -- rnd monad
       valgad = encode valq
   -- CJP: clunky, but that's what we get without a MonadTagged
   samples <- DT.mapM (\as -> replicateM (length as) (lweSample skout)) valgad
-  return $! force $ zipWith (+) <$> (map P.const <$> valgad) <*> samples
+  return $ zipWith (+) <$> (map P.const <$> valgad) <*> samples
 
 -- poor man's module multiplication for knapsack
 (*>>) :: (Ring r, Functor f) => r -> f r -> f r
@@ -295,9 +292,8 @@ knapsack hint xs = sum $ zipWith (*>>) (adviseCRT <$> xs) hint
 
 -- | Constraint synonym for applying a key-switch hint.
 type SwitchCtx gad c m' zq =
-  (Decompose gad (c m' zq), Fact m',
-   Cyclotomic c zq, Ring (c m' zq),
-   DecompOf (c m' zq) ~ (c m' (DecompOf zq)), ReduceCyc c (DecompOf zq) zq)
+  (Fact m', Cyclotomic c zq, ReduceCyc c (DecompOf zq) zq, Ring (c m' zq),
+   Decompose gad (c m' zq), DecompOf (c m' zq) ~ (c m' (DecompOf zq)))
 
 -- Helper function: applies key-switch hint to a ring element.
 switch :: (SwitchCtx gad c m' zq, r'q ~ c m' zq)
@@ -408,7 +404,7 @@ mulGCT (CT enc k l c) = CT enc (k+1) l $ mulG <$> c
 ---------- NumericPrelude instances ----------
 
 instance (Lift' zp, Reduce (LiftOf zp) zq, -- mulScalar
-          Eq zp, m `Divides` m', ToSDCtx c m' zp zq)
+          ToSDCtx c m' zp zq, Eq zp, m `Divides` m')
          => Additive.C (CT m zp (c m' zq)) where
 
   zero = CT LSD 0 one zero
@@ -445,13 +441,13 @@ instance (ToSDCtx c m' zp zq, Additive (CT m zp (c m' zq)))
 ---------- Ring switching ----------
 
 -- | Constraint synonym for 'absorbGFactors'.
-type AbsorbGCtx c zp zq = (IntegralDomain zp, Cyclotomic c zp, Cyclotomic c zq, LiftCyc c zp)
+type AbsorbGCtx c zp zq = (Cyclotomic c zp, Cyclotomic c zq, LiftCyc c zp)
 
 -- | "Absorb" the powers of \( g \) associated with the ciphertext, at
 -- the cost of some increase in noise. This is usually needed before
 -- changing the index of the ciphertext ring.
 absorbGFactors :: forall c zp zq m m' .
-                  (AbsorbGCtx c zp zq, Fact m, Fact m', Ring (c m' zp), Ring (c m' zq),
+                  (AbsorbGCtx c zp zq, Fact m', Ring (c m' zp), Ring (c m' zq),
                    ReduceCyc c (LiftOf zp) zq)
                   => CT m zp (c m' zq) -> CT m zp (c m' zq)
 absorbGFactors ct@(CT enc k l r)
@@ -504,12 +500,12 @@ instance (NFData (Linear c e' r' s' zq), NFData (c s' zq))
 type TunnelHintCtx c e r s e' r' s' z zp zq' gad =
   (ExtendLinIdx e r s e' r' s',         -- extendLin
    e' ~ (e * (r' / r)),                 -- convenience; implied by prev constraint
+   z ~ LiftOf zp,
    KSHintCtx gad c r' z zq',            -- ksHint
-   Lift zp z,                           -- liftLin
    Lift' (Linear c e r s zp),           -- lift
    ReduceCyc c z zq',                   -- reduce
    ExtensionCyc c z, e' `Divides` r',   -- powBasis
-   Ring (c s' z), Ring (c r' z), Random (c s' zq'), Gadget gad (c s' zq'), NFData (c s' zq'))
+   Ring (c s' z), Ring (c r' z), Random (c s' zq'), Gadget gad (c s' zq'))
 
 -- | Generates auxilliary data needed to tunnel from \( \O_{r'} \) to
 -- \( \O_{s'} \).
