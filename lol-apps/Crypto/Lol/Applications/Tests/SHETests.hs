@@ -23,8 +23,13 @@ Tests for SymmSHE.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
---module Crypto.Lol.Applications.Tests.SHETests (sheTests, decTest, modSwPTTest, ksTests, twemTests, tunnelTests) where
-module Crypto.Lol.Applications.Tests.SHETests (decTest) where
+module Crypto.Lol.Applications.Tests.SHETests
+(decTest
+,ksTests
+,modSwPTTest
+,sheTests
+,tunnelTests
+,twemTests) where
 
 import Control.Applicative
 import Control.Monad
@@ -32,114 +37,129 @@ import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Tests (chooseAny, showType, testIOWithGen, testGroup, Test, Gen)
+import Crypto.Lol.Tests (chooseAny, showType, testIOWithGen, testGroup, testWithGen, Test, Gen)
 
 -- EAC: is there a simple way to parameterize the variance?
 -- generates a secret key with scaled variance 1.0
 instance (GenSKCtx c m' z Double) => Random (SK (c m' z)) where
+  -- Need this for 'chooseAny' in our tests
   random = runRand $ genSK (1 :: Double)
   randomR = error "randomR not defined for SK"
 
-joinGens :: Gen a -> Gen b -> Gen (a, b)
-joinGens g h = liftA2 (\x y -> (x, y)) g h
+consGens2 :: Gen a -> Gen b -> Gen (a, b)
+consGens2 g h = liftA2 (\x y -> (x, y)) g h
 
-{-
-sheTests :: forall t m m' zp zq . (_)
-  => Proxy '(m,m',zp,zq) -> Proxy t -> Test
+consGens3 :: Gen a -> Gen b -> Gen c -> Gen (a, b, c)
+consGens3 g h i = liftA3 (\x y z -> (x, y, z)) g h i
+
+sheTests :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (zp :: *) (zq :: *) . _
+         => Proxy '(m,m',zp,zq) -> Proxy t -> Test
 sheTests _ _ =
-  let ptmr = Proxy::Proxy '(t,m,m',zp,zq)
-  in testGroup (showType ptmr) $ ($ ptmr) <$> [
-   genTestArgs "DecU . Enc" prop_encDecU,
-   genTestArgs "AddPub"     prop_addPub,
-   genTestArgs "MulPub"     prop_mulPub,
-   genTestArgs "CTAdd"      prop_ctadd,
-   genTestArgs "CTAdd2"     prop_ctadd2,
-   genTestArgs "CTMul"      prop_ctmul,
-   genTestArgs "CT zero"    prop_ctzero,
-   genTestArgs "CT one"     prop_ctone]
--}
+  let ptmmrr = Proxy::Proxy '(t,m,m',zp,zq)
+      gpt = chooseAny :: Gen (PT (Cyc t m zp))
+      gsk = chooseAny :: Gen (SK (Cyc t m' (LiftOf zp)))
+      gc = chooseAny :: Gen (Cyc t m zp)
+  in testGroup (showType ptmmrr) [
+    testIOWithGen "DecU . Enc" (prop_encDecU ptmmrr) (consGens2 gpt gsk),
+    testIOWithGen "AddPub"     (prop_addPub ptmmrr)  (consGens3 gc gpt gsk),
+    testIOWithGen "MulPub"     (prop_mulPub ptmmrr)  (consGens3 gc gpt gsk),
+    testIOWithGen "CTAdd"      (prop_ctadd ptmmrr)   (consGens3 gpt gpt gsk),
+    testIOWithGen "CTAdd2"     (prop_ctadd2 ptmmrr)  (consGens3 gpt gpt gsk),
+    testIOWithGen "CTMul"      (prop_ctmul ptmmrr)   (consGens3 gpt gpt gsk),
+    testWithGen   "CT zero"    (prop_ctzero ptmmrr)  gsk,
+    testWithGen   "CT one"     (prop_ctone ptmmrr)   gsk]
 
 -- zq must be liftable
 decTest :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (zp :: *) (zq :: *) . _
         => Proxy '(m,m',zp,zq) -> Proxy t -> Test
 decTest _ _ =
   let ptmmrr = Proxy::Proxy '(t,m,m',zp,zq)
-      g1 = chooseAny :: Gen (SK (Cyc t m' (LiftOf zp)))
-      g2 = chooseAny :: Gen (Cyc t m zp)
-      tupGen = joinGens g1 g2
+      gsk = chooseAny :: Gen (SK (Cyc t m' (LiftOf zp)))
+      gc = chooseAny :: Gen (Cyc t m zp)
   in testGroup (showType ptmmrr)
-               [testIOWithGen "Dec . Enc" (prop_encDec ptmmrr) tupGen]
+               [testIOWithGen "Dec . Enc" (prop_encDec ptmmrr) (consGens2 gsk gc)]
 
-{-
-modSwPTTest :: forall t m m' zp zp' zq . (_)
+-- (PT (Cyc t m zp), SK (Cyc t m' z))
+modSwPTTest :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (zp :: *) zp' zq . _
   => Proxy '(m,m',zp,zp',zq) -> Proxy t -> Test
 modSwPTTest _ _ =
-  let ptmr = Proxy::Proxy '(t,m,m',zp,zp',zq)
-  in testGroup (showType ptmr)
-       [genTestArgs "ModSwitch PT" prop_modSwPT ptmr]
+  let ptmmrrr = Proxy::Proxy '(t,m,m',zp,zp',zq)
+      gpt = chooseAny :: Gen (PT (Cyc t m zp))
+      gsk = chooseAny :: Gen (SK (Cyc t m' (LiftOf zp)))
+  in testGroup (showType ptmmrrr)
+               [testIOWithGen "ModSwitch PT" (prop_modSwPT ptmmrrr) (consGens2 gpt gsk)]
 
-ksTests :: forall t m m' zp zq gad . (_)
+ksTests :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (zp :: *) zq gad . _
   => Proxy '(m,m',zp,zq) -> Proxy gad -> Proxy t -> Test
 ksTests _ _ _ =
-  let ptmr = Proxy::Proxy '(t,m,m',zp,zq,gad)
-  in testGroup (showType ptmr) $ ($ ptmr) <$> [
-    genTestArgs "KSLin" prop_ksLin,
-    genTestArgs "KSQuad" prop_ksQuad]
+  let ptmmrrg = Proxy::Proxy '(t,m,m',zp,zq,gad)
+      gpt = chooseAny :: Gen (PT (Cyc t m zp))
+      gsk = chooseAny :: Gen (SK (Cyc t m' (LiftOf zp)))
+  in testGroup (showType ptmmrrg) [
+    testIOWithGen "KSLin" (prop_ksLin ptmmrrg) (consGens3 gpt gsk gsk),
+    testIOWithGen "KSQuad" (prop_ksQuad ptmmrrg) (consGens3 gpt gpt gsk)]
 
-twemTests :: forall t r r' s s' zp zq . (_)
+twemTests :: forall (t :: Factored -> * -> *) (r :: Factored) (r' :: Factored)
+                    (s :: Factored) s' (zp :: *) zq . _
   => Proxy '(r,r',s,s',zp,zq) -> Proxy t -> Test
 twemTests _ _ =
-  let ptmr = Proxy::Proxy '(t,r,r',s,s',zp,zq)
-  in testGroup (showType ptmr) [
-      genTestArgs "Embed" prop_ctembed ptmr,
-      genTestArgs "Twace" prop_cttwace ptmr]
+  let p = Proxy::Proxy '(t,r,r',s,s',zp,zq) -- Gave up on the Proxy naming convention here
+      gpt = chooseAny :: Gen (PT (Cyc t r zp))
+      gsk = chooseAny :: Gen (SK (Cyc t r' (LiftOf zp)))
+      gpt' = chooseAny :: Gen (PT (Cyc t s zp))
+  in testGroup (showType p) [
+      testIOWithGen "Embed" (prop_ctembed p) (consGens2 gpt gsk),
+      testIOWithGen "Twace" (prop_cttwace p) (consGens2 gpt' gsk)]
 
-tunnelTests :: forall t r r' s s' zp zq gad . (_)
+tunnelTests :: forall (t :: Factored -> * -> *) (r :: Factored) (r' :: Factored)
+                      s (s' :: Factored) (zp :: *) zq gad . (_)
   => Proxy '(r,r',s,s',zp,zq) -> Proxy gad -> Proxy t -> Test
 tunnelTests _ _ _ =
-  let ptmr = Proxy::Proxy '(t,r,r',s,s',zp,zq,gad)
-  in testGroup (showType ptmr)
-       [genTestArgs "Tunnel" prop_ringTunnel ptmr]
+  let p = Proxy::Proxy '(t,r,r',s,s',zp,zq,gad)
+      gpt = chooseAny :: Gen (PT (Cyc t r zp))
+      gsk = chooseAny :: Gen (SK (Cyc t r' (LiftOf zp)))
+      gsk' = chooseAny :: Gen (SK (Cyc t s' (LiftOf zp)))
+  in testGroup (showType p)
+               [testIOWithGen "Tunnel" (prop_ringTunnel p) (consGens3 gpt gsk gsk')]
 
 
 
 
 
 prop_encDecU :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
-  => PT (Cyc t m zp) -> SK (Cyc t m' z) -> Test '(t,m,m',zp,zq)
-prop_encDecU x sk = testIO $ do
+  => Proxy '(t,m,m',zp,zq)
+     -> (PT (Cyc t m zp), SK (Cyc t m' z))
+     -> IO Bool
+prop_encDecU _ (x, sk) = do
   y :: CT m zp (Cyc t m' zq) <- encrypt sk x
   let x' = decryptUnrestricted sk $ y
   return $ x == x'
 
 prop_addPub :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
-  => Cyc t m zp
-     -> PT (Cyc t m zp)
-     -> SK (Cyc t m' z)
-     -> Test '(t,m,m',zp,zq)
-prop_addPub a pt sk = testIO $ do
+  => Proxy '(t,m,m',zp,zq)
+     -> (Cyc t m zp, PT (Cyc t m zp), SK (Cyc t m' z))
+     -> IO Bool
+prop_addPub _ (a, pt, sk) = do
   ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   let ct' = addPublic a ct
       pt' = decryptUnrestricted sk ct'
   return $ pt' == (a+pt)
 
 prop_mulPub :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
-  => Cyc t m zp
-     -> PT (Cyc t m zp)
-     -> SK (Cyc t m' z)
-     -> Test '(t,m,m',zp,zq)
-prop_mulPub a pt sk = testIO $ do
+  => Proxy '(t,m,m',zp,zq)
+     -> (Cyc t m zp, PT (Cyc t m zp), SK (Cyc t m' z))
+     -> IO Bool
+prop_mulPub _ (a, pt, sk) = do
   ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   let ct' = mulPublic a ct
       pt' = decryptUnrestricted sk ct'
   return $ pt' == (a*pt)
 
 prop_ctadd :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
-  => PT (Cyc t m zp)
-     -> PT (Cyc t m zp)
-     -> SK (Cyc t m' z)
-     -> Test '(t,m,m',zp,zq)
-prop_ctadd pt1 pt2 sk = testIO $ do
+  => Proxy '(t,m,m',zp,zq)
+     -> (PT (Cyc t m zp), PT (Cyc t m zp), SK (Cyc t m' z))
+     -> IO Bool
+prop_ctadd _ (pt1, pt2, sk) = do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
   let ct' = ct1 + ct2
@@ -148,11 +168,10 @@ prop_ctadd pt1 pt2 sk = testIO $ do
 
 -- tests adding with different scale values
 prop_ctadd2 :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
-  => PT (Cyc t m zp)
-     -> PT (Cyc t m zp)
-     -> SK (Cyc t m' z)
-     -> Test '(t,m,m',zp,zq)
-prop_ctadd2 pt1 pt2 sk = testIO $ do
+  => Proxy '(t,m,m',zp,zq)
+     -> (PT (Cyc t m zp), PT (Cyc t m zp), SK (Cyc t m' z))
+     -> IO Bool
+prop_ctadd2 _ (pt1, pt2, sk) = do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
   -- no-op to induce unequal scale values
@@ -161,11 +180,10 @@ prop_ctadd2 pt1 pt2 sk = testIO $ do
   return $ pt1+pt2 == pt'
 
 prop_ctmul :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
-  => PT (Cyc t m zp)
-     -> PT (Cyc t m zp)
-     -> SK (Cyc t m' z)
-     -> Test '(t,m,m',zp,zq)
-prop_ctmul pt1 pt2 sk = testIO $ do
+  => Proxy '(t,m,m',zp,zq)
+     -> (PT (Cyc t m zp), PT (Cyc t m zp), SK (Cyc t m' z))
+     -> IO Bool
+prop_ctmul _ (pt1, pt2, sk) = do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
   let ct' = ct1 * ct2
@@ -173,17 +191,16 @@ prop_ctmul pt1 pt2 sk = testIO $ do
   return $ pt1*pt2 == pt'
 
 prop_ctzero :: forall t m m' z zp (zq :: *) . (z ~ LiftOf zp, Fact m, _)
-  => SK (Cyc t m' z) -> Test '(t,m,m',zp,zq)
-prop_ctzero sk =
-  let z = decryptUnrestricted sk (zero :: CT m zp (Cyc t m' zq))
-  in test $ zero == z
+  => Proxy '(t,m,m',zp,zq)
+     -> SK (Cyc t m' z)
+     -> Bool
+prop_ctzero _ sk = zero == decryptUnrestricted sk (zero :: CT m zp (Cyc t m' zq))
 
 prop_ctone :: forall t m m' z zp (zq :: *) . (z ~ LiftOf zp, Fact m, _)
-  => SK (Cyc t m' z) -> Test '(t,m,m',zp,zq)
-prop_ctone sk =
-  let z = decryptUnrestricted sk (one :: CT m zp (Cyc t m' zq)) :: Cyc t m zp
-  in test $ one == z
--}
+  => Proxy '(t,m,m',zp,zq)
+     -> SK (Cyc t m' z)
+     -> Bool
+prop_ctone _ sk = one == decryptUnrestricted sk (one :: CT m zp (Cyc t m' zq))
 
 prop_encDec :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
   => Proxy '(t,m,m',zp,zq) -> (SK (Cyc t m' z), Cyc t m zp) -> IO Bool
@@ -192,10 +209,11 @@ prop_encDec _ (sk, x) = do
   let x' = decrypt sk $ y
   return $ x == x'
 
-{-
 prop_modSwPT :: forall t m m' z zp (zp' :: *) (zq :: *) . (z ~ LiftOf zp, _)
-  => PT (Cyc t m zp) -> SK (Cyc t m' z) -> Test '(t,m,m',zp,zp',zq)
-prop_modSwPT pt sk = testIO $ do
+  => Proxy '(t,m,m',zp,zp',zq)
+     -> (PT (Cyc t m zp), SK (Cyc t m' z))
+     -> IO Bool
+prop_modSwPT _ (pt, sk) = do
   y :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   let p = proxy modulus (Proxy::Proxy zp)
       p' = proxy modulus (Proxy::Proxy zp')
@@ -206,8 +224,10 @@ prop_modSwPT pt sk = testIO $ do
   return $ x'' == rescaleCyc Dec x
 
 prop_ksLin :: forall t m m' z zp (zq :: *) (gad :: *) . (z ~ LiftOf zp, _)
-  => PT (Cyc t m zp) -> SK (Cyc t m' z) -> SK (Cyc t m' z) -> Test '(t,m,m',zp,zq,gad)
-prop_ksLin pt skin skout = testIO $ do
+  => Proxy '(t,m,m',zp,zq,gad)
+     -> (PT (Cyc t m zp), SK (Cyc t m' z), SK (Cyc t m' z))
+     -> IO Bool
+prop_ksLin _ (pt, skin, skout) = do
   ct <- encrypt skin pt
   kslHint :: KSLinearHint gad (Cyc t m' zq) <- ksLinearHint skout skin
   let ct' = keySwitchLinear kslHint ct :: CT m zp (Cyc t m' zq)
@@ -215,8 +235,10 @@ prop_ksLin pt skin skout = testIO $ do
   return $ pt == pt'
 
 prop_ksQuad :: forall t m m' z zp zq (gad :: *) . (z ~ LiftOf zp, _)
-  => PT (Cyc t m zp) -> PT (Cyc t m zp) -> SK (Cyc t m' z) -> Test '(t,m,m',zp,zq,gad)
-prop_ksQuad pt1 pt2 sk = testIO $ do
+  => Proxy '(t,m,m',zp,zq,gad)
+     -> (PT (Cyc t m zp), PT (Cyc t m zp), SK (Cyc t m' z))
+     -> IO Bool
+prop_ksQuad _ (pt1, pt2, sk) = do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 <- encrypt sk pt2
   ksqHint :: KSQuadCircHint gad (Cyc t m' zq) <- ksQuadCircHint sk
@@ -226,8 +248,10 @@ prop_ksQuad pt1 pt2 sk = testIO $ do
   return $ ptProd == pt'
 
 prop_ctembed :: forall t r r' s s' z zp (zq :: *) . (z ~ LiftOf zp, Fact s', Fact s, _)
-  => PT (Cyc t r zp) -> SK (Cyc t r' z) -> Test '(t,r,r',s,s',zp,zq)
-prop_ctembed pt sk =testIO $ do
+  => Proxy '(t,r,r',s,s',zp,zq)
+     -> (PT (Cyc t r zp), SK (Cyc t r' z))
+     -> IO Bool
+prop_ctembed _ (pt, sk) = do
   ct :: CT r zp (Cyc t r' zq) <- encrypt sk pt
   let ct' = embedCT ct :: CT s zp (Cyc t s' zq)
       pt' = decryptUnrestricted (embedSK sk) ct'
@@ -235,32 +259,37 @@ prop_ctembed pt sk =testIO $ do
 
 -- CT must be encrypted with key from small ring
 prop_cttwace :: forall t r r' s s' z zp (zq :: *) . (z ~ LiftOf zp, Fact r, _)
-  => PT (Cyc t s zp) -> SK (Cyc t r' z) -> Test '(t,r,r',s,s',zp,zq)
-prop_cttwace pt sk = testIO $ do
+  => Proxy '(t,r,r',s,s',zp,zq)
+     -> (PT (Cyc t s zp), SK (Cyc t r' z))
+     -> IO Bool
+prop_cttwace _ (pt, sk) = do
   ct :: CT s zp (Cyc t s' zq) <- encrypt (embedSK sk) pt
   let ct' = twaceCT ct :: CT r zp (Cyc t r' zq)
       pt' = decryptUnrestricted sk ct'
   return $ twace pt == pt'
 
-prop_ringTunnel :: forall t e r s e' r' s' z zp zq gad .
-  (TunnelHintCtx t e r s e' r' s' z zp zq gad,
-   TunnelCtx t r s e' r' s' zp zq gad,
-   EncryptCtx t r r' z zp zq,
-   DecryptUCtx t s s' z zp zq,
+prop_ringTunnel :: forall c t e r s e' r' s' z zp zq gad .
+  (c ~ Cyc t,
+   TunnelHintCtx c e r s e' r' s' z zp zq gad,
+   TunnelCtx c r s e' r' s' zp zq gad,
+   EncryptCtx c r r' z zp zq,
+   DecryptUCtx c s s' z zp zq,
+   Random (Cyc t s zp), Ring (Cyc t s zp), Eq (Cyc t s zp),
    Random zp, Eq zp,
    e ~ FGCD r s, Fact e)
-  => PT (Cyc t r zp) -> SK (Cyc t r' z) -> SK (Cyc t s' z) -> Test '(t,r,r',s,s',zp,zq,gad)
-prop_ringTunnel x skin skout = testIO $ do
+  => Proxy '(t,r,r',s,s',zp,zq,gad)
+  -> (PT (Cyc t r zp), SK (Cyc t r' z), SK (Cyc t s' z))
+  -> IO Bool
+prop_ringTunnel _ (x, skin, skout) = do
   let totr = proxy totientFact (Proxy::Proxy r)
       tote = proxy totientFact (Proxy::Proxy e)
       basisSize = totr `div` tote
   -- choose a random linear function of the appropriate size
   bs :: [Cyc t s zp] <- replicateM basisSize getRandom
-  let f = linearDec bs \\ (gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)) :: Linear t zp e r s
+  let f = linearDec bs \\ (gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)) :: Linear c e r s zp
       expected = evalLin f x \\ (gcdDivides (Proxy::Proxy r) (Proxy::Proxy s))
   y :: CT r zp (Cyc t r' zq) <- encrypt skin x
-  hints :: TunnelHint gad t e r s e' r' s' zp zq <- tunnelHint f skout skin
+  hints :: TunnelHint gad c e r s e' r' s' zp zq <- tunnelHint f skout skin
   let y' = tunnel hints y :: CT s zp (Cyc t s' zq)
       actual = decryptUnrestricted skout y' :: Cyc t s zp
   return $ expected == actual
--}

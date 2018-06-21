@@ -82,11 +82,4 @@ defaultAppsTests pt pgad  =
 
     twemTests (Proxy::Proxy '(F1, F7, F3, F21, Zq 2, Zq 18869761)),
 
-    tunnelTests (Proxy::Proxy '(F8,F40,F20,F60,Zq 4,Zq (18869761 ** 19393921))) pgad]    
-  ]
-
--- EAC: is there a simple way to parameterize the variance?
--- generates a secret key with scaled variance 1.0
-instance (GenSKCtx t m' z Double) => Random (SK (Cyc t m' z)) where
-  random = runRand $ genSK (1 :: Double)
-  randomR = error "randomR not defined for SK"
+    tunnelTests (Proxy::Proxy '(F8,F40,F20,F60,Zq 4,Zq (18869761 ** 19393921))) pgad]]
