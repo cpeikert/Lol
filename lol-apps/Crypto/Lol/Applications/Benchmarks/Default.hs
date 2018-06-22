@@ -23,14 +23,18 @@ Mostly-monomorphized benchmarks for lol-apps.
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Applications.Benchmarks.Default
- (defaultSHEBenches) where
+ (defaultSHEBenches, defaultKHPRFBenches) where
 
 import Control.Monad.Random
 
 import Crypto.Lol
-import Crypto.Lol.Applications.Benchmarks.SHEBenches
-import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Benchmarks
+import Crypto.Lol.Applications.SymmSHE
+import Crypto.Lol.Applications.Benchmarks.SHEBenches
+--import Crypto.Lol.Applications.KeyHomomorphicPRF
+import Crypto.Lol.Applications.Benchmarks.KHPRFBenches
+
+--import Criterion.Main
 
 defaultSHEBenches :: _ => Proxy t -> Proxy gad -> Proxy gen -> [rnd Benchmark]
 defaultSHEBenches pt pgad pgen  = [
@@ -76,6 +80,9 @@ defaultSHEBenches pt pgad pgen  = [
                                                   F9 * F5 * F7 * F13,
                                                   Zq PP32,
                                                   Zq 3144961)) pgad]]
+
+defaultKHPRFBenches :: (MonadRandom rnd) => [rnd Benchmark]
+defaultKHPRFBenches = [khprfBenches]
 
 
 -- EAC: is there a simple way to parameterize the variance?

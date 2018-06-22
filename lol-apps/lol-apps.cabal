@@ -67,6 +67,7 @@ library
   other-modules:
     Crypto.Lol.Applications.Tests.SHETests
     Crypto.Lol.Applications.Tests.Default
+    Crypto.Lol.Applications.Benchmarks.KHPRFBenches
     Crypto.Lol.Applications.Benchmarks.SHEBenches
     Crypto.Lol.Applications.Benchmarks.Default
     Crypto.Lol.Applications.Examples.KHPRF
@@ -75,6 +76,7 @@ library
   build-depends:
     base >= 4.9 && < 4.10,
     containers < 0.6,
+    criterion >= 1.1.4.0,
     crypto-api < 0.14,
     deepseq >= 1.4.1.1 && < 1.5,
     DRBG < 0.6,
