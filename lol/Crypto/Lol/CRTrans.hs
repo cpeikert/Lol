@@ -14,6 +14,7 @@ Classes and helper methods for the Chinese remainder transform
 and ring extensions.
 -}
 
+{-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -23,7 +24,7 @@ and ring extensions.
 {-# LANGUAGE TypeFamilies          #-}
 
 module Crypto.Lol.CRTrans
-( CRTrans(..), CRTEmbed(..)
+( CRTrans'(..), CRTrans, CRTEmbed(..)
 , CRTInfo
 ) where
 
@@ -31,6 +32,7 @@ import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 
 import Control.Arrow
+import Control.Monad.Identity
 
 -- | Information that characterizes the (invertible) Chinese remainder
 -- transformation over a ring \(R\) (represented by the type @r@), namely:
@@ -43,6 +45,9 @@ import Control.Arrow
 
 type CRTInfo r = (Int -> r, r)
 
+-- | Convenient constraint synonym
+type CRTrans mon r = (CRTrans' r, mon ~ CRTMonad r)
+
 -- | A ring that (possibly) supports invertible Chinese remainder
 -- transformations of various indices.
 
@@ -51,12 +56,13 @@ type CRTInfo r = (Int -> r, r)
 -- \(m\)th, \(m'\)th roots of unity where \(m\) divides \(m'\), then
 -- it should be the case that \(\omega_{m'}^{m'/m}=\omega_m\).
 
-class (Monad mon, Ring r) => CRTrans mon r where
+class (Monad (CRTMonad r), Ring r) => CRTrans' r where
+  type CRTMonad r :: * -> *
 
   -- | 'CRTInfo' for a given index \(m\). The method itself may be
   -- slow, but the function it returns should be fast, e.g., via
   -- internal memoization.
-  crtInfo :: Reflects m Int => TaggedT m mon (CRTInfo r)
+  crtInfo :: Reflects m Int => TaggedT m (CRTMonad r) (CRTInfo r)
 
 -- | A ring with a ring embedding into some ring @'CRTExt' r@ that has
 -- an invertible CRT transformation for /every/ positive index \(m\).
@@ -69,7 +75,10 @@ class (Ring r, Ring (CRTExt r)) => CRTEmbed r where
   fromExt :: CRTExt r -> r
 
 -- | Product ring
-instance (CRTrans mon a, CRTrans mon b) => CRTrans mon (a,b) where
+instance (CRTrans' a, CRTrans' b, CRTMonad a ~ CRTMonad b)
+  => CRTrans' (a,b) where
+  type CRTMonad (a,b) = CRTMonad a
+
   crtInfo = do
     (fa, inva) <- crtInfo
     (fb, invb) <- crtInfo
@@ -82,11 +91,12 @@ instance (CRTEmbed a, CRTEmbed b) => CRTEmbed (a,b) where
   fromExt = fromExt *** fromExt
 
 -- | Complex numbers have 'CRTrans' for any index \(m\)
-instance (Monad mon, Transcendental a) => CRTrans mon (Complex a) where
+instance (Transcendental a) => CRTrans' (Complex a) where
+  type CRTMonad (Complex a) = Identity
   crtInfo = crtInfoC
 
-crtInfoC :: forall mon m a . (Monad mon, Reflects m Int, Transcendental a)
-            => TaggedT m mon (CRTInfo (Complex a))
+crtInfoC :: forall m a . (Reflects m Int, Transcendental a)
+            => Tagged m (CRTInfo (Complex a))
 crtInfoC = let mval = proxy value (Proxy::Proxy m)
                mhat = valueHat mval
            in return (omegaPowC mval, recip $ fromIntegral mhat)
@@ -101,13 +111,25 @@ instance (Transcendental a) => CRTEmbed (Complex a) where
   fromExt = id
 
 -- | Returns 'Nothing'
-instance CRTrans Maybe Double where crtInfo = tagT Nothing
+instance CRTrans' Double where
+  type CRTMonad Double = Maybe
+  crtInfo = tagT Nothing
+
 -- | Returns 'Nothing'
-instance CRTrans Maybe Int where crtInfo = tagT Nothing
+instance CRTrans' Int where
+  type CRTMonad Int = Maybe
+  crtInfo = tagT Nothing
+
 -- | Returns 'Nothing'
-instance CRTrans Maybe Int64 where crtInfo = tagT Nothing
+instance CRTrans' Int64 where
+  type CRTMonad Int64 = Maybe
+  crtInfo = tagT Nothing
+
 -- | Returns 'Nothing'
-instance CRTrans Maybe Integer where crtInfo = tagT Nothing
+instance CRTrans' Integer where
+  type CRTMonad Integer = Maybe
+  crtInfo = tagT Nothing
+
 -- can also do for Int8, Int16, Int32 etc.
 
 -- | Embeds into the complex numbers \(\C\).

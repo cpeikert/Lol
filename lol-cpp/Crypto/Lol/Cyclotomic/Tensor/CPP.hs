@@ -39,7 +39,6 @@ import Algebra.Ring         as Ring (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 
 import Control.Applicative    hiding ((*>))
-import Control.Arrow          ((***))
 import Control.DeepSeq
 import Control.Monad.Except
 import Control.Monad.Identity (Identity (..), runIdentity)
@@ -71,12 +70,13 @@ import Crypto.Lol.GaussRandom
 import Crypto.Lol.Prelude                         as LP hiding (replicate,
                                                          unzip, zip)
 import Crypto.Lol.Reflects
-import Crypto.Lol.Tests
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IFunctor
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Unsafe.ZqBasic
+import Crypto.Lol.Utils.ShowType
+import Crypto.Lol.Utils.Tests
 
 import Data.Foldable as F
 
@@ -351,6 +351,10 @@ instance Tensor CT Double where
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 
+instance TensorCRT CT Double where
+  crtFuncs    = Nothing
+  crtExtFuncs = Nothing
+
 instance TensorGSqNorm CT Double where
   gSqNormDec (CT v) = untag gSqNormDecDouble v
   gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
@@ -389,6 +393,10 @@ instance Tensor CT Int64 where
   {-# INLINABLE embedDec #-}
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
+
+instance TensorCRT CT Int64 where
+  crtFuncs    = Nothing
+  crtExtFuncs = Nothing
 
 instance TensorGSqNorm CT Int64 where
   gSqNormDec (CT v) = untag gSqNormDecInt64 v
@@ -542,15 +550,14 @@ cZipDispatch f = do -- in Tagged m
 cDispatchGaussianDouble :: forall m var rnd . (Fact m, ToRational var, MonadRandom rnd)
   => var -> rnd (CT' m Double)
 cDispatchGaussianDouble var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
-  -- get rus for (Complex r)
   -- takes ru (not ruInv) to match RT
-  ruinv' <- mapTaggedT (return . fromMaybe (error "complexGaussianRoots")) ru
+  ru' <- mapTaggedT (return . runIdentity) ru
   totm <- pureT totientFact
   mval <- pureT valueFact
   rad <- pureT radicalFact
   yin <- T.lift $ realGaussians (var * fromIntegral (mval `div` rad)) totm
   return $ unsafePerformIO $
-    withPtrArray ruinv' (\ruptr -> withBasicArgs (dgaussdecDouble ruptr) (CT' yin))
+    withPtrArray ru' (\ruptr -> withBasicArgs (dgaussdecDouble ruptr) (CT' yin))
 
 ---------- Misc instances and arithmetic ----------
 

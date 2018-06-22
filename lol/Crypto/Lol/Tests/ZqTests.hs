@@ -12,9 +12,9 @@ Tests for modular arithmetic.
 -}
 
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoImplicitPrelude     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
@@ -31,9 +31,9 @@ module Crypto.Lol.Tests.ZqTests (zqTests) where
 import Crypto.Lol
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Utils.ShowType
-import Crypto.Lol.Utils.Tests (chooseAny, testGroup, testWithGen, Gen, Test)
+import Crypto.Lol.Utils.Tests    (Gen, Test, chooseAny, testGroup,
+                                  testWithGen)
 
-import Control.Applicative
 import Control.Monad.Random
 
 -- | Tests for modular arithmetic implementations.
