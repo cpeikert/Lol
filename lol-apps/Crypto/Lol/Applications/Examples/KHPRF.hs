@@ -20,7 +20,7 @@ import Crypto.Lol hiding (replicate)
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Types
 
-type Top = 'Intern ('Intern 'Leaf 'Leaf) 'Leaf
+type SimpleTop = 'Intern ('Intern 'Leaf 'Leaf) 'Leaf
 type N = 16
 type Q = 256
 type P = 2
@@ -32,6 +32,6 @@ khprfMain :: IO ()
 khprfMain = do
   key    <- genKey
   params :: PRFParams N Gad Rq <- genParams
-  let result :: [Matrix Rp] = run (Proxy :: Proxy Top) params $
+  let result :: [Matrix Rp] = run (sing :: STop SimpleTop) params $
                               sequence $ prf key <$> values
   print result

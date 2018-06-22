@@ -11,10 +11,10 @@ Portability : POSIX
 Key-homomorphic PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [BP14]>.
 -}
 
+{-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
 {-# LANGUAGE FlexibleContexts     #-}
 {-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE KindSignatures       #-}
 {-# LANGUAGE GADTs                #-}
 {-# LANGUAGE NoImplicitPrelude    #-}
 {-# LANGUAGE PolyKinds            #-}
@@ -26,8 +26,8 @@ Key-homomorphic PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [B
 {-# LANGUAGE UndecidableInstances #-}
 
 module Crypto.Lol.Applications.KeyHomomorphicPRF
-( FBTTop(..), SFBTTop(..), SizeFBTTop, FBT
-, PRFKey, PRFParams
+( Top(..), STop, SizeTop, TopC, sing
+, FBT, PRFKey, PRFParams
 , prf, genKey, genParams, run, runT
 , Vector, BitString
 , replicate, replicateS, fromList, fromListS, split, splitS
@@ -51,13 +51,16 @@ singletons [d|
 
         -- | Topology of a full binary tree (promoted to the type
         -- level by data kinds)
-        data FBTTop = Leaf | Intern FBTTop FBTTop
+        data Top = Leaf | Intern Top Top
 
         -- promote to type family for getting number of leaves
-        sizeFBTTop :: FBTTop -> Pos
-        sizeFBTTop Leaf = O
-        sizeFBTTop (Intern l r) = (sizeFBTTop l) `addPos` (sizeFBTTop r)
+        sizeTop :: Top -> Pos
+        sizeTop Leaf = O
+        sizeTop (Intern l r) = (sizeTop l) `addPos` (sizeTop r)
              |]
+
+-- | Kind-restricted type synonym for 'SingI'
+type TopC (t :: Top) = SingI t
 
 -- | A full binary tree of topology @t@, which at each node stores a
 -- bit string \( x \) of appropriate length (equal to the number of
@@ -79,7 +82,7 @@ data PRFParams n gad a = Params (Matrix a) (Matrix a)
 
 -- | A 'BitString' together with a 'Matrix.T'
 data BitStringMatrix t a
-  = BSM { bsmBitString :: BitString (SizeFBTTop t), bsmMatrix :: Matrix a }
+  = BSM { bsmBitString :: BitString (SizeTop t), bsmMatrix :: Matrix a }
 
 -- | The value stored at the root of a full binary tree.
 root :: FBT t n gad a -> BitStringMatrix t a
@@ -94,16 +97,16 @@ subtrees (I _ l r) = (l, r)
 -- 'FBT' from a previous call, to amortize the computation across many
 -- inputs.
 updateFBT :: forall gad rq t n . Decompose gad rq
-  => SFBTTop t
+  => STop t
   -> PRFParams n gad rq
   -> Maybe (FBT t n gad rq)
-  -> BitString (SizeFBTTop t)
+  -> BitString (SizeTop t)
   -> FBT t n gad rq
 updateFBT s p@(Params a0 a1) fbt x = case s of
     SLeaf       -> L $ BSM x $ if head x then a1 else a0
     SIntern _ _  | isJust fbt && x == bsmBitString (root $ fromJust fbt)
                 -> fromJust fbt
-    SIntern l r -> let (xl, xr) = splitS (sSizeFBTTop l) x
+    SIntern l r -> let (xl, xr) = splitS (sSizeTop l) x
                        children = subtrees <$> fbt
                        fbtl = updateFBT l p (fst <$> children) xl
                        fbtr = updateFBT r p (snd <$> children) xr
@@ -139,10 +142,10 @@ genKey = fmap Key $ randomMtx 1 $ proxy value (Proxy :: Proxy n)
 -- 'PRFParams' public parameters and to keep an 'FBT' as state for
 -- efficient amortization across calls.
 prf :: forall t n gad rq rp m .
-  (Rescale rq rp, Decompose gad rq, SingI t,
+  (Rescale rq rp, Decompose gad rq, TopC t,
    MonadState (FBT t n gad rq) m, MonadReader (PRFParams n gad rq) m)
   => PRFKey n rq                -- | secret key
-  -> BitString (SizeFBTTop t)   -- | input \( x \)
+  -> BitString (SizeTop t)   -- | input \( x \)
   -> m (Matrix rp)              -- | PRF output
 prf s x = do
   p <- ask
@@ -153,7 +156,7 @@ prf s x = do
 -- | Run a PRF computation with some public parameters.
 -- E.g.: @run top params (prf key x)@
 run :: Decompose gad rq
-  => SFBTTop t                     -- | singleton for tree topology
+  => STop t                     -- | singleton for tree topology
   -> PRFParams n gad rq            -- | public parameters
   -> StateT (FBT t n gad rq) (Reader (PRFParams n gad rq)) a
                                    -- | prf computation
@@ -162,13 +165,13 @@ run pt p = runIdentity . runT pt p
 
 -- | More general (monad transformer) version of 'run'.
 runT :: (Decompose gad rq, Monad m)
-  => SFBTTop t
+  => STop t
   -> PRFParams n gad rq
   -> StateT (FBT t n gad rq) (ReaderT (PRFParams n gad rq) m) a
   -> m a
 runT s p = flip runReaderT p .
            (flip evalStateT $ updateFBT s p Nothing
-                             (replicateS (sSizeFBTTop s) False))
+                             (replicateS (sSizeTop s) False))
 
 -- | Type-safe sized vector from blog post "Part 1: Dependent Types in
 -- Haskell"
