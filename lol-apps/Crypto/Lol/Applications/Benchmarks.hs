@@ -13,11 +13,11 @@ benchmarks for HomomPRF are included in the example.
 -}
 
 module Crypto.Lol.Applications.Benchmarks
-(
--- * Default benchmarks and parameters
- module Crypto.Lol.Applications.Benchmarks.Default
--- * Benchmarks for various types of functions in SymmSHE
-,module Crypto.Lol.Applications.Benchmarks.SHEBenches) where
+( module Crypto.Lol.Applications.Benchmarks.Default
+, module Crypto.Lol.Applications.Benchmarks.SHEBenches
+, module Crypto.Lol.Applications.Benchmarks.KHPRFBenches
+) where
 
 import Crypto.Lol.Applications.Benchmarks.Default
 import Crypto.Lol.Applications.Benchmarks.SHEBenches
+import Crypto.Lol.Applications.Benchmarks.KHPRFBenches
