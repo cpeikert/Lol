@@ -180,8 +180,7 @@ prfState :: (Rescale rq rp, Decompose gad rq)
 prfState t p s x = let st = updateState t (Left p) x in (prfCore s st, st)
 
 -- | Amortized PRF computation for a given secret key and input. The
--- output is in a monadic context that needs to be able to read
--- 'PRFParams' public parameters and to keep 'PRFState' state for
+-- output is in a monadic context that keeps a 'PRFState' state for
 -- efficient amortization across calls.
 prfAmortized :: forall t n gad rq rp m .
   (Rescale rq rp, Decompose gad rq, FBTC t,
