@@ -18,6 +18,7 @@ Key-homomorphic PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [B
 {-# LANGUAGE GADTs                #-}
 {-# LANGUAGE NoImplicitPrelude    #-}
 {-# LANGUAGE PolyKinds            #-}
+{-# LANGUAGE RecordWildCards      #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE StandaloneDeriving   #-}
 {-# LANGUAGE TemplateHaskell      #-}
@@ -26,17 +27,16 @@ Key-homomorphic PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [B
 {-# LANGUAGE UndecidableInstances #-}
 
 module Crypto.Lol.Applications.KeyHomomorphicPRF
-( Top(..), STop, SizeTop, TopC, sing
-, FBT, PRFKey, PRFParams
-, prf, genKey, genParams, run, runT
+( FBT(..), SFBT, SizeFBT, FBTC, singFBT
+, PRFKey, PRFParams, PRFState
+, genKey, genParams, prf, prfState, prfAmortized, run, runT
 , Vector, BitString
 , replicate, replicateS, fromList, fromListS, split, splitS
 ) where
 
-import Control.Applicative ((<$>))
+import Control.Applicative ((<$>),(<*>))
 import Control.Monad.Random hiding (fromList, split)
 import Control.Monad.State
-import Control.Monad.Reader
 import Control.Monad.Identity
 
 import Crypto.Lol hiding (replicate, head)
@@ -49,75 +49,35 @@ import qualified MathObj.Matrix as M
 
 singletons [d|
 
-        -- | Topology of a full binary tree (promoted to the type
-        -- level by data kinds)
-        data Top = Leaf | Intern Top Top
+        -- | A full binary tree (promoted to the type level by data
+        -- kinds, and singleton-ized): each node is either a leaf or
+        -- has two children.
+        data FBT = Leaf | Intern FBT FBT
 
         -- promote to type family for getting number of leaves
-        sizeTop :: Top -> Pos
-        sizeTop Leaf = O
-        sizeTop (Intern l r) = (sizeTop l) `addPos` (sizeTop r)
+        sizeFBT :: FBT -> Pos
+        sizeFBT Leaf = O
+        sizeFBT (Intern l r) = (sizeFBT l) `addPos` (sizeFBT r)
              |]
 
 -- | Kind-restricted type synonym for 'SingI'
-type TopC (t :: Top) = SingI t
+type FBTC (t :: FBT) = SingI t
 
--- | A full binary tree of topology @t@, which at each node stores a
--- bit string \( x \) of appropriate length (equal to the number of
--- leaves in the subtree rooted at the node) and a matrix having @n@
--- rows over ring @r@; the matrix is \( A_T(x) \) for the gadget
--- indicated by @gad@.
-data FBT t n gad a where
-  L :: BitStringMatrix 'Leaf a
-    -> FBT 'Leaf n gad a
-  I :: BitStringMatrix ('Intern l r) a -> FBT l n gad a -> FBT r n gad a
-    -> FBT ('Intern l r) n gad a
+-- | Kind-restricted synonym for 'sing'
+singFBT :: FBTC t => SFBT t
+singFBT = sing
 
 -- | A PRF secret key of dimension @n@ over ring @a@.
-newtype PRFKey n a = Key { unKey :: Matrix a }
+newtype PRFKey n a = Key { key :: Matrix a }
+
+-- | Generate an @n@-dimensional secret key over @rq@.
+genKey :: forall rq rnd n . (MonadRandom rnd, Random rq, Reflects n Int)
+       => rnd (PRFKey n rq)
+genKey = fmap Key $ randomMtx 1 $ proxy value (Proxy :: Proxy n)
 
 -- | PRF public parameters for an @n@-dimension secret key over @a@,
 -- using a gadget indicated by @gad@.
-data PRFParams n gad a = Params (Matrix a) (Matrix a)
-
--- | A 'BitString' together with a 'Matrix.T'
-data BitStringMatrix t a
-  = BSM { bsmBitString :: BitString (SizeTop t), bsmMatrix :: Matrix a }
-
--- | The value stored at the root of a full binary tree.
-root :: FBT t n gad a -> BitStringMatrix t a
-root (L a)     = a
-root (I a _ _) = a
-
-subtrees :: FBT ('Intern l r) n gad a -> (FBT l n gad a, FBT r n gad a)
-subtrees (I _ l r) = (l, r)
-
--- | Compute \( \mathbf{A}_T(x) \) from Definition 2.1 of [BP14],
--- given public parameters, the input \( x \), and (optionally) an
--- 'FBT' from a previous call, to amortize the computation across many
--- inputs.
-updateFBT :: forall gad rq t n . Decompose gad rq
-  => STop t
-  -> PRFParams n gad rq
-  -> Maybe (FBT t n gad rq)
-  -> BitString (SizeTop t)
-  -> FBT t n gad rq
-updateFBT s p@(Params a0 a1) fbt x = case s of
-    SLeaf       -> L $ BSM x $ if head x then a1 else a0
-    SIntern _ _  | isJust fbt && x == bsmBitString (root $ fromJust fbt)
-                -> fromJust fbt
-    SIntern l r -> let (xl, xr) = splitS (sSizeTop l) x
-                       children = subtrees <$> fbt
-                       fbtl = updateFBT l p (fst <$> children) xl
-                       fbtr = updateFBT r p (snd <$> children) xr
-                       al = bsmMatrix $ root fbtl
-                       ar = bsmMatrix $ root fbtr
-                       ar' = reduce <$> proxy (decomposeMatrix ar) (Proxy :: Proxy gad)
-                   in  I (BSM x (al*ar')) fbtl fbtr
-
--- | A random matrix having a given number of rows and columns.
-randomMtx :: (MonadRandom rnd, Random a) => Int -> Int -> rnd (Matrix a)
-randomMtx r c = M.fromList r c <$> replicateM (r*c) getRandom
+data PRFParams n gad a = Params { a0 :: (Matrix a), a1 :: (Matrix a) }
 
 -- | Generate public parameters (\( \mathbf{A}_0 \) and \(
 -- \mathbf{A}_1 \)) for @n@-dimensional secret keys over a ring @rq@
@@ -127,54 +87,132 @@ genParams :: forall gad rq rnd n .
           => rnd (PRFParams n gad rq)
 genParams = let len = length $ untag (gadget :: Tagged gad [rq])
                 n   = proxy value (Proxy :: Proxy n)
-            in do
-                a0 <- randomMtx n $ n * len
-                a1 <- randomMtx n $ n * len
-                return $ Params a0 a1
+            in Params <$> (randomMtx n (n*len)) <*> (randomMtx n (n*len))
 
--- | Generate an @n@-dimensional secret key over @rq@.
-genKey :: forall rq rnd n . (MonadRandom rnd, Random rq, Reflects n Int)
-       => rnd (PRFKey n rq)
-genKey = fmap Key $ randomMtx 1 $ proxy value (Proxy :: Proxy n)
+-- | A random matrix having a given number of rows and columns.
+randomMtx :: (MonadRandom rnd, Random a) => Int -> Int -> rnd (Matrix a)
+randomMtx r c = M.fromList r c <$> replicateM (r*c) getRandom
 
--- | Given a secret key and a PRF input, compute the PRF output. The
--- output is in a monadic context that needs to be able to access
--- 'PRFParams' public parameters and to keep an 'FBT' as state for
+-- | PRF state for tree topology @t@ with key length @n@ over @a@,
+-- using gadget indicated by @gad@.
+data PRFState t n gad rq = PRFState { params :: PRFParams   n gad rq
+                                    , state' :: PRFState' t n gad rq }
+
+data PRFState' t n gad rq where
+  L :: BitStringMatrix 'Leaf rq
+    -> PRFState' 'Leaf n gad rq
+  I :: BitStringMatrix ('Intern l r) rq
+    -> PRFState' l n gad rq     -- | left child
+    -> PRFState' r n gad rq     -- | right child
+    -> PRFState' ('Intern l r) n gad rq
+
+-- | A 'BitString' together with a 'Matrix.T'
+data BitStringMatrix t a
+  = BSM { bitString :: BitString (SizeFBT t), matrix :: Matrix a }
+
+root'  :: PRFState'             t n gad a -> BitStringMatrix t a
+left'  :: PRFState' ('Intern l r) n gad a -> PRFState' l n gad a
+right' :: PRFState' ('Intern l r) n gad a -> PRFState' r n gad a
+
+root'  (L a)     = a
+root'  (I a _ _) = a
+left'  (I _ l _) = l
+right' (I _ _ r) = r
+
+root :: PRFState             t n gad a -> BitStringMatrix t a
+root = root' . state'
+
+-- | Compute PRF state for a given tree and input, which includes \(
+-- \mathbf{A}_T(x) \) and all intermediate values (see Definition 2.1
+-- of [BP14]).
+updateState' :: forall gad rq t n . Decompose gad rq
+  => SFBT t                     -- | singleton for the tree \( T \) 
+  -> PRFParams n gad rq
+  -> Maybe (PRFState' t n gad rq)
+  -> BitString (SizeFBT t)      -- | input \( x \)
+  -> PRFState' t n gad rq
+updateState' t p st x = case t of
+  SLeaf       -> L $ BSM x $ if head x then a1 p else a0 p
+  SIntern _ _  | fromMaybe False (((x ==) . bitString . root') <$> st)
+                 -> fromJust st
+  SIntern l r -> let (xl, xr) = splitS (sSizeFBT l) x
+                     stl = updateState' l p (left'  <$> st) xl
+                     str = updateState' r p (right' <$> st) xr
+                     al   = matrix $ root' stl
+                     ar   = matrix $ root' str
+                     ar'  = reduce <$> proxy (decomposeMatrix ar) (Proxy :: Proxy gad)
+                 in I (BSM x (al*ar')) stl str
+
+updateState :: Decompose gad rq
+  => SFBT t
+  -> Either (PRFParams n gad rq) (PRFState t n gad rq)
+  -> BitString (SizeFBT t)
+  -> PRFState t n gad rq
+updateState t e x =
+  let p = either id params e
+      st' = case e of           -- using fromRight gives weird error
+        (Left  _)  -> Nothing
+        (Right st) -> Just $ state' st
+  in PRFState p $ updateState' t p st' x
+
+-- | Compute \( \lfloor s \cdot \mathbf{A}_T \rceil_p \), where \(
+-- \mathbf{A}_T(x) \) comes from the given state.
+prfCore :: (Ring rq, Rescale rq rp)
+  => PRFKey n rq -> PRFState t n gad rq -> Matrix rp
+prfCore s st = rescale <$> (key s) * matrix (root st)
+
+-- | "Fresh" PRF computation, with no precomputed 'PRFState'.
+prf :: (Rescale rq rp, Decompose gad rq)
+  => SFBT t                     -- | singleton for the tree \( T \)
+  -> PRFParams n gad rq         -- | public parameters
+  -> PRFKey n rq                -- | secret key \( s \)
+  -> BitString (SizeFBT t)      -- | input \( x \)
+  -> Matrix rp
+prf = (fmap . fmap . fmap) fst . prfState
+
+-- | "Fresh" PRF computation that also outputs the resulting 'PRFState'.
+prfState :: (Rescale rq rp, Decompose gad rq)
+  => SFBT t                     -- | singleton for the tree \( T \)
+  -> PRFParams n gad rq         -- | public parameters
+  -> PRFKey n rq                -- | secret key \( s \)
+  -> BitString (SizeFBT t)      -- | input \( x \)
+  -> (Matrix rp, PRFState t n gad rq)
+prfState t p s x = let st = updateState t (Left p) x in (prfCore s st, st)
+
+-- | Amortized PRF computation for a given secret key and input. The
+-- output is in a monadic context that needs to be able to read
+-- 'PRFParams' public parameters and to keep 'PRFState' state for
 -- efficient amortization across calls.
-prf :: forall t n gad rq rp m .
-  (Rescale rq rp, Decompose gad rq, TopC t,
-   MonadState (FBT t n gad rq) m, MonadReader (PRFParams n gad rq) m)
+prfAmortized :: forall t n gad rq rp m .
+  (Rescale rq rp, Decompose gad rq, FBTC t,
+   MonadState (PRFState t n gad rq) m)
   => PRFKey n rq                -- | secret key
-  -> BitString (SizeTop t)   -- | input \( x \)
+  -> BitString (SizeFBT t)      -- | input \( x \)
   -> m (Matrix rp)              -- | PRF output
-prf s x = do
-  p <- ask
-  modify (\fbt -> updateFBT (sing :: Sing t) p (Just fbt) x)
+prfAmortized s x = do
+  modify (\fbt -> updateState (sing :: Sing t) (Right fbt) x)
   fbt <- get
-  return $ let at = bsmMatrix $ root fbt in rescale <$> (unKey s) * at
+  return $ prfCore s fbt
 
 -- | Run a PRF computation with some public parameters.
 -- E.g.: @run top params (prf key x)@
 run :: Decompose gad rq
-  => STop t                     -- | singleton for tree topology
+  => SFBT t                        -- | singleton for tree topology
   -> PRFParams n gad rq            -- | public parameters
-  -> StateT (FBT t n gad rq) (Reader (PRFParams n gad rq)) a
-                                   -- | prf computation
+  -> State (PRFState t n gad rq) a -- | prf computation
   -> a
 run pt p = runIdentity . runT pt p
 
 -- | More general (monad transformer) version of 'run'.
 runT :: (Decompose gad rq, Monad m)
-  => STop t
+  => SFBT t
   -> PRFParams n gad rq
-  -> StateT (FBT t n gad rq) (ReaderT (PRFParams n gad rq) m) a
+  -> StateT (PRFState t n gad rq) m a
   -> m a
-runT s p = flip runReaderT p .
-           (flip evalStateT $ updateFBT s p Nothing
-                             (replicateS (sSizeTop s) False))
+runT t p = flip evalStateT $
+  updateState t (Left p) (replicateS (sSizeFBT t) False)
 
--- | Type-safe sized vector from blog post "Part 1: Dependent Types in
--- Haskell"
+-- | Canonical type-safe sized vector
 data Vector n a where
   Lone :: a               -> Vector 'O a
   (:-) :: a -> Vector n a -> Vector ('S n) a
@@ -227,9 +265,9 @@ split = splitS (sing :: Sing m)
 
 -- | Alternative form of 'split'
 splitS :: SPos m -> Vector (m `AddPos` n) a -> (Vector m a, Vector n a)
-splitS s (h :- t) = case s of
-  SO   -> (Lone h, t)
-  SS k -> let (b, e) = splitS k t in (h :- b, e)
+splitS m (h :- t) = case m of
+  SO    -> (Lone h, t)
+  SS m' -> let (b, e) = splitS m' t in (h :- b, e)
 splitS _ (Lone _) = error "splitS: internal error; can't split a Lone"
 
 -- | Create a 'Vector' full of given value
@@ -238,24 +276,22 @@ replicate = replicateS (sing :: Sing n)
 
 -- | Alternative form of 'replicate'
 replicateS :: SPos n -> a -> Vector n a
-replicateS s a = case s of
-  SO   -> Lone a
-  SS k -> a :- replicateS k a
+replicateS n a = case n of
+  SO    -> Lone a
+  SS n' -> a :- replicateS n' a
 
 -- | Convert a list to a 'Vector', return 'Nothing' if lengths don't match
 fromList :: forall n a . PosC n => [a] -> Maybe (Vector n a)
 fromList = fromListS (sing :: Sing n)
 
 fromListS :: SPos n -> [a] -> Maybe (Vector n a)
-fromListS s xs = case s of
-  SO   -> case xs of
-            (x:[])   -> Just (Lone x)
-            _        -> Nothing
-  SS k -> case xs of
-            (x:rest) -> (:-) x <$> fromListS k rest
-            _        -> Nothing
-
-
+fromListS n xs = case n of
+  SO    -> case xs of
+             (x:[])   -> Just (Lone x)
+             _        -> Nothing
+  SS n' -> case xs of
+             (x:rest) -> (:-) x <$> fromListS n' rest
+             _        -> Nothing
 
 sPosToInt :: SPos n -> Int
 sPosToInt SO     = 1
@@ -266,9 +302,8 @@ sPosToInt (SS a) = 1 + sPosToInt a
 Note: Making 'Vector' an instance of 'Additive.C'
 Option 1: Two separate instances for Vector `O Bool and Vector (`S n) Bool
     Recursive instance requires recursive restraint
-    Use of `zero` would require extra 'Additive.C' constraint in 'defaultFBT'
+    Can't always match on these instances if we only know that n :: Pos
 Option 2: One instance, using singletons and 'case' to distinguish
     Ugly syntax
     Didn't implement (functionality replaced by 'replicate')
-    May need to do something similar for 'Enum' if it causes errors
 -}
