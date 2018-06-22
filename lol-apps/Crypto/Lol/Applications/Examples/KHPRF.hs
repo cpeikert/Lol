@@ -32,6 +32,7 @@ khprfMain :: IO ()
 khprfMain = do
   key    <- genKey
   params :: PRFParams N Gad Rq <- genParams
-  let result :: [Matrix Rp] = run (singFBT :: SFBT SimpleTop) params $
-                              sequence $ prfAmortized key <$> values
+  let t = singFBT :: SFBT SimpleTop
+  let result :: [Matrix Rp] = run t params $
+                              sequence $ prfAmortized t key <$> values
   print result
