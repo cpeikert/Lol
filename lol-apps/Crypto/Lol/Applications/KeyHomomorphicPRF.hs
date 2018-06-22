@@ -182,25 +182,30 @@ prfState t p s x = let st = updateState t (Left p) x in (prfCore s st, st)
 -- | Amortized PRF computation for a given secret key and input. The
 -- output is in a monadic context that keeps a 'PRFState' state for
 -- efficient amortization across calls.
-prfAmortized :: forall t n gad rq rp m .
-  (Rescale rq rp, Decompose gad rq, FBTC t,
-   MonadState (PRFState t n gad rq) m)
-  => PRFKey n rq                -- | secret key
+prfAmortized ::
+  (Rescale rq rp, Decompose gad rq, MonadState (PRFState t n gad rq) m)
+  => SFBT t
+  -> PRFKey n rq                -- | secret key \( s \)
   -> BitString (SizeFBT t)      -- | input \( x \)
   -> m (Matrix rp)              -- | PRF output
-prfAmortized s x = do
-  modify (\fbt -> updateState (sing :: Sing t) (Right fbt) x)
+prfAmortized t s x = do
+  modify (\fbt -> updateState t (Right fbt) x)
   fbt <- get
   return $ prfCore s fbt
 
+-- CJP TODO: try to find a way for run/runT not to require the SFBT t
+-- argument, because it's already been provided in prfAmortized. This
+-- will likely require moving from State to a more customized monad
+-- that supports a default state.
+
 -- | Run a PRF computation with some public parameters.
 -- E.g.: @run top params (prf key x)@
-run :: Decompose gad rq
-  => SFBT t                        -- | singleton for tree topology
+run :: (Decompose gad rq)
+  => SFBT t                        -- | singleton for the tree \( T \)
   -> PRFParams n gad rq            -- | public parameters
   -> State (PRFState t n gad rq) a -- | prf computation
   -> a
-run pt p = runIdentity . runT pt p
+run = (fmap . fmap) runIdentity . runT
 
 -- | More general (monad transformer) version of 'run'.
 runT :: (Decompose gad rq, Monad m)
@@ -209,7 +214,7 @@ runT :: (Decompose gad rq, Monad m)
   -> StateT (PRFState t n gad rq) m a
   -> m a
 runT t p = flip evalStateT $
-  updateState t (Left p) (replicateS (sSizeFBT t) False)
+           updateState t (Left p) (replicateS (sSizeFBT t) False)
 
 -- | Canonical type-safe sized vector
 data Vector n a where

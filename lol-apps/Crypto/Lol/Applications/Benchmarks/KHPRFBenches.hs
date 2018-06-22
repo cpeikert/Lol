@@ -1,10 +1,10 @@
 {-|
 Module      : Crypto.Lol.Applications.Benchmarks.KHPRFBenches
 Description : Benchmarks for KeyHomomorphicPRF.
-Copyright   : (c) Eric Crockett, 2011-2017
-                  Chris Peikert, 2011-2017
+Copyright   : (c) Bogdan Manga, 2018
+                  Chris Peikert, 2018
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : bmanga@umich.edu
 Stability   : experimental
 Portability : POSIX
 
@@ -30,7 +30,7 @@ import Control.Monad.Random hiding (fromList, split)
 
 import Criterion.Main
 
-type N = 16
+type N = 2
 type Q = 256
 type P = 2
 type Rq = ZqBasic Q Int64
@@ -57,23 +57,26 @@ khprfBenches :: MonadRandom rnd => rnd Benchmark
 khprfBenches = do
   key <- genKey
   params :: PRFParams N Gad Rq <- genParams
-  let pl = sing :: Sing LeftTop
-  let pc = sing :: Sing CompleteTop
-  let pr = sing :: Sing RightTop
+  let pl = singFBT :: Sing LeftTop
+  let pc = singFBT :: Sing CompleteTop
+  let pr = singFBT :: Sing RightTop
+  let x  = replicate False
   return $ bgroup "KHPRF Benchmarks"
-    [ bench "left-startup"       $ prfPureBench pl params key [replicate False]
-    , bench "left-amortized"     $ prfPureBench pl params key values
-    , bench "complete-startup"   $ prfPureBench pc params key [replicate False]
-    , bench "complete-amortized" $ prfPureBench pc params key values
-    , bench "right-startup"      $ prfPureBench pr params key [replicate False]
-    , bench "right-amortized"    $ prfPureBench pr params key values ]
+    [ bench "left-solo"          $ prfBench          pl params key x
+    , bench "complete-solo"      $ prfBench          pc params key x
+    , bench "right-solo"         $ prfBench          pr params key x
+    , bench "left-amortized"     $ prfAmortizedBench pl params key values
+    , bench "complete-amortized" $ prfAmortizedBench pc params key values
+    , bench "right-amortized"    $ prfAmortizedBench pr params key values
+    ]
 
-prfPureBench :: (TopC t, Rescale rq Rp, Decompose gad rq)
-  => STop t -> PRFParams n gad rq -> PRFKey n rq
-  -> [BitString (SizeTop t)] -> Benchmarkable
-prfPureBench s params key xs = nf (run s params :: _ -> [Matrix Rp])
-                                  (sequence $ prf key <$> xs)
+prfBench :: (Rescale rq Rp, Decompose gad rq, FBTC t)
+  => SFBT t -> PRFParams n gad rq -> PRFKey n rq -> BitString (SizeFBT t)
+  -> Benchmarkable
+prfBench t p s x = nf (prf t p s :: _ -> Matrix Rp) x
 
-
--- CONSIDER benchmarking both Gray code enumeration and `normal`
--- enumeration for comparison purposes.
+prfAmortizedBench :: (Rescale rq Rp, Decompose gad rq)
+  => SFBT t -> PRFParams n gad rq -> PRFKey n rq -> [BitString (SizeFBT t)]
+  -> Benchmarkable
+prfAmortizedBench t p s xs =
+  nf (run t p :: _ -> [Matrix Rp]) (sequence $ prfAmortized t s <$> xs)
