@@ -11,12 +11,12 @@ Portability : POSIX
 Example using KeyHomomorphicPRF.
 -}
 
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Crypto.Lol.Applications.Examples.KHPRF (khprfMain) where
 
-import Crypto.Lol hiding (replicate)
+import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Types
 
@@ -32,6 +32,6 @@ khprfMain :: IO ()
 khprfMain = do
   key    <- genKey
   params :: PRFParams N Gad Rq <- genParams
-  let result :: [Matrix Rp] = run (sing :: STop SimpleTop) params $
-                              sequence $ prf key <$> values
+  let result :: [Matrix Rp] = run (singFBT :: SFBT SimpleTop) params $
+                              sequence $ prfAmortized key <$> values
   print result
