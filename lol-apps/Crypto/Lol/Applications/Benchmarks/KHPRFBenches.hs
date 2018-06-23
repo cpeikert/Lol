@@ -19,7 +19,7 @@ Benchmarks for KeyHomomorphicPRF.
 {-# LANGUAGE ScopedTypeVariables   #-}
 
 module Crypto.Lol.Applications.Benchmarks.KHPRFBenches
-( khprfBenches, khprfBenchesMain ) where
+( khprfBenches, main ) where
 
 import Crypto.Lol hiding (replicate)
 import Crypto.Lol.Types
@@ -48,8 +48,8 @@ type CompleteTop =     -- complete and balanced
   'Intern ('Intern ('Intern 'Leaf 'Leaf) ('Intern 'Leaf 'Leaf))
           ('Intern ('Intern 'Leaf 'Leaf) ('Intern 'Leaf 'Leaf))
 
-khprfBenchesMain :: IO ()
-khprfBenchesMain = do
+main :: IO ()
+main = do
   x <- khprfBenches
   defaultMain [x]
 
