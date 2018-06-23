@@ -780,12 +780,18 @@ instance (Reduce Integer (ZqBasic q z), ForallFact1 Applicative t)
 
 -----
 
+-- | Rescales relative to the powerful basis. This instance is
+-- provided for convenience, but usage of 'RescaleCyc' is preferred.
+instance (RescaleCyc (Cyc t) a b, Fact m,
+          Additive (Cyc t m a), Additive (Cyc t m b)) -- superclasses
+ => Rescale (Cyc t m a) (Cyc t m b) where
+  rescale = rescaleCyc L.Pow
+
 -- CJP: can we avoid incoherent instances by changing instance heads
 -- and using overlapping instances with isomorphism constraints?
 
 instance {-# INCOHERENT #-} (Rescale a b, CRTElt t a, Tensor t b)
   => RescaleCyc (CycG t) a b where
-
   -- Optimized for subring constructors, for powerful basis.
   -- Analogs for decoding basis are not quite correct, because (* -1)
   -- doesn't commute with 'rescale' due to tiebreakers!
