@@ -91,7 +91,7 @@ import Control.Arrow
 import Control.DeepSeq
 -- GHC warning is wrong: https://ghc.haskell.org/trac/ghc/ticket/12067
 import Control.Monad.Identity
-import Control.Monad.Random hiding (lift)
+import Control.Monad.Random   hiding (lift)
 import Data.Coerce
 import Data.Traversable
 
@@ -504,6 +504,13 @@ unzipCyc (CRT u) = either ((cycPE *** cycPE) . unzipCRTE)
                    ((cycPC *** cycPC) . unzipCRTC) u
 unzipCyc (Scalar c) = Scalar *** Scalar $ c
 unzipCyc (Sub c) = Sub *** Sub $ unzipCyc c
+
+-- | Rescales relative to the powerful basis. This instance is
+-- provided for convenience, but usage of 'RescaleCyc' is preferred.
+instance (R.RescaleCyc (Cyc t) a b, Fact m,
+          Additive (Cyc t m a), Additive (Cyc t m b)) -- superclasses
+ => Rescale (Cyc t m a) (Cyc t m b) where
+  rescale = R.rescaleCyc R.Pow
 
 instance {-# INCOHERENT #-} (Rescale a b, CElt t a, TElt t b)
     => R.RescaleCyc (Cyc t) a b where
