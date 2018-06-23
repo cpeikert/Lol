@@ -8,7 +8,7 @@ Maintainer  : bmanga@umich.edu
 Stability   : experimental
 Portability : POSIX
 
-Example using KeyHomomorphicPRF.
+Example usage of 'Crypto.Lol.Applications.KeyHomomorphicPRF'.
 -}
 
 {-# LANGUAGE DataKinds           #-}
@@ -18,14 +18,16 @@ module Crypto.Lol.Applications.Examples.KHPRF (khprfMain) where
 
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
+import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
 type SimpleTop = 'Intern ('Intern 'Leaf 'Leaf) 'Leaf
-type N = 16
-type Q = 256
+type M = F64
+type N = 1
+type Q = 257
 type P = 2
-type Rq = ZqBasic Q Int64
-type Rp = ZqBasic P Int64
+type Rq = Cyc CT M (ZqBasic Q Int64)
+type Rp = Cyc CT M (ZqBasic P Int64)
 type Gad = BaseBGad 2
 
 khprfMain :: IO ()

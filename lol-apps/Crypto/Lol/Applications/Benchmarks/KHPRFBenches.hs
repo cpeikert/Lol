@@ -17,6 +17,7 @@ Benchmarks for KeyHomomorphicPRF.
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Crypto.Lol.Applications.Benchmarks.KHPRFBenches
 ( khprfBenches, main ) where
@@ -24,29 +25,37 @@ module Crypto.Lol.Applications.Benchmarks.KHPRFBenches
 import Crypto.Lol hiding (replicate)
 import Crypto.Lol.Types
 import Crypto.Lol.Applications.KeyHomomorphicPRF
+import Crypto.Lol.Cyclotomic.Tensor.CPP
 
 import Control.Applicative
 import Control.Monad.Random hiding (fromList, split)
 
 import Criterion.Main
 
-type N = 2
+type M = F64
+type N = 1
 type Q = 256
 type P = 2
-type Rq = ZqBasic Q Int64
-type Rp = ZqBasic P Int64
+type Rq = Cyc CT M (ZqBasic Q Int64)
+type Rp = Cyc CT M (ZqBasic P Int64)
 type Gad = BaseBGad 2
 
--- | FBT topologies with 8 leaves each
-type LeftTop =         -- left spine
-  'Intern ('Intern ('Intern ('Intern ('Intern ('Intern ('Intern
-  'Leaf 'Leaf) 'Leaf) 'Leaf) 'Leaf) 'Leaf) 'Leaf) 'Leaf
-type RightTop =        -- right spine
-  'Intern 'Leaf ('Intern 'Leaf ('Intern 'Leaf ('Intern 'Leaf (
-  'Intern 'Leaf ('Intern 'Leaf ('Intern 'Leaf 'Leaf))))))
-type CompleteTop =     -- complete and balanced
-  'Intern ('Intern ('Intern 'Leaf 'Leaf) ('Intern 'Leaf 'Leaf))
-          ('Intern ('Intern 'Leaf 'Leaf) ('Intern 'Leaf 'Leaf))
+-- | left-spine tree with the given number of leaves
+type family Left n where
+  Left 'O       = 'Leaf
+  Left ('S n')  = 'Intern (Left n') 'Leaf
+
+-- | right-spine tree with the given number of leaves
+type family Right n where
+  Right 'O      = 'Leaf
+  Right ('S n') = 'Intern 'Leaf (Right n')
+
+type Complete0 = 'Leaf
+type Complete1 = 'Intern Complete0 Complete0
+type Complete2 = 'Intern Complete1 Complete1
+type Complete3 = 'Intern Complete2 Complete2
+type Complete4 = 'Intern Complete3 Complete3
+type Complete5 = 'Intern Complete4 Complete4
 
 main :: IO ()
 main = do
@@ -57,17 +66,18 @@ khprfBenches :: MonadRandom rnd => rnd Benchmark
 khprfBenches = do
   key <- genKey
   params :: PRFParams N Gad Rq <- genParams
-  let pl = singFBT :: Sing LeftTop
-  let pc = singFBT :: Sing CompleteTop
-  let pr = singFBT :: Sing RightTop
-  let x  = replicate False
+  let sc = singFBT :: Sing Complete5
+      sl = singFBT :: Sing (Left  P32)
+      sr = singFBT :: Sing (Right P32)
+      xs = take 32 values
+      x  = head xs
   return $ bgroup "KHPRF Benchmarks"
-    [ bench "left-solo"          $ prfBench          pl params key x
-    , bench "complete-solo"      $ prfBench          pc params key x
-    , bench "right-solo"         $ prfBench          pr params key x
-    , bench "left-amortized"     $ prfAmortizedBench pl params key values
-    , bench "complete-amortized" $ prfAmortizedBench pc params key values
-    , bench "right-amortized"    $ prfAmortizedBench pr params key values
+    [ bench "complete-solo"      $ prfBench          sc params key x
+    , bench "left-solo"          $ prfBench          sl params key x
+    , bench "right-solo"         $ prfBench          sr params key x
+    , bench "complete-amortized" $ prfAmortizedBench sc params key xs
+    , bench "left-amortized"     $ prfAmortizedBench sl params key xs
+    , bench "right-amortized"    $ prfAmortizedBench sr params key xs
     ]
 
 prfBench :: (Rescale rq Rp, Decompose gad rq, FBTC t)
