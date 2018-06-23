@@ -27,6 +27,6 @@ module Crypto.Lol.PosBin
 
 import Crypto.Lol.PosBinDefs
 
-$(mapM posDec [1..16])
+$(mapM posDec [1..64])
 
 $(mapM binDec [1..128])
