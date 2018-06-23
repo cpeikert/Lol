@@ -183,38 +183,27 @@ prfState t p s x = let st = updateState t (Left p) x in (prfCore s st, st)
 -- output is in a monadic context that keeps a 'PRFState' state for
 -- efficient amortization across calls.
 prfAmortized ::
-  (Rescale rq rp, Decompose gad rq, MonadState (PRFState t n gad rq) m)
-  => SFBT t
+  (Rescale rq rp, Decompose gad rq,
+   MonadState (Maybe (PRFState t n gad rq)) m)
+  => SFBT t                     -- | singleton for the tree \( T \)
+  -> PRFParams n gad rq         -- | public parameters
   -> PRFKey n rq                -- | secret key \( s \)
   -> BitString (SizeFBT t)      -- | input \( x \)
   -> m (Matrix rp)              -- | PRF output
-prfAmortized t s x = do
-  modify (\fbt -> updateState t (Right fbt) x)
+prfAmortized t p s x = do
   fbt <- get
-  return $ prfCore s fbt
-
--- CJP TODO: try to find a way for run/runT not to require the SFBT t
--- argument, because it's already been provided in prfAmortized. This
--- will likely require moving from State to a more customized monad
--- that supports a default state.
+  let fbt' = updateState t (maybe (Left p) Right fbt) x
+  put $ Just fbt'
+  return $ prfCore s fbt'
 
 -- | Run a PRF computation with some public parameters.
 -- E.g.: @run top params (prf key x)@
-run :: (Decompose gad rq)
-  => SFBT t                        -- | singleton for the tree \( T \)
-  -> PRFParams n gad rq            -- | public parameters
-  -> State (PRFState t n gad rq) a -- | prf computation
-  -> a
-run = (fmap . fmap) runIdentity . runT
+run :: State (Maybe (PRFState t n gad rq)) a -> a
+run = runIdentity . runT
 
 -- | More general (monad transformer) version of 'run'.
-runT :: (Decompose gad rq, Monad m)
-  => SFBT t
-  -> PRFParams n gad rq
-  -> StateT (PRFState t n gad rq) m a
-  -> m a
-runT t p = flip evalStateT $
-           updateState t (Left p) (replicateS (sSizeFBT t) False)
+runT :: (Monad m) => StateT (Maybe (PRFState t n gad rq)) m a -> m a
+runT = flip evalStateT Nothing
 
 -- | Canonical type-safe sized vector
 data Vector n a where

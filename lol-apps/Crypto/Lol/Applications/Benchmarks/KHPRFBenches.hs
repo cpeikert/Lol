@@ -79,4 +79,4 @@ prfAmortizedBench :: (Rescale rq Rp, Decompose gad rq)
   => SFBT t -> PRFParams n gad rq -> PRFKey n rq -> [BitString (SizeFBT t)]
   -> Benchmarkable
 prfAmortizedBench t p s xs =
-  nf (run t p :: _ -> [Matrix Rp]) (sequence $ prfAmortized t s <$> xs)
+  nf (run :: _ -> [Matrix Rp]) (sequence $ prfAmortized t p s <$> xs)

@@ -30,9 +30,9 @@ type Gad = BaseBGad 2
 
 khprfMain :: IO ()
 khprfMain = do
-  key    <- genKey
+  key <- genKey
   params :: PRFParams N Gad Rq <- genParams
   let t = singFBT :: SFBT SimpleTop
-  let result :: [Matrix Rp] = run t params $
-                              sequence $ prfAmortized t key <$> values
+  let result :: [Matrix Rp] =
+        run $ sequence $ prfAmortized t params key <$> values
   print result
