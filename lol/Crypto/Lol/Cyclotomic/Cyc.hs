@@ -738,8 +738,7 @@ instance (Lift' (RRq q Double), Tensor t (RRq q Double), Tensor t Double)
   liftCyc L.Dec (PowRRq u) = CycDbl $ Dec $ lift $ toDec u
   liftCyc L.Pow (DecRRq u) = CycDbl $ Pow $ lift $ toPow u
 
-instance (UnCyc t (a,b), Lift (a,b) Integer, ForallFact1 Applicative t,
-          ReduceCyc t Integer (a,b))
+instance (UnCyc t (a,b), Lift (a,b) Integer, ForallFact1 Applicative t)
   => LiftCyc (Cyc t) (a,b) where
   liftCyc L.Pow = PowIgr . fmap lift . unCycPow
   liftCyc L.Dec = DecIgr . fmap lift . unCycDec
@@ -747,8 +746,7 @@ instance (UnCyc t (a,b), Lift (a,b) Integer, ForallFact1 Applicative t,
 ---------- Promoted lattice operations ----------
 
 -- | promoted from base ring
-instance (Reduce a b, CRTElt t a, CRTElt t b) 
-         => ReduceCyc (CycG t) a b where
+instance (Reduce a b, CRTElt t a, CRTElt t b) => ReduceCyc (CycG t) a b where
   reduceCyc (Pow u)    = Pow    $ reduce u
   reduceCyc (Dec u)    = Dec    $ reduce u
   reduceCyc (CRT u)    = Pow    $ reduce $ either toPow toPow u

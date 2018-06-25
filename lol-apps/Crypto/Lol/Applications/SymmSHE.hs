@@ -506,7 +506,7 @@ type TunnelHintCtx c e r s e' r' s' z zp zq' gad =
    e' ~ (e * (r' / r)),                 -- convenience; implied by prev constraint
    z ~ LiftOf zp,
    KSHintCtx gad c r' z zq',            -- ksHint
-   Lift' (Linear c e r s zp),           -- lift
+   LiftCyc c zp,                        -- liftPow
    ReduceCyc c z zq',                   -- reduce
    ExtensionCyc c z, e' `Divides` r',   -- powBasis
    Ring (c s' z), Ring (c r' z), Random (c s' zq'), Gadget gad (c s' zq'))
@@ -520,7 +520,7 @@ tunnelHint :: forall gad c e r s e' r' s' z zp zq' rnd .
   -> SK (c r' z)
   -> rnd (TunnelHint gad c e r s e' r' s' zp zq')
 tunnelHint f skout (SK _ sin) = -- generate hints
-  (let f' = extendLin $ lift f :: Linear c e' r' s' z
+  (let f' = extendLin $ liftPow f :: Linear c e' r' s' z
        f'q = reduce f' :: Linear c e' r' s' zq'
        -- choice of basis here must match coeffs* basis below
        ps = proxy powBasis (Proxy::Proxy e')
