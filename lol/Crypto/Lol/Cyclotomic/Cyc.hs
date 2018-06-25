@@ -747,8 +747,7 @@ instance (UnCyc t (a,b), Lift (a,b) Integer, ForallFact1 Applicative t,
 ---------- Promoted lattice operations ----------
 
 -- | promoted from base ring
-instance (Reduce a b, CRTElt t a, CRTElt t b,
-          ZeroTestable a, ZeroTestable b) -- ZT just for Additive superclasses
+instance (Reduce a b, CRTElt t a, CRTElt t b) 
          => ReduceCyc (CycG t) a b where
   reduceCyc (Pow u)    = Pow    $ reduce u
   reduceCyc (Dec u)    = Dec    $ reduce u
