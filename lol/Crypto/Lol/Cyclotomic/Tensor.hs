@@ -120,7 +120,7 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
 
 -- | Encapsulates functions related to the Chinese-remainder
 -- representation/transform.
-class (Tensor t r, Ring r, ForallFact2 (Module.C r) t r, CRTrans mon r)
+class (Tensor t r, CRTrans mon r, ForallFact2 (Module.C r) t r)
   => TensorCRT t mon r where
   -- | A tuple of all the operations relating to the CRT basis, in a
   -- single 'Maybe' value for safety.  Clients should typically not

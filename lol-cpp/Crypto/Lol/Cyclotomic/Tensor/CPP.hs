@@ -315,14 +315,9 @@ instance TensorCRT CT Identity (Complex Double) where
   crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT')
 
 instance TensorCRT CT Maybe (Complex Double) where
-  crtFuncs = (,,,,) <$>
-    return (CT . repl) <*>
-    (wrap . untag (cZipDispatch dmulC) <$> gCRT) <*>
-    (wrap . untag (cZipDispatch dmulC) <$> gInvCRT) <*>
-    (wrap <$> untagT ctCRTC) <*>
-    (wrap <$> untagT ctCRTInvC)
+  crtFuncs = return $ runIdentity crtFuncs
 
-  crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT')
+  crtExtFuncs = return $ runIdentity crtExtFuncs
 
   {-# INLINABLE crtFuncs #-}
   {-# INLINE crtExtFuncs #-}
