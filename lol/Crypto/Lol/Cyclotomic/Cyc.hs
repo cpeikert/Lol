@@ -776,6 +776,11 @@ instance (Reduce Double (RRq q Double), CRTElt t Double, Tensor t (RRq q Double)
   reduceCyc (CycDbl (Dec u)) = DecRRq $ reduce u
   reduceCyc (CycDbl c)       = reduceCyc $ CycDbl $ toPow' c
 
+instance (Reduce Integer (ZqBasic q z), ForallFact1 Applicative t)
+  => ReduceCyc (Cyc t) Integer (ZqBasic q z) where
+  reduceCyc (PowIgr u) = CycZqB $ Pow $ reduce <$> u
+  reduceCyc (DecIgr u) = CycZqB $ Dec $ reduce <$> u
+
 -----
 
 -- CJP: can we avoid incoherent instances by changing instance heads
