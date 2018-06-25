@@ -120,13 +120,14 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
 
 -- | Encapsulates functions related to the Chinese-remainder
 -- representation/transform.
-class (Tensor t r, Ring r, ForallFact2 (Module.C r) t r) => TensorCRT t r where
+class (Tensor t r, Ring r, ForallFact2 (Module.C r) t r, CRTrans mon r)
+  => TensorCRT t mon r where
   -- | A tuple of all the operations relating to the CRT basis, in a
   -- single 'Maybe' value for safety.  Clients should typically not
   -- use this method directly, but instead call the corresponding
   -- top-level functions: the elements of the tuple correpond to the
   -- functions 'scalarCRT', 'mulGCRT', 'divGCRT', 'crt', 'crtInv'.
-  crtFuncs :: (CRTrans mon r, Fact m) =>
+  crtFuncs :: Fact m =>
               mon (    r -> t m r, -- scalarCRT
                    t m r -> t m r, -- mulGCRT
                    t m r -> t m r, -- divGCRT
@@ -138,7 +139,7 @@ class (Tensor t r, Ring r, ForallFact2 (Module.C r) t r) => TensorCRT t r where
   -- method directly, but instead call the corresponding top-level
   -- functions: the elements of the tuple correpond to the functions
   -- 'twaceCRT', 'embedCRT'.
-  crtExtFuncs :: (CRTrans mon r, m `Divides` m') =>
+  crtExtFuncs :: m `Divides` m' =>
                  mon (t m' r -> t m  r, -- twaceCRT
                       t m  r -> t m' r) -- embedCRT
 
@@ -166,7 +167,7 @@ class (Tensor t fp) => TensorCRTSet t fp where
     => Tagged m [t m' fp]
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
-hasCRTFuncs :: forall t m mon r . (CRTrans mon r, TensorCRT t r, Fact m)
+hasCRTFuncs :: forall t m mon r . (TensorCRT t mon r, Fact m)
                => TaggedT (t m r) mon ()
 {-# INLINABLE hasCRTFuncs #-}
 hasCRTFuncs = tagT $ do
@@ -175,12 +176,12 @@ hasCRTFuncs = tagT $ do
 
 -- | Yield a tensor for a scalar in the CRT basis.  (This function is
 -- simply an appropriate entry from 'crtFuncs'.)
-scalarCRT :: (CRTrans mon r, TensorCRT t r, Fact m) => mon (r -> t m r)
+scalarCRT :: (TensorCRT t mon r, Fact m) => mon (r -> t m r)
 {-# INLINABLE scalarCRT #-}
 scalarCRT = (\(f,_,_,_,_) -> f) <$> crtFuncs
 
 mulGCRT, divGCRT, crt, crtInv ::
-  (CRTrans mon r, TensorCRT t r, Fact m) => mon (t m r -> t m r)
+  (TensorCRT t mon r, Fact m) => mon (t m r -> t m r)
 {-# INLINABLE mulGCRT #-}
 {-# INLINABLE divGCRT #-}
 {-# INLINABLE crt #-}
@@ -203,7 +204,7 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 -- For cyclotomic indices \(m \mid m'\),
 -- \(\Tw(x) = (\hat{m}/\hat{m}') \cdot \Tr((g'/g) \cdot x)\).
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-twaceCRT :: forall t m m' mon r . (CRTrans mon r, TensorCRT t r, m `Divides` m')
+twaceCRT :: forall t m m' mon r . (TensorCRT t mon r, m `Divides` m')
             => mon (t m' r -> t m r)
 {-# INLINABLE twaceCRT #-}
 twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
@@ -213,7 +214,7 @@ twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
 -- | Embed a tensor with index \(m\) in the CRT basis to a tensor with
 -- index \(m'\) in the CRT basis.
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
-embedCRT :: forall t m m' mon r . (CRTrans mon r, TensorCRT t r, m `Divides` m')
+embedCRT :: forall t m m' mon r . (TensorCRT t mon r, m `Divides` m')
             => mon (t m r -> t m' r)
 embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
            proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>

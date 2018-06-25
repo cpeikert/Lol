@@ -75,8 +75,7 @@ import Crypto.Lol.Types.IFunctor
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Unsafe.ZqBasic
-import Crypto.Lol.Utils.ShowType
-import Crypto.Lol.Utils.Tests
+import Crypto.Lol.Tests
 
 import Data.Foldable as F
 
@@ -259,7 +258,7 @@ instance Reflects q Int64 => Tensor CT (ZqBasic q Int64) where
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 
-instance Reflects q Int64 => TensorCRT CT (ZqBasic q Int64) where
+instance Reflects q Int64 => TensorCRT CT Maybe (ZqBasic q Int64) where
   crtFuncs = (,,,,) <$>
     return (CT . repl) <*>
     (wrap . untag (cZipDispatch dmulZq) <$> gCRT) <*>
@@ -305,7 +304,17 @@ instance Tensor CT (Complex Double) where
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 
-instance TensorCRT CT (Complex Double) where
+instance TensorCRT CT Identity (Complex Double) where
+  crtFuncs = (,,,,) <$>
+    return (CT . repl) <*>
+    (wrap . untag (cZipDispatch dmulC) <$> gCRT) <*>
+    (wrap . untag (cZipDispatch dmulC) <$> gInvCRT) <*>
+    (wrap <$> untagT ctCRTC) <*>
+    (wrap <$> untagT ctCRTInvC)
+
+  crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT')
+
+instance TensorCRT CT Maybe (Complex Double) where
   crtFuncs = (,,,,) <$>
     return (CT . repl) <*>
     (wrap . untag (cZipDispatch dmulC) <$> gCRT) <*>
@@ -351,7 +360,7 @@ instance Tensor CT Double where
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 
-instance TensorCRT CT Double where
+instance TensorCRT CT Maybe Double where
   crtFuncs    = Nothing
   crtExtFuncs = Nothing
 
@@ -394,7 +403,7 @@ instance Tensor CT Int64 where
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 
-instance TensorCRT CT Int64 where
+instance TensorCRT CT Maybe Int64 where
   crtFuncs    = Nothing
   crtExtFuncs = Nothing
 

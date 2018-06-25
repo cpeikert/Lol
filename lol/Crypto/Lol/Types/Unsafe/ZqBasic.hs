@@ -172,9 +172,7 @@ mhatInv = let qval = proxy value (Proxy::Proxy q)
 
 -- instance of CRTrans
 instance (Reflects q z, ToInteger z, PID z, Enumerable (ZqBasic q z))
-         => CRTrans' (ZqBasic q z) where
-  type CRTMonad (ZqBasic q z) = Maybe
-
+         => CRTrans Maybe (ZqBasic q z) where
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
 -- | Embeds into the complex numbers \( \C \).
