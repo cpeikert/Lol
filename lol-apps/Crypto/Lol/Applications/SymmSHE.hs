@@ -32,7 +32,7 @@ module Crypto.Lol.Applications.SymmSHE
 -- * Data types
 SK, PT, CT -- don't export constructors!
 -- * Keygen, encryption, decryption
-, genSK, genSKWithVar
+, zeroSK, genSK, genSKWithVar
 , encrypt
 , errorTerm, errorTermUnrestricted, decrypt, decryptUnrestricted
 -- * Arithmetic with public values
@@ -87,6 +87,9 @@ data SK r where
 -- Need this for running tests
 instance Show r => Show (SK r) where
   show (SK v r) = "(SK " ++ (show $ toRational v) ++ " " ++ (show r) ++ ")"
+
+zeroSK :: Ring r => SK r
+zeroSK = SK (1 :: Double) zero
 
 -- | plaintext
 type PT rp = rp

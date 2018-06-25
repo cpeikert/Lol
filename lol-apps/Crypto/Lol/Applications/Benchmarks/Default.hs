@@ -29,13 +29,14 @@ import Control.Monad.Random
 import Crypto.Lol
 import Crypto.Lol.Applications.Benchmarks.SHEBenches
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Benchmarks (bgroup)
+import Crypto.Lol.Benchmarks (bgroup, Benchmark, Zq)
 
-defaultSHEBenches :: _ => Proxy t -> Proxy gad -> Proxy gen -> [rnd Benchmark]
+defaultSHEBenches :: forall t gad gen . _ => Proxy t -> Proxy gad -> Proxy gen -> [Benchmark]
 defaultSHEBenches pt pgad pgen  = [
-  bgroup "SHE" $ ($ pt) <$>
-    [sheBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)) pgen,
-     sheBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857)) pgen],
+  bgroup "SHE" $ (($ pt) . ($ pgen)) <$>
+    [sheBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
+     sheBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))]]
+{-
   bgroup "Dec" $ ($ pt) <$>
     [decBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
      decBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
@@ -75,3 +76,4 @@ defaultSHEBenches pt pgad pgen  = [
                                                   F9 * F5 * F7 * F13,
                                                   Zq PP32,
                                                   Zq 3144961)) pgad]]
+-}
