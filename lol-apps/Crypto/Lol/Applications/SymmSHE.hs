@@ -150,7 +150,8 @@ encrypt (SK svar s) =
 type ErrorTermCtx c m' z zp zq = (ToSDCtx c m' zp zq, ReduceCyc c z zq, LiftCyc c zq, Ring (c m' zq))
 
 -- | Extract the error term of a ciphertext.
-errorTerm :: ErrorTermCtx c m' z zp zq => SK (c m' z) -> CT m zp (c m' zq) -> c m' (LiftOf zq)
+errorTerm :: ErrorTermCtx c m' z zp zq
+          => SK (c m' z) -> CT m zp (c m' zq) -> c m' (LiftOf zq)
 errorTerm (SK _ s) = let sq = reduceCyc s in
   \ct -> let (CT LSD _ _ c) = toLSD ct
          in liftCyc Dec $ evaluate c sq
@@ -445,14 +446,14 @@ instance (ToSDCtx c m' zp zq, Additive (CT m zp (c m' zq)))
 ---------- Ring switching ----------
 
 -- | Constraint synonym for 'absorbGFactors'.
-type AbsorbGCtx c zp zq = (Cyclotomic c zp, Cyclotomic c zq, LiftCyc c zp)
+type AbsorbGCtx c m' zp zq =
+  (Fact m', Ring (c m' zp), Ring (c m' zq),
+   Cyclotomic c zp, Cyclotomic c zq, LiftCyc c zp, ReduceCyc c (LiftOf zp) zq)
 
 -- | "Absorb" the powers of \( g \) associated with the ciphertext, at
 -- the cost of some increase in noise. This is usually needed before
 -- changing the index of the ciphertext ring.
-absorbGFactors :: forall c zp zq m m' .
-                  (AbsorbGCtx c zp zq, Fact m', Ring (c m' zp), Ring (c m' zq),
-                   ReduceCyc c (LiftOf zp) zq)
+absorbGFactors :: forall c zp zq m m' . AbsorbGCtx c m' zp zq
                   => CT m zp (c m' zq) -> CT m zp (c m' zq)
 absorbGFactors ct@(CT enc k l r)
   | k == 0 = ct
@@ -507,7 +508,6 @@ type TunnelHintCtx c e r s e' r' s' z zp zq' gad =
    z ~ LiftOf zp,
    KSHintCtx gad c r' z zq',            -- ksHint
    LiftCyc c zp,                        -- liftPow
-   ReduceCyc c z zq',                   -- reduce
    ExtensionCyc c z, e' `Divides` r',   -- powBasis
    Ring (c s' z), Ring (c r' z), Random (c s' zq'), Gadget gad (c s' zq'))
 
@@ -530,12 +530,10 @@ tunnelHint f skout (SK _ sin) = -- generate hints
 
 -- | Constraint synonym for ring tunneling.
 type TunnelCtx c r s e' r' s' zp zq' gad =
-  (Fact r, Fact s, e' `Divides` r', e' `Divides` s', -- evalLin
+  (Fact r, Fact s, e' `Divides` r', e' `Divides` s', ExtensionCyc c zq', -- evalLin
    ToSDCtx c r' zp zq',                     -- toMSD
-   AbsorbGCtx c zp zq',                     -- absorbGFactors
-   SwitchCtx gad c s' zq',                  -- switch
-   ReduceCyc c (LiftOf zp) zq',             -- reduceCyc
-   Ring (c r' zp), ExtensionCyc c zq')
+   AbsorbGCtx c r' zp zq',                  -- absorbGFactors
+   SwitchCtx gad c s' zq')                  -- switch
 
 -- | Homomorphically apply the \( E \)-linear function that maps the
 -- elements of the decoding basis of \( R/E \) to the corresponding

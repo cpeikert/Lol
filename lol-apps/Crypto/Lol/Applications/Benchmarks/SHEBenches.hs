@@ -92,6 +92,10 @@ tunnelBenches _ _ _ = do
   return $ bgroup (showType p ++ "/SymmSHE")
                   [mkBenchIO "tunnel" (bench_tunnel p zero sk1 sk2)]
 
+
+
+
+
 bench_enc :: forall t m m' z zp (zq :: *) (gen :: *) . (z ~ LiftOf zp,  _)
   => Proxy '(t,m,m',zp,zq,gen)
      -> SK (Cyc t m' z)
@@ -172,11 +176,9 @@ bench_tunnel :: forall c t e e' r r' s s' z zp zq gad .
    EncryptCtx c r r' z zp zq,
    CRTSetCyc c zp,
    e ~ FGCD r s,
-   ZPP zp, Mod zp,
    z ~ ModRep zp,
    r `Divides` r',
-   Fact e,
-   NFData zp)
+   Fact e)
   => Proxy '(t,r,r',s,s',zp,zq,gad)
      -> PT (Cyc t r zp)
      -> SK (Cyc t r' z)
@@ -184,12 +186,14 @@ bench_tunnel :: forall c t e e' r r' s s' z zp zq gad .
      -> IO (CT s zp (Cyc t s' zq))
 bench_tunnel _ pt skin skout = do
   x <- encrypt skin pt
-  let crts :: [Cyc t s zp] = proxy crtSet (Proxy::Proxy e) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
+  let crts :: [Cyc t s zp] = proxy crtSet (Proxy::Proxy e)
+        \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
       r = proxy totientFact (Proxy::Proxy r)
       e = proxy totientFact (Proxy::Proxy e)
       dim = r `div` e
       -- only take as many crts as we need
       -- otherwise linearDec fails
-      linf :: Linear (Cyc t) e r s zp = linearDec (take dim crts) \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
+      linf :: Linear (Cyc t) e r s zp = linearDec (take dim crts)
+        \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
   hints :: TunnelHint gad (Cyc t) e r s e' r' s' zp zq <- tunnelHint linf skout skin
   evalRandIO $ return $ (tunnel hints :: CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)) x
