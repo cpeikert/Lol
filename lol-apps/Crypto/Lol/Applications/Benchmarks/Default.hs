@@ -21,59 +21,57 @@ Mostly-monomorphized benchmarks for lol-apps.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Applications.Benchmarks.Default
- (defaultSHEBenches) where
+module Crypto.Lol.Applications.Benchmarks.Default (defaultSHEBenches) where
 
 import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Applications.Benchmarks.SHEBenches
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Benchmarks (bgroup, Benchmark, Zq)
+import Crypto.Lol.Benchmarks (bgroup, Benchmark, Zq, type (**))
 
-defaultSHEBenches :: forall t gad gen . _ => Proxy t -> Proxy gad -> Proxy gen -> [Benchmark]
-defaultSHEBenches pt pgad pgen  = [
-  bgroup "SHE" $ (($ pt) . ($ pgen)) <$>
+defaultSHEBenches :: forall t gad gen rnd . (MonadRandom rnd, _)
+                  => Proxy t -> Proxy gad -> Proxy gen -> rnd [Benchmark]
+defaultSHEBenches pt pgad pgen  = sequence [
+  fmap (bgroup "SHE") $ sequence $ (($ pt) . ($ pgen)) <$>
     [sheBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
-     sheBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))]]
-{-
-  bgroup "Dec" $ ($ pt) <$>
+     sheBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
+  fmap (bgroup "Dec") $ sequence $ ($ pt) <$>
     [decBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
      decBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
-  bgroup "Rescale" $ ($ pt) <$>
-    [rescaleBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq 1017857, Zq (1017857 ** 1032193))) pgad,
-     rescaleBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq 1008001, Zq (1008001 ** 1065601))) pgad],
-  bgroup "KeySwitch" $ ($ pt) <$>
-    [keySwitchBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq (1017857 ** 1032193))) pgad,
-     keySwitchBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq (1008001 ** 1065601))) pgad],
-  bgroup "Tunnel" $ ($ pt) <$>
+  fmap (bgroup "Rescale") $ sequence $ ($ pt) <$>
+    [rescaleBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq 1017857, Zq (1032193 ** 1017857))),
+     rescaleBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq 1008001, Zq (1065601 ** 1008001)))],
+  fmap (bgroup "KeySwitch") $ sequence $ (($ pt) . ($ pgad)) <$>
+    [keySwitchBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq (1017857 ** 1032193))),
+     keySwitchBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq (1008001 ** 1065601)))],
+  fmap (bgroup "Tunnel") $ sequence $ (($ pt) . ($ pgad)) <$>
     [tunnelBenches {- H0 -> H1 -} (Proxy::Proxy '(F128,
                                                   F128 * F7 * F13,
                                                   F64 * F7, F64 * F7 * F13,
                                                   Zq PP32,
-                                                  Zq 3144961)) pgad,
+                                                  Zq 3144961)),
      tunnelBenches {- H1 -> H2 -} (Proxy::Proxy '(F64 * F7,
                                                   F64 * F7 * F13,
                                                   F32 * F7 * F13,
                                                   F32 * F7 * F13,
                                                   Zq PP32,
-                                                  Zq 3144961)) pgad,
+                                                  Zq 3144961)),
      tunnelBenches {- H2 -> H3 -} (Proxy::Proxy '(F32 * F7 * F13,
                                                   F32 * F7 * F13,
                                                   F8 * F5 * F7 * F13,
                                                   F8 * F5 * F7 *F13,
                                                   Zq PP32,
-                                                  Zq 3144961)) pgad,
+                                                  Zq 3144961)),
      tunnelBenches {- H3 -> H4 -} (Proxy::Proxy '(F8 * F5 * F7 * F13,
                                                   F8 * F5 * F7 *F13,
                                                   F4 * F3 * F5 * F7 * F13,
                                                   F4 * F3 * F5 * F7 * F13,
                                                   Zq PP32,
-                                                  Zq 3144961)) pgad,
+                                                  Zq 3144961)),
      tunnelBenches {- H4 -> H5 -} (Proxy::Proxy '(F4 * F3 * F5 * F7 * F13,
                                                   F4 * F3 * F5 * F7 *F13,
                                                   F9 * F5 * F7 * F13,
                                                   F9 * F5 * F7 * F13,
                                                   Zq PP32,
-                                                  Zq 3144961)) pgad]]
--}
+                                                  Zq 3144961))]]
