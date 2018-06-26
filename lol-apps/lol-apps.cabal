@@ -51,7 +51,7 @@ library
     ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
 
   exposed-modules:
-    Crypto.Lol.Applications.KeyHomomorphicPRF
+    --Crypto.Lol.Applications.KeyHomomorphicPRF
     Crypto.Lol.Applications.SymmSHE
 
     Crypto.Proto.SHE
@@ -69,7 +69,7 @@ library
     Crypto.Lol.Applications.Tests.Default
     Crypto.Lol.Applications.Benchmarks.SHEBenches
     Crypto.Lol.Applications.Benchmarks.Default
-    Crypto.Lol.Applications.Examples.KHPRF
+    --Crypto.Lol.Applications.Examples.KHPRF
     Crypto.Lol.Applications.Examples.SymmSHE
 
   build-depends:
