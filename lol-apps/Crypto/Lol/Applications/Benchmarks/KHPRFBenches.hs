@@ -22,13 +22,14 @@ Benchmarks for KeyHomomorphicPRF.
 module Crypto.Lol.Applications.Benchmarks.KHPRFBenches
 ( khprfBenches, main ) where
 
+import Control.Applicative
+import Control.DeepSeq
+import Control.Monad.Random hiding (fromList, split)
+
 import Crypto.Lol hiding (replicate)
 import Crypto.Lol.Types
 import Crypto.Lol.Applications.KeyHomomorphicPRF
-import Crypto.Lol.Cyclotomic.Tensor.CPP
-
-import Control.Applicative
-import Control.Monad.Random hiding (fromList, split)
+import Crypto.Lol.Reflects
 
 import Criterion.Main
 
@@ -36,8 +37,9 @@ type M = F64
 type N = 1
 type Q = 256
 type P = 2
-type Rq = Cyc CT M (ZqBasic Q Int64)
-type Rp = Cyc CT M (ZqBasic P Int64)
+type Zq q = ZqBasic q Int64
+type Rq t = Cyc t M (Zq Q)
+type Rp t = Cyc t M (Zq P)
 type Gad = BaseBGad 2
 
 -- | left-spine tree with the given number of leaves
@@ -57,36 +59,44 @@ type Complete3 = 'Intern Complete2 Complete2
 type Complete4 = 'Intern Complete3 Complete3
 type Complete5 = 'Intern Complete4 Complete4
 
-main :: IO ()
-main = do
-  x <- khprfBenches
+main :: forall t . (_) => Proxy t -> IO ()
+main pt = do
+  x <- khprfBenches pt
   defaultMain [x]
 
-khprfBenches :: MonadRandom rnd => rnd Benchmark
-khprfBenches = do
-  key <- genKey
-  params :: PRFParams N Gad Rq <- genParams
-  let sc = singFBT :: Sing Complete5
-      sl = singFBT :: Sing (Left  P32)
-      sr = singFBT :: Sing (Right P32)
-      xs = take 32 values
-      x  = head xs
+khprfBenches :: forall ts rnd .
+    (MonadRandom rnd, Random (Rq ts), Rescale (Rq ts) (Rp ts),
+     Decompose Gad (Rq ts), Reflects N Int, Gadget Gad (Rq ts), NFData (Rp ts))
+  => Proxy ts -> rnd Benchmark
+khprfBenches pts = do
+  key :: PRFKey N (Rq ts) <- genKey
+  params :: PRFParams N Gad (Rq ts) <- genParams
+  let sc  = singFBT :: Sing Complete5
+      sl  = singFBT :: Sing (Left  P32)
+      sr  = singFBT :: Sing (Right P32)
+      xs  = take 32 values
+      x   = head xs
+      prp = Proxy :: Proxy (Rp ts)
   return $ bgroup "KHPRF Benchmarks"
-    [ bench "complete-solo"      $ prfBench          sc params key x
-    , bench "left-solo"          $ prfBench          sl params key x
-    , bench "right-solo"         $ prfBench          sr params key x
-    , bench "complete-amortized" $ prfAmortizedBench sc params key xs
-    , bench "left-amortized"     $ prfAmortizedBench sl params key xs
-    , bench "right-amortized"    $ prfAmortizedBench sr params key xs
+    [ bench "complete-solo"      $ prfBench          pts prp sc params key x
+    , bench "left-solo"          $ prfBench          pts prp sl params key x
+    , bench "right-solo"         $ prfBench          pts prp sr params key x
+    , bench "complete-amortized" $ prfAmortizedBench pts prp sc params key xs
+    , bench "left-amortized"     $ prfAmortizedBench pts prp sl params key xs
+    , bench "right-amortized"    $ prfAmortizedBench pts prp sr params key xs
     ]
 
-prfBench :: (Rescale rq Rp, Decompose gad rq, FBTC t)
-  => SFBT t -> PRFParams n gad rq -> PRFKey n rq -> BitString (SizeFBT t)
+prfBench :: forall ts t n gad rq rp .
+    (Rescale rq rp, Decompose gad rq, FBTC t, NFData rp)
+  => Proxy ts -> Proxy rp
+  -> SFBT t -> PRFParams n gad rq -> PRFKey n rq -> BitString (SizeFBT t)
   -> Benchmarkable
-prfBench t p s x = nf (prf t p s :: _ -> Matrix Rp) x
+prfBench _ _ t p s x = nf (prf t p s :: _ -> Matrix rp) x
 
-prfAmortizedBench :: (Rescale rq Rp, Decompose gad rq)
-  => SFBT t -> PRFParams n gad rq -> PRFKey n rq -> [BitString (SizeFBT t)]
+prfAmortizedBench :: forall ts t n gad rq rp .
+    (Rescale rq rp, Decompose gad rq, NFData rp)
+  => Proxy ts -> Proxy rp
+  -> SFBT t -> PRFParams n gad rq -> PRFKey n rq -> [BitString (SizeFBT t)]
   -> Benchmarkable
-prfAmortizedBench t p s xs =
-  nf (run :: _ -> [Matrix Rp]) (sequence $ prfAmortized t p s <$> xs)
+prfAmortizedBench _ _ t p s xs =
+  nf (run :: _ -> [Matrix rp]) (sequence $ prfAmortized t p s <$> xs)

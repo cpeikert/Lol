@@ -11,14 +11,14 @@ Portability : POSIX
 Example usage of 'Crypto.Lol.Applications.KeyHomomorphicPRF'.
 -}
 
-{-# LANGUAGE DataKinds           #-}
-{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 
 module Crypto.Lol.Applications.Examples.KHPRF (khprfMain) where
 
 import Crypto.Lol
 import Crypto.Lol.Applications.KeyHomomorphicPRF
-import Crypto.Lol.Cyclotomic.Tensor.CPP
 import Crypto.Lol.Types
 
 type SimpleTop = 'Intern ('Intern 'Leaf 'Leaf) 'Leaf
@@ -26,15 +26,15 @@ type M = F64
 type N = 1
 type Q = 257
 type P = 2
-type Rq = Cyc CT M (ZqBasic Q Int64)
-type Rp = Cyc CT M (ZqBasic P Int64)
+type Rq t = Cyc t M (ZqBasic Q Int64)
+type Rp t = Cyc t M (ZqBasic P Int64)
 type Gad = BaseBGad 2
 
-khprfMain :: IO ()
-khprfMain = do
+khprfMain :: forall t . (_) => Proxy t -> IO ()
+khprfMain _ = do
   key <- genKey
-  params :: PRFParams N Gad Rq <- genParams
+  params :: PRFParams N Gad (Rq t) <- genParams
   let t = singFBT :: SFBT SimpleTop
-  let result :: [Matrix Rp] =
+  let result :: [Matrix (Rp t)] =
         run $ sequence $ prfAmortized t params key <$> values
   print result
