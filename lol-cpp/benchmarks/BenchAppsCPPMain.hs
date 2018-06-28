@@ -28,5 +28,5 @@ main = do
       pct = Proxy::Proxy CT
   bs <- sequence $
           defaultSHEBenches pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG) ++
-          [khprfBenches pct]
+          defaultKHPRFBenches pct (Proxy::Proxy $ BaseBGad 2)
   mapM_ (prettyBenchesTable o) bs
