@@ -32,7 +32,7 @@ import Control.Monad.IO.Class (liftIO)
 
 import Criterion.Internal (runAndAnalyseOne)
 import Criterion.Main.Options (defaultConfig)
-import Criterion.Measurement (secs)
+import Criterion.Measurement (initializeTime, secs)
 import Criterion.Monad (Criterion, withConfig)
 import Criterion.Types
 
@@ -88,7 +88,9 @@ config OptsInternal{..} = defaultConfig {verbosity = if verb == Full then Normal
 
 -- collect reports from all selected benchmarks, printing a summary along the way
 summarizeBenchReports :: OptsInternal -> Benchmark -> Criterion [Report]
-summarizeBenchReports OptsInternal{..} b = snd <$> go (0, []) ("", b)
+summarizeBenchReports OptsInternal{..} b = do
+  liftIO initializeTime -- Workaround for criterion issue #195
+  snd <$> go (0, []) ("", b)
   where
     select name =
       let param = getBenchParams name

@@ -10,7 +10,7 @@ Portability : POSIX
 
   \( \def\C{\mathbb{C}} \)
 
-Benchmarks for individual layers of the Lol stack (Tensor, UCyc, Cyc), plus
+Benchmarks for individual layers of the Lol stack (Tensor, CycRep, Cyc), plus
 default parameters and helper functions for diplaying results.
 -}
 
@@ -24,24 +24,22 @@ module Crypto.Lol.Benchmarks
  module Crypto.Lol.Benchmarks.Default
 -- * Benchmarks for different layers of Lol
 ,module Crypto.Lol.Benchmarks.TensorBenches
-,module Crypto.Lol.Benchmarks.UCycBenches
+,module Crypto.Lol.Benchmarks.CycRepBenches
 ,module Crypto.Lol.Benchmarks.CycBenches
 -- * Utilities for creating benchmarks
 ,module Crypto.Lol.Utils.Benchmarks
-,module Crypto.Lol.Utils.GenArgs
 -- * Utilities for showing benchmark results
 ,module Crypto.Lol.Utils.ShowType
 ,Verb(..)
 ,module Crypto.Lol.Utils.PrettyPrint.Table
 ,module Crypto.Lol.Utils.PrettyPrint.Diagnostic) where
 
-import Crypto.Lol.Utils.Benchmarks
 import Crypto.Lol.Benchmarks.CycBenches
-import Crypto.Lol.Benchmarks.UCycBenches
+import Crypto.Lol.Benchmarks.CycRepBenches
 import Crypto.Lol.Benchmarks.Default
 import Crypto.Lol.Benchmarks.TensorBenches
-import Crypto.Lol.Utils.GenArgs
-import Crypto.Lol.Utils.ShowType
-import Crypto.Lol.Utils.PrettyPrint (Verb(..))
-import Crypto.Lol.Utils.PrettyPrint.Table
+import Crypto.Lol.Utils.Benchmarks
+import Crypto.Lol.Utils.PrettyPrint            (Verb (..))
 import Crypto.Lol.Utils.PrettyPrint.Diagnostic
+import Crypto.Lol.Utils.PrettyPrint.Table
+import Crypto.Lol.Utils.ShowType

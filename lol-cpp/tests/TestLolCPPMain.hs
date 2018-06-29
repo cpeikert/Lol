@@ -20,4 +20,9 @@ import Test.Framework
 
 main :: IO ()
 main = defaultMainWithArgs
-  (defaultLolTests (Proxy::Proxy CT)) ["--maximum-generated-tests=100"]
+          [defaultZqTests
+          ,zqTensorTests (Proxy::Proxy CT)
+          ,int64TensorTests (Proxy::Proxy CT)
+          ,cpxTensorTests (Proxy::Proxy CT)
+          ,cycTests (Proxy::Proxy CT)]
+         ["--maximum-generated-tests=100"]

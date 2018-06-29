@@ -26,7 +26,6 @@ main :: IO ()
 main = do
   let o = (defaultTableOpts Nothing)
       pct = Proxy::Proxy CT
-  bs <- sequence $
-          defaultSHEBenches pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG) ++
-          defaultKHPRFBenches pct (Proxy::Proxy (BaseBGad 2))
-  mapM_ (prettyBenchesTable o) bs
+  sheBenches <- defaultSHEBenches pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG)
+  khprfBenches <- defaultKHPRFBenches pct (Proxy::Proxy (BaseBGad 2))
+  mapM_ (prettyBenchesTable o) (sheBenches ++ khprfBenches)

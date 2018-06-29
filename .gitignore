@@ -8,3 +8,7 @@ lol-cpp/lib
 **/*.class
 **/*.o
 **/TAGS
+**/*.hi
+**/*.hspp
+**/*.dyn_*
+**/.DS_Store

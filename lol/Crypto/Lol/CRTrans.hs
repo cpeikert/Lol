@@ -14,6 +14,7 @@ Classes and helper methods for the Chinese remainder transform
 and ring extensions.
 -}
 
+{-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
@@ -31,6 +32,7 @@ import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 
 import Control.Arrow
+import Control.Monad.Identity
 
 -- | Information that characterizes the (invertible) Chinese remainder
 -- transformation over a ring \(R\) (represented by the type @r@), namely:
@@ -52,7 +54,6 @@ type CRTInfo r = (Int -> r, r)
 -- it should be the case that \(\omega_{m'}^{m'/m}=\omega_m\).
 
 class (Monad mon, Ring r) => CRTrans mon r where
-
   -- | 'CRTInfo' for a given index \(m\). The method itself may be
   -- slow, but the function it returns should be fast, e.g., via
   -- internal memoization.
@@ -82,7 +83,12 @@ instance (CRTEmbed a, CRTEmbed b) => CRTEmbed (a,b) where
   fromExt = fromExt *** fromExt
 
 -- | Complex numbers have 'CRTrans' for any index \(m\)
-instance (Monad mon, Transcendental a) => CRTrans mon (Complex a) where
+instance (Transcendental a) => CRTrans Identity (Complex a) where
+  crtInfo = crtInfoC
+
+-- | For testing ergonomics, we also have a 'Maybe' instance of 'CRTrans'
+-- for complex numbers.
+instance (Transcendental a) => CRTrans Maybe (Complex a) where
   crtInfo = crtInfoC
 
 crtInfoC :: forall mon m a . (Monad mon, Reflects m Int, Transcendental a)
@@ -101,13 +107,21 @@ instance (Transcendental a) => CRTEmbed (Complex a) where
   fromExt = id
 
 -- | Returns 'Nothing'
-instance CRTrans Maybe Double where crtInfo = tagT Nothing
+instance CRTrans Maybe Double where
+  crtInfo = tagT Nothing
+
 -- | Returns 'Nothing'
-instance CRTrans Maybe Int where crtInfo = tagT Nothing
+instance CRTrans Maybe Int where
+  crtInfo = tagT Nothing
+
 -- | Returns 'Nothing'
-instance CRTrans Maybe Int64 where crtInfo = tagT Nothing
+instance CRTrans Maybe Int64 where
+  crtInfo = tagT Nothing
+
 -- | Returns 'Nothing'
-instance CRTrans Maybe Integer where crtInfo = tagT Nothing
+instance CRTrans Maybe Integer where
+  crtInfo = tagT Nothing
+
 -- can also do for Int8, Int16, Int32 etc.
 
 -- | Embeds into the complex numbers \(\C\).

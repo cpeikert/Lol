@@ -34,7 +34,7 @@ module Crypto.Lol.Utils.ShowType
 ,Zq
 ,type (**)) where
 
-import Crypto.Lol (Int64,Fact,valueFact,Mod(..), Proxy(..), proxy, TrivGad, BaseBGad)
+import Crypto.Lol (Complex, Int64,Fact,valueFact,Mod(..), Proxy(..), proxy, TrivGad, BaseBGad)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
@@ -98,6 +98,9 @@ instance (Mod (ZqBasic q i), Show i) => Show (ArgType (ZqBasic q i)) where
 
 instance Show (ArgType Int64) where
   show _ = "Int64"
+
+instance Show (ArgType (Complex Double)) where
+  show _ = "Complex Double"
 
 instance Show (ArgType TrivGad) where
   show _ = "TrivGad"

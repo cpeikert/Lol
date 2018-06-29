@@ -28,7 +28,9 @@ type Sample t m zq zp = (Cyc t m zq, Cyc t m zp)
 
 -- | Common constraints for working with RLWR.
 type RLWRCtx t m zq zp =
-  (Fact m, Ring zq, RescaleCyc (Cyc t) zq zp, CElt t zq, CElt t zp)
+  (Fact m, Ring zq, RescaleCyc (Cyc t) zq zp,
+   Cyclotomic (Cyc t) zq, Random (Cyc t m zq),
+   Ring (Cyc t m zq))
 
 -- | An RLWR sample with the given secret.
 sample :: (RLWRCtx t m zq zp, Random zq, MonadRandom rnd)

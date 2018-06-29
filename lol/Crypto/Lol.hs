@@ -4,7 +4,7 @@ Description : Primary interface to the Lol library.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
@@ -50,15 +50,15 @@ material for reading the documentation.
 
 -- EAC: See https://github.com/haskell/haddock/issues/563
 module Crypto.Lol
-(module Crypto.Lol.Cyclotomic.Cyc
-,module Crypto.Lol.Cyclotomic.Linear
-,module Crypto.Lol.Cyclotomic.RescaleCyc
-,module Crypto.Lol.Gadget
-,module Crypto.Lol.Prelude
+( module Crypto.Lol.Cyclotomic.Cyc
+, module Crypto.Lol.Cyclotomic.Linear
+, module Crypto.Lol.Cyclotomic.Language
+, module Crypto.Lol.Gadget
+, module Crypto.Lol.Prelude
 ) where
 
 import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Cyclotomic.Linear
-import Crypto.Lol.Cyclotomic.RescaleCyc
+import Crypto.Lol.Cyclotomic.Language
 import Crypto.Lol.Gadget
 import Crypto.Lol.Prelude

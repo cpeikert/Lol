@@ -58,7 +58,7 @@ import Data.Maybe
 import NumericPrelude.Numeric as NP (round)
 import System.Random
 
-import qualified Data.Vector                 as V
+import qualified Data.Vector as V
 
 import qualified Algebra.Additive       as Additive (C)
 import qualified Algebra.Field          as Field (C)
@@ -68,7 +68,7 @@ import qualified Algebra.ZeroTestable   as ZeroTestable (C)
 
 -- | An infinite list of primes greater than @lower@ and congruent to
 -- 1 mod @m@.
-goodQs :: (IntegralDomain a, ToInteger a) => a -> a -> [a]
+goodQs :: (ToInteger a) => a -> a -> [a]
 goodQs m lower = filter (isPrime . toInteger) $
   iterate (+m) $ lower + ((m-lower) `mod` m) + 1
 
@@ -173,7 +173,6 @@ mhatInv = let qval = proxy value (Proxy::Proxy q)
 -- instance of CRTrans
 instance (Reflects q z, ToInteger z, PID z, Enumerable (ZqBasic q z))
          => CRTrans Maybe (ZqBasic q z) where
-
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
 -- | Embeds into the complex numbers \( \C \).
@@ -181,7 +180,7 @@ instance (Reflects q z, ToInteger z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q 
   type CRTExt (ZqBasic q z) = Complex Double
 
   toExt (ZqB x) = fromReal $ fromIntegral x
-  fromExt x = reduce' $ NP.round $ real x
+  fromExt = reduce' . NP.round . real
 
 -- instance of Additive
 instance (Reflects q z, ToInteger z, Additive z) => Additive.C (ZqBasic q z) where

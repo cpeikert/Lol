@@ -4,7 +4,7 @@ Description : Functions and types for working with continuous ring-LWE samples.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
@@ -15,65 +15,74 @@ Functions and types for working with continuous ring-LWE samples.
 -}
 
 {-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
 module Crypto.Lol.RLWE.Continuous where
 
-import Crypto.Lol.Cyclotomic.Cyc    as C
-import Crypto.Lol.Cyclotomic.Tensor (TElt)
-import Crypto.Lol.Cyclotomic.UCyc   as U
+import Crypto.Lol.Cyclotomic.Language
 import Crypto.Lol.Prelude
+import Crypto.Lol.Types.IFunctor
+
+import qualified Algebra.Additive     as Additive (C)
 
 import Control.Applicative
 import Control.Monad.Random hiding (lift)
 
--- | A continuous RLWE sample \( (a,b) \in R_q \times K/(qR)\).  (The
--- second component is a 'UCyc' because the base type @rrq@
--- representing \(\R/(q\Z)\), is an additive group
--- but not a ring, so we can't usefully work with a 'Cyc' over it.)
-type Sample t m zq rrq = (Cyc t m zq, UCyc t m D rrq)
+-- | A continuous RLWE sample \( (a,b) \in R_q \times K/(qR) \).  The
+-- base type @rrq@ represents \( \R/q\Z \), the additive group of
+-- reals modulo \( q \).
+type Sample c (m :: Factored) zq rrq = (c m zq, c m rrq)
+
+-- CJP: trying to avoid this problem:
+-- (The second component is a 'CycRep' because the base type @rrq@,
+-- representing \(\R/(q\Z)\), is an additive group but not a ring, so
+-- we can't usefully work with a 'Cyc' over it.)
 
 -- | Common constraints for working with continuous RLWE.
-type RLWECtx t m zq rrq =
-  (Fact m, Ring zq, CElt t zq, Subgroup zq rrq, Lift' rrq,
-   TElt t rrq, TElt t (LiftOf rrq))
+type RLWECtx c m zq rrq =
+  (Fact m, Cyclotomic c zq, Subgroup zq rrq, Lift' rrq, LiftCyc c rrq,
+   Ring (c m zq), Additive.C (c m rrq),
+   IFElt c zq, IFElt c rrq, IFunctor c)
 
 -- | A continuous RLWE sample with the given scaled variance and secret.
-sample :: forall rnd v t m zq rrq .
-  (RLWECtx t m zq rrq, Random zq, Random (LiftOf rrq), OrdFloat (LiftOf rrq),
-   MonadRandom rnd, ToRational v)
-  => v -> Cyc t m zq -> rnd (Sample t m zq rrq)
+sample :: forall rnd v c m zq rrq .
+  (RLWECtx c m zq rrq, Random zq, Random (LiftOf rrq), OrdFloat (LiftOf rrq),
+   GaussianCyc c (LiftOf rrq),
+   Reduce (c m (LiftOf rrq)) (c m rrq),
+   Random (c m zq), MonadRandom rnd, ToRational v)
+  => v -> c m zq -> rnd (Sample c m zq rrq)
 {-# INLINABLE sample #-}
 sample svar s = let s' = adviseCRT s in do
   a <- getRandom
-  e :: UCyc t m D (LiftOf rrq) <- U.tGaussian svar
-  let as = fmapDec fromSubgroup $ uncycDec $ a * s' :: UCyc t m D rrq
+  e :: c m (LiftOf rrq) <- tweakedGaussian svar
+  let as = fmapI fromSubgroup (a * s')
   return (a, as + reduce e)
 
 -- | The error term of an RLWE sample, given the purported secret.
-errorTerm :: (RLWECtx t m zq rrq)
-             => Cyc t m zq -> Sample t m zq rrq -> UCyc t m D (LiftOf rrq)
+errorTerm :: RLWECtx c m zq rrq => c m zq -> Sample c m zq rrq -> c m (LiftOf rrq)
 {-# INLINABLE errorTerm #-}
 errorTerm s = let s' = adviseCRT s
-              in \(a,b) -> lift $ b - fmapDec fromSubgroup (uncycDec $ a * s')
+              in \(a,b) -> liftDec $ b - fmapI fromSubgroup (a * s')
 
 -- | The 'gSqNorm' of the error term of an RLWE sample, given the
 -- purported secret.
-errorGSqNorm :: (RLWECtx t m zq rrq, Ring (LiftOf rrq))
-                => Cyc t m zq -> Sample t m zq rrq -> LiftOf rrq
+errorGSqNorm :: (RLWECtx c m zq rrq, GSqNorm c (LiftOf rrq))
+                => c m zq -> Sample c m zq rrq -> LiftOf rrq
 {-# INLINABLE errorGSqNorm #-}
-errorGSqNorm s = U.gSqNorm . errorTerm s
+errorGSqNorm s = gSqNorm . errorTerm s
 
 -- | A bound such that the 'gSqNorm' of a continuous error generated
--- by 'tGaussian' with scaled variance \(v\) (over the \(m\)th cyclotomic
--- field) is less than the bound except with probability approximately
--- \(\epsilon\).
+-- by 'tweakedGaussian' with scaled variance \(v\) (over the \(m\)th
+-- cyclotomic field) is less than the bound except with probability
+-- approximately \( \varepsilon \).
 errorBound :: (Ord v, Transcendental v, Fact m)
               => v              -- ^ the scaled variance
-              -> v              -- ^ \(\epsilon\)
+              -> v              -- ^ \( \varepsilon \)
               -> Tagged m v
 errorBound v eps = do
   n <- fromIntegral <$> totientFact

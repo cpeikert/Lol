@@ -22,59 +22,19 @@ Infrastructure for benchmarking Lol.
 {-# LANGUAGE TypeFamilies          #-}
 
 module Crypto.Lol.Utils.Benchmarks
-(Crypto.Lol.Utils.Benchmarks.bench
-,benchM
-,benchIO
-,benchGroup
-,genBenchArgs
-,Bench
-,Benchmark
-,addGen) where
+(mkBench, mkBenchIO
+-- Re-exports
+,C.bgroup, C.Benchmark) where
 
 import Control.DeepSeq
 import Control.Monad.Random
-import Criterion as C
-import Crypto.Lol.Utils.GenArgs
+import qualified Criterion as C
 import Data.Proxy
 
--- | Convenience function for benchmarks with an extra parameter.
-addGen :: Proxy gen -> Proxy '(t,m,r) -> Proxy '(t,m,r,gen)
-addGen _ _ = Proxy
+-- | Make a `Benchmark` from a function and its input
+mkBench :: NFData b => String -> (a -> b) -> a -> C.Benchmark
+mkBench name f input = C.bench name $ C.nf f input
 
--- | Wrapper for criterion's 'nf'.
-{-# INLINABLE bench #-}
-bench :: NFData b => (a -> b) -> a -> Bench params
-bench f = Bench . nf f
-
--- | Use when you need randomness /outside/ the benchmark.
-benchM :: (forall m . (MonadRandom m) => m (Bench a)) -> Bench a
-benchM = BenchM
-
--- | Wrapper for criterion's 'nfIO'. Use when there is randomness /inside/ the
--- benchmark.
-benchIO :: NFData b => IO b -> Bench params
-benchIO = Bench . nfIO
-
-{-# INLINABLE benchGroup #-}
--- | Wrapper for criterion's 'bgroup'.
-benchGroup :: (Monad rnd) => String -> [rnd Benchmark] -> rnd Benchmark
-benchGroup str = (bgroup str <$>) . sequence
-
--- | Converts a function mapping zero or more arguments to a 'Bench' @a@
--- by generating random inputs to the function.
-genBenchArgs :: (GenArgs bnch, ResultOf bnch ~ Bench a, MonadRandom rnd)
-  => String -> bnch -> Proxy a -> rnd Benchmark
-genBenchArgs s f _ = (C.bench s . unbench) <$> genArgs f
-
-unbench :: Bench a -> Benchmarkable
-unbench (Bench x) = x
-unbench (BenchM _) = error "cannot unbench BenchM"
-
--- | Wrapper around criterion's 'Benchmarkable', with phantom parameters.
-data Bench params where
-  Bench :: Benchmarkable -> Bench a
-  BenchM :: (forall m . (MonadRandom m) => m (Bench a)) -> Bench a
-
-instance GenArgs (Bench params) where
-  genArgs x@(Bench _) = return x
-  genArgs (BenchM x) = x
+-- | Make a `Benchmark` from an IO function and its input
+mkBenchIO :: NFData b => String -> IO b -> C.Benchmark
+mkBenchIO name i = C.bench name $ C.nfIO i

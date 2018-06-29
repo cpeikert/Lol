@@ -9,7 +9,7 @@ import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 
 data Rq = Rq{m :: !(P'.Word32), q :: !(P'.Word64), xs :: !(P'.Seq P'.Int64)}
-        deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
+          deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
 
 instance P'.Mergeable Rq where
   mergeAppend (Rq x'1 x'2 x'3) (Rq y'1 y'2 y'3) = Rq (P'.mergeAppend x'1 y'1) (P'.mergeAppend x'2 y'2) (P'.mergeAppend x'3 y'3)

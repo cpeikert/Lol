@@ -65,8 +65,8 @@ library
     Crypto.Lol.Prelude
 
     Crypto.Lol.Cyclotomic.Cyc
-    Crypto.Lol.Cyclotomic.UCyc
-    Crypto.Lol.Cyclotomic.RescaleCyc
+    Crypto.Lol.Cyclotomic.CycRep
+    Crypto.Lol.Cyclotomic.Language
     Crypto.Lol.Cyclotomic.Linear
 
     Crypto.Lol.RLWE.Continuous
@@ -78,6 +78,7 @@ library
     Crypto.Lol.Types.Unsafe.Complex
     Crypto.Lol.Types.FiniteField
     Crypto.Lol.Types.IrreducibleChar2
+    Crypto.Lol.Types.IFunctor
     Crypto.Lol.Types.IZipVector
     Crypto.Lol.Types.Proto
     Crypto.Lol.Types.Random
@@ -91,6 +92,7 @@ library
     Crypto.Proto.Lol.R
     Crypto.Proto.Lol.Rq
     Crypto.Proto.Lol.RqProduct
+    Crypto.Proto.Lol.K
     Crypto.Proto.Lol.Kq
     Crypto.Proto.Lol.KqProduct
     Crypto.Proto.Lol.TypeRep
@@ -114,7 +116,6 @@ library
     Crypto.Lol.PosBin
     Crypto.Lol.PosBinDefs
 
-    Crypto.Lol.Utils.GenArgs
     Crypto.Lol.Utils.Tests
     Crypto.Lol.Utils.Benchmarks
     Crypto.Lol.Utils.PrettyPrint
@@ -129,7 +130,7 @@ library
     Crypto.Lol.Benchmarks.CycBenches
     Crypto.Lol.Benchmarks.Default
     Crypto.Lol.Benchmarks.TensorBenches
-    Crypto.Lol.Benchmarks.UCycBenches
+    Crypto.Lol.Benchmarks.CycRepBenches
 
   build-depends:
     ansi-terminal < 0.7,

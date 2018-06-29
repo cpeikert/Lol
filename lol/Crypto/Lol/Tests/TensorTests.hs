@@ -15,6 +15,7 @@ Tests for the 'Tensor' interface.
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
+{-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -23,187 +24,198 @@ Tests for the 'Tensor' interface.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.TensorTests (tensorTests1, tensorTests2) where
+module Crypto.Lol.Tests.TensorTests (tensorCrtTests1, tensorCrtTests2, tensorTests1, tensorTests2) where
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Utils.ShowType
-import Crypto.Lol.Utils.Tests
+import Crypto.Lol.Utils.Tests (nestGroup, testGroup, testWithGen, testWithoutGen,
+                               (=~=), ApproxEqual, Gen, Test)
 
 import Control.Applicative
 import Data.Maybe
-import qualified Test.Framework as TF
 
--- | Tests for single-index 'Tensor' operations. There must be a CRT basis for \(O_m\) over @r@.
-tensorTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> TF.Test
-tensorTests1 _ _ =
-  let ptmr = Proxy :: Proxy '(t,m,r)
-  in testGroup (showType ptmr) $ ($ ptmr) <$> [
-      genTestArgs   "fmapT comparison" prop_fmapT,
-      genTestArgs   "fmap comparison"  prop_fmap,
-      nestGroup  "GInv.G == id" [
-        genTestArgs "Pow basis"        prop_ginv_pow,
-        genTestArgs "Dec basis"        prop_ginv_dec,
-        genTestArgs "CRT basis"        prop_ginv_crt],
-      genTestArgs   "CRTInv.CRT == id" prop_crt_inv,
-      genTestArgs   "LInv.L == id"     prop_l_inv,
-      genTestArgs   "Scalar"           prop_scalar_crt,
-      nestGroup  "G commutes with L" [
-        genTestArgs "Dec basis"        prop_g_dec,
-        genTestArgs "CRT basis"        prop_g_crt],
-      genTestArgs "Tw and Em ID for equal indices" prop_twEmID
-      ]
+-- TODO: We don't test:
+--         * Tensor::coeffs,
+--         * Tensor::powBasisPow,
+--         * TensorGSqNorm::gSqNormDec
 
--- | Tests for inter-ring 'Tensor' operations. There must be a CRT basis for \(O_{m'}\) over @r@.
-tensorTests2 :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> TF.Test
-tensorTests2 _ _ =
-  let ptmr = Proxy :: Proxy '(t,m,m',r)
-  in testGroup (showType ptmr) $ ($ ptmr) <$> [
-      nestGroup  "Tw.Em == id" [
-        genTestArgs "Pow basis"                      prop_trem_pow,
-        genTestArgs "Dec basis"                      prop_trem_dec,
-        genTestArgs "CRT basis"                      prop_trem_crt],
-      nestGroup  "Em commutes with L" [
-        genTestArgs "Dec basis"                      prop_embed_dec,
-        genTestArgs "CRT basis"                      prop_embed_crt],
-      nestGroup  "Tw commutes with L" [
-        genTestArgs "Dec basis"                      prop_twace_dec,
-        genTestArgs "CRT basis"                      prop_twace_crt],
-      nestGroup  "Twace invariants" [
-        genTestArgs "Invar1 Pow basis"               prop_twace_invar1_pow,
-        genTestArgs "Invar1 Dec basis"               prop_twace_invar1_dec,
-        genTestArgs "Invar1 CRT basis"               prop_twace_invar1_crt,
-        genTestArgs "Invar2 Pow/Dec basis"           prop_twace_invar2_powdec,
-        genTestArgs "Invar2 CRT basis"               prop_twace_invar2_crt]
-      ]
+-- Has to take two generators because prop_scalar_crt only takes ring elements as input
+tensorTests1 :: forall t m r . _ => Gen (t m r) -> Test
+tensorTests1 tensorGen =
+  let ptmr  = Proxy::Proxy '(t,m,r)
+      tests = ($ tensorGen) <$> [
+        testWithGen   "fmap comparison"                           prop_fmap,
+        nestGroup     "GInv.G == id" [
+          testWithGen "Pow basis"                                 prop_ginv_pow,
+          testWithGen "Dec basis"                                 prop_ginv_dec],
+        testWithGen   "LInv.L == id"                              prop_l_inv,
+        testWithGen   "G commutes with L on Dec basis"            prop_g_dec,
+        testWithGen   "Tw and Em ID on Pow/Dec for equal indices" prop_twEmID] in
+  testGroup (showType ptmr) tests
 
-prop_fmapT :: _ => t m r -> Test '(t,m,r)
-prop_fmapT x = test $ fmapT id x == x \\ witness entailEqT x \\ witness entailIndexT x
+tensorCrtTests1 :: forall t m r . _ => Gen r -> Gen (t m r) -> Test
+tensorCrtTests1 ringGen tensorGen =
+  let ptmr = Proxy::Proxy '(t,m,r)
+      tests = [
+          testWithGen "GInv.G == id on CRT basis"             prop_ginv_crt tensorGen,
+          testWithGen "CRTInv.CRT == id"                      prop_crt_inv tensorGen,
+          testWithGen "G commutes with L on CRT basis"        prop_g_crt tensorGen,
+          testWithGen "Tw and Em ID on CRT for equal indices" prop_twEmIDCRT tensorGen,
+          testWithGen "Scalar"                               (prop_scalar_crt ptmr) ringGen] in
+  testGroup (showType ptmr) tests
 
-prop_fmap :: _ => t m r -> Test '(t,m,r)
-prop_fmap x = test $ (fmap id x) == x \\ witness entailEqT x \\ witness entailIndexT x
+tensorTests2 :: forall t m m' r . _
+             => Proxy '(t,m,m',r) -> Gen (t m r) -> Test
+tensorTests2 _ tensorGen =
+  let ptmmr  = Proxy::Proxy '(t,m,m',r)
+      randTests  = ($ tensorGen) <$> [
+        nestGroup  "Tw.Em == id" [
+          testWithGen "Pow basis"                       (prop_trem_pow ptmmr),
+          testWithGen "Dec basis"                       (prop_trem_dec ptmmr)],
+        testWithGen   "Em commutes with L in Dec basis" (prop_embed_dec ptmmr),
+        testWithGen   "Tw commutes with L in Dec basis" (prop_twace_dec ptmmr)]
+      deterministicTests = [
+        testGroup  "Twace invariants" [
+          testWithoutGen "Invar1 Pow basis"             (prop_twace_invar1_pow ptmmr),
+          testWithoutGen "Invar1 Dec basis"             (prop_twace_invar1_dec ptmmr),
+          testWithoutGen "Invar2 Pow/Dec basis"         (prop_twace_invar2_powdec ptmmr)]] in
+      testGroup (showType ptmmr) (randTests ++ deterministicTests)
+
+tensorCrtTests2 :: forall t m m' r . _ => Proxy '(t,m,m',r) -> Gen (t m r) -> Test
+tensorCrtTests2 _ tensorGen =
+  let ptmmr  = Proxy::Proxy '(t,m,m',r)
+      randTests  = ($ tensorGen) <$> [
+        testWithGen "Tw.Em == id in CRT basis"        (prop_trem_crt ptmmr),
+        testWithGen "Em commutes with L in CRT basis" (prop_embed_crt ptmmr),
+        testWithGen "Tw commutes with L in CRT basis" (prop_twace_crt ptmmr)]
+      deterministicTests = [
+        testGroup "Twace invariants" [
+          testWithoutGen "Invar1 CRT basis"           (prop_twace_invar1_crt ptmmr),
+          testWithoutGen "Invar2 CRT basis"           (prop_twace_invar2_crt ptmmr)]] in
+      testGroup (showType ptmmr) (randTests ++ deterministicTests)
+
+prop_fmap :: _ => t m r -> Bool
+prop_fmap x = (fmap id x) =~= x
 
 -- divG . mulG == id in Pow basis
-prop_ginv_pow :: _ => t m r -> Test '(t,m,r)
-prop_ginv_pow x = test $ (fromMaybe (error "could not divide by G in prop_ginv_pow") $
-  divGPow $ mulGPow x) == x \\ witness entailEqT x
+prop_ginv_pow :: _ => t m r -> Bool
+prop_ginv_pow x = (fromMaybe (error "could not divide by G in prop_ginv_pow") $
+  divGPow $ mulGPow x) =~= x
 
 -- divG . mulG == id in Dec basis
-prop_ginv_dec :: _ => t m r -> Test '(t,m,r)
-prop_ginv_dec x = test $ (fromMaybe (error "could not divide by G in prop_ginv_dec") $
-  divGDec $ mulGDec x) == x \\ witness entailEqT x
+prop_ginv_dec :: _ => t m r -> Bool
+prop_ginv_dec x = (fromMaybe (error "could not divide by G in prop_ginv_dec") $
+  divGDec $ mulGDec x) =~= x
 
 -- divG . mulG == id in CRT basis
-prop_ginv_crt :: _ => t m r -> Test '(t,m,r)
-prop_ginv_crt x = test $ fromMaybe (error "no CRT in prop_ginv_crt") $ do
+prop_ginv_crt :: _ => t m r -> Bool
+prop_ginv_crt x = fromMaybe (error "no CRT in prop_ginv_crt") $ do
   divGCRT' <- divGCRT
   mulGCRT' <- mulGCRT
-  return $ (divGCRT' $ mulGCRT' x) == x \\ witness entailEqT x
+  return $ (divGCRT' $ mulGCRT' x) =~= x
 
 -- mulGDec == lInv. mulGPow . l
-prop_g_dec :: _ => t m r -> Test '(t,m,r)
-prop_g_dec x = test $ (mulGDec x) == (lInv $ mulGPow $ l x) \\ witness entailEqT x
+prop_g_dec :: _ => t m r -> Bool
+prop_g_dec x = (mulGDec x) =~= (lInv $ mulGPow $ l x)
 
-prop_g_crt :: _ => t m r -> Test '(t,m,r)
-prop_g_crt x = test $ fromMaybe (error "no CRT in prop_g_crt") $ do
+prop_g_crt :: _ => t m r -> Bool
+prop_g_crt x = fromMaybe (error "no CRT in prop_g_crt") $ do
   mulGCRT' <- mulGCRT
   crt' <- crt
   crtInv' <- crtInv
-  return $ (mulGCRT' x) == (crt' $ mulGPow $ crtInv' x) \\ witness entailEqT x
+  return $ (mulGCRT' x) =~= (crt' $ mulGPow $ crtInv' x)
 
 -- crtInv . crt == id
-prop_crt_inv :: _ => t m r -> Test '(t,m,r)
-prop_crt_inv x = test $ fromMaybe (error "no CRT in prop_crt_inv") $ do
+prop_crt_inv :: _ => t m r -> Bool
+prop_crt_inv x = fromMaybe (error "no CRT in prop_crt_inv") $ do
   crt' <- crt
   crtInv' <- crtInv
-  return $ (crtInv' $ crt' x) == x \\ witness entailEqT x
+  return $ (crtInv' $ crt' x) =~= x
 
 -- lInv . l == id
-prop_l_inv :: _ => t m r -> Test '(t,m,r)
-prop_l_inv x = test $ (lInv $ l x) == x \\ witness entailEqT x
+prop_l_inv :: _ => t m r -> Bool
+prop_l_inv x = (lInv $ l x) =~= x
 
 -- scalarCRT = crt . scalarPow
-prop_scalar_crt :: forall t m r . (Tensor t, Fact m, _) => r -> Test '(t,m,r)
-prop_scalar_crt r = test $ fromMaybe (error "no CRT in prop_scalar_crt") $ do
+-- This only requires Proxy '(t,m) to be fully determined, but this works too
+prop_scalar_crt :: forall t m r . (Tensor t r, Fact m, _) => Proxy '(t,m,r) -> r -> Bool
+prop_scalar_crt _ x = fromMaybe (error "no CRT in prop_scalar_crt") $ do
   scalarCRT' <- scalarCRT
   crt' <- crt
-  return $ (scalarCRT' r :: t m r) == (crt' $ scalarPow r)
-  \\ proxy entailEqT (Proxy::Proxy (t m r))
+  return $ (scalarCRT' x :: t m r) =~= (crt' $ scalarPow x)
 
 -- tests that twace . embed == id in the Pow basis
-prop_trem_pow :: forall t m m' r . (Fact m, Fact m', _) => t m r -> Test '(t,m,m',r)
-prop_trem_pow x = test $ (twacePowDec $ (embedPow x :: t m' r)) == x \\ witness entailEqT x
+prop_trem_pow :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_trem_pow _ x = (twacePowDec $ (embedPow x :: t m' r)) =~= x
 
 -- tests that twace . embed == id in the Dec basis
-prop_trem_dec :: forall t m m' r . (Fact m, Fact m', _) => t m r -> Test '(t,m,m',r)
-prop_trem_dec x = test $ (twacePowDec $ (embedDec x :: t m' r)) == x \\ witness entailEqT x
+prop_trem_dec :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_trem_dec _ x = (twacePowDec $ (embedDec x :: t m' r)) =~= x
 
 -- tests that twace . embed == id in the CRT basis
-prop_trem_crt :: forall t m m' r . (Fact m, Fact m', _) => t m r -> Test '(t,m,m',r)
-prop_trem_crt x = test $ fromMaybe (error "no CRT in prop_trem_crt") $
-  (x==) <$> (twaceCRT <*> (embedCRT <*> pure x :: Maybe (t m' r))) \\ witness entailEqT x
+prop_trem_crt :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_trem_crt _ x = fromMaybe (error "no CRT in prop_trem_crt") $
+  (x=~=) <$> (twaceCRT <*> (embedCRT <*> pure x :: Maybe (t m' r)))
 
 -- embedDec == lInv . embedPow . l
-prop_embed_dec :: forall t m m' r . (Fact m, Fact m', _) => t m r -> Test '(t,m,m',r)
-prop_embed_dec x = test $ (embedDec x :: t m' r) == (lInv $ embedPow $ l x)
-  \\ proxy entailEqT (Proxy::Proxy (t m' r))
+prop_embed_dec :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_embed_dec _ x = (embedDec x :: t m' r) =~= (lInv $ embedPow $ l x)
 
 -- embedCRT = crt . embedPow . crtInv
-prop_embed_crt :: forall t m m' r . (Fact m, Fact m', _) => t m r -> Test '(t,m,m',r)
-prop_embed_crt x = test $ fromMaybe (error "no CRT in prop_embed_crt") $ do
+prop_embed_crt :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_embed_crt _ x = fromMaybe (error "no CRT in prop_embed_crt") $ do
   crt' <- crt
   crtInv' <- crtInv
   embedCRT' <- embedCRT
-  return $ (embedCRT' x :: t m' r) == (crt' $ embedPow $ crtInv' x)
-    \\ proxy entailEqT (Proxy::Proxy (t m' r))
+  return $ (embedCRT' x :: t m' r) =~= (crt' $ embedPow $ crtInv' x)
 
 -- twacePowDec = lInv . twacePowDec . l
-prop_twace_dec :: forall t m m' r . (Fact m, Fact m', _) => t m' r -> Test '(t,m,m',r)
-prop_twace_dec x = test $ (twacePowDec x :: t m r) == (lInv $ twacePowDec $ l x)
-  \\ proxy entailEqT (Proxy::Proxy (t m r))
+prop_twace_dec :: forall t m m' r . _ => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_twace_dec _ x = (twacePowDec x :: t m r) =~= (lInv $ twacePowDec $ l x)
 
 -- twaceCRT = crt . twacePowDec . crtInv
-prop_twace_crt :: forall t m m' r . (Fact m, Fact m', _) => t m' r -> Test '(t,m,m',r)
-prop_twace_crt x = test $ fromMaybe (error "no CRT in prop_trace_crt") $ do
+prop_twace_crt :: forall t m m' r . _ => Proxy '(t,m,m',r) -> t m r -> Bool
+prop_twace_crt _ x = fromMaybe (error "no CRT in prop_trace_crt") $ do
   twaceCRT' <- twaceCRT
   crt' <- crt
   crtInv' <- crtInv
-  return $ (twaceCRT' x :: t m r) == (crt' $ twacePowDec $ crtInv' x)
-    \\ proxy entailEqT (Proxy::Proxy (t m r))
+  return $ (twaceCRT' x :: t m r) =~= (crt' $ twacePowDec $ crtInv' x)
 
-prop_twEmID :: forall t m r . _ => t m r -> Test '(t,m,r)
-prop_twEmID x = test $
-  ((twacePowDec x) == x) &&
-  (((fromMaybe (error "twemid_crt") twaceCRT) x) == x) &&
-  ((embedPow x) == x) &&
-  ((embedDec x) == x) &&
-  (((fromMaybe (error "twemid_crt") embedCRT) x) == x) \\ witness entailEqT x
+prop_twEmIDCRT :: forall t m r . _ => t m r -> Bool
+prop_twEmIDCRT x = (((fromMaybe (error "twemid_crt") twaceCRT) x) =~= x) &&
+                   (((fromMaybe (error "twemid_crt") embedCRT) x) =~= x)
+
+prop_twEmID :: forall t m r . _ => t m r -> Bool
+prop_twEmID x = ((twacePowDec x) =~= x) &&
+                ((embedPow x) =~= x) &&
+                ((embedDec x) =~= x)
 
 -- twace mhat'/g' = mhat*totm'/totm/g (Pow basis)
-prop_twace_invar1_pow :: forall t m m' r . _ => Test '(t,m,m',r)
-prop_twace_invar1_pow = test $ fromMaybe (error "could not divide by G in prop_twace_invar1_pow") $ do
+prop_twace_invar1_pow :: forall t m m' r . _ => Proxy '(t,m,m',r) -> Bool
+prop_twace_invar1_pow _ = fromMaybe (error "could not divide by G in prop_twace_invar1_pow") $ do
   let mhat = proxy valueHatFact (Proxy::Proxy m)
       mhat' = proxy valueHatFact (Proxy::Proxy m')
       totm = proxy totientFact (Proxy::Proxy m)
       totm' = proxy totientFact (Proxy::Proxy m')
   output :: t m r <- divGPow $ scalarPow $ fromIntegral $ mhat * totm' `div` totm
   input :: t m' r <- divGPow $ scalarPow $ fromIntegral mhat'
-  return $ (twacePowDec input) == output \\ proxy entailEqT (Proxy::Proxy (t m r))
+  return $ (twacePowDec input) =~= output
 
 -- twace mhat'/g' = mhat*totm'/totm/g (Dec basis)
-prop_twace_invar1_dec :: forall t m m' r . _ => Test '(t,m,m',r)
-prop_twace_invar1_dec = test $ fromMaybe (error "could not divide by G in prop_twace_invar1_dec") $ do
+prop_twace_invar1_dec :: forall t m m' r . _ => Proxy '(t,m,m',r) -> Bool
+prop_twace_invar1_dec _ = fromMaybe (error "could not divide by G in prop_twace_invar1_dec") $ do
   let mhat = proxy valueHatFact (Proxy::Proxy m)
       mhat' = proxy valueHatFact (Proxy::Proxy m')
       totm = proxy totientFact (Proxy::Proxy m)
       totm' = proxy totientFact (Proxy::Proxy m')
   output :: t m r <- divGDec $ lInv $ scalarPow $ fromIntegral $ mhat * totm' `div` totm
   input :: t m' r <- divGDec $ lInv $ scalarPow $ fromIntegral mhat'
-  return $ (twacePowDec input) == output \\ proxy entailEqT (Proxy::Proxy (t m r))
+  return $ (twacePowDec input) =~= output
 
 -- twace mhat'/g' = mhat*totm'/totm/g (CRT basis)
-prop_twace_invar1_crt :: forall t m m' r . _ => Test '(t,m,m',r)
-prop_twace_invar1_crt = test $ fromMaybe (error "no CRT in prop_twace_invar1_crt") $ do
+prop_twace_invar1_crt :: forall t m m' r . _ => Proxy '(t,m,m',r) -> Bool
+prop_twace_invar1_crt _ = fromMaybe (error "no CRT in prop_twace_invar1_crt") $ do
   let mhat = proxy valueHatFact (Proxy::Proxy m)
       mhat' = proxy valueHatFact (Proxy::Proxy m')
       totm = proxy totientFact (Proxy::Proxy m)
@@ -215,23 +227,25 @@ prop_twace_invar1_crt = test $ fromMaybe (error "no CRT in prop_twace_invar1_crt
   twaceCRT' <- twaceCRT
   let output :: t m r = divGCRT1 $ scalarCRT1 $ fromIntegral $ mhat * totm' `div` totm
       input :: t m' r = divGCRT2 $ scalarCRT2 $ fromIntegral mhat'
-  return $ (twaceCRT' input) == output \\ proxy entailEqT (Proxy::Proxy (t m r))
+  return $ (twaceCRT' input) =~= output
 
 -- twace preserves scalars in Pow/Dec basis
-prop_twace_invar2_powdec :: forall t m m' r . (Tensor t, Fact m, Fact m', Ring r, _) => Test '(t,m,m',r)
-prop_twace_invar2_powdec = test $
+prop_twace_invar2_powdec :: forall t m m' r . (Tensor t r, m `Divides` m', _)
+                         => Proxy '(t,m,m',r) -> Bool
+prop_twace_invar2_powdec _ =
   let output = scalarPow $ one :: t m r
       input = scalarPow $ one :: t m' r
-  in (twacePowDec input) == output \\ proxy entailEqT (Proxy::Proxy (t m r))
+  in (twacePowDec input) =~= output
 
 -- twace preserves scalars in Pow/Dec basis
-prop_twace_invar2_crt :: forall t m m' r . (Tensor t, Fact m, Fact m', Ring r, _) => Test '(t,m,m',r)
-prop_twace_invar2_crt = test $ fromMaybe (error "no CRT in prop_twace_invar2_crt") $ do
+prop_twace_invar2_crt :: forall t m m' r . (Tensor t r, m `Divides` m', _)
+                      => Proxy '(t,m,m',r) -> Bool
+prop_twace_invar2_crt _ = fromMaybe (error "no CRT in prop_twace_invar2_crt") $ do
   scalarCRT1 <- scalarCRT
   scalarCRT2 <- scalarCRT
   let input = scalarCRT1 one :: t m' r
       output = scalarCRT2 one :: t m r
-  return $ (twacePowDec input) == output \\ proxy entailEqT (Proxy::Proxy (t m r))
+  return $ (twacePowDec input) =~= output
 
 {-
 -- tests that gSqNormDec of two "random-looking" vectors agrees for RT and CT
