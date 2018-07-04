@@ -12,6 +12,7 @@ Example usage of 'Crypto.Lol.Applications.KeyHomomorphicPRF'.
 -}
 
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
@@ -30,7 +31,7 @@ type Rq t = Cyc t M (ZqBasic Q Int64)
 type Rp t = Cyc t M (ZqBasic P Int64)
 type Gad = BaseBGad 2
 
-khprfMain :: forall t . (_) => Proxy t -> IO ()
+khprfMain :: forall t . _ => Proxy t -> IO ()
 khprfMain _ = do
   key <- genKey
   params :: PRFParams N Gad (Rq t) <- genParams

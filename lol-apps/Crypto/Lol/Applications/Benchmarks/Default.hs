@@ -81,4 +81,4 @@ defaultSHEBenches pt pgad pgen  = sequence [
 
 
 defaultKHPRFBenches :: _ => Proxy t -> Proxy gad -> rnd [Benchmark]
-defaultKHPRFBenches pt pgad = sequence [khprfBenches pt pgad]
+defaultKHPRFBenches = khprfBenches
