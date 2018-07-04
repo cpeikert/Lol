@@ -761,6 +761,11 @@ instance (ReduceCyc (Cyc t) r a, ReduceCyc (Cyc t) r b)
   => ReduceCyc (Cyc t) r (a,b) where
   reduceCyc r = CycPair (reduceCyc r) (reduceCyc r)
 
+instance (ReduceCyc (CycG t) a b, Fact m,
+          Additive (CycG t m a), Additive (CycG t m b)) -- Reduce superclasses
+  => Reduce (CycG t m a) (CycG t m b) where
+  reduce = reduceCyc
+
 instance (ReduceCyc (Cyc t) a b, Fact m,
           Additive (Cyc t m a), Additive (Cyc t m b)) -- Reduce superclasses
   => Reduce (Cyc t m a) (Cyc t m b) where
@@ -904,9 +909,9 @@ fromZL :: TaggedT s ZipList a -> Tagged s [a]
 fromZL = coerce
 
 -- | promoted from base ring, using the powerful basis for best geometry
-instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
+instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), CRTElt t z, Fact m,
           -- for satisfying Decompose's Gadget superclass
-          ZeroTestable (ZqBasic q z), IntegralDomain (ZqBasic q z))
+          ZeroTestable (ZqBasic q z), ZeroTestable z, IntegralDomain (ZqBasic q z))
          => Decompose gad (CycG t m (ZqBasic q z)) where
 
   type DecompOf (CycG t m (ZqBasic q z)) = CycG t m z
@@ -923,13 +928,16 @@ instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
   {-# INLINABLE decompose #-}
 
 -- specific to Int64 because we need to know constructor for lift type
-instance (Decompose gad (CycG t m (ZqBasic q Int64)))
+instance (Fact m, Decompose gad (CycG t m (ZqBasic q Int64)),
+          CRTElt t (Complex Double), CRTElt t (ZqBasic q Int64), CRTElt t Int64,
+          Reflects q Int64)
   => Decompose gad (Cyc t m (ZqBasic q Int64)) where
 
   type DecompOf (Cyc t m (ZqBasic q Int64)) = Cyc t m Int64
   decompose (CycZqB c) = (CycI64 <$>) <$> decompose c
 
 instance (Decompose gad (Cyc t m a), Decompose gad (Cyc t m b),
+         Reduce (DecompOf (Cyc t m b)) (Cyc t m (a, b)),
          DecompOf (Cyc t m a) ~ DecompOf (Cyc t m b))
   => Decompose gad (Cyc t m (a,b)) where
   type DecompOf (Cyc t m (a,b)) = DecompOf (Cyc t m a)
@@ -937,7 +945,8 @@ instance (Decompose gad (Cyc t m a), Decompose gad (Cyc t m b),
 
 -- ForallFact2 in case they're useful
 
-instance (Decompose gad (ZqBasic q Int64), CRTElt t (ZqBasic q Int64),
+instance (Decompose gad (ZqBasic q Int64), Reflects q Int64,
+          CRTElt t (ZqBasic q Int64), CRTElt t (Complex Double), CRTElt t Int64,
           -- copied from Decompose instance above
           IntegralDomain (ZqBasic q Int64))
   => ForallFact2 (Decompose gad) (Cyc t) (ZqBasic q Int64) where
