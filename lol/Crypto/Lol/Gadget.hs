@@ -59,7 +59,7 @@ class Ring u => Gadget gad u where
 -- | Decomposition relative to a gadget.
 
 -- CJP: include a `Module (DecompOf u) u` superclass constraint?
-class (Gadget gad u) => Decompose gad u where
+class (Gadget gad u, Reduce (DecompOf u) u) => Decompose gad u where
   -- | The ring that @u@ decomposes over.
   type DecompOf u
 
