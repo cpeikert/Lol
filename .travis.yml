@@ -49,11 +49,6 @@ install:
 # - stack build lol-repa --no-terminal --install-ghc --test --bench --dependencies-only --flag lol-repa:with-execs
 # - stack build rlwe-challenges --no-terminal --install-ghc --test --bench --dependencies-only
 
-env:
-  - TEST_SUITE=lol
-  - TEST_SUITE=lol-cpp
-#  - TEST_SUITE=lol-repa
-
 script:
 # Build the package, its tests, benchmarks, executables, (but not its
 # docs!) and run the tests
@@ -66,5 +61,7 @@ script:
 - travis_wait 40 stack build
 # TODO: put "--flag lol-cpp:with-execs" back in the line above when ready
 
-- travis_wait 40 stack test  $TEST_SUITE --no-terminal --fast
-- travis_wait 40 exec stack bench $TEST_SUITE --no-terminal --fast --no-run-benchmarks
+- travis_wait 40 stack test  lol     --no-terminal --fast
+- travis_wait 40 stack test  lol-cpp --no-terminal --fast
+- travis_wait 40 stack bench lol     --no-terminal --fast --no-run-benchmarks
+- travis_wait 40 stack bench lol-cpp --no-terminal --fast --no-run-benchmarks
