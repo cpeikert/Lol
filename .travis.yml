@@ -41,9 +41,8 @@ before_install:
 install:
 # Build dependencies for libs, tests, benches, and executables
 - stack build lol      --no-terminal --install-ghc --test --bench --dependencies-only
+- stack build lol-cpp  --no-terminal --install-ghc --test --bench --dependencies-only --flag lol-cpp:with-execs
 - stack build lol-apps --no-terminal --install-ghc --test --bench --dependencies-only
-- stack build lol-cpp  --no-terminal --install-ghc --test --bench --dependencies-only
-# TODO: put "--flag lol-cpp:with-execs" back in the line above when ready
 
 # putting aside repa and challenges for now:
 # - stack build lol-repa --no-terminal --install-ghc --test --bench --dependencies-only --flag lol-repa:with-execs
@@ -58,8 +57,7 @@ script:
 
 # build docs and executables:
 
-- travis_wait 40 stack build
-# TODO: put "--flag lol-cpp:with-execs" back in the line above when ready
+- travis_wait 40 stack build --fast --flag lol-cpp:with-execs
 
 - travis_wait 40 stack test  lol     --no-terminal --fast
 - travis_wait 40 stack test  lol-cpp --no-terminal --fast
