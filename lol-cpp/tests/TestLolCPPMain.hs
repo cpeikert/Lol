@@ -4,7 +4,7 @@ Description : Main driver for lol tests with CPP.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
@@ -20,9 +20,10 @@ import Test.Framework
 
 main :: IO ()
 main = defaultMainWithArgs
-          [defaultZqTests
-          ,zqTensorTests (Proxy::Proxy CT)
-          ,int64TensorTests (Proxy::Proxy CT)
-          ,cpxTensorTests (Proxy::Proxy CT)
-          ,cycTests (Proxy::Proxy CT)]
-         ["--maximum-generated-tests=100"]
+          [ defaultZqTests
+          , zqTensorTests (Proxy::Proxy CT)
+          , int64TensorTests (Proxy::Proxy CT)
+          , cpxTensorTests (Proxy::Proxy CT)
+          , cycTests (Proxy::Proxy CT)
+          ]
+          ["--maximum-generated-tests=10"]
