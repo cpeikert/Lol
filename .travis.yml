@@ -43,13 +43,13 @@ install:
 - stack build lol      --no-terminal --install-ghc --test --bench --dependencies-only
 - stack build lol-apps --no-terminal --install-ghc --test --bench --dependencies-only
 - stack build lol-cpp  --no-terminal --install-ghc --test --bench --dependencies-only --flag lol-cpp:with-execs
-- stack build lol-repa --no-terminal --install-ghc --test --bench --dependencies-only --flag lol-repa:with-execs
-- stack build rlwe-challenges --no-terminal --install-ghc --test --bench --dependencies-only
+#- stack build lol-repa --no-terminal --install-ghc --test --bench --dependencies-only --flag lol-repa:with-execs
+#- stack build rlwe-challenges --no-terminal --install-ghc --test --bench --dependencies-only
 
 env:
   - TEST_SUITE=lol
   - TEST_SUITE=lol-cpp
-  - TEST_SUITE=lol-repa
+#  - TEST_SUITE=lol-repa
 
 script:
 # Build the package, its tests, benchmarks, executables, and its docs and run the tests
