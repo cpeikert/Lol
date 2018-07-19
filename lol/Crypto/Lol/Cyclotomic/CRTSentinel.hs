@@ -5,7 +5,7 @@ Description : Safely exposes a "sentinel" indicating usage of either CRT basis
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
@@ -33,7 +33,6 @@ import Data.Functor.Trans.Tagged
 import Data.Maybe
 import Data.Proxy
 
-import Crypto.Lol.CRTrans
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Factored
 
