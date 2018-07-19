@@ -60,7 +60,6 @@ import qualified Algebra.Additive as Additive (C)
 import qualified Algebra.Ring     as Ring (C)
 
 import Crypto.Lol as LP hiding (sin)
-import Crypto.Lol.Cyclotomic.CycRep   (D, CycRep, CRTElt)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
 import Crypto.Proto.Lol.R (R)
@@ -190,8 +189,7 @@ errorTermUnrestricted :: ErrorTermUCtx c m' z zp zq
   => SK (c m' z) -> CT m zp (c m' zq) -> c m' (LiftOf zq)
 errorTermUnrestricted (SK _ s) = let sq = reduceCyc s in
   \ct -> let (CT LSD _ _ c) = toLSD ct
-             eval = evaluate c sq
-         in liftDec eval
+         in liftDec $ evaluate c sq
 
 -- | More general form of 'decrypt' that works for unrestricted output
 -- coefficient types.
