@@ -786,7 +786,8 @@ instance (Reduce Integer (ZqBasic q z), ForallFact1 Applicative t)
 -----
 
 -- | Rescales relative to the powerful basis. This instance is
--- provided for convenience, but usage of 'RescaleCyc' is preferred.
+-- provided for convenience, but usage of 'RescaleCyc' is preferred to
+-- explicitly specify which basis by which to rescale.
 instance (RescaleCyc (Cyc t) a b, Fact m,
           Additive (Cyc t m a), Additive (Cyc t m b)) -- superclasses
  => Rescale (Cyc t m a) (Cyc t m b) where
@@ -807,15 +808,18 @@ instance {-# INCOHERENT #-} (Rescale a b, CRTElt t a, Tensor t b)
   rescaleCyc L.Dec c = Dec $ fmapI rescale $ unCycGDec c
   {-# INLINABLE rescaleCyc #-}
 
+-- | identity rescale
 instance RescaleCyc (CycG t) a a where
   -- No-op rescale
   rescaleCyc _ = id
   {-# INLINABLE rescaleCyc #-}
 
+-- | rescale from one modulus to another
 instance (RescaleCyc (CycG t) (ZqBasic q z) (ZqBasic p z))
   => RescaleCyc (Cyc t) (ZqBasic q z) (ZqBasic p z) where
   rescaleCyc b = CycZqB . rescaleCyc b . unCycZqB
 
+-- | rescale from one modulus to another
 instance (Rescale (RRq q r) (RRq p r), Tensor t (RRq q r), Tensor t (RRq p r))
   => RescaleCyc (Cyc t) (RRq q r) (RRq p r) where
   rescaleCyc L.Pow (PowRRq u) = PowRRq $ rescale u
@@ -823,7 +827,20 @@ instance (Rescale (RRq q r) (RRq p r), Tensor t (RRq q r), Tensor t (RRq p r))
   rescaleCyc L.Dec (DecRRq u) = DecRRq $ rescale u
   rescaleCyc L.Dec (PowRRq u) = DecRRq $ rescale $ toDec u
 
--- | specialized instance for product rings of \(\Z_q\)s
+-- | rescale up by one additional modulus
+instance (Reflects q z, Reduce z b, CRTElt t (ZqBasic q z), ZeroTestable z,
+          ForallFact2 (Module.C b) (Cyc t) b)
+  => RescaleCyc (Cyc t) b (ZqBasic q z, b) where
+
+  -- bring m into scope
+  rescaleCyc :: forall m . Fact m
+    => Basis -> Cyc t m b -> Cyc t m (ZqBasic q z, b)
+  rescaleCyc = let q :: z = proxy value (Proxy::Proxy q)
+               -- same method works for any basis
+               in \_ b -> CycPair zero $ (reduce q :: b) *> b
+                          \\ (entailFact2 :: Fact m :- Module.C b (Cyc t m b))
+
+-- | specialized (faster) rescale-down by a single \(\Z_q\)
 instance (LiftCyc (Cyc t) (ZqBasic q z), ReduceCyc (Cyc t) z b,
           Reflects q z, Reduce z b, Field b,
           ForallFact2 Additive.C (Cyc t) b, ForallFact2 (Module.C b) (Cyc t) b)
@@ -833,21 +850,23 @@ instance (LiftCyc (Cyc t) (ZqBasic q z), ReduceCyc (Cyc t) z b,
   rescaleCyc :: forall m . Fact m
     => Basis -> Cyc t m (ZqBasic q z, b) -> Cyc t m b
   rescaleCyc bas (CycPair a b) =
-    let qval :: z = proxy value (Proxy::Proxy q)
-        z = liftCyc bas a
-    in recip (reduce qval :: b) *> (b - reduceCyc z)
-       \\ (entailFact2 :: Fact m :- Module.C b (Cyc t m b))
-       \\ (entailFact2 :: Fact m :- Additive.C (Cyc t m b))
+    let q :: z = proxy value (Proxy::Proxy q)
+        x      = liftCyc bas a
+    in recip (reduce q :: b) *> (b - reduceCyc x)
+       \\ (entailFact2 :: Fact m :- Module.C   b (Cyc t m b))
+       \\ (entailFact2 :: Fact m :- Additive.C   (Cyc t m b))
 
 -- CJP: do we really need these? Just have client call rescaleCyc
 -- multiple times?
 
+-- | convenient rescale-down by multiple components at once
 instance (RescaleCyc (Cyc t) (b,c) c, RescaleCyc (Cyc t) (a,(b,c)) (b,c))
          => RescaleCyc (Cyc t) (a,(b,c)) c where
 
   rescaleCyc bas a = rescaleCyc bas (rescaleCyc bas a :: Cyc t _ (b,c))
   {-# INLINABLE rescaleCyc #-}
 
+-- | convenient rescale-down by multiple components at once
 instance (RescaleCyc (Cyc t) (b,(c,d)) d,
           RescaleCyc (Cyc t) (a,(b,(c,d))) (b,(c,d)))
          => RescaleCyc (Cyc t) (a,(b,(c,d))) d where
@@ -855,6 +874,7 @@ instance (RescaleCyc (Cyc t) (b,(c,d)) d,
   rescaleCyc bas a = rescaleCyc bas (rescaleCyc bas a :: Cyc t _ (b,(c,d)))
   {-# INLINABLE rescaleCyc #-}
 
+-- | convenient rescale-down by multiple components at once
 instance (RescaleCyc (Cyc t) (b,(c,(d,e))) e,
           RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) (b,(c,(d,e))))
          => RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) e where
