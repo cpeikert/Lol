@@ -40,8 +40,8 @@ compiler-check: newer-minor
 
 packages:
 - lol/
-- lol-apps/
 - lol-cpp/
+- lol-apps/
 # - lol-repa/
 # - rlwe-challenges/
 
