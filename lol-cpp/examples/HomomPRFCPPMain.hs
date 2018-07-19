@@ -18,4 +18,4 @@ import Crypto.Lol.Applications.Examples
 import Data.Proxy
 
 main :: IO ()
-main = homomPRFMain (Proxy::Proxy CT)
+main = khprfMain (Proxy::Proxy CT)
