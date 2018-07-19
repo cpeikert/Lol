@@ -65,3 +65,10 @@ script:
 - travis_wait 40 stack test  lol-cpp --no-terminal --fast
 - travis_wait 40 stack bench lol     --no-terminal --fast --no-run-benchmarks
 - travis_wait 40 stack bench lol-cpp --no-terminal --fast --no-run-benchmarks
+
+notifications:
+  email:
+    recipients:
+      - cpeikert@alum.mit.edu
+    on_success: change
+    on_failure: always
