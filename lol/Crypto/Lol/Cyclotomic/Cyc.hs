@@ -761,6 +761,11 @@ instance (ReduceCyc (Cyc t) r a, ReduceCyc (Cyc t) r b)
   => ReduceCyc (Cyc t) r (a,b) where
   reduceCyc r = CycPair (reduceCyc r) (reduceCyc r)
 
+instance (ReduceCyc (CycG t) a b, Fact m,
+          Additive (CycG t m a), Additive (CycG t m b)) -- Reduce superclasses
+  => Reduce (CycG t m a) (CycG t m b) where
+  reduce = reduceCyc
+
 instance (ReduceCyc (Cyc t) a b, Fact m,
           Additive (Cyc t m a), Additive (Cyc t m b)) -- Reduce superclasses
   => Reduce (Cyc t m a) (Cyc t m b) where
@@ -906,7 +911,9 @@ fromZL = coerce
 -- | promoted from base ring, using the powerful basis for best geometry
 instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
           -- for satisfying Decompose's Gadget superclass
-          ZeroTestable (ZqBasic q z), IntegralDomain (ZqBasic q z))
+          ZeroTestable (ZqBasic q z), IntegralDomain (ZqBasic q z),
+          -- for satisfying Decompose's Reduce superclass w/o using m
+          CRTElt t z, ZeroTestable z)
          => Decompose gad (CycG t m (ZqBasic q z)) where
 
   type DecompOf (CycG t m (ZqBasic q z)) = CycG t m z
@@ -923,29 +930,21 @@ instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
   {-# INLINABLE decompose #-}
 
 -- specific to Int64 because we need to know constructor for lift type
-instance (Decompose gad (CycG t m (ZqBasic q Int64)))
+instance (Decompose gad (CycG t m (ZqBasic q Int64)),
+          -- for satisfying Decompose's Reduce superclass
+          Reduce (Cyc t m Int64) (Cyc t m (ZqBasic q Int64)))
   => Decompose gad (Cyc t m (ZqBasic q Int64)) where
 
   type DecompOf (Cyc t m (ZqBasic q Int64)) = Cyc t m Int64
   decompose (CycZqB c) = (CycI64 <$>) <$> decompose c
 
 instance (Decompose gad (Cyc t m a), Decompose gad (Cyc t m b),
-         DecompOf (Cyc t m a) ~ DecompOf (Cyc t m b))
+         DecompOf (Cyc t m a) ~ DecompOf (Cyc t m b),
+         -- for satisfying Decompose's Reduce superclass
+         Reduce (DecompOf (Cyc t m a)) (Cyc t m (a, b)))
   => Decompose gad (Cyc t m (a,b)) where
   type DecompOf (Cyc t m (a,b)) = DecompOf (Cyc t m a)
   decompose (CycPair a b) = (++) <$> decompose a <*> decompose b
-
--- ForallFact2 in case they're useful
-
-instance (Decompose gad (ZqBasic q Int64), CRTElt t (ZqBasic q Int64),
-          -- copied from Decompose instance above
-          IntegralDomain (ZqBasic q Int64))
-  => ForallFact2 (Decompose gad) (Cyc t) (ZqBasic q Int64) where
-  entailFact2 = C.Sub Dict
-
--- can't do ForallFact2 for pairs because we'll need equality
--- constraint for DecompOf (Cyc t m a) and (Cyc t m b), but m isn't in
--- scope.
 
 -----
 
