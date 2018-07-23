@@ -17,15 +17,11 @@ L converts decoding -> powerful represenation, L^{-1} is the reverse.
 #include "types.h"
 #include "tensor.h"
 
-// TODO: Fix all comments that mention tupSize
-
 /* The prime-index transform that converts decoding basis coefficients (over any
  * ring) to powerful basis coefficients.
- * 'y' is an array of decoding basis coefficients in a four-dimensional tensor:
- * [tupSize]x[lts]x[rts]x[p-1].
- * The 'tupSize' outermost dimension is handled in tensorFuserPrime, which turns
- * this prime-index transformation into an arbitrary-index transformation. Thus
- * we can think of the operator as  (I_lts \otimes L_p \otimes I_rts).
+ * 'y' is an array of decoding basis coefficients in a three-dimensional tensor:
+ * [lts]x[rts]x[p-1].
+ * We can think of the operator as  (I_lts \otimes L_p \otimes I_rts).
  */
 template <typename ring> void lp (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
@@ -61,10 +57,8 @@ template <typename ring> void lp (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
 /* The prime-index transform that converts powerful basis coefficients (over any
  * ring) to powerful basis coefficients.
  * 'y' is an array of powerful basis coefficients in a four-dimensional tensor:
- * [tupSize]x[lts]x[rts]x[p-1].
- * The 'tupSize' outermost dimension is handled in tensorFuserPrime, which turns
- * this prime-index transformation into an arbitrary-index transformation. Thus
- * we can think of the operator as  (I_lts \otimes (L_p)^{-1} \otimes I_rts).
+ * [lts]x[rts]x[p-1].
+ * We can think of the operator as  (I_lts \otimes (L_p)^{-1} \otimes I_rts).
  */
 template <typename ring> void lpInv (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
@@ -102,8 +96,7 @@ template <typename ring> void lpInv (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
 /* Arbitrary-index transformation that converts decoding basis coefficients
  * (over a ring R mod (q1xq2x...), where the q_i's are pairwise coprime) into
  * powerful basis coefficients. The input 'y' represents a four-dimensional
- * tensor indexed as [tupSize]x[lts]x[rts]x[p-1], where each component of the
- * first coordinate is with respect to the corresponding modulus in 'qs'.
+ * tensor indexed as [lts]x[rts]x[p-1]
  *
  * Use "extern "C"" to avoid C++ name mangling, which makes it hard to call
  * from Haskell.
@@ -135,6 +128,11 @@ extern "C" void tensorLDouble (double* y, hDim_t totm, PrimeExponent* peArr, hSh
   tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
 }
 
+extern "C" void tensorLRRq (RRq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+{
+  tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
+}
+
 extern "C" void tensorLC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
   tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
@@ -143,8 +141,7 @@ extern "C" void tensorLC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_
 /* Arbitrary-index transformation that converts powerful basis coefficients
  * (over a ring R mod (q1xq2x...), where the q_i's are pairwise coprime) into
  * decoding basis coefficients. The input 'y' represents a four-dimensional
- * tensor indexed as [tupSize]x[lts]x[rts]x[p-1], where each component of the
- * first coordinate is with respect to the corresponding modulus in 'qs'.
+ * tensor indexed as [lts]x[rts]x[p-1]
  *
  * Use "extern "C"" to avoid C++ name mangling, which makes it hard to call
  * from Haskell.
