@@ -70,12 +70,12 @@ import Crypto.Lol.GaussRandom
 import Crypto.Lol.Prelude                         as LP hiding (replicate,
                                                          unzip, zip)
 import Crypto.Lol.Reflects
+import Crypto.Lol.Tests
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IFunctor
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Unsafe.ZqBasic
-import Crypto.Lol.Tests
 
 import Data.Foldable as F
 
@@ -226,7 +226,7 @@ instance IFunctor CT where
 ---------- Tensor instances ----------
 
 instance Reflects q Int64 => Tensor CT (ZqBasic q Int64) where
-  scalarPow = CT . scalarPow'
+  scalarPowDec = CT . scalarPowDec'
 
   l = wrap $ basicDispatch dlZq
   lInv = wrap $ basicDispatch dlinvZq
@@ -245,7 +245,7 @@ instance Reflects q Int64 => Tensor CT (ZqBasic q Int64) where
 
   powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
 
-  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE scalarPowDec #-}
   {-# INLINABLE l #-}
   {-# INLINABLE lInv #-}
   {-# INLINABLE mulGPow #-}
@@ -272,7 +272,7 @@ instance Reflects q Int64 => TensorCRT CT Maybe (ZqBasic q Int64) where
   {-# INLINE crtExtFuncs #-}
 
 instance Tensor CT (Complex Double) where
-  scalarPow = CT . scalarPow'
+  scalarPowDec = CT . scalarPowDec'
 
   l = wrap $ basicDispatch dlC
   lInv = wrap $ basicDispatch dlinvC
@@ -291,7 +291,7 @@ instance Tensor CT (Complex Double) where
 
   powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
 
-  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE scalarPowDec #-}
   {-# INLINABLE l #-}
   {-# INLINABLE lInv #-}
   {-# INLINABLE mulGPow #-}
@@ -323,7 +323,7 @@ instance TensorCRT CT Maybe (Complex Double) where
   {-# INLINE crtExtFuncs #-}
 
 instance Tensor CT Double where
-  scalarPow = CT . scalarPow'
+  scalarPowDec = CT . scalarPowDec'
 
   l = wrap $ basicDispatch dlDouble
   lInv = wrap $ basicDispatch dlinvDouble
@@ -342,7 +342,7 @@ instance Tensor CT Double where
 
   powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
 
-  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE scalarPowDec #-}
   {-# INLINABLE l #-}
   {-# INLINABLE lInv #-}
   {-# INLINABLE mulGPow #-}
@@ -366,7 +366,7 @@ instance TensorGSqNorm CT Double where
   {-# INLINABLE gSqNormDec #-}
 
 instance Tensor CT Int64 where
-  scalarPow = CT . scalarPow'
+  scalarPowDec = CT . scalarPowDec'
 
   l = wrap $ basicDispatch dlInt64
   lInv = wrap $ basicDispatch dlinvInt64
@@ -385,7 +385,7 @@ instance Tensor CT Int64 where
 
   powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
 
-  {-# INLINABLE scalarPow #-}
+  {-# INLINABLE scalarPowDec #-}
   {-# INLINABLE l #-}
   {-# INLINABLE lInv #-}
   {-# INLINABLE mulGPow #-}
@@ -594,9 +594,9 @@ replM :: forall m r mon . (Fact m, Storable r, Monad mon)
 replM = let n = proxy totientFact (Proxy::Proxy m)
         in fmap coerce . SV.replicateM n
 
-scalarPow' :: forall m r . (Fact m, Additive r, Storable r) => r -> CT' m r
+scalarPowDec' :: forall m r . (Fact m, Additive r, Storable r) => r -> CT' m r
 -- constant-term coefficient is first entry wrt powerful basis
-scalarPow' =
+scalarPowDec' =
   let n = proxy totientFact (Proxy::Proxy m)
   in \r -> CT' $ generate n (\i -> if i == 0 then r else zero)
 
