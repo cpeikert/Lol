@@ -235,7 +235,7 @@ fKron mat = tagT $ go $ sUnF (sing :: SFactored m)
             return $ MKron rest' mat'
 
 -- | For a prime power \(p^e\), converts any matrix \(M\) for
--- prime \(p\) to \(\vece{1}_(p^{e-1}) \otimes M\), where \(\vece{1}\)
+-- prime \(p\) to \(\vec{1}_(p^{e-1}) \otimes M\), where \(\vec{1}\)
 -- denotes the all-1s vector.
 ppKron :: forall pp r mon . (PPow pp, Monad mon)
           => (forall p . (Prime p) => TaggedT p mon (KronC r))
