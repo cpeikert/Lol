@@ -151,7 +151,8 @@ class TensorGaussian t q where
   tweakedGaussianDec :: (ToRational v, Fact m, MonadRandom rnd)
                         => v -> rnd (t m q)
 
--- | A coefficient tensor that supports taking norms under the canonical embedding.
+-- | A coefficient tensor that supports taking norms under the
+-- canonical embedding.
 class TensorGSqNorm t r where
   -- | Given the coefficient tensor of \(e\) with respect to the
   -- decoding basis of \(R\), yield the (scaled) squared norm of
