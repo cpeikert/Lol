@@ -57,7 +57,7 @@ module Crypto.Lol.Cyclotomic.CycRep
 -- * Inter-ring operations and values
 , embedPow, embedDec, embedCRTC, embedCRTE
 , twacePow, twaceDec, twaceCRTC, twaceCRTE
-, coeffsPow, coeffsDec, powBasis, crtSet
+, coeffsPow, coeffsDec, powBasis, decBasis, crtSet
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor hiding (divGDec, divGPow, embedCRT,
@@ -125,7 +125,7 @@ type CRTElt t r = (TensorCRT t Maybe r, TensorCRT t Identity (CRTExt r), CRTEmbe
 
 -- | Embed a scalar from the base ring.
 scalarPow :: (Tensor t r, Fact m) => r -> CycRep t P m r
-scalarPow = Pow . T.scalarPow
+scalarPow = Pow . T.scalarPowDec
 {-# INLINABLE scalarPow #-}
 
 -- | Embed a scalar from the base ring.
@@ -162,7 +162,7 @@ instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
 -- underlying tensor? Would this require using ForallFact2 Additive.C?
 
 instance (Tensor t r, Fact m) => Additive.C (CycRep t P m r) where
-  zero = Pow $ T.scalarPow zero
+  zero = Pow $ T.scalarPowDec zero
   (Pow v1) + (Pow v2) = Pow $ zipWithI (+) v1 v2
   (Pow v1) - (Pow v2) = Pow $ zipWithI (-) v1 v2
   negate (Pow v) = Pow $ fmapI negate v
@@ -172,7 +172,7 @@ instance (Tensor t r, Fact m) => Additive.C (CycRep t P m r) where
   {-# INLINABLE negate #-}
 
 instance (Tensor t r, Fact m) => Additive.C (CycRep t D m r) where
-  zero = Dec $ T.scalarPow zero -- scalarPow works because it's zero
+  zero = Dec $ T.scalarPowDec zero
   (Dec v1) + (Dec v2) = Dec $ zipWithI (+) v1 v2
   (Dec v1) - (Dec v2) = Dec $ zipWithI (-) v1 v2
   negate (Dec v) = Dec $ fmapI negate v
@@ -371,12 +371,12 @@ cosetGaussian =
 
 -- | Embed into an extension ring, for the powerful basis.
 embedPow :: (Tensor t r, m `Divides` m') => CycRep t P m r -> CycRep t P m' r
-embedPow (Pow v) = Pow $ T.embedPow v
+embedPow (Pow v) = Pow $ T.embedPowDec v
 {-# INLINABLE embedPow #-}
 
 -- | Embed into an extension ring, for the decoding basis.
 embedDec :: (Tensor t r, m `Divides` m') => CycRep t D m r -> CycRep t D m' r
-embedDec (Dec v) = Dec $ T.embedDec v
+embedDec (Dec v) = Dec $ T.embedPowDec v
 {-# INLINABLE embedDec #-}
 
 -- | Embed into an extension ring, for the CRT basis.  (The output is
@@ -448,7 +448,12 @@ coeffsDec (Dec v) = LP.map Dec $ coeffs v
 -- | The relative powerful basis of \(\O_{m'} / \O_m\).
 powBasis :: (Tensor t r, m `Divides` m') => Tagged m [CycRep t P m' r]
 {-# INLINABLE powBasis #-}
-powBasis = (Pow <$>) <$> powBasisPow
+powBasis = (Pow <$>) <$> relativePowDec
+
+-- | The relative decoding basis of \(\O_{m'} / \O_m\).
+decBasis :: (Tensor t r, m `Divides` m') => Tagged m [CycRep t D m' r]
+{-# INLINABLE decBasis #-}
+decBasis = (Dec <$>) <$> relativePowDec
 
 -- | The relative mod-\(r\) CRT set of \(\O_{m'} / \O_m\),
 -- represented with respect to the powerful basis (which seems to be
@@ -495,7 +500,7 @@ class ToCRT c rep r where
 
 instance Tensor t r => ToPowDec (CycRep t) P r where
   toPow = id
-  toDec (Pow v) = Dec $ lInv v
+  toDec (Pow v) = Dec $ powToDec v
 
 instance CRTElt t r => ToCRT (CycRep t) P r where
   toCRT (Pow v) = case crtSentinel of
@@ -503,7 +508,7 @@ instance CRTElt t r => ToCRT (CycRep t) P r where
                     Left  s -> Left  $ CRTE s $ runIdentity crt $ fmapI toExt v
 
 instance Tensor t r => ToPowDec (CycRep t) D r where
-  toPow (Dec v) = Pow $ l v
+  toPow (Dec v) = Pow $ decToPow v
   toDec = id
 
 instance CRTElt t r => ToCRT (CycRep t) D r where
