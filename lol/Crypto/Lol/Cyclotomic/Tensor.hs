@@ -397,7 +397,7 @@ indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
             in tag (mpps, phi, phi', tots)
 
 -- | A vector of \(\varphi(m)\) entries, where the \(i\)th entry is
--- the index into the powerful\/decoding basis of \(\O_{m'}\) of the
+-- the index into the powerful/decoding basis of \(\O_{m'}\) of the
 -- \(i\)th entry of the powerful/decoding basis of \(\O_m\).
 extIndicesPowDec :: (m `Divides` m') => Tagged '(m, m') (U.Vector Int)
 {-# INLINABLE extIndicesPowDec #-}
