@@ -94,8 +94,8 @@ class Cyclotomic c r => ExtensionCyc c r where
   -- 'embed' (i.e., @twace . embed == id@).
   twace :: (m `Divides` m') => c m' r -> c m r
 
-  -- | The relative powerful basis of the extension.
-  powBasis :: (m `Divides` m') => Tagged m [c m' r]
+  -- | The relative powerful/decoding bases of the extension.
+  powBasis, decBasis :: (m `Divides` m') => Tagged m [c m' r]
 
   -- | Yield the coefficient vector with respect to the given
   -- (relative) basis of the extension.

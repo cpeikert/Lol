@@ -68,7 +68,8 @@ import qualified Algebra.ZeroTestable as ZeroTestable (C)
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CycRep   hiding (coeffsDec,
                                                  coeffsPow, crtSet,
-                                                 gSqNorm, powBasis)
+                                                 decBasis, gSqNorm,
+                                                 powBasis)
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
@@ -645,6 +646,7 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r) -- ZT, ID for superclass
                                   \\ gcdDivides (Proxy::Proxy l) (Proxy::Proxy m)
 
   powBasis = (Pow <$>) <$> R.powBasis
+  decBasis = (Dec <$>) <$> R.decBasis
 
   coeffsCyc L.Pow c' = Pow <$> R.coeffsPow (unCycGPow c')
   coeffsCyc L.Dec c' = Dec <$> R.coeffsDec (unCycGDec c')
@@ -653,18 +655,21 @@ instance ExtensionCyc (CycG t) Double => ExtensionCyc (Cyc t) Double where
   embed = CycDbl . embed . unCycDbl
   twace = CycDbl . twace . unCycDbl
   powBasis = (CycDbl <$>) <$> powBasis
+  decBasis = (CycDbl <$>) <$> decBasis
   coeffsCyc b = fmap CycDbl . coeffsCyc b . unCycDbl
 
 instance ExtensionCyc (CycG t) Int64 => ExtensionCyc (Cyc t) Int64 where
   embed = CycI64 . embed . unCycI64
   twace = CycI64 . twace . unCycI64
   powBasis = (CycI64 <$>) <$> powBasis
+  decBasis = (CycI64 <$>) <$> decBasis
   coeffsCyc b = fmap CycI64 . coeffsCyc b . unCycI64
 
 instance ExtensionCyc (CycG t) (ZqBasic q z) => ExtensionCyc (Cyc t) (ZqBasic q z) where
   embed = CycZqB . embed . unCycZqB
   twace = CycZqB . twace . unCycZqB
   powBasis = (CycZqB <$>) <$> powBasis
+  decBasis = (CycZqB <$>) <$> decBasis
   coeffsCyc b = fmap CycZqB . coeffsCyc b . unCycZqB
 
 instance (ExtensionCyc (Cyc t) a, ExtensionCyc (Cyc t) b)
@@ -672,6 +677,7 @@ instance (ExtensionCyc (Cyc t) a, ExtensionCyc (Cyc t) b)
   embed (CycPair a b) = CycPair (embed a) (embed b)
   twace (CycPair a b) = CycPair (twace a) (twace b)
   powBasis = zipWith CycPair <$> powBasis <*> powBasis
+  decBasis = zipWith CycPair <$> decBasis <*> decBasis
   coeffsCyc bas (CycPair a b) =
     zipWith CycPair (coeffsCyc bas a) (coeffsCyc bas b)
 
@@ -681,6 +687,7 @@ instance (Tensor t (RRq q r)) => ExtensionCyc (Cyc t) (RRq q r) where
   twace (PowRRq u) = PowRRq $ twacePow u
   twace (DecRRq u) = DecRRq $ twaceDec u
   powBasis = (PowRRq <$>) <$> R.powBasis
+  decBasis = (DecRRq <$>) <$> R.decBasis
   coeffsCyc L.Pow (PowRRq c) = PowRRq <$> R.coeffsPow c
   coeffsCyc L.Dec (DecRRq c) = DecRRq <$> R.coeffsDec c
   coeffsCyc L.Pow (DecRRq c) = PowRRq <$> R.coeffsPow (toPow c)
