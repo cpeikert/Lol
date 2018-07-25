@@ -300,7 +300,7 @@ gCRTPrime = do
   p <- pureT valuePrime
   (wPow, _) <- crtInfo
   return $ MC (p-1) 1 $ if p == 2 then const $ const one
-                        else (\i _ -> one - wPow (i+1))
+                        else (\i _ -> one - wPow (p-i-1))
 
 -- | A \((p-1)\)-by-1 matrix of the inverse CRT coefficients of \(g_p\),
 -- for the \(p\)th cyclotomic.
