@@ -88,11 +88,11 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
   => Tensor t r where
 
   -- | Convert a scalar to a tensor in the powerful basis.
-  scalarPow :: Fact m => r -> t m r
+  scalarPowDec :: Fact m => r -> t m r
 
-  -- | 'l' converts from decoding-basis representation to
-  -- powerful-basis representation; 'lInv' is its inverse.
-  l, lInv :: Fact m => t m r -> t m r
+  -- | Convert between the decoding-basis and powerful-basis
+  -- representations.
+  powToDec, decToPow :: Fact m => t m r -> t m r
 
   -- | Multiply by \(g_m\) in the powerful/decoding basis
   mulGPow, mulGDec :: Fact m => t m r -> t m r
@@ -104,19 +104,20 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
 
   -- | The @twace@ linear transformation, which is the same in both the
   -- powerful and decoding bases.
-  twacePowDec :: (m `Divides` m') => t m' r -> t m r
+  twacePowDec :: m `Divides` m' => t m' r -> t m r
 
   -- | The @embed@ linear transformations, for the powerful and
   -- decoding bases.
-  embedPow, embedDec :: (m `Divides` m') => t m r -> t m' r
+  embedPowDec :: m `Divides` m' => t m r -> t m' r
 
-  -- | Map a tensor in the powerful\/decoding\/CRT basis, representing
+  -- | Map a tensor in the powerful/decoding/CRT basis, representing
   -- an \(\O_{m'}\) element, to a vector of tensors representing
   -- \(\O_m\) elements in the same kind of basis.
-  coeffs :: (m `Divides` m') => t m' r -> [t m r]
+  coeffs :: m `Divides` m' => t m' r -> [t m r]
 
-  -- | The powerful extension basis w.r.t. the powerful basis.
-  powBasisPow :: (m `Divides` m') => Tagged m [t m' r]
+  -- | The relative powerful/decoding basis of \( \O_{m'}/\O_{m} \),
+  -- w.r.t. the same kind of basis of \( \O_{m'} \).
+  relativePowDec :: m `Divides` m' => Tagged m [t m' r]
 
 -- | Encapsulates functions related to the Chinese-remainder
 -- representation/transform.
