@@ -49,7 +49,7 @@ module Crypto.Lol.Cyclotomic.CycRep
 -- * Changing representation
 , toPow, toDec, toCRT
 -- * Scalars
-, scalarPow, scalarCRT
+, scalarPow, scalarDec, scalarCRT
 -- * Basic operations
 , mulGPow, mulGDec, mulGCRTC, divGPow, divGDec, divGCRTC, gSqNorm
 -- * Error sampling
@@ -61,8 +61,8 @@ module Crypto.Lol.Cyclotomic.CycRep
 ) where
 
 import Crypto.Lol.Cyclotomic.Tensor hiding (divGDec, divGPow, embedCRT,
-                                     embedDec, embedPow, mulGDec, mulGPow,
-                                     scalarCRT, scalarPow, twaceCRT)
+                                     embedPowDec, mulGDec, mulGPow,
+                                     scalarCRT, twaceCRT)
 
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CRTSentinel
@@ -127,6 +127,11 @@ type CRTElt t r = (TensorCRT t Maybe r, TensorCRT t Identity (CRTExt r), CRTEmbe
 scalarPow :: (Tensor t r, Fact m) => r -> CycRep t P m r
 scalarPow = Pow . T.scalarPowDec
 {-# INLINABLE scalarPow #-}
+
+-- | Embed a scalar from the base ring.
+scalarDec :: (Tensor t r, Fact m) => r -> CycRep t D m r
+scalarDec = Dec . T.scalarPowDec
+{-# INLINABLE scalarDec #-}
 
 -- | Embed a scalar from the base ring.
 scalarCRT :: (Fact m, CRTElt t r) => r -> CycRepEC t m r
