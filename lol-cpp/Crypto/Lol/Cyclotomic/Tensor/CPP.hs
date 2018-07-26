@@ -228,8 +228,8 @@ instance IFunctor CT where
 instance Reflects q Int64 => Tensor CT (ZqBasic q Int64) where
   scalarPowDec = CT . scalarPowDec'
 
-  l = wrap $ basicDispatch dlZq
-  lInv = wrap $ basicDispatch dlinvZq
+  decToPow = wrap $ basicDispatch duZq
+  powToDec = wrap $ basicDispatch duinvZq
 
   mulGPow = wrap $ basicDispatch dmulgpowZq
   mulGDec = wrap $ basicDispatch dmulgdecZq
@@ -238,25 +238,23 @@ instance Reflects q Int64 => Tensor CT (ZqBasic q Int64) where
   divGDec = wrapM $ dispatchGInv dginvdecZq
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
-  embedPow = wrap $ runIdentity $ coerceEm embedPow'
-  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+  embedPowDec = wrap $ runIdentity $ coerceEm embedPowDec'
 
   coeffs = wrapM $ coerceCoeffs coeffs'
 
-  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+  relativePowDec = (CT <$>) <$> coerceBasis relativePowDec'
 
   {-# INLINABLE scalarPowDec #-}
-  {-# INLINABLE l #-}
-  {-# INLINABLE lInv #-}
+  {-# INLINABLE decToPow #-}
+  {-# INLINABLE powToDec #-}
   {-# INLINABLE mulGPow #-}
   {-# INLINABLE mulGDec #-}
   {-# INLINABLE divGPow #-}
   {-# INLINABLE divGDec #-}
   {-# INLINABLE twacePowDec #-}
-  {-# INLINABLE embedPow #-}
-  {-# INLINABLE embedDec #-}
+  {-# INLINABLE embedPowDec #-}
   {-# INLINABLE coeffs #-}
-  {-# INLINABLE powBasisPow #-}
+  {-# INLINABLE relativePowDec #-}
 
 instance Reflects q Int64 => TensorCRT CT Maybe (ZqBasic q Int64) where
   crtFuncs = (,,,,) <$>
@@ -274,8 +272,8 @@ instance Reflects q Int64 => TensorCRT CT Maybe (ZqBasic q Int64) where
 instance Tensor CT (Complex Double) where
   scalarPowDec = CT . scalarPowDec'
 
-  l = wrap $ basicDispatch dlC
-  lInv = wrap $ basicDispatch dlinvC
+  decToPow = wrap $ basicDispatch duC
+  powToDec = wrap $ basicDispatch duinvC
 
   mulGPow = wrap $ basicDispatch dmulgpowC
   mulGDec = wrap $ basicDispatch dmulgdecC
@@ -284,25 +282,23 @@ instance Tensor CT (Complex Double) where
   divGDec = wrapM $ dispatchGInv dginvdecC
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
-  embedPow = wrap $ runIdentity $ coerceEm embedPow'
-  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+  embedPowDec = wrap $ runIdentity $ coerceEm embedPowDec'
 
   coeffs = wrapM $ coerceCoeffs coeffs'
 
-  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+  relativePowDec = (CT <$>) <$> coerceBasis relativePowDec'
 
   {-# INLINABLE scalarPowDec #-}
-  {-# INLINABLE l #-}
-  {-# INLINABLE lInv #-}
+  {-# INLINABLE decToPow #-}
+  {-# INLINABLE powToDec #-}
   {-# INLINABLE mulGPow #-}
   {-# INLINABLE mulGDec #-}
   {-# INLINABLE divGPow #-}
   {-# INLINABLE divGDec #-}
   {-# INLINABLE twacePowDec #-}
-  {-# INLINABLE embedPow #-}
-  {-# INLINABLE embedDec #-}
+  {-# INLINABLE embedPowDec #-}
   {-# INLINABLE coeffs #-}
-  {-# INLINABLE powBasisPow #-}
+  {-# INLINABLE relativePowDec #-}
 
 instance TensorCRT CT Identity (Complex Double) where
   crtFuncs = (,,,,) <$>
@@ -325,8 +321,8 @@ instance TensorCRT CT Maybe (Complex Double) where
 instance Tensor CT Double where
   scalarPowDec = CT . scalarPowDec'
 
-  l = wrap $ basicDispatch dlDouble
-  lInv = wrap $ basicDispatch dlinvDouble
+  decToPow = wrap $ basicDispatch duDouble
+  powToDec = wrap $ basicDispatch duinvDouble
 
   mulGPow = wrap $ basicDispatch dmulgpowDouble
   mulGDec = wrap $ basicDispatch dmulgdecDouble
@@ -335,25 +331,23 @@ instance Tensor CT Double where
   divGDec = wrapM $ dispatchGInv dginvdecDouble
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
-  embedPow = wrap $ runIdentity $ coerceEm embedPow'
-  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+  embedPowDec = wrap $ runIdentity $ coerceEm embedPowDec'
 
   coeffs = wrapM $ coerceCoeffs coeffs'
 
-  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+  relativePowDec = (CT <$>) <$> coerceBasis relativePowDec'
 
   {-# INLINABLE scalarPowDec #-}
-  {-# INLINABLE l #-}
-  {-# INLINABLE lInv #-}
+  {-# INLINABLE decToPow #-}
+  {-# INLINABLE powToDec #-}
   {-# INLINABLE mulGPow #-}
   {-# INLINABLE mulGDec #-}
   {-# INLINABLE divGPow #-}
   {-# INLINABLE divGDec #-}
   {-# INLINABLE twacePowDec #-}
-  {-# INLINABLE embedPow #-}
-  {-# INLINABLE embedDec #-}
+  {-# INLINABLE embedPowDec #-}
   {-# INLINABLE coeffs #-}
-  {-# INLINABLE powBasisPow #-}
+  {-# INLINABLE relativePowDec #-}
 
 instance TensorCRT CT Maybe Double where
   crtFuncs    = Nothing
@@ -368,8 +362,8 @@ instance TensorGSqNorm CT Double where
 instance Tensor CT Int64 where
   scalarPowDec = CT . scalarPowDec'
 
-  l = wrap $ basicDispatch dlInt64
-  lInv = wrap $ basicDispatch dlinvInt64
+  decToPow = wrap $ basicDispatch duInt64
+  powToDec = wrap $ basicDispatch duinvInt64
 
   mulGPow = wrap $ basicDispatch dmulgpowInt64
   mulGDec = wrap $ basicDispatch dmulgdecInt64
@@ -378,25 +372,23 @@ instance Tensor CT Int64 where
   divGDec = wrapM $ dispatchGInv dginvdecInt64
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
-  embedPow = wrap $ runIdentity $ coerceEm embedPow'
-  embedDec = wrap $ runIdentity $ coerceEm embedDec'
+  embedPowDec = wrap $ runIdentity $ coerceEm embedPowDec'
 
   coeffs = wrapM $ coerceCoeffs coeffs'
 
-  powBasisPow = (CT <$>) <$> coerceBasis powBasisPow'
+  relativePowDec = (CT <$>) <$> coerceBasis relativePowDec'
 
   {-# INLINABLE scalarPowDec #-}
-  {-# INLINABLE l #-}
-  {-# INLINABLE lInv #-}
+  {-# INLINABLE decToPow #-}
+  {-# INLINABLE powToDec #-}
   {-# INLINABLE mulGPow #-}
   {-# INLINABLE mulGDec #-}
   {-# INLINABLE divGPow #-}
   {-# INLINABLE divGDec #-}
   {-# INLINABLE twacePowDec #-}
-  {-# INLINABLE embedPow #-}
-  {-# INLINABLE embedDec #-}
+  {-# INLINABLE embedPowDec #-}
   {-# INLINABLE coeffs #-}
-  {-# INLINABLE powBasisPow #-}
+  {-# INLINABLE relativePowDec #-}
 
 instance TensorCRT CT Maybe Int64 where
   crtFuncs    = Nothing
@@ -459,7 +451,7 @@ coerceEm = (coerce <$>) . untagT
 coerceCoeffs :: Tagged '(m,m') (Vector r -> [Vector r]) -> CT' m' r -> [CT' m r]
 coerceCoeffs = coerce
 
--- | Useful coersion for defining @powBasisPow@ and @crtSetDec@ in the @Tensor@
+-- | Useful coersion for defining @relativePowDec@ and @crtSetDec@ in the @Tensor@
 -- interface. Using 'coerce' alone is insufficient for type inference.
 coerceBasis :: Tagged '(m,m') [Vector r] -> Tagged m [CT' m' r]
 coerceBasis = coerce
