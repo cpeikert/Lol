@@ -1,4 +1,4 @@
-v{-|
+{-|
 Module      : Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 Description : Transforms Haskell types into C counterparts.
 Copyright   : (c) Eric Crockett, 2011-2017
