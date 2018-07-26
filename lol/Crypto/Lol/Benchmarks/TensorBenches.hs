@@ -49,15 +49,15 @@ tensorBenches1 ptmr pgen =
           mkBench "zipWith (*)" (bench_mul z),
           mkBench "crt" bench_crt,
           mkBench "crtInv" bench_crtInv,
-          mkBench "l" bench_l,
-          mkBench "lInv" bench_lInv,
+          mkBench "decToPow" bench_decToPow,
+          mkBench "powToDec" bench_powToDec,
           mkBench "*g Pow" bench_mulGPow,
           mkBench "*g Dec" bench_mulGDec,
           mkBench "*g CRT" bench_mulGCRT,
           mkBench "divG Pow" bench_divGPow,
           mkBench "divG Dec" bench_divGDec,
           mkBench "divG CRT" bench_divGCRT,
-          mkBench "lift" bench_liftPow] in
+          mkBench "lift" bench_lift] in
     bgroup "Tensor" (benches ++ [errorBench])
 
 -- | Benchmarks for inter-ring 'Tensor' operations.
@@ -74,8 +74,7 @@ tensorBenches2 ptmmr =
         mkBench "twacePow" (bench_twacePow ptmmr) z',
         mkBench "twaceDec" (bench_twacePow ptmmr) z', -- yes, twacePow is correct here. It's the same function!
         mkBench "twaceCRT" (bench_twaceCRT ptmmr) z',
-        mkBench "embedPow" (bench_embedPow ptmmr) z,
-        mkBench "embedDec" (bench_embedDec ptmmr) z,
+        mkBench "embedPowDec" (bench_embedPowDec ptmmr) z,
         mkBench "embedCRT" (bench_embedCRT ptmmr) z] in
   bgroup "Tensor" benches
 
@@ -94,20 +93,19 @@ bench_crt = fromJust' "TensorBenches.bench_crt" crt
 bench_crtInv :: _ => t m r -> t m r
 bench_crtInv = fromJust' "TensorBenches.bench_crtInv" crtInv
 
-{-# INLINABLE bench_l #-}
+{-# INLINABLE bench_decToPow #-}
 -- convert input from Dec basis to Pow basis
-bench_l :: _ => t m r -> t m r
-bench_l = l
+bench_decToPow :: _ => t m r -> t m r
+bench_decToPow = decToPow
 
-{-# INLINABLE bench_lInv #-}
+{-# INLINABLE bench_powToDec #-}
 -- convert input from Dec basis to Pow basis
-bench_lInv :: _ => t m r -> t m r
-bench_lInv = lInv
+bench_powToDec :: _ => t m r -> t m r
+bench_powToDec = powToDec
 
-{-# INLINABLE bench_liftPow #-}
--- lift an element in the Pow basis
-bench_liftPow :: _ => t m r -> t m r'
-bench_liftPow = fmapI lift
+{-# INLINABLE bench_lift #-}
+bench_lift :: _ => t m r -> t m r'
+bench_lift = fmapI lift
 
 {-# INLINABLE bench_mulGPow #-}
 -- multiply by g when input is in Pow basis
@@ -162,15 +160,10 @@ bench_twaceCRT :: forall t m m' r . (Tensor t r, Fact m, _)
   => Proxy '(t,m,m',r) -> t m' r -> t m r
 bench_twaceCRT _ = fromJust' "TensorBenches.bench_twaceCRT" twaceCRT
 
-{-# INLINABLE bench_embedPow #-}
-bench_embedPow :: forall t m m' r . (Tensor t r, Fact m', _)
+{-# INLINABLE bench_embedPowDec #-}
+bench_embedPowDec :: forall t m m' r . (Tensor t r, Fact m', _)
   => Proxy '(t,m,m',r) -> t m r -> t m' r
-bench_embedPow _ = embedPow
-
-{-# INLINABLE bench_embedDec #-}
-bench_embedDec :: forall t m m' r . (Tensor t r, Fact m', _)
-  => Proxy '(t,m,m',r) -> t m r -> t m' r
-bench_embedDec _ = embedDec
+bench_embedPowDec _ = embedPowDec
 
 {-# INLINABLE bench_embedCRT #-}
 bench_embedCRT :: forall t m m' r . (Tensor t r, Fact m', _)
