@@ -285,7 +285,6 @@ twCRTsPPow = do
   jToPow <- pureT indexToPowPPow
   (wPow, _) <- crtInfo
   (MC _ _ gCRT) <- gCRTPPow
-
   return $ MC phi phi (\j i -> wPow (jToPow j * negate (iToZms i)) * gCRT i 0)
 
 gCRTPPow, gInvCRTPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (KronC r)
