@@ -112,6 +112,9 @@ data CycG t m r where
 -- ring of the coefficients (e.g., \(\ \Q \), \( \Z \), \( \Z_q \)).
 data family Cyc (t :: Factored -> * -> *) (m :: Factored) r
 
+type instance LiftOf (CycG t m r) = CycG t m (LiftOf r)
+type instance LiftOf (Cyc  t m r) = Cyc  t m (LiftOf r)
+
 -- could also do an Int instance
 newtype instance Cyc t m Double        = CycDbl { unCycDbl :: CycG t m Double }
 newtype instance Cyc t m Int64         = CycI64 { unCycI64 :: CycG t m Int64 }
@@ -597,18 +600,6 @@ instance GaussianCyc (CycG t) Double => GaussianCyc (Cyc t) Double where
 -- CJP: no GaussianCyc for Int64, Integer, ZqBasic, pairs, or RRq
 
 -- | uses 'Double' precision for the intermediate Gaussian samples
-instance (TensorGaussian t Double, IFElt t Double, IFunctor t, ToInteger z, IFElt t z)
-  => RoundedGaussianCyc (CycG t) z where
-  {-# INLINABLE roundedGaussian #-}
-  roundedGaussian = fmap Dec . R.roundedGaussian
-
--- | uses 'Double' precision for the intermediate Gaussian samples
-instance RoundedGaussianCyc (CycG t) Int64 => RoundedGaussianCyc (Cyc t) Int64 where
-  roundedGaussian = fmap CycI64 . L.roundedGaussian
-
--- CJP: no RoundedGaussianCyc for Integer, Double, ZqBasic, or pairs
-
--- | uses 'Double' precision for the intermediate Gaussian samples
 instance (TensorGaussian t Double, IFElt t Double, IFunctor t, Mod zp,
           Lift zp (ModRep zp), CRTElt t zp, IFElt t (LiftOf zp))
   => CosetGaussianCyc (CycG t) zp where
@@ -717,80 +708,7 @@ instance (CRTSetCyc (CycG t) (ZqBasic q z))
 
 -- CJP TODO?: instance CRTSetCyc (Cyc t) (a,b)
 
------
-
-type instance LiftOf (CycG t m r) = CycG t m (LiftOf r)
-type instance LiftOf (Cyc  t m r) = Cyc  t m (LiftOf r)
-
-instance (Lift b a, CRTElt t b, Tensor t a) => LiftCyc (CycG t) b where
-  liftCyc L.Pow (Pow u) = Pow $ lift u
-  liftCyc L.Pow (Dec u) = Pow $ lift $ toPow u
-  liftCyc L.Pow (CRT u) = Pow $ lift $ either toPow toPow u
-  -- optimized for subrings; these are correct for powerful basis but
-  -- not for decoding
-  liftCyc L.Pow (Scalar c) = Scalar $ lift c
-  liftCyc L.Pow (Sub c) = Sub $ liftCyc L.Pow c
-
-  liftCyc L.Dec c = Dec $ lift $ unCycGDec c
-
-instance (LiftCyc (CycG t) (ZqBasic q Int64))
-  => LiftCyc (Cyc t) (ZqBasic q Int64) where
-  liftCyc b = CycI64 . liftCyc b . unCycZqB
-
--- specialized to Double so we know the target base type
-instance (Lift' (RRq q Double), Tensor t (RRq q Double), Tensor t Double)
-  => LiftCyc (Cyc t) (RRq q Double) where
-  liftCyc L.Pow (PowRRq u) = CycDbl $ Pow $ lift u
-  liftCyc L.Dec (DecRRq u) = CycDbl $ Dec $ lift u
-  liftCyc L.Dec (PowRRq u) = CycDbl $ Dec $ lift $ toDec u
-  liftCyc L.Pow (DecRRq u) = CycDbl $ Pow $ lift $ toPow u
-
-instance (UnCyc t (a,b), Lift (a,b) Integer, ForallFact1 Applicative t)
-  => LiftCyc (Cyc t) (a,b) where
-  liftCyc L.Pow = PowIgr . fmap lift . unCycPow
-  liftCyc L.Dec = DecIgr . fmap lift . unCycDec
-
 ---------- Promoted lattice operations ----------
-
--- | promoted from base ring
-instance (Reduce a b, CRTElt t a, CRTElt t b) => ReduceCyc (CycG t) a b where
-  reduceCyc (Pow u)    = Pow    $ reduce u
-  reduceCyc (Dec u)    = Dec    $ reduce u
-  reduceCyc (CRT u)    = Pow    $ reduce $ either toPow toPow u
-  reduceCyc (Scalar c) = Scalar $ reduce c
-  reduceCyc (Sub c)    = Sub (reduceCyc c)
-
-instance ReduceCyc (CycG t) Int64 (ZqBasic q Int64)
-  => ReduceCyc (Cyc t) Int64 (ZqBasic q Int64) where
-  reduceCyc = CycZqB . reduceCyc . unCycI64
-
-instance (ReduceCyc (Cyc t) r a, ReduceCyc (Cyc t) r b)
-  => ReduceCyc (Cyc t) r (a,b) where
-  reduceCyc r = CycPair (reduceCyc r) (reduceCyc r)
-
-instance (ReduceCyc (CycG t) a b, Fact m,
-          Additive (CycG t m a), Additive (CycG t m b)) -- Reduce superclasses
-  => Reduce (CycG t m a) (CycG t m b) where
-  reduce = reduceCyc
-
-instance (ReduceCyc (Cyc t) a b, Fact m,
-          Additive (Cyc t m a), Additive (Cyc t m b)) -- Reduce superclasses
-  => Reduce (Cyc t m a) (Cyc t m b) where
-  reduce = reduceCyc
-
--- specialized to Double so we know the source base type
-instance (Reduce Double (RRq q Double), CRTElt t Double, Tensor t (RRq q Double))
-  => ReduceCyc (Cyc t) Double (RRq q Double) where
-  reduceCyc (CycDbl (Pow u)) = PowRRq $ reduce u
-  reduceCyc (CycDbl (Dec u)) = DecRRq $ reduce u
-  reduceCyc (CycDbl c)       = reduceCyc $ CycDbl $ toPow' c
-
-instance (Reduce Integer (ZqBasic q z), ForallFact1 Applicative t)
-  => ReduceCyc (Cyc t) Integer (ZqBasic q z) where
-  reduceCyc (PowIgr u) = CycZqB $ Pow $ reduce <$> u
-  reduceCyc (DecIgr u) = CycZqB $ Dec $ reduce <$> u
-
------
 
 -- | Rescales relative to the powerful basis. This instance is
 -- provided for convenience, but usage of 'RescaleCyc' is preferred to
