@@ -51,7 +51,7 @@ module Crypto.Lol.Cyclotomic.CycRep
 -- * Scalars
 , scalarPow, scalarDec, scalarCRT
 -- * Basic operations
-, mulGPow, mulGDec, mulGCRTC, divGPow, divGDec, divGCRTC, gSqNorm
+, mulGPow, mulGDec, mulGCRTC, divGPow, divGDec, divGCRTC, gSqNormDec
 -- * Error sampling
 , tweakedGaussian, roundedGaussian, cosetGaussian
 -- * Inter-ring operations and values
@@ -60,12 +60,14 @@ module Crypto.Lol.Cyclotomic.CycRep
 , coeffsPow, coeffsDec, powBasis, decBasis, crtSet
 ) where
 
-import Crypto.Lol.Cyclotomic.Tensor hiding (divGDec, divGPow, embedCRT,
-                                     embedPowDec, mulGDec, mulGPow,
-                                     scalarCRT, twaceCRT)
-
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CRTSentinel
+import           Crypto.Lol.Cyclotomic.Tensor      hiding (divGDec,
+                                                    divGPow, embedCRT,
+                                                    embedPowDec,
+                                                    gSqNormDec, mulGDec,
+                                                    mulGPow, scalarCRT,
+                                                    twaceCRT)
 import qualified Crypto.Lol.Cyclotomic.Tensor      as T
 import           Crypto.Lol.Prelude                as LP
 import           Crypto.Lol.Types.FiniteField
@@ -331,9 +333,9 @@ divGCRTC (CRTC s v) = CRTC s $ divGCRTCS s v
 -- | Yield the scaled squared norm of \(g_m \cdot e\) under
 -- the canonical embedding, namely,
 -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\) .
-gSqNorm :: (TensorGSqNorm t r, Fact m) => CycRep t D m r -> r
-gSqNorm (Dec v) = gSqNormDec v
-{-# INLINABLE gSqNorm #-}
+gSqNormDec :: (TensorGSqNorm t r, Fact m) => CycRep t D m r -> r
+gSqNormDec (Dec v) = T.gSqNormDec v
+{-# INLINABLE gSqNormDec #-}
 
 -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\) in
 -- the decoding basis, where \(D\) has scaled variance \(v\).
