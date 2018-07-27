@@ -48,6 +48,7 @@ the internal linear transforms and other operations it performs.
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TemplateHaskell            #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
@@ -93,6 +94,7 @@ import           Data.Coerce
 import           Data.Constraint        ((:-), Dict (..), (\\))
 import qualified Data.Constraint        as C
 import           Data.Traversable
+import           Language.Haskell.TH
 
 -- | Underlying GADT for a cyclotomic ring in one of several
 -- representations.
@@ -210,6 +212,9 @@ instance (Fact m, CRTElt t a, IFunctor t, IFElt t a, IFElt t b)
 
   fmapCyc b@(Just L.Pow) f c = fmapCyc b f $ toPow' c
   fmapCyc b@(Just L.Dec) f c = fmapCyc b f $ toDec' c
+
+-- CJP: more autogen instances at end of file, to avoid scoping
+-- problems
 
 ---------- Algebraic instances ----------
 
@@ -1058,3 +1063,27 @@ instance (Fact m, CRTElt t r, Protoable (CycRep t D m r))
   fromProto x = Dec <$> fromProto x
 
 -- TODO: define Protoable instances for Cyc?
+
+
+---------- TH instances of FunctorCyc ----------
+
+-- CJP: the TH needs to be before/after everything in the module so as
+-- not to screw up scoping
+let fst (a,_,_) = a
+    snd (_,b,_) = b
+    thd (_,_,c) = c
+    -- the Cyc instances (CycG wrappers) to take product of for FunctorCyc
+    cycs = [ (conT ''Int64,  conE 'CycI64, varE 'unCycI64)
+           , (conT ''Double, conE 'CycDbl, varE 'unCycDbl)
+           , (conT ''ZqBasic `appT` varT (mkName "q") `appT` conT ''Int64,
+                             conE 'CycZqB, varE 'unCycZqB)]
+    mkFunctorCyc (a,aCycDecon) (b,bCycCon) =
+      [d|
+       instance (FunctorCyc (CycG t m) $a $b)
+         => FunctorCyc (Cyc t m) $a $b where
+         fmapCyc b f = $bCycCon . fmapCyc b f . $aCycDecon
+      |]
+  in liftA concat $ sequence (mkFunctorCyc
+                              <$> ((fst &&& thd) <$> cycs)
+                              <*> ((fst &&& snd) <$> cycs))
+
