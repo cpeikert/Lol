@@ -197,6 +197,20 @@ instance (UnCyc t a, UnCyc t b,
   unCycPow (CycPair a b) = zipWithI (,) (unCycPow a) (unCycPow b)
   unCycDec (CycPair a b) = zipWithI (,) (unCycDec a) (unCycDec b)
 
+---------- FunctorCyc instances ----------
+
+instance (Fact m, CRTElt t a, IFunctor t, IFElt t a, IFElt t b)
+  => FunctorCyc (CycG t m) a b where
+  fmapCyc Nothing f (Pow v) = Pow $ fmapI f v
+  fmapCyc Nothing f (Dec v) = Dec $ fmapI f v
+  fmapCyc Nothing f c       = fmapCyc Nothing f $ toPow' c
+
+  fmapCyc (Just L.Pow) f (Pow v) = Pow $ fmapI f v
+  fmapCyc (Just L.Dec) f (Dec v) = Dec $ fmapI f v
+
+  fmapCyc b@(Just L.Pow) f c = fmapCyc b f $ toPow' c
+  fmapCyc b@(Just L.Dec) f c = fmapCyc b f $ toDec' c
+
 ---------- Algebraic instances ----------
 
 instance (Fact m, ZeroTestable r, CRTElt t r, ForallFact2 ZeroTestable.C t r)
