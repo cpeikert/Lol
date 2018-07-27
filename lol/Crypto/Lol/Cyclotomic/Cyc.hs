@@ -213,6 +213,11 @@ instance (Fact m, CRTElt t a, IFunctor t, IFElt t a, IFElt t b)
   fmapCyc b@(Just L.Pow) f c = fmapCyc b f $ toPow' c
   fmapCyc b@(Just L.Dec) f c = fmapCyc b f $ toDec' c
 
+instance (FunctorCyc (Cyc t m) z a, FunctorCyc (Cyc t m) z b)
+  => FunctorCyc (Cyc t m) z (a,b) where
+  fmapCyc bas f = uncurry CycPair . ((fmapCyc bas (fst . f)) &&&
+                                     (fmapCyc bas (snd . f)))
+
 -- CJP: more autogen instances at end of file, to avoid scoping
 -- problems
 
