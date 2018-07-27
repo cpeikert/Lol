@@ -1,5 +1,5 @@
 /*
-Module      : l.cpp
+Module      : u.cpp
 Description : Powerful <-> Decoding basis conversion.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -8,31 +8,31 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Prime- and arbitrary-index transformations for the L operator
+Prime- and arbitrary-index transformations for the U operator
 (see LPR13: https://eprint.iacr.org/2013/293) which converts between the
 powerful and decoding basis representation for cyclotomic ring elements.
-L converts decoding -> powerful represenation, L^{-1} is the reverse.
+U converts decoding -> powerful represenation, U^{-1} is the reverse.
 */
 
 #include "types.h"
 #include "tensor.h"
 
 /* The prime-index transform that converts decoding basis coefficients (over any
- * ring) to powerful basis coefficients.
+ * abelian group) to powerful basis coefficients.
  * 'y' is an array of decoding basis coefficients in a three-dimensional tensor:
  * [lts]x[rts]x[p-1].
- * We can think of the operator as  (I_lts \otimes L_p \otimes I_rts).
+ * We can think of the operator as  (I_lts \otimes U_p \otimes I_rts).
  */
-template <typename ring> void lp (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
+template <typename abgrp> void up (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
   hDim_t ltsOffset;
   hDim_t rtsOffset;
   int i;
 
-  // L_2 = id
+  // U_2 = id
   if(p == 2) {return;}
 
-  // each square diagonal matrix in I_lts \otimes (L_p \otimes I_rts) has
+  // each square diagonal matrix in I_lts \otimes (U_p \otimes I_rts) has
   // size rts*(p-1)
   hDim_t ltsBockSize = rts*(p-1);
   // operate on the chunk of 'y' corresponding to each matrix on the diagonal
@@ -41,35 +41,36 @@ template <typename ring> void lp (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
     hDim_t blockIdx = ltsOffset*ltsBockSize;
     // operate on slices of 'y' of size 'rts'
     for (rtsOffset = 0; rtsOffset < rts; ++rtsOffset) {
-      hDim_t idx1 = blockIdx + rtsOffset;       // y[ltsOffset][rtsOffset][0]
-      hDim_t idx2 = blockIdx + rtsOffset + rts; // y[ltsOffset][rtsOffset][1]
-      // the actual work: y_i = y_i + y_{i-1}
-      for (i = 1; i < p-1; ++i) {
-        y[idx2] += y[idx1];
-        // advance the pointer by the size of the slice: rts
-        idx2 += rts;
-        idx1 += rts;
+      hDim_t tensorOffset = blockIdx + rtsOffset;
+      // The vector we're working with appears as a column in a matrix. The vector is
+      // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
+      hDim_t idx = tensorOffset + (p-2)*rts;
+      // the actual work, stepping backwards: y_{i-1} = y_{i-1} + y_i
+      for (i = p-2; i != 0; --i) {
+        y[idx-rts] += y[idx];
+        // decrease the pointer by the size of the slice: rts
+        idx -= rts;
       }
     }
   }
 }
 
 /* The prime-index transform that converts powerful basis coefficients (over any
- * ring) to powerful basis coefficients.
- * 'y' is an array of powerful basis coefficients in a four-dimensional tensor:
+ * abelian group) to powerful basis coefficients.
+ * 'y' is an array of powerful basis coefficients in a three-dimensional tensor:
  * [lts]x[rts]x[p-1].
- * We can think of the operator as  (I_lts \otimes (L_p)^{-1} \otimes I_rts).
+ * We can think of the operator as  (I_lts \otimes UU_p)^{-1} \otimes I_rts).
  */
-template <typename ring> void lpInv (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
+template <typename abgrp> void upInv (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
   hDim_t ltsOffset;
   hDim_t rtsOffset;
   int i;
 
-  // (L_2)^{-1} = id
+  // (U_2)^{-1} = id
   if(p == 2) {return;}
 
-  // each square diagonal matrix in I_lts \otimes (L_p \otimes I_rts) has
+  // each square diagonal matrix in I_lts \otimes (U_p \otimes I_rts) has
   // size rts*(p-1)
   hDim_t ltsBockSize = rts*(p-1);
   // operate on the chunk of 'y' corresponding to each matrix on the diagonal
@@ -77,17 +78,16 @@ template <typename ring> void lpInv (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
     // the offset into y corresponding to the block diagonal matrix
     hDim_t blockIdx = ltsOffset*ltsBockSize;
     // operate on slices of 'y' of size 'rts'
-    for (rtsOffset = 0; rtsOffset < rts; ++ rtsOffset) {
+    for (rtsOffset = 0; rtsOffset < rts; ++rtsOffset) {
       hDim_t tensorOffset = blockIdx + rtsOffset;
-      hDim_t idx1 = tensorOffset + (p-3) * rts; // y[ltsOffset][rtsOffset][p-3]
-      hDim_t idx2 = tensorOffset + (p-2) * rts; // y[ltsOffset][rtsOffset][p-2]
-      // the actual work: forward direction takes adjacent sums, so the
-      // reverse direction starts at the end and takes adjacent differences
+      // The vector we're working with appears as a column in a matrix. The vector is
+      // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
+      hDim_t idx = tensorOffset;
+      // the actual work, stepping forwards: y_i = y_i - y_{i+1}
       for (i = p-2; i != 0; --i) {
-        y[idx2] -= y[idx1] ;
+        y[idx] -= y[idx+rts] ;
         // advance the pointer by the size of the slice: rts
-        idx2 -= rts;
-        idx1 -= rts;
+        idx += rts;
       }
     }
   }
@@ -101,10 +101,10 @@ template <typename ring> void lpInv (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
  * Use "extern "C"" to avoid C++ name mangling, which makes it hard to call
  * from Haskell.
  */
-extern "C" void tensorLRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
+extern "C" void tensorURq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
   Zq::q = q;
-  tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, q);
+  tensorFuserPrime (y, up, totm, peArr, sizeOfPE, q);
   // Haskell expects each Z_q coefficient to be in the range 0 <= x < q_i, so
   // ensure that is the case.
   canonicalizeZq(y,totm,q);
@@ -118,38 +118,33 @@ extern "C" void tensorLRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t si
  * Use "extern "C"" to avoid C++ name mangling, which makes it hard to call
  * from Haskell.
  */
-extern "C" void tensorLR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorUR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, up, totm, peArr, sizeOfPE, 0);
 }
 
-extern "C" void tensorLDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorUDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, up, totm, peArr, sizeOfPE, 0);
 }
 
-extern "C" void tensorLRRq (RRq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorUC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
-}
-
-extern "C" void tensorLC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
-{
-  tensorFuserPrime (y, lp, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, up, totm, peArr, sizeOfPE, 0);
 }
 
 /* Arbitrary-index transformation that converts powerful basis coefficients
  * (over a ring R mod (q1xq2x...), where the q_i's are pairwise coprime) into
- * decoding basis coefficients. The input 'y' represents a four-dimensional
+ * decoding basis coefficients. The input 'y' represents a three-dimensional
  * tensor indexed as [lts]x[rts]x[p-1]
  *
  * Use "extern "C"" to avoid C++ name mangling, which makes it hard to call
  * from Haskell.
  */
-extern "C" void tensorLInvRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
+extern "C" void tensorUInvRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE, hInt_t q)
 {
   Zq::q = q;
-  tensorFuserPrime (y, lpInv, totm, peArr, sizeOfPE, q);
+  tensorFuserPrime (y, upInv, totm, peArr, sizeOfPE, q);
   // Haskell expects each Z_q coefficient to be in the range 0 <= x < q_i, so
   // ensure that is the case.
   canonicalizeZq(y,totm,q);
@@ -163,17 +158,17 @@ extern "C" void tensorLInvRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t
  * Use "extern "C"" to avoid C++ name mangling, which makes it hard to call
  * from Haskell.
  */
-extern "C" void tensorLInvR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorUInvR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrime (y, lpInv, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, upInv, totm, peArr, sizeOfPE, 0);
 }
 
-extern "C" void tensorLInvDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorUInvDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrime (y, lpInv, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, upInv, totm, peArr, sizeOfPE, 0);
 }
 
-extern "C" void tensorLInvC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+extern "C" void tensorUInvC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  tensorFuserPrime (y, lpInv, totm, peArr, sizeOfPE, 0);
+  tensorFuserPrime (y, upInv, totm, peArr, sizeOfPE, 0);
 }
