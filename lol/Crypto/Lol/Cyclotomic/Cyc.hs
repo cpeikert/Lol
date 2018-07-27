@@ -68,12 +68,12 @@ import qualified Algebra.ZeroTestable as ZeroTestable (C)
 import           Crypto.Lol.CRTrans
 import           Crypto.Lol.Cyclotomic.CycRep   hiding (coeffsDec,
                                                  coeffsPow, crtSet,
-                                                 decBasis, gSqNorm,
-                                                 powBasis)
+                                                 decBasis, powBasis)
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
 import           Crypto.Lol.Cyclotomic.Tensor   (Tensor, TensorCRTSet,
+                                                 TensorGSqNorm,
                                                  TensorGaussian)
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.Prelude             as LP
@@ -511,10 +511,8 @@ deriving instance (Ring (GF (ZqBasic q z) d),
 
 ---------- Cyclotomic classes ----------
 
-instance (CRTElt t r, ZeroTestable r, IntegralDomain r)
-  => Cyclotomic (CycG t) r where
-  scalarCyc = Scalar
-
+instance (Fact m, CRTElt t r, ZeroTestable r, IntegralDomain r)
+  => Cyclotomic (CycG t m r) where
   mulG (Pow u) = Pow $ R.mulGPow u
   mulG (Dec u) = Dec $ R.mulGDec u
   mulG (CRT (Left u)) = Pow $ R.mulGPow $ toPow u -- go to Pow for precision
@@ -536,41 +534,36 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r)
 -- CJP: can't derive instances here because Cyc isn't the *last*
 -- argument of the class
 
-instance Cyclotomic (CycG t) Double => Cyclotomic (Cyc t) Double where
-  scalarCyc = CycDbl . scalarCyc
+instance Cyclotomic (CycG t m Double) => Cyclotomic (Cyc t m Double) where
   mulG      = CycDbl . mulG      . unCycDbl
   divG      = fmap CycDbl . divG . unCycDbl
   advisePow = CycDbl . advisePow . unCycDbl
   adviseDec = CycDbl . adviseDec . unCycDbl
   adviseCRT = CycDbl . adviseCRT . unCycDbl
 
-instance Cyclotomic (CycG t) Int64 => Cyclotomic (Cyc t) Int64 where
-  scalarCyc = CycI64 . scalarCyc
+instance Cyclotomic (CycG t m Int64) => Cyclotomic (Cyc t m Int64) where
   mulG      = CycI64 . mulG      . unCycI64
   divG      = fmap CycI64 . divG . unCycI64
   advisePow = CycI64 . advisePow . unCycI64
   adviseDec = CycI64 . adviseDec . unCycI64
   adviseCRT = CycI64 . adviseCRT . unCycI64
 
-instance Cyclotomic (CycG t) (ZqBasic q z) => Cyclotomic (Cyc t) (ZqBasic q z) where
-  scalarCyc = CycZqB . scalarCyc
+instance Cyclotomic (CycG t m (ZqBasic q z)) => Cyclotomic (Cyc t m (ZqBasic q z)) where
   mulG      = CycZqB . mulG      . unCycZqB
   divG      = fmap CycZqB . divG . unCycZqB
   advisePow = CycZqB . advisePow . unCycZqB
   adviseDec = CycZqB . adviseDec . unCycZqB
   adviseCRT = CycZqB . adviseCRT . unCycZqB
 
-instance (Cyclotomic (Cyc t) a, Cyclotomic (Cyc t) b)
-  => Cyclotomic (Cyc t) (a,b) where
-  scalarCyc (a,b) = CycPair (scalarCyc a) (scalarCyc b)
+instance (Cyclotomic (Cyc t m a), Cyclotomic (Cyc t m b))
+  => Cyclotomic (Cyc t m (a,b)) where
   mulG (CycPair a b) = CycPair (mulG a) (mulG b)
   divG (CycPair a b) = CycPair <$> divG a <*> divG b
   advisePow (CycPair a b) = CycPair (advisePow a) (advisePow b)
   adviseDec (CycPair a b) = CycPair (adviseDec a) (adviseDec b)
   adviseCRT (CycPair a b) = CycPair (adviseCRT a) (adviseCRT b)
 
-instance (Tensor t (RRq q r)) => Cyclotomic (Cyc t) (RRq q r) where
-  scalarCyc = PowRRq . scalarPow
+instance (Fact m, Tensor t (RRq q r)) => Cyclotomic (Cyc t m (RRq q r)) where
   mulG (PowRRq c) = PowRRq $ mulGPow c
   mulG (DecRRq c) = DecRRq $ mulGDec c
   divG (PowRRq c) = PowRRq <$> divGPow c
@@ -583,32 +576,38 @@ instance (Tensor t (RRq q r)) => Cyclotomic (Cyc t) (RRq q r) where
 
 -----
 
-instance (GSqNorm (CycG t) Double) => GSqNorm (Cyc t) Double where
+instance (Fact m, TensorGSqNorm t r, CRTElt t r) => GSqNorm (CycG t m r) r where
+  gSqNorm (Dec c) = gSqNormDec c
+  gSqNorm c       = gSqNorm $ toDec' c
+
+instance (Fact m, TensorGSqNorm t Double, CRTElt t Double) -- copied
+  => GSqNorm (Cyc t m Double) Double where
   gSqNorm = gSqNorm . unCycDbl
 
-instance (GSqNorm (CycG t) Int64) => GSqNorm (Cyc t) Int64 where
+instance (Fact m, TensorGSqNorm t Int64, CRTElt t Int64) -- copied
+  => GSqNorm (Cyc t m Int64) Int64 where
   gSqNorm = gSqNorm . unCycI64
 
 -----
 
-instance TensorGaussian t q => GaussianCyc (CycG t) q where
+instance (Fact m, TensorGaussian t q) => GaussianCyc (CycG t m q) where
   tweakedGaussian = fmap Dec . R.tweakedGaussian
 
-instance GaussianCyc (CycG t) Double => GaussianCyc (Cyc t) Double where
+instance (Fact m, TensorGaussian t Double) => GaussianCyc (Cyc t m Double) where
   tweakedGaussian = fmap CycDbl . L.tweakedGaussian
 
 -- CJP: no GaussianCyc for Int64, Integer, ZqBasic, pairs, or RRq
 
 -- | uses 'Double' precision for the intermediate Gaussian samples
-instance (TensorGaussian t Double, IFElt t Double, IFunctor t, Mod zp,
+instance (TensorGaussian t Double, IFElt t Double, IFunctor t, Fact m, Mod zp,
           Lift zp (ModRep zp), CRTElt t zp, IFElt t (LiftOf zp))
-  => CosetGaussianCyc (CycG t) zp where
+  => CosetGaussianCyc (CycG t m zp) where
   {-# INLINABLE cosetGaussian #-}
   cosetGaussian v = (Dec <$>) . R.cosetGaussian v . unCycGDec
 
 -- | uses 'Double' precision for the intermediate Gaussian samples
-instance (CosetGaussianCyc (CycG t) (ZqBasic q Int64))
-  => CosetGaussianCyc (Cyc t) (ZqBasic q Int64) where
+instance (CosetGaussianCyc (CycG t m (ZqBasic q Int64)))
+  => CosetGaussianCyc (Cyc t m (ZqBasic q Int64)) where
   cosetGaussian v = fmap CycI64 . L.cosetGaussian v . unCycZqB
 
 -- CJP: no CosetGaussianCyc for Double, Int64, Integer, or pairs
@@ -713,7 +712,7 @@ instance (CRTSetCyc (CycG t) (ZqBasic q z))
 -- | Rescales relative to the powerful basis. This instance is
 -- provided for convenience, but usage of 'RescaleCyc' is preferred to
 -- explicitly specify which basis by which to rescale.
-instance (RescaleCyc (Cyc t) a b, Fact m,
+instance (RescaleCyc (Cyc t m) a b, Fact m,
           Additive (Cyc t m a), Additive (Cyc t m b)) -- superclasses
  => Rescale (Cyc t m a) (Cyc t m b) where
   rescale = rescaleCyc L.Pow
@@ -721,8 +720,8 @@ instance (RescaleCyc (Cyc t) a b, Fact m,
 -- CJP: can we avoid incoherent instances by changing instance heads
 -- and using overlapping instances with isomorphism constraints?
 
-instance {-# INCOHERENT #-} (Rescale a b, CRTElt t a, Tensor t b)
-  => RescaleCyc (CycG t) a b where
+instance {-# INCOHERENT #-} (Fact m, Rescale a b, CRTElt t a, Tensor t b)
+  => RescaleCyc (CycG t m) a b where
   -- Optimized for subring constructors, for powerful basis.
   -- Analogs for decoding basis are not quite correct, because (* -1)
   -- doesn't commute with 'rescale' due to tiebreakers!
@@ -734,77 +733,69 @@ instance {-# INCOHERENT #-} (Rescale a b, CRTElt t a, Tensor t b)
   {-# INLINABLE rescaleCyc #-}
 
 -- | identity rescale
-instance RescaleCyc (CycG t) a a where
+instance RescaleCyc (CycG t m) a a where
   -- No-op rescale
   rescaleCyc _ = id
   {-# INLINABLE rescaleCyc #-}
 
 -- | rescale from one modulus to another
-instance (RescaleCyc (CycG t) (ZqBasic q z) (ZqBasic p z))
-  => RescaleCyc (Cyc t) (ZqBasic q z) (ZqBasic p z) where
+instance (RescaleCyc (CycG t m) (ZqBasic q z) (ZqBasic p z))
+  => RescaleCyc (Cyc t m) (ZqBasic q z) (ZqBasic p z) where
   rescaleCyc b = CycZqB . rescaleCyc b . unCycZqB
 
 -- | rescale from one modulus to another
-instance (Rescale (RRq q r) (RRq p r), Tensor t (RRq q r), Tensor t (RRq p r))
-  => RescaleCyc (Cyc t) (RRq q r) (RRq p r) where
+instance (Fact m, Rescale (RRq q r) (RRq p r), Tensor t (RRq q r), Tensor t (RRq p r))
+  => RescaleCyc (Cyc t m) (RRq q r) (RRq p r) where
   rescaleCyc L.Pow (PowRRq u) = PowRRq $ rescale u
   rescaleCyc L.Pow (DecRRq u) = PowRRq $ rescale $ toPow u
   rescaleCyc L.Dec (DecRRq u) = DecRRq $ rescale u
   rescaleCyc L.Dec (PowRRq u) = DecRRq $ rescale $ toDec u
 
 -- | rescale up by one additional modulus
-instance (Reflects q z, Reduce z b, CRTElt t (ZqBasic q z), ZeroTestable z,
-          ForallFact2 (Module.C b) (Cyc t) b)
-  => RescaleCyc (Cyc t) b (ZqBasic q z, b) where
+instance (Fact m, Reflects q z, Reduce z b, CRTElt t (ZqBasic q z), ZeroTestable z,
+          Module.C b (Cyc t m b))
+  => RescaleCyc (Cyc t m) b (ZqBasic q z, b) where
 
-  -- bring m into scope
-  rescaleCyc :: forall m . Fact m
-    => Basis -> Cyc t m b -> Cyc t m (ZqBasic q z, b)
   rescaleCyc = let q :: z = proxy value (Proxy::Proxy q)
                -- same method works for any basis
                in \_ b -> CycPair zero $ (reduce q :: b) *> b
-                          \\ (entailFact2 :: Fact m :- Module.C b (Cyc t m b))
 
 -- | specialized (faster) rescale-down by a single \(\Z_q\)
-instance (LiftCyc (Cyc t) (ZqBasic q z), ReduceCyc (Cyc t) z b,
-          Reflects q z, Reduce z b, Field b,
-          ForallFact2 Additive.C (Cyc t) b, ForallFact2 (Module.C b) (Cyc t) b)
-  => RescaleCyc (Cyc t) (ZqBasic q z, b) b where
+instance (ToInteger z, Reflects q z, Reduce z b, Field b,
+          FunctorCyc (Cyc t m) (ZqBasic q z) z,
+          FunctorCyc (Cyc t m) z b,
+          Additive (Cyc t m b), Module b (Cyc t m b))
+  => RescaleCyc (Cyc t m) (ZqBasic q z, b) b where
 
-  -- bring m into scope
-  rescaleCyc :: forall m . Fact m
-    => Basis -> Cyc t m (ZqBasic q z, b) -> Cyc t m b
   rescaleCyc bas (CycPair a b) =
     let q :: z = proxy value (Proxy::Proxy q)
-        x      = liftCyc bas a
+        x      = liftCyc (Just bas) a
     in recip (reduce q :: b) *> (b - reduceCyc x)
-       \\ (entailFact2 :: Fact m :- Module.C   b (Cyc t m b))
-       \\ (entailFact2 :: Fact m :- Additive.C   (Cyc t m b))
 
 -- CJP: do we really need these? Just have client call rescaleCyc
 -- multiple times?
 
 -- | convenient rescale-down by multiple components at once
-instance (RescaleCyc (Cyc t) (b,c) c, RescaleCyc (Cyc t) (a,(b,c)) (b,c))
-         => RescaleCyc (Cyc t) (a,(b,c)) c where
+instance (RescaleCyc (Cyc t m) (b,c) c, RescaleCyc (Cyc t m) (a,(b,c)) (b,c))
+         => RescaleCyc (Cyc t m) (a,(b,c)) c where
 
-  rescaleCyc bas a = rescaleCyc bas (rescaleCyc bas a :: Cyc t _ (b,c))
+  rescaleCyc bas a = rescaleCyc bas (rescaleCyc bas a :: Cyc t m (b,c))
   {-# INLINABLE rescaleCyc #-}
 
 -- | convenient rescale-down by multiple components at once
-instance (RescaleCyc (Cyc t) (b,(c,d)) d,
-          RescaleCyc (Cyc t) (a,(b,(c,d))) (b,(c,d)))
-         => RescaleCyc (Cyc t) (a,(b,(c,d))) d where
+instance (RescaleCyc (Cyc t m) (b,(c,d)) d,
+          RescaleCyc (Cyc t m) (a,(b,(c,d))) (b,(c,d)))
+         => RescaleCyc (Cyc t m) (a,(b,(c,d))) d where
 
-  rescaleCyc bas a = rescaleCyc bas (rescaleCyc bas a :: Cyc t _ (b,(c,d)))
+  rescaleCyc bas a = rescaleCyc bas (rescaleCyc bas a :: Cyc t m (b,(c,d)))
   {-# INLINABLE rescaleCyc #-}
 
 -- | convenient rescale-down by multiple components at once
-instance (RescaleCyc (Cyc t) (b,(c,(d,e))) e,
-          RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) (b,(c,(d,e))))
-         => RescaleCyc (Cyc t) (a,(b,(c,(d,e)))) e where
+instance (RescaleCyc (Cyc t m) (b,(c,(d,e))) e,
+          RescaleCyc (Cyc t m) (a,(b,(c,(d,e)))) (b,(c,(d,e))))
+         => RescaleCyc (Cyc t m) (a,(b,(c,(d,e)))) e where
 
-  rescaleCyc bas a = rescaleCyc bas (rescaleCyc bas a :: Cyc t _ (b,(c,(d,e))))
+  rescaleCyc bas a = rescaleCyc bas (rescaleCyc bas a :: Cyc t m (b,(c,(d,e))))
   {-# INLINABLE rescaleCyc #-}
 
 -----
@@ -846,6 +837,22 @@ instance (ForallFact2 (Gadget gad) (Cyc t) a,
                        \\ (entailFact2 :: Fact m :- Gadget gad (Cyc t m b)))
 
 -----
+
+instance (Fact m, Reduce a b, CRTElt t a, Tensor t b,
+          Additive (CycG t m a), Additive (CycG t m b)) -- Reduce superclasses
+  => Reduce (CycG t m a) (CycG t m b) where
+  reduce (Pow u)    = Pow    $ reduce u
+  reduce (Dec u)    = Dec    $ reduce u
+  reduce (CRT u)    = Pow    $ reduce $ either toPow toPow u
+  reduce (Scalar c) = Scalar $ reduce c
+
+instance (Reduce (CycG t m Int64) (CycG t m (ZqBasic q Int64)))
+  => Reduce (Cyc t m Int64) (Cyc t m (ZqBasic q Int64)) where
+  reduce = CycZqB . reduce . unCycI64
+
+instance (Reduce (Cyc t m z) (Cyc t m a), Reduce (Cyc t m z) (Cyc t m b))
+  => Reduce (Cyc t m z) (Cyc t m (a,b)) where
+  reduce z = CycPair (reduce z) (reduce z)
 
 toZL :: Tagged s [a] -> TaggedT s ZipList a
 toZL = coerce
