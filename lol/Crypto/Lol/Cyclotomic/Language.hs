@@ -132,15 +132,18 @@ fmapAny = fmapCyc   Nothing
 fmapPow = fmapCyc $ Just Pow
 fmapDec = fmapCyc $ Just Dec
 
--- | Reduce on a cyclotomic.
+-- | Reduce on a cyclotomic (in an arbitrary basis).
 reduceCyc :: (FunctorCyc c a b, Reduce a b) => c a -> c b
 reduceCyc = fmapAny reduce
 
 -- | Lift a cyclotomic in the specified basis (or any basis).
+liftCyc :: (FunctorCyc c a b, Lift a b) => Maybe Basis -> c a -> c b
+liftCyc = flip fmapCyc lift
+
 liftAny, liftPow, liftDec :: (FunctorCyc c a b, Lift a b) => c a -> c b
-liftAny = fmapAny lift
-liftPow = fmapPow lift
-liftDec = fmapDec lift
+liftAny = liftCyc   Nothing
+liftPow = liftCyc $ Just Pow
+liftDec = liftCyc $ Just Dec
 
 -- | Rescaling on cyclotomics from one base ring to another. (This is
 -- a separate class because there are optimized rescaling algorithms
