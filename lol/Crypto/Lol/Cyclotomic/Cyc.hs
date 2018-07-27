@@ -458,10 +458,6 @@ deriving instance (Module (ZqBasic q z) (CycG t m (ZqBasic q z)),
                    Ring (ZqBasic q z)) -- satisfy superclass
   => Module.C (ZqBasic q z) (Cyc t m (ZqBasic q z))
 
-instance (Module r (Cyc t m a), Module r (Cyc t m b))
-  => Module.C r (Cyc t m (a,b)) where
-  r *> (CycPair ca cb) = CycPair (r *> ca) (r *> cb)
-
 instance (Module a (Cyc t m a), Module b (Cyc t m b))
   => Module.C (a,b) (Cyc t m (a,b)) where
   (a,b) *> (CycPair ca cb) = CycPair (a *> ca) (b *> cb)
@@ -487,14 +483,6 @@ instance (ForallFact2 (Module.C a) (Cyc t) a,
   entailFact2 = C.Sub (Dict
                        \\ (entailFact2 :: Fact m :- Module.C a (Cyc t m a))
                        \\ (entailFact2 :: Fact m :- Module.C b (Cyc t m b)))
-
-instance (ForallFact2 (Module.C r) (Cyc t) a,
-          ForallFact2 (Module.C r) (Cyc t) b)
-  => ForallFact2 (Module.C r) (Cyc t) (a,b) where
-  entailFact2 :: forall m . Fact m :- Module.C r (Cyc t m (a,b))
-  entailFact2 = C.Sub (Dict
-                       \\ (entailFact2 :: Fact m :- Module.C r (Cyc t m a))
-                       \\ (entailFact2 :: Fact m :- Module.C r (Cyc t m b)))
 
 -- Module over finite field
 
