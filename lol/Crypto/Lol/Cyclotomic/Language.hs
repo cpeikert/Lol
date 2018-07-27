@@ -73,10 +73,10 @@ roundedGaussian svar = fmapCyc (Just Dec) (roundMult one) <$>
 
 -- | Sampling from /discretized/ tweaked Gaussian distributions over
 -- cyclotomic number rings.
-class RoundedGaussianCyc c where
+class RoundedGaussianCyc cmz where
   -- | Sample from the tweaked Gaussian with given scaled variance,
   -- deterministically rounded using the decoding basis.
-  roundedGaussian :: (ToRational v, MonadRandom rnd) => v -> rnd c
+  roundedGaussian :: (ToRational v, MonadRandom rnd) => v -> rnd cmz
 
 -}
 
