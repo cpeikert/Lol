@@ -60,20 +60,19 @@ module Crypto.Lol.Cyclotomic.CycRep
 , coeffsPow, coeffsDec, powBasis, decBasis, crtSet
 ) where
 
-import           Crypto.Lol.CRTrans
-import           Crypto.Lol.Cyclotomic.CRTSentinel
-import           Crypto.Lol.Cyclotomic.Tensor      hiding (divGDec,
-                                                    divGPow, embedCRT,
-                                                    embedPowDec,
-                                                    gSqNormDec, mulGDec,
-                                                    mulGPow, scalarCRT,
-                                                    twaceCRT)
-import qualified Crypto.Lol.Cyclotomic.Tensor      as T
-import           Crypto.Lol.Prelude                as LP
-import           Crypto.Lol.Types.FiniteField
-import           Crypto.Lol.Types.IFunctor
-import           Crypto.Lol.Types.Proto
-import           Crypto.Lol.Types.ZPP
+import Crypto.Lol.CRTrans
+import Crypto.Lol.Cyclotomic.CRTSentinel
+import Crypto.Lol.Cyclotomic.Tensor      hiding (divGDec, divGPow,
+                                          embedCRT, embedPowDec,
+                                          gSqNormDec, mulGDec, mulGPow,
+                                          scalarCRT, twaceCRT)
+import Crypto.Lol.Prelude                as LP
+import Crypto.Lol.Types.FiniteField
+import Crypto.Lol.Types.IFunctor
+import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.ZPP
+
+import qualified Crypto.Lol.Cyclotomic.Tensor as T
 
 import qualified Algebra.Additive     as Additive (C)
 import qualified Algebra.Module       as Module (C)
