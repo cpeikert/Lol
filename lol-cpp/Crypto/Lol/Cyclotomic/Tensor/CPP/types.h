@@ -82,6 +82,13 @@ public:
     this->x %= q;
     return *this;
   }
+  Zq& operator*=(const hInt_t& b)
+  {
+    Zq c;
+    c = b;
+    *this *= c;
+    return *this;
+  }
   // fails if b is not invertible mod q
   Zq& operator/=(const Zq& b)
   {
@@ -105,6 +112,11 @@ inline Zq operator-(Zq a, const Zq& b)
   return a;
 }
 inline Zq operator*(Zq a, const Zq& b)
+{
+  a *= b;
+  return a;
+}
+inline Zq operator*(Zq a, const hInt_t& b)
 {
   a *= b;
   return a;
@@ -160,6 +172,13 @@ public:
     this->imag = (a*b.imag)+(this->imag*b.real);
     return *this;
   }
+  Complex& operator*=(const hInt_t& b)
+  {
+    Complex c;
+    c = b;
+    *this *= c;
+    return *this;
+  }
   Complex& operator/=(const Complex& b)
   {
     Complex bconj;
@@ -183,6 +202,11 @@ inline Complex operator-(Complex a, const Complex& b)
   return a;
 }
 inline Complex operator*(Complex a, const Complex& b)
+{
+  a *= b;
+  return a;
+}
+inline Complex operator*(Complex a, const hInt_t& b)
 {
   a *= b;
   return a;

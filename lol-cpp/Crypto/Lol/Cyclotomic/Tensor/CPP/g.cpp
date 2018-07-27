@@ -13,23 +13,25 @@ Portability : POSIX
 #include "tensor.h"
 #include "common.h"
 
-template <typename ring> void gPow (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
+template <typename abgrp> void gPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
   if (p == 2) {return;}
-  hDim_t tmp1 = rts*(p-1);
-  hDim_t tmp2 = tmp1 - rts;
   hDim_t blockOffset, modOffset;
   hDim_t i;
   for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-    hDim_t tmp3 = blockOffset * tmp1;
+    hDim_t tmp1 = blockOffset * (p-1)*rts;
     for (modOffset = 0; modOffset < rts; ++modOffset) {
-      hDim_t tensorOffset = tmp3 + modOffset;
-      ring last = y[(tensorOffset + tmp2)];
-      for (i = p-2; i != 0; --i) {
-        hDim_t idx = tensorOffset + i * rts;
-        y[idx] += (last - y[(idx-rts)]);
+      hDim_t tensorOffset = tmp1 + modOffset;
+      // The vector we're working with appears as a column in a matrix. The vector is
+      // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
+      abgrp first = y[tensorOffset];
+      // the actual work, stepping forwards: y_i = y_1 - y_{i+1}
+      for (i = 0; i < p-2; ++i) {
+        hDim_t idx = tensorOffset + i*rts;
+        y[idx] += (first - y[idx+rts]);
       }
-      y[tensorOffset] += last;
+      // last += first
+      y[tensorOffset + (p-2)*rts] += first;
     }
   }
 }
@@ -57,33 +59,36 @@ template <typename ring> void gDec (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
   }
 }
 
-template <typename ring> void gInvPow (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
+template <typename abgrp> void gInvPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
   if (p == 2) {return;}
-  hDim_t tmp1 = rts * (p-1);
   hDim_t blockOffset, modOffset;
   hDim_t i;
 
   for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-    hDim_t tmp2 = blockOffset * tmp1;
+    hDim_t tmp1 = blockOffset * (p-1)*rts;
     for (modOffset = 0; modOffset < rts; ++modOffset) {
-      hDim_t tensorOffset = tmp2 + modOffset;
-      ring lelts;
-      lelts = 0;
-      for (i = 0; i < p-1; ++i) {
-        lelts += y[(tensorOffset + i*rts)];
-      }
-      ring relts;
+      hDim_t tensorOffset = tmp1 + modOffset;
+      // The vector we're working with appears as a column in a matrix. The vector is
+      // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
+      abgrp relts;
       relts = 0;
-      for (i = p-2; i >= 0; --i) {
+      // relts = Σ y_i
+      for (i = 0; i < p-1; ++i) {
+        relts += y[tensorOffset + i*rts];
+      }
+      abgrp lelts;
+      lelts = 0;
+      // How to compute the new value y'_i:
+      // y'_i = i * Σ_{j=i}^{p-1} y_i + (i-1-p) * Σ_{j=1}^{i-1} y_i
+      // That is, it's i*right coeffs + (i-1-p)*left coeffs. That's what the bottom algorithm does,
+      // albeit 0-indexed.
+      for (i = 0; i != p-1; ++i) {
         hDim_t idx = tensorOffset + i*rts;
-        ring z = y[idx];
-        ring lmul, rmul;
-        lmul = p-1-i;
-        rmul = i+1;
-        y[idx] = lmul * lelts - rmul * relts;
-        lelts -= z;
-        relts += z;
+        abgrp z = y[idx];
+        y[idx] = relts*(i+1) - lelts*(p-1-i);
+        relts -= z;
+        lelts += z;
       }
     }
   }
