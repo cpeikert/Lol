@@ -36,25 +36,31 @@ template <typename abgrp> void gPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
   }
 }
 
-template <typename ring> void gDec (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
+template <typename abgrp> void gDec (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
   if (p == 2) {return;}
-  hDim_t tmp1 = rts*(p-1);
   hDim_t blockOffset;
   hDim_t modOffset;
   hDim_t i;
 
   for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-    hDim_t tmp2 = blockOffset * tmp1;
+    hDim_t tmp1 = blockOffset * (p-1)*rts;
     for (modOffset = 0; modOffset < rts; ++modOffset) {
-      hDim_t tensorOffset = tmp2 + modOffset;
-      ring acc = y[tensorOffset];
-      for (i = p-2; i != 0; --i) {
+      // The vector we're working with appears as a column in a matrix. The vector is
+      // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
+      hDim_t tensorOffset = tmp1 + modOffset;
+      // By the end of the for loop, acc will be Σ_{i=1}^{p-2} y_i
+      abgrp acc;
+      acc = 0;
+      // y_i = y_i - y_{i+1}
+      for (i = 0; i != p-2; ++i) {
         hDim_t idx = tensorOffset + i * rts;
         acc += y[idx];
-        y[idx] -= y[(idx-rts)];
+        y[idx] -= y[idx+rts];
       }
-      y[tensorOffset] += acc;
+      // last = acc + 2*last
+      hDim_t last_idx = tensorOffset + (p-2)*rts;
+      y[last_idx] += (acc + y[last_idx]);
     }
   }
 }
@@ -80,8 +86,8 @@ template <typename abgrp> void gInvPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t
       abgrp lelts;
       lelts = 0;
       // How to compute the new value y'_i:
-      // y'_i = i * Σ_{j=i}^{p-1} y_i + (i-1-p) * Σ_{j=1}^{i-1} y_i
-      // That is, it's i*right coeffs + (i-1-p)*left coeffs. That's what the bottom algorithm does,
+      // y'_i = i*Σ_{j=i}^{p-1} y_j + (i-1-p)*Σ_{j=1}^{i-1} y_j
+      // That is, i*right_coeffs + (i-1-p)*left_coeffs. That's what the below algorithm does,
       // albeit 0-indexed.
       for (i = 0; i != p-1; ++i) {
         hDim_t idx = tensorOffset + i*rts;
@@ -94,35 +100,35 @@ template <typename abgrp> void gInvPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t
   }
 }
 
-template <typename ring> void gInvDec (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
+template <typename abgrp> void gInvDec (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
   if (p == 2) {return;}
   hDim_t blockOffset;
   hDim_t modOffset;
   hDim_t i;
-  hDim_t tmp1 = rts*(p-1);
 
   for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-    hDim_t tmp2 = blockOffset*tmp1;
+    hDim_t tmp1 = blockOffset* (p-1)*rts;
     for (modOffset = 0; modOffset < rts; ++modOffset) {
-      hDim_t tensorOffset = tmp2 + modOffset;
-      ring lastOut;
-      lastOut = 0;
-      for (i=1; i < p; ++i) {
-        ring ri;
-        ri = i;
-        lastOut += (ri * y[(tensorOffset + (i-1)*rts)]);
+      // The vector we're working with appears as a column in a matrix. The vector is
+      // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
+      hDim_t tensorOffset = tmp1 + modOffset;
+      abgrp acc;
+      // acc = Σ_{i=1}^{p-1} (p-i)*y_i
+      acc = 0;
+      for (i=0; i != p-1; ++i) {
+        acc += (y[tensorOffset + i*rts] * (p-1-i));
       }
-      ring rp;
-      rp = p;
-      ring acc = lastOut;
-      for (i = p-2; i > 0; --i) {
+      // How to compute the new value y'_i:
+      // y'_i = -Σ_{j=1}^{j=i-1} j*y_j + Σ_{j=i}^{p-1} (p-j)*y_j
+      // The LHS is 0 to begin with. We remove terms from the RHS and add to the LHS by subtracting
+      // off from acc.
+      for (i=0; i != p-1; ++i) {
         hDim_t idx = tensorOffset + i*rts;
-        ring tmp = acc;
-        acc -= y[idx]*rp;
+        abgrp tmp = acc;
+        acc -= (y[idx] * p);
         y[idx] = tmp;
       }
-      y[tensorOffset] = acc;
     }
   }
 }
