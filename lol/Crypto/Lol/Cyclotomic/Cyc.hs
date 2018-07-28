@@ -167,35 +167,47 @@ uncycCRT :: (Fact m, CRTElt t r) => CycG t m r -> CycRepEC t m r
 uncycCRT c = let (CRT u) = toCRT' c in u
 -}
 
--- | Extract a 'CycRep', in a desired representation, from a 'Cyc'.
+-- | Go between 'Cyc' and 'CycRep', in a desired representation.
 class UnCyc t r where
+  cycPow   :: (Fact m) => CycRep t P m r -> Cyc t m r
+  cycDec   :: (Fact m) => CycRep t D m r -> Cyc t m r
   unCycPow :: (Fact m) => Cyc t m r -> CycRep t P m r
   unCycDec :: (Fact m) => Cyc t m r -> CycRep t D m r
 
 instance CRTElt t Double => UnCyc t Double where
+  cycPow   = CycDbl . Pow
+  cycDec   = CycDbl . Dec
   unCycPow = unCycGPow . unCycDbl
   unCycDec = unCycGDec . unCycDbl
 
 instance CRTElt t Int64 => UnCyc t Int64 where
+  cycPow   = CycI64 . Pow
+  cycDec   = CycI64 . Dec
   unCycPow = unCycGPow . unCycI64
   unCycDec = unCycGDec . unCycI64
 
 instance CRTElt t (ZqBasic q z) => UnCyc t (ZqBasic q z) where
+  cycPow   = CycZqB . Pow
+  cycDec   = CycZqB . Dec
   unCycPow = unCycGPow . unCycZqB
   unCycDec = unCycGDec . unCycZqB
 
--- not for Integer, because we can't convert between Pow and Dec reps
+-- CJP TODO: one for Integer?; would require converting between Pow and
+-- Dec reps in pure Haskell
 
 instance Tensor t (RRq q r) => UnCyc t (RRq q r) where
+  cycPow = PowRRq
+  cycDec = DecRRq
   unCycPow (PowRRq v) = v
   unCycPow (DecRRq v) = toPow v
-
   unCycDec (DecRRq v) = v
   unCycDec (PowRRq v) = toDec v
 
-instance (UnCyc t a, UnCyc t b,
-         IFunctor t, IFElt t a, IFElt t b, IFElt t (a,b))
+instance (UnCyc t a, UnCyc t b, IFunctor t, IFElt t a, IFElt t b, IFElt t (a,b))
   => UnCyc t (a,b) where
+  cycPow = uncurry CycPair . ((cycPow . fmapI fst) &&& (cycPow . fmapI snd))
+  cycDec = uncurry CycPair . ((cycDec . fmapI fst) &&& (cycDec . fmapI snd))
+
   unCycPow (CycPair a b) = zipWithI (,) (unCycPow a) (unCycPow b)
   unCycDec (CycPair a b) = zipWithI (,) (unCycDec a) (unCycDec b)
 
