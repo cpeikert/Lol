@@ -64,6 +64,18 @@ errorGSqNorm :: (RLWECtx cm zq rrq, FunctorCyc cm rrq (LiftOf rrq), Lift' rrq,
 {-# INLINABLE errorGSqNorm #-}
 errorGSqNorm = (fmap gSqNorm) . errorTerm
 
+-- | Gives \( c^2 \) such that the Gaussian mass outside a ball of radius
+-- \( c \) is approximately \( \epsilon \) (i.e., the Gaussian measure for
+-- \( \| x^2 \| > c^2 \cdot n \) is \( \approx \epsilon \).) This is corollary
+-- 2.2 in the paper.
+tailGaussian :: (Ord v, Transcendental v, Fact m) => v -> Tagged m v
+tailGaussian eps = do
+  n <- fromIntegral <$> totientFact
+  let stabilize x =
+        let x' = (1/2 + (log (2 * pi * x))/2 - (log eps)/n)/pi
+        in if x'-x < 0.0001 then x' else stabilize x'
+  return $ stabilize $ 1/(2*pi)
+
 -- | A bound such that the 'gSqNorm' of a continuous error generated
 -- by 'tweakedGaussian' with scaled variance \(v\) (over the \(m\)th
 -- cyclotomic field) is less than the bound except with probability
@@ -75,7 +87,5 @@ errorBound :: (Ord v, Transcendental v, Fact m)
 errorBound v eps = do
   n <- fromIntegral <$> totientFact
   mhat <- fromIntegral <$> valueHatFact
-  let stabilize x =
-        let x' = (1/2 + log (2 * pi * x)/2 - log eps/n)/pi
-        in if x'-x < 0.0001 then x' else stabilize x'
-  return $ mhat * n * v * stabilize (1/(2*pi))
+  csq <- tailGaussian eps
+  return $ mhat * n * v * csq
