@@ -15,10 +15,7 @@ Functions and types for working with continuous ring-LWE samples.
 -}
 
 {-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE KindSignatures        #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
@@ -26,55 +23,46 @@ module Crypto.Lol.RLWE.Continuous where
 
 import Crypto.Lol.Cyclotomic.Language
 import Crypto.Lol.Prelude
-import Crypto.Lol.Types.IFunctor
-
-import qualified Algebra.Additive     as Additive (C)
 
 import Control.Applicative
-import Control.Monad.Random hiding (lift)
+import Control.Monad.Random
 
 -- | A continuous RLWE sample \( (a,b) \in R_q \times K/(qR) \).  The
 -- base type @rrq@ represents \( \R/q\Z \), the additive group of
 -- reals modulo \( q \).
-type Sample c (m :: Factored) zq rrq = (c m zq, c m rrq)
-
--- CJP: trying to avoid this problem:
--- (The second component is a 'CycRep' because the base type @rrq@,
--- representing \(\R/(q\Z)\), is an additive group but not a ring, so
--- we can't usefully work with a 'Cyc' over it.)
+type Sample cm zq rrq = (cm zq, cm rrq)
 
 -- | Common constraints for working with continuous RLWE.
-type RLWECtx c m zq rrq =
-  (Fact m, Cyclotomic c zq, Subgroup zq rrq, Lift' rrq, LiftCyc c rrq,
-   Ring (c m zq), Additive.C (c m rrq),
-   IFElt c zq, IFElt c rrq, IFunctor c)
+type RLWECtx cm zq rrq =
+  (Cyclotomic (cm zq), Ring (cm zq), Additive (cm rrq),
+   Subgroup zq rrq, FunctorCyc cm zq rrq)
 
 -- | A continuous RLWE sample with the given scaled variance and secret.
-sample :: forall rnd v c m zq rrq .
-  (RLWECtx c m zq rrq, Random zq, Random (LiftOf rrq), OrdFloat (LiftOf rrq),
-   GaussianCyc c (LiftOf rrq),
-   Reduce (c m (LiftOf rrq)) (c m rrq),
-   Random (c m zq), MonadRandom rnd, ToRational v)
-  => v -> c m zq -> rnd (Sample c m zq rrq)
+sample :: forall rnd v cm zq rrq .
+  (RLWECtx cm zq rrq, Random (cm zq), GaussianCyc (cm (LiftOf rrq)),
+   Reduce (cm (LiftOf rrq)) (cm rrq), MonadRandom rnd, ToRational v)
+  => v -> cm zq -> rnd (Sample cm zq rrq)
 {-# INLINABLE sample #-}
 sample svar s = let s' = adviseCRT s in do
   a <- getRandom
-  e :: c m (LiftOf rrq) <- tweakedGaussian svar
-  let as = fmapI fromSubgroup (a * s')
+  e :: cm (LiftOf rrq) <- tweakedGaussian svar
+  let as = fmapDec fromSubgroup (a * s')
   return (a, as + reduce e)
 
 -- | The error term of an RLWE sample, given the purported secret.
-errorTerm :: RLWECtx c m zq rrq => c m zq -> Sample c m zq rrq -> c m (LiftOf rrq)
+errorTerm :: (RLWECtx cm zq rrq, FunctorCyc cm rrq (LiftOf rrq), Lift' rrq)
+  => cm zq -> Sample cm zq rrq -> cm (LiftOf rrq)
 {-# INLINABLE errorTerm #-}
 errorTerm s = let s' = adviseCRT s
-              in \(a,b) -> liftDec $ b - fmapI fromSubgroup (a * s')
+              in \(a,b) -> liftDec $ b - fmapDec fromSubgroup (a * s')
 
 -- | The 'gSqNorm' of the error term of an RLWE sample, given the
 -- purported secret.
-errorGSqNorm :: (RLWECtx c m zq rrq, GSqNorm c (LiftOf rrq))
-                => c m zq -> Sample c m zq rrq -> LiftOf rrq
+errorGSqNorm :: (RLWECtx cm zq rrq, FunctorCyc cm rrq (LiftOf rrq), Lift' rrq,
+                 GSqNormCyc cm (LiftOf rrq))
+  => cm zq -> Sample cm zq rrq -> LiftOf rrq
 {-# INLINABLE errorGSqNorm #-}
-errorGSqNorm s = gSqNorm . errorTerm s
+errorGSqNorm = (fmap gSqNorm) . errorTerm
 
 -- | A bound such that the 'gSqNorm' of a continuous error generated
 -- by 'tweakedGaussian' with scaled variance \(v\) (over the \(m\)th
