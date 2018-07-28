@@ -203,15 +203,9 @@ instance (UnCyc t a, UnCyc t b,
 
 instance (Fact m, CRTElt t a, IFunctor t, IFElt t a, IFElt t b)
   => FunctorCyc (CycG t m) a b where
-  fmapCyc Nothing f (Pow v) = Pow $ fmapI f v
-  fmapCyc Nothing f (Dec v) = Dec $ fmapI f v
-  fmapCyc Nothing f c       = fmapCyc Nothing f $ toPow' c
-
-  fmapCyc (Just L.Pow) f (Pow v) = Pow $ fmapI f v
-  fmapCyc (Just L.Dec) f (Dec v) = Dec $ fmapI f v
-
-  fmapCyc b@(Just L.Pow) f c = fmapCyc b f $ toPow' c
-  fmapCyc b@(Just L.Dec) f c = fmapCyc b f $ toDec' c
+  fmapCyc (Just L.Pow) f = Pow . fmapI f . unCycGPow
+  fmapCyc (Just L.Dec) f = Dec . fmapI f . unCycGDec
+  fmapCyc Nothing      f = fmapCyc (Just L.Pow) f
 
 instance (FunctorCyc (Cyc t m) z a, FunctorCyc (Cyc t m) z b)
   => FunctorCyc (Cyc t m) z (a,b) where
