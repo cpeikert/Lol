@@ -98,7 +98,7 @@ type instance LiftOf (Linear c e r s zp) = Linear c e r s (LiftOf zp)
 -- | Lift the linear function in the specified basis (or any, if
 -- 'Nothing' is given).  The powerful basis is generally best,
 -- geometrically.
-liftLin :: (Fact s, Lift' zp, FunctorCyc (c s) zp (LiftOf zp))
+liftLin :: (Fact s, LiftCyc (c s) zp)
   => Maybe Basis -> Linear c e r s zp -> Linear c e r s (LiftOf zp)
 liftLin b (RD ys) = RD $ liftCyc b <$> ys
 

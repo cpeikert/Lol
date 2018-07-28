@@ -61,7 +61,7 @@ class GaussianCyc cmq where
   -- \), where \( D \) has scaled variance \( v \).
   tweakedGaussian :: (ToRational v, MonadRandom rnd) => v -> rnd cmq
 
--- | convenient type synonym that looks like a class constraint
+-- | Convenient type synonym that looks like a class constraint.
 type RoundedGaussianCyc cm z =
   (ToInteger z, GaussianCyc (cm Double), FunctorCyc cm Double z)
 
@@ -140,11 +140,14 @@ fmapDec = fmapCyc $ Just Dec
 reduceCyc :: (FunctorCyc c a b, Reduce a b) => c a -> c b
 reduceCyc = fmapAny reduce
 
+-- | Convenient type synonym that looks like a class constraint.
+type LiftCyc c a = (Lift' a, FunctorCyc c a (LiftOf a))
+
 -- | Lift a cyclotomic in the specified basis (or any basis).
-liftCyc :: (FunctorCyc c a b, Lift a b) => Maybe Basis -> c a -> c b
+liftCyc :: (LiftCyc c a) => Maybe Basis -> c a -> c (LiftOf a)
 liftCyc = flip fmapCyc lift
 
-liftAny, liftPow, liftDec :: (FunctorCyc c a b, Lift a b) => c a -> c b
+liftAny, liftPow, liftDec :: (LiftCyc c a) => c a -> c (LiftOf a)
 liftAny = liftCyc   Nothing
 liftPow = liftCyc $ Just Pow
 liftDec = liftCyc $ Just Dec
