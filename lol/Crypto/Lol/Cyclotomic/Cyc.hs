@@ -1074,14 +1074,15 @@ instance (Fact m, CRTElt t r, Protoable (CycRep t D m r))
 
 -- CJP: the TH needs to be before/after everything in the module so as
 -- not to screw up scoping
-let fst (a,_,_) = a
-    snd (_,b,_) = b
-    thd (_,_,c) = c
-    -- the Cyc instances (CycG wrappers) to take product of for FunctorCyc
-    cycs = [ (conT ''Int64,  conE 'CycI64, varE 'unCycI64)
-           , (conT ''Double, conE 'CycDbl, varE 'unCycDbl)
-           , (conT ''ZqBasic `appT` varT (mkName "q") `appT` conT ''Int64,
-                             conE 'CycZqB, varE 'unCycZqB)]
+let fst3 (a,_,_) = a
+    snd3 (_,b,_) = b
+    thd3 (_,_,c) = c
+    -- the Cyc instances (CycG wrappers) to take cross-product of, for
+    -- FunctorCyc instances
+    cycs = [ ([t| Int64  |], [| CycI64 |], [| unCycI64 |])
+           , ([t| Double |], [| CycDbl |], [| unCycDbl |])
+           , ([t| ZqBasic $(varT (mkName "q")) $(varT (mkName "z")) |],
+                                  [| CycZqB |], [| unCycZqB |])]
     mkFunctorCyc (a,aCycDecon) (b,bCycCon) =
       [d|
        instance (FunctorCyc (CycG t m) $a $b)
