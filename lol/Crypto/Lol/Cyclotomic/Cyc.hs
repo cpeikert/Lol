@@ -1081,11 +1081,11 @@ instance (Fact m, CRTElt t r, Protoable (CycRep t D m r))
 -- UnCyc), but not *to* pairs due to Cyc's special constructor.
 
 let fst3 (a,_,_) = a
-    types = [ [t| ( $(varT (mkName "a")) , $(varT (mkName "b"))) |] -- pair
-            , [t| Int64   |]
-            , [t| Double  |]
+    types = [ [t| Int64 |]
+            , [t| Double |]
             , [t| ZqBasic $(varT (mkName "q")) $(varT (mkName "z")) |]
             , [t| RRq $(varT (mkName "q")) $(varT (mkName "r")) |]
+            , [t| ( $(varT (mkName "a")) , $(varT (mkName "b"))) |] -- pair
             ]
     mkIFunctorCyc y z =
       [d|
