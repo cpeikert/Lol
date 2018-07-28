@@ -1077,8 +1077,7 @@ instance (Fact m, CRTElt t r, Protoable (CycRep t D m r))
 -- CJP: the TH needs to appear before/after everything in the module
 -- so as not to screw up scoping
 
-let fst3 (a,_,_) = a
-    types = [ [t| Int64 |]
+let types = [ [t| Int64 |]
             , [t| Double |]
             , [t| ZqBasic $(varT (mkName "q")) $(varT (mkName "z")) |]
             , [t| RRq $(varT (mkName "q")) $(varT (mkName "r")) |]
