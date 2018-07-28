@@ -50,24 +50,24 @@ sample svar s = let s' = adviseCRT s in do
   return (a, as + reduce e)
 
 -- | The error term of an RLWE sample, given the purported secret.
-errorTerm :: (RLWECtx cm zq rrq, FunctorCyc cm rrq (LiftOf rrq), Lift' rrq)
-  => cm zq -> Sample cm zq rrq -> cm (LiftOf rrq)
+errorTerm :: (RLWECtx cm zq rrq, Lift' rrq, FunctorCyc cm rrq (LiftOf rrq))
+          => cm zq -> Sample cm zq rrq -> cm (LiftOf rrq)
 {-# INLINABLE errorTerm #-}
 errorTerm s = let s' = adviseCRT s
               in \(a,b) -> liftDec $ b - fmapDec fromSubgroup (a * s')
 
 -- | The 'gSqNorm' of the error term of an RLWE sample, given the
 -- purported secret.
-errorGSqNorm :: (RLWECtx cm zq rrq, FunctorCyc cm rrq (LiftOf rrq), Lift' rrq,
+errorGSqNorm :: (RLWECtx cm zq rrq, Lift' rrq, FunctorCyc cm rrq (LiftOf rrq),
                  GSqNormCyc cm (LiftOf rrq))
-  => cm zq -> Sample cm zq rrq -> LiftOf rrq
+             => cm zq -> Sample cm zq rrq -> LiftOf rrq
 {-# INLINABLE errorGSqNorm #-}
 errorGSqNorm = (fmap gSqNorm) . errorTerm
 
--- | Gives \( c^2 \) such that the Gaussian mass outside a ball of radius
--- \( c \) is approximately \( \epsilon \) (i.e., the Gaussian measure for
--- \( \| x^2 \| > c^2 \cdot n \) is \( \approx \epsilon \).) This is corollary
--- 2.2 in the paper.
+-- | Gives \( c^2 \) such that the Gaussian mass outside a ball of
+-- radius \( c \) is approximately \( \epsilon \) (i.e., the Gaussian
+-- measure for \( \| x^2 \| > c^2 \cdot n \) is \( \approx \epsilon
+-- \).)
 tailGaussian :: (Ord v, Transcendental v, Fact m) => v -> Tagged m v
 tailGaussian eps = do
   n <- fromIntegral <$> totientFact
