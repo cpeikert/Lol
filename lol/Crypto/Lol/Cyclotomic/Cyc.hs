@@ -1073,12 +1073,8 @@ instance (Fact m, CRTElt t r, Protoable (CycRep t D m r))
 
 ---------- TH instances of FunctorCyc ----------
 
--- CJP: the TH needs to be before/after everything in the module so as
--- not to screw up scoping
-
--- Instances that rely on IFunctor (in practice, Storable base types).
--- Note that we can go *from* pairs to anything else (thanks to
--- UnCyc), but not *to* pairs due to Cyc's special constructor.
+-- CJP: the TH needs to appear before/after everything in the module
+-- so as not to screw up scoping
 
 let fst3 (a,_,_) = a
     types = [ [t| Int64 |]
@@ -1087,6 +1083,8 @@ let fst3 (a,_,_) = a
             , [t| RRq $(varT (mkName "q")) $(varT (mkName "r")) |]
             , [t| ( $(varT (mkName "a")) , $(varT (mkName "b"))) |] -- pair
             ]
+    -- Instances that rely on IFunctor (in practice, Storable base
+    -- types), and go between any two IFElt types.
     mkIFunctorCyc y z =
       [d|
        instance (Fact m, UnCyc t $y, UnCyc t $z,
@@ -1096,4 +1094,19 @@ let fst3 (a,_,_) = a
          fmapCyc (Just L.Dec) f = cycDec . fmapI f . unCycDec
          fmapCyc Nothing      f = fmapCyc (Just L.Pow) f
        |]
-  in liftA concat $ sequence (mkIFunctorCyc <$> types <*> types)
+    -- Instances that map to Integer, hence need to use fmap.
+    mkFunctorCyc y =
+      [d|
+       instance (Fact m, ForallFact1 Applicative t, UnCyc t $y)
+         => FunctorCyc (Cyc t m) $y Integer where
+         fmapCyc (Just L.Pow) f = PowIgr . fmap f . unCycPow
+         fmapCyc (Just L.Dec) f = DecIgr . fmap f . unCycDec
+         fmapCyc Nothing      f = fmapCyc (Just L.Pow) f
+       |]
+    -- CJP TODO: if/when we get a way to convert Integer between Pow
+    -- and Dec, we can also have instances that go *from* Integer
+  in liftA concat $ sequence $
+     (mkIFunctorCyc <$> types <*> types) ++ (mkFunctorCyc <$> types)
+
+
+
