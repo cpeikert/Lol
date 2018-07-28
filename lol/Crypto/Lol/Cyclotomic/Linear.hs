@@ -32,7 +32,7 @@ over a common subring.
 
 module Crypto.Lol.Cyclotomic.Linear
 ( Linear, ExtendLinIdx
-, linearDec, evalLin, extendLin
+, linearDec, evalLin, liftLin, extendLin
 ) where
 
 import Crypto.Lol.Cyclotomic.Language
@@ -98,7 +98,7 @@ type instance LiftOf (Linear c e r s zp) = Linear c e r s (LiftOf zp)
 -- | Lift the linear function in the specified basis (or any, if
 -- 'Nothing' is given).  The powerful basis is generally best,
 -- geometrically.
-liftLin :: (Fact s, LiftCyc (c s) zp)
+liftLin :: (LiftCyc (c s) zp)
   => Maybe Basis -> Linear c e r s zp -> Linear c e r s (LiftOf zp)
 liftLin b (RD ys) = RD $ liftCyc b <$> ys
 
