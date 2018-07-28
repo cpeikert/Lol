@@ -2,9 +2,9 @@
 Module      : Crypto.Lol.RLWE.Discrete
 Description : Functions and types for working with discretized ring-LWE samples.
 Copyright   : (c) Eric Crockett, 2011-2017
-                  Chris Peikert, 2011-2017
+                  Chris Peikert, 2011-2018
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
@@ -18,8 +18,7 @@ Functions and types for working with discretized ring-LWE samples.
 
 module Crypto.Lol.RLWE.Discrete where
 
-import Crypto.Lol.Cyclotomic.Language
-import Crypto.Lol.Prelude
+import Crypto.Lol
 import Crypto.Lol.RLWE.Continuous as C (errorBound, tailGaussian)
 
 import Control.Applicative

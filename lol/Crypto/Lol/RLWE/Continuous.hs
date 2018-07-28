@@ -2,7 +2,7 @@
 Module      : Crypto.Lol.RLWE.Continuous
 Description : Functions and types for working with continuous ring-LWE samples.
 Copyright   : (c) Eric Crockett, 2011-2017
-                  Chris Peikert, 2011-2017
+                  Chris Peikert, 2011-2018
 License     : GPL-3
 Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
@@ -21,8 +21,7 @@ Functions and types for working with continuous ring-LWE samples.
 
 module Crypto.Lol.RLWE.Continuous where
 
-import Crypto.Lol.Cyclotomic.Language
-import Crypto.Lol.Prelude
+import Crypto.Lol
 
 import Control.Applicative
 import Control.Monad.Random
