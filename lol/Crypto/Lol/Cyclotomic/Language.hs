@@ -15,6 +15,7 @@ Portability : POSIX
   \( \def\O{\mathcal{O}} \)
 -}
 
+{-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -60,11 +61,14 @@ class GaussianCyc cmq where
   -- \), where \( D \) has scaled variance \( v \).
   tweakedGaussian :: (ToRational v, MonadRandom rnd) => v -> rnd cmq
 
+-- | convenient type synonym that looks like a class constraint
+type RoundedGaussianCyc cm z =
+  (ToInteger z, GaussianCyc (cm Double), FunctorCyc cm Double z)
+
 -- | Sample from the tweaked Gaussian with given scaled variance,
 -- deterministically rounded using the decoding basis.
 roundedGaussian :: forall cm z v rnd .
-  (FunctorCyc cm Double z, GaussianCyc (cm Double), ToInteger z,
-   ToRational v, MonadRandom rnd)
+  (RoundedGaussianCyc cm z, ToRational v, MonadRandom rnd)
   => v -> rnd (cm z)
 roundedGaussian svar = fmapCyc (Just Dec) (roundMult one) <$>
                        (tweakedGaussian svar :: rnd (cm Double))
