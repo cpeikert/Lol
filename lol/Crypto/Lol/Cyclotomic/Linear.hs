@@ -65,7 +65,7 @@ type role Linear representational representational representational nominal nomi
 -- (in \(S\)) on the relative decoding basis of \(R/E\).  The number of
 -- elements in the list must not exceed the size of the basis.
 linearDec :: forall c e r s z .
-             (e `Divides` r, e `Divides` s, ExtensionCyc c z)
+             (e `Divides` r, e `Divides` s, Cyclotomic (c s z), ExtensionCyc c z)
              => [c s z] -> Linear c e r s z
 linearDec ys = let ps = proxy powBasis (Proxy::Proxy e) `asTypeOf` ys
                in if length ys <= length ps then RD (adviseCRT <$> ys)
@@ -89,15 +89,18 @@ instance Additive (c s z) => Additive.C (Linear c e r s z) where
 
   negate (RD as) = RD $ negate <$> as
 
-instance (Fact s, Additive.C (c s z), Additive.C (c s zp), ReduceCyc c z zp)
+instance (Fact s, Reduce (c s z) (c s zp))
   => Reduce (Linear c e r s z) (Linear c e r s zp) where
-  reduce (RD ys) = RD $ reduceCyc <$> ys
+  reduce (RD ys) = RD $ reduce <$> ys
 
 type instance LiftOf (Linear c e r s zp) = Linear c e r s (LiftOf zp)
 
--- | lifting in powerful basis is generally best, geometrically
-instance (LiftCyc c zp) => LiftCyc (Linear c e r) zp where
-  liftCyc b (RD ys) = RD $ liftCyc b <$> ys
+-- | Lift the linear function in the specified basis (or any, if
+-- 'Nothing' is given).  The powerful basis is generally best,
+-- geometrically.
+liftLin :: (Fact s, Lift' zp, FunctorCyc (c s) zp (LiftOf zp))
+  => Maybe Basis -> Linear c e r s zp -> Linear c e r s (LiftOf zp)
+liftLin b (RD ys) = RD $ liftCyc b <$> ys
 
 -- | A convenient constraint synonym for extending a linear function
 -- to larger rings.
