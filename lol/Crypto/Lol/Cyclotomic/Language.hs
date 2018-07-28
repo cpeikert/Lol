@@ -47,11 +47,11 @@ class Cyclotomic cmr where
   -- value by many other values.
   advisePow, adviseDec, adviseCRT :: cmr -> cmr
 
-class GSqNorm cmr r where
+class GSqNormCyc cm r where
   -- | Yield the scaled squared norm of \( g_m \cdot e \) under the
   -- canonical embedding, namely, \( \hat{m}^{-1} \cdot \| \sigma(g_m
   -- \cdot e) \|^2 \).
-  gSqNorm :: cmr -> r
+  gSqNorm :: cm r -> r
 
 -- | Sampling from tweaked Gaussian distributions over cyclotomic
 -- number fields.

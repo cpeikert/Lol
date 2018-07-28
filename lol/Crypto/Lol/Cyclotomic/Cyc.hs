@@ -601,16 +601,17 @@ instance (Fact m, Tensor t (RRq q r)) => Cyclotomic (Cyc t m (RRq q r)) where
 
 -----
 
-instance (Fact m, TensorGSqNorm t r, CRTElt t r) => GSqNorm (CycG t m r) r where
+instance (Fact m, TensorGSqNorm t r, CRTElt t r)
+  => GSqNormCyc (CycG t m) r where
   gSqNorm (Dec c) = gSqNormDec c
   gSqNorm c       = gSqNorm $ toDec' c
 
 instance (Fact m, TensorGSqNorm t Double, CRTElt t Double) -- copied
-  => GSqNorm (Cyc t m Double) Double where
+  => GSqNormCyc (Cyc t m) Double where
   gSqNorm = gSqNorm . unCycDbl
 
 instance (Fact m, TensorGSqNorm t Int64, CRTElt t Int64) -- copied
-  => GSqNorm (Cyc t m Int64) Int64 where
+  => GSqNormCyc (Cyc t m) Int64 where
   gSqNorm = gSqNorm . unCycI64
 
 -----
