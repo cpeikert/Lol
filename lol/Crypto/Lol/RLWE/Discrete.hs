@@ -13,53 +13,49 @@ Functions and types for working with discretized ring-LWE samples.
 
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
 module Crypto.Lol.RLWE.Discrete where
 
-import Crypto.Lol.Cyclotomic.Cyc
 import Crypto.Lol.Cyclotomic.Language
 import Crypto.Lol.Prelude
 import Crypto.Lol.RLWE.Continuous as C (errorBound, tailGaussian)
 
-import qualified Algebra.Additive     as Additive (C)
-
 import Control.Applicative
 import Control.Monad.Random
 
--- | A discrete RLWE sample \( (a,b) \in R_q \times R_q\).
-type Sample t m zq = (Cyc t m zq, Cyc t m zq)
+-- | A discrete RLWE sample \( (a,b) \in R_q \times R_q \).
+type Sample cm zq = (cm zq, cm zq)
 
 -- | Common constraints for working with discrete RLWE.
-type RLWECtx t m zq =
-  (Fact m, Ring zq, Lift' zq, ToInteger (LiftOf zq),
-   Cyclotomic (Cyc t) zq, Random (Cyc t m zq), RoundedGaussianCyc (Cyc t) (LiftOf zq),
-   ReduceCyc (Cyc t) (LiftOf zq) zq, LiftCyc (Cyc t) zq,
-   Ring (Cyc t m zq), Additive.C (Cyc t m (LiftOf zq)))
+type RLWECtx cm zq =
+  (Cyclotomic (cm zq), Random (cm zq), Ring (cm zq), 
+   Reduce (cm (LiftOf zq)) (cm zq))
 
 -- | A discrete RLWE sample with the given scaled variance and secret.
-sample :: forall rnd v t m zq .
-  (RLWECtx t m zq, Random zq,  MonadRandom rnd, ToRational v)
-  => v -> Cyc t m zq -> rnd (Sample t m zq)
+sample :: forall rnd v cm zq .
+  (RLWECtx cm zq, RoundedGaussianCyc cm (LiftOf zq),
+   MonadRandom rnd, ToRational v)
+  => v -> cm zq -> rnd (Sample cm zq)
 {-# INLINABLE sample #-}
 sample svar s = let s' = adviseCRT s in do
   a <- getRandom
-  e :: Cyc t m (LiftOf zq) <- roundedGaussian svar
+  e :: cm (LiftOf zq) <- roundedGaussian svar
   return (a, a * s' + reduce e)
 
 -- | The error term of an RLWE sample, given the purported secret.
-errorTerm :: RLWECtx t m zq
-             => Cyc t m zq -> Sample t m zq -> Cyc t m (LiftOf zq)
+errorTerm :: (RLWECtx cm zq, Lift' zq, FunctorCyc cm zq (LiftOf zq))
+          => cm zq -> Sample cm zq -> cm (LiftOf zq)
 {-# INLINABLE errorTerm #-}
 errorTerm s = let s' = adviseCRT s
               in \(a,b) -> liftDec $ b - a * s'
 
 -- | The 'gSqNorm' of the error term of an RLWE sample, given the
 -- purported secret.
-errorGSqNorm :: (RLWECtx t m zq, GSqNorm (Cyc t) (LiftOf zq))
-                => Cyc t m zq -> Sample t m zq -> LiftOf zq
+errorGSqNorm :: (RLWECtx cm zq, Lift' zq, FunctorCyc cm zq (LiftOf zq), 
+                 GSqNormCyc cm (LiftOf zq))
+             => cm zq -> Sample cm zq -> LiftOf zq
 {-# INLINABLE errorGSqNorm #-}
 errorGSqNorm s = gSqNorm . errorTerm s
 
