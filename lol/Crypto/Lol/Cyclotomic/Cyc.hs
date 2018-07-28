@@ -219,13 +219,8 @@ instance (Fact m, CRTElt t a, IFunctor t, IFElt t a, IFElt t b)
   fmapCyc (Just L.Dec) f = Dec . fmapI f . unCycGDec
   fmapCyc Nothing      f = fmapCyc (Just L.Pow) f
 
-instance (FunctorCyc (Cyc t m) z a, FunctorCyc (Cyc t m) z b)
-  => FunctorCyc (Cyc t m) z (a,b) where
-  fmapCyc bas f = uncurry CycPair . ((fmapCyc bas (fst . f)) &&&
-                                     (fmapCyc bas (snd . f)))
-
--- CJP: more autogen instances at end of file, to avoid scoping
--- problems
+-- CJP: the rest of the instances are autogen'd at end of file, to
+-- avoid scoping problems
 
 ---------- Algebraic instances ----------
 
@@ -1080,22 +1075,25 @@ instance (Fact m, CRTElt t r, Protoable (CycRep t D m r))
 
 -- CJP: the TH needs to be before/after everything in the module so as
 -- not to screw up scoping
-let fst3 (a,_,_) = a
-    snd3 (_,b,_) = b
-    thd3 (_,_,c) = c
-    -- the Cyc instances (CycG wrappers) to take cross-product of, for
-    -- FunctorCyc instances
-    cycs = [ ([t| Int64  |], [| CycI64 |], [| unCycI64 |])
-           , ([t| Double |], [| CycDbl |], [| unCycDbl |])
-           , ([t| ZqBasic $(varT (mkName "q")) $(varT (mkName "z")) |],
-                                  [| CycZqB |], [| unCycZqB |])]
-    mkFunctorCyc (a,aCycDecon) (b,bCycCon) =
-      [d|
-       instance (FunctorCyc (CycG t m) $a $b)
-         => FunctorCyc (Cyc t m) $a $b where
-         fmapCyc b f = $bCycCon . fmapCyc b f . $aCycDecon
-      |]
-  in liftA concat $ sequence (mkFunctorCyc
-                              <$> ((fst &&& thd) <$> cycs)
-                              <*> ((fst &&& snd) <$> cycs))
 
+-- Instances that rely on IFunctor (in practice, Storable base types).
+-- Note that we can go *from* pairs to anything else (thanks to
+-- UnCyc), but not *to* pairs due to Cyc's special constructor.
+
+let fst3 (a,_,_) = a
+    types = [ [t| ( $(varT (mkName "a")) , $(varT (mkName "b"))) |] -- pair
+            , [t| Int64   |]
+            , [t| Double  |]
+            , [t| ZqBasic $(varT (mkName "q")) $(varT (mkName "z")) |]
+            , [t| RRq $(varT (mkName "q")) $(varT (mkName "r")) |]
+            ]
+    mkIFunctorCyc y z =
+      [d|
+       instance (Fact m, UnCyc t $y, UnCyc t $z,
+                 IFunctor t, IFElt t $y, IFElt t $z)
+         => FunctorCyc (Cyc t m) $y $z where
+         fmapCyc (Just L.Pow) f = cycPow . fmapI f . unCycPow
+         fmapCyc (Just L.Dec) f = cycDec . fmapI f . unCycDec
+         fmapCyc Nothing      f = fmapCyc (Just L.Pow) f
+       |]
+  in liftA concat $ sequence (mkIFunctorCyc <$> types <*> types)
