@@ -63,8 +63,8 @@ class GaussianCyc cmq where
 -- | Sample from the tweaked Gaussian with given scaled variance,
 -- deterministically rounded using the decoding basis.
 roundedGaussian :: forall cm z v rnd .
-  (FunctorCyc cm Double z, GaussianCyc (cm Double),
-   ToRational v, ToInteger z, MonadRandom rnd)
+  (FunctorCyc cm Double z, GaussianCyc (cm Double), ToInteger z,
+   ToRational v, MonadRandom rnd)
   => v -> rnd (cm z)
 roundedGaussian svar = fmapCyc (Just Dec) (roundMult one) <$>
                        (tweakedGaussian svar :: rnd (cm Double))
