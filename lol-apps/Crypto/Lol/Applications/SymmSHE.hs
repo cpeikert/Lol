@@ -33,7 +33,7 @@ module Crypto.Lol.Applications.SymmSHE
 -- * Data types
 SK, PT, CT -- don't export constructors!
 -- * Keygen, encryption, decryption
-, genSK, genSKWithVar
+, genSK, genAnotherSK
 , encrypt
 , errorTerm, decrypt
 -- * Arithmetic with public values
@@ -117,7 +117,8 @@ instance (NFData r) => NFData (SK r) where
 ---------- Basic functions: Gen, Enc, Dec ----------
 
 -- | Constraint synonym for generating a secret key.
-type GenSKCtx c m z v = (ToInteger z, RoundedGaussianCyc (c m) z, ToRational v, NFData v)
+type GenSKCtx c m z v =
+  (ToInteger z, RoundedGaussianCyc (c m) z, ToRational v, NFData v)
 
 -- | Generates a secret key with (index-independent) scaled variance
 -- parameter \( v \); see 'roundedGaussian'.
@@ -125,9 +126,9 @@ genSK :: (GenSKCtx c m z v, MonadRandom rnd) => v -> rnd (SK (c m z))
 genSK v = liftM (SK v) $ roundedGaussian v
 
 -- | Generates a secret key with the same scaled variance
--- as the input secret key.
-genSKWithVar :: (GenSKCtx c m z a, MonadRandom rnd) => SK a -> rnd (SK (c m z))
-genSKWithVar (SK v _) = genSK v
+-- as the given secret key.
+genAnotherSK :: (GenSKCtx c m z a, MonadRandom rnd) => SK a -> rnd (SK (c m z))
+genAnotherSK (SK v _) = genSK v
 
 -- | Constraint synonym for encryption.
 type EncryptCtx c m m' z zp zq =
