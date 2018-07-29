@@ -85,10 +85,6 @@ import MathObj.Polynomial as P
 data SK r where
   SK  :: (ToRational v, NFData v) => v -> r -> SK r
 
--- Need this for running tests
-instance Show r => Show (SK r) where
-  show (SK v r) = "(SK " ++ (show $ toRational v) ++ " " ++ (show r) ++ ")"
-
 -- | plaintext
 type PT rp = rp
 
@@ -107,12 +103,6 @@ data CT m zp r'q =
 
 -- Note: do *not* give an Eq instance for CT, because it's not
 -- meaningful to compare ciphertexts for equality
-
-instance (NFData zp, NFData r'q) => NFData (CT m zp r'q) where
-  rnf (CT _ k sc cs) = rnf k `seq` rnf sc `seq` rnf cs
-
-instance (NFData r) => NFData (SK r) where
-  rnf (SK v s) = rnf v `seq` rnf s
 
 ---------- Basic functions: Gen, Enc, Dec ----------
 
@@ -466,10 +456,6 @@ twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 data TunnelHint gad c e r s e' r' s' zp zq =
   TInfo (Linear c e' r' s' zq) [Tagged gad [Polynomial (c s' zq)]]
 
-instance (NFData (Linear c e' r' s' zq), NFData (c s' zq))
-  => NFData (TunnelHint gad c e r s e' r' s' zp zq) where
-  rnf (TInfo l t) = rnf l `seq` rnf t
-
 -- e' ~ (e * ...) is not needed in this module, but is at use sites...
 -- | Constraint synonym for generating 'TunnelHint'.
 type TunnelHintCtx c e r s e' r' s' z zp zq' gad =
@@ -532,6 +518,23 @@ tunnel (TInfo f'q hints) ct =
        c1' = sum c1s'
    in CT MSD 0 s $ P.const c0' + c1')
     \\ lcmDivides (Proxy::Proxy r) (Proxy::Proxy e')
+
+---------- Utility instances ----------
+
+instance (NFData zp, NFData r'q) => NFData (CT m zp r'q) where
+  rnf (CT _ k sc cs) = rnf k `seq` rnf sc `seq` rnf cs
+
+instance (NFData r) => NFData (SK r) where
+  rnf (SK v s) = rnf v `seq` rnf s
+
+instance (NFData (Linear c e' r' s' zq), NFData (c s' zq))
+  => NFData (TunnelHint gad c e r s e' r' s' zp zq) where
+  rnf (TInfo l t) = rnf l `seq` rnf t
+
+instance Show r => Show (SK r) where
+  show (SK v r) = "(SK " ++ (show $ toRational v) ++ " " ++ (show r) ++ ")"
+
+----- Protoable instances
 
 instance (Protoable r, ProtoType r ~ R) => Protoable (SK r) where
   type ProtoType (SK r) = P.SecretKey
