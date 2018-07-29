@@ -49,10 +49,10 @@ SK, PT, CT -- don't export constructors!
 , TunnelHint, tunnelHint
 , tunnel
 -- * Constraint synonyms
-, GenSKCtx, EncryptCtx, ToSDCtx, ErrorTermCtx
-, DecryptCtx
+, GenSKCtx, EncryptCtx, ToSDCtx
+, ErrorTermCtx, DecryptCtx
 , AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
-, KeySwitchCtx, KSHintCtx
+, KSHintCtx, KeySwitchCtx
 , TunnelHintCtx, TunnelCtx
 , SwitchCtx, LWECtx -- these are internal, but exported for better docs
 ) where
