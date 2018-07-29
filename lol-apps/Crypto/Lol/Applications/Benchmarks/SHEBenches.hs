@@ -38,7 +38,8 @@ import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Benchmarks (bgroup, mkBench, mkBenchIO, showType, Benchmark)
+import Crypto.Lol.Benchmarks           (Benchmark, bgroup, mkBench,
+                                        mkBenchIO, showType)
 import Crypto.Lol.Types
 import Crypto.Lol.Types.ZPP
 import Crypto.Random
@@ -171,13 +172,13 @@ bench_keySwQ _ pt sk = do
 bench_tunnel :: forall c t e e' r r' s s' z zp zq gad .
   (c ~ Cyc t,
    z ~ LiftOf zp,
+   Cyclotomic (Cyc t s zp),     -- linearDec
    TunnelHintCtx c e r s e' r' s' z zp zq gad,
    TunnelCtx c r s e' r' s' zp zq gad,
    EncryptCtx c r r' z zp zq,
    CRTSetCyc c zp,
-   e ~ FGCD r s,
-   z ~ ModRep zp,
    r `Divides` r',
+   e ~ FGCD r s,
    Fact e)
   => Proxy '(t,r,r',s,s',zp,zq,gad)
      -> PT (Cyc t r zp)
@@ -188,12 +189,11 @@ bench_tunnel _ pt skin skout = do
   x <- encrypt skin pt
   let crts :: [Cyc t s zp] = proxy crtSet (Proxy::Proxy e)
         \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
-      r = proxy totientFact (Proxy::Proxy r)
-      e = proxy totientFact (Proxy::Proxy e)
-      dim = r `div` e
+      totr = proxy totientFact (Proxy::Proxy r)
+      tote = proxy totientFact (Proxy::Proxy e)
       -- only take as many crts as we need
       -- otherwise linearDec fails
-      linf :: Linear (Cyc t) e r s zp = linearDec (take dim crts)
+      linf :: Linear (Cyc t) e r s zp = linearDec (take (totr `div` tote) crts)
         \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
   hints :: TunnelHint gad (Cyc t) e r s e' r' s' zp zq <- tunnelHint linf skout skin
   evalRandIO $ return $ (tunnel hints :: CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)) x
