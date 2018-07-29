@@ -24,12 +24,13 @@ Tests for SymmSHE.
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Applications.Tests.SHETests
-(decTest
-,ksTests
-,modSwPTTest
-,sheTests
-,tunnelTests
-,twemTests) where
+( decTest
+, ksTests
+, modSwPTTest
+, sheTests
+, tunnelTests
+, twemTests
+) where
 
 import Control.Applicative
 import Control.Monad
