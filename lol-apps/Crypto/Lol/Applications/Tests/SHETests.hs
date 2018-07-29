@@ -14,12 +14,14 @@ Tests for SymmSHE.
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
@@ -38,7 +40,9 @@ import Control.Monad.Random
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Tests (chooseAny, showType, testIOWithGen, testGroup, testWithGen, Test, Gen)
+import Crypto.Lol.Tests                (Gen, Test, chooseAny, showType,
+                                        testGroup, testIOWithGen,
+                                        testWithGen)
 
 -- EAC: is there a simple way to parameterize the variance?
 -- generates a secret key with scaled variance 1.0
@@ -61,7 +65,7 @@ sheTests _ _ =
       gsk = chooseAny :: Gen (SK (Cyc t m' (LiftOf zp)))
       gc = chooseAny :: Gen (Cyc t m zp)
   in testGroup (showType ptmmrr) [
-    testIOWithGen "DecU . Enc" (prop_encDecU ptmmrr) (consGens2 gpt gsk),
+    testIOWithGen "Dec . Enc"  (prop_encDec ptmmrr)  (consGens2 gpt gsk),
     testIOWithGen "AddPub"     (prop_addPub ptmmrr)  (consGens3 gc gpt gsk),
     testIOWithGen "MulPub"     (prop_mulPub ptmmrr)  (consGens3 gc gpt gsk),
     testIOWithGen "CTAdd"      (prop_ctadd ptmmrr)   (consGens3 gpt gpt gsk),
@@ -127,15 +131,6 @@ tunnelTests _ _ _ =
 
 
 
-prop_encDecU :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
-  => Proxy '(t,m,m',zp,zq)
-     -> (PT (Cyc t m zp), SK (Cyc t m' z))
-     -> IO Bool
-prop_encDecU _ (x, sk) = do
-  y :: CT m zp (Cyc t m' zq) <- encrypt sk x
-  let x' = decryptUnrestricted sk $ y
-  return $ x == x'
-
 prop_addPub :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
   => Proxy '(t,m,m',zp,zq)
      -> (Cyc t m zp, PT (Cyc t m zp), SK (Cyc t m' z))
@@ -143,7 +138,7 @@ prop_addPub :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
 prop_addPub _ (a, pt, sk) = do
   ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   let ct' = addPublic a ct
-      pt' = decryptUnrestricted sk ct'
+      pt' = decrypt sk ct'
   return $ pt' == (a+pt)
 
 prop_mulPub :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
@@ -153,7 +148,7 @@ prop_mulPub :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
 prop_mulPub _ (a, pt, sk) = do
   ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   let ct' = mulPublic a ct
-      pt' = decryptUnrestricted sk ct'
+      pt' = decrypt sk ct'
   return $ pt' == (a*pt)
 
 prop_ctadd :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
@@ -164,7 +159,7 @@ prop_ctadd _ (pt1, pt2, sk) = do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
   let ct' = ct1 + ct2
-      pt' = decryptUnrestricted sk ct'
+      pt' = decrypt sk ct'
   return $ pt1+pt2 == pt'
 
 -- tests adding with different scale values
@@ -177,7 +172,7 @@ prop_ctadd2 _ (pt1, pt2, sk) = do
   ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
   -- no-op to induce unequal scale values
   let ct' = ct1 + (modSwitchPT ct2)
-      pt' = decryptUnrestricted sk ct'
+      pt' = decrypt sk ct'
   return $ pt1+pt2 == pt'
 
 prop_ctmul :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
@@ -188,23 +183,23 @@ prop_ctmul _ (pt1, pt2, sk) = do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
   let ct' = ct1 * ct2
-      pt' = decryptUnrestricted sk ct'
+      pt' = decrypt sk ct'
   return $ pt1*pt2 == pt'
 
 prop_ctzero :: forall t m m' z zp (zq :: *) . (z ~ LiftOf zp, Fact m, _)
   => Proxy '(t,m,m',zp,zq)
      -> SK (Cyc t m' z)
      -> Bool
-prop_ctzero _ sk = zero == decryptUnrestricted sk (zero :: CT m zp (Cyc t m' zq))
+prop_ctzero _ sk = zero == decrypt sk (zero :: CT m zp (Cyc t m' zq))
 
 prop_ctone :: forall t m m' z zp (zq :: *) . (z ~ LiftOf zp, Fact m, _)
   => Proxy '(t,m,m',zp,zq)
      -> SK (Cyc t m' z)
      -> Bool
-prop_ctone _ sk = one == decryptUnrestricted sk (one :: CT m zp (Cyc t m' zq))
+prop_ctone _ sk = one == decrypt sk (one :: CT m zp (Cyc t m' zq))
 
 prop_encDec :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
-  => Proxy '(t,m,m',zp,zq) -> (SK (Cyc t m' z), Cyc t m zp) -> IO Bool
+  => Proxy '(t,m,m',zp,zq) -> (PT (Cyc t m zp), SK (Cyc t m' z)) -> IO Bool
 prop_encDec _ (sk, x) = do
   y :: CT m zp (Cyc t m' zq) <- encrypt sk x
   let x' = decrypt sk $ y
@@ -219,9 +214,9 @@ prop_modSwPT _ (pt, sk) = do
   let p = proxy modulus (Proxy::Proxy zp)
       p' = proxy modulus (Proxy::Proxy zp')
       z = (fromIntegral $ p `div` p')*y
-      x = decryptUnrestricted sk z
+      x = decrypt sk z
       y' = modSwitchPT z :: CT m zp' (Cyc t m' zq)
-      x'' = decryptUnrestricted sk y'
+      x'' = decrypt sk y'
   return $ x'' == rescaleCyc Dec x
 
 prop_ksLin :: forall t m m' z zp (zq :: *) (gad :: *) . (z ~ LiftOf zp, _)
@@ -232,7 +227,7 @@ prop_ksLin _ (pt, skin, skout) = do
   ct <- encrypt skin pt
   kslHint :: KSLinearHint gad (Cyc t m' zq) <- ksLinearHint skout skin
   let ct' = keySwitchLinear kslHint ct :: CT m zp (Cyc t m' zq)
-      pt' = decryptUnrestricted skout ct'
+      pt' = decrypt skout ct'
   return $ pt == pt'
 
 prop_ksQuad :: forall t m m' z zp zq (gad :: *) . (z ~ LiftOf zp, _)
@@ -245,7 +240,7 @@ prop_ksQuad _ (pt1, pt2, sk) = do
   ksqHint :: KSQuadCircHint gad (Cyc t m' zq) <- ksQuadCircHint sk
   let ct' = keySwitchQuadCirc ksqHint $ ct1*ct2
       ptProd = pt1*pt2
-      pt' = decryptUnrestricted sk ct'
+      pt' = decrypt sk ct'
   return $ ptProd == pt'
 
 prop_ctembed :: forall t r r' s s' z zp (zq :: *) . (z ~ LiftOf zp, Fact s', Fact s, _)
@@ -255,7 +250,7 @@ prop_ctembed :: forall t r r' s s' z zp (zq :: *) . (z ~ LiftOf zp, Fact s', Fac
 prop_ctembed _ (pt, sk) = do
   ct :: CT r zp (Cyc t r' zq) <- encrypt sk pt
   let ct' = embedCT ct :: CT s zp (Cyc t s' zq)
-      pt' = decryptUnrestricted (embedSK sk) ct'
+      pt' = decrypt (embedSK sk) ct'
   return $ embed pt == pt'
 
 -- CT must be encrypted with key from small ring
@@ -266,7 +261,7 @@ prop_cttwace :: forall t r r' s s' z zp (zq :: *) . (z ~ LiftOf zp, Fact r, _)
 prop_cttwace _ (pt, sk) = do
   ct :: CT s zp (Cyc t s' zq) <- encrypt (embedSK sk) pt
   let ct' = twaceCT ct :: CT r zp (Cyc t r' zq)
-      pt' = decryptUnrestricted sk ct'
+      pt' = decrypt sk ct'
   return $ twace pt == pt'
 
 prop_ringTunnel :: forall c t e r s e' r' s' z zp zq gad .
@@ -274,7 +269,7 @@ prop_ringTunnel :: forall c t e r s e' r' s' z zp zq gad .
    TunnelHintCtx c e r s e' r' s' z zp zq gad,
    TunnelCtx c r s e' r' s' zp zq gad,
    EncryptCtx c r r' z zp zq,
-   DecryptUCtx c s s' z zp zq,
+   DecryptCtx c s s' z zp zq,
    Random (Cyc t s zp), Ring (Cyc t s zp), Eq (Cyc t s zp),
    Random zp, Eq zp,
    e ~ FGCD r s, Fact e)
@@ -292,5 +287,5 @@ prop_ringTunnel _ (x, skin, skout) = do
   y :: CT r zp (Cyc t r' zq) <- encrypt skin x
   hints :: TunnelHint gad c e r s e' r' s' zp zq <- tunnelHint f skout skin
   let y' = tunnel hints y :: CT s zp (Cyc t s' zq)
-      actual = decryptUnrestricted skout y' :: Cyc t s zp
+      actual = decrypt skout y' :: Cyc t s zp
   return $ expected == actual
