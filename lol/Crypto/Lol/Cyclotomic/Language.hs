@@ -125,29 +125,29 @@ class ExtensionCyc c r => CRTSetCyc c r where
   crtSet :: (m `Divides` m') => Tagged m [c m' r]
 
 -- | Map over coefficients in a specified basis.
-class FunctorCyc c a b where
+class FunctorCyc cm a b where
   -- | Map in the specified basis (where 'Nothing' indicates that
   -- any 'Basis' may be used).
-  fmapCyc :: Maybe Basis -> (a -> b) -> c a -> c b
+  fmapCyc :: Maybe Basis -> (a -> b) -> cm a -> cm b
 
 -- | Convenient specializations of 'fmapCyc'.
-fmapAny, fmapPow, fmapDec :: FunctorCyc c a b => (a -> b) -> c a -> c b
+fmapAny, fmapPow, fmapDec :: FunctorCyc cm a b => (a -> b) -> cm a -> cm b
 fmapAny = fmapCyc   Nothing
 fmapPow = fmapCyc $ Just Pow
 fmapDec = fmapCyc $ Just Dec
 
 -- | Reduce on a cyclotomic (in an arbitrary basis).
-reduceCyc :: (FunctorCyc c a b, Reduce a b) => c a -> c b
+reduceCyc :: (FunctorCyc cm a b, Reduce a b) => cm a -> cm b
 reduceCyc = fmapAny reduce
 
 -- | Convenient type synonym that looks like a class constraint.
-type LiftCyc c a = (Lift' a, FunctorCyc c a (LiftOf a))
+type LiftCyc cm a = (Lift' a, FunctorCyc cm a (LiftOf a))
 
 -- | Lift a cyclotomic in the specified basis (or any basis).
-liftCyc :: (LiftCyc c a) => Maybe Basis -> c a -> c (LiftOf a)
+liftCyc :: (LiftCyc cm a) => Maybe Basis -> cm a -> cm (LiftOf a)
 liftCyc = flip fmapCyc lift
 
-liftAny, liftPow, liftDec :: (LiftCyc c a) => c a -> c (LiftOf a)
+liftAny, liftPow, liftDec :: (LiftCyc cm a) => cm a -> cm (LiftOf a)
 liftAny = liftCyc   Nothing
 liftPow = liftCyc $ Just Pow
 liftDec = liftCyc $ Just Dec
@@ -155,11 +155,11 @@ liftDec = liftCyc $ Just Dec
 -- | Rescaling on cyclotomics from one base ring to another. (This is
 -- a separate class because there are optimized rescaling algorithms
 -- that can't be implemented using 'FunctorCyc'.)
-class RescaleCyc c a b where
+class RescaleCyc cm a b where
   -- | Rescale in the given basis.
-  rescaleCyc :: Basis -> c a -> c b
+  rescaleCyc :: Basis -> cm a -> cm b
 
-rescalePow, rescaleDec :: (RescaleCyc c a b) => c a -> c b
+rescalePow, rescaleDec :: (RescaleCyc cm a b) => cm a -> cm b
 -- | 'rescaleCyc' specialized to the powerful basis.
 rescalePow = rescaleCyc Pow
 -- | 'rescaleCyc' specialized to the decoding basis.
