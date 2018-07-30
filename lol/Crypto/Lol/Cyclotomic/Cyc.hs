@@ -362,7 +362,11 @@ deriving instance Additive (CycG t m Double) => Additive.C (Cyc t m Double)
 deriving instance Additive (CycG t m Int64) => Additive.C (Cyc t m Int64)
 deriving instance Additive (CycG t m (ZqBasic q z)) => Additive.C (Cyc t m (ZqBasic q z))
 
--- no instance for Integer because we can't convert between reps
+-- CJP: need at least a basic Tensor t Integer implementation to do this
+instance Additive.C (Cyc t m Integer) where
+  (+) = error "TODO: implement Additive for Cyc t m Integer"
+  zero = error "TODO: implement Additive for Cyc t m Integer"
+  negate = error "TODO: implement Additive for Cyc t m Integer"
 
 instance (Additive (Cyc t m a), Additive (Cyc t m b))
   => Additive.C (Cyc t m (a,b)) where
@@ -876,6 +880,12 @@ instance (Fact m, Reduce a b, CRTElt t a, ZeroTestable a,
 instance (Reduce (CycG t m Int64) (CycG t m (ZqBasic q Int64)))
   => Reduce (Cyc t m Int64) (Cyc t m (ZqBasic q Int64)) where
   reduce = CycZqB . reduce . unCycI64
+
+instance (Fact m, Reflects q Int64, CRTElt t (ZqBasic q Int64), -- superclass
+          Additive (Cyc t m Integer)) -- superclass
+  => Reduce (Cyc t m Integer) (Cyc t m (ZqBasic q Int64)) where
+  reduce (PowIgr u) = CycZqB $ Pow $ fmap reduce u
+  reduce (DecIgr u) = CycZqB $ Dec $ fmap reduce u
 
 instance (Reduce (Cyc t m z) (Cyc t m a), Reduce (Cyc t m z) (Cyc t m b))
   => Reduce (Cyc t m z) (Cyc t m (a,b)) where
