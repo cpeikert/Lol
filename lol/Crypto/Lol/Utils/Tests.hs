@@ -34,14 +34,14 @@ module Crypto.Lol.Utils.Tests
 ,QC.Gen
 ,TF.Test) where
 
-import Crypto.Lol.Prelude (imag, real, Complex, Int64)
+import Crypto.Lol.Prelude              (Complex, Int64, imag, real)
 import Crypto.Lol.Types.Unsafe.ZqBasic
 
-import qualified Test.Framework as TF
+import qualified Test.Framework                       as TF
 import qualified Test.Framework.Providers.QuickCheck2 as QC2
-import qualified Test.QuickCheck as QC
-import qualified Test.QuickCheck.Gen as QCG
-import qualified Test.QuickCheck.Monadic as QCM
+import qualified Test.QuickCheck                      as QC
+import qualified Test.QuickCheck.Gen                  as QCG
+import qualified Test.QuickCheck.Monadic              as QCM
 
 -- The allowable distance from 1 the ratio of two Doubles is allowed to be in order for the numbers
 -- to be considered "approximately equal". That is, x =~= y iff -1-ε < x/y < 1+ε
@@ -64,7 +64,7 @@ instance ApproxEqual Double where
     | y == 0             = abs x < approxEqualEpsilon
     | isNaN x || isNaN y = False
     -- Calculate the distance of x/y and y/x from 1 and take the minimum
-    | otherwise          = let minDist = minimum $ map (\r -> abs $ (abs r) - 1) [(x/y), (y/x)] in
+    | otherwise          = let minDist = minimum $ map (\r -> abs $ abs r - 1) [x/y, y/x] in
                                minDist < approxEqualEpsilon
 
 instance ApproxEqual (Complex Double) where
