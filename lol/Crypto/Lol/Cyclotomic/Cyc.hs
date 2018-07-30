@@ -864,13 +864,14 @@ instance (ForallFact2 (Gadget gad) (Cyc t) a,
 
 -----
 
-instance (Fact m, Reduce a b, CRTElt t a, Tensor t b,
-          Additive (CycG t m a), Additive (CycG t m b)) -- Reduce superclasses
+instance (Fact m, Reduce a b, CRTElt t a, ZeroTestable a,
+          CRTElt t b, ZeroTestable b) -- to satisfy Reduce superclasses
   => Reduce (CycG t m a) (CycG t m b) where
   reduce (Pow u)    = Pow    $ reduce u
   reduce (Dec u)    = Dec    $ reduce u
   reduce (CRT u)    = Pow    $ reduce $ either toPow toPow u
   reduce (Scalar c) = Scalar $ reduce c
+  reduce (Sub (c :: CycG t l a)) = Sub (reduce c :: CycG t l b)
 
 instance (Reduce (CycG t m Int64) (CycG t m (ZqBasic q Int64)))
   => Reduce (Cyc t m Int64) (Cyc t m (ZqBasic q Int64)) where
