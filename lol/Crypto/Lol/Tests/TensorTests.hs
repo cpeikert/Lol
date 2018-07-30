@@ -211,8 +211,8 @@ prop_twace_invar1_dec _ = fromMaybe (error "could not divide by G in prop_twace_
       mhat' = proxy valueHatFact (Proxy::Proxy m')
       totm = proxy totientFact (Proxy::Proxy m)
       totm' = proxy totientFact (Proxy::Proxy m')
-  output :: t m r <- divGDec $ powToDec $ scalarPowDec $ fromIntegral $ mhat * totm' `div` totm
-  input :: t m' r <- divGDec $ powToDec $ scalarPowDec $ fromIntegral mhat'
+  output :: t m r <- divGDec $ scalarPowDec $ fromIntegral $ mhat * totm' `div` totm
+  input :: t m' r <- divGDec $ scalarPowDec $ fromIntegral mhat'
   return $ (twacePowDec input) =~= output
 
 -- twace mhat'/g' = mhat*totm'/totm/g (CRT basis)
