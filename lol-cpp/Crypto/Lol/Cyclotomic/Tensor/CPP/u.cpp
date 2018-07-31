@@ -25,31 +25,20 @@ U converts decoding -> powerful represenation, U^{-1} is the reverse.
  */
 template <typename abgrp> void up (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
-  hDim_t ltsOffset;
-  hDim_t rtsOffset;
-  int i;
-
   // U_2 = id
   if(p == 2) {return;}
 
+  // operate on the chunk of 'y' corresponding to each matrix on the diagonal.
   // each square diagonal matrix in I_lts \otimes (U_p \otimes I_rts) has
-  // size rts*(p-1)
-  hDim_t ltsBockSize = rts*(p-1);
-  // operate on the chunk of 'y' corresponding to each matrix on the diagonal
-  for (ltsOffset = 0; ltsOffset < lts; ++ltsOffset) {
-    // the offset into y corresponding to the block diagonal matrix
-    hDim_t blockIdx = ltsOffset*ltsBockSize;
-    // operate on slices of 'y' of size 'rts'
-    for (rtsOffset = 0; rtsOffset < rts; ++rtsOffset) {
-      hDim_t tensorOffset = blockIdx + rtsOffset;
+  // size (p-1)*rts
+  // lidx is the offset into y corresponding to the block diagonal matrix
+  for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
+    for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
       // The vector we're working with appears as a column in a matrix. The vector is
       // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
-      hDim_t idx = tensorOffset + (p-2)*rts;
-      // the actual work, stepping backwards: y_{i-1} = y_{i-1} + y_i
-      for (i = p-2; i != 0; --i) {
-        y[idx-rts] += y[idx];
-        // decrease the pointer by the size of the slice: rts
-        idx -= rts;
+      // The actual work, stepping backwards: y_{i-1} = y_{i-1} + y_i
+      for (hDim_t i = 0, off = ridx + (p-2)*rts; i < p-2; ++i, off -= rts) {
+        y[off-rts] += y[off];
       }
     }
   }
@@ -63,31 +52,20 @@ template <typename abgrp> void up (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
  */
 template <typename abgrp> void upInv (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
-  hDim_t ltsOffset;
-  hDim_t rtsOffset;
-  int i;
-
   // (U_2)^{-1} = id
   if(p == 2) {return;}
 
+  // operate on the chunk of 'y' corresponding to each matrix on the diagonal.
   // each square diagonal matrix in I_lts \otimes (U_p \otimes I_rts) has
-  // size rts*(p-1)
-  hDim_t ltsBockSize = rts*(p-1);
-  // operate on the chunk of 'y' corresponding to each matrix on the diagonal
-  for (ltsOffset = 0; ltsOffset < lts; ++ltsOffset) {
-    // the offset into y corresponding to the block diagonal matrix
-    hDim_t blockIdx = ltsOffset*ltsBockSize;
-    // operate on slices of 'y' of size 'rts'
-    for (rtsOffset = 0; rtsOffset < rts; ++rtsOffset) {
-      hDim_t tensorOffset = blockIdx + rtsOffset;
+  // size (p-1)*rts
+  // lidx is the offset into y corresponding to the block diagonal matrix
+  for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
+    for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
       // The vector we're working with appears as a column in a matrix. The vector is
       // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
-      hDim_t idx = tensorOffset;
-      // the actual work, stepping forwards: y_i = y_i - y_{i+1}
-      for (i = p-2; i != 0; --i) {
-        y[idx] -= y[idx+rts] ;
-        // advance the pointer by the size of the slice: rts
-        idx += rts;
+      // The actual work, stepping forwards: y_i = y_i - y_{i+1}
+      for (hDim_t i = 0, off = ridx; i < p-2; ++i, off += rts) {
+        y[off] -= y[off+rts];
       }
     }
   }
@@ -95,7 +73,7 @@ template <typename abgrp> void upInv (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p
 
 /* Arbitrary-index transformation that converts decoding basis coefficients
  * (over a ring R mod (q1xq2x...), where the q_i's are pairwise coprime) into
- * powerful basis coefficients. The input 'y' represents a four-dimensional
+ * powerful basis coefficients. The input 'y' represents a three-dimensional
  * tensor indexed as [lts]x[rts]x[p-1]
  *
  * Use "extern "C"" to avoid C++ name mangling, which makes it hard to call
