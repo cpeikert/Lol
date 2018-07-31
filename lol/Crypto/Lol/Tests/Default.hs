@@ -77,7 +77,8 @@ unifTensorCrtTests1 _ _ =
       tensorGen = chooseAny :: Gen (t m r) in
   tensorCrtTests1 ringGen tensorGen
 
-boundedInt64TensorTests1 :: forall t m . (Tensor t Int64, Fact m, _) => Proxy m -> Proxy t -> Test
+boundedInt64TensorTests1 :: forall t m . (TensorPowDec t Int64, Fact m, _)
+  => Proxy m -> Proxy t -> Test
 boundedInt64TensorTests1 _ _ = tensorTests1 (int64TensorGen :: Gen (t m Int64))
 
 boundedInt64TensorTests2 :: forall t m m' . _ => Proxy '(m,m') -> Proxy t -> Test

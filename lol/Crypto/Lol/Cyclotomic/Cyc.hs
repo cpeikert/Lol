@@ -73,7 +73,7 @@ import           Crypto.Lol.Cyclotomic.CycRep   hiding (coeffsDec,
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
-import           Crypto.Lol.Cyclotomic.Tensor   (Tensor, TensorCRTSet,
+import           Crypto.Lol.Cyclotomic.Tensor   (TensorPowDec, TensorCRTSet,
                                                  TensorGSqNorm,
                                                  TensorGaussian)
 import           Crypto.Lol.Gadget
@@ -195,7 +195,7 @@ instance CRTElt t (ZqBasic q z) => UnCyc t (ZqBasic q z) where
 -- CJP TODO: one for Integer?; would require converting between Pow and
 -- Dec reps in pure Haskell
 
-instance Tensor t (RRq q r) => UnCyc t (RRq q r) where
+instance TensorPowDec t (RRq q r) => UnCyc t (RRq q r) where
   cycPow = PowRRq
   cycDec = DecRRq
   unCycPow (PowRRq v) = v
@@ -362,7 +362,7 @@ deriving instance Additive (CycG t m Double) => Additive.C (Cyc t m Double)
 deriving instance Additive (CycG t m Int64) => Additive.C (Cyc t m Int64)
 deriving instance Additive (CycG t m (ZqBasic q z)) => Additive.C (Cyc t m (ZqBasic q z))
 
--- CJP: need at least a basic Tensor t Integer implementation to do this
+-- CJP: need at least a basic TensorPowDec t Integer implementation to do this
 instance Additive.C (Cyc t m Integer) where
   (+) = error "TODO: implement Additive for Cyc t m Integer"
   zero = error "TODO: implement Additive for Cyc t m Integer"
@@ -374,7 +374,7 @@ instance (Additive (Cyc t m a), Additive (Cyc t m b))
   (CycPair a b) + (CycPair a' b') = CycPair (a+a') (b+b')
   negate (CycPair a b) = CycPair (negate a) (negate b)
 
-instance (Additive (RRq q r), Tensor t (RRq q r), IFunctor t, Fact m)
+instance (Additive (RRq q r), TensorPowDec t (RRq q r), IFunctor t, Fact m)
   => Additive.C (Cyc t m (RRq q r)) where
   zero = PowRRq zero
 
@@ -592,17 +592,6 @@ instance (Cyclotomic (Cyc t m a), Cyclotomic (Cyc t m b))
   adviseDec (CycPair a b) = CycPair (adviseDec a) (adviseDec b)
   adviseCRT (CycPair a b) = CycPair (adviseCRT a) (adviseCRT b)
 
-instance (Fact m, Tensor t (RRq q r)) => Cyclotomic (Cyc t m (RRq q r)) where
-  mulG (PowRRq c) = PowRRq $ mulGPow c
-  mulG (DecRRq c) = DecRRq $ mulGDec c
-  divG (PowRRq c) = PowRRq <$> divGPow c
-  divG (DecRRq c) = DecRRq <$> divGDec c
-  advisePow (DecRRq c) = PowRRq $ toPow c
-  advisePow c = c
-  adviseDec (PowRRq c) = DecRRq $ toDec c
-  adviseDec c = c
-  adviseCRT = id
-
 -----
 
 instance (Fact m, TensorGSqNorm t r, CRTElt t r)
@@ -701,7 +690,7 @@ instance (ExtensionCyc (Cyc t) a, ExtensionCyc (Cyc t) b)
   coeffsCyc bas (CycPair a b) =
     zipWith CycPair (coeffsCyc bas a) (coeffsCyc bas b)
 
-instance (Tensor t (RRq q r)) => ExtensionCyc (Cyc t) (RRq q r) where
+instance (TensorPowDec t (RRq q r)) => ExtensionCyc (Cyc t) (RRq q r) where
   embed (PowRRq u) = PowRRq $ embedPow u
   embed (DecRRq u) = DecRRq $ embedDec u
   twace (PowRRq u) = PowRRq $ twacePow u
@@ -750,7 +739,7 @@ instance (RescaleCyc (Cyc t m) a b, Fact m,
 -- CJP: can we avoid incoherent instances by changing instance heads
 -- and using overlapping instances with isomorphism constraints?
 
-instance {-# INCOHERENT #-} (Fact m, Rescale a b, CRTElt t a, Tensor t b)
+instance {-# INCOHERENT #-} (Fact m, Rescale a b, CRTElt t a, TensorPowDec t b)
   => RescaleCyc (CycG t m) a b where
   -- Optimized for subring constructors, for powerful basis.
   -- Analogs for decoding basis are not quite correct, because (* -1)
@@ -774,7 +763,7 @@ instance (RescaleCyc (CycG t m) (ZqBasic q z) (ZqBasic p z))
   rescaleCyc b = CycZqB . rescaleCyc b . unCycZqB
 
 -- | rescale from one modulus to another
-instance (Fact m, Rescale (RRq q r) (RRq p r), Tensor t (RRq q r), Tensor t (RRq p r))
+instance (Fact m, Rescale (RRq q r) (RRq p r), TensorPowDec t (RRq q r), TensorPowDec t (RRq p r))
   => RescaleCyc (Cyc t m) (RRq q r) (RRq p r) where
   rescaleCyc L.Pow (PowRRq u) = PowRRq $ rescale u
   rescaleCyc L.Pow (DecRRq u) = PowRRq $ rescale $ toPow u

@@ -139,7 +139,7 @@ bench_divGCRT = fromJust' "TensorBenches.bench_divGCRT" divGCRT
 
 {-# INLINABLE bench_errRounded #-}
 -- generate a rounded error term
-bench_errRounded :: forall t m r gen . (Fact m, CryptoRandomGen gen, Tensor t r, _)
+bench_errRounded :: forall t m r gen . (Fact m, CryptoRandomGen gen, TensorPowDec t r, _)
   => Proxy '(t,m,r) -> Proxy gen -> Double -> IO (t m (LiftOf r))
 bench_errRounded _ _ v = do
   gen <- newGenIO
@@ -151,21 +151,21 @@ bench_errRounded _ _ v = do
 -- EAC: due to GHC bug #12634, I have to give these a little more help than the corresponding functions
 -- in UCyc and Cyc benches. Not a huge deal.
 {-# INLINABLE bench_twacePow #-}
-bench_twacePow :: forall t (m :: Factored) (m' :: Factored) r . (Tensor t r, Fact m, _)
+bench_twacePow :: forall t (m :: Factored) (m' :: Factored) r . (TensorPowDec t r, Fact m, _)
   => Proxy '(t,m,m',r) -> t m' r -> t m r
 bench_twacePow _ = twacePowDec
 
 {-# INLINABLE bench_twaceCRT #-}
-bench_twaceCRT :: forall t m m' r . (Tensor t r, Fact m, _)
+bench_twaceCRT :: forall t m m' r . (TensorPowDec t r, Fact m, _)
   => Proxy '(t,m,m',r) -> t m' r -> t m r
 bench_twaceCRT _ = fromJust' "TensorBenches.bench_twaceCRT" twaceCRT
 
 {-# INLINABLE bench_embedPowDec #-}
-bench_embedPowDec :: forall t m m' r . (Tensor t r, Fact m', _)
+bench_embedPowDec :: forall t m m' r . (TensorPowDec t r, Fact m', _)
   => Proxy '(t,m,m',r) -> t m r -> t m' r
 bench_embedPowDec _ = embedPowDec
 
 {-# INLINABLE bench_embedCRT #-}
-bench_embedCRT :: forall t m m' r . (Tensor t r, Fact m', _)
+bench_embedCRT :: forall t m m' r . (TensorPowDec t r, Fact m', _)
   => Proxy '(t,m,m',r) -> t m r -> t m' r
 bench_embedCRT _ = fromJust' "TensorBenches.bench_embedCRT" embedCRT

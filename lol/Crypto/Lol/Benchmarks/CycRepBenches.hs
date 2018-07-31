@@ -32,7 +32,6 @@ import Control.Monad.Random hiding (lift)
 import Crypto.Lol.Utils.Benchmarks (bgroup, mkBench, mkBenchIO, Benchmark)
 import Crypto.Lol.Cyclotomic.CycRep
 import Crypto.Lol.Cyclotomic.Language (mulG)
-import Crypto.Lol.Cyclotomic.Tensor (Tensor)
 import Crypto.Lol.Prelude
 import Crypto.Lol.Types
 import Crypto.Random
@@ -160,7 +159,7 @@ bench_divGCRT = either (error "bench_divGCRT expected a CRTC") divGCRTC
 
 {-# INLINABLE bench_errRounded #-}
 -- generate a rounded error term
-bench_errRounded :: forall t m r gen . (Tensor t r, Fact m, CryptoRandomGen gen, _)
+bench_errRounded :: forall t m r gen . (Fact m, CryptoRandomGen gen, _)
                  => Proxy '(t,m,r) -> Proxy gen -> Double -> IO (CycRep t D m (LiftOf r))
 bench_errRounded _ _ v = do
   gen <- newGenIO

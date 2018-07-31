@@ -36,8 +36,8 @@ import Control.Applicative
 import Data.Maybe
 
 -- TODO: We don't test:
---         * Tensor::coeffs,
---         * Tensor::powBasisPow,
+--         * TensorPowDec::coeffs,
+--         * TensorPowDec::powBasisPow,
 --         * TensorGSqNorm::gSqNormDec
 
 -- Has to take two generators because prop_scalar_crt only takes ring elements as input
@@ -139,7 +139,7 @@ prop_decToPowToDec x = (powToDec $ decToPow x) =~= x
 
 -- scalarCRT = crt . scalarPowDec
 -- This only requires Proxy '(t,m) to be fully determined, but this works too
-prop_scalar_crt :: forall t m r . (Tensor t r, Fact m, _) => Proxy '(t,m,r) -> r -> Bool
+prop_scalar_crt :: forall t m r . (TensorPowDec t r, Fact m, _) => Proxy '(t,m,r) -> r -> Bool
 prop_scalar_crt _ x = fromMaybe (error "no CRT in prop_scalar_crt") $ do
   scalarCRT' <- scalarCRT
   crt' <- crt
@@ -232,7 +232,7 @@ prop_twace_invar1_crt _ = fromMaybe (error "no CRT in prop_twace_invar1_crt") $ 
   return $ (twaceCRT' input) =~= output
 
 -- twace preserves scalars in Pow/Dec basis
-prop_twace_invar2_powdec :: forall t m m' r . (Tensor t r, m `Divides` m', _)
+prop_twace_invar2_powdec :: forall t m m' r . (TensorPowDec t r, m `Divides` m', _)
                          => Proxy '(t,m,m',r) -> Bool
 prop_twace_invar2_powdec _ =
   let output = scalarPowDec $ one :: t m r
@@ -240,7 +240,7 @@ prop_twace_invar2_powdec _ =
   in (twacePowDec input) =~= output
 
 -- twace preserves scalars in Pow/Dec basis
-prop_twace_invar2_crt :: forall t m m' r . (Tensor t r, m `Divides` m', _)
+prop_twace_invar2_crt :: forall t m m' r . (TensorPowDec t r, m `Divides` m', _)
                       => Proxy '(t,m,m',r) -> Bool
 prop_twace_invar2_crt _ = fromMaybe (error "no CRT in prop_twace_invar2_crt") $ do
   scalarCRT1 <- scalarCRT

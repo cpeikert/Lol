@@ -34,7 +34,12 @@ indexing.
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Crypto.Lol.Cyclotomic.Tensor
-( Tensor(..), TensorCRT(..), TensorGaussian(..), TensorGSqNorm(..), TensorCRTSet(..)
+(TensorPowDec(..)
+,TensorG(..)
+,TensorCRT(..)
+,TensorGaussian(..)
+,TensorGSqNorm(..)
+,TensorCRTSet(..)
 -- * Top-level CRT functions
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
@@ -74,7 +79,7 @@ import qualified Data.Vector.Unboxed     as U
 -- index \(m\).
 
 -- | __WARNING:__ as with all fixed-point arithmetic, the methods
--- in 'Tensor' may result in overflow (and thereby incorrect answers
+-- in 'TensorPowDec' may result in overflow (and thereby incorrect answers
 -- and potential security flaws) if the input arguments are too close
 -- to the bounds imposed by the base type.  The acceptable range of
 -- inputs for each method is determined by the linear transform it
@@ -85,7 +90,7 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
        -- include Functor and Foldable because the other ForallFact1
        -- constraints don't imply them
        IFunctor t, IFElt t r, Additive r)
-  => Tensor t r where
+  => TensorPowDec t r where
 
   -- | Convert a scalar to a tensor in the powerful basis.
   scalarPowDec :: Fact m => r -> t m r
@@ -94,17 +99,9 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
   -- representations.
   powToDec, decToPow :: Fact m => t m r -> t m r
 
-  -- | Multiply by \(g_m\) in the powerful/decoding basis
-  mulGPow, mulGDec :: Fact m => t m r -> t m r
-
-  -- | Divide by \(g_m\) in the powerful/decoding basis.  The 'Maybe'
-  -- output indicates that the operation may fail, which happens
-  -- exactly when the input is not divisible by \(g_m\).
-  divGPow, divGDec :: Fact m => t m r -> Maybe (t m r)
-
-  -- | The @twace@ linear transformation in the powerful and decoding
-  -- basis.
-  twacePow, twaceDec :: m `Divides` m' => t m' r -> t m r
+  -- | The @twace@ linear transformation, which is the same in both the
+  -- powerful and decoding bases.
+  twacePowDec :: m `Divides` m' => t m' r -> t m r
 
   -- | The @embed@ linear transformations, for the powerful and
   -- decoding bases.
@@ -119,9 +116,19 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
   -- w.r.t. the same kind of basis of \( \O_{m'} \).
   relativePowDec :: m `Divides` m' => Tagged m [t m' r]
 
+-- | Encapsulates multiplication and division by \(g_m\)
+class TensorPowDec t r => TensorG t r where
+  -- | Multiply by \(g_m\) in the powerful/decoding basis
+  mulGPow, mulGDec :: Fact m => t m r -> t m r
+
+  -- | Divide by \(g_m\) in the powerful/decoding basis.  The 'Maybe'
+  -- output indicates that the operation may fail, which happens
+  -- exactly when the input is not divisible by \(g_m\).
+  divGPow, divGDec :: Fact m => t m r -> Maybe (t m r)
+
 -- | Encapsulates functions related to the Chinese-remainder
 -- representation/transform.
-class (Tensor t r, CRTrans mon r, ForallFact2 (Module.C r) t r)
+class (TensorPowDec t r, CRTrans mon r, ForallFact2 (Module.C r) t r)
   => TensorCRT t mon r where
   -- | A tuple of all the operations relating to the CRT basis, in a
   -- single 'Maybe' value for safety.  Clients should typically not
@@ -160,9 +167,9 @@ class TensorGSqNorm t r where
   -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\).
   gSqNormDec :: Fact m => t m r -> r
 
--- | A 'Tensor' that supports relative CRT sets for the element type
+-- | A 'TensorPowDec' that supports relative CRT sets for the element type
 -- 'fp' representing a prime-order finite field.
-class (Tensor t fp) => TensorCRTSet t fp where
+class (TensorPowDec t fp) => TensorCRTSet t fp where
   -- | Relative mod-@p@ CRT set of \( \O_{m'}/\O_{m} \) in the
   -- decoding basis.
   crtSetDec :: (m `Divides` m', Coprime (PToF (CharOf fp)) m')
