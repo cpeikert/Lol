@@ -102,9 +102,9 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
   -- exactly when the input is not divisible by \(g_m\).
   divGPow, divGDec :: Fact m => t m r -> Maybe (t m r)
 
-  -- | The @twace@ linear transformation, which is the same in both the
-  -- powerful and decoding bases.
-  twacePowDec :: m `Divides` m' => t m' r -> t m r
+  -- | The @twace@ linear transformation in the powerful and decoding
+  -- basis.
+  twacePow, twaceDec :: m `Divides` m' => t m' r -> t m r
 
   -- | The @embed@ linear transformations, for the powerful and
   -- decoding bases.
