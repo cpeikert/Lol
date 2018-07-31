@@ -50,7 +50,7 @@ tensorTests1 tensorGen =
           testWithGen "Pow basis"                                 prop_ginv_pow,
           testWithGen "Dec basis"                                 prop_ginv_dec],
         testWithGen   "DecToPowToDec == id"                       prop_decToPowToDec,
-        testWithGen   "G commutes with L on Dec basis"            prop_g_dec,
+        testWithGen   "G commutes with U on Dec basis"            prop_g_dec,
         testWithGen   "Tw and Em ID on Pow/Dec for equal indices" prop_twEmID] in
   testGroup (showType ptmr) tests
 
@@ -60,7 +60,7 @@ tensorCrtTests1 ringGen tensorGen =
       tests = [
           testWithGen "GInv.G == id on CRT basis"             prop_ginv_crt tensorGen,
           testWithGen "CRTInv.CRT == id"                      prop_crt_inv tensorGen,
-          testWithGen "G commutes with L on CRT basis"        prop_g_crt tensorGen,
+          testWithGen "G commutes with U on CRT basis"        prop_g_crt tensorGen,
           testWithGen "Tw and Em ID on CRT for equal indices" prop_twEmIDCRT tensorGen,
           testWithGen "Scalar"                               (prop_scalar_crt ptmr) ringGen] in
   testGroup (showType ptmr) tests
@@ -73,8 +73,8 @@ tensorTests2 _ tensorGen =
         nestGroup  "Tw.Em == id" [
           testWithGen "Pow basis"                       (prop_trem_pow ptmmr),
           testWithGen "Dec basis"                       (prop_trem_dec ptmmr)],
-        testWithGen   "Em commutes with L in Dec basis" (prop_embed_dec ptmmr),
-        testWithGen   "Tw commutes with L in Dec basis" (prop_twace_dec ptmmr)]
+        testWithGen   "Em commutes with U in Dec basis" (prop_embed_dec ptmmr),
+        testWithGen   "Tw commutes with U in Dec basis" (prop_twace_dec ptmmr)]
       deterministicTests = [
         testGroup  "Twace invariants" [
           testWithoutGen "Invar1 Pow basis"             (prop_twace_invar1_pow ptmmr),
@@ -87,8 +87,8 @@ tensorCrtTests2 _ tensorGen =
   let ptmmr  = Proxy::Proxy '(t,m,m',r)
       randTests  = ($ tensorGen) <$> [
         testWithGen "Tw.Em == id in CRT basis"        (prop_trem_crt ptmmr),
-        testWithGen "Em commutes with L in CRT basis" (prop_embed_crt ptmmr),
-        testWithGen "Tw commutes with L in CRT basis" (prop_twace_crt ptmmr)]
+        testWithGen "Em commutes with U in CRT basis" (prop_embed_crt ptmmr),
+        testWithGen "Tw commutes with U in CRT basis" (prop_twace_crt ptmmr)]
       deterministicTests = [
         testGroup "Twace invariants" [
           testWithoutGen "Invar1 CRT basis"           (prop_twace_invar1_crt ptmmr),
@@ -160,7 +160,7 @@ prop_trem_crt _ x = fromMaybe (error "no CRT in prop_trem_crt") $
 
 -- embedPowDec == powToDec . embedPowDec . decToPow
 prop_embed_dec :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
-prop_embed_dec _ x = (embedPowDec x :: t m' r) =~= 
+prop_embed_dec _ x = (embedPowDec x :: t m' r) =~=
                      (powToDec $ embedPowDec $ decToPow x)
 
 -- embedCRT = crt . embedPowDec . crtInv
@@ -173,7 +173,7 @@ prop_embed_crt _ x = fromMaybe (error "no CRT in prop_embed_crt") $ do
 
 -- twacePowDec = powToDec . twacePowDec . decToPow
 prop_twace_dec :: forall t m m' r . _ => Proxy '(t,m,m',r) -> t m r -> Bool
-prop_twace_dec _ x = (twacePowDec x :: t m r) =~= 
+prop_twace_dec _ x = (twacePowDec x :: t m r) =~=
                      (powToDec $ twacePowDec $ decToPow x)
 
 -- twaceCRT = crt . twacePowDec . crtInv
