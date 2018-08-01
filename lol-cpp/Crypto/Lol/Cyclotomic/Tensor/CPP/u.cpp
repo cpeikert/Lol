@@ -106,6 +106,12 @@ extern "C" void tensorUDouble (double* y, hDim_t totm, PrimeExponent* peArr, hSh
   tensorFuserPrime (y, up, totm, peArr, sizeOfPE, 0);
 }
 
+extern "C" void tensorURRq (RRq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+{
+  tensorFuserPrime (y, up, totm, peArr, sizeOfPE, 0);
+  canonicalizeRRq(y,totm);
+}
+
 extern "C" void tensorUC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
   tensorFuserPrime (y, up, totm, peArr, sizeOfPE, 0);
@@ -144,6 +150,12 @@ extern "C" void tensorUInvR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShor
 extern "C" void tensorUInvDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
   tensorFuserPrime (y, upInv, totm, peArr, sizeOfPE, 0);
+}
+
+extern "C" void tensorUInvRRq (RRq* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+{
+  tensorFuserPrime (y, upInv, totm, peArr, sizeOfPE, 0);
+  canonicalizeRRq(y,totm);
 }
 
 extern "C" void tensorUInvC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)

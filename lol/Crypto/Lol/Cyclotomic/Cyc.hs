@@ -1069,9 +1069,6 @@ instance (Fact m, CRTElt t r, Protoable (CycRep t D m r))
   toProto x = toProto $ toDec' x
   fromProto x = Dec <$> fromProto x
 
--- TODO: define Protoable instances for Cyc?
-
-
 ---------- TH instances of FunctorCyc ----------
 
 -- CJP: the TH needs to appear before/after everything in the module
@@ -1107,6 +1104,3 @@ let types = [ [t| Int64 |]
     -- and Dec, we can also have instances that go *from* Integer
   in liftA concat $ sequence $
      (mkIFunctorCyc <$> types <*> types) ++ (mkFunctorCyc <$> types)
-
-
-

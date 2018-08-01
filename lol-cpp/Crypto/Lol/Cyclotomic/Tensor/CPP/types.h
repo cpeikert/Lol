@@ -14,9 +14,10 @@ Typedefs and data type for modular arithmetic.
 #ifndef TENSORTYPES_H_
 #define TENSORTYPES_H_
 
-#include <inttypes.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cinttypes>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
 
 typedef int64_t hInt_t;
 typedef int32_t hDim_t;
@@ -131,6 +132,60 @@ inline Zq operator/(Zq a, const Zq& b)
 // before returning to Haskell.
 void canonicalizeZq (Zq* y, hDim_t totm, hInt_t q);
 
+
+// Helper function. Outputs the fractional part of a given double, i.e., things in the range (-1, 1)
+inline double fractional_part(double x)
+{
+    double _dummy;
+    return modf(x, &_dummy);
+}
+
+// Class for real numbers modulo qZ.
+// For efficiency, all operators output values in the range -1 < x < 1.
+// This allows us to do the final conversion to canonical form only once at the
+// end.
+class RRq
+{
+public:
+  // value in the range -1 < x < 1
+  double x;
+
+  // turn an hInt_t into a Zq with modular reduction.
+  RRq& operator=(const double& c)
+  {
+    this->x = fractional_part(c);
+    return *this;
+  }
+  RRq& operator+=(const RRq& b)
+  {
+    this->x += b.x;
+    this->x = fractional_part(this->x);
+    return *this;
+  }
+  RRq& operator-=(const RRq& b)
+  {
+    this->x -= b.x;
+    this->x = fractional_part(this->x);
+    return *this;
+  }
+};
+
+// binary operators defined in terms of the unary operators
+inline RRq operator+(RRq a, const RRq& b)
+{
+  a += b;
+  return a;
+}
+inline RRq operator-(RRq a, const RRq& b)
+{
+  a -= b;
+  return a;
+}
+
+// Converts an RRq value into the range 0 <= x < 1. This should be called
+// before returning to Haskell
+void canonicalizeRRq (RRq* y, hDim_t totm);
+
 class Complex
 {
 public:
@@ -191,6 +246,7 @@ public:
     return *this;
   }
 };
+
 inline Complex operator+(Complex a, const Complex& b)
 {
   a += b;

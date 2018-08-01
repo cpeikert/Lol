@@ -48,7 +48,7 @@ import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 newtype RRq q r = RRq r
     deriving (Eq, ZeroTestable.C, Show, NFData)
 
-instance (Reflects q r, RealField r) => Additive.C (RRq q r) where
+instance RealField r => Additive.C (RRq q r) where
   {-# INLINABLE zero #-}
   zero = RRq zero
 

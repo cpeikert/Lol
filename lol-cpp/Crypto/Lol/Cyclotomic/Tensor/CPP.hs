@@ -75,6 +75,7 @@ import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IFunctor
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.Unsafe.RRq
 import Crypto.Lol.Types.Unsafe.ZqBasic
 
 import Data.Foldable as F
@@ -407,6 +408,31 @@ instance TensorGSqNorm CT Int64 where
   gSqNormDec (ZV v) = gSqNormDec (CT $ zvToCT' v)
 
   {-# INLINABLE gSqNormDec #-}
+
+-- Instance constraints are due to 'fromSubgroup' in 'relativePowDec'
+instance (Reflects q Int64, Reflects q Double) => TensorPowDec CT (RRq q Double) where
+  scalarPowDec = CT . scalarPowDec'
+
+  decToPow = wrap $ basicDispatch duRRq
+  powToDec = wrap $ basicDispatch duinvRRq
+
+  twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
+  embedPowDec = wrap $ runIdentity $ coerceEm embedPowDec'
+
+  coeffs = wrapM $ coerceCoeffs coeffs'
+
+  relativePowDec :: forall m m' . m `Divides` m' => Tagged m [CT m' (RRq q Double)]
+  relativePowDec =
+    let zqBasis = (CT <$>) <$> coerceBasis relativePowDec' :: Tagged m [CT m' (ZqBasic q Int64)] in
+    (fmapI fromSubgroup <$>) <$> zqBasis
+
+  {-# INLINABLE scalarPowDec #-}
+  {-# INLINABLE decToPow #-}
+  {-# INLINABLE powToDec #-}
+  {-# INLINABLE twacePowDec #-}
+  {-# INLINABLE embedPowDec #-}
+  {-# INLINABLE coeffs #-}
+  {-# INLINABLE relativePowDec #-}
 
 ---------- Entailments for CT ----------
 

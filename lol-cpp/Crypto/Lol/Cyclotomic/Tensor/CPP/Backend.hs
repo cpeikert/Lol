@@ -27,29 +27,30 @@ calls in a type-safe way.
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 
 module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
-( dcrtZq, dcrtinvZq
-, duZq, duinvZq
-, dmulgpowZq, dmulgdecZq
-, dginvpowZq, dginvdecZq
-, dmulZq
-, dcrtC, dcrtinvC
-, duC, duinvC
-, dmulgpowC, dmulgdecC
-, dginvpowC, dginvdecC
-, dmulC
-, duDouble, duinvDouble
-, dmulgpowDouble, dmulgdecDouble
-, dginvpowDouble, dginvdecDouble
-, dgaussdecDouble
-, dmulDouble
-, dnormDouble
-, duInt64, duinvInt64
-, dmulgpowInt64, dmulgdecInt64
-, dginvpowInt64, dginvdecInt64
-, dnormInt64
-, marshalFactors
-, CPP
-, withArray, withPtrArray
+(dcrtZq, dcrtinvZq
+,duZq, duinvZq
+,dmulgpowZq, dmulgdecZq
+,dginvpowZq, dginvdecZq
+,dmulZq
+,dcrtC, dcrtinvC
+,duC, duinvC
+,dmulgpowC, dmulgdecC
+,dginvpowC, dginvdecC
+,dmulC
+,duDouble, duinvDouble
+,dmulgpowDouble, dmulgdecDouble
+,dginvpowDouble, dginvdecDouble
+,dgaussdecDouble
+,dmulDouble
+,dnormDouble
+,duRRq,duinvRRq
+,duInt64, duinvInt64
+,dmulgpowInt64, dmulgdecInt64
+,dginvpowInt64, dginvdecInt64
+,dnormInt64
+,marshalFactors
+,CPP
+,withArray, withPtrArray
 ) where
 
 import Crypto.Lol.Prelude              as LP (Complex, PP, Proxy (..),
@@ -202,6 +203,14 @@ duDouble pout = tensorUDouble (castPtr pout)
 duinvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
 duinvDouble pout = tensorUInvDouble (castPtr pout)
 
+-- q is nominal. C++ never sees it, so it doesn't matter what it is
+duRRq :: forall q . Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+duRRq pout = tensorURRq (castPtr pout)
+
+-- q is nominal. C++ never sees it, so it doesn't matter what it is
+duinvRRq :: forall q . Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+duinvRRq pout = tensorUInvRRq (castPtr pout)
+
 dnormDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dnormDouble pout = tensorNormSqD 1 (castPtr pout)
 
@@ -251,6 +260,8 @@ foreign import ccall unsafe "tensorURq" tensorURq ::                Ptr (ZqBasic
 foreign import ccall unsafe "tensorUInvRq" tensorUInvRq ::          Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
 foreign import ccall unsafe "tensorUDouble" tensorUDouble ::       Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorUInvDouble" tensorUInvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorURRq" tensorURRq ::       Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorUInvRRq" tensorUInvRRq :: Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorUC" tensorUC ::       Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorUInvC" tensorUInvC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 
