@@ -315,8 +315,8 @@ gInvCRTPrime = do
   (wPow, phatinv) <- crtInfo
   return $ MC (p-1) 1 $
     if p == 2 then const $ const one
-    else (\i -> const $ negate $ phatinv *
-                sum [fromIntegral j * wPow ((i+1)*(1-j)) | j <- [1..p]])
+    else (\i -> const $ phatinv *
+                sum [fromIntegral j * wPow ((i+1)*(p-1-j)) | j <- [1..p-1]])
 
 -- Reindexing functions
 
