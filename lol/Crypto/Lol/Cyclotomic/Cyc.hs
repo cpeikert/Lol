@@ -1059,15 +1059,40 @@ instance (Fact m, ForallFact2 NFData t (RRq q r))
   rnf (PowRRq u) = rnf u
   rnf (DecRRq u) = rnf u
 
------
+---------- Protoable instances of Cyc/CycG ----------
 
 instance (Fact m, CRTElt t r, Protoable (CycRep t D m r))
-         => Protoable (CycG t m r) where
-
+    => Protoable (CycG t m r) where
   type ProtoType (CycG t m r) = ProtoType (CycRep t D m r)
   toProto (Dec uc) = toProto uc
   toProto x = toProto $ toDec' x
   fromProto x = Dec <$> fromProto x
+
+instance (Fact m, CRTElt t Double, Protoable (CycG t m Double))
+    => Protoable (Cyc t m Double) where
+  type ProtoType (Cyc t m Double) = ProtoType (CycG t m Double)
+  toProto = toProto . unCycDbl
+  fromProto x = CycDbl <$> fromProto x
+
+instance (Fact m, CRTElt t Int64, Protoable (CycG t m Int64))
+    => Protoable (Cyc t m Int64) where
+  type ProtoType (Cyc t m Int64) = ProtoType (CycG t m Int64)
+  toProto = toProto . unCycI64
+  fromProto x = CycI64 <$> fromProto x
+
+instance (Fact m, CRTElt t Double, Protoable (CycG t m (ZqBasic q z)))
+    => Protoable (Cyc t m (ZqBasic q z)) where
+  type ProtoType (Cyc t m (ZqBasic q z)) = ProtoType (CycG t m (ZqBasic q z))
+  toProto = toProto . unCycZqB
+  fromProto x = CycZqB <$> fromProto x
+
+instance (Fact m, CRTElt t Double, TensorPowDec t (RRq q Double),
+          Protoable (CycRep t D m (RRq q Double)))
+    => Protoable (Cyc t m (RRq q Double)) where
+  type ProtoType (Cyc t m (RRq q Double)) = ProtoType (CycG t m (RRq q Double))
+  toProto (PowRRq x) = toProto $ toDec x
+  toProto (DecRRq x) = toProto x
+  fromProto x = DecRRq <$> fromProto x
 
 ---------- TH instances of FunctorCyc ----------
 
