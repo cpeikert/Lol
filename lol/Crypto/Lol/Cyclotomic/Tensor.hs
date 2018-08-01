@@ -278,21 +278,21 @@ gCRTK = fKron gCRTPPow
 -- for \(m\)th cyclotomic.
 gInvCRTK = fKron gInvCRTPPow
 
--- | The "tweaked" \(\CRT^*\) matrix:
--- \(\CRT^* \cdot \text{diag}(\sigma(g_m))\).
-twCRTs :: (Fact m, CRTrans mon r) => TaggedT m mon (Kron r)
-twCRTs = fKron twCRTsPPow
+-- | The "tweaked" \( \CRT^t \) matrix:
+-- \(\CRT^t \cdot \text{diag}(\sigma(g_m))\).
+twCRTt :: (Fact m, CRTrans mon r) => TaggedT m mon (Kron r)
+twCRTt = fKron twCRTtPPow
 
--- | The "tweaked" \(\CRT^*\) matrix (for prime powers):
--- \(\CRT^* \cdot \text{diag}(\sigma(g_p))\).
-twCRTsPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (KronC r)
-twCRTsPPow = do
+-- | The "tweaked" \( \CRT^t \) matrix for prime powers:
+-- \(\CRT^t \cdot \text{diag}(\sigma(g_p))\).
+twCRTtPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (KronC r)
+twCRTtPPow = do
   phi    <- pureT totientPPow
   iToZms <- pureT indexToZmsPPow
   jToPow <- pureT indexToPowPPow
   (wPow, _) <- crtInfo
   (MC _ _ gCRT) <- gCRTPPow
-  return $ MC phi phi (\j i -> wPow (jToPow j * negate (iToZms i)) * gCRT i 0)
+  return $ MC phi phi (\j i -> wPow (jToPow j * (iToZms i)) * gCRT i 0)
 
 gCRTPPow, gInvCRTPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (KronC r)
 gCRTPPow = ppKron gCRTPrime
