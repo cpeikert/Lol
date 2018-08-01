@@ -23,6 +23,7 @@ main = defaultMainWithArgs
           [ defaultZqTests
           , zqTensorTests (Proxy::Proxy CT)
           , int64TensorTests (Proxy::Proxy CT)
+          , dblTensorTests (Proxy::Proxy CT)
           , cpxTensorTests (Proxy::Proxy CT)
           , cycTests (Proxy::Proxy CT)
           ]

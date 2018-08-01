@@ -23,7 +23,7 @@ which can be used to verify a 'Crypto.Lol.Cyclotomic.Tensor' implementation.
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Tests.Default (
-  cycTests, cpxTensorTests, defaultZqTests, int64TensorTests, zqTensorTests
+  cycTests, cpxTensorTests, dblTensorTests, defaultZqTests, int64TensorTests, zqTensorTests
 ) where
 
 import Crypto.Lol (Cyc, Int64)
@@ -178,6 +178,54 @@ int64TensorTests pt =
         boundedInt64TensorTests2 (Proxy::Proxy '(F7, F21)),
         boundedInt64TensorTests2 (Proxy::Proxy '(F3, F42))] in
   testGroup "All Tensor-like Tests over Int64" [uniIndexWithoutCrt, multiIndexWithoutCrt]
+
+dblTensorTests :: _ => Proxy t -> Test
+dblTensorTests pt =
+  let uniIndexWithoutCrt = testGroup "Single-Index Tensor Tests over Double" $ ($ pt) <$> [
+        unifTensorTests1 (Proxy::Proxy '(F7, Double)),
+        unifTensorTests1 (Proxy::Proxy '(F12, Double)),
+        unifTensorTests1 (Proxy::Proxy '(F1, Double)),
+        unifTensorTests1 (Proxy::Proxy '(F2, Double)),
+        unifTensorTests1 (Proxy::Proxy '(F4, Double)),
+        unifTensorTests1 (Proxy::Proxy '(F8, Double)),
+        unifTensorTests1 (Proxy::Proxy '(F21, Double)),
+        unifTensorTests1 (Proxy::Proxy '(F42, Double)),
+        unifTensorTests1 (Proxy::Proxy '(F42, Double)),
+        unifTensorTests1 (Proxy::Proxy '(F89, Double))]
+      uniIndexWithCrt = testGroup "Single-Index TensorCRT Tests over Double" $ ($ pt) <$> [
+        unifTensorCrtTests1 (Proxy::Proxy '(F7, Double)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F12, Double)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F1, Double)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F2, Double)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F4, Double)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F8, Double)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F21, Double)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F42, Double)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F42, Double)),
+        unifTensorCrtTests1 (Proxy::Proxy '(F89, Double))]
+      multiIndexWithoutCrt = testGroup "Multi-Index Tensor Tests over Double" $ ($ pt) <$> [
+        unifTensorTests2 (Proxy::Proxy '(F1, F7, Double)),
+        unifTensorTests2 (Proxy::Proxy '(F4, F12, Double)),
+        unifTensorTests2 (Proxy::Proxy '(F4, F12, Double)),
+        unifTensorTests2 (Proxy::Proxy '(F2, F8, Double)),
+        unifTensorTests2 (Proxy::Proxy '(F8, F8, Double)),
+        unifTensorTests2 (Proxy::Proxy '(F2, F8, Double)),
+        unifTensorTests2 (Proxy::Proxy '(F4, F8, Double)),
+        unifTensorTests2 (Proxy::Proxy '(F3, F21, Double)),
+        unifTensorTests2 (Proxy::Proxy '(F7, F21, Double)),
+        unifTensorTests2 (Proxy::Proxy '(F3, F42, Double))]
+      multiIndexWithCrt = testGroup "Multi-Index TensorCRT Tests over Double" $ ($ pt) <$> [
+        unifTensorCrtTests2 (Proxy::Proxy '(F1, F7, Double)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F4, F12, Double)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F4, F12, Double)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F2, F8, Double)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F8, F8, Double)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F2, F8, Double)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F4, F8, Double)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F3, F21, Double)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F7, F21, Double)),
+        unifTensorCrtTests2 (Proxy::Proxy '(F3, F42, Double))] in
+  testGroup "All Tensor-like Tests over Double" [uniIndexWithoutCrt, multiIndexWithoutCrt]
 
 cpxTensorTests :: _ => Proxy t -> Test
 cpxTensorTests pt =
