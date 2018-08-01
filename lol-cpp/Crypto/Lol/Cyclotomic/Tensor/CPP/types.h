@@ -60,10 +60,9 @@ public:
   static hInt_t q; // declared here, defined in common.cpp due to GHC #12152.
 
   // turn an hInt_t into a Zq with modular reduction.
-  Zq& operator=(const hInt_t& c)
+  Zq(const hInt_t& c)
   {
     this->x = c % q;
-    return *this;
   }
   Zq& operator+=(const Zq& b)
   {
@@ -85,16 +84,14 @@ public:
   }
   Zq& operator*=(const hInt_t& b)
   {
-    Zq c;
-    c = b;
+    Zq c = Zq(b);
     *this *= c;
     return *this;
   }
   // fails if b is not invertible mod q
   Zq& operator/=(const Zq& b)
   {
-    Zq binv;
-    binv = reciprocal(q,b.x);
+    Zq binv = Zq(reciprocal(q,b.x));
     ASSERT (binv.x); // binv == 0 indicates that x is not invertible mod q
     *this *= binv;
     return *this;
@@ -151,10 +148,9 @@ public:
   double x;
 
   // turn an hInt_t into a Zq with modular reduction.
-  RRq& operator=(const double& c)
+  RRq(const double& c)
   {
     this->x = fractional_part(c);
-    return *this;
   }
   RRq& operator+=(const RRq& b)
   {
@@ -202,11 +198,10 @@ public:
       this->imag = b;
   }
 
-  Complex& operator=(const hInt_t& c)
+  Complex(const hInt_t& c)
   {
     this->real = c;
     this->imag = 0;
-    return *this;
   }
   Complex& operator+=(const Complex& b)
   {
