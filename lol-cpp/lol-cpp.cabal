@@ -65,7 +65,7 @@ library
   C-sources: Crypto/Lol/Cyclotomic/Tensor/CPP/common.cpp,
              Crypto/Lol/Cyclotomic/Tensor/CPP/crt.cpp,
              Crypto/Lol/Cyclotomic/Tensor/CPP/g.cpp,
-             Crypto/Lol/Cyclotomic/Tensor/CPP/u.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CPP/l.cpp,
              Crypto/Lol/Cyclotomic/Tensor/CPP/mul.cpp,
              Crypto/Lol/Cyclotomic/Tensor/CPP/norm.cpp,
              Crypto/Lol/Cyclotomic/Tensor/CPP/random.cpp,
