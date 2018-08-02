@@ -22,9 +22,9 @@ CPP Tensor-specific functions for embedding/twacing in various bases.
 {-# LANGUAGE TypeOperators         #-}
 
 module Crypto.Lol.Cyclotomic.Tensor.CPP.Extension
-( embedPowDec', embedCRT'
+( embedPow', embedDec', embedCRT'
 , twacePowDec', twaceCRT'
-, coeffs', relativePowDec'
+, coeffs', powBasisPow'
 , crtSetDec'
 , backpermute'
 ) where
@@ -58,16 +58,23 @@ backpermute' :: (Storable a) =>
 {-# INLINABLE backpermute' #-}
 backpermute' is v = generate (U.length is) (\i -> v ! (is U.! i))
 
-embedPowDec' :: (Additive r, Storable r, m `Divides` m')
-             => Tagged '(m, m') (Vector r -> Vector r)
-{-# INLINABLE embedPowDec' #-}
+embedPow', embedDec' :: (Additive r, Storable r, m `Divides` m')
+                     => Tagged '(m, m') (Vector r -> Vector r)
+{-# INLINABLE embedPow' #-}
+{-# INLINABLE embedDec' #-}
 -- | Embeds an vector in the powerful basis of the the mth cyclotomic ring
 -- to an vector in the powerful basis of the m'th cyclotomic ring when @m | m'@
-embedPowDec' = (\indices arr -> generate (U.length indices) $ \idx ->
+embedPow' = (\indices arr -> generate (U.length indices) $ \idx ->
   let (j0,j1) = indices U.! idx
   in if j0 == 0
      then arr ! j1
-     else zero) <$> baseIndicesPowDec
+     else zero) <$> baseIndicesPow
+-- | Embeds an vector in the decoding basis of the the mth cyclotomic ring
+-- to an vector in the decoding basis of the m'th cyclotomic ring when @m | m'@
+embedDec' = (\indices arr -> generate (U.length indices)
+  (\idx -> maybe LP.zero
+    (\(sh,b) -> if b then negate (arr ! sh) else arr ! sh)
+    (indices U.! idx))) <$> baseIndicesDec
 
 -- | Embeds an vector in the CRT basis of the the mth cyclotomic ring
 -- to an vector in the CRT basis of the m'th cyclotomic ring when @m | m'@
@@ -121,14 +128,13 @@ twaceCRT' = tagT $ do
     let v = backpermute' indices (SV.zipWith (*) tweak arr)
     in generate phi $ \i -> foldl1' (+) $ SV.unsafeSlice (i*reltot) reltot v
 
--- | The powerful\/decoding extension basis, wrt the
--- powerful\/decoding basis.  Outputs a list of vectors in O_m' that
--- are an \( O_m \)-basis for \( O_m' \).
-relativePowDec' :: forall m m' r . (m `Divides` m', Ring r, SV.Storable r)
+-- | The powerful extension basis, wrt the powerful basis.
+-- Outputs a list of vectors in O_m' that are an O_m basis for O_m'
+powBasisPow' :: forall m m' r . (m `Divides` m', Ring r, SV.Storable r)
                 => Tagged '(m, m') [SV.Vector r]
-relativePowDec' = do
+powBasisPow' = do
   (_, phi, phi', _) <- indexInfo
-  idxs <- baseIndicesPowDec
+  idxs <- baseIndicesPow
   return $ LP.map (\k -> generate phi' $ \j ->
                            let (j0,j1) = idxs U.! j
                           in if j0==k && j1==0 then one else zero)

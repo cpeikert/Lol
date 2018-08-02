@@ -28,22 +28,22 @@ calls in a type-safe way.
 
 module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 (dcrtZq, dcrtinvZq
-,duZq, duinvZq
+,dlZq, dlinvZq
 ,dmulgpowZq, dmulgdecZq
 ,dginvpowZq, dginvdecZq
 ,dmulZq
 ,dcrtC, dcrtinvC
-,duC, duinvC
+,dlC, dlinvC
 ,dmulgpowC, dmulgdecC
 ,dginvpowC, dginvdecC
 ,dmulC
-,duDouble, duinvDouble
+,dlDouble, dlinvDouble
 ,dmulgpowDouble, dmulgdecDouble
 ,dginvpowDouble, dginvdecDouble
 ,dgaussdecDouble
 ,dnormDouble
-,duRRq,duinvRRq
-,duInt64, duinvInt64
+,dlRRq,dlinvRRq
+,dlInt64, dlinvInt64
 ,dmulgpowInt64, dmulgdecInt64
 ,dginvpowInt64, dginvdecInt64
 ,dnormInt64
@@ -137,13 +137,13 @@ dcrtinvZq :: forall q . Reflects q Int64 => Ptr (Ptr (ZqBasic q Int64)) -> Ptr (
 dcrtinvZq ruptr minv pout totm pfac numFacts =
   tensorCRTInvRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv) (proxy value (Proxy::Proxy q))
 
-duZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
-duZq pout totm pfac numFacts =
-  tensorURq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+dlZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlZq pout totm pfac numFacts =
+  tensorLRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
 
-duinvZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
-duinvZq pout totm pfac numFacts =
-  tensorUInvRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+dlinvZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlinvZq pout totm pfac numFacts =
+  tensorLInvRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
 
 dmulgpowZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dmulgpowZq pout totm pfac numFacts =
@@ -165,7 +165,6 @@ dmulZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Ptr (ZqBasic q
 dmulZq aout bout totm =
   mulRq (castPtr aout) (castPtr bout) totm (proxy value (Proxy::Proxy q))
 
--- products of Complex correspond to CRTExt of a Zq product
 dcrtC :: Ptr (Ptr (Complex Double)) -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dcrtC ruptr pout totm pfac numFacts =
   tensorCRTC (castPtr pout) totm pfac numFacts (castPtr ruptr)
@@ -174,11 +173,11 @@ dcrtinvC :: Ptr (Ptr (Complex Double)) -> Ptr (Complex Double) -> Ptr (Complex D
 dcrtinvC ruptr minv pout totm pfac numFacts =
   tensorCRTInvC (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv)
 
-duC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
-duC pout = tensorUC (castPtr pout)
+dlC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlC pout = tensorLC (castPtr pout)
 
-duinvC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
-duinvC pout = tensorUInvC (castPtr pout)
+dlinvC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlinvC pout = tensorLInvC (castPtr pout)
 
 dmulgpowC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dmulgpowC pout = tensorGPowC (castPtr pout)
@@ -196,18 +195,18 @@ dmulC :: Ptr (Complex Double) -> Ptr (Complex Double) -> Int64 -> IO ()
 dmulC aout bout = mulC (castPtr aout) (castPtr bout)
 
 -- q is nominal. C++ never sees it, so it doesn't matter what it is
-duRRq :: forall q . Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
-duRRq pout = tensorURRq (castPtr pout)
+dlRRq :: forall q . Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlRRq pout = tensorLRRq (castPtr pout)
 
 -- q is nominal. C++ never sees it, so it doesn't matter what it is
-duinvRRq :: forall q . Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
-duinvRRq pout = tensorUInvRRq (castPtr pout)
+dlinvRRq :: forall q . Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlinvRRq pout = tensorLInvRRq (castPtr pout)
 
-duDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
-duDouble pout = tensorUDouble (castPtr pout)
+dlDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlDouble pout = tensorLDouble (castPtr pout)
 
-duinvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
-duinvDouble pout = tensorUInvDouble (castPtr pout)
+dlinvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlinvDouble pout = tensorLInvDouble (castPtr pout)
 
 dnormDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dnormDouble pout = tensorNormSqD 1 (castPtr pout)
@@ -228,11 +227,11 @@ dgaussdecDouble :: Ptr (Ptr (Complex Double)) -> Ptr Double -> Int64 -> Ptr CPP 
 dgaussdecDouble ruptr pout totm pfac numFacts =
   tensorGaussianDec (castPtr pout) totm pfac numFacts (castPtr ruptr)
 
-duInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
-duInt64 pout = tensorUR (castPtr pout)
+dlInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlInt64 pout = tensorLR (castPtr pout)
 
-duinvInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
-duinvInt64 pout = tensorUInvR (castPtr pout)
+dlinvInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
+dlinvInt64 pout = tensorLInvR (castPtr pout)
 
 dnormInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dnormInt64 pout = tensorNormSqR 1 (castPtr pout)
@@ -249,16 +248,16 @@ dginvpowInt64 pout = tensorGInvPowR (castPtr pout)
 dginvdecInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO Int16
 dginvdecInt64 pout = tensorGInvDecR (castPtr pout)
 
-foreign import ccall unsafe "tensorUR" tensorUR ::                  Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorUInvR" tensorUInvR ::            Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorURq" tensorURq ::                Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
-foreign import ccall unsafe "tensorUInvRq" tensorUInvRq ::          Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
-foreign import ccall unsafe "tensorUDouble" tensorUDouble ::       Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorUInvDouble" tensorUInvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorURRq" tensorURRq ::       Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorUInvRRq" tensorUInvRRq :: Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorUC" tensorUC ::       Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorUInvC" tensorUInvC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLR" tensorLR ::                  Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLInvR" tensorLInvR ::            Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLRq" tensorLRq ::                Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
+foreign import ccall unsafe "tensorLInvRq" tensorLInvRq ::          Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
+foreign import ccall unsafe "tensorLDouble" tensorLDouble ::       Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLInvDouble" tensorLInvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLRRq" tensorLRRq ::       Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLInvRRq" tensorLInvRRq :: Ptr (RRq q Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLC" tensorLC ::       Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorLInvC" tensorLInvC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 
 foreign import ccall unsafe "tensorNormSqR" tensorNormSqR ::     Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorNormSqD" tensorNormSqD ::     Int16 -> Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
