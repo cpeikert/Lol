@@ -41,7 +41,8 @@ template <typename abgrp> void gDec (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
       // The vector we're working with appears as a column in a matrix. The vector is
       // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
       // By the end of the for loop, acc will be Σ_{i=1}^{p-2} y_i
-      abgrp acc = abgrp(0);
+      abgrp acc;
+      acc = 0;
       // y_i = y_i - y_{i+1}
       for (hDim_t i = 0, off = ridx; i < p-2; ++i, off += rts) {
         acc += y[off];
@@ -62,12 +63,15 @@ template <typename abgrp> void gInvPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
       // The input vector we're operating on is y[ridx], y[ridx+rts],
       // y[ridx+2*rts], ..., y[ridx+(p-2)*rts]
-      abgrp sum = abgrp(0);
+      abgrp sum;
+      sum = 0;
       // sum = Σ y_i
       for (hDim_t i = 0, off = ridx; i < p-1; ++i, off += rts) {
         sum += y[off];
       }
-      abgrp relts = abgrp(0), acc = abgrp(sum);
+      abgrp relts, acc;
+      relts = 0;
+      acc = sum;
       // How to compute the new value y'_i:
       // y'_i = i*Σ y_j - p*Σ_{j=i}^{i-1} y_j
       // acc contains the left term, and relts contains the right term.
@@ -91,7 +95,8 @@ template <typename abgrp> void gInvDec (abgrp* y, hDim_t lts, hDim_t rts, hDim_t
       // The vector we're working with appears as a column in a matrix. The vector is
       // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
       // acc = Σ_{i=1}^{p-1} (p-i)*y_i
-      abgrp acc = abgrp(0);
+      abgrp acc;
+      acc = 0;
       for (hDim_t i = 0, off = ridx; i < p-1; ++i, off += rts) {
         acc += (y[off] * (p-1-i));
       }
@@ -189,7 +194,8 @@ extern "C" hShort_t tensorGInvPowRq (Zq* y, hDim_t totm, PrimeExponent* peArr, h
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
 
   hInt_t ori = reciprocal(Zq::q, oddrad);
-  Zq oddradInv = Zq(ori);
+  Zq oddradInv;
+  oddradInv = ori;
   if (ori == 0) {
     return 0; // error condition
   }
@@ -251,7 +257,8 @@ extern "C" hShort_t tensorGInvDecRq (Zq* y, hDim_t totm, PrimeExponent* peArr, h
   hInt_t oddrad = oddRad(peArr, sizeOfPE);
 
   hInt_t ori = reciprocal(Zq::q, oddrad);
-  Zq oddradInv = Zq(ori);
+  Zq oddradInv;
+  oddradInv = ori;
   if (ori == 0) {
     return 0; // error condition
   }
