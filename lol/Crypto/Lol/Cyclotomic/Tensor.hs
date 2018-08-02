@@ -93,7 +93,7 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
   => TensorPowDec t r where
 
   -- | Convert a scalar to a tensor in the powerful basis.
-  scalarPowDec :: Fact m => r -> t m r
+  scalarPow :: Fact m => r -> t m r
 
   -- | Convert between the decoding-basis and powerful-basis
   -- representations.
@@ -105,16 +105,16 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
 
   -- | The @embed@ linear transformations, for the powerful and
   -- decoding bases.
-  embedPowDec :: m `Divides` m' => t m r -> t m' r
+  embedPow :: m `Divides` m' => t m r -> t m' r
 
   -- | Map a tensor in the powerful/decoding/CRT basis, representing
   -- an \(\O_{m'}\) element, to a vector of tensors representing
   -- \(\O_m\) elements in the same kind of basis.
   coeffs :: m `Divides` m' => t m' r -> [t m r]
 
-  -- | The relative powerful/decoding basis of \( \O_{m'}/\O_{m} \),
-  -- w.r.t. the same kind of basis of \( \O_{m'} \).
-  relativePowDec :: m `Divides` m' => Tagged m [t m' r]
+  -- | The relative powerful basis of \( \O_{m'}/\O_{m} \),
+  -- w.r.t. the powerful basis of \( \O_{m'} \).
+  powBasisPow :: m `Divides` m' => Tagged m [t m' r]
 
 -- | Encapsulates multiplication and division by \(g_m\)
 class TensorPowDec t r => TensorG t r where
