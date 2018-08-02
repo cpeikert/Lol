@@ -62,6 +62,13 @@ public:
   // default constructor
   Zq() : x(0) {}
 
+  inline Zq operator-()
+  {
+    Zq out;
+    out.x = -x;
+    return out;
+  }
+
   // turn an hInt_t into a Zq with modular reduction.
   Zq& operator=(const hInt_t& c)
   {
@@ -156,6 +163,13 @@ public:
   // default constructor
   RRq() : x(0) {}
 
+  inline RRq operator-()
+  {
+    RRq out;
+    out.x = -x;
+    return out;
+  }
+
   // turn an hInt_t into a Zq with modular reduction.
   RRq& operator=(const double& c)
   {
@@ -204,6 +218,14 @@ public:
   Complex(const double& a, const double& b) {
       this->real = a;
       this->imag = b;
+  }
+
+  inline Complex operator-()
+  {
+    Complex out;
+    out.real = -real;
+    out.imag = -imag;
+    return out;
   }
 
   Complex& operator=(const hInt_t& c)

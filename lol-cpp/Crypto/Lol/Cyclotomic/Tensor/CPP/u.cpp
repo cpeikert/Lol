@@ -28,9 +28,6 @@ template <typename abgrp> void up (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
   // U_2 = id
   if(p == 2) {return;}
 
-  // CJP: prefer to use new, but causes linking errors (?)
-  abgrp* temp = (abgrp*) malloc ((p-1)*sizeof(*temp));
-
   // operate on the chunk of 'y' corresponding to each matrix on the diagonal.
   // each square diagonal matrix in I_lts \otimes U_p \otimes I_rts has
   // size (p-1)*rts
@@ -38,23 +35,15 @@ template <typename abgrp> void up (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
       // The actual work
-      hDim_t i=p-2, off = ridx + rts;
-      temp[i] = 0;
-      temp[i] -= y[off];
-      do {
-        --i; off += rts;
-        temp[i] = temp[i+1] - y[off];
-      } while(i > 0);
-      temp[0] = y[ridx];
-
-      // now copy temp back into y
-      for(i=0, off=ridx; i < p-1; ++i, off += rts) {
-        y[off] = temp[i];
-      }
+      hDim_t off = ridx + (p-2)*rts;
+      y[off] = -y[off];
+      while (off > ridx + rts) {
+        hDim_t newoff = off - rts;
+        y[newoff] = y[off] - y[newoff];
+        off = newoff;
+      } 
     }
   }
-
-  free(temp);
 }
 
 /* The prime-index transform that converts powerful basis coefficients (over any
@@ -68,9 +57,6 @@ template <typename abgrp> void upInv (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p
   // (U_2)^{-1} = id
   if(p == 2) {return;}
 
-  // CJP: prefer to use new, but causes linking errors (?)
-  abgrp* temp = (abgrp*) malloc((p-1)*sizeof(*temp));
-
   // operate on the chunk of 'y' corresponding to each matrix on the diagonal.
   // each square diagonal matrix in I_lts \otimes (U_p \otimes I_rts) has
   // size (p-1)*rts
@@ -78,23 +64,15 @@ template <typename abgrp> void upInv (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
       // The actual work
-      temp[0] = y[ridx];
-      hDim_t i = 1, off = ridx + (p-2)*rts;
-      temp[i] = 0;
-      temp[i] -= y[off];
-      do {
-        i++;
-        temp[i] = y[off]; off -= rts; temp[i] -= y[off];
-      } while(i < p-2);
-
-      // now copy temp back into y
-      for(i=0, off=ridx; i < p-1; ++i, off += rts) {
-        y[off] = temp[i];
+      hDim_t off = ridx + rts;
+      while(off < ridx + (p-2)*rts) {
+        hDim_t newoff = off + rts;
+        y[off] = y[newoff] - y[off];
+        off = newoff;
       }
+      y[off] = -y[off];
     }
   }
-
-  free(temp);
 }
 
 /* Arbitrary-index transformation that converts decoding basis coefficients
