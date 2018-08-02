@@ -71,8 +71,9 @@ tensorTests2 _ tensorGen =
   let ptmmr  = Proxy::Proxy '(t,m,m',r)
       randTests  = ($ tensorGen) <$> [
         nestGroup  "Tw.Em == id" [
-          testWithGen "Pow basis"                       (prop_trem_pow ptmmr),
-          testWithGen "Dec basis"                       (prop_trem_dec ptmmr)],
+          testWithGen "Pow basis"                       (prop_trem_pow ptmmr)
+--        , testWithGen "Dec basis"                       (prop_trem_dec ptmmr)
+          ],
         testWithGen   "Em commutes with L in Dec basis" (prop_embed_dec ptmmr),
         testWithGen   "Tw commutes with L in Dec basis" (prop_twace_dec ptmmr)]
       deterministicTests = [
@@ -137,39 +138,41 @@ prop_crt_inv x = fromMaybe (error "no CRT in prop_crt_inv") $ do
 prop_decToPowToDec :: _ => t m r -> Bool
 prop_decToPowToDec x = (powToDec $ decToPow x) =~= x
 
--- scalarCRT = crt . scalarPowDec
+-- scalarCRT = crt . scalarPow
 -- This only requires Proxy '(t,m) to be fully determined, but this works too
 prop_scalar_crt :: forall t m r . (TensorPowDec t r, Fact m, _) => Proxy '(t,m,r) -> r -> Bool
 prop_scalar_crt _ x = fromMaybe (error "no CRT in prop_scalar_crt") $ do
   scalarCRT' <- scalarCRT
   crt' <- crt
-  return $ (scalarCRT' x :: t m r) =~= (crt' $ scalarPowDec x)
+  return $ (scalarCRT' x :: t m r) =~= (crt' $ scalarPow x)
 
 -- tests that twace . embed == id in the Pow basis
 prop_trem_pow :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
-prop_trem_pow _ x = (twacePowDec $ (embedPowDec x :: t m' r)) =~= x
+prop_trem_pow _ x = (twacePowDec $ (embedPow x :: t m' r)) =~= x
 
+{-
 -- tests that twace . embed == id in the Dec basis
 prop_trem_dec :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_trem_dec _ x = (twacePowDec $ (embedPowDec x :: t m' r)) =~= x
+-}
 
 -- tests that twace . embed == id in the CRT basis
 prop_trem_crt :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_trem_crt _ x = fromMaybe (error "no CRT in prop_trem_crt") $
   (x=~=) <$> (twaceCRT <*> (embedCRT <*> pure x :: Maybe (t m' r)))
 
--- embedPowDec == powToDec . embedPowDec . decToPow
+-- embedPow == powToDec . embedPow . decToPow
 prop_embed_dec :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
-prop_embed_dec _ x = (embedPowDec x :: t m' r) =~= 
-                     (powToDec $ embedPowDec $ decToPow x)
+prop_embed_dec _ x = (embedPow x :: t m' r) =~= 
+                     (powToDec $ embedPow $ decToPow x)
 
--- embedCRT = crt . embedPowDec . crtInv
+-- embedCRT = crt . embedPow . crtInv
 prop_embed_crt :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_embed_crt _ x = fromMaybe (error "no CRT in prop_embed_crt") $ do
   crt' <- crt
   crtInv' <- crtInv
   embedCRT' <- embedCRT
-  return $ (embedCRT' x :: t m' r) =~= (crt' $ embedPowDec $ crtInv' x)
+  return $ (embedCRT' x :: t m' r) =~= (crt' $ embedPow $ crtInv' x)
 
 -- twacePowDec = powToDec . twacePowDec . decToPow
 prop_twace_dec :: forall t m m' r . _ => Proxy '(t,m,m',r) -> t m r -> Bool
@@ -190,8 +193,7 @@ prop_twEmIDCRT x = (((fromMaybe (error "twemid_crt") twaceCRT) x) =~= x) &&
 
 prop_twEmID :: forall t m r . _ => t m r -> Bool
 prop_twEmID x = ((twacePowDec x) =~= x) &&
-                ((embedPowDec x) =~= x) &&
-                ((embedPowDec x) =~= x)
+                ((embedPow x) =~= x)
 
 -- twace mhat'/g' = mhat*totm'/totm/g (Pow basis)
 prop_twace_invar1_pow :: forall t m m' r . _ => Proxy '(t,m,m',r) -> Bool
@@ -200,8 +202,8 @@ prop_twace_invar1_pow _ = fromMaybe (error "could not divide by G in prop_twace_
       mhat' = proxy valueHatFact (Proxy::Proxy m')
       totm = proxy totientFact (Proxy::Proxy m)
       totm' = proxy totientFact (Proxy::Proxy m')
-  output :: t m r <- divGPow $ scalarPowDec $ fromIntegral $ mhat * totm' `div` totm
-  input :: t m' r <- divGPow $ scalarPowDec $ fromIntegral mhat'
+  output :: t m r <- divGPow $ scalarPow $ fromIntegral $ mhat * totm' `div` totm
+  input :: t m' r <- divGPow $ scalarPow $ fromIntegral mhat'
   return $ (twacePowDec input) =~= output
 
 -- twace mhat'/g' = mhat*totm'/totm/g (Dec basis)
@@ -211,8 +213,8 @@ prop_twace_invar1_dec _ = fromMaybe (error "could not divide by G in prop_twace_
       mhat' = proxy valueHatFact (Proxy::Proxy m')
       totm = proxy totientFact (Proxy::Proxy m)
       totm' = proxy totientFact (Proxy::Proxy m')
-  output :: t m r <- divGDec $ scalarPowDec $ fromIntegral $ mhat * totm' `div` totm
-  input :: t m' r <- divGDec $ scalarPowDec $ fromIntegral mhat'
+  output :: t m r <- divGDec $ powToDec $ scalarPow $ fromIntegral $ mhat * totm' `div` totm
+  input :: t m' r <- divGDec $ powToDec $ scalarPow $ fromIntegral mhat'
   return $ (twacePowDec input) =~= output
 
 -- twace mhat'/g' = mhat*totm'/totm/g (CRT basis)
@@ -235,8 +237,8 @@ prop_twace_invar1_crt _ = fromMaybe (error "no CRT in prop_twace_invar1_crt") $ 
 prop_twace_invar2_powdec :: forall t m m' r . (TensorPowDec t r, m `Divides` m', _)
                          => Proxy '(t,m,m',r) -> Bool
 prop_twace_invar2_powdec _ =
-  let output = scalarPowDec $ one :: t m r
-      input = scalarPowDec $ one :: t m' r
+  let output = scalarPow $ one :: t m r
+      input = scalarPow $ one :: t m' r
   in (twacePowDec input) =~= output
 
 -- twace preserves scalars in Pow/Dec basis
