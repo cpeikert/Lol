@@ -87,7 +87,7 @@ cycRepBenches2 ptmmr =
         mkBench "twaceDec" (bench_twaceDec ptmmr) zDec',
         mkBench "twaceCRT" (bench_twaceCRT ptmmr) zPC',
         mkBench "embedPow" (bench_embedPow ptmmr) zPow,
-        mkBench "embedDec" (bench_embedDec ptmmr) zDec,
+--        mkBench "embedDec" (bench_embedDec ptmmr) zDec,
         mkBench "embedCRT" (bench_embedCRT ptmmr) zPC] in
   bgroup "CycRep" benches
 
@@ -186,10 +186,12 @@ bench_embedPow :: forall t m m' r . (Fact m', _)
   => Proxy '(t,m,m',r) -> CycRep t P m r -> CycRep t P m' r
 bench_embedPow _ = embedPow
 
+{-
 {-# INLINE bench_embedDec #-}
 bench_embedDec :: forall t m m' r . (Fact m', _)
   => Proxy '(t,m,m',r) -> CycRep t D m r -> CycRep t D m' r
 bench_embedDec _ = embedDec
+-}
 
 {-# INLINE bench_embedCRT #-}
 bench_embedCRT :: forall t m m' r . (Fact m', _)

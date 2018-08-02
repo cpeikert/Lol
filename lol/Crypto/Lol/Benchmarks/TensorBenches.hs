@@ -74,7 +74,7 @@ tensorBenches2 ptmmr =
         mkBench "twacePow" (bench_twacePow ptmmr) z',
         mkBench "twaceDec" (bench_twacePow ptmmr) z', -- yes, twacePow is correct here. It's the same function!
         mkBench "twaceCRT" (bench_twaceCRT ptmmr) z',
-        mkBench "embedPowDec" (bench_embedPowDec ptmmr) z,
+        mkBench "embedPow" (bench_embedPow ptmmr) z,
         mkBench "embedCRT" (bench_embedCRT ptmmr) z] in
   bgroup "Tensor" benches
 
@@ -160,10 +160,10 @@ bench_twaceCRT :: forall t m m' r . (TensorPowDec t r, Fact m, _)
   => Proxy '(t,m,m',r) -> t m' r -> t m r
 bench_twaceCRT _ = fromJust' "TensorBenches.bench_twaceCRT" twaceCRT
 
-{-# INLINABLE bench_embedPowDec #-}
-bench_embedPowDec :: forall t m m' r . (TensorPowDec t r, Fact m', _)
+{-# INLINABLE bench_embedPow #-}
+bench_embedPow :: forall t m m' r . (TensorPowDec t r, Fact m', _)
   => Proxy '(t,m,m',r) -> t m r -> t m' r
-bench_embedPowDec _ = embedPowDec
+bench_embedPow _ = embedPow
 
 {-# INLINABLE bench_embedCRT #-}
 bench_embedCRT :: forall t m m' r . (TensorPowDec t r, Fact m', _)
