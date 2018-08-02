@@ -70,13 +70,13 @@ import Crypto.Lol.GaussRandom
 import Crypto.Lol.Prelude                         as LP hiding (replicate,
                                                          unzip, zip)
 import Crypto.Lol.Reflects
+import Crypto.Lol.Tests
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IFunctor
 import Crypto.Lol.Types.IZipVector
 import Crypto.Lol.Types.Proto
 import Crypto.Lol.Types.Unsafe.RRq
 import Crypto.Lol.Types.Unsafe.ZqBasic
-import Crypto.Lol.Tests
 
 import Data.Foldable as F
 
