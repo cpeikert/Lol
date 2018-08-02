@@ -49,7 +49,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 , zmsToIndexFact
 , indexInfo
 , extIndicesPowDec, extIndicesCRT, extIndicesCoeffs
-, baseIndicesPowDec, baseIndicesCRT
+, baseIndicesPow, baseIndicesDec, baseIndicesCRT
 , digitRev
 )
 where
@@ -430,12 +430,19 @@ baseWrapper f = do
   return $ U.generate phi' (f mpps)
 
 -- | A lookup table for 'toIndexPair' applied to indices \([\varphi(m')]\).
-baseIndicesPowDec :: forall m m' . (m `Divides` m')
+baseIndicesPow :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector (Int,Int))
-baseIndicesPowDec = baseWrapper (toIndexPair . totients)
-{-# INLINABLE baseIndicesPowDec #-}
+baseIndicesPow = baseWrapper (toIndexPair . totients)
+{-# INLINABLE baseIndicesPow #-}
 
--- | Same as 'baseIndicesPowDec', but only includes the second component
+-- | A lookup table for 'baseIndexDec' applied to indices \([\varphi(m')]\).
+baseIndicesDec :: forall m m' . (m `Divides` m')
+                  => Tagged '(m, m') (U.Vector (Maybe (Int,Bool)))
+-- this one is more complicated; requires the prime powers
+baseIndicesDec = baseWrapper baseIndexDec
+{-# INLINABLE baseIndicesDec #-}
+
+-- | Same as 'baseIndicesPow', but only includes the second component
 -- of each pair.
 baseIndicesCRT :: forall m m' . (m `Divides` m')
                   => Tagged '(m, m') (U.Vector Int)
@@ -450,6 +457,27 @@ extIndicesCoeffs = do
   (_, phi, phi', tots) <- indexInfo
   return $ V.generate (phi' `div` phi)
            (\i1 -> U.generate phi (\i0 -> fromIndexPair tots (i1,i0)))
+
+-- | Convenient reindexing functions
+
+-- | Maps an index of the extension ring array to its corresponding
+-- index in the base ring array (if it exists), with sign, under the
+-- decoding basis.
+baseIndexDec :: [(Int,Int,Int)] -> Int -> Maybe (Int, Bool)
+baseIndexDec [] 0 = Just (0,False)
+baseIndexDec ((p,e,e'):rest) i'
+   = let (i'q, i'r) = i' `divMod` totientPP (p,e')
+         phi = totientPP (p,e)
+         curr
+           | p>2 && e==0 && e' > 0 = case i'r of
+               0 -> Just (0,False)
+               1 -> Just (0,True)
+               _ -> Nothing
+           | otherwise = if i'r < phi then Just (i'r,False) else Nothing
+     in do
+       (i,b) <- curr
+       (j,b') <- baseIndexDec rest i'q
+       return (i + phi*j, b /= b')
 
 -- the first list of pps must "divide" the other.  result is a list of
 -- all (prime, min e, max e).
