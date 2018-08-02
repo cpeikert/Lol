@@ -59,10 +59,21 @@ public:
   // global modulus, which allows us to cast values to a Zq type for efficiency.
   static hInt_t q; // declared here, defined in common.cpp due to GHC #12152.
 
+  // default constructor
+  Zq() : x(0) {}
+
+  inline Zq operator-()
+  {
+    Zq out;
+    out.x = -x;
+    return out;
+  }
+
   // turn an hInt_t into a Zq with modular reduction.
-  Zq(const hInt_t& c)
+  Zq& operator=(const hInt_t& c)
   {
     this->x = c % q;
+    return *this;
   }
   Zq& operator+=(const Zq& b)
   {
@@ -84,14 +95,16 @@ public:
   }
   Zq& operator*=(const hInt_t& b)
   {
-    Zq c = Zq(b);
+    Zq c;
+    c = b;
     *this *= c;
     return *this;
   }
   // fails if b is not invertible mod q
   Zq& operator/=(const Zq& b)
   {
-    Zq binv = Zq(reciprocal(q,b.x));
+    Zq binv;
+    binv = reciprocal(q,b.x);
     ASSERT (binv.x); // binv == 0 indicates that x is not invertible mod q
     *this *= binv;
     return *this;
@@ -147,10 +160,21 @@ public:
   // value in the range -1 < x < 1
   double x;
 
+  // default constructor
+  RRq() : x(0) {}
+
+  inline RRq operator-()
+  {
+    RRq out;
+    out.x = -x;
+    return out;
+  }
+
   // turn an hInt_t into a Zq with modular reduction.
-  RRq(const double& c)
+  RRq& operator=(const double& c)
   {
     this->x = fractional_part(c);
+    return *this;
   }
   RRq& operator+=(const RRq& b)
   {
@@ -188,20 +212,27 @@ public:
   double real;
   double imag;
 
-  Complex() {
-      this->real = 0.0;
-      this->imag = 0.0;
-  }
+  // default constructor
+  Complex() : real(0.0), imag(0.0) {}
 
   Complex(const double& a, const double& b) {
       this->real = a;
       this->imag = b;
   }
 
-  Complex(const hInt_t& c)
+  inline Complex operator-()
+  {
+    Complex out;
+    out.real = -real;
+    out.imag = -imag;
+    return out;
+  }
+
+  Complex& operator=(const hInt_t& c)
   {
     this->real = c;
     this->imag = 0;
+    return *this;
   }
   Complex& operator+=(const Complex& b)
   {

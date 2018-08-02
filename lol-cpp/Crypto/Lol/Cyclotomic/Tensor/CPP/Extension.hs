@@ -147,10 +147,10 @@ crtSetDec' =
       h :: Int = proxy valueHatFact m'p
       hinv = recip $ fromIntegral h
   in reify d $ \(_::Proxy d) -> do
-      let twCRTs' :: Kron (GF fp d)
-            = fromMaybe (error "internal error: crtSetDec': twCRTs") $ proxyT twCRTs m'p
+      let twCRTt' :: Kron (GF fp d)
+            = fromMaybe (error "internal error: crtSetDec': twCRTt") $ proxyT twCRTt m'p
           zmsToIdx = proxy T.zmsToIndexFact m'p
-          elt j i = indexK twCRTs' j (zmsToIdx i)
+          elt j i = indexK twCRTt' j (zmsToIdx i)
           trace' = trace :: GF fp d -> fp -- to avoid recomputing powTraces
       cosets <- partitionCosets p
       return $ LP.map (\is -> generate phi

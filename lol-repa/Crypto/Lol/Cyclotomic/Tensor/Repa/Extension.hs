@@ -30,10 +30,10 @@ module Crypto.Lol.Cyclotomic.Tensor.Repa.Extension
 ) where
 
 import           Crypto.Lol.CRTrans
-import qualified Crypto.Lol.Cyclotomic.Tensor                     as T
+import qualified Crypto.Lol.Cyclotomic.Tensor               as T
 import           Crypto.Lol.Cyclotomic.Tensor.Repa.CRT
 import           Crypto.Lol.Cyclotomic.Tensor.Repa.RTCommon as RT
-import           Crypto.Lol.Prelude                               as LP
+import           Crypto.Lol.Prelude                         as LP
 
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZmStar
@@ -155,10 +155,10 @@ crtSetDec' = return $
       h :: Int = proxy valueHatFact m'p
       hinv = recip $ fromIntegral h
   in reify d $ \(_::Proxy d) ->
-       let twCRTs' :: T.Kron (GF fp d)
-             = fromMaybe (error "internal error: crtSetDec': twCRTs") $ proxyT T.twCRTs m'p
+       let twCRTt' :: T.Kron (GF fp d)
+             = fromMaybe (error "internal error: crtSetDec': twCRTt") $ proxyT T.twCRTt m'p
            zmsToIdx = proxy T.zmsToIndexFact m'p
-           elt j i = T.indexK twCRTs' j (zmsToIdx i)
+           elt j i = T.indexK twCRTt' j (zmsToIdx i)
            trace' = trace :: GF fp d -> fp
            cosets = proxy (partitionCosets p) (Proxy::Proxy '(m,m'))
        in LP.map (\is -> Arr $ force $ fromFunction (Z :. phi)

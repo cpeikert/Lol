@@ -29,17 +29,19 @@ template <typename abgrp> void up (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
   if(p == 2) {return;}
 
   // operate on the chunk of 'y' corresponding to each matrix on the diagonal.
-  // each square diagonal matrix in I_lts \otimes (U_p \otimes I_rts) has
+  // each square diagonal matrix in I_lts \otimes U_p \otimes I_rts has
   // size (p-1)*rts
   // lidx is the offset into y corresponding to the block diagonal matrix
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
-      // The vector we're working with appears as a column in a matrix. The vector is
-      // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
-      // The actual work, stepping backwards: y_{i-1} = y_{i-1} + y_i
-      for (hDim_t i = 0, off = ridx + (p-2)*rts; i < p-2; ++i, off -= rts) {
-        y[off-rts] += y[off];
-      }
+      // The actual work
+      hDim_t off = ridx + (p-2)*rts;
+      y[off] = -y[off];
+      while (off > ridx + rts) {
+        hDim_t newoff = off - rts;
+        y[newoff] = y[off] - y[newoff];
+        off = newoff;
+      } 
     }
   }
 }
@@ -48,7 +50,7 @@ template <typename abgrp> void up (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
  * abelian group) to powerful basis coefficients.
  * 'y' is an array of powerful basis coefficients in a three-dimensional tensor:
  * [lts]x[rts]x[p-1].
- * We can think of the operator as  (I_lts \otimes UU_p)^{-1} \otimes I_rts).
+ * We can think of the operator as  I_lts \otimes U_p^{-1} \otimes I_rts).
  */
 template <typename abgrp> void upInv (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
@@ -61,12 +63,14 @@ template <typename abgrp> void upInv (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p
   // lidx is the offset into y corresponding to the block diagonal matrix
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
-      // The vector we're working with appears as a column in a matrix. The vector is
-      // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
-      // The actual work, stepping forwards: y_i = y_i - y_{i+1}
-      for (hDim_t i = 0, off = ridx; i < p-2; ++i, off += rts) {
-        y[off] -= y[off+rts];
+      // The actual work
+      hDim_t off = ridx + rts;
+      while(off < ridx + (p-2)*rts) {
+        hDim_t newoff = off + rts;
+        y[off] = y[newoff] - y[off];
+        off = newoff;
       }
+      y[off] = -y[off];
     }
   }
 }
