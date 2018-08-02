@@ -19,15 +19,15 @@ template <typename abgrp> void gPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
-      // The vector we're working with appears as a column in a matrix. The vector is
-      // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
-      abgrp first = y[ridx];
-      // the actual work, stepping forwards: y_i = y_1 - y_{i+1}
-      for (hDim_t i = 0, off = ridx; i < p-2; ++i, off += rts) {
-        y[off] += (first - y[off+rts]);
+      // the actual work, stepping backwards
+      hDim_t off = ridx + (p-2)*rts;
+      abgrp last = y[off];
+      while(off > ridx) {
+        hDim_t newoff = off-rts;
+        y[off] += (last - y[newoff]);
+        off = newoff;
       }
-      // last += first
-      y[ridx + (p-2)*rts] += first;
+      y[ridx] += last;
     }
   }
 }
@@ -61,21 +61,15 @@ template <typename abgrp> void gInvPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t
 
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
-      // The input vector we're operating on is y[ridx], y[ridx+rts],
-      // y[ridx+2*rts], ..., y[ridx+(p-2)*rts]
       abgrp sum;
       sum = 0;
-      // sum = Σ y_i
       for (hDim_t i = 0, off = ridx; i < p-1; ++i, off += rts) {
         sum += y[off];
       }
-      abgrp relts, acc;
-      relts = 0;
+      abgrp acc, relts;
       acc = sum;
-      // How to compute the new value y'_i:
-      // y'_i = i*Σ y_j - p*Σ_{j=i}^{i-1} y_j
-      // acc contains the left term, and relts contains the right term.
-      for (hDim_t i = 0, off = ridx; i < p-1; ++i, off += rts) {
+      relts = 0;
+      for(hDim_t off = ridx + (p-2)*rts; off >= ridx; off -= rts) {
         abgrp z = y[off] * p;
         y[off] = acc - relts;
         relts += z;
