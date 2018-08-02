@@ -155,10 +155,9 @@ template <typename ring> void dftp (ring* y, hDim_t lts, hDim_t rts,
       hDim_t temp2 = blockOffset*temp1;
       for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
         tensorOffset = temp2 + modOffset;
-        ring y1, y2, y3;
-        y1 = y[tensorOffset];
-        y2 = y[(tensorOffset+rts)];
-        y3 = y[(tensorOffset+(rts<<1))];
+        ring y1 = y[tensorOffset];
+        ring y2 = y[(tensorOffset+rts)];
+        ring y3 = y[(tensorOffset+(rts<<1))];
         //q is <32 bits, so we can do 3 additions without overflow
         y[tensorOffset]           += (y2 + y3);
         y[(tensorOffset+rts)]      = y1 + (ru1*y2) + (ru2*y3);
@@ -177,12 +176,11 @@ template <typename ring> void dftp (ring* y, hDim_t lts, hDim_t rts,
       hDim_t temp2 = blockOffset*temp1;
       for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
           tensorOffset = temp2 + modOffset;
-          ring y1, y2, y3, y4, y5;
-          y1 = y[tensorOffset];
-          y2 = y[(tensorOffset+rts)];
-          y3 = y[(tensorOffset+(rts<<1))];
-          y4 = y[(tensorOffset+3*rts)];
-          y5 = y[(tensorOffset+(rts<<2))];
+          ring y1 = y[tensorOffset];
+          ring y2 = y[(tensorOffset+rts)];
+          ring y3 = y[(tensorOffset+(rts<<1))];
+          ring y4 = y[(tensorOffset+3*rts)];
+          ring y5 = y[(tensorOffset+(rts<<2))];
           y[tensorOffset]           += y2 + y3 + y4 + y5;
           y[(tensorOffset+rts)]      = y1 + (ru1*y2) + (ru2*y3) + (ru3*y4) + (ru4*y5);
           y[(tensorOffset+(rts<<1))] = y1 + (ru2*y2) + (ru4*y3) + (ru1*y4) + (ru3*y5);
@@ -204,14 +202,13 @@ template <typename ring> void dftp (ring* y, hDim_t lts, hDim_t rts,
       hDim_t temp2 = blockOffset*temp1;
       for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
         tensorOffset = temp2 + modOffset;
-        ring y1, y2, y3, y4, y5, y6, y7;
-        y1 = y[tensorOffset];
-        y2 = y[(tensorOffset+rts)];
-        y3 = y[(tensorOffset+(rts<<1))];
-        y4 = y[(tensorOffset+3*rts)];
-        y5 = y[(tensorOffset+(rts<<2))];
-        y6 = y[(tensorOffset+rts*5)];
-        y7 = y[(tensorOffset+rts*6)];
+        ring y1 = y[tensorOffset];
+        ring y2 = y[(tensorOffset+rts)];
+        ring y3 = y[(tensorOffset+(rts<<1))];
+        ring y4 = y[(tensorOffset+3*rts)];
+        ring y5 = y[(tensorOffset+(rts<<2))];
+        ring y6 = y[(tensorOffset+rts*5)];
+        ring y7 = y[(tensorOffset+rts*6)];
         y[tensorOffset]           += y2 +     y3 +     y4 +     y5 +     y6 +     y7;
         y[(tensorOffset+rts)]      = y1 + (ru1*y2) + (ru2*y3) + (ru3*y4) + (ru4*y5) + (ru5*y6) + (ru6*y7);
         y[(tensorOffset+(rts<<1))] = y1 + (ru2*y2) + (ru4*y3) + (ru6*y4) + (ru1*y5) + (ru3*y6) + (ru5*y7);
@@ -260,9 +257,8 @@ template <typename ring> void crtp (ring* y, hDim_t lts, hDim_t rts,
       hDim_t temp2 = blockOffset*temp1;
       for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
         tensorOffset = temp2 + modOffset;
-        ring y1, y2;
-        y1 = y[tensorOffset];
-        y2 = y[(tensorOffset+rts)];
+        ring y1 = y[tensorOffset];
+        ring y2 = y[(tensorOffset+rts)];
         y[tensorOffset]      += (ru1*y2);
         y[(tensorOffset+rts)] = y1 + (ru2*y2);
       }
@@ -279,11 +275,10 @@ template <typename ring> void crtp (ring* y, hDim_t lts, hDim_t rts,
       hDim_t temp2 = blockOffset*temp1;
       for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
         tensorOffset = temp2 + modOffset;
-        ring y1, y2, y3, y4;
-        y1 = y[tensorOffset];
-        y2 = y[(tensorOffset+rts)];
-        y3 = y[(tensorOffset+(rts<<1))];
-        y4 = y[(tensorOffset+3*rts)];
+        ring y1 = y[tensorOffset];
+        ring y2 = y[(tensorOffset+rts)];
+        ring y3 = y[(tensorOffset+(rts<<1))];
+        ring y4 = y[(tensorOffset+3*rts)];
 
         y[tensorOffset]           += ((ru1*y2) + (ru2*y3) + (ru3*y4));
         y[(tensorOffset+rts)]      = y1 + (ru2*y2) + (ru4*y3) + (ru1*y4);
@@ -304,13 +299,12 @@ template <typename ring> void crtp (ring* y, hDim_t lts, hDim_t rts,
       hDim_t temp2 = blockOffset*temp1;
       for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
         tensorOffset = temp2 + modOffset;
-        ring y1, y2, y3, y4, y5, y6;
-        y1 = y[tensorOffset];
-        y2 = y[(tensorOffset+rts)];
-        y3 = y[(tensorOffset+(rts<<1))];
-        y4 = y[(tensorOffset+3*rts)];
-        y5 = y[(tensorOffset+(rts<<2))];
-        y6 = y[(tensorOffset+rts*5)];
+        ring y1 = y[tensorOffset];
+        ring y2 = y[(tensorOffset+rts)];
+        ring y3 = y[(tensorOffset+(rts<<1))];
+        ring y4 = y[(tensorOffset+3*rts)];
+        ring y5 = y[(tensorOffset+(rts<<2))];
+        ring y6 = y[(tensorOffset+rts*5)];
         y[tensorOffset]           += ((ru1*y2) + (ru2*y3) + (ru3*y4) + (ru4*y5) + (ru5*y6));
         y[(tensorOffset+rts)]      = y1 + (ru2*y2) + (ru4*y3) + (ru6*y4) + (ru1*y5) + (ru3*y6);
         y[(tensorOffset+(rts<<1))] = y1 + (ru3*y2) + (ru6*y3) + (ru2*y4) + (ru5*y5) + (ru1*y6);
@@ -361,11 +355,10 @@ template <typename ring> void crtpinv (ring* y, hDim_t lts, hDim_t rts,
       hDim_t temp2 = blockOffset*temp1;
       for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
         tensorOffset = temp2 + modOffset;
-        ring y1, y2, shift;
-        y1 = y[tensorOffset];
-        y2 = y[(tensorOffset+rts)];
+        ring y1 = y[tensorOffset];
+        ring y2 = y[(tensorOffset+rts)];
 
-        shift = (ru2*y1) + (ru1*y2);
+        ring shift = (ru2*y1) + (ru1*y2);
 
         y[tensorOffset]      +=                 y2  - shift;
         y[(tensorOffset+rts)] = (ru1*y1) + (ru2*y2) - shift;
@@ -383,13 +376,12 @@ template <typename ring> void crtpinv (ring* y, hDim_t lts, hDim_t rts,
       hDim_t temp2 = blockOffset*temp1;
       for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
         tensorOffset = temp2 + modOffset;
-        ring y1, y2, y3, y4, shift;
-        y1 = y[tensorOffset];
-        y2 = y[(tensorOffset+rts)];
-        y3 = y[(tensorOffset+(rts<<1))];
-        y4 = y[(tensorOffset+3*rts)];
+        ring y1 = y[tensorOffset];
+        ring y2 = y[(tensorOffset+rts)];
+        ring y3 = y[(tensorOffset+(rts<<1))];
+        ring y4 = y[(tensorOffset+3*rts)];
 
-        shift = (ru4*y1) + (ru3*y2) + (ru2*y3) + (ru1*y4);
+        ring shift = (ru4*y1) + (ru3*y2) + (ru2*y3) + (ru1*y4);
 
         y[tensorOffset]           +=                 y2  +      y3  +      y4  - shift;
         y[(tensorOffset+rts)]      = (ru1*y1) + (ru2*y2) + (ru3*y3) + (ru4*y4) - shift;
@@ -410,15 +402,14 @@ template <typename ring> void crtpinv (ring* y, hDim_t lts, hDim_t rts,
       hDim_t temp2 = blockOffset*temp1;
       for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
         tensorOffset = temp2 + modOffset;
-        ring y1, y2, y3, y4, y5, y6, shift;
-        y1 = y[tensorOffset];
-        y2 = y[(tensorOffset+rts)];
-        y3 = y[(tensorOffset+(rts<<1))];
-        y4 = y[(tensorOffset+3*rts)];
-        y5 = y[(tensorOffset+(rts<<2))];
-        y6 = y[(tensorOffset+rts*5)];
+        ring y1 = y[tensorOffset];
+        ring y2 = y[(tensorOffset+rts)];
+        ring y3 = y[(tensorOffset+(rts<<1))];
+        ring y4 = y[(tensorOffset+3*rts)];
+        ring y5 = y[(tensorOffset+(rts<<2))];
+        ring y6 = y[(tensorOffset+rts*5)];
 
-        shift = (ru6*y1) + (ru5*y2) + (ru4*y3) + (ru3*y4) + (ru2*y5) + (ru1*y6);
+        ring shift = (ru6*y1) + (ru5*y2) + (ru4*y3) + (ru3*y4) + (ru2*y5) + (ru1*y6);
 
         y[tensorOffset]           +=                 y2  +      y3  +      y4  +      y5  +      y6  - shift;
         y[(tensorOffset+rts)]      = (ru1*y1) + (ru2*y2) + (ru3*y3) + (ru4*y4) + (ru5*y5) + (ru6*y6) - shift;
@@ -436,8 +427,7 @@ template <typename ring> void crtpinv (ring* y, hDim_t lts, hDim_t rts,
       hDim_t temp2 = blockOffset*temp1;
       for(hDim_t modOffset = 0; modOffset < rts; modOffset++) {
         tensorOffset = temp2 + modOffset;
-        ring shift;
-        shift = 0;
+        ring shift = ring(0);
         for(hDim_t row = 0; row < p-1; row++) {
           shift += (y[(tensorOffset+row*rts)]*ruinv[(p-row-1)*rustride]);
           tempSpace[row] = 0;
