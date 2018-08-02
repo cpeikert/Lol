@@ -44,7 +44,7 @@ module Crypto.Lol.Cyclotomic.Tensor
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
 -- * Special vectors/matrices
-, Kron, indexK, gCRTK, gInvCRTK, twCRTs
+, Kron, indexK, gCRTK, gInvCRTK, twCRTt
 -- * Tensor indexing
 , zmsToIndexFact
 , indexInfo
