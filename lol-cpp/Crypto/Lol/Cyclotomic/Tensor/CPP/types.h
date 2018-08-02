@@ -59,6 +59,9 @@ public:
   // global modulus, which allows us to cast values to a Zq type for efficiency.
   static hInt_t q; // declared here, defined in common.cpp due to GHC #12152.
 
+  // default constructor
+  Zq() : x(0) {}
+
   // turn an hInt_t into a Zq with modular reduction.
   Zq& operator=(const hInt_t& c)
   {
@@ -150,6 +153,9 @@ public:
   // value in the range -1 < x < 1
   double x;
 
+  // default constructor
+  RRq() : x(0) {}
+
   // turn an hInt_t into a Zq with modular reduction.
   RRq& operator=(const double& c)
   {
@@ -192,10 +198,8 @@ public:
   double real;
   double imag;
 
-  Complex() {
-      this->real = 0.0;
-      this->imag = 0.0;
-  }
+  // default constructor
+  Complex() : real(0.0), imag(0.0) {}
 
   Complex(const double& a, const double& b) {
       this->real = a;
