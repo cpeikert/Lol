@@ -28,32 +28,48 @@ template <typename abgrp> void up (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
   // U_2 = id
   if(p == 2) {return;}
 
+  // CJP: prefer to use new, but causes linking errors (?)
+  abgrp* temp = (abgrp*) malloc ((p-1)*sizeof(*temp));
+
   // operate on the chunk of 'y' corresponding to each matrix on the diagonal.
-  // each square diagonal matrix in I_lts \otimes (U_p \otimes I_rts) has
+  // each square diagonal matrix in I_lts \otimes U_p \otimes I_rts has
   // size (p-1)*rts
   // lidx is the offset into y corresponding to the block diagonal matrix
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
-      // The vector we're working with appears as a column in a matrix. The vector is
-      // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
-      // The actual work, stepping backwards: y_{i-1} = y_{i-1} + y_i
-      for (hDim_t i = 0, off = ridx + (p-2)*rts; i < p-2; ++i, off -= rts) {
-        y[off-rts] += y[off];
+      // The actual work
+      hDim_t i=p-2, off = ridx + rts;
+      temp[i] = 0;
+      temp[i] -= y[off];
+      do {
+        --i; off += rts;
+        temp[i] = temp[i+1] - y[off];
+      } while(i > 0);
+      temp[0] = y[ridx];
+
+      // now copy temp back into y
+      for(i=0, off=ridx; i < p-1; ++i, off += rts) {
+        y[off] = temp[i];
       }
     }
   }
+
+  free(temp);
 }
 
 /* The prime-index transform that converts powerful basis coefficients (over any
  * abelian group) to powerful basis coefficients.
  * 'y' is an array of powerful basis coefficients in a three-dimensional tensor:
  * [lts]x[rts]x[p-1].
- * We can think of the operator as  (I_lts \otimes UU_p)^{-1} \otimes I_rts).
+ * We can think of the operator as  I_lts \otimes U_p^{-1} \otimes I_rts).
  */
 template <typename abgrp> void upInv (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
   // (U_2)^{-1} = id
   if(p == 2) {return;}
+
+  // CJP: prefer to use new, but causes linking errors (?)
+  abgrp* temp = (abgrp*) malloc((p-1)*sizeof(*temp));
 
   // operate on the chunk of 'y' corresponding to each matrix on the diagonal.
   // each square diagonal matrix in I_lts \otimes (U_p \otimes I_rts) has
@@ -61,14 +77,24 @@ template <typename abgrp> void upInv (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p
   // lidx is the offset into y corresponding to the block diagonal matrix
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
-      // The vector we're working with appears as a column in a matrix. The vector is
-      // y[tensorOffset], y[tensorOffset+rts], y[tensorOffset+2*rts], ..., y[tensorOffset+(p-2)*rts]
-      // The actual work, stepping forwards: y_i = y_i - y_{i+1}
-      for (hDim_t i = 0, off = ridx; i < p-2; ++i, off += rts) {
-        y[off] -= y[off+rts];
+      // The actual work
+      temp[0] = y[ridx];
+      hDim_t i = 1, off = ridx + (p-2)*rts;
+      temp[i] = 0;
+      temp[i] -= y[off];
+      do {
+        i++;
+        temp[i] = y[off]; off -= rts; temp[i] -= y[off];
+      } while(i < p-2);
+
+      // now copy temp back into y
+      for(i=0, off=ridx; i < p-1; ++i, off += rts) {
+        y[off] = temp[i];
       }
     }
   }
+
+  free(temp);
 }
 
 /* Arbitrary-index transformation that converts decoding basis coefficients
