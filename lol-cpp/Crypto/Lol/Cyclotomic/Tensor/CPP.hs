@@ -234,6 +234,7 @@ instance Reflects q Int64 => TensorPowDec CT (ZqBasic q Int64) where
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
   embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
 
   coeffs = wrapM $ coerceCoeffs coeffs'
 
@@ -244,6 +245,7 @@ instance Reflects q Int64 => TensorPowDec CT (ZqBasic q Int64) where
   {-# INLINABLE powToDec #-}
   {-# INLINABLE twacePowDec #-}
   {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 
@@ -280,6 +282,7 @@ instance TensorPowDec CT (Complex Double) where
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
   embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
 
   coeffs = wrapM $ coerceCoeffs coeffs'
 
@@ -290,6 +293,7 @@ instance TensorPowDec CT (Complex Double) where
   {-# INLINABLE powToDec #-}
   {-# INLINABLE twacePowDec #-}
   {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 
@@ -331,6 +335,7 @@ instance TensorPowDec CT Double where
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
   embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
 
   coeffs = wrapM $ coerceCoeffs coeffs'
 
@@ -341,6 +346,7 @@ instance TensorPowDec CT Double where
   {-# INLINABLE powToDec #-}
   {-# INLINABLE twacePowDec #-}
   {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 
@@ -374,6 +380,7 @@ instance TensorPowDec CT Int64 where
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
   embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
 
   coeffs = wrapM $ coerceCoeffs coeffs'
 
@@ -384,6 +391,7 @@ instance TensorPowDec CT Int64 where
   {-# INLINABLE powToDec #-}
   {-# INLINABLE twacePowDec #-}
   {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 
@@ -418,6 +426,7 @@ instance (Reflects q Int64, Reflects q Double) => TensorPowDec CT (RRq q Double)
 
   twacePowDec = wrap $ runIdentity $ coerceTw twacePowDec'
   embedPow = wrap $ runIdentity $ coerceEm embedPow'
+  embedDec = wrap $ runIdentity $ coerceEm embedDec'
 
   coeffs = wrapM $ coerceCoeffs coeffs'
 
@@ -431,6 +440,7 @@ instance (Reflects q Int64, Reflects q Double) => TensorPowDec CT (RRq q Double)
   {-# INLINABLE powToDec #-}
   {-# INLINABLE twacePowDec #-}
   {-# INLINABLE embedPow #-}
+  {-# INLINABLE embedDec #-}
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 

@@ -105,7 +105,7 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
 
   -- | The @embed@ linear transformations, for the powerful and
   -- decoding bases.
-  embedPow :: m `Divides` m' => t m r -> t m' r
+  embedPow, embedDec :: m `Divides` m' => t m r -> t m' r
 
   -- | Map a tensor in the powerful/decoding/CRT basis, representing
   -- an \(\O_{m'}\) element, to a vector of tensors representing

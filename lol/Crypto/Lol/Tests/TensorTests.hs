@@ -72,7 +72,7 @@ tensorTests2 _ tensorGen =
       randTests  = ($ tensorGen) <$> [
         nestGroup  "Tw.Em == id" [
           testWithGen "Pow basis"                       (prop_trem_pow ptmmr)
---        , testWithGen "Dec basis"                       (prop_trem_dec ptmmr)
+        , testWithGen "Dec basis"                       (prop_trem_dec ptmmr)
           ],
         testWithGen   "Em commutes with L in Dec basis" (prop_embed_dec ptmmr),
         testWithGen   "Tw commutes with L in Dec basis" (prop_twace_dec ptmmr)]
@@ -150,20 +150,18 @@ prop_scalar_crt _ x = fromMaybe (error "no CRT in prop_scalar_crt") $ do
 prop_trem_pow :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_trem_pow _ x = (twacePowDec $ (embedPow x :: t m' r)) =~= x
 
-{-
 -- tests that twace . embed == id in the Dec basis
 prop_trem_dec :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
-prop_trem_dec _ x = (twacePowDec $ (embedPowDec x :: t m' r)) =~= x
--}
+prop_trem_dec _ x = (twacePowDec $ (embedDec x :: t m' r)) =~= x
 
 -- tests that twace . embed == id in the CRT basis
 prop_trem_crt :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
 prop_trem_crt _ x = fromMaybe (error "no CRT in prop_trem_crt") $
   (x=~=) <$> (twaceCRT <*> (embedCRT <*> pure x :: Maybe (t m' r)))
 
--- embedPow == powToDec . embedPow . decToPow
+-- embedDec == powToDec . embedPow . decToPow
 prop_embed_dec :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
-prop_embed_dec _ x = (embedPow x :: t m' r) =~=
+prop_embed_dec _ x = (embedDec x :: t m' r) =~=
                      (powToDec $ embedPow $ decToPow x)
 
 -- embedCRT = crt . embedPow . crtInv
