@@ -163,7 +163,7 @@ prop_trem_crt _ x = fromMaybe (error "no CRT in prop_trem_crt") $
 
 -- embedPow == powToDec . embedPow . decToPow
 prop_embed_dec :: forall t m m' r . (m `Divides` m', _) => Proxy '(t,m,m',r) -> t m r -> Bool
-prop_embed_dec _ x = (embedPow x :: t m' r) =~= 
+prop_embed_dec _ x = (embedPow x :: t m' r) =~=
                      (powToDec $ embedPow $ decToPow x)
 
 -- embedCRT = crt . embedPow . crtInv
@@ -176,7 +176,7 @@ prop_embed_crt _ x = fromMaybe (error "no CRT in prop_embed_crt") $ do
 
 -- twacePowDec = powToDec . twacePowDec . decToPow
 prop_twace_dec :: forall t m m' r . _ => Proxy '(t,m,m',r) -> t m r -> Bool
-prop_twace_dec _ x = (twacePowDec x :: t m r) =~= 
+prop_twace_dec _ x = (twacePowDec x :: t m r) =~=
                      (powToDec $ twacePowDec $ decToPow x)
 
 -- twaceCRT = crt . twacePowDec . crtInv
