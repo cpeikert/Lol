@@ -36,7 +36,7 @@ template <typename abgrp> void lp (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
       // The new value y'_i = Σ_{j=1}^i y_i
       // We do this from left to right, letting y'_i = y_i + y'_{i-1}
-      for (hDim_t i = 0, off = ridx + rts; i < p-2; ++i, off += rts) {
+      for (hDim_t off = ridx + rts; off < ridx + (p-1)*rts; off += rts) {
           y[off] += y[off-rts];
       }
     }
@@ -62,7 +62,7 @@ template <typename abgrp> void lpInv (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
       // The new value y'_i = y_i - y_{i-1} when i > 1 and y'_1 = y_1
       // We do this from right to left, letting y'_i = y_i - y_{i-1}
-      for (hDim_t i = 0, off = ridx + (p-2)*rts; i < p-2; i++, off -= rts) {
+      for (hDim_t off = ridx + (p-2)*rts; off > ridx; off -= rts) {
         y[off] -= y[off-rts];
       }
     }
