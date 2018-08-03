@@ -19,12 +19,12 @@ template <typename abgrp> void gPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
-      // The new value y'_i = y_i + y_{p-1} - y_{i-1} where i > 1
+      // The new value y'_i = y_i + y_{p-1} - y_{i-1} where i > 0
       abgrp y_last = y[ridx + (p-2)*rts];
-      for (hDim_t i = 0, off = ridx + (p-2)*rts; i < p-2; ++i, off -= rts) {
+      for (hDim_t off = ridx + (p-2)*rts; off > ridx; off -= rts) {
         y[off] += (y_last - y[off-rts]);
       }
-      // y_1 = y_1 + y_{p-1}
+      // y_0 = y_0 + y_{p-2}
       y[ridx] += y_last;
     }
   }
@@ -37,13 +37,13 @@ template <typename abgrp> void gDec (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
       abgrp sum = y[ridx];
-      // The new value y'_i = y_i - y_{i-1} where i > 1
-      for (hDim_t i = 0, off = ridx + (p-2)*rts; i < p-2; ++i, off -= rts) {
+      // The new value y'_i = y_i - y_{i-1} where i > 0
+      for (hDim_t off = ridx + (p-2)*rts; off > ridx; off -= rts) {
         sum += y[off];
         y[off] -= y[off-rts];
       }
       // At this point, sum = Σ y_i
-      // y_1 = y_1 + Σ y_i
+      // y_0 = y_0 + Σ y_i
       y[ridx] += sum;
     }
   }
@@ -55,16 +55,17 @@ template <typename abgrp> void gInvPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t
 
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
-      // The new value y'_i = (p-i+1) * Σ_{j=1}^i y_j - i * Σ_{j=i+1}^{p-1} y_j
-      // We do this by letting sum = Σ y_i and having acc = sum at first. On each iteration,
-      // we let acc += (sum - p*y_i)
+      // The new value y'_i = (p-i+1) * Σ_{j=1}^i y_j - i *
+      // Σ_{j=i+1}^{p-1} y_j We do this by letting sum = Σ y_i and
+      // having acc = sum at first. On each iteration, we let acc +=
+      // (sum - p*y_i)
       abgrp sum;
       sum = 0;
-      for (hDim_t i = 0, off = ridx; i < p-1; ++i, off += rts) {
+      for (hDim_t off = ridx; off < ridx + (p-1)*rts; off += rts) {
         sum += y[off];
       }
       abgrp acc = sum;
-      for (hDim_t i = 0, off = ridx + (p-2)*rts; i < p-1; ++i, off -= rts) {
+      for (hDim_t off = ridx + (p-2)*rts; off >= ridx; off -= rts) {
         abgrp tmp = y[off] * p;
         y[off] = acc;
         acc += (sum - tmp);
@@ -79,7 +80,7 @@ template <typename abgrp> void gInvDec (abgrp* y, hDim_t lts, hDim_t rts, hDim_t
 
   for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
     for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
-      // sum = Σ i*y_i
+      // sum = Σ (i+1)*y_i, i=0, ..., p-2
       abgrp sum;
       sum = 0;
       for (hDim_t i = 0, off = ridx; i < p-1; ++i, off += rts) {
@@ -87,7 +88,7 @@ template <typename abgrp> void gInvDec (abgrp* y, hDim_t lts, hDim_t rts, hDim_t
       }
       // The new value y'_i = Σ j*y_j - p*Σ{j=i+1}^{p-1} y_j
       // We do this by setting y'_i = sum and then letting sum -= p*y_i
-      for (hDim_t i = 0, off = ridx + (p-2)*rts; i < p-1; ++i, off -= rts) {
+      for (hDim_t off = ridx + (p-2)*rts; off >= ridx; off -= rts) {
         abgrp tmp = y[off];
         y[off] = sum;
         sum -= (tmp * p);
