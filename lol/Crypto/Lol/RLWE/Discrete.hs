@@ -29,7 +29,7 @@ type Sample cm zq = (cm zq, cm zq)
 
 -- | Common constraints for working with discrete RLWE.
 type RLWECtx cm zq =
-  (Cyclotomic (cm zq), Random (cm zq), Ring (cm zq), 
+  (Cyclotomic (cm zq), Random (cm zq), Ring (cm zq),
    Reduce (cm (LiftOf zq)) (cm zq))
 
 -- | A discrete RLWE sample with the given scaled variance and secret.
