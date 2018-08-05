@@ -136,6 +136,17 @@ fmapAny = fmapCyc   Nothing
 fmapPow = fmapCyc $ Just Pow
 fmapDec = fmapCyc $ Just Dec
 
+-- | Fold over coefficients in a specified basis.
+class FoldableCyc cm a where
+  -- | Fold in the specified basis (where 'Nothing' indicates that
+  -- any 'Basis' may be used).
+  foldrCyc :: Maybe Basis -> (a -> b -> b) -> b -> cm a -> b
+
+foldrAny, foldrPow, foldrDec :: FoldableCyc cm a => (a -> b -> b) -> b -> cm a -> b
+foldrAny = foldrCyc   Nothing
+foldrPow = foldrCyc $ Just Pow
+foldrDec = foldrCyc $ Just Dec
+
 -- | Reduce on a cyclotomic (in an arbitrary basis).
 reduceCyc :: (FunctorCyc cm a b, Reduce a b) => cm a -> cm b
 reduceCyc = fmapAny reduce
