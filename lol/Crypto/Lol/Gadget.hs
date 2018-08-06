@@ -11,6 +11,7 @@ Portability : POSIX
 Interfaces for "gadgets," decomposition, and error correction.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -20,12 +21,13 @@ Interfaces for "gadgets," decomposition, and error correction.
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
 module Crypto.Lol.Gadget
 ( Gadget(..), Decompose(..), Correct(..)
-, decomposeT, decomposeList, decomposeMatrix
+, decomposeList, decomposeMatrix
 , TrivGad, BaseBGad
 ) where
 
@@ -47,14 +49,14 @@ data BaseBGad b
 -- CJP: is Ring superclass really necessary here?
 class Ring u => Gadget gad u where
   -- | The gadget vector over @u@.
-  gadget :: Tagged gad [u]
+  gadget :: [u]
 
   -- | Yield an error-tolerant encoding of an element with respect to
   -- the gadget.  (Mathematically, this should just be the product of
   -- the input with the gadget, but it is a class method to allow for
   -- optimized implementations.)
-  encode :: u -> Tagged gad [u]
-  encode s = ((* s) <$>) <$> gadget
+  encode :: u -> [u]
+  encode s = (* s) <$> gadget @gad
 
 -- | Decomposition relative to a gadget.
 
@@ -64,43 +66,39 @@ class (Gadget gad u, Reduce (DecompOf u) u) => Decompose gad u where
   type DecompOf u
 
   -- | Yield a short vector \( x \) such that \( \langle g, x\rangle = u \).
-  decompose :: u -> Tagged gad [DecompOf u]
-
--- | Alternative to 'decompose'.
-decomposeT :: Decompose gad u => u -> TaggedT gad [] (DecompOf u)
-decomposeT = peelT . decompose
+  decompose :: u -> [DecompOf u]
 
 -- | Decompose a list entry-wise.
-decomposeList :: Decompose gad u => [u] -> Tagged gad [DecompOf u]
-decomposeList = fmap concat . traverse decompose
+decomposeList :: forall gad u . Decompose gad u => [u] -> [DecompOf u]
+decomposeList = concat . fmap (decompose @gad)
 
 -- | Decompose a matrix entry-wise.
 decomposeMatrix :: forall gad u . (Decompose gad u)
-                   => Matrix u -> Tagged gad (Matrix (DecompOf u))
-decomposeMatrix m = do
-  l <- length <$> (gadget :: Tagged gad [u]) -- CJP: avoid scoped type vars?
-  fromColumns (l * numRows m) (numColumns m) <$>
-    traverse decomposeList (columns m)
+                   => Matrix u -> Matrix (DecompOf u)
+decomposeMatrix =
+  let l = length $ gadget @gad @u
+  in \m -> fromColumns (l * numRows m) (numColumns m) $
+           decomposeList @gad <$> (columns m)
 
 -- | Error correction relative to a gadget.
 class Gadget gad u => Correct gad u where
 
   -- | Error-correct a "noisy" encoding of an element (see 'encode'),
   -- returning the encoded element and the error vector.
-  correct :: Tagged gad [u] -> (u, [LiftOf u])
+  correct :: [u] -> (u, [LiftOf u])
 
 
 -- | Product ring: concatenate gadgets over component rings
 instance (Gadget gad a, Gadget gad b) => Gadget gad (a,b) where
 
-  gadget = (++) <$> (map (,zero) <$> gadget) <*> (map (zero,) <$> gadget)
+  gadget = (++) ((,zero) <$> gadget @gad @a) ((zero,) <$> gadget @gad @b)
 
 -- | Product ring: concatenate decompositions for component rings
 instance (Decompose gad a, Decompose gad b, DecompOf a ~ DecompOf b)
          => Decompose gad (a,b) where
 
   type DecompOf (a,b) = DecompOf a
-  decompose (a,b) = (++) <$> decompose a <*> decompose b
+  decompose (a,b) = (++) (decompose @gad a) (decompose @gad b)
 
 -- | Product ring
 instance (Correct gad a, Correct gad b,
@@ -109,18 +107,17 @@ instance (Correct gad a, Correct gad b,
     => Correct gad (a,b) where
 
   correct =
-    let gada = gadget :: Tagged gad [a]
-        gadb = gadget :: Tagged gad [b]
+    let gada = gadget @gad @a
+        gadb = gadget @gad @b
         ka = length gada
-        qaval = toInteger $ proxy modulus (Proxy::Proxy a)
-        qbval = toInteger $ proxy modulus (Proxy::Proxy b)
+        qaval = toInteger $ modulus @a
+        qbval = toInteger $ modulus @b
         qamod = fromIntegral qaval
         qbmod = fromIntegral qbval
         qainv = recip qamod
         qbinv = recip qbmod
     in \tv ->
-        let v = untag tv
-            (wa,wb) = splitAt ka v
+        let (wa,wb) = splitAt ka tv
             (va,xb) = unzip $
                       (\(a,b) -> let x = toInteger $ lift b
                                  in (qbinv * (a - fromIntegral x), x)) <$> wa
@@ -129,10 +126,10 @@ instance (Correct gad a, Correct gad b,
                                  in (qainv * (b - fromIntegral x), x)) <$> wb
             (sa,ea) = (qbmod *) ***
                       zipWith (\x e -> x + qbval * toInteger e) xb $
-                      correct (tag va `asTypeOf` gada)
+                      correct @gad va
             (sb,eb) = (qamod *) ***
                       zipWith (\x e -> x + qaval * toInteger e) xa $
-                      correct (tag vb `asTypeOf` gadb)
+                      correct @gad vb
         in ((sa,sb), ea ++ eb)
 
 
