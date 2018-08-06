@@ -17,6 +17,7 @@ used modules, plus some low-level classes, missing instances, and
 assorted utility functions.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes        #-}
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -30,6 +31,7 @@ assorted utility functions.
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
@@ -100,7 +102,7 @@ class Enumerable a where
 -- | Represents a quotient group modulo some integer.
 class (ToInteger (ModRep a), Additive a) => Mod a where
   type ModRep a
-  modulus :: Tagged a (ModRep a)
+  modulus :: ModRep a
 
 -- | Represents that @a@ is a subgroup of @b@.
 class (Additive a, Additive b) => Subgroup a b where
@@ -148,8 +150,8 @@ rescaleMod :: forall a b .
               => a -> b
 {-# INLINABLE rescaleMod #-}
 rescaleMod =
-    let qval = proxy modulus (Proxy :: Proxy a)
-        q'val = proxy modulus (Proxy :: Proxy b)
+    let qval  = modulus @a
+        q'val = modulus @b
     in \x -> let (quot',_) = divModCent (q'val * lift x) qval
              in fromIntegral quot'
 
@@ -157,7 +159,7 @@ rescaleMod =
 roundCoset :: forall zp z r .
               (Mod zp, z ~ ModRep zp, Lift zp z, RealField r) => zp -> r -> z
 {-# INLINABLE roundCoset #-}
-roundCoset = let pval = proxy modulus (Proxy::Proxy zp)
+roundCoset = let pval = modulus @zp
              in \ zp x -> let rep = lift zp
                           in rep + roundMult pval (x - fromIntegral rep)
 
@@ -172,8 +174,8 @@ instance (Mod a, Mod b, Lift' a, Lift' b, Reduce Integer (a,b),
 
   {-# INLINABLE lift #-}
   lift (a,b) =
-    let moda = toInteger $ proxy modulus (Proxy::Proxy a)
-        modb = toInteger $ proxy modulus (Proxy::Proxy b)
+    let moda = toInteger $ modulus @a
+        modb = toInteger $ modulus @b
         q = moda * modb
         ainv = fromMaybe (error "Lift' (a,b): moduli not coprime") $ moda `modinv` modb
         lifta = toInteger $ lift a
@@ -212,8 +214,7 @@ instance (IntegralDomain a, IntegralDomain b) => IntegralDomain.C (a,b) where
 instance (Mod a, Mod b) => Mod (a,b) where
   type ModRep (a,b) = Integer
 
-  modulus = tag $ fromIntegral (proxy modulus (Proxy::Proxy a)) *
-            fromIntegral (proxy modulus (Proxy::Proxy b))
+  modulus = fromIntegral (modulus @a) * fromIntegral (modulus @b)
   {-# INLINABLE modulus #-}
 
 -- | Reduce into product ring.
@@ -227,7 +228,7 @@ instance (Reduce a b1, Reduce a b2) => Reduce a (b1, b2) where
 -- | Rescale a product ring of \(\Z_q\)s
 instance (Mod a, Field b, Lift a (ModRep a), Reduce (LiftOf a) b)
          => Rescale (a,b) b where
-  rescale = let q1val = proxy modulus (Proxy::Proxy a)
+  rescale = let q1val = modulus @a
                 q1inv = recip $ reduce q1val
             in \(x1,x2) -> q1inv * (x2 - reduce (lift x1))
   {-# INLINABLE rescale #-}
@@ -260,7 +261,7 @@ instance (Rescale (a,(b,(c,(d,(e,f))))) (b,(c,(d,(e,f)))), Rescale (b,(c,(d,(e,f
 -- | Rescale a product ring of \(\Z_q\)s
 instance (Mod b, Field a, Lift b (ModRep b), Reduce (LiftOf b) a)
          => Rescale (a,b) a where
-  rescale = let q2val = proxy modulus (Proxy::Proxy b)
+  rescale = let q2val = modulus @b
                 q2inv = recip $ reduce q2val
             in \(x1,x2) -> q2inv * (x1 - reduce (lift x2))
   {-# INLINABLE rescale #-}
@@ -275,14 +276,14 @@ instance (Rescale ((a,b),c) (a,b), Rescale (a,b) a,
 -- | Rescale /up/ to a product ring of \(\Z_q\)s
 instance (Ring a, Mod b, Reduce (ModRep b) a) => Rescale a (a,b) where
   -- multiply by q2
-  rescale = let q2val = reduce $ proxy modulus (Proxy::Proxy b)
+  rescale = let q2val = reduce $ modulus @b
             in \x -> (q2val * x, zero)
   {-# INLINABLE rescale #-}
 
 -- | Rescale /up/ to a product ring of \(\Z_q\)s
 instance (Ring b, Mod a, Reduce (ModRep a) b) => Rescale b (a,b) where
   -- multiply by q1
-  rescale = let q1val = reduce $ proxy modulus (Proxy::Proxy a)
+  rescale = let q1val = reduce $ modulus @a
             in \x -> (zero, q1val * x)
   {-# INLINABLE rescale #-}
 
