@@ -28,13 +28,11 @@ import Control.Monad.Random
 type Sample cm zq = (cm zq, cm zq)
 
 -- | Common constraints for working with discrete RLWE.
-type RLWECtx cm zq =
-  (Cyclotomic (cm zq), Random (cm zq), Ring (cm zq),
-   Reduce (cm (LiftOf zq)) (cm zq))
+type RLWECtx cm zq = (Cyclotomic (cm zq), Ring (cm zq), Reduce (cm (LiftOf zq)) (cm zq))
 
 -- | A discrete RLWE sample with the given scaled variance and secret.
 sample :: forall rnd v cm zq .
-  (RLWECtx cm zq, RoundedGaussianCyc cm (LiftOf zq),
+  (RLWECtx cm zq, Random (cm zq), RoundedGaussianCyc cm (LiftOf zq),
    MonadRandom rnd, ToRational v)
   => v -> cm zq -> rnd (Sample cm zq)
 {-# INLINABLE sample #-}
@@ -52,7 +50,7 @@ errorTerm s = let s' = adviseCRT s
 
 -- | The 'gSqNorm' of the error term of an RLWE sample, given the
 -- purported secret.
-errorGSqNorm :: (RLWECtx cm zq, Lift' zq, FunctorCyc cm zq (LiftOf zq), 
+errorGSqNorm :: (RLWECtx cm zq, Lift' zq, FunctorCyc cm zq (LiftOf zq),
                  GSqNormCyc cm (LiftOf zq))
              => cm zq -> Sample cm zq -> LiftOf zq
 {-# INLINABLE errorGSqNorm #-}

@@ -33,7 +33,7 @@ type Sample cm zq rrq = (cm zq, cm rrq)
 
 -- | Common constraints for working with continuous RLWE.
 type RLWECtx cm zq rrq =
-  (Cyclotomic (cm zq), Random (cm zq), Ring (cm zq), Additive (cm rrq),
+  (Cyclotomic (cm zq), Ring (cm zq), Additive (cm rrq),
    Subgroup zq rrq, FunctorCyc cm zq rrq)
 
 -- | A continuous RLWE sample with the given scaled variance and secret.
