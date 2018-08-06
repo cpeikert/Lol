@@ -62,15 +62,15 @@ embedPow', embedDec' :: (Additive r, Storable r, m `Divides` m')
                      => Tagged '(m, m') (Vector r -> Vector r)
 {-# INLINABLE embedPow' #-}
 {-# INLINABLE embedDec' #-}
--- | Embeds an vector in the powerful basis of the the mth cyclotomic ring
--- to an vector in the powerful basis of the m'th cyclotomic ring when @m | m'@
+-- | Embeds an vector in the powerful basis of the @m@th cyclotomic
+-- ring to a vector in the powerful basis of the @m'@th cyclotomic
+-- ring
 embedPow' = (\indices arr -> generate (U.length indices) $ \idx ->
   let (j0,j1) = indices U.! idx
   in if j0 == 0
      then arr ! j1
      else zero) <$> baseIndicesPow
--- | Embeds an vector in the decoding basis of the the mth cyclotomic ring
--- to an vector in the decoding basis of the m'th cyclotomic ring when @m | m'@
+-- | Same as 'embedPow'', but for the decoding basis.
 embedDec' = (\indices arr -> generate (U.length indices)
   (\idx -> maybe LP.zero
     (\(sh,b) -> if b then negate (arr ! sh) else arr ! sh)
