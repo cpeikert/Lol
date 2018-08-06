@@ -459,12 +459,12 @@ data TunnelHint gad c e r s e' r' s' zp zq =
 -- e' ~ (e * ...) is not needed in this module, but is at use sites...
 -- | Constraint synonym for generating 'TunnelHint'.
 type TunnelHintCtx c e r s e' r' s' z zp zq' gad =
-  (ExtendLinIdx e r s e' r' s',         -- extendLin
-   e' ~ (e * (r' / r)),                 -- convenience; implied by prev constraint
-   z ~ LiftOf zp,
-   KSHintCtx gad c s' z zq',            -- ksHint
-   LiftCyc (c s) zp,                    -- liftLin
-   ExtensionCyc c z, e' `Divides` r',   -- powBasis
+  (ExtendLinCtx c e r s e' r' s' zp, -- extendLin
+   e' ~ (e * (r' / r)),     -- convenience; implied by prev constraint
+   Fact r, z ~ LiftOf zp,
+   KSHintCtx gad c s' z zq',          -- ksHint
+   LiftCyc (c s) zp,                  -- liftLin
+   ExtensionCyc c z, e' `Divides` r', -- powBasis
    Reduce (c s' z) (c s' zq'),
    Cyclotomic (c r' z),         -- adviseCRT
    Ring (c r' z), Ring (c s' z), Random (c s' zq'), Gadget gad (c s' zq'))
