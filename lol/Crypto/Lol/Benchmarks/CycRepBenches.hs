@@ -32,7 +32,6 @@ import Control.Monad.Random hiding (lift)
 import Crypto.Lol.Utils.Benchmarks (bgroup, mkBench, mkBenchIO, Benchmark)
 import Crypto.Lol.Cyclotomic.CycRep
 import Crypto.Lol.Cyclotomic.Language (mulG)
-import Crypto.Lol.Cyclotomic.Tensor (Tensor)
 import Crypto.Lol.Prelude
 import Crypto.Lol.Types
 import Crypto.Random
@@ -88,7 +87,7 @@ cycRepBenches2 ptmmr =
         mkBench "twaceDec" (bench_twaceDec ptmmr) zDec',
         mkBench "twaceCRT" (bench_twaceCRT ptmmr) zPC',
         mkBench "embedPow" (bench_embedPow ptmmr) zPow,
-        mkBench "embedDec" (bench_embedDec ptmmr) zDec,
+--        mkBench "embedDec" (bench_embedDec ptmmr) zDec,
         mkBench "embedCRT" (bench_embedCRT ptmmr) zPC] in
   bgroup "CycRep" benches
 
@@ -160,7 +159,7 @@ bench_divGCRT = either (error "bench_divGCRT expected a CRTC") divGCRTC
 
 {-# INLINABLE bench_errRounded #-}
 -- generate a rounded error term
-bench_errRounded :: forall t m r gen . (Tensor t r, Fact m, CryptoRandomGen gen, _)
+bench_errRounded :: forall t m r gen . (Fact m, CryptoRandomGen gen, _)
                  => Proxy '(t,m,r) -> Proxy gen -> Double -> IO (CycRep t D m (LiftOf r))
 bench_errRounded _ _ v = do
   gen <- newGenIO
@@ -187,10 +186,12 @@ bench_embedPow :: forall t m m' r . (Fact m', _)
   => Proxy '(t,m,m',r) -> CycRep t P m r -> CycRep t P m' r
 bench_embedPow _ = embedPow
 
+{-
 {-# INLINE bench_embedDec #-}
 bench_embedDec :: forall t m m' r . (Fact m', _)
   => Proxy '(t,m,m',r) -> CycRep t D m r -> CycRep t D m' r
 bench_embedDec _ = embedDec
+-}
 
 {-# INLINE bench_embedCRT #-}
 bench_embedCRT :: forall t m m' r . (Fact m', _)

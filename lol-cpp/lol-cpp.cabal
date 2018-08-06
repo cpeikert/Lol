@@ -69,6 +69,7 @@ library
              Crypto/Lol/Cyclotomic/Tensor/CPP/mul.cpp,
              Crypto/Lol/Cyclotomic/Tensor/CPP/norm.cpp,
              Crypto/Lol/Cyclotomic/Tensor/CPP/random.cpp,
+             Crypto/Lol/Cyclotomic/Tensor/CPP/rrq.cpp
              Crypto/Lol/Cyclotomic/Tensor/CPP/zq.cpp
 
   if flag(llvm)

@@ -85,9 +85,7 @@ sheMain _ = do
   hint' :: KSQuadCircHint KSGad (Cyc t CTIndex CTZq3) <- ksQuadCircHint sk
   ciphertext' :: CTRing2 t <- encrypt sk plaintext
   let ct3 = keySwitchQuadCirc hint' $ modSwitch $ ciphertext' * ciphertext'
-      -- the CT modulus of ct3 is a ring product, which can't be lifted to a fixed size repr
-      -- so use decryptUnrestricted instead
-      pt3 = decryptUnrestricted sk ct3
+      pt3 = decrypt sk ct3
       ct3' = modSwitch ct3 :: CTRing1 t
       -- after rescaling, ct3' has a single modulus, so we can use normal decrypt
       pt3' = decrypt sk ct3'

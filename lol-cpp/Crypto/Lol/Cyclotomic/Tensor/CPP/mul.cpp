@@ -29,3 +29,8 @@ extern "C" void mulC (Complex* a, Complex* b, hDim_t totm)
 {
   zipWithStar(a, b, totm, 0);
 }
+
+extern "C" void mulDouble (double* a, double* b, hDim_t totm)
+{
+  zipWithStar(a, b, totm, 0);
+}

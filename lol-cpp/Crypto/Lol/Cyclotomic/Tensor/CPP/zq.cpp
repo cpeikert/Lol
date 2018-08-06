@@ -55,7 +55,7 @@ hInt_t reciprocal (hInt_t a, hInt_t b)
 
 /* Put a Z_q coefficient in the range -q < x < q into the range 0 <= x < q*/
 void canonicalizeZq (Zq* y, hDim_t totm, hInt_t q) {
-  // canonicalize every coefficient with this modulus (spaced tupSize apart)
+  // canonicalize every coefficient with this modulus
   for(hDim_t j = 0; j < totm; j++) {
     if(y[j].x<0) {
       y[j].x+=q;

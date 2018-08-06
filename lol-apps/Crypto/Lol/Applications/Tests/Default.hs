@@ -25,8 +25,8 @@ module Crypto.Lol.Applications.Tests.Default (defaultAppsTests) where
 
 import Control.Monad.Random
 
-import Crypto.Lol (Cyc)
-import Crypto.Lol.Applications.SymmSHE hiding (CT)
+import Crypto.Lol                             (Cyc)
+import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Applications.Tests.SHETests
 import Crypto.Lol.Factored
 import Crypto.Lol.Gadget

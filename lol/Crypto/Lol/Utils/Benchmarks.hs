@@ -12,9 +12,9 @@ Infrastructure for benchmarking Lol.
 -}
 
 {-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -27,9 +27,8 @@ module Crypto.Lol.Utils.Benchmarks
 ,C.bgroup, C.Benchmark) where
 
 import Control.DeepSeq
-import Control.Monad.Random
+
 import qualified Criterion as C
-import Data.Proxy
 
 -- | Make a `Benchmark` from a function and its input
 mkBench :: NFData b => String -> (a -> b) -> a -> C.Benchmark

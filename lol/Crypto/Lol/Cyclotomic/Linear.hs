@@ -31,11 +31,12 @@ over a common subring.
 {-# LANGUAGE UndecidableInstances       #-}
 
 module Crypto.Lol.Cyclotomic.Linear
-( Linear, ExtendLinIdx
-, linearDec, evalLin, extendLin
+( Linear, ExtendLinCtx
+, linearDec, evalLin, liftLin, extendLin
 ) where
 
 import Crypto.Lol.Cyclotomic.Language
+import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
@@ -47,7 +48,9 @@ import Algebra.Additive as Additive (C)
 import Control.Applicative
 import Control.DeepSeq
 
-import Data.Word
+import qualified Data.Vector         as V
+import qualified Data.Vector.Unboxed as U
+import           Data.Word
 
 -- | An \(E\)-linear function from \(R\) to \(S\).
 
@@ -65,7 +68,7 @@ type role Linear representational representational representational nominal nomi
 -- (in \(S\)) on the relative decoding basis of \(R/E\).  The number of
 -- elements in the list must not exceed the size of the basis.
 linearDec :: forall c e r s z .
-             (e `Divides` r, e `Divides` s, ExtensionCyc c z)
+             (e `Divides` r, e `Divides` s, Cyclotomic (c s z), ExtensionCyc c z)
              => [c s z] -> Linear c e r s z
 linearDec ys = let ps = proxy powBasis (Proxy::Proxy e) `asTypeOf` ys
                in if length ys <= length ps then RD (adviseCRT <$> ys)
@@ -89,34 +92,42 @@ instance Additive (c s z) => Additive.C (Linear c e r s z) where
 
   negate (RD as) = RD $ negate <$> as
 
-instance (Fact s, Additive.C (c s z), Additive.C (c s zp), ReduceCyc c z zp)
+instance (Reduce (c s z) (c s zp))
   => Reduce (Linear c e r s z) (Linear c e r s zp) where
-  reduce (RD ys) = RD $ reduceCyc <$> ys
+  reduce (RD ys) = RD $ reduce <$> ys
 
 type instance LiftOf (Linear c e r s zp) = Linear c e r s (LiftOf zp)
 
--- | lifting in powerful basis is generally best, geometrically
-instance (LiftCyc c zp) => LiftCyc (Linear c e r) zp where
-  liftCyc b (RD ys) = RD $ liftCyc b <$> ys
+-- | Lift the linear function in the specified basis (or any, if
+-- 'Nothing' is given).  The powerful basis is generally best,
+-- geometrically.
+liftLin :: (LiftCyc (c s) zp)
+  => Maybe Basis -> Linear c e r s zp -> Linear c e r s (LiftOf zp)
+liftLin b (RD ys) = RD $ liftCyc b <$> ys
 
 -- | A convenient constraint synonym for extending a linear function
 -- to larger rings.
-type ExtendLinIdx e r s e' r' s' =
-  (Fact r, e ~ FGCD r e', r' ~ FLCM r e', -- these imply R'=R\otimes_E E'
-   e' `Divides` s', s `Divides` s') -- lcm(s,e')|s' <=> (S+E') \subseteq S'
+type ExtendLinCtx c e r s e' r' s' z =
+  (e ~ FGCD r e',                   -- E = R \cap E'
+   FLCM r e' `Divides` r',          -- (R+E') \subseteq R'
+   e' `Divides` s', s `Divides` s', -- (S+E') \subseteq S'
+   ExtensionCyc c z, Additive (c s' z))
 
 -- | Extend an \(E\)-linear function \(R\to S\) to an \(E'\)-linear
--- function \(R'\to S'\). (Mathematically, such extension only requires
--- \(\lcm(r,e') | r'\) (not equality), but this generality would
--- significantly complicate the implementation, and for our purposes
--- there's no reason to use any larger \(r'\).)
-extendLin :: (ExtendLinIdx e r s e' r' s', ExtensionCyc c z)
-           => Linear c e r s z -> Linear c e' r' s' z
--- CJP: this simple implementation works because R/E and R'/E' have
--- identical decoding bases, because R' \cong R \otimes_E E'.  If we
--- relax the constraint on E then we'd have to change the
--- implementation to something more difficult.
-extendLin (RD ys) = RD (embed <$> ys)
+-- function \(R'\to S'\).
+extendLin :: forall c e r s e' r' s' z .
+  (ExtendLinCtx c e r s e' r' s' z)
+  => Linear c e r s z -> Linear c e' r' s' z
+-- need the indexing:
+-- dec_{R'/E'} <-> dec_{R'/(R+E')} \otimes dec_{(R+E')/E'}
+--               = dec_{R'/(R+E')} \otimes dec_{R/E}.
+extendLin (RD ys) =
+  let yvec  = V.fromList ys
+      idxs  = proxy baseIndicesPow (Proxy :: Proxy '(FLCM r e', r'))
+      y'vec = V.generate (U.length idxs) $ \idx ->
+        let (j0,j1) = idxs U.! idx
+        in if j0 == 0 then embed (yvec V.! j1) else zero
+  in RD $ V.toList y'vec
 
 instance (Reflects e Word32, Reflects r Word32,
           Protoable (c s zq), ProtoType (c s zq) ~ RqProduct)

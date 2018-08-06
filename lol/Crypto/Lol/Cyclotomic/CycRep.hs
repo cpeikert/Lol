@@ -51,27 +51,28 @@ module Crypto.Lol.Cyclotomic.CycRep
 -- * Scalars
 , scalarPow, scalarCRT
 -- * Basic operations
-, mulGPow, mulGDec, mulGCRTC, divGPow, divGDec, divGCRTC, gSqNorm
+, mulGPow, mulGDec, mulGCRTC, divGPow, divGDec, divGCRTC, gSqNormDec
 -- * Error sampling
 , tweakedGaussian, roundedGaussian, cosetGaussian
 -- * Inter-ring operations and values
-, embedPow, embedDec, embedCRTC, embedCRTE
+, embedPow, embedCRTC, embedCRTE
 , twacePow, twaceDec, twaceCRTC, twaceCRTE
 , coeffsPow, coeffsDec, powBasis, crtSet
 ) where
 
-import Crypto.Lol.Cyclotomic.Tensor hiding (divGDec, divGPow, embedCRT,
-                                     embedDec, embedPow, mulGDec, mulGPow,
-                                     scalarCRT, scalarPow, twaceCRT)
+import Crypto.Lol.CRTrans
+import Crypto.Lol.Cyclotomic.CRTSentinel
+import Crypto.Lol.Cyclotomic.Tensor      hiding (divGDec, divGPow,
+                                          embedCRT, embedPow, gSqNormDec,
+                                          mulGDec, mulGPow, scalarCRT,
+                                          scalarPow, twaceCRT)
+import Crypto.Lol.Prelude                as LP
+import Crypto.Lol.Types.FiniteField
+import Crypto.Lol.Types.IFunctor
+import Crypto.Lol.Types.Proto
+import Crypto.Lol.Types.ZPP
 
-import           Crypto.Lol.CRTrans
-import           Crypto.Lol.Cyclotomic.CRTSentinel
-import qualified Crypto.Lol.Cyclotomic.Tensor      as T
-import           Crypto.Lol.Prelude                as LP
-import           Crypto.Lol.Types.FiniteField
-import           Crypto.Lol.Types.IFunctor
-import           Crypto.Lol.Types.Proto
-import           Crypto.Lol.Types.ZPP
+import qualified Crypto.Lol.Cyclotomic.Tensor as T
 
 import qualified Algebra.Additive     as Additive (C)
 import qualified Algebra.Module       as Module (C)
@@ -90,7 +91,7 @@ import Data.Traversable
 
 -- | Represents a cyclotomic ring such as \(\Z[\zeta_m]\),
 -- \(\Z_q[\zeta_m]\), and \(\Q(\zeta_m)\) in an explicit
--- representation: @t@ is the 'Tensor' type for storing coefficient
+-- representation: @t@ is the 'TensorPowDec' type for storing coefficient
 -- tensors; @m@ is the cyclotomic index; @rep@ is the representation
 -- (e.g., 'P', 'D', 'C', 'E'); @r@ is the base ring of the
 -- coefficients (e.g., \(\Z\), \(\Z_q\)).
@@ -121,10 +122,10 @@ type CycRepEC t m r = Either (CycRep t E m r) (CycRep t C m r)
 type CycRepPC t m r = Either (CycRep t P m r) (CycRep t C m r)
 
 -- | Constraints needed for CRT-related operations on 'CycRep' data.
-type CRTElt t r = (TensorCRT t Maybe r, TensorCRT t Identity (CRTExt r), CRTEmbed r)
+type CRTElt t r = (TensorG t r, TensorCRT t Maybe r, TensorCRT t Identity (CRTExt r), CRTEmbed r)
 
 -- | Embed a scalar from the base ring.
-scalarPow :: (Tensor t r, Fact m) => r -> CycRep t P m r
+scalarPow :: (TensorPowDec t r, Fact m) => r -> CycRep t P m r
 scalarPow = Pow . T.scalarPow
 {-# INLINABLE scalarPow #-}
 
@@ -161,7 +162,7 @@ instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
 -- TODO: replace these implementations to use Additive instance of
 -- underlying tensor? Would this require using ForallFact2 Additive.C?
 
-instance (Tensor t r, Fact m) => Additive.C (CycRep t P m r) where
+instance (TensorPowDec t r, Fact m) => Additive.C (CycRep t P m r) where
   zero = Pow $ T.scalarPow zero
   (Pow v1) + (Pow v2) = Pow $ zipWithI (+) v1 v2
   (Pow v1) - (Pow v2) = Pow $ zipWithI (-) v1 v2
@@ -171,7 +172,7 @@ instance (Tensor t r, Fact m) => Additive.C (CycRep t P m r) where
   {-# INLINABLE (-) #-}
   {-# INLINABLE negate #-}
 
-instance (Tensor t r, Fact m) => Additive.C (CycRep t D m r) where
+instance (TensorPowDec t r, Fact m) => Additive.C (CycRep t D m r) where
   zero = Dec $ T.scalarPow zero -- scalarPow works because it's zero
   (Dec v1) + (Dec v2) = Dec $ zipWithI (+) v1 v2
   (Dec v1) - (Dec v2) = Dec $ zipWithI (-) v1 v2
@@ -220,11 +221,11 @@ instance (Fact m, CRTElt t r) => Ring.C (CycRepEC t m r) where
   {-# INLINABLE (*) #-}
 
 
-instance (Ring r, Tensor t r, Fact m) => Module.C r (CycRep t P m r) where
+instance (Ring r, TensorPowDec t r, Fact m) => Module.C r (CycRep t P m r) where
   r *> (Pow v) = Pow $ fmapI (r *) v
   {-# INLINABLE (*>) #-}
 
-instance (Ring r, Tensor t r, Fact m) => Module.C r (CycRep t D m r) where
+instance (Ring r, TensorPowDec t r, Fact m) => Module.C r (CycRep t D m r) where
   r *> (Dec v) = Dec $ fmapI (r *) v
   {-# INLINABLE (*>) #-}
 
@@ -237,19 +238,19 @@ instance (CRTElt t r, Fact m) => Module.C r (CycRepEC t m r) where
 -- | \(R_p\) is an \(\F_{p^d}\)-module when \(d\) divides \(\varphi(m)\), by
 -- applying \(d\)-dimensional \(\F_p\)-linear transform on \(d\)-dim chunks of
 -- powerful basis coeffs.
-instance (GFCtx fp d, Fact m, Tensor t fp, Module (GF fp d) (t m fp))
+instance (GFCtx fp d, Fact m, TensorPowDec t fp, Module (GF fp d) (t m fp))
          => Module.C (GF fp d) (CycRep t P m fp) where
   -- can use any r-basis to define module mult, but must be
   -- consistent.
   r *> (Pow v) = Pow $ r LP.*> v
 
 
-instance (Reduce a b, Tensor t a, Tensor t b, Fact m)
+instance (Reduce a b, TensorPowDec t a, TensorPowDec t b, Fact m)
          => Reduce (CycRep t P m a) (CycRep t P m b) where
   reduce (Pow v) = Pow $ fmapI reduce v
   {-# INLINABLE reduce #-}
 
-instance (Reduce a b, Tensor t a, Tensor t b, Fact m)
+instance (Reduce a b, TensorPowDec t a, TensorPowDec t b, Fact m)
     => Reduce (CycRep t D m a) (CycRep t D m b) where
   reduce (Dec v) = Dec $ fmapI reduce v
   {-# INLINABLE reduce #-}
@@ -260,24 +261,24 @@ instance (Reduce a b, Tensor t a, Tensor t b, Fact m)
 type instance LiftOf (CycRep t P m r) = CycRep t P m (LiftOf r)
 type instance LiftOf (CycRep t D m r) = CycRep t D m (LiftOf r)
 
-instance (Lift' r, Tensor t r, Tensor t (LiftOf r), Fact m)
+instance (Lift' r, TensorPowDec t r, TensorPowDec t (LiftOf r), Fact m)
          => Lift' (CycRep t P m r) where
   lift (Pow v) = Pow $ fmapI lift v
   {-# INLINABLE lift #-}
 
-instance (Lift' r, Tensor t r, Tensor t (LiftOf r), Fact m)
+instance (Lift' r, TensorPowDec t r, TensorPowDec t (LiftOf r), Fact m)
          => Lift' (CycRep t D m r) where
   lift (Dec v) = Dec $ fmapI lift v
   {-# INLINABLE lift #-}
 
 -- CJP: no Lift' for C because CRT basis may not exist for target type
 
-instance (Rescale a b, Tensor t a, Tensor t b, Fact m)
+instance (Rescale a b, TensorPowDec t a, TensorPowDec t b, Fact m)
          => Rescale (CycRep t P m a) (CycRep t P m b) where
   rescale (Pow v) = Pow $ fmapI rescale v
   {-# INLINABLE rescale #-}
 
-instance (Rescale a b, Tensor t a, Tensor t b, Fact m)
+instance (Rescale a b, TensorPowDec t a, TensorPowDec t b, Fact m)
          => Rescale (CycRep t D m a) (CycRep t D m b) where
   rescale (Dec v) = Dec $ fmapI rescale v
   {-# INLINABLE rescale #-}
@@ -291,10 +292,10 @@ instance (Rescale a b, Tensor t a, Tensor t b, Fact m)
 -- wouldn't be efficient, and (2) their superclass constraints are not
 -- satisfied anyway (e.g., Ring for P rep).
 
-mulGPow :: (Fact m, Tensor t r) => CycRep t P m r -> CycRep t P m r
+mulGPow :: (Fact m, TensorG t r) => CycRep t P m r -> CycRep t P m r
 mulGPow (Pow v) = Pow $ T.mulGPow v
 
-mulGDec :: (Fact m, Tensor t r) => CycRep t D m r -> CycRep t D m r
+mulGDec :: (Fact m, TensorG t r) => CycRep t D m r -> CycRep t D m r
 mulGDec (Dec v) = Dec $ T.mulGDec v
 
 mulGCRTC :: (Fact m, TensorCRT t Maybe r)
@@ -309,12 +310,12 @@ mulGCRTC (CRTC s v) = CRTC s $ mulGCRTCS s v
 -- WARNING: this implementation is not a constant-time algorithm, so
 -- information about the argument may be leaked through a timing
 -- channel.
-divGPow :: (Fact m, Tensor t r) => CycRep t P m r -> Maybe (CycRep t P m r)
+divGPow :: (Fact m, TensorG t r) => CycRep t P m r -> Maybe (CycRep t P m r)
 {-# INLINABLE divGPow #-}
 divGPow (Pow v) = Pow <$> T.divGPow v
 
 -- | Similar to 'divGPow'.
-divGDec :: (Fact m, Tensor t r) => CycRep t D m r -> Maybe (CycRep t D m r)
+divGDec :: (Fact m, TensorG t r) => CycRep t D m r -> Maybe (CycRep t D m r)
 {-# INLINABLE divGDec #-}
 divGDec (Dec v) = Dec <$> T.divGDec v
 
@@ -326,9 +327,9 @@ divGCRTC (CRTC s v) = CRTC s $ divGCRTCS s v
 -- | Yield the scaled squared norm of \(g_m \cdot e\) under
 -- the canonical embedding, namely,
 -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\) .
-gSqNorm :: (TensorGSqNorm t r, Fact m) => CycRep t D m r -> r
-gSqNorm (Dec v) = gSqNormDec v
-{-# INLINABLE gSqNorm #-}
+gSqNormDec :: (TensorGSqNorm t r, Fact m) => CycRep t D m r -> r
+gSqNormDec (Dec v) = T.gSqNormDec v
+{-# INLINABLE gSqNormDec #-}
 
 -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\) in
 -- the decoding basis, where \(D\) has scaled variance \(v\).
@@ -370,14 +371,9 @@ cosetGaussian =
 ----- inter-ring operations
 
 -- | Embed into an extension ring, for the powerful basis.
-embedPow :: (Tensor t r, m `Divides` m') => CycRep t P m r -> CycRep t P m' r
+embedPow :: (TensorPowDec t r, m `Divides` m') => CycRep t P m r -> CycRep t P m' r
 embedPow (Pow v) = Pow $ T.embedPow v
 {-# INLINABLE embedPow #-}
-
--- | Embed into an extension ring, for the decoding basis.
-embedDec :: (Tensor t r, m `Divides` m') => CycRep t D m r -> CycRep t D m' r
-embedDec (Dec v) = Dec $ T.embedDec v
-{-# INLINABLE embedDec #-}
 
 -- | Embed into an extension ring, for the CRT basis.  (The output is
 -- an 'Either' because the extension ring might not support 'C'.)
@@ -402,13 +398,13 @@ embedCRTE x@(CRTE _ v) =
     Right _ -> Left $ embedPow $ toPow x
 
 -- | Twace into a subring, for the powerful basis.
-twacePow :: (Tensor t r, m `Divides` m')
+twacePow :: (TensorPowDec t r, m `Divides` m')
          => CycRep t P m' r -> CycRep t P m r
 twacePow (Pow v) = Pow $ twacePowDec v
 {-# INLINABLE twacePow #-}
 
 -- | Twace into a subring, for the decoding basis.
-twaceDec :: (Tensor t r, m `Divides` m') => CycRep t D m' r -> CycRep t D m r
+twaceDec :: (TensorPowDec t r, m `Divides` m') => CycRep t D m' r -> CycRep t D m r
 twaceDec (Dec v) = Dec $ twacePowDec v
 {-# INLINABLE twaceDec #-}
 
@@ -435,18 +431,18 @@ twaceCRTE x@(CRTE _ v) =
 
 -- | Yield the \(\O_m\)-coefficients of an \(\O_{m'}\)-element,
 -- with respect to the relative powerful \(\O_m\)-basis.
-coeffsPow :: (Tensor t r, m `Divides` m') => CycRep t P m' r -> [CycRep t P m r]
+coeffsPow :: (TensorPowDec t r, m `Divides` m') => CycRep t P m' r -> [CycRep t P m r]
 {-# INLINABLE coeffsPow #-}
 coeffsPow (Pow v) = LP.map Pow $ coeffs v
 
 -- | Yield the \(\O_m\)-coefficients of an \(\O_{m'}\) element,
 -- with respect to the relative decoding \(\O_m\)-basis.
-coeffsDec :: (Tensor t r, m `Divides` m') => CycRep t D m' r -> [CycRep t D m r]
+coeffsDec :: (TensorPowDec t r, m `Divides` m') => CycRep t D m' r -> [CycRep t D m r]
 {-# INLINABLE coeffsDec #-}
 coeffsDec (Dec v) = LP.map Dec $ coeffs v
 
 -- | The relative powerful basis of \(\O_{m'} / \O_m\).
-powBasis :: (Tensor t r, m `Divides` m') => Tagged m [CycRep t P m' r]
+powBasis :: (TensorPowDec t r, m `Divides` m') => Tagged m [CycRep t P m' r]
 {-# INLINABLE powBasis #-}
 powBasis = (Pow <$>) <$> powBasisPow
 
@@ -493,17 +489,17 @@ class ToCRT c rep r where
   -- | Convert to an appropriate CRT-basis representation.
   toCRT :: (Fact m) => c rep m r -> Either (c E m r) (c C m r)
 
-instance Tensor t r => ToPowDec (CycRep t) P r where
+instance TensorPowDec t r => ToPowDec (CycRep t) P r where
   toPow = id
-  toDec (Pow v) = Dec $ lInv v
+  toDec (Pow v) = Dec $ powToDec v
 
 instance CRTElt t r => ToCRT (CycRep t) P r where
   toCRT (Pow v) = case crtSentinel of
                     Right s -> Right $ CRTC s $ crtCS s v
                     Left  s -> Left  $ CRTE s $ runIdentity crt $ fmapI toExt v
 
-instance Tensor t r => ToPowDec (CycRep t) D r where
-  toPow (Dec v) = Pow $ l v
+instance TensorPowDec t r => ToPowDec (CycRep t) D r where
+  toPow (Dec v) = Pow $ decToPow v
   toDec = id
 
 instance CRTElt t r => ToCRT (CycRep t) D r where

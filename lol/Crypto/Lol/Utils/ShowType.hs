@@ -99,6 +99,9 @@ instance (Mod (ZqBasic q i), Show i) => Show (ArgType (ZqBasic q i)) where
 instance Show (ArgType Int64) where
   show _ = "Int64"
 
+instance Show (ArgType Double) where
+  show _ = "Double"
+
 instance Show (ArgType (Complex Double)) where
   show _ = "Complex Double"
 

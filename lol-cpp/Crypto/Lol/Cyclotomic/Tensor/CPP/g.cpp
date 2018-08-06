@@ -13,111 +13,86 @@ Portability : POSIX
 #include "tensor.h"
 #include "common.h"
 
-template <typename ring> void gPow (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
+template <typename abgrp> void gPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
   if (p == 2) {return;}
-  hDim_t tmp1 = rts*(p-1);
-  hDim_t tmp2 = tmp1 - rts;
-  hDim_t blockOffset, modOffset;
-  hDim_t i;
-  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-    hDim_t tmp3 = blockOffset * tmp1;
-    for (modOffset = 0; modOffset < rts; ++modOffset) {
-      hDim_t tensorOffset = tmp3 + modOffset;
-      ring last = y[(tensorOffset + tmp2)];
-      for (i = p-2; i != 0; --i) {
-        hDim_t idx = tensorOffset + i * rts;
-        y[idx] += (last - y[(idx-rts)]);
+
+  for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
+    for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
+      // The new value y'_i = y_i + y_{p-1} - y_{i-1} where i > 0
+      abgrp y_last = y[ridx + (p-2)*rts];
+      for (hDim_t off = ridx + (p-2)*rts; off > ridx; off -= rts) {
+        y[off] += (y_last - y[off-rts]);
       }
-      y[tensorOffset] += last;
+      // y_0 = y_0 + y_{p-2}
+      y[ridx] += y_last;
     }
   }
 }
 
-template <typename ring> void gDec (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
+template <typename abgrp> void gDec (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
   if (p == 2) {return;}
-  hDim_t tmp1 = rts*(p-1);
-  hDim_t blockOffset;
-  hDim_t modOffset;
-  hDim_t i;
 
-  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-    hDim_t tmp2 = blockOffset * tmp1;
-    for (modOffset = 0; modOffset < rts; ++modOffset) {
-      hDim_t tensorOffset = tmp2 + modOffset;
-      ring acc = y[tensorOffset];
-      for (i = p-2; i != 0; --i) {
-        hDim_t idx = tensorOffset + i * rts;
-        acc += y[idx];
-        y[idx] -= y[(idx-rts)];
+  for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
+    for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
+      abgrp sum = y[ridx];
+      // The new value y'_i = y_i - y_{i-1} where i > 0
+      for (hDim_t off = ridx + (p-2)*rts; off > ridx; off -= rts) {
+        sum += y[off];
+        y[off] -= y[off-rts];
       }
-      y[tensorOffset] += acc;
+      // At this point, sum = Σ y_i
+      // y_0 = y_0 + Σ y_i
+      y[ridx] += sum;
     }
   }
 }
 
-template <typename ring> void gInvPow (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
+template <typename abgrp> void gInvPow (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
   if (p == 2) {return;}
-  hDim_t tmp1 = rts * (p-1);
-  hDim_t blockOffset, modOffset;
-  hDim_t i;
 
-  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-    hDim_t tmp2 = blockOffset * tmp1;
-    for (modOffset = 0; modOffset < rts; ++modOffset) {
-      hDim_t tensorOffset = tmp2 + modOffset;
-      ring lelts;
-      lelts = 0;
-      for (i = 0; i < p-1; ++i) {
-        lelts += y[(tensorOffset + i*rts)];
+  for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
+    for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
+      // The new value y'_i = (p-i+1) * Σ_{j=1}^i y_j - i *
+      // Σ_{j=i+1}^{p-1} y_j We do this by letting sum = Σ y_i and
+      // having acc = sum at first. On each iteration, we let acc +=
+      // (sum - p*y_i)
+      abgrp sum;
+      sum = 0;
+      for (hDim_t off = ridx; off < ridx + (p-1)*rts; off += rts) {
+        sum += y[off];
       }
-      ring relts;
-      relts = 0;
-      for (i = p-2; i >= 0; --i) {
-        hDim_t idx = tensorOffset + i*rts;
-        ring z = y[idx];
-        ring lmul, rmul;
-        lmul = p-1-i;
-        rmul = i+1;
-        y[idx] = lmul * lelts - rmul * relts;
-        lelts -= z;
-        relts += z;
+      abgrp acc = sum;
+      for (hDim_t off = ridx + (p-2)*rts; off >= ridx; off -= rts) {
+        abgrp tmp = y[off] * p;
+        y[off] = acc;
+        acc += (sum - tmp);
       }
     }
   }
 }
 
-template <typename ring> void gInvDec (ring* y, hDim_t lts, hDim_t rts, hDim_t p)
+template <typename abgrp> void gInvDec (abgrp* y, hDim_t lts, hDim_t rts, hDim_t p)
 {
   if (p == 2) {return;}
-  hDim_t blockOffset;
-  hDim_t modOffset;
-  hDim_t i;
-  hDim_t tmp1 = rts*(p-1);
 
-  for (blockOffset = 0; blockOffset < lts; ++blockOffset) {
-    hDim_t tmp2 = blockOffset*tmp1;
-    for (modOffset = 0; modOffset < rts; ++modOffset) {
-      hDim_t tensorOffset = tmp2 + modOffset;
-      ring lastOut;
-      lastOut = 0;
-      for (i=1; i < p; ++i) {
-        ring ri;
-        ri = i;
-        lastOut += (ri * y[(tensorOffset + (i-1)*rts)]);
+  for (hDim_t lblock = 0, lidx = 0; lblock < lts; ++lblock, lidx += (p-1)*rts) {
+    for (hDim_t rblock = 0, ridx = lidx; rblock < rts; ++rblock, ++ridx) {
+      // sum = Σ (i+1)*y_i, i=0, ..., p-2
+      abgrp sum;
+      sum = 0;
+      for (hDim_t i = 0, off = ridx; i < p-1; ++i, off += rts) {
+        sum += (y[off] * (i+1));
       }
-      ring rp;
-      rp = p;
-      ring acc = lastOut;
-      for (i = p-2; i > 0; --i) {
-        hDim_t idx = tensorOffset + i*rts;
-        ring tmp = acc;
-        acc -= y[idx]*rp;
-        y[idx] = tmp;
+      // The new value y'_i = Σ j*y_j - p*Σ{j=i+1}^{p-1} y_j
+      // We do this by setting y'_i = sum and then letting sum -= p*y_i
+      for (hDim_t off = ridx + (p-2)*rts; off >= ridx; off -= rts) {
+        abgrp tmp = y[off];
+        y[off] = sum;
+        sum -= (tmp * p);
       }
-      y[tensorOffset] = acc;
     }
   }
 }
@@ -132,6 +107,11 @@ extern "C" void tensorGPowRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t
   Zq::q = q;
   tensorFuserPrime(y, gPow, totm, peArr, sizeOfPE, q);
   canonicalizeZq(y,totm,q);
+}
+
+extern "C" void tensorGPowDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+{
+  tensorFuserPrime (y, gPow, totm, peArr, sizeOfPE, 0);
 }
 
 extern "C" void tensorGPowC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
@@ -149,6 +129,11 @@ extern "C" void tensorGDecRq (Zq* y, hDim_t totm, PrimeExponent* peArr, hShort_t
   Zq::q = q;
   tensorFuserPrime (y, gDec, totm, peArr, sizeOfPE, q);
   canonicalizeZq(y,totm,q);
+}
+
+extern "C" void tensorGDecDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+{
+  tensorFuserPrime (y, gDec, totm, peArr, sizeOfPE, 0);
 }
 
 extern "C" void tensorGDecC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
@@ -206,6 +191,18 @@ extern "C" hShort_t tensorGInvPowRq (Zq* y, hDim_t totm, PrimeExponent* peArr, h
   return 1;
 }
 
+extern "C" hShort_t tensorGInvPowDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+{
+  tensorFuserPrime (y, gInvPow, totm, peArr, sizeOfPE, 0);
+
+  double oddrad = (double)oddRad(peArr, sizeOfPE);
+
+  for(int i = 0; i < totm; i++) {
+    y[i] /= oddrad;
+  }
+  return 1;
+}
+
 extern "C" hShort_t tensorGInvPowC (Complex* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
   tensorFuserPrime (y, gInvPow, totm, peArr, sizeOfPE, 0);
@@ -254,6 +251,18 @@ extern "C" hShort_t tensorGInvDecRq (Zq* y, hDim_t totm, PrimeExponent* peArr, h
   }
 
   canonicalizeZq(y,totm,q);
+  return 1;
+}
+
+extern "C" hShort_t tensorGInvDecDouble (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
+{
+  tensorFuserPrime (y, gInvDec, totm, peArr, sizeOfPE, 0);
+
+  double oddrad = (double)oddRad(peArr, sizeOfPE);
+
+  for(int i = 0; i < totm; i++) {
+    y[i] /= oddrad;
+  }
   return 1;
 }
 

@@ -27,8 +27,8 @@ import Control.Applicative
 import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol
-import Crypto.Lol.Utils.Benchmarks (bgroup, mkBench, mkBenchIO, Benchmark)
 import Crypto.Lol.Types
+import Crypto.Lol.Utils.Benchmarks (Benchmark, bgroup, mkBench, mkBenchIO)
 import Crypto.Random
 
 -- | Benchmarks for single-index 'Cyc' operations.
@@ -100,7 +100,7 @@ bench_lInv = adviseDec  . advisePow
 {-# INLINE bench_liftPow #-}
 -- lift an element in the Pow basis
 bench_liftPow :: _ => Cyc t m r -> Cyc t m r'
-bench_liftPow = (liftCyc Pow) . advisePow
+bench_liftPow = liftPow . advisePow
 
 {-# INLINABLE bench_mulgPow #-}
 -- multiply by g when input is in Pow basis

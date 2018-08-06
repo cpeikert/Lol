@@ -1,6 +1,6 @@
 {-|
 Module      : Crypto.Lol.Cyclotomic.Language
-Description : Interfaces for operations on cyclotomic rings.
+Description : Abstract interfaces for operations on cyclotomic rings.
 Copyright   : (c) Chris Peikert, 2018-
 License     : GPL-3
 Maintainer  : ecrockett0@gmail.com
@@ -15,14 +15,17 @@ Portability : POSIX
   \( \def\O{\mathcal{O}} \)
 -}
 
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
 module Crypto.Lol.Cyclotomic.Language
 where
 
-import Crypto.Lol.Factored
 import Crypto.Lol.Prelude
 
 import Control.Monad.Random (MonadRandom)
@@ -31,61 +34,70 @@ import Control.Monad.Random (MonadRandom)
 data Basis = Pow | Dec
 
 -- | Operations on cyclotomics.
-class Cyclotomic c r where
-  -- | Embed a scalar.
-  scalarCyc :: Fact m => r -> c m r
-
+class Cyclotomic cmr where
   -- | Multiply by the special element \( g \).
-  mulG :: Fact m => c m r -> c m r
+  mulG :: cmr -> cmr
 
   -- | Divide by the special element \( g \), returning 'Nothing' if
   -- the input is not evenly divisible.
-  divG :: Fact m => c m r -> Maybe (c m r)
+  divG :: cmr -> Maybe cmr
 
-  -- | Yield an equivalent element that /may/ be in a CRT
-  -- representation.  This can serve as an optimization hint. E.g.,
-  -- call 'adviseCRT' prior to multiplying the same value by many
-  -- other values.
-  adviseCRT :: Fact m => c m r -> c m r
-  -- | Same as 'adviseCRT', but for the powerful basis.
-  advisePow :: Fact m => c m r -> c m r
-  -- | Same as 'adviseCRT', but for the decoding basis.
-  adviseDec :: Fact m => c m r -> c m r
+  -- | Yield an equivalent element that /may/ be in
+  -- powerful\/decoding\/CRT representation.  This can serve as an
+  -- optimization hint. E.g., call 'adviseCRT' prior to multiplying a
+  -- value by many other values.
+  advisePow, adviseDec, adviseCRT :: cmr -> cmr
 
-class GSqNorm c r where
+class GSqNormCyc cm r where
   -- | Yield the scaled squared norm of \( g_m \cdot e \) under the
   -- canonical embedding, namely, \( \hat{m}^{-1} \cdot \| \sigma(g_m
   -- \cdot e) \|^2 \).
-  gSqNorm :: Fact m => c m r -> r
+  gSqNorm :: cm r -> r
 
 -- | Sampling from tweaked Gaussian distributions over cyclotomic
 -- number fields.
-class GaussianCyc c q where
+class GaussianCyc cmq where
   -- | Sample from the "tweaked" Gaussian distribution \( t \cdot D
   -- \), where \( D \) has scaled variance \( v \).
-  tweakedGaussian :: (Fact m, ToRational v, MonadRandom rnd)
-    => v -> rnd (c m q)
+  tweakedGaussian :: (ToRational v, MonadRandom rnd) => v -> rnd cmq
+
+-- | Convenient type synonym that looks like a class constraint.
+type RoundedGaussianCyc cm z =
+  (ToInteger z, GaussianCyc (cm Double), FunctorCyc cm Double z)
+
+-- | Sample from the tweaked Gaussian with given scaled variance,
+-- deterministically rounded using the decoding basis.
+roundedGaussian :: forall cm z v rnd .
+  (RoundedGaussianCyc cm z, ToRational v, MonadRandom rnd)
+  => v -> rnd (cm z)
+roundedGaussian svar = fmapCyc (Just Dec) (roundMult one) <$>
+                       (tweakedGaussian svar :: rnd (cm Double))
+
+{-
 
 -- | Sampling from /discretized/ tweaked Gaussian distributions over
 -- cyclotomic number rings.
-class RoundedGaussianCyc c z where
+class RoundedGaussianCyc cmz where
   -- | Sample from the tweaked Gaussian with given scaled variance,
   -- deterministically rounded using the decoding basis.
-  roundedGaussian :: (Fact m, ToRational v, MonadRandom rnd)
-                  => v -> rnd (c m z)
+  roundedGaussian :: (ToRational v, MonadRandom rnd) => v -> rnd cmz
+
+-}
+
+-- CJP TODO: see if we can implement cosetGaussian generically using
+-- ZipWithCyc class
 
 -- | Sampling from tweaked Gaussian distributions, discretized to
 -- mod-p cosets of cyclotomic number rings.
-class CosetGaussianCyc c zp where
+class CosetGaussianCyc rp where
   -- | Sample from the tweaked Gaussian with scaled variance \( v
   -- \cdot p^2 \), deterministically rounded to the given coset of
   -- \( R_p \) using the decoding basis.
-  cosetGaussian :: (Fact m, ToRational v, MonadRandom rnd)
-                => v -> c m zp -> rnd (c m (LiftOf zp))
-
+  cosetGaussian :: (ToRational v, MonadRandom rnd)
+                => v -> rp -> rnd (LiftOf rp)
 
 -- | Cyclotomic extensions \( \O_{m'}/\O_m \).
-class Cyclotomic c r => ExtensionCyc c r where
+class ExtensionCyc c r where
   -- | Embed into a cyclotomic extension.
   embed :: (m `Divides` m') => c m r -> c m' r
 
@@ -94,7 +106,7 @@ class Cyclotomic c r => ExtensionCyc c r where
   -- 'embed' (i.e., @twace . embed == id@).
   twace :: (m `Divides` m') => c m' r -> c m r
 
-  -- | The relative powerful basis of the extension.
+  -- | The relative powerful/decoding bases of the extension.
   powBasis :: (m `Divides` m') => Tagged m [c m' r]
 
   -- | Yield the coefficient vector with respect to the given
@@ -112,27 +124,42 @@ class ExtensionCyc c r => CRTSetCyc c r where
   -- | The relative mod-@r@ CRT set of the extension.
   crtSet :: (m `Divides` m') => Tagged m [c m' r]
 
--- | Reduce from one base ring to another, for any cyclotomic index.
-class ReduceCyc c a b where
-  -- | Basis-independent reduce.
-  reduceCyc :: Fact m => c m a -> c m b
+-- | Map over coefficients in a specified basis.
+class FunctorCyc cm a b where
+  -- | Map in the specified basis (where 'Nothing' indicates that
+  -- any 'Basis' may be used).
+  fmapCyc :: Maybe Basis -> (a -> b) -> cm a -> cm b
 
-class LiftCyc c r where
-  -- | Lift using the specified basis.
-  liftCyc :: Fact m => Basis -> c m r -> c m (LiftOf r)
+-- | Convenient specializations of 'fmapCyc'.
+fmapAny, fmapPow, fmapDec :: FunctorCyc cm a b => (a -> b) -> cm a -> cm b
+fmapAny = fmapCyc   Nothing
+fmapPow = fmapCyc $ Just Pow
+fmapDec = fmapCyc $ Just Dec
 
-liftPow, liftDec :: (LiftCyc c r, Fact m) => c m r -> c m (LiftOf r)
--- | 'liftCyc' specialized to the powerful basis.
-liftPow = liftCyc Pow
--- | 'liftCyc' specialized to the decoding basis.
-liftDec = liftCyc Dec
+-- | Reduce on a cyclotomic (in an arbitrary basis).
+reduceCyc :: (FunctorCyc cm a b, Reduce a b) => cm a -> cm b
+reduceCyc = fmapAny reduce
 
--- | Rescaling on cyclotomics from one base ring to another.
-class RescaleCyc c a b where
+-- | Convenient type synonym that looks like a class constraint.
+type LiftCyc cm a = (Lift' a, FunctorCyc cm a (LiftOf a))
+
+-- | Lift a cyclotomic in the specified basis (or any basis).
+liftCyc :: (LiftCyc cm a) => Maybe Basis -> cm a -> cm (LiftOf a)
+liftCyc = flip fmapCyc lift
+
+liftAny, liftPow, liftDec :: (LiftCyc cm a) => cm a -> cm (LiftOf a)
+liftAny = liftCyc   Nothing
+liftPow = liftCyc $ Just Pow
+liftDec = liftCyc $ Just Dec
+
+-- | Rescaling on cyclotomics from one base ring to another. (This is
+-- a separate class because there are optimized rescaling algorithms
+-- that can't be implemented using 'FunctorCyc'.)
+class RescaleCyc cm a b where
   -- | Rescale in the given basis.
-  rescaleCyc :: Fact m => Basis -> c m a -> c m b
+  rescaleCyc :: Basis -> cm a -> cm b
 
-rescalePow, rescaleDec :: (RescaleCyc c a b, Fact m) => c m a -> c m b
+rescalePow, rescaleDec :: (RescaleCyc cm a b) => cm a -> cm b
 -- | 'rescaleCyc' specialized to the powerful basis.
 rescalePow = rescaleCyc Pow
 -- | 'rescaleCyc' specialized to the decoding basis.

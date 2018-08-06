@@ -34,7 +34,12 @@ indexing.
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Crypto.Lol.Cyclotomic.Tensor
-( Tensor(..), TensorCRT(..), TensorGaussian(..), TensorGSqNorm(..), TensorCRTSet(..)
+( TensorPowDec(..)
+, TensorG(..)
+, TensorCRT(..)
+, TensorGaussian(..)
+, TensorGSqNorm(..)
+, TensorCRTSet(..)
 -- * Top-level CRT functions
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
@@ -74,7 +79,7 @@ import qualified Data.Vector.Unboxed     as U
 -- index \(m\).
 
 -- | __WARNING:__ as with all fixed-point arithmetic, the methods
--- in 'Tensor' may result in overflow (and thereby incorrect answers
+-- in 'TensorPowDec' may result in overflow (and thereby incorrect answers
 -- and potential security flaws) if the input arguments are too close
 -- to the bounds imposed by the base type.  The acceptable range of
 -- inputs for each method is determined by the linear transform it
@@ -85,15 +90,34 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
        -- include Functor and Foldable because the other ForallFact1
        -- constraints don't imply them
        IFunctor t, IFElt t r, Additive r)
-  => Tensor t r where
+  => TensorPowDec t r where
 
   -- | Convert a scalar to a tensor in the powerful basis.
   scalarPow :: Fact m => r -> t m r
 
-  -- | 'l' converts from decoding-basis representation to
-  -- powerful-basis representation; 'lInv' is its inverse.
-  l, lInv :: Fact m => t m r -> t m r
+  -- | Convert between the decoding-basis and powerful-basis
+  -- representations.
+  powToDec, decToPow :: Fact m => t m r -> t m r
 
+  -- | The @twace@ linear transformation, which is the same in both the
+  -- powerful and decoding bases.
+  twacePowDec :: m `Divides` m' => t m' r -> t m r
+
+  -- | The @embed@ linear transformations, for the powerful and
+  -- decoding bases.
+  embedPow, embedDec :: m `Divides` m' => t m r -> t m' r
+
+  -- | Map a tensor in the powerful/decoding/CRT basis, representing
+  -- an \(\O_{m'}\) element, to a vector of tensors representing
+  -- \(\O_m\) elements in the same kind of basis.
+  coeffs :: m `Divides` m' => t m' r -> [t m r]
+
+  -- | The relative powerful basis of \( \O_{m'}/\O_{m} \),
+  -- w.r.t. the powerful basis of \( \O_{m'} \).
+  powBasisPow :: m `Divides` m' => Tagged m [t m' r]
+
+-- | Encapsulates multiplication and division by \(g_m\)
+class TensorPowDec t r => TensorG t r where
   -- | Multiply by \(g_m\) in the powerful/decoding basis
   mulGPow, mulGDec :: Fact m => t m r -> t m r
 
@@ -102,25 +126,9 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
   -- exactly when the input is not divisible by \(g_m\).
   divGPow, divGDec :: Fact m => t m r -> Maybe (t m r)
 
-  -- | The @twace@ linear transformation, which is the same in both the
-  -- powerful and decoding bases.
-  twacePowDec :: (m `Divides` m') => t m' r -> t m r
-
-  -- | The @embed@ linear transformations, for the powerful and
-  -- decoding bases.
-  embedPow, embedDec :: (m `Divides` m') => t m r -> t m' r
-
-  -- | Map a tensor in the powerful\/decoding\/CRT basis, representing
-  -- an \(\O_{m'}\) element, to a vector of tensors representing
-  -- \(\O_m\) elements in the same kind of basis.
-  coeffs :: (m `Divides` m') => t m' r -> [t m r]
-
-  -- | The powerful extension basis w.r.t. the powerful basis.
-  powBasisPow :: (m `Divides` m') => Tagged m [t m' r]
-
 -- | Encapsulates functions related to the Chinese-remainder
 -- representation/transform.
-class (Tensor t r, CRTrans mon r, ForallFact2 (Module.C r) t r)
+class (TensorPowDec t r, CRTrans mon r, ForallFact2 (Module.C r) t r)
   => TensorCRT t mon r where
   -- | A tuple of all the operations relating to the CRT basis, in a
   -- single 'Maybe' value for safety.  Clients should typically not
@@ -150,7 +158,8 @@ class TensorGaussian t q where
   tweakedGaussianDec :: (ToRational v, Fact m, MonadRandom rnd)
                         => v -> rnd (t m q)
 
--- | A coefficient tensor that supports taking norms under the canonical embedding.
+-- | A coefficient tensor that supports taking norms under the
+-- canonical embedding.
 class TensorGSqNorm t r where
   -- | Given the coefficient tensor of \(e\) with respect to the
   -- decoding basis of \(R\), yield the (scaled) squared norm of
@@ -158,9 +167,9 @@ class TensorGSqNorm t r where
   -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\).
   gSqNormDec :: Fact m => t m r -> r
 
--- | A 'Tensor' that supports relative CRT sets for the element type
+-- | A 'TensorPowDec' that supports relative CRT sets for the element type
 -- 'fp' representing a prime-order finite field.
-class (Tensor t fp) => TensorCRTSet t fp where
+class (TensorPowDec t fp) => TensorCRTSet t fp where
   -- | Relative mod-@p@ CRT set of \( \O_{m'}/\O_{m} \) in the
   -- decoding basis.
   crtSetDec :: (m `Divides` m', Coprime (PToF (CharOf fp)) m')
@@ -233,7 +242,7 @@ fKron mat = tagT $ go $ sUnF (sing :: SFactored m)
             return $ MKron rest' mat'
 
 -- | For a prime power \(p^e\), converts any matrix \(M\) for
--- prime \(p\) to \(\vece{1}_(p^{e-1}) \otimes M\), where \(\vece{1}\)
+-- prime \(p\) to \(\vec{1}_(p^{e-1}) \otimes M\), where \(\vec{1}\)
 -- denotes the all-1s vector.
 ppKron :: forall pp r mon . (PPow pp, Monad mon)
           => (forall p . (Prime p) => TaggedT p mon (KronC r))
@@ -283,7 +292,6 @@ twCRTsPPow = do
   jToPow <- pureT indexToPowPPow
   (wPow, _) <- crtInfo
   (MC _ _ gCRT) <- gCRTPPow
-
   return $ MC phi phi (\j i -> wPow (jToPow j * negate (iToZms i)) * gCRT i 0)
 
 gCRTPPow, gInvCRTPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (KronC r)
@@ -395,7 +403,7 @@ indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
             in tag (mpps, phi, phi', tots)
 
 -- | A vector of \(\varphi(m)\) entries, where the \(i\)th entry is
--- the index into the powerful\/decoding basis of \(\O_{m'}\) of the
+-- the index into the powerful/decoding basis of \(\O_{m'}\) of the
 -- \(i\)th entry of the powerful/decoding basis of \(\O_m\).
 extIndicesPowDec :: (m `Divides` m') => Tagged '(m, m') (U.Vector Int)
 {-# INLINABLE extIndicesPowDec #-}
