@@ -31,11 +31,12 @@ over a common subring.
 {-# LANGUAGE UndecidableInstances       #-}
 
 module Crypto.Lol.Cyclotomic.Linear
-( Linear, ExtendLinIdx
+( Linear, ExtendLinCtx
 , linearDec, evalLin, liftLin, extendLin
 ) where
 
 import Crypto.Lol.Cyclotomic.Language
+import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
@@ -47,7 +48,9 @@ import Algebra.Additive as Additive (C)
 import Control.Applicative
 import Control.DeepSeq
 
-import Data.Word
+import qualified Data.Vector         as V
+import qualified Data.Vector.Unboxed as U
+import           Data.Word
 
 -- | An \(E\)-linear function from \(R\) to \(S\).
 
@@ -104,22 +107,27 @@ liftLin b (RD ys) = RD $ liftCyc b <$> ys
 
 -- | A convenient constraint synonym for extending a linear function
 -- to larger rings.
-type ExtendLinIdx e r s e' r' s' =
-  (Fact r, e ~ FGCD r e', r' ~ FLCM r e', -- these imply R'=R\otimes_E E'
-   e' `Divides` s', s `Divides` s') -- lcm(s,e')|s' <=> (S+E') \subseteq S'
+type ExtendLinCtx c e r s e' r' s' z =
+  (e ~ FGCD r e',                   -- E = R \cap E'
+   FLCM r e' `Divides` r',          -- (R+E') \subseteq R'
+   e' `Divides` s', s `Divides` s', -- (S+E') \subseteq S'
+   ExtensionCyc c z, Additive (c s' z))
 
 -- | Extend an \(E\)-linear function \(R\to S\) to an \(E'\)-linear
--- function \(R'\to S'\). (Mathematically, such extension only requires
--- \(\lcm(r,e') | r'\) (not equality), but this generality would
--- significantly complicate the implementation, and for our purposes
--- there's no reason to use any larger \(r'\).)
-extendLin :: (ExtendLinIdx e r s e' r' s', ExtensionCyc c z)
-           => Linear c e r s z -> Linear c e' r' s' z
--- CJP: this simple implementation works because R/E and R'/E' have
--- identical decoding bases, because R' \cong R \otimes_E E'.  If we
--- relax the constraint on E then we'd have to change the
--- implementation to something more difficult.
-extendLin (RD ys) = RD (embed <$> ys)
+-- function \(R'\to S'\).
+extendLin :: forall c e r s e' r' s' z .
+  (ExtendLinCtx c e r s e' r' s' z)
+  => Linear c e r s z -> Linear c e' r' s' z
+-- need the indexing:
+-- dec_{R'/E'} <-> dec_{R'/(R+E')} \otimes dec_{(R+E')/E'}
+--               = dec_{R'/(R+E')} \otimes dec_{R/E}.
+extendLin (RD ys) =
+  let yvec  = V.fromList ys
+      idxs  = proxy baseIndicesPow (Proxy :: Proxy '(FLCM r e', r'))
+      y'vec = V.generate (U.length idxs) $ \idx ->
+        let (j0,j1) = idxs U.! idx
+        in if j0 == 0 then embed (yvec V.! j1) else zero
+  in RD $ V.toList y'vec
 
 instance (Reflects e Word32, Reflects r Word32,
           Protoable (c s zq), ProtoType (c s zq) ~ RqProduct)
