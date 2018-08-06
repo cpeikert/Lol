@@ -34,12 +34,12 @@ indexing.
 {-# LANGUAGE UndecidableSuperClasses #-}
 
 module Crypto.Lol.Cyclotomic.Tensor
-(TensorPowDec(..)
-,TensorG(..)
-,TensorCRT(..)
-,TensorGaussian(..)
-,TensorGSqNorm(..)
-,TensorCRTSet(..)
+( TensorPowDec(..)
+, TensorG(..)
+, TensorCRT(..)
+, TensorGaussian(..)
+, TensorGSqNorm(..)
+, TensorCRTSet(..)
 -- * Top-level CRT functions
 , hasCRTFuncs
 , scalarCRT, mulGCRT, divGCRT, crt, crtInv, twaceCRT, embedCRT
