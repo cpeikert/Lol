@@ -12,6 +12,7 @@ This sub-module exists only because we can't define and use
 template Haskell splices in the same module.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE GADTs                 #-}
@@ -22,6 +23,7 @@ template Haskell splices in the same module.
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -74,7 +76,6 @@ import Crypto.Lol.PosBin
 
 import Control.Arrow
 import Data.Constraint           hiding ((***), (&&&))
-import Data.Functor.Trans.Tagged
 import Data.List                 hiding ((\\))
 import Data.Singletons.Prelude   hiding ((:-))
 import Data.Singletons.TH
@@ -365,31 +366,31 @@ ppToPP :: PrimePower -> PP
 ppToPP = (binToInt . unP *** posToInt) . unPP
 
 -- | Reflect a 'PrimePower' type to a 'PP' value.
-ppPPow :: forall pp . PPow pp => Tagged pp PP
-ppPPow = tag $ ppToPP $ fromSing (sing :: SPrimePower pp)
+ppPPow :: forall pp . PPow pp => PP
+ppPPow = ppToPP $ fromSing (sing :: SPrimePower pp)
 
 -- | Value-level prime-power factorization tagged by a 'Factored' type.
-ppsFact :: forall m . Fact m => Tagged m [PP]
-ppsFact = tag $ map ppToPP $ unF $ fromSing (sing :: SFactored m)
+ppsFact :: forall m . Fact m => [PP]
+ppsFact = map ppToPP $ unF $ fromSing (sing :: SFactored m)
 
 -- | The value of a 'PrimeBin' type.
-valuePrime :: forall p . Prime p => Tagged p Int
-valuePrime = tag $ binToInt $ unP $ fromSing (sing :: SPrimeBin p)
+valuePrime :: forall p . Prime p => Int
+valuePrime = binToInt $ unP $ fromSing (sing :: SPrimeBin p)
 
 
 valueFact, totientFact, radicalFact, oddRadicalFact, valueHatFact ::
-  Fact m => Tagged m Int
+  forall m . Fact m => Int
 -- | The value of a 'Factored' type.
-valueFact = valuePPs <$> ppsFact
+valueFact = valuePPs $ ppsFact @m
 -- | The totient of a 'Factored' type's value.
-totientFact = totientPPs <$> ppsFact
+totientFact = totientPPs $ ppsFact @m
 -- | The "hat" of a 'Factored' type's value:
 -- \( \hat{m} = \begin{cases} m & \mbox{if } m \text{ is odd} \\ m/2 & \text{otherwise} \end{cases} \).
-valueHatFact = valueHat <$> valueFact
+valueHatFact = valueHat $ valueFact @m
 -- | The radical (product of prime divisors) of a 'Factored' type.
-radicalFact = radicalPPs <$> ppsFact
+radicalFact = radicalPPs $ ppsFact @m
 -- | The odd radical (product of odd prime divisors) of a 'Factored' type.
-oddRadicalFact = oddRadicalPPs <$> ppsFact
+oddRadicalFact = oddRadicalPPs $ ppsFact @m
 
 valueF, totientF, radicalF, oddRadicalF, valueHatF :: Factored -> Int
 -- | The value of a 'Factored'.
@@ -404,22 +405,22 @@ radicalF = radicalPPs . map ppToPP . unF
 oddRadicalF = oddRadicalPPs . map ppToPP . unF
 
 primePPow, exponentPPow, valuePPow, totientPPow, radicalPPow, oddRadicalPPow, valueHatPPow ::
-  PPow pp => Tagged pp Int
+  forall pp . PPow pp => Int
 -- | Reflect the prime component of a 'PrimePower' type.
-primePPow = fst <$> ppPPow
+primePPow = fst $ ppPPow @pp
 -- | Reflect the exponent component of a 'PrimePower' type.
-exponentPPow = snd <$> ppPPow
+exponentPPow = snd $ ppPPow @pp
 -- | The value of a 'PrimePower' type.
-valuePPow = valuePP <$> ppPPow
+valuePPow = valuePP $ ppPPow @pp
 -- | The totient of a 'PrimePower' type's value.
-totientPPow = totientPP <$> ppPPow
+totientPPow = totientPP $ ppPPow @pp
 -- | The "hat" of a 'PrimePower' type's value:
 -- \( p^e \) if \( p \) is odd, \( 2^{e-1} \) otherwise.
-valueHatPPow = valueHat <$> valuePPow
+valueHatPPow = valueHat $ valuePPow @pp
 -- | The radical of a 'PrimePower' type's value.
-radicalPPow = radicalPP <$> ppPPow
+radicalPPow = radicalPP $ ppPPow @pp
 -- | The odd radical of a 'PrimePower' type's value.
-oddRadicalPPow = oddRadicalPP <$> ppPPow
+oddRadicalPPow = oddRadicalPP $ ppPPow @pp
 
 -- functions on data-level [PP]
 valuePPs, totientPPs, radicalPPs, oddRadicalPPs :: [PP] -> Int
