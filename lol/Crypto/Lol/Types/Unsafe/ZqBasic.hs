@@ -22,6 +22,7 @@ if we "simplify" constraints in this module. For example, replace the
 (Additive z)
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes        #-}
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -32,11 +33,13 @@ if we "simplify" constraints in this module. For example, replace the
 {-# LANGUAGE RebindableSyntax           #-}
 {-# LANGUAGE RoleAnnotations            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
+{-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
 module Crypto.Lol.Types.Unsafe.ZqBasic
-( ZqBasic(..) -- export the type, but not the constructor (for safety)
+( ZqBasic(..) -- export constructor from this (unsafe) module
 , goodQs
 ) where
 
@@ -53,7 +56,6 @@ import Math.NumberTheory.Primes.Testing
 import Control.Applicative
 import Control.Arrow
 import Control.DeepSeq        (NFData)
-import Data.Coerce
 import Data.Maybe
 import NumericPrelude.Numeric as NP (round)
 import System.Random
@@ -74,7 +76,7 @@ goodQs m lower = filter (isPrime . toInteger) $
 
 -- | The ring \(\Z_q\) of integers modulo 'q', using underlying integer
 -- type 'z'.
-newtype ZqBasic q z = ZqB z
+newtype ZqBasic q z = ZqB { unZqB :: z }
     deriving (Eq, Ord, ZeroTestable.C, Show, NFData)
 
 -- the q argument, though phantom, matters for safety
@@ -86,21 +88,20 @@ type role ZqBasic nominal representational
 
 {-# INLINABLE reduce' #-}
 reduce' :: forall q z . (Reflects q z, ToInteger z) => z -> ZqBasic q z
-reduce' = ZqB . (`mod` proxy value (Proxy::Proxy q))
+reduce' = ZqB . (`mod` value @q)
 
 -- puts value in range [-q/2, q/2)
 decode' :: forall q z . (Reflects q z, ToInteger z) => ZqBasic q z -> z
-decode' = let qval = proxy value (Proxy::Proxy q)
+decode' = let qval = value @q
           in \(ZqB x) -> if 2 * x < qval then x else x - qval
 
 instance (Reflects q z, ToInteger z, Enum z) => Enumerable (ZqBasic q z) where
-  values = let qval :: z = proxy value (Proxy::Proxy q)
-           in coerce [0..(qval-1)]
+  values = ZqB <$> [0..(value @q - 1)]
 
 instance (Reflects q z, ToInteger z) => Mod (ZqBasic q z) where
   type ModRep (ZqBasic q z) = z
 
-  modulus = retag (value :: Tagged q z)
+  modulus = value @q
 
 type instance CharOf (ZqBasic p z) = p
 
@@ -110,8 +111,8 @@ instance (PPow pp, zq ~ ZqBasic pp z,
 
   type ZpOf (ZqBasic pp z) = ZqBasic (PrimePP pp) z
 
-  modulusZPP = retag (ppPPow :: Tagged pp PP)
-  liftZp = coerce
+  modulusZPP = ppPPow @pp
+  liftZp = ZqB . unZqB
 
 instance (Reflects q z, ToInteger z) => Reduce z (ZqBasic q z) where
   reduce = reduce'
@@ -132,8 +133,8 @@ instance (Reflects q z, ToInteger z, Reflects q' z, Ring z)
 instance (Reflects p z, Reflects q z, ToInteger z, Field (ZqBasic q z), Field (ZqBasic p z))
          => Encode (ZqBasic p z) (ZqBasic q z) where
 
-  lsdToMSD = let pval :: z = proxy value (Proxy::Proxy p)
-                 negqval :: z = negate $ proxy value (Proxy::Proxy q)
+  lsdToMSD = let pval = value @p
+                 negqval = negate $ value @q
              in (reduce' negqval, recip $ reduce' pval)
 
 -- | Yield a /principal/ \(m\)th root of unity \(\omega_m \in \Z_q^*\).
@@ -145,8 +146,8 @@ principalRootUnity ::
     forall m q z . (Reflects m Int, Reflects q z, ToInteger z, Enumerable (ZqBasic q z))
                => TaggedT m Maybe (Int -> ZqBasic q z)
 principalRootUnity =        -- use Integers for all intermediate calcs
-  let qval = fromIntegral (proxy value (Proxy::Proxy q) :: z)
-      mval = proxy value (Proxy::Proxy m)
+  let qval = fromIntegral (value @q :: z)
+      mval = value @m
       -- order of Zq^* (assuming q prime)
       order = qval-1
       -- the primes dividing the order of Zq^*
@@ -166,9 +167,8 @@ principalRootUnity =        -- use Integers for all intermediate calcs
 
 mhatInv :: forall m q z . (Reflects m Int, Reflects q z, ToInteger z, PID z)
            => TaggedT m Maybe (ZqBasic q z)
-mhatInv = let qval = proxy value (Proxy::Proxy q)
-          in peelT $ (fmap reduce' . (`modinv` qval) . fromIntegral) <$>
-                 valueHat <$> (value :: Tagged m Int)
+mhatInv = tagT $ reduce' <$>
+          ((`modinv` (value @q)) $ fromIntegral $ valueHat $ (value @m :: Int))
 
 -- instance of CRTrans
 instance (Reflects q z, ToInteger z, PID z, Enumerable (ZqBasic q z))
@@ -189,10 +189,7 @@ instance (Reflects q z, ToInteger z, Additive z) => Additive.C (ZqBasic q z) whe
   zero = ZqB zero
 
   {-# INLINABLE (+) #-}
-  (+) = let qval = proxy value (Proxy::Proxy q)
-        in \ (ZqB x) (ZqB y) ->
-        let z = x + y
-        in ZqB (if z >= qval then z - qval else z)
+  (ZqB x) + (ZqB y) = reduce' $ x + y
 
   {-# INLINABLE negate #-}
   negate (ZqB x) = reduce' $ negate x
@@ -204,7 +201,7 @@ instance (Reflects q z, ToInteger z, Ring z) => Ring.C (ZqBasic q z) where
 
   {-# INLINABLE fromInteger #-}
   fromInteger =
-    let qval = toInteger (proxy value (Proxy::Proxy q) :: z)
+    let qval = toInteger (value @q :: z)
     -- this is safe as long as type z can hold the value of q
     in \x -> ZqB $ fromInteger $ x `mod` qval
 
@@ -212,7 +209,7 @@ instance (Reflects q z, ToInteger z, Ring z) => Ring.C (ZqBasic q z) where
 instance (Reflects q z, ToInteger z, PID z, Show z) => Field.C (ZqBasic q z) where
 
   {-# INLINABLE recip #-}
-  recip = let qval = proxy value (Proxy::Proxy q)
+  recip = let qval = value @q
               -- safe because modinv returns in range 0..qval-1
           in \(ZqB x) -> ZqB $
                fromMaybe (error $ "ZqB.recip fail: " ++
@@ -224,16 +221,15 @@ instance (Reflects q z, ToInteger z, Field (ZqBasic q z)) => IntegralDomain.C (Z
 
 -- Gadget-related instances
 instance (Reflects q z, ToInteger z) => Gadget TrivGad (ZqBasic q z) where
-  gadget = tag [one]
+  gadget = [one]
 
 instance (Reflects q z, ToInteger z) => Decompose TrivGad (ZqBasic q z) where
   type DecompOf (ZqBasic q z) = z
-  decompose x = tag [lift x]
+  decompose x = [lift x]
 
 instance (Reflects q z, ToInteger z, Ring z) => Correct TrivGad (ZqBasic q z) where
-  correct a = case untag a of
-    [b] -> (b, [zero])
-    _ -> error "Correct TrivGad: wrong length"
+  correct [b] = (b, [zero])
+  correct _   = error "Correct TrivGad: wrong length"
 
 -- BaseBGad instances
 
@@ -249,18 +245,18 @@ gadgetZ b q = take (gadlen b q) $ iterate (*b) one
 instance (Reflects q z, ToInteger z, RealIntegral z, Reflects b z)
          => Gadget (BaseBGad b) (ZqBasic q z) where
 
-  gadget = let qval = proxy value (Proxy :: Proxy q)
-               bval = proxy value (Proxy :: Proxy b)
-           in tag $ reduce' <$> gadgetZ bval qval
+  gadget = let qval = value @q
+               bval = value @b
+           in reduce' <$> gadgetZ bval qval
 
 instance (Reflects q z, ToInteger z, Reflects b z)
     => Decompose (BaseBGad b) (ZqBasic q z) where
   type DecompOf (ZqBasic q z) = z
-  decompose = let qval = proxy value (Proxy :: Proxy q)
-                  bval = proxy value (Proxy :: Proxy b)
+  decompose = let qval = value @q
+                  bval = value @b
                   k = gadlen bval qval
                   radices = replicate (k-1) bval
-              in tag . decomp radices . lift
+              in decomp radices . lift
 
 -- | Yield the error vector for a noisy multiple of the gadget (all
 -- over the integers).
@@ -305,16 +301,15 @@ instance (Reflects q z, ToInteger z, Reflects b z)
     => Correct (BaseBGad b) (ZqBasic q z) where
 
   correct =
-    let qval = proxy value (Proxy :: Proxy q)
-        bval = proxy value (Proxy :: Proxy b)
+    let qval = value @q
+        bval = value @b
         correct' = correctZ qval bval
-    in \tv -> let v = untag tv
-                  es = correct' $ lift <$> v
-              in (head v - reduce (head es), es)
+    in \tv -> let es = correct' $ lift <$> tv
+              in (head tv - reduce (head es), es)
 
 -- instance of Random
 instance (Reflects q z, ToInteger z, Random z) => Random (ZqBasic q z) where
-  random = let high = proxy value (Proxy::Proxy q) - 1
+  random = let high = value @q - 1
            in \g -> let (x,g') = randomR (0,high) g
                     in (ZqB x, g')
 
