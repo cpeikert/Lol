@@ -24,6 +24,7 @@ Provides applicative-like functions for indexed vectors.
 {-# LANGUAGE RecordWildCards            #-}
 {-# LANGUAGE RoleAnnotations            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
@@ -78,7 +79,7 @@ type role IZipVector representational representational
 -- | Smart constructor that checks whether length of input is right
 -- (should be totient of @m@).
 iZipVector :: forall m a . (Fact m) => Vector a -> Maybe (IZipVector m a)
-iZipVector = let n = proxy totientFact (Proxy::Proxy m)
+iZipVector = let n = totientFact @m
             in \vec -> if n == V.length vec
                        then Just $ IZipVector vec
                        else Nothing
@@ -93,7 +94,7 @@ zipIZV (IZipVector a) (IZipVector b) = IZipVector $ V.zip a b
 
 -- don't export
 repl :: forall m a . (Fact m) => a -> IZipVector m a
-repl = let n = proxy totientFact (Proxy::Proxy m)
+repl = let n = totientFact @m
        in IZipVector . V.replicate n
 
 -- Zip-py 'Applicative' instance.
@@ -109,13 +110,13 @@ instance (Fact m) => Protoable (IZipVector m Int64) where
   type ProtoType (IZipVector m Int64) = R
 
   toProto (IZipVector xs') =
-    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+    let m = fromIntegral $ valueFact @m
         xs = S.fromList $ V.toList xs'
     in R{..}
 
   fromProto R{..} = do
-    let m' = proxy valueFact (Proxy::Proxy m) :: Int
-        n = proxy totientFact (Proxy::Proxy m)
+    let m' = valueFact @m :: Int
+        n  = totientFact @m
         ys' = V.fromList $ F.toList xs
         len = F.length xs
     unless (m' == fromIntegral m) $ throwError $
@@ -130,13 +131,13 @@ instance (Fact m) => Protoable (IZipVector m Double) where
   type ProtoType (IZipVector m Double) = K
 
   toProto (IZipVector xs') =
-    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
+    let m = fromIntegral $ valueFact @m
         xs = S.fromList $ V.toList xs'
     in K{..}
 
   fromProto K{..} = do
-    let m' = proxy valueFact (Proxy::Proxy m) :: Int
-        n = proxy totientFact (Proxy::Proxy m)
+    let m' = valueFact @m :: Int
+        n  = totientFact @m
         ys' = V.fromList $ F.toList xs
         len = F.length xs
     unless (m' == fromIntegral m) $ throwError $
@@ -151,16 +152,16 @@ instance (Fact m, Reflects q Int64) => Protoable (IZipVector m (ZqBasic q Int64)
   type ProtoType (IZipVector m (ZqBasic q Int64)) = RqProduct
 
   toProto (IZipVector xs') =
-    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-        q = fromIntegral (proxy value (Proxy::Proxy q) :: Int64)
+    let m = fromIntegral $ valueFact @m
+        q = fromIntegral (value @q :: Int64)
         xs = S.fromList $ V.toList $ V.map LP.lift xs'
     in RqProduct $ S.singleton Rq{..}
 
   fromProto (RqProduct xs') = do
     let rqs = F.toList xs'
-        m' = proxy valueFact (Proxy::Proxy m) :: Int
-        q' = proxy value (Proxy::Proxy q) :: Int64
-        n = proxy totientFact (Proxy::Proxy m)
+        m' = valueFact @m :: Int
+        q' = value @q :: Int64
+        n  = totientFact @m
     unless (F.length rqs == 1) $ throwError $
       "An error occurred while reading the proto type for CT.\n\
       \Expected one Rq, but list has length " ++ show (F.length rqs)
@@ -182,16 +183,16 @@ instance (Fact m, Reflects q Double) => Protoable (IZipVector m (RRq q Double)) 
   type ProtoType (IZipVector m (RRq q Double)) = KqProduct
 
   toProto (IZipVector xs') =
-    let m = fromIntegral $ proxy valueFact (Proxy::Proxy m)
-        q = round (proxy value (Proxy::Proxy q) :: Double)
+    let m = fromIntegral $ valueFact @m
+        q = round (value @q :: Double)
         xs = S.fromList $ V.toList $ V.map LP.lift xs'
     in KqProduct $ S.singleton Kq{..}
 
   fromProto (KqProduct xs') = do
     let rqs = F.toList xs'
-        m' = proxy valueFact (Proxy::Proxy m) :: Int
-        q' = round (proxy value (Proxy::Proxy q) :: Double)
-        n = proxy totientFact (Proxy::Proxy m)
+        m' = valueFact @m :: Int
+        q' = round (value @q :: Double)
+        n  = totientFact @m
     unless (F.length rqs == 1) $ throwError $
       "An error occurred while reading the proto type for CT.\n\
       \Expected one Rq, but list has length " ++ show (F.length rqs)
