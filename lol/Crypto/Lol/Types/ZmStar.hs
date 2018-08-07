@@ -13,6 +13,7 @@ Portability : POSIX
 A collection of helper functions for working with \(\Z_m^*\).
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -20,6 +21,7 @@ A collection of helper functions for working with \(\Z_m^*\).
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -40,9 +42,9 @@ import Data.Set  as S (Set, difference, findMin, fromList, map, null)
 
 -- | The multiplicative order of \(p\) (the argument) modulo \(m\).
 -- Requires \(\gcd(p,m)=1\).
-order :: forall m . (Reflects m Int) => Int -> Tagged m Int
-order p = tag $
-  let mval = proxy value (Proxy::Proxy m)
+order :: forall m . (Reflects m Int) => Int -> Int
+order p =
+  let mval = value @m
   in if gcd p mval /= 1
      then error "p and m not coprime"
      else 1 + length (takeWhile (/= one) $
@@ -52,7 +54,7 @@ order p = tag $
 cosets :: forall zm . (Mod zm, ModRep zm ~ Int, Ord zm, Ring zm)
   => Int -> [Set zm]
 cosets p =
-  let mval = proxy modulus (Proxy::Proxy zm)
+  let mval = modulus @zm
   in if gcd p mval /= 1
      then error "p and m not coprime"
      else let zmstar = fromList $ LP.map fromIntegral $ filter ((==) 1 . gcd mval) [1..mval]
@@ -71,8 +73,7 @@ cosets p =
 -- (specified by representatives), where the cosets in each component
 -- are in bijective correspondence with the cosets of \(\Z_m^* / <p>\) under
 -- the natural (\(\bmod m\)) homomorphism.
-partitionCosets :: forall m m' . (m `Divides` m')
-  => Int -> Tagged '(m, m') [[Int]]
+partitionCosets :: forall m m' . (m `Divides` m') => Int -> [[Int]]
 partitionCosets p =
   let m'cosets = cosets p
       -- a map from cosets of Z_m^* / <p> to their preimages under the
@@ -85,4 +86,4 @@ partitionCosets p =
       -- inner list, there is exactly one m'-(co)set lying above each m-coset
       part' = transpose $ elems partition
      -- concat the inner sets to get a list of "CRT cosets" (indexed in Z_m'^*)
-  in return $ LP.map (LP.map (lift . findMin)) part'
+  in LP.map (LP.map (lift . findMin)) part'
