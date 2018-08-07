@@ -15,6 +15,7 @@ Class for pretty-printing type parameters to tests and benchmarks
 
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE ExplicitNamespaces    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
@@ -23,18 +24,22 @@ Class for pretty-printing type parameters to tests and benchmarks
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
 module Crypto.Lol.Utils.ShowType
-(ArgType
-,showType
-,ShowType
-,Zq
-,type (**)) where
+( ArgType
+, showType
+, ShowType
+, Zq
+, type (**)
+) where
 
-import Crypto.Lol (Complex, Int64,Fact,valueFact,Mod(..), Proxy(..), proxy, TrivGad, BaseBGad)
+import Crypto.Lol                      (BaseBGad, Complex, Fact, Int64,
+                                        Mod (..), Proxy (..), TrivGad,
+                                        proxy, valueFact)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
@@ -77,7 +82,7 @@ instance (KnownNat n) => Show (ArgType n) where
   show _ = show $ natVal (Proxy::Proxy n)
 
 instance (Fact m) => Show (ArgType m) where
-  show _ = "F" ++ show (proxy valueFact (Proxy::Proxy m))
+  show _ = "F" ++ show (valueFact @m)
 
 instance (Show (ArgType a), Show (ArgType b)) => Show (ArgType '(a,b)) where
   show _ = "(" ++ show (AT :: ArgType a) ++ "," ++ show (AT :: ArgType b) ++ ")"
@@ -93,8 +98,8 @@ instance (Show (ArgType a), Show (ArgType (InternalList as))) => Show (ArgType (
 instance Show (ArgType (InternalList '[])) where
   show _ = ""
 
-instance (Mod (ZqBasic q i), Show i) => Show (ArgType (ZqBasic q i)) where
-  show _ = "Q" ++ show (proxy modulus (Proxy::Proxy (ZqBasic q i)))
+instance (Mod (ZqBasic q z), Show z) => Show (ArgType (ZqBasic q z)) where
+  show _ = "Q" ++ show (modulus @(ZqBasic q z))
 
 instance Show (ArgType Int64) where
   show _ = "Int64"
@@ -109,7 +114,7 @@ instance Show (ArgType TrivGad) where
   show _ = "TrivGad"
 
 instance (Reflects b Integer) => Show (ArgType (BaseBGad (b :: k))) where
-  show _ = "Base" ++ show (proxy value (Proxy::Proxy b) :: Integer) ++ "Gad"
+  show _ = "Base" ++ show (value @b :: Integer) ++ "Gad"
 
 -- for RNS-style moduli
 instance (Show (ArgType a), Show (ArgType b)) => Show (ArgType (a,b)) where
