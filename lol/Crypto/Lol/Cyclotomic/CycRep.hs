@@ -38,6 +38,7 @@ the internal linear transforms and other operations it performs.
 {-# LANGUAGE RebindableSyntax           #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
@@ -362,7 +363,7 @@ cosetGaussian :: forall t m zp z v rnd .
   => v -> CycRep t D m zp -> rnd (CycRep t D m z)
 {-# INLINABLE cosetGaussian #-}
 cosetGaussian =
-  let pval = fromIntegral $ proxy modulus (Proxy::Proxy zp)
+  let pval = fromIntegral $ modulus @zp
   in \ svar (Dec c) ->
     Dec . zipWithI roundCoset c <$>
     (tweakedGaussianDec (svar*pval*pval) :: rnd (t m Double))
@@ -459,7 +460,7 @@ crtSet =
   --DT.trace ("CycRep.crtSet: m = " ++
   --          show (proxy valueFact (Proxy::Proxy m)) ++ ", m'= " ++
   --          show (proxy valueFact (Proxy::Proxy m'))) $
-  let (p,e) = proxy modulusZPP (Proxy::Proxy r)
+  let (p,e) = modulusZPP @r
       -- raise to the p^(e-1) power iteratively (one factor of p at a
       -- time), switching back to pow basis each time so that we don't
       -- lose precision!  (This fixes a bug witnessed for moderate
