@@ -19,6 +19,7 @@ Interface for cyclotomic tensors, and helper functions for tensor
 indexing.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes     #-}
 {-# LANGUAGE ConstraintKinds         #-}
 {-# LANGUAGE DataKinds               #-}
 {-# LANGUAGE FlexibleContexts        #-}
@@ -28,6 +29,7 @@ indexing.
 {-# LANGUAGE RankNTypes              #-}
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE TupleSections           #-}
+{-# LANGUAGE TypeApplications        #-}
 {-# LANGUAGE TypeFamilies            #-}
 {-# LANGUAGE TypeOperators           #-}
 {-# LANGUAGE UndecidableInstances    #-}
@@ -176,11 +178,10 @@ class (TensorPowDec t fp) => TensorCRTSet t fp where
     => Tagged m [t m' fp]
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
-hasCRTFuncs :: forall t m mon r . (TensorCRT t mon r, Fact m)
-               => TaggedT (t m r) mon ()
+hasCRTFuncs :: forall t m r mon . (TensorCRT t mon r, Fact m) => mon ()
 {-# INLINABLE hasCRTFuncs #-}
-hasCRTFuncs = tagT $ do
-  (_ :: r -> t m r,_,_,_,_) <- crtFuncs
+hasCRTFuncs = do
+  (_,_,_,_,_) <- crtFuncs @t @mon @r @m
   return ()
 
 -- | Yield a tensor for a scalar in the CRT basis.  (This function is
@@ -216,8 +217,8 @@ crtInv = (\(_,_,_,_,f) -> f) <$> crtFuncs
 twaceCRT :: forall t m m' mon r . (TensorCRT t mon r, m `Divides` m')
             => mon (t m' r -> t m r)
 {-# INLINABLE twaceCRT #-}
-twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
-           proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
+twaceCRT = hasCRTFuncs @t @m' @r *>
+           hasCRTFuncs @t @m  @r *>
            (fst <$> crtExtFuncs)
 
 -- | Embed a tensor with index \(m\) in the CRT basis to a tensor with
@@ -225,8 +226,8 @@ twaceCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
 -- (This function is simply an appropriate entry from 'crtExtFuncs'.)
 embedCRT :: forall t m m' mon r . (TensorCRT t mon r, m `Divides` m')
             => mon (t m r -> t m' r)
-embedCRT = proxyT hasCRTFuncs (Proxy::Proxy (t m' r)) *>
-           proxyT hasCRTFuncs (Proxy::Proxy (t m  r)) *>
+embedCRT = hasCRTFuncs @t @m' @r *>
+           hasCRTFuncs @t @m  @r *>
            (snd <$> crtExtFuncs)
 
 fKron :: forall m r mon . (Fact m, Monad mon)
@@ -248,9 +249,9 @@ ppKron :: forall pp r mon . (PPow pp, Monad mon)
           => (forall p . (Prime p) => TaggedT p mon (KronC r))
           -> TaggedT pp mon (KronC r)
 ppKron mat = tagT $ case (sing :: SPrimePower pp) of
-  pp@(SPP (STuple2 sp _)) -> do
+  pp@(SPP (STuple2 (sp :: Sing p) _)) -> do
     (MC h w f) <- withWitnessT mat sp
-    let d = withWitness valuePPow pp `div` withWitness valuePrime sp
+    let d = withSingI pp (valuePPow @pp) `div` withSingI sp (valuePrime @p)
     return $ MC (h*d) w (f . (`mod` h))
 
 -- deeply embedded DSL for Kronecker products of matrices
@@ -285,11 +286,12 @@ twCRTs = fKron twCRTsPPow
 
 -- | The "tweaked" \(\CRT^*\) matrix (for prime powers):
 -- \(\CRT^* \cdot \text{diag}(\sigma(g_p))\).
-twCRTsPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (KronC r)
+twCRTsPPow :: forall pp mon r .
+  (PPow pp, CRTrans mon r) => TaggedT pp mon (KronC r)
 twCRTsPPow = do
-  phi    <- pureT totientPPow
-  iToZms <- pureT indexToZmsPPow
-  jToPow <- pureT indexToPowPPow
+  let phi    = totientPPow @pp
+      iToZms = indexToZmsPPow @pp
+      jToPow = indexToPowPPow @pp
   (wPow, _) <- crtInfo
   (MC _ _ gCRT) <- gCRTPPow
   return $ MC phi phi (\j i -> wPow (jToPow j * negate (iToZms i)) * gCRT i 0)
@@ -298,12 +300,13 @@ gCRTPPow, gInvCRTPPow :: (PPow pp, CRTrans mon r) => TaggedT pp mon (KronC r)
 gCRTPPow = ppKron gCRTPrime
 gInvCRTPPow = ppKron gInvCRTPrime
 
-gCRTPrime, gInvCRTPrime :: (Prime p, CRTrans mon r) => TaggedT p mon (KronC r)
+gCRTPrime, gInvCRTPrime :: forall p mon r .
+  (Prime p, CRTrans mon r) => TaggedT p mon (KronC r)
 
 -- | A \((p-1)\)-by-1 matrix of the CRT coefficients of \(g_p\), for
 -- \(p\)th cyclotomic.
 gCRTPrime = do
-  p <- pureT valuePrime
+  let p = valuePrime @p
   (wPow, _) <- crtInfo
   return $ MC (p-1) 1 $ if p == 2 then const $ const one
                         else (\i _ -> one - wPow (i+1))
@@ -311,7 +314,7 @@ gCRTPrime = do
 -- | A \((p-1)\)-by-1 matrix of the inverse CRT coefficients of \(g_p\),
 -- for the \(p\)th cyclotomic.
 gInvCRTPrime = do
-  p <- pureT valuePrime
+  let p = valuePrime @p
   (wPow, phatinv) <- crtInfo
   return $ MC (p-1) 1 $
     if p == 2 then const $ const one
@@ -328,13 +331,13 @@ digitRev (p,e) j
   | e >= 1 = let (q,r) = j `divMod` p
              in r * (p^(e-1)) + digitRev (p,e-1) q
 
-indexToPowPPow, indexToZmsPPow :: PPow pp => Tagged pp (Int -> Int)
-indexToPowPPow = indexToPow <$> ppPPow
-indexToZmsPPow = indexToZms <$> ppPPow
+indexToPowPPow, indexToZmsPPow :: forall pp . PPow pp => Int -> Int
+indexToPowPPow = indexToPow (ppPPow @pp)
+indexToZmsPPow = indexToZms (ppPPow @pp)
 
 -- | Convert a \(\Z_m^*\) index to a linear tensor index in \([m]\).
-zmsToIndexFact :: Fact m => Tagged m (Int -> Int)
-zmsToIndexFact = zmsToIndex <$> ppsFact
+zmsToIndexFact :: forall m . Fact m => (Int -> Int)
+zmsToIndexFact = zmsToIndex (ppsFact @m)
 
 -- | For a prime power \(p^e\), map a tensor index to the corresponding
 -- power \(j \in [\varphi(p^e)]\), as in the powerful basis.
@@ -394,11 +397,11 @@ fromIndexPair ((phi,phi'):rest) (i1,i0) =
 -- triple in the first component.
 indexInfo :: forall m m' . (m `Divides` m')
              => Tagged '(m, m') ([(Int,Int,Int)], Int, Int, [(Int,Int)])
-indexInfo = let pps = proxy ppsFact (Proxy::Proxy m)
-                pps' = proxy ppsFact (Proxy::Proxy m')
+indexInfo = let pps  = ppsFact @m
+                pps' = ppsFact @m'
                 mpps = mergePPs pps pps'
-                phi = proxy totientFact (Proxy::Proxy m)
-                phi' = proxy totientFact (Proxy::Proxy m')
+                phi  = totientFact @m
+                phi' = totientFact @m'
                 tots = totients mpps
             in tag (mpps, phi, phi', tots)
 
