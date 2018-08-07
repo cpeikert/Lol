@@ -14,9 +14,11 @@ Portability : POSIX
 Functions and types for working with continuous ring-LWE samples.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE RebindableSyntax      #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 
 module Crypto.Lol.RLWE.Continuous where
@@ -67,24 +69,24 @@ errorGSqNorm = (fmap gSqNorm) . errorTerm
 -- radius \( c \) is approximately \( \epsilon \) (i.e., the Gaussian
 -- measure for \( \| x^2 \| > c^2 \cdot n \) is \( \approx \epsilon
 -- \).)
-tailGaussian :: (Ord v, Transcendental v, Fact m) => v -> Tagged m v
-tailGaussian eps = do
-  n <- fromIntegral <$> totientFact
-  let stabilize x =
+tailGaussian :: forall m v . (Fact m, Ord v, Transcendental v) => v -> v
+tailGaussian eps =
+  let n = fromIntegral $ totientFact @m
+      stabilize x =
         let x' = (1/2 + (log (2 * pi * x))/2 - (log eps)/n)/pi
         in if x'-x < 0.0001 then x' else stabilize x'
-  return $ stabilize $ 1/(2*pi)
+  in stabilize $ 1/(2*pi)
 
 -- | A bound such that the 'gSqNorm' of a continuous error generated
 -- by 'tweakedGaussian' with scaled variance \(v\) (over the \(m\)th
 -- cyclotomic field) is less than the bound except with probability
 -- approximately \( \varepsilon \).
-errorBound :: (Ord v, Transcendental v, Fact m)
-              => v              -- ^ the scaled variance
-              -> v              -- ^ \( \varepsilon \)
-              -> Tagged m v
-errorBound v eps = do
-  n <- fromIntegral <$> totientFact
-  mhat <- fromIntegral <$> valueHatFact
-  csq <- tailGaussian eps
-  return $ mhat * n * v * csq
+errorBound :: forall m v . (Fact m, Ord v, Transcendental v)
+           => v              -- ^ the scaled variance
+           -> v              -- ^ \( \varepsilon \)
+           -> v
+errorBound v eps =
+  let n    = fromIntegral $ totientFact @m
+      mhat = fromIntegral $ valueHatFact @m
+      csq  = tailGaussian @m eps
+  in mhat * n * v * csq
