@@ -13,8 +13,9 @@ Portability : POSIX
 A class for integers mod a prime power.
 -}
 
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeFamilies     #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Crypto.Lol.Types.ZPP
 ( ZPP(..)
@@ -30,7 +31,7 @@ class (PrimeField (ZpOf zq), Ring zq) => ZPP zq where
   type ZpOf zq
 
   -- | The prime and exponent of the modulus.
-  modulusZPP :: Tagged zq PP
+  modulusZPP :: PP
 
   -- | Lift from \(\Z_p\) to a representative.
   liftZp :: ZpOf zq -> zq
