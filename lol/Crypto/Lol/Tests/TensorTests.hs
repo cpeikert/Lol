@@ -14,6 +14,7 @@ Tests for the 'Tensor' interface.
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
@@ -25,13 +26,16 @@ Tests for the 'Tensor' interface.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Tests.TensorTests (tensorCrtTests1, tensorCrtTests2, tensorTests1, tensorTests2) where
+module Crypto.Lol.Tests.TensorTests
+( tensorCrtTests1, tensorCrtTests2, tensorTests1, tensorTests2
+) where
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Utils.ShowType
-import Crypto.Lol.Utils.Tests (nestGroup, testGroup, testWithGen, testWithoutGen,
-                               (=~=), ApproxEqual, Gen, Test)
+import Crypto.Lol.Utils.Tests
+    (ApproxEqual, Gen, Test, nestGroup, testGroup, testWithGen,
+    testWithoutGen, (=~=))
 
 import Control.Applicative
 import Data.Maybe
