@@ -49,6 +49,7 @@ the internal linear transforms and other operations it performs.
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
@@ -770,7 +771,7 @@ instance (Fact m, Reflects q z, Reduce z b, CRTElt t (ZqBasic q z), ZeroTestable
           Module.C b (Cyc t m b))
   => RescaleCyc (Cyc t m) b (ZqBasic q z, b) where
 
-  rescaleCyc = let q :: z = proxy value (Proxy::Proxy q)
+  rescaleCyc = let q :: z = value @q
                -- same method works for any basis
                in \_ b -> CycPair zero $ (reduce q :: b) *> b
 
@@ -782,7 +783,7 @@ instance (ToInteger z, Reflects q z, Reduce z b, Field b,
   => RescaleCyc (Cyc t m) (ZqBasic q z, b) b where
 
   rescaleCyc bas (CycPair a b) =
-    let q :: z = proxy value (Proxy::Proxy q)
+    let q :: z = value @q
         x      = liftCyc (Just bas) a
     in recip (reduce q :: b) *> (b - reduceCyc x)
 
@@ -820,17 +821,19 @@ instance (Gadget gad (ZqBasic q z),
           Fact m, CRTElt t (ZqBasic q z),
           ZeroTestable (ZqBasic q z), IntegralDomain (ZqBasic q z))
   => Gadget gad (CycG t m (ZqBasic q z)) where
-  gadget = (Scalar <$>) <$> gadget
+  gadget = Scalar <$> gadget @gad
   {-# INLINABLE gadget #-}
   -- CJP: default 'encode' works because mul-by-Scalar is fast
 
-deriving instance Gadget gad (CycG t m (ZqBasic q z))
-  => Gadget gad (Cyc t m (ZqBasic q z))
+-- can't auto-derive because of ambiguity of gadget
+instance Gadget gad (CycG t m (ZqBasic q z))
+  => Gadget gad (Cyc t m (ZqBasic q z)) where
+  gadget = coerce (gadget @gad :: [Cyc t m (ZqBasic q z)])
 
 instance (Gadget gad (Cyc t m a), Gadget gad (Cyc t m b))
   => Gadget gad (Cyc t m (a,b)) where
-  gadget = (++) <$> (map (flip CycPair zero) <$> gadget)
-                <*> (map (CycPair zero) <$> gadget)
+  gadget = (++) (flip CycPair zero <$> gadget @gad)
+                (     CycPair zero <$> gadget @gad)
 
 -- ForallFact2 in case they're useful
 
@@ -875,12 +878,6 @@ instance (Reduce (Cyc t m z) (Cyc t m a), Reduce (Cyc t m z) (Cyc t m b))
   => Reduce (Cyc t m z) (Cyc t m (a,b)) where
   reduce z = CycPair (reduce z) (reduce z)
 
-toZL :: Tagged s [a] -> TaggedT s ZipList a
-toZL = coerce
-
-fromZL :: TaggedT s ZipList a -> Tagged s [a]
-fromZL = coerce
-
 -- | promoted from base ring, using the powerful basis for best geometry
 instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
           -- for satisfying Decompose's Gadget superclass
@@ -893,12 +890,12 @@ instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
 
   -- faster implementations: decompose directly in subring, which is
   -- correct because we decompose in powerful basis
-  decompose (Scalar c) = (Scalar <$>) <$> decompose c
-  decompose (Sub c) = (Sub <$>) <$> decompose c
+  decompose (Scalar c) = Scalar <$> decompose @gad c
+  decompose (Sub c) = Sub <$> decompose @gad c
 
-  -- traverse: Traversable (CycRep t P m) and Applicative (Tagged gad ZL)
-  decompose (Pow u) = fromZL $ Pow <$> traverse (toZL . decompose) u
-  decompose c = decompose $ toPow' c
+  -- traverse: Traversable (CycRep t P m) and Applicative ZipList
+  decompose (Pow u) = getZipList $ Pow <$> traverse (ZipList . decompose @gad) u
+  decompose c = decompose @gad $ toPow' c
 
   {-# INLINABLE decompose #-}
 
@@ -909,7 +906,7 @@ instance (Decompose gad (CycG t m (ZqBasic q Int64)),
   => Decompose gad (Cyc t m (ZqBasic q Int64)) where
 
   type DecompOf (Cyc t m (ZqBasic q Int64)) = Cyc t m Int64
-  decompose (CycZqB c) = (CycI64 <$>) <$> decompose c
+  decompose (CycZqB c) = CycI64 <$> decompose @gad c
 
 instance (Decompose gad (Cyc t m a), Decompose gad (Cyc t m b),
          DecompOf (Cyc t m a) ~ DecompOf (Cyc t m b),
@@ -917,7 +914,7 @@ instance (Decompose gad (Cyc t m a), Decompose gad (Cyc t m b),
          Reduce (DecompOf (Cyc t m a)) (Cyc t m (a, b)))
   => Decompose gad (Cyc t m (a,b)) where
   type DecompOf (Cyc t m (a,b)) = DecompOf (Cyc t m a)
-  decompose (CycPair a b) = (++) <$> decompose a <*> decompose b
+  decompose (CycPair a b) = (++) (decompose @gad a) (decompose @gad b)
 
 -----
 
@@ -930,13 +927,19 @@ instance (Correct gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
   -- sequence: Monad [] and Traversable (CycRep t D m)
   -- sequenceA: Applicative (CycRep t D m) and Traversable (TaggedT gad [])
   correct bs = Dec *** (Dec <$>) $
-               second sequence $ fmap fst &&& fmap snd $ (correct . pasteT) <$>
-               sequenceA (unCycGDec <$> peelT bs)
+               second sequence $ fmap fst &&& fmap snd $ correct @gad <$>
+               sequenceA (unCycGDec <$> bs)
   {-# INLINABLE correct #-}
 
--- specific to Int64 due to LiftOf
-deriving instance Correct gad (CycG t m (ZqBasic q Int64))
-  => Correct gad (Cyc t m (ZqBasic q Int64))
+-- specific to Int64 due to LiftOf. Can't auto-derive because of
+-- ambiguity of 'correct'
+instance Correct gad (CycG t m (ZqBasic q Int64))
+  => Correct gad (Cyc t m (ZqBasic q Int64)) where
+
+  -- correct = (CycZqB *** fmap CycI64) . correct @gad . fmap unCycZqB
+  correct = coerce $ 
+    (correct @gad :: [Cyc t m (ZqBasic q Int64)]
+                  -> (Cyc t m (ZqBasic q Int64), [Cyc t m Int64]))
 
 -- TODO: instance Correct gad (Cyc t m (a,b)) where
 -- seems hard; see Correct instance for pairs in Gadget.hs
