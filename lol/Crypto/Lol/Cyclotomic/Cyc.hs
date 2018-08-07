@@ -73,10 +73,12 @@ import           Crypto.Lol.Cyclotomic.CycRep   hiding (coeffsDec,
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
-import           Crypto.Lol.Cyclotomic.Tensor   (TensorCRTSet,
+import           Crypto.Lol.Cyclotomic.Tensor   (TensorCRT,
+                                                 TensorCRTSet,
                                                  TensorGSqNorm,
                                                  TensorGaussian,
-                                                 TensorPowDec)
+                                                 TensorPowDec,
+                                                 TensorG)
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.Prelude             as LP
 import           Crypto.Lol.Reflects
@@ -94,6 +96,7 @@ import           Control.Monad.Random   hiding (lift)
 import           Data.Coerce
 import           Data.Constraint        ((:-), Dict (..), (\\))
 import qualified Data.Constraint        as C
+import           Data.Foldable          (Foldable)
 import           Data.Traversable
 import           Language.Haskell.TH
 
@@ -212,7 +215,18 @@ instance (UnCyc t a, UnCyc t b, IFunctor t, IFElt t a, IFElt t b, IFElt t (a,b))
   unCycPow (CycPair a b) = zipWithI (,) (unCycPow a) (unCycPow b)
   unCycDec (CycPair a b) = zipWithI (,) (unCycDec a) (unCycDec b)
 
----------- FunctorCyc instances ----------
+---------- Category theoretic instances ----------
+
+instance (Fact m, CRTElt t r,
+          Traversable (CycRep t P m), Traversable (CycRep t D m), ForallFact1 Foldable t)
+    => FoldableCyc (CycG t m) r where
+  foldrCyc (Just L.Pow) f acc (Pow u) = foldr f acc u
+  foldrCyc (Just L.Dec) f acc (Dec u) = foldr f acc u
+  foldrCyc Nothing f acc c = foldrCyc (Just L.Pow) f acc c
+  foldrCyc powbas@(Just L.Pow) f acc c@(Dec u) = foldrCyc powbas f acc (toPow' c)
+  foldrCyc decbas@(Just L.Dec) f acc c@(Pow u) = foldrCyc decbas f acc (toDec' c)
+  foldrCyc bas f acc c@(CRT u) = foldrCyc bas f acc (toPow' c)
+  foldrCyc bas f acc (Sub u) = foldrCyc bas f acc u
 
 instance (Fact m, CRTElt t a, IFunctor t, IFElt t a, IFElt t b)
   => FunctorCyc (CycG t m) a b where
@@ -871,6 +885,11 @@ instance (Fact m, Reflects q Int64, CRTElt t (ZqBasic q Int64), -- superclass
   reduce (PowIgr u) = CycZqB $ Pow $ fmap reduce u
   reduce (DecIgr u) = CycZqB $ Dec $ fmap reduce u
 
+instance (Fact m, Reflects q Double, CRTElt t Double, TensorPowDec t (RRq q Double),
+          FunctorCyc (Cyc t m) Double (RRq q Double))
+  => Reduce (Cyc t m Double) (Cyc t m (RRq q Double)) where
+  reduce = fmapCyc Nothing reduce
+
 instance (Reduce (Cyc t m z) (Cyc t m a), Reduce (Cyc t m z) (Cyc t m b))
   => Reduce (Cyc t m z) (Cyc t m (a,b)) where
   reduce z = CycPair (reduce z) (reduce z)
@@ -1088,6 +1107,28 @@ instance (Fact m, CRTElt t Double, TensorPowDec t (RRq q Double),
   toProto (PowRRq x) = toProto $ toDec x
   toProto (DecRRq x) = toProto x
   fromProto x = DecRRq <$> fromProto x
+
+---------- Instances of FoldableCyc ----------
+
+instance (Fact m, FoldableCyc (CycG t m) Double) => FoldableCyc (Cyc t m) Double where
+  foldrCyc bas f acc (CycDbl u) = foldrCyc bas f acc u
+
+instance (Fact m, FoldableCyc (CycG t m) Int64) => FoldableCyc (Cyc t m) Int64 where
+  foldrCyc bas f acc (CycI64 u) = foldrCyc bas f acc u
+
+instance (Fact m, FoldableCyc (CycG t m) (ZqBasic q z)) => FoldableCyc (Cyc t m) (ZqBasic q z) where
+  foldrCyc bas f acc (CycZqB u) = foldrCyc bas f acc u
+
+-- No instance for CycPair is possible.
+
+-- No instance for Cyc over Integer without TensorPowDec CT Integer, since we need to use toDec and
+-- toPow as defined in CycRep.
+
+instance (Fact m, TensorPowDec t (RRq q r), Foldable (CycRep t P m), Foldable (CycRep t D m))
+    => FoldableCyc (Cyc t m) (RRq q r) where
+  foldrCyc (Just L.Pow) f acc c = foldr f acc (unCycPow c)
+  foldrCyc (Just L.Dec) f acc c = foldr f acc (unCycDec c)
+  foldrCyc Nothing f acc c = foldrCyc (Just L.Pow) f acc c
 
 ---------- TH instances of FunctorCyc ----------
 

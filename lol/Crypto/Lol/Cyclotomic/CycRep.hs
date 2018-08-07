@@ -587,7 +587,6 @@ instance (Fact m, ForallFact1 Foldable t) => Foldable (CycRep t C m) where
   foldr f b (CRTC _ v) = foldr f b v
                          \\ (entailFact1 :: Fact m :- Foldable (t m))
 
-
 instance (Fact m, ForallFact1 Traversable t,
           ForallFact1 Applicative t) -- satisfy superclass
   => Traversable (CycRep t P m) where
