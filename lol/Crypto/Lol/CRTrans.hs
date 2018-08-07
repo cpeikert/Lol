@@ -21,6 +21,7 @@ and ring extensions.
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 
 module Crypto.Lol.CRTrans
@@ -93,7 +94,7 @@ instance (Transcendental a) => CRTrans Maybe (Complex a) where
 
 crtInfoC :: forall mon m a . (Monad mon, Reflects m Int, Transcendental a)
             => TaggedT m mon (CRTInfo (Complex a))
-crtInfoC = let mval = proxy value (Proxy::Proxy m)
+crtInfoC = let mval = value @m
                mhat = valueHat mval
            in return (omegaPowC mval, recip $ fromIntegral mhat)
 
