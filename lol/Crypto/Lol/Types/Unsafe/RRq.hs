@@ -25,6 +25,7 @@ The safe way to use this type is to import "Crypto.Lol.Types".
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RebindableSyntax           #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE UndecidableInstances       #-}
 
@@ -59,7 +60,7 @@ instance RealField r => Additive.C (RRq q r) where
   negate (RRq x) = RRq $ fraction $ negate x
 
 reduce' :: forall q r . (Reflects q r, RealField r) => r -> RRq q r
-reduce' r = RRq $ fraction $ r / proxy value (Proxy::Proxy q) -- scale down
+reduce' r = RRq $ fraction $ r / value @q -- scale down
 
 instance (Reflects q r, RealField r, Additive (RRq q r))
   => Reduce r (RRq q r) where
@@ -69,7 +70,7 @@ type instance LiftOf (RRq q r) = r
 
 instance (Reflects q r, Field r, Reduce r (RRq q r))
   => Lift' (RRq q r) where
-  lift (RRq r) = (r-0.5) * proxy value (Proxy::Proxy q)
+  lift (RRq r) = (r-0.5) * value @q
 
 instance (Additive (RRq q r), Additive (RRq p r))
   => Rescale (RRq q r) (RRq p r) where
