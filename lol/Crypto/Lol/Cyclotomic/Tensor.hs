@@ -116,7 +116,7 @@ class (ForallFact1 Functor  t, ForallFact1 Applicative t,
 
   -- | The relative powerful basis of \( \O_{m'}/\O_{m} \),
   -- w.r.t. the powerful basis of \( \O_{m'} \).
-  powBasisPow :: m `Divides` m' => Tagged m [t m' r]
+  powBasisPow :: m `Divides` m' => [t m' r]
 
 -- | Encapsulates multiplication and division by \(g_m\)
 class TensorPowDec t r => TensorG t r where
@@ -175,7 +175,7 @@ class (TensorPowDec t fp) => TensorCRTSet t fp where
   -- | Relative mod-@p@ CRT set of \( \O_{m'}/\O_{m} \) in the
   -- decoding basis.
   crtSetDec :: (m `Divides` m', Coprime (PToF (CharOf fp)) m')
-    => Tagged m [t m' fp]
+    => [t m' fp]
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
 hasCRTFuncs :: forall t m r mon . (TensorCRT t mon r, Fact m) => mon ()
@@ -396,70 +396,65 @@ fromIndexPair ((phi,phi'):rest) (i1,i0) =
 -- final component is a pair \( ( \varphi(p^e), \varphi(p^{e'}))\) for each
 -- triple in the first component.
 indexInfo :: forall m m' . (m `Divides` m')
-             => Tagged '(m, m') ([(Int,Int,Int)], Int, Int, [(Int,Int)])
+             => ([(Int,Int,Int)], Int, Int, [(Int,Int)])
 indexInfo = let pps  = ppsFact @m
                 pps' = ppsFact @m'
                 mpps = mergePPs pps pps'
                 phi  = totientFact @m
                 phi' = totientFact @m'
                 tots = totients mpps
-            in tag (mpps, phi, phi', tots)
+            in (mpps, phi, phi', tots)
 
 -- | A vector of \(\varphi(m)\) entries, where the \(i\)th entry is
 -- the index into the powerful/decoding basis of \(\O_{m'}\) of the
 -- \(i\)th entry of the powerful/decoding basis of \(\O_m\).
-extIndicesPowDec :: (m `Divides` m') => Tagged '(m, m') (U.Vector Int)
+extIndicesPowDec :: forall m m' . (m `Divides` m') => (U.Vector Int)
 {-# INLINABLE extIndicesPowDec #-}
-extIndicesPowDec = do
-  (_, phi, _, tots) <- indexInfo
-  return $ U.generate phi (fromIndexPair tots . (0,))
+extIndicesPowDec =
+  let (_, phi, _, tots) = indexInfo @m @m'
+  in U.generate phi (fromIndexPair tots . (0,))
 
 -- | A vector of \(\varphi(m)\) blocks of \(\varphi(m')/\varphi(m)\) consecutive
 -- entries. Each block contains all those indices into the CRT basis
 -- of \(\O_{m'}\) that "lie above" the corresponding index into the CRT
 -- basis of \(\O_m\).
-extIndicesCRT :: forall m m' . (m `Divides` m')
-                 => Tagged '(m, m') (U.Vector Int)
-extIndicesCRT = do
-  (_, phi, phi', tots) <- indexInfo
-  return $ U.generate phi'
-           (fromIndexPair tots . swap . (`divMod` (phi' `div` phi)))
+extIndicesCRT :: forall m m' . (m `Divides` m') => (U.Vector Int)
+extIndicesCRT =
+  let (_, phi, phi', tots) = indexInfo @m @m'
+  in U.generate phi'
+     (fromIndexPair tots . swap . (`divMod` (phi' `div` phi)))
 
 baseWrapper :: forall m m' a . (m `Divides` m', U.Unbox a)
                => ([(Int,Int,Int)] -> Int -> a)
-               -> Tagged '(m, m') (U.Vector a)
-baseWrapper f = do
-  (mpps, _, phi', _) <- indexInfo
-  return $ U.generate phi' (f mpps)
+               -> (U.Vector a)
+baseWrapper f =
+  let (mpps, _, phi', _) = indexInfo @m @m'
+  in U.generate phi' (f mpps)
 
 -- | A lookup table for 'toIndexPair' applied to indices \([\varphi(m')]\).
-baseIndicesPow :: forall m m' . (m `Divides` m')
-                  => Tagged '(m, m') (U.Vector (Int,Int))
-baseIndicesPow = baseWrapper (toIndexPair . totients)
+baseIndicesPow :: forall m m' . (m `Divides` m') => (U.Vector (Int,Int))
+baseIndicesPow = baseWrapper @m @m' (toIndexPair . totients)
 {-# INLINABLE baseIndicesPow #-}
 
 -- | A lookup table for 'baseIndexDec' applied to indices \([\varphi(m')]\).
-baseIndicesDec :: forall m m' . (m `Divides` m')
-                  => Tagged '(m, m') (U.Vector (Maybe (Int,Bool)))
+baseIndicesDec :: forall m m' . (m `Divides` m') => (U.Vector (Maybe (Int,Bool)))
 -- this one is more complicated; requires the prime powers
-baseIndicesDec = baseWrapper baseIndexDec
+baseIndicesDec = baseWrapper @m @m' baseIndexDec
 {-# INLINABLE baseIndicesDec #-}
 
 -- | Same as 'baseIndicesPow', but only includes the second component
 -- of each pair.
-baseIndicesCRT :: forall m m' . (m `Divides` m')
-                  => Tagged '(m, m') (U.Vector Int)
+baseIndicesCRT :: forall m m' . (m `Divides` m') => (U.Vector Int)
 baseIndicesCRT =
-  baseWrapper (\pps -> snd . toIndexPair (totients pps))
+  baseWrapper @m @m' (\pps -> snd . toIndexPair (totients pps))
 
 -- | The \(i_0\)th entry of the \(i_1\)th vector is
 -- 'fromIndexPair' \((i_1,i_0)\).
-extIndicesCoeffs :: forall m m' . (m `Divides` m')
-                    => Tagged '(m, m') (V.Vector (U.Vector Int))
-extIndicesCoeffs = do
-  (_, phi, phi', tots) <- indexInfo
-  return $ V.generate (phi' `div` phi)
-           (\i1 -> U.generate phi (\i0 -> fromIndexPair tots (i1,i0)))
+extIndicesCoeffs :: forall m m' . (m `Divides` m') => (V.Vector (U.Vector Int))
+extIndicesCoeffs =
+  let (_, phi, phi', tots) = indexInfo @m @m'
+  in V.generate (phi' `div` phi)
+     (\i1 -> U.generate phi (\i0 -> fromIndexPair tots (i1,i0)))
 
 -- | Convenient reindexing functions
 
