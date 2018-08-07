@@ -62,7 +62,7 @@ steps:
       #   >     (concat, foldl, foldr, head, init, last, length)
       #
       # Default: after_alias
-      list_align: new_line
+      list_align: after_alias
 
       # Long list align style takes effect when import is too long. This is
       # determined by 'columns' setting.
