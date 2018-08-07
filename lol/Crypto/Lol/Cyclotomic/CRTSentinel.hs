@@ -29,9 +29,7 @@ module Crypto.Lol.Cyclotomic.CRTSentinel
 , embedCRTCS, twaceCRTCS
 ) where
 
-import Data.Functor.Trans.Tagged
 import Data.Maybe
-import Data.Proxy
 
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Factored
@@ -47,8 +45,7 @@ crtSentinel = fromMaybe (Left ESentinel) (Right <$> crtCSentinel)
 crtCSentinel :: forall t m r .
                 (TensorCRT t Maybe r, Fact m)
                 => Maybe (CSentinel t m r)
-crtCSentinel = proxyT hasCRTFuncs (Proxy::Proxy (t m r)) *>
-               pure CSentinel
+crtCSentinel = hasCRTFuncs @t @m @r *> pure CSentinel
 {-# INLINABLE crtCSentinel #-}
 
 crtESentinel :: (TensorCRT t Maybe r, Fact m)
