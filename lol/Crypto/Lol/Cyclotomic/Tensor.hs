@@ -232,8 +232,8 @@ embedCRT = hasCRTFuncs @t @m' @r *>
 
 fKron :: forall m r mon . (Fact m, Monad mon)
          => (forall pp . (PPow pp) => TaggedT pp mon (KronC r))
-         -> TaggedT m mon (Kron r)
-fKron mat = tagT $ go $ sUnF (sing :: SFactored m)
+         -> mon (Kron r)
+fKron mat = go $ sUnF (sing :: SFactored m)
   where go :: Sing (pplist :: [PrimePower]) -> mon (Kron r)
         go spps = case spps of
           SNil -> return MNil
@@ -271,18 +271,18 @@ indexK (MKron m (MC r c mc)) i j =
       (jq,jr) = j `divMod` c
       in indexK m iq jq * mc ir jr
 
-gCRTK, gInvCRTK :: (Fact m, CRTrans mon r) => TaggedT m mon (Kron r)
+gCRTK, gInvCRTK :: forall m mon r . (Fact m, CRTrans mon r) => mon (Kron r)
 -- | A \(\varphi(m)\)-by-1 matrix of the CRT coefficients of \(g_m\), for
 -- \(m\)th cyclotomic.
-gCRTK = fKron gCRTPPow
+gCRTK = fKron @m gCRTPPow
 -- | A \(\varphi(m)\)-by-1 matrix of the inverse CRT coefficients of \(g_m\),
 -- for \(m\)th cyclotomic.
-gInvCRTK = fKron gInvCRTPPow
+gInvCRTK = fKron @m gInvCRTPPow
 
 -- | The "tweaked" \(\CRT^*\) matrix:
 -- \(\CRT^* \cdot \text{diag}(\sigma(g_m))\).
-twCRTs :: (Fact m, CRTrans mon r) => TaggedT m mon (Kron r)
-twCRTs = fKron twCRTsPPow
+twCRTs :: forall m mon r . (Fact m, CRTrans mon r) => mon (Kron r)
+twCRTs = fKron @m twCRTsPPow
 
 -- | The "tweaked" \(\CRT^*\) matrix (for prime powers):
 -- \(\CRT^* \cdot \text{diag}(\sigma(g_p))\).
