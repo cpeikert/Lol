@@ -408,7 +408,7 @@ indexInfo = let pps  = ppsFact @m
 -- | A vector of \(\varphi(m)\) entries, where the \(i\)th entry is
 -- the index into the powerful/decoding basis of \(\O_{m'}\) of the
 -- \(i\)th entry of the powerful/decoding basis of \(\O_m\).
-extIndicesPowDec :: forall m m' . (m `Divides` m') => (U.Vector Int)
+extIndicesPowDec :: forall m m' . (m `Divides` m') => U.Vector Int
 {-# INLINABLE extIndicesPowDec #-}
 extIndicesPowDec =
   let (_, phi, _, tots) = indexInfo @m @m'
@@ -418,7 +418,7 @@ extIndicesPowDec =
 -- entries. Each block contains all those indices into the CRT basis
 -- of \(\O_{m'}\) that "lie above" the corresponding index into the CRT
 -- basis of \(\O_m\).
-extIndicesCRT :: forall m m' . (m `Divides` m') => (U.Vector Int)
+extIndicesCRT :: forall m m' . (m `Divides` m') => U.Vector Int
 extIndicesCRT =
   let (_, phi, phi', tots) = indexInfo @m @m'
   in U.generate phi'
@@ -426,31 +426,31 @@ extIndicesCRT =
 
 baseWrapper :: forall m m' a . (m `Divides` m', U.Unbox a)
                => ([(Int,Int,Int)] -> Int -> a)
-               -> (U.Vector a)
+               -> U.Vector a
 baseWrapper f =
   let (mpps, _, phi', _) = indexInfo @m @m'
   in U.generate phi' (f mpps)
 
 -- | A lookup table for 'toIndexPair' applied to indices \([\varphi(m')]\).
-baseIndicesPow :: forall m m' . (m `Divides` m') => (U.Vector (Int,Int))
+baseIndicesPow :: forall m m' . (m `Divides` m') => U.Vector (Int,Int)
 baseIndicesPow = baseWrapper @m @m' (toIndexPair . totients)
 {-# INLINABLE baseIndicesPow #-}
 
 -- | A lookup table for 'baseIndexDec' applied to indices \([\varphi(m')]\).
-baseIndicesDec :: forall m m' . (m `Divides` m') => (U.Vector (Maybe (Int,Bool)))
+baseIndicesDec :: forall m m' . (m `Divides` m') => U.Vector (Maybe (Int,Bool))
 -- this one is more complicated; requires the prime powers
 baseIndicesDec = baseWrapper @m @m' baseIndexDec
 {-# INLINABLE baseIndicesDec #-}
 
 -- | Same as 'baseIndicesPow', but only includes the second component
 -- of each pair.
-baseIndicesCRT :: forall m m' . (m `Divides` m') => (U.Vector Int)
+baseIndicesCRT :: forall m m' . (m `Divides` m') => U.Vector Int
 baseIndicesCRT =
   baseWrapper @m @m' (\pps -> snd . toIndexPair (totients pps))
 
 -- | The \(i_0\)th entry of the \(i_1\)th vector is
 -- 'fromIndexPair' \((i_1,i_0)\).
-extIndicesCoeffs :: forall m m' . (m `Divides` m') => (V.Vector (U.Vector Int))
+extIndicesCoeffs :: forall m m' . (m `Divides` m') => V.Vector (U.Vector Int)
 extIndicesCoeffs =
   let (_, phi, phi', tots) = indexInfo @m @m'
   in V.generate (phi' `div` phi)
