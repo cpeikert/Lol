@@ -36,16 +36,16 @@ module Crypto.Lol.Applications.KeyHomomorphicPRF
 , replicate, replicateS, fromList, fromListS, split, splitS
 ) where
 
-import Control.Applicative ((<$>),(<*>))
-import Control.Monad.Random hiding (fromList, split)
-import Control.Monad.State
+import Control.Applicative    ((<$>), (<*>))
 import Control.Monad.Identity
+import Control.Monad.Random   hiding (fromList, split)
+import Control.Monad.State
 
-import Crypto.Lol hiding (replicate, head)
+import Crypto.Lol          hiding (head, replicate)
 import Crypto.Lol.Reflects
 
-import Data.Singletons.TH
 import Data.Maybe
+import Data.Singletons.TH
 
 import qualified MathObj.Matrix as M
 
@@ -58,7 +58,7 @@ singletons [d|
 
         -- promote to type family for getting number of leaves
         sizeFBT :: FBT -> Pos
-        sizeFBT Leaf = O
+        sizeFBT Leaf         = O
         sizeFBT (Intern l r) = (sizeFBT l) `addPos` (sizeFBT r)
              |]
 
@@ -128,7 +128,7 @@ root = root' . state'
 -- \mathbf{A}_T(x) \) and all intermediate values (see Definition 2.1
 -- of [BP14]).
 updateState' :: forall gad rq t n . Decompose gad rq
-  => SFBT t                     -- | singleton for the tree \( T \) 
+  => SFBT t                     -- | singleton for the tree \( T \)
   -> PRFParams n gad rq
   -> Maybe (PRFState' t n gad rq)
   -> BitString (SizeFBT t)      -- | input \( x \)
@@ -282,8 +282,8 @@ fromList = fromListS (sing :: Sing n)
 fromListS :: SPos n -> [a] -> Maybe (Vector n a)
 fromListS n xs = case n of
   SO    -> case xs of
-             (x:[])   -> Just (Lone x)
-             _        -> Nothing
+             (x:[]) -> Just (Lone x)
+             _      -> Nothing
   SS n' -> case xs of
              (x:rest) -> (:-) x <$> fromListS n' rest
              _        -> Nothing
