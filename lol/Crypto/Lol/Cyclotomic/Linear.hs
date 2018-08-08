@@ -87,8 +87,8 @@ instance Additive (c s z) => Additive.C (Linear c e r s z) where
   zero = RD []
 
   (RD as) + (RD bs) = RD $ sumall as bs
-    where sumall [] ys = ys
-          sumall xs [] = xs
+    where sumall [] ys         = ys
+          sumall xs []         = xs
           sumall (x:xs) (y:ys) = x+y : sumall xs ys
 
   negate (RD as) = RD $ negate <$> as
@@ -124,7 +124,7 @@ extendLin :: forall c e r s e' r' s' z .
 --               = dec_{R'/(R+E')} \otimes dec_{R/E}.
 extendLin (RD ys) =
   let yvec  = V.fromList ys
-      idxs  = proxy baseIndicesPow (Proxy :: Proxy '(FLCM r e', r'))
+      idxs  = baseIndicesPow @(FLCM r e') @r'
       y'vec = V.generate (U.length idxs) $ \idx ->
         let (j0,j1) = idxs U.! idx
         in if j0 == 0 then embed (yvec V.! j1) else zero
