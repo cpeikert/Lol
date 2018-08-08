@@ -295,68 +295,68 @@ type Coprime m m' = (FGCD m m' ~ F1)
 -- coercions: using proxy arguments here due to compiler bugs in usage
 
 -- coerce any divisibility relationship we want
-coerceFDivs :: p m -> p' m' -> (() :- (FDivides m m' ~ 'True))
-coerceFDivs _ _ = Sub $ unsafeCoerce (Dict :: Dict ())
+coerceFDivs :: forall m m' . (() :- (FDivides m m' ~ 'True))
+coerceFDivs = Sub $ unsafeCoerce (Dict :: Dict ())
 
 -- coerce any GCD we want
-coerceGCD :: p a -> p' a' -> p'' a'' -> (() :- (FGCD a a' ~ a''))
-coerceGCD _ _ _ = Sub $ unsafeCoerce (Dict :: Dict ())
+coerceGCD :: (() :- (FGCD a a' ~ a''))
+coerceGCD = Sub $ unsafeCoerce (Dict :: Dict ())
 
 -- | Entails constraint for transitivity of division, i.e.
 -- if \( k \mid l \) and \( l \mid m \), then \( k \mid m \).
-transDivides :: forall k l m . Proxy k -> Proxy l -> Proxy m ->
+transDivides :: forall k l m .
                 ((k `Divides` l, l `Divides` m) :- (k `Divides` m))
-transDivides k _ m = Sub Dict \\ coerceFDivs k m
+transDivides = Sub Dict \\ coerceFDivs @k @m
 
 -- | Entailment for divisibility by GCD:
 -- if \( g=\gcd(m_1,m_2) \) then \( g \mid m_1 \) and \( g \mid m_2 \).
-gcdDivides :: forall m1 m2 g . Proxy m1 -> Proxy m2 ->
+gcdDivides :: forall m1 m2 g .
               ((Fact m1, Fact m2, g ~ FGCD m1 m2) :-
                (g `Divides` m1, g `Divides` m2))
-gcdDivides m1 m2 =
+gcdDivides =
   Sub $ withSingI (sFGCD (sing :: SFactored m1) (sing :: SFactored m2))
-  Dict \\ coerceFDivs (Proxy::Proxy g) m1
-       \\ coerceFDivs (Proxy::Proxy g) m2
+  Dict \\ coerceFDivs @g @m1
+       \\ coerceFDivs @g @m2
 
 -- | Entailment for LCM divisibility:
 -- if \( l=\lcm(m_1,m_2) \) then \( m_1 \mid l \) and \( m_2 \mid l \).
-lcmDivides :: forall m1 m2 l . Proxy m1 -> Proxy m2 ->
+lcmDivides :: forall m1 m2 l .
               ((Fact m1, Fact m2, l ~ FLCM m1 m2) :-
                (m1 `Divides` l, m2 `Divides` l))
-lcmDivides m1 m2 =
+lcmDivides =
   Sub $ withSingI (sFLCM (sing :: SFactored m1) (sing :: SFactored m2))
-  Dict \\ coerceFDivs m1 (Proxy::Proxy l)
-       \\ coerceFDivs m2 (Proxy::Proxy l)
+  Dict \\ coerceFDivs @m1 @l
+       \\ coerceFDivs @m2 @l
 
 -- | Entailment for LCM divisibility:
 -- the LCM of two divisors of \( m \) also divides \( m \).
-lcm2Divides :: forall m1 m2 l m . Proxy m1 -> Proxy m2 -> Proxy m ->
+lcm2Divides :: forall m1 m2 l m .
                ((m1 `Divides` m, m2 `Divides` m, l ~ FLCM m1 m2) :-
                 (m1 `Divides` l, m2 `Divides` l, (FLCM m1 m2) `Divides` m))
-lcm2Divides m1 m2 m =
+lcm2Divides =
   Sub $ withSingI (sFLCM (sing :: SFactored m1) (sing :: SFactored m2))
-  Dict \\ coerceFDivs (Proxy::Proxy (FLCM m1 m2)) m \\ lcmDivides m1 m2
+  Dict \\ coerceFDivs @(FLCM m1 m2) @m \\ lcmDivides @m1 @m2
 
 -- | Entailment for \( p \)-free division:
 -- if \( f \) is \(m \) after removing all \( p \)-factors, then \( f \mid m \)
 -- and \( \gcd(f,p)=1 \).
-pSplitTheorems :: forall p m f . Proxy p -> Proxy m ->
+pSplitTheorems :: forall p m f .
                   ((Prime p, Fact m, f ~ PFree p m) :-
                    (f `Divides` m, Coprime (PToF p) f))
-pSplitTheorems _ m =
+pSplitTheorems =
   Sub $ withSingI (sPFree (sing :: SPrimeBin p) (sing :: SFactored m))
-  Dict \\ coerceFDivs (Proxy::Proxy f) m
-  \\ coerceGCD (Proxy::Proxy (PToF p)) (Proxy::Proxy f) (Proxy::Proxy F1)
+  Dict \\ coerceFDivs @f @m
+  \\ coerceGCD @(PToF p) @f @F1
 
 -- | Entailment for \( p \)-free division:
 -- if \( m \mid m' \), then \( \text{p-free}(m) \mid \text{p-free}(m') \).
-pFreeDivides :: forall p m m' . Proxy p -> Proxy m -> Proxy m' ->
+pFreeDivides :: forall p m m' .
                 ((Prime p, m `Divides` m') :-
                  ((PFree p m) `Divides` (PFree p m')))
-pFreeDivides _ _ _ =
+pFreeDivides =
   Sub $ withSingI (sPFree (sing :: SPrimeBin p) (sing :: SFactored m)) $
         withSingI (sPFree (sing :: SPrimeBin p) (sing :: SFactored m')) $
-        Dict \\ coerceFDivs (Proxy::Proxy (PFree p m)) (Proxy::Proxy (PFree p m'))
+        Dict \\ coerceFDivs @(PFree p m) @(PFree p m')
 
 -- | Type synonym for @(prime, exponent)@ pair.
 type PP = (Int, Int)
