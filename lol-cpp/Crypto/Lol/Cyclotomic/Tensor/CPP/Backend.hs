@@ -60,6 +60,7 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.RRq
 import Crypto.Lol.Types.Unsafe.ZqBasic
 
+import Control.Arrow                 ((***))
 import Data.Int
 import Data.Vector.Storable          as SV (Vector, fromList,
                                             unsafeToForeignPtr0)
@@ -72,7 +73,7 @@ import Foreign.Storable      (Storable (..))
 
 -- | Convert a list of prime powers to a suitable C representation.
 marshalFactors :: [PP] -> Vector CPP
-marshalFactors = SV.fromList . LP.map (\(p,e) -> (fromIntegral p, fromIntegral e))
+marshalFactors = SV.fromList . LP.map (fromIntegral *** fromIntegral)
 
 -- http://stackoverflow.com/questions/6517387/vector-vector-foo-ptr-ptr-foo-io-a-io-a
 -- | Evaluates a C function that takes an "a** ptr" on a list of Vectors.
@@ -99,36 +100,6 @@ instance (Storable a, Storable b)
   poke p (a,b) = do
     poke (castPtr p :: Ptr a) a
     poke (castPtr (plusPtr p (sizeOf a)) :: Ptr b) b
-
--- returns the modulus as a nested list of moduli
-class (Tuple a) => ZqTuple a where
-  type ModPairs a
-  getModuli :: Tagged a (ModPairs a)
-
-instance (Reflects q Int64) => ZqTuple (ZqBasic q Int64) where
-  type ModPairs (ZqBasic q Int64) = Int64
-  getModuli = tag $ value @q
-
-instance (Reflects q r, RealFrac r) => ZqTuple (RRq q r) where
-  type ModPairs (RRq q r) = Int64
-  getModuli = tag $ round (value @q :: r)
-
-instance (ZqTuple a, ZqTuple b) => ZqTuple (a, b) where
-  type ModPairs (a,b) = (ModPairs a, ModPairs b)
-  getModuli =
-    let as = proxy getModuli (Proxy::Proxy a)
-        bs = proxy getModuli (Proxy :: Proxy b)
-    in tag (as,bs)
-
--- counts components in a nested tuple
-class Tuple a where
-  numComponents :: Tagged a Int16
-
-instance {-# Overlappable #-} Tuple a where
-  numComponents = tag 1
-
-instance (Tuple a, Tuple b) => Tuple (a,b) where
-  numComponents = tag $ proxy numComponents (Proxy::Proxy a) + proxy numComponents (Proxy::Proxy b)
 
 dcrtZq :: forall q . Reflects q Int64 => Ptr (Ptr (ZqBasic q Int64)) -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dcrtZq ruptr pout totm pfac numFacts =
