@@ -174,8 +174,7 @@ class TensorGSqNorm t r where
 class (TensorPowDec t fp) => TensorCRTSet t fp where
   -- | Relative mod-@p@ CRT set of \( \O_{m'}/\O_{m} \) in the
   -- decoding basis.
-  crtSetDec :: (m `Divides` m', Coprime (PToF (CharOf fp)) m')
-    => [t m' fp]
+  crtSetDec :: (m `Divides` m', Coprime (PToF (CharOf fp)) m') => [t m' fp]
 
 -- | Convenience value indicating whether 'crtFuncs' exists.
 hasCRTFuncs :: forall t m r mon . (TensorCRT t mon r, Fact m) => mon ()
