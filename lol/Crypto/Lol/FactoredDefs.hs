@@ -330,7 +330,7 @@ lcmDivides =
 
 -- | Entailment for LCM divisibility:
 -- the LCM of two divisors of \( m \) also divides \( m \).
-lcm2Divides :: forall m1 m2 l m .
+lcm2Divides :: forall m1 m2 m l .
                ((m1 `Divides` m, m2 `Divides` m, l ~ FLCM m1 m2) :-
                 (m1 `Divides` l, m2 `Divides` l, (FLCM m1 m2) `Divides` m))
 lcm2Divides =
