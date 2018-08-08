@@ -34,6 +34,7 @@ The acceptable range of inputs for each function is determined by
 the internal linear transforms and other operations it performs.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes        #-}
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -282,7 +283,7 @@ instance (Eq r, Fact m, CRTElt t r, ForallFact2 Eq t r) => Eq (CycG t m r) where
   -- EAC: would like to convert c2 to basis of c1 *before* embedding
   (Sub (c1 :: CycG t l1 r)) == (Sub (c2 :: CycG t l2 r)) =
     (embed' c1 :: CycG t (FLCM l1 l2) r) == embed' c2
-    \\ lcmDivides (Proxy::Proxy l1) (Proxy::Proxy l2)
+    \\ lcmDivides @l1 @l2
 
   -- some other relatively efficient comparisons
   (Scalar c1) == (Pow u2) = scalarPow c1 == u2
@@ -338,7 +339,7 @@ instance (Fact m, CRTElt t r, ZeroTestable r) => Additive.C (CycG t m r) where
   -- EAC: would like to convert c2 to basis of c1 before embedding
   (Sub (c1 :: CycG t m1 r)) + (Sub (c2 :: CycG t m2 r)) =
     (Sub $ (embed' c1 :: CycG t (FLCM m1 m2) r) + embed' c2)
-    \\ lcm2Divides (Proxy::Proxy m1) (Proxy::Proxy m2) (Proxy::Proxy m)
+    \\ lcm2Divides @m1 @m2 @m
 
   -- SCALAR PLUS SOMETHING ELSE
 
@@ -456,7 +457,7 @@ instance (Fact m, CRTElt t r, ZeroTestable r) => Ring.C (CycG t m r) where
   (Sub (c1 :: CycG t m1 r)) * (Sub (c2 :: CycG t m2 r)) =
     -- re-wrap c1, c2 as Subs of the composition, and force them to CRT
     (Sub $ (toCRT' $ Sub c1 :: CycG t (FLCM m1 m2) r) * toCRT' (Sub c2))
-    \\ lcm2Divides (Proxy::Proxy m1) (Proxy::Proxy m2) (Proxy::Proxy m)
+    \\ lcm2Divides @m1 @m2 @m
 
   -- ELSE: work in appropriate CRT rep
   c1 * c2 = toCRT' c1 * toCRT' c2
@@ -657,7 +658,7 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r) -- ZT, ID for superclass
             => CycG t m r -> CycG t m' r
   embed (Scalar c) = Scalar c           -- keep as scalar
   embed (Sub (c :: CycG t l r)) = Sub c -- keep as subring element
-    \\ transDivides (Proxy::Proxy l) (Proxy::Proxy m) (Proxy::Proxy m')
+    \\ transDivides @l @m @m'
   embed c = Sub c
 
   twace :: forall t m m' r .
@@ -668,9 +669,10 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r) -- ZT, ID for superclass
   twace (CRT u) = either (cycPE . twaceCRTE) (cycPC . twaceCRTC) u
   twace (Scalar u) = Scalar u
   twace (Sub (c :: CycG t l r)) = Sub (twace c :: CycG t (FGCD l m) r)
-                                  \\ gcdDivides (Proxy::Proxy l) (Proxy::Proxy m)
+                                  \\ gcdDivides @l @m
 
-  powBasis = (Pow <$>) <$> R.powBasis
+  powBasis :: forall m m' a . (m `Divides` m') => Tagged m [CycG t m' r]
+  powBasis = tag $ Pow <$> R.powBasis @m
 
   coeffsCyc L.Pow c' = Pow <$> R.coeffsPow (unCycGPow c')
   coeffsCyc L.Dec c' = Dec <$> R.coeffsDec (unCycGDec c')
@@ -706,7 +708,8 @@ instance (TensorPowDec t (RRq q r)) => ExtensionCyc (Cyc t) (RRq q r) where
   embed (DecRRq u) = PowRRq $ embedPow $ toPow u
   twace (PowRRq u) = PowRRq $ twacePow u
   twace (DecRRq u) = DecRRq $ twaceDec u
-  powBasis = (PowRRq <$>) <$> R.powBasis
+  powBasis :: forall m m' a . (m `Divides` m') => Tagged m [Cyc t m' (RRq q r)]
+  powBasis = tag $ PowRRq <$> R.powBasis @m
   coeffsCyc L.Pow (PowRRq c) = PowRRq <$> R.coeffsPow c
   coeffsCyc L.Dec (DecRRq c) = DecRRq <$> R.coeffsDec c
   coeffsCyc L.Pow (DecRRq c) = PowRRq <$> R.coeffsPow (toPow c)
@@ -720,14 +723,14 @@ embed' (Pow u) = Pow $ embedPow u
 embed' (Dec u) = Pow $ embedPow $ toPow u
 embed' (CRT u) = either (cycPE . embedCRTE) (cycPC . embedCRTC) u
 embed' (Scalar c) = Scalar c
-embed' (Sub (c :: CycG t k r)) = embed' c
-  \\ transDivides (Proxy::Proxy k) (Proxy::Proxy l) (Proxy::Proxy m)
+embed' (Sub (c :: CycG t k r)) = embed' c \\ transDivides @k @l @m
 
 -----
 
 instance (ZPP r, CRTElt t r, TensorCRTSet t (ZpOf r), ExtensionCyc (CycG t) r)
   => CRTSetCyc (CycG t) r where
-  crtSet = (Pow <$>) <$> R.crtSet
+  crtSet :: forall m m' . (m `Divides` m') => Tagged m [CycG t m' r]
+  crtSet = tag $ Pow <$> R.crtSet @m
   {-# INLINABLE crtSet #-}
 
 instance (CRTSetCyc (CycG t) (ZqBasic q z))
