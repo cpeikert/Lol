@@ -25,6 +25,7 @@ The acceptable range of inputs for each function is determined by
 the internal linear transforms and other operations it performs.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes        #-}
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -200,7 +201,7 @@ instance (Fact m, CRTElt t r) => Additive.C (CycRepEC t m r) where
   _ - _ = error "CycRep (-) internal error: mixed CRTC/CRTE"
 
   negate (Right (CRTC s v)) = Right $ CRTC s $ fmapI negate v
-  negate (Left (CRTE s v)) = Left $ CRTE s $ fmapI negate v
+  negate (Left (CRTE s v))  = Left $ CRTE s $ fmapI negate v
 
   {-# INLINABLE zero #-}
   {-# INLINABLE (+) #-}
@@ -384,7 +385,7 @@ embedCRTC :: (m `Divides` m', CRTElt t r)
 embedCRTC x@(CRTC s v) =
   case crtSentinel of
     -- go to CRTC if valid, else go to Pow
-    Left  _ -> Left $ embedPow $ toPow x
+    Left  _  -> Left $ embedPow $ toPow x
     Right s' -> Right $ CRTC s' $ embedCRTCS s s' v
 
 -- | Similar to 'embedCRTC'.  (The output is an 'Either' because the
@@ -443,17 +444,18 @@ coeffsDec :: (TensorPowDec t r, m `Divides` m') => CycRep t D m' r -> [CycRep t 
 coeffsDec (Dec v) = LP.map Dec $ coeffs v
 
 -- | The relative powerful basis of \(\O_{m'} / \O_m\).
-powBasis :: (TensorPowDec t r, m `Divides` m') => Tagged m [CycRep t P m' r]
+powBasis :: forall m m' t r .
+  (TensorPowDec t r, m `Divides` m') => [CycRep t P m' r]
 {-# INLINABLE powBasis #-}
-powBasis = (Pow <$>) <$> powBasisPow
+powBasis = Pow <$> powBasisPow @t @r @m
 
 -- | The relative mod-\(r\) CRT set of \(\O_{m'} / \O_m\),
 -- represented with respect to the powerful basis (which seems to be
 -- the best choice for typical use cases).
-crtSet :: forall t m m' r p mbar m'bar .
+crtSet :: forall m m' p mbar m'bar t r .
            (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r), mbar ~ PFree p m, m'bar ~ PFree p m',
             CRTElt t r, TensorCRTSet t (ZpOf r))
-          => Tagged m [CycRep t P m' r]
+          => [CycRep t P m' r]
 {-# INLINABLE crtSet #-}
 crtSet =
   -- CJP: consider using traceEvent or traceMarker
@@ -470,11 +472,9 @@ crtSet =
       pp  = Proxy::Proxy p
       pm  = Proxy::Proxy m
       pm' = Proxy::Proxy m'
-  in retag (fmap (embedPow .
-                  expon e .
-                  Dec . fmapI liftZp) <$>
-            (crtSetDec :: Tagged mbar [t m'bar (ZpOf r)]))
-     \\ pFreeDivides pp pm pm' \\ pSplitTheorems pp pm \\ pSplitTheorems pp pm'
+  in (embedPow . expon e . Dec . fmapI liftZp) <$>
+     (crtSetDec @t @_ @mbar :: [t m'bar (ZpOf r)])
+     \\ pFreeDivides @p @m @m' \\ pSplitTheorems @p @m \\ pSplitTheorems @p @m'
 
 
 --------- Changing representation ------------------
@@ -523,7 +523,7 @@ instance ToCRT (CycRep t) E r where
 -- | Convenient version of 'toPow' for 'Either' CRT basis type.
 toPowCE :: (Fact m, CRTElt t r) => CycRepEC t m r -> CycRep t P m r
 {-# INLINABLE toPowCE #-}
-toPowCE (Left u) = toPow u
+toPowCE (Left u)  = toPow u
 toPowCE (Right u) = toPow u
 
 
