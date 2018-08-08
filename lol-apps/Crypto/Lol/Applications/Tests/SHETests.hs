@@ -11,6 +11,7 @@ Portability : POSIX
 Tests for SymmSHE.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
@@ -19,6 +20,7 @@ Tests for SymmSHE.
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -208,8 +210,8 @@ prop_modSwPT :: forall t m m' z zp (zp' :: *) (zq :: *) . (z ~ LiftOf zp, _)
      -> IO Bool
 prop_modSwPT _ (pt, sk) = do
   y :: CT m zp (Cyc t m' zq) <- encrypt sk pt
-  let p = proxy modulus (Proxy::Proxy zp)
-      p' = proxy modulus (Proxy::Proxy zp')
+  let p = modulus @zp
+      p' = modulus @zp'
       z = (fromIntegral $ p `div` p')*y
       x = decrypt sk z
       y' = modSwitchPT z :: CT m zp' (Cyc t m' zq)
@@ -222,7 +224,7 @@ prop_ksLin :: forall t m m' z zp (zq :: *) (gad :: *) . (z ~ LiftOf zp, _)
      -> IO Bool
 prop_ksLin _ (pt, skin, skout) = do
   ct <- encrypt skin pt
-  kslHint :: KSLinearHint gad (Cyc t m' zq) <- ksLinearHint skout skin
+  kslHint :: KSHint gad (Cyc t m' zq) <- ksLinearHint skout skin
   let ct' = keySwitchLinear kslHint ct :: CT m zp (Cyc t m' zq)
       pt' = decrypt skout ct'
   return $ pt == pt'
@@ -234,7 +236,7 @@ prop_ksQuad :: forall t m m' z zp zq (gad :: *) . (z ~ LiftOf zp, _)
 prop_ksQuad _ (pt1, pt2, sk) = do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 <- encrypt sk pt2
-  ksqHint :: KSQuadCircHint gad (Cyc t m' zq) <- ksQuadCircHint sk
+  ksqHint :: KSHint gad (Cyc t m' zq) <- ksQuadCircHint sk
   let ct' = keySwitchQuadCirc ksqHint $ ct1*ct2
       ptProd = pt1*pt2
       pt' = decrypt sk ct'
@@ -274,13 +276,13 @@ prop_tunnel :: forall c t e r s e' r' s' z zp zq gad .
   -> (PT (Cyc t r zp), SK (Cyc t r' z), SK (Cyc t s' z))
   -> IO Bool
 prop_tunnel _ (x, skin, skout) = do
-  let totr = proxy totientFact (Proxy::Proxy r)
-      tote = proxy totientFact (Proxy::Proxy e)
+  let totr = totientFact @r
+      tote = totientFact @e
       basisSize = totr `div` tote
   -- choose a random linear function of the appropriate size
   bs :: [Cyc t s zp] <- replicateM basisSize getRandom
-  let f = linearDec bs \\ (gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)) :: Linear c e r s zp
-      expected = evalLin f x \\ (gcdDivides (Proxy::Proxy r) (Proxy::Proxy s))
+  let f = linearDec bs \\ (gcdDivides @r @s) :: Linear c e r s zp
+      expected = evalLin f x \\ (gcdDivides @r @s)
   y :: CT r zp (Cyc t r' zq) <- encrypt skin x
   hints :: TunnelHint gad c e r s e' r' s' zp zq <- tunnelHint f skout skin
   let y' = tunnel hints y :: CT s zp (Cyc t s' zq)
