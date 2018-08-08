@@ -209,7 +209,7 @@ dlinvDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dlinvDouble pout = tensorLInvDouble (castPtr pout)
 
 dnormDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
-dnormDouble pout = tensorNormSqD 1 (castPtr pout)
+dnormDouble pout = tensorNormSqD (castPtr pout)
 
 dmulgpowDouble :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dmulgpowDouble pout = tensorGPowDouble (castPtr pout)
@@ -234,7 +234,7 @@ dlinvInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dlinvInt64 pout = tensorLInvR (castPtr pout)
 
 dnormInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
-dnormInt64 pout = tensorNormSqR 1 (castPtr pout)
+dnormInt64 pout = tensorNormSqR (castPtr pout)
 
 dmulgpowInt64 :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dmulgpowInt64 pout = tensorGPowR (castPtr pout)
@@ -259,8 +259,8 @@ foreign import ccall unsafe "tensorLInvRRq" tensorLInvRRq :: Ptr (RRq q Double) 
 foreign import ccall unsafe "tensorLC" tensorLC ::       Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 foreign import ccall unsafe "tensorLInvC" tensorLInvC :: Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16          -> IO ()
 
-foreign import ccall unsafe "tensorNormSqR" tensorNormSqR ::     Int16 -> Ptr Int64 -> Int64 -> Ptr CPP -> Int16          -> IO ()
-foreign import ccall unsafe "tensorNormSqD" tensorNormSqD ::     Int16 -> Ptr Double -> Int64 -> Ptr CPP -> Int16          -> IO ()
+foreign import ccall unsafe "tensorNormSqR" tensorNormSqR :: Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
+foreign import ccall unsafe "tensorNormSqD" tensorNormSqD :: Ptr Double -> Int64 -> Ptr CPP -> Int16 -> IO ()
 
 foreign import ccall unsafe "tensorGPowR" tensorGPowR ::                 Ptr Int64 -> Int64 -> Ptr CPP -> Int16 -> IO ()
 foreign import ccall unsafe "tensorGPowRq" tensorGPowRq ::               Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> Int64 -> IO ()
