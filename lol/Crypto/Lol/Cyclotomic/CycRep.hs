@@ -447,7 +447,7 @@ coeffsDec (Dec v) = LP.map Dec $ coeffs v
 powBasis :: forall m m' t r .
   (TensorPowDec t r, m `Divides` m') => [CycRep t P m' r]
 {-# INLINABLE powBasis #-}
-powBasis = Pow <$> powBasisPow @t @r @m
+powBasis = fmap Pow $ untag $ powBasisPow @t @r @m
 
 -- | The relative mod-\(r\) CRT set of \(\O_{m'} / \O_m\),
 -- represented with respect to the powerful basis (which seems to be
@@ -473,7 +473,7 @@ crtSet =
       pm  = Proxy::Proxy m
       pm' = Proxy::Proxy m'
   in (embedPow . expon e . Dec . fmapI liftZp) <$>
-     (crtSetDec @t @_ @mbar :: [t m'bar (ZpOf r)])
+     (untag $ crtSetDec @t @_ @mbar :: [t m'bar (ZpOf r)])
      \\ pFreeDivides @p @m @m' \\ pSplitTheorems @p @m \\ pSplitTheorems @p @m'
 
 
