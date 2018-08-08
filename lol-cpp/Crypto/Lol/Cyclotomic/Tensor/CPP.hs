@@ -27,6 +27,7 @@ Wrapper for a C++ implementation of 'Tensor' interfaces.
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TupleSections              #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
@@ -506,8 +507,8 @@ dispatchGInv :: forall m r . (Storable r, Fact m)
              => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO Int16)
                  -> CT' m r -> Maybe (CT' m r)
 dispatchGInv f =
-  let factors = proxy (marshalFactors <$> ppsFact) (Proxy::Proxy m)
-      totm = proxy (fromIntegral <$> totientFact) (Proxy::Proxy m)
+  let factors = marshalFactors $ ppsFact @m
+      totm = fromIntegral $ totientFact @m
       numFacts = fromIntegral $ SV.length factors
   in \(CT' x) -> unsafePerformIO $ do
     yout <- SV.thaw x
@@ -522,8 +523,8 @@ withBasicArgs :: forall m r . (Fact m, Storable r)
   => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
      -> CT' m r -> IO (CT' m r)
 withBasicArgs f =
-  let factors = proxy (marshalFactors <$> ppsFact) (Proxy::Proxy m)
-      totm = proxy (fromIntegral <$> totientFact) (Proxy::Proxy m)
+  let factors = marshalFactors $ ppsFact @m
+      totm = fromIntegral $ totientFact @m
       numFacts = fromIntegral $ SV.length factors
   in \(CT' x) -> do
     yout <- SV.thaw x
@@ -575,11 +576,11 @@ ctCRTInvC = do
   return $ \x -> unsafePerformIO $
     withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinvC ruptr))
 
-cZipDispatch :: (Storable r, Fact m)
+cZipDispatch :: forall m r . (Storable r, Fact m)
   => (Ptr r -> Ptr r -> Int64 -> IO ())
-     -> Tagged m (CT' m r -> CT' m r -> CT' m r)
+  -> Tagged m (CT' m r -> CT' m r -> CT' m r)
 cZipDispatch f = do -- in Tagged m
-  totm <- fromIntegral <$> totientFact
+  let totm = fromIntegral $ totientFact @m
   return $ coerce $ \a b -> unsafePerformIO $ do
     yout <- SV.thaw a
     SM.unsafeWith yout (\pout ->
@@ -590,11 +591,11 @@ cZipDispatch f = do -- in Tagged m
 cDispatchGaussianDouble :: forall m var rnd . (Fact m, ToRational var, MonadRandom rnd)
   => var -> rnd (CT' m Double)
 cDispatchGaussianDouble var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
+  let totm = totientFact @m
+      mval = valueFact @m
+      rad = radicalFact @m
   -- takes ru (not ruInv) to match RT
   ru' <- mapTaggedT (return . runIdentity) ru
-  totm <- pureT totientFact
-  mval <- pureT valueFact
-  rad <- pureT radicalFact
   yin <- T.lift $ realGaussians (var * fromIntegral (mval `div` rad)) totm
   return $ unsafePerformIO $
     withPtrArray ru' (\ruptr -> withBasicArgs (dgaussdecDouble ruptr) (CT' yin))
@@ -615,57 +616,45 @@ instance (Storable r, Random (CT' m r)) => Random (CT m r) where
 
   -- Drop to the CT' instance
   randomR (CT a, CT b) = runRand $ CT <$> (liftRand $ randomR (a, b))
-  randomR (a@_, b@_) = randomR (toCT a, toCT b)
+  randomR (a@_, b@_)   = randomR (toCT a, toCT b)
 
 instance (NFData r) => NFData (CT m r) where
   rnf (CT v) = rnf v
   rnf (ZV v) = rnf v
 
 repl :: forall m r . (Fact m, Storable r) => r -> CT' m r
-repl = let n = proxy totientFact (Proxy::Proxy m)
+repl = let n = totientFact @m
        in coerce . SV.replicate n
 
 replM :: forall m r mon . (Fact m, Storable r, Monad mon)
          => mon r -> mon (CT' m r)
-replM = let n = proxy totientFact (Proxy::Proxy m)
+replM = let n = totientFact @m
         in fmap coerce . SV.replicateM n
 
 scalarPow' :: forall m r . (Fact m, Additive r, Storable r) => r -> CT' m r
 -- constant-term coefficient is first entry wrt powerful basis
 scalarPow' =
-  let n = proxy totientFact (Proxy::Proxy m)
+  let n = totientFact @m
   in \r -> CT' $ generate n (\i -> if i == 0 then r else zero)
 
-ru, ruInv :: (CRTrans mon r, Fact m, Storable r)
+ru, ruInv :: forall m mon r . (CRTrans mon r, Fact m, Storable r)
    => TaggedT m mon [Vector r]
 ru = do
-  mval <- pureT valueFact
   wPow <- fst <$> crtInfo
-  LP.map
-    (\(p,e) -> do
-        let pp = p^e
-            pow = mval `div` pp
-        generate pp (wPow . (*pow))) <$>
-      pureT ppsFact
+  let go (p,e) = let pp=p^e
+                 in generate pp (wPow . (* (valueFact @m `div` pp)))
+  return $ go <$> ppsFact @m
 
 ruInv = do
-  mval <- pureT valueFact
   wPow <- fst <$> crtInfo
-  LP.map
-    (\(p,e) -> do
-        let pp = p^e
-            pow = mval `div` pp
-        generate pp (\i -> wPow $ -i*pow)) <$>
-      pureT ppsFact
+  let go (p,e) = let pp=p^e
+                 in generate pp (wPow . (* (valueFact @m `div` pp)) . negate)
+  return $ go <$> ppsFact @m
 
-wrapVector :: forall mon m r . (Monad mon, Fact m, Ring r, Storable r)
-  => TaggedT m mon (Kron r) -> mon (CT' m r)
-wrapVector v = do
-  vmat <- proxyT v (Proxy::Proxy m)
-  let n = proxy totientFact (Proxy::Proxy m)
-  return $ CT' $ generate n (flip (indexK vmat) 0)
+wrapVector :: forall m r . (Fact m, Ring r, Storable r) => Kron r -> CT' m r
+wrapVector v = CT' $ generate (totientFact @m) (flip (indexK v) 0)
 
-gCRT, gInvCRT :: (Storable r, CRTrans mon r, Fact m)
-                 => mon (CT' m r)
-gCRT = wrapVector gCRTK
-gInvCRT = wrapVector gInvCRTK
+gCRT, gInvCRT :: forall m mon r .
+  (Storable r, CRTrans mon r, Fact m) => mon (CT' m r)
+gCRT    = wrapVector <$> gCRTK    @m
+gInvCRT = wrapVector <$> gInvCRTK @m
