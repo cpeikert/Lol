@@ -14,22 +14,23 @@ Benchmarks for SymmSHE.
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Applications.Benchmarks.SHEBenches
-(
-decBenches
-,keySwitchBenches
-,rescaleBenches
-,sheBenches
-,tunnelBenches
+( decBenches
+, keySwitchBenches
+, rescaleBenches
+, sheBenches
+, tunnelBenches
 ) where
 
 import Control.Applicative
@@ -163,7 +164,7 @@ bench_keySwQ :: forall t m m' z zp zq (gad :: *) . (z ~ LiftOf zp, _)
      -> IO (CT m zp (Cyc t m' zq))
 bench_keySwQ _ pt sk = do
   x :: CT m zp (Cyc t m' zq) <- encrypt sk pt
-  ksqHint :: KSQuadCircHint gad (Cyc t m' zq) <- ksQuadCircHint sk
+  ksqHint :: KSHint gad (Cyc t m' zq) <- ksQuadCircHint sk
   let y = x*x
   evalRandIO $ return $ keySwitchQuadCirc ksqHint y
 
@@ -188,12 +189,12 @@ bench_tunnel :: forall c t e e' r r' s s' z zp zq gad .
 bench_tunnel _ pt skin skout = do
   x <- encrypt skin pt
   let crts :: [Cyc t s zp] = proxy crtSet (Proxy::Proxy e)
-        \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
-      totr = proxy totientFact (Proxy::Proxy r)
-      tote = proxy totientFact (Proxy::Proxy e)
+        \\ gcdDivides @r @s
+      totr = totientFact @r
+      tote = totientFact @e
       -- only take as many crts as we need
       -- otherwise linearDec fails
       linf :: Linear (Cyc t) e r s zp = linearDec (take (totr `div` tote) crts)
-        \\ gcdDivides (Proxy::Proxy r) (Proxy::Proxy s)
+        \\ gcdDivides @r @s
   hints :: TunnelHint gad (Cyc t) e r s e' r' s' zp zq <- tunnelHint linf skout skin
   evalRandIO $ return $ (tunnel hints :: CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)) x
