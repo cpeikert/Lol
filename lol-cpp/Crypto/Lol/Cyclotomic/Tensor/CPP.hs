@@ -119,7 +119,7 @@ instance (ForallFact2 Protoable IZipVector r, Fact m, Storable r) => Protoable (
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
-toCT (ZV v) = CT $ zvToCT' v
+toCT (ZV v)   = CT $ zvToCT' v
 
 toZV :: (Fact m) => CT m r -> CT m r
 toZV (CT (CT' v)) = ZV $ fromMaybe (error "toZV: internal error") $
@@ -160,14 +160,14 @@ instance (Additive r, Storable r, Fact m)
   (CT (CT' a)) + (CT (CT' b)) = CT $ CT' $ SV.zipWith (+) a b
   a + b = toCT a + toCT b
   negate (CT (CT' a)) = CT $ CT' $ SV.map negate a -- EAC: This probably should be converted to C code
-  negate a = negate $ toCT a
+  negate a            = negate $ toCT a
 
   zero = CT $ repl zero
 
 instance (ZeroTestable r, Storable r) => ZeroTestable.C (CT m r) where
   --{-# INLINABLE isZero #-}
   isZero (CT (CT' a)) = SV.foldl' (\ b x -> b && isZero x) True a
-  isZero (ZV v) = isZero v
+  isZero (ZV v)       = isZero v
 
 instance (GFCtx fp d, Fact m, Additive (CT m fp))
     => Module.C (GF fp d) (CT m fp) where
@@ -207,7 +207,7 @@ instance Fact m => Foldable (CT m) where
 
 instance Fact m => Traversable (CT m) where
   traverse f r@(CT _) = T.traverse f $ toZV r
-  traverse f (ZV v) = ZV <$> T.traverse f v
+  traverse f (ZV v)   = ZV <$> T.traverse f v
 
 instance TensorGaussian CT Double where
   tweakedGaussianDec v = CT <$> cDispatchGaussianDouble v
@@ -220,7 +220,7 @@ instance IFunctor CT where
   type IFElt CT a = Storable a
 
   fmapI f (CT (CT' sv)) = CT $ CT' $ SV.map f sv
-  fmapI f a = fmapI f $ toCT a
+  fmapI f a             = fmapI f $ toCT a
 
   zipWithI f (CT (CT' sv1)) (CT (CT' sv2)) = CT $ CT' $ SV.zipWith f sv1 sv2
   zipWithI f a b = zipWithI f (toCT a) (toCT b)
