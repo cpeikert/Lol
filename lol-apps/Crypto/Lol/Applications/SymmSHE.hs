@@ -478,11 +478,10 @@ tunnelHint :: forall gad c e r s e' r' s' z zp zq' rnd .
   -> rnd (TunnelHint gad c e r s e' r' s' zp zq')
 tunnelHint f skout (SK _ sin) = -- generate hints
   (let f' = extendLin $ liftLin (Just Pow) f :: Linear c e' r' s' z
-       f'q = reduce f' :: Linear c e' r' s' zq'
        -- choice of basis here must match coeffs* basis in tunnel (below)
        ps = proxy powBasis (Proxy::Proxy e')
        comps = (evalLin f' . (adviseCRT sin *)) <$> ps
-   in THint f'q <$> (CM.mapM (ksHint skout) comps))
+   in THint (reduce f') <$> (CM.mapM (ksHint skout) comps))
   \\ lcmDivides @r @e'
 
 -- | Constraint synonym for ring tunneling.
