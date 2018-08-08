@@ -20,6 +20,7 @@ calls in a type-safe way.
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
@@ -106,11 +107,11 @@ class (Tuple a) => ZqTuple a where
 
 instance (Reflects q Int64) => ZqTuple (ZqBasic q Int64) where
   type ModPairs (ZqBasic q Int64) = Int64
-  getModuli = tag $ proxy value (Proxy::Proxy q)
+  getModuli = tag $ value @q
 
 instance (Reflects q r, RealFrac r) => ZqTuple (RRq q r) where
   type ModPairs (RRq q r) = Int64
-  getModuli = tag $ round (proxy value (Proxy::Proxy q) :: r)
+  getModuli = tag $ round (value @q :: r)
 
 instance (ZqTuple a, ZqTuple b) => ZqTuple (a, b) where
   type ModPairs (a,b) = (ModPairs a, ModPairs b)
@@ -131,39 +132,39 @@ instance (Tuple a, Tuple b) => Tuple (a,b) where
 
 dcrtZq :: forall q . Reflects q Int64 => Ptr (Ptr (ZqBasic q Int64)) -> Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dcrtZq ruptr pout totm pfac numFacts =
-  tensorCRTRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (proxy value (Proxy::Proxy q))
+  tensorCRTRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (value @q)
 
 dcrtinvZq :: forall q . Reflects q Int64 => Ptr (Ptr (ZqBasic q Int64)) -> Ptr (ZqBasic q Int64) ->  Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dcrtinvZq ruptr minv pout totm pfac numFacts =
-  tensorCRTInvRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv) (proxy value (Proxy::Proxy q))
+  tensorCRTInvRq (castPtr pout) totm pfac numFacts (castPtr ruptr) (castPtr minv) (value @q)
 
 dlZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dlZq pout totm pfac numFacts =
-  tensorLRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+  tensorLRq (castPtr pout) totm pfac numFacts (value @q)
 
 dlinvZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dlinvZq pout totm pfac numFacts =
-  tensorLInvRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+  tensorLInvRq (castPtr pout) totm pfac numFacts (value @q)
 
 dmulgpowZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dmulgpowZq pout totm pfac numFacts =
-  tensorGPowRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+  tensorGPowRq (castPtr pout) totm pfac numFacts (value @q)
 
 dmulgdecZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dmulgdecZq pout totm pfac numFacts =
-  tensorGDecRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+  tensorGDecRq (castPtr pout) totm pfac numFacts (value @q)
 
 dginvpowZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO Int16
 dginvpowZq pout totm pfac numFacts =
-  tensorGInvPowRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+  tensorGInvPowRq (castPtr pout) totm pfac numFacts (value @q)
 
 dginvdecZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Int64 -> Ptr CPP -> Int16 -> IO Int16
 dginvdecZq pout totm pfac numFacts =
-  tensorGInvDecRq (castPtr pout) totm pfac numFacts (proxy value (Proxy::Proxy q))
+  tensorGInvDecRq (castPtr pout) totm pfac numFacts (value @q)
 
 dmulZq :: forall q . Reflects q Int64 => Ptr (ZqBasic q Int64) -> Ptr (ZqBasic q Int64) -> Int64 -> IO ()
 dmulZq aout bout totm =
-  mulRq (castPtr aout) (castPtr bout) totm (proxy value (Proxy::Proxy q))
+  mulRq (castPtr aout) (castPtr bout) totm (value @q)
 
 dcrtC :: Ptr (Ptr (Complex Double)) -> Ptr (Complex Double) -> Int64 -> Ptr CPP -> Int16 -> IO ()
 dcrtC ruptr pout totm pfac numFacts =
