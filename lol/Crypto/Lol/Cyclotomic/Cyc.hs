@@ -75,12 +75,10 @@ import           Crypto.Lol.Cyclotomic.CycRep   hiding (coeffsDec,
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
-import           Crypto.Lol.Cyclotomic.Tensor   (TensorCRT,
-                                                 TensorCRTSet,
-                                                 TensorGSqNorm,
+import           Crypto.Lol.Cyclotomic.Tensor   (TensorCRT, TensorCRTSet,
+                                                 TensorG, TensorGSqNorm,
                                                  TensorGaussian,
-                                                 TensorPowDec,
-                                                 TensorG)
+                                                 TensorPowDec)
 import           Crypto.Lol.Gadget
 import           Crypto.Lol.Prelude             as LP
 import           Crypto.Lol.Reflects
@@ -244,12 +242,12 @@ instance (Fact m, CRTElt t a, IFunctor t, IFElt t a, IFElt t b)
 instance (Fact m, ZeroTestable r, CRTElt t r, ForallFact2 ZeroTestable.C t r)
   => ZeroTestable.C (CycG t m r) where
   isZero x = case x of
-    (Pow u) -> isZero u
-    (Dec u) -> isZero u
+    (Pow u)         -> isZero u
+    (Dec u)         -> isZero u
     (CRT (Right u)) -> isZero u
-    c@(CRT _) -> isZero $ toPow' c
-    (Scalar c) -> isZero c
-    (Sub c) -> isZero c
+    c@(CRT _)       -> isZero $ toPow' c
+    (Scalar c)      -> isZero c
+    (Sub c)         -> isZero c
     \\ (entailFact2 :: Fact m :- ZeroTestable.C (t m r))
 
 deriving instance ZeroTestable (CycG t m Double) => ZeroTestable.C (Cyc t m Double)
@@ -369,11 +367,11 @@ instance (Fact m, CRTElt t r, ZeroTestable r) => Additive.C (CycG t m r) where
   (Dec u1) + (CRT u2) = CRT $ toCRT u1 + u2
 
   {-# INLINABLE negate #-}
-  negate (Pow u) = Pow $ negate u
-  negate (Dec u) = Dec $ negate u
-  negate (CRT u) = CRT $ negate u
+  negate (Pow u)    = Pow $ negate u
+  negate (Dec u)    = Dec $ negate u
+  negate (CRT u)    = CRT $ negate u
   negate (Scalar c) = Scalar (negate c)
-  negate (Sub c) = Sub $ negate c
+  negate (Sub c)    = Sub $ negate c
 
 deriving instance Additive (CycG t m Double) => Additive.C (Cyc t m Double)
 deriving instance Additive (CycG t m Int64) => Additive.C (Cyc t m Int64)
@@ -559,19 +557,19 @@ deriving instance (Ring (GF (ZqBasic q z) d),
 
 instance (Fact m, CRTElt t r, ZeroTestable r, IntegralDomain r)
   => Cyclotomic (CycG t m r) where
-  mulG (Pow u) = Pow $ R.mulGPow u
-  mulG (Dec u) = Dec $ R.mulGDec u
-  mulG (CRT (Left u)) = Pow $ R.mulGPow $ toPow u -- go to Pow for precision
+  mulG (Pow u)         = Pow $ R.mulGPow u
+  mulG (Dec u)         = Dec $ R.mulGDec u
+  mulG (CRT (Left u))  = Pow $ R.mulGPow $ toPow u -- go to Pow for precision
   mulG (CRT (Right u)) = CRT $ Right $ R.mulGCRTC u
-  mulG c@(Scalar _) = mulG $ toCRT' c
-  mulG (Sub c) = mulG $ embed' c   -- must go to full ring
+  mulG c@(Scalar _)    = mulG $ toCRT' c
+  mulG (Sub c)         = mulG $ embed' c   -- must go to full ring
 
-  divG (Pow u) = Pow <$> R.divGPow u
-  divG (Dec u) = Dec <$> R.divGDec u
-  divG (CRT (Left u)) = Pow <$> R.divGPow (toPow u) -- go to Pow for precision
+  divG (Pow u)         = Pow <$> R.divGPow u
+  divG (Dec u)         = Dec <$> R.divGDec u
+  divG (CRT (Left u))  = Pow <$> R.divGPow (toPow u) -- go to Pow for precision
   divG (CRT (Right u)) = Just $ (CRT . Right) $ R.divGCRTC u
-  divG c@(Scalar _) = divG $ toCRT' c
-  divG (Sub c) = divG $ embed' c  -- must go to full ring
+  divG c@(Scalar _)    = divG $ toCRT' c
+  divG (Sub c)         = divG $ embed' c  -- must go to full ring
 
   advisePow = toPow'
   adviseDec = toDec'
@@ -758,10 +756,10 @@ instance {-# INCOHERENT #-} (Fact m, Rescale a b, CRTElt t a, TensorPowDec t b)
   -- Analogs for decoding basis are not quite correct, because (* -1)
   -- doesn't commute with 'rescale' due to tiebreakers!
   rescaleCyc L.Pow (Scalar c) = Scalar $ rescale c
-  rescaleCyc L.Pow (Sub c) = Sub $ rescalePow c
+  rescaleCyc L.Pow (Sub c)    = Sub $ rescalePow c
 
-  rescaleCyc L.Pow c = Pow $ fmapI rescale $ unCycGPow c
-  rescaleCyc L.Dec c = Dec $ fmapI rescale $ unCycGDec c
+  rescaleCyc L.Pow c          = Pow $ fmapI rescale $ unCycGPow c
+  rescaleCyc L.Dec c          = Dec $ fmapI rescale $ unCycGDec c
   {-# INLINABLE rescaleCyc #-}
 
 -- | identity rescale
@@ -875,10 +873,10 @@ instance (ForallFact2 (Gadget gad) (Cyc t) a,
 instance (Fact m, Reduce a b, CRTElt t a, ZeroTestable a,
           CRTElt t b, ZeroTestable b) -- to satisfy Reduce superclasses
   => Reduce (CycG t m a) (CycG t m b) where
-  reduce (Pow u)    = Pow    $ reduce u
-  reduce (Dec u)    = Dec    $ reduce u
-  reduce (CRT u)    = Pow    $ reduce $ either toPow toPow u
-  reduce (Scalar c) = Scalar $ reduce c
+  reduce (Pow u)                 = Pow    $ reduce u
+  reduce (Dec u)                 = Dec    $ reduce u
+  reduce (CRT u)                 = Pow    $ reduce $ either toPow toPow u
+  reduce (Scalar c)              = Scalar $ reduce c
   reduce (Sub (c :: CycG t l a)) = Sub (reduce c :: CycG t l b)
 
 instance (Reduce (CycG t m Int64) (CycG t m (ZqBasic q Int64)))
@@ -959,7 +957,7 @@ instance Correct gad (CycG t m (ZqBasic q Int64))
   => Correct gad (Cyc t m (ZqBasic q Int64)) where
 
   -- correct = (CycZqB *** fmap CycI64) . correct @gad . fmap unCycZqB
-  correct = coerce $ 
+  correct = coerce $
     (correct @gad :: [Cyc t m (ZqBasic q Int64)]
                   -> (Cyc t m (ZqBasic q Int64), [Cyc t m Int64]))
 
@@ -978,23 +976,23 @@ toPow', toDec', toCRT' :: (Fact m, CRTElt t r) => CycG t m r -> CycG t m r
 {-# INLINABLE toCRT' #-}
 
 -- | Force to powerful-basis representation (for internal use only).
-toPow' c@(Pow _) = c
-toPow' (Dec u) = Pow $ toPow u
-toPow' (CRT u) = Pow $ either toPow toPow u
+toPow' c@(Pow _)  = c
+toPow' (Dec u)    = Pow $ toPow u
+toPow' (CRT u)    = Pow $ either toPow toPow u
 toPow' (Scalar c) = Pow $ scalarPow c
-toPow' (Sub c) = toPow' $ embed' c
+toPow' (Sub c)    = toPow' $ embed' c
 
 -- | Force to decoding-basis representation (for internal use only).
-toDec' (Pow u) = Dec $ toDec u
-toDec' c@(Dec _) = c
-toDec' (CRT u) = Dec $ either toDec toDec u
+toDec' (Pow u)    = Dec $ toDec u
+toDec' c@(Dec _)  = c
+toDec' (CRT u)    = Dec $ either toDec toDec u
 toDec' (Scalar c) = Dec $ toDec $ scalarPow c
-toDec' (Sub c) = toDec' $ embed' c
+toDec' (Sub c)    = toDec' $ embed' c
 
 -- | Force to a CRT representation (for internal use only).
-toCRT' (Pow u) = CRT $ toCRT u
-toCRT' (Dec u) = CRT $ toCRT u
-toCRT' c@(CRT _) = c
+toCRT' (Pow u)    = CRT $ toCRT u
+toCRT' (Dec u)    = CRT $ toCRT u
+toCRT' c@(CRT _)  = c
 toCRT' (Scalar c) = CRT $ scalarCRT c
 -- CJP: the following is the fastest algorithm for when both source
 -- and target have the same CRTr/CRTe choice.  It is not the fastest
@@ -1002,7 +1000,7 @@ toCRT' (Scalar c) = CRT $ scalarCRT c
 -- input is non-CRT), but this is an unusual case.  Note: both calls
 -- to toCRT' are necessary in general, because embed' may not preserve
 -- CRT representation!
-toCRT' (Sub c) = toCRT' $ embed' $ toCRT' c
+toCRT' (Sub c)    = toCRT' $ embed' $ toCRT' c
 
 ---------- Utility instances ----------
 
@@ -1036,12 +1034,12 @@ instance (Fact m, ForallFact2 Random t (RRq q r))
 
 instance (Fact m, ForallFact2 Show t r, ForallFact2 Show t (CRTExt r), Show r)
   => Show (CycG t m r) where
-  show (Pow x) = "Cyc.Pow " ++ show x
-  show (Dec x) = "Cyc.Dec " ++ show x
-  show (CRT (Left x)) = "Cyc.CRT " ++ show x
+  show (Pow x)         = "Cyc.Pow " ++ show x
+  show (Dec x)         = "Cyc.Dec " ++ show x
+  show (CRT (Left x))  = "Cyc.CRT " ++ show x
   show (CRT (Right x)) = "Cyc.CRT " ++ show x
-  show (Scalar x) = "Cyc.Scalar " ++ show x
-  show (Sub x) = "Cyc.Sub " ++ show x
+  show (Scalar x)      = "Cyc.Scalar " ++ show x
+  show (Sub x)         = "Cyc.Sub " ++ show x
 
 deriving instance Show (CycG t m Double)        => Show (Cyc t m Double)
 deriving instance Show (CycG t m Int64)         => Show (Cyc t m Int64)
@@ -1057,11 +1055,11 @@ deriving instance (Fact m, ForallFact2 Show t (RRq q r)) => Show (Cyc t m (RRq q
 instance (Fact m, NFData r,
           ForallFact2 NFData t r, ForallFact2 NFData t (CRTExt r))
          => NFData (CycG t m r) where
-  rnf (Pow u) = rnf u
-  rnf (Dec u) = rnf u
-  rnf (CRT u) = rnf u
+  rnf (Pow u)    = rnf u
+  rnf (Dec u)    = rnf u
+  rnf (CRT u)    = rnf u
   rnf (Scalar u) = rnf u
-  rnf (Sub c) = rnf c
+  rnf (Sub c)    = rnf c
 
 deriving instance NFData (CycG t m Double)        => NFData (Cyc t m Double)
 deriving instance NFData (CycG t m Int64)         => NFData (Cyc t m Int64)
@@ -1085,7 +1083,7 @@ instance (Fact m, CRTElt t r, Protoable (CycRep t D m r))
     => Protoable (CycG t m r) where
   type ProtoType (CycG t m r) = ProtoType (CycRep t D m r)
   toProto (Dec uc) = toProto uc
-  toProto x = toProto $ toDec' x
+  toProto x        = toProto $ toDec' x
   fromProto x = Dec <$> fromProto x
 
 instance (Fact m, CRTElt t Double, Protoable (CycG t m Double))
@@ -1134,7 +1132,7 @@ instance (Fact m, TensorPowDec t (RRq q r), Foldable (CycRep t P m), Foldable (C
     => FoldableCyc (Cyc t m) (RRq q r) where
   foldrCyc (Just L.Pow) f acc c = foldr f acc (unCycPow c)
   foldrCyc (Just L.Dec) f acc c = foldr f acc (unCycDec c)
-  foldrCyc Nothing f acc c = foldrCyc (Just L.Pow) f acc c
+  foldrCyc Nothing f acc c      = foldrCyc (Just L.Pow) f acc c
 
 ---------- TH instances of FunctorCyc ----------
 
