@@ -75,14 +75,14 @@ sheMain _ = do
       pt1 = decrypt sk ct1
   print $ "Test1 (expect TRUE): " ++ (show $ 2*plaintext == pt1)
 
-  hint :: KSQuadCircHint KSGad (Cyc t CTIndex CTZq2) <- ksQuadCircHint sk
+  hint :: KSHint KSGad (Cyc t CTIndex CTZq2) <- ksQuadCircHint sk
   let ct2 = modSwitch $ keySwitchQuadCirc hint $ modSwitch $ ciphertext*ciphertext
       pt2 = decrypt sk (ct2 :: CTRing1 t)
   -- note: this requires a *LARGE* CT modulus to succeed
   print $ "Test2 (expect FALSE): " ++ (show $ plaintext*plaintext == pt2)
 
   -- so we support using *several* small moduli:
-  hint' :: KSQuadCircHint KSGad (Cyc t CTIndex CTZq3) <- ksQuadCircHint sk
+  hint' :: KSHint KSGad (Cyc t CTIndex CTZq3) <- ksQuadCircHint sk
   ciphertext' :: CTRing2 t <- encrypt sk plaintext
   let ct3 = keySwitchQuadCirc hint' $ modSwitch $ ciphertext' * ciphertext'
       pt3 = decrypt sk ct3
