@@ -14,6 +14,7 @@ Symmetric-key somewhat homomorphic encryption.  See Section 4 of
 <http://eprint.iacr.org/2015/1134> for mathematical description.
 -}
 
+{-# LANGUAGE AllowAmbiguousTypes        #-}
 {-# LANGUAGE ConstraintKinds            #-}
 {-# LANGUAGE DataKinds                  #-}
 {-# LANGUAGE FlexibleContexts           #-}
@@ -24,6 +25,7 @@ Symmetric-key somewhat homomorphic encryption.  See Section 4 of
 {-# LANGUAGE NoImplicitPrelude          #-}
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
+{-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
 {-# LANGUAGE UndecidableInstances       #-}
@@ -41,7 +43,7 @@ SK, PT, CT -- don't export constructors!
 -- * Modulus switching
 , modSwitch, modSwitchPT
 -- * Key switching
-, KSLinearHint, KSQuadCircHint
+, KSHint
 , ksLinearHint, ksQuadCircHint
 , keySwitchLinear, keySwitchQuadCirc
 -- * Ring switching
@@ -193,7 +195,7 @@ toLSD = let (zpScale, zqScale :: zq) = msdToLSD
 -- | Rescale a polynomial in MSD encoding, for best noise behavior.
 modSwitchMSD :: (RescaleCyc (c m') zq zq') => Polynomial (c m' zq) -> Polynomial (c m' zq')
 modSwitchMSD c = case coeffs c of
-  [] -> fromCoeffs []
+  []    -> fromCoeffs []
   c0:c' -> fromCoeffs $ rescaleDec c0 : map rescalePow c'
 
 -- | Rescale a ciphertext to a new modulus.
@@ -230,22 +232,39 @@ lweSample (SK svar s) =
     c1 <- adviseCRT <$> getRandom -- want entire hint to be in CRT form
     return $ fromCoeffs [c1 * sq + reduce (e `asTypeOf` s), c1]
 
+-- | Key-switch hint.
+newtype KSHint gad r'q' = KSHint [Polynomial r'q']
+  deriving (NFData)
+
 -- | Constraint synonym for generating key-switch hints.
 type KSHintCtx gad c m' z zq = (LWECtx c m' z zq, Gadget gad (c m' zq))
 
--- | Generate a hint that "encrypts" a value under a secret key, in
--- the sense required for key-switching.  The hint works for any
--- plaintext modulus, but must be applied on a ciphertext in MSD form.
--- The output is 'force'd, i.e., evaluating it to whnf will actually
--- cause it to be be evaluated to nf.
-ksHint :: (KSHintCtx gad c m' z zq, MonadRandom rnd)
-          => SK (c m' z) -> c m' z -> rnd (Tagged gad [Polynomial (c m' zq)])
+-- | Helper function that generates a hint that "encrypts" a value
+-- under a secret key, in the sense required for key-switching.  The
+-- hint works for any plaintext modulus, but must be applied on a
+-- ciphertext in MSD form.
+ksHint :: forall gad c m' z zq rnd . (KSHintCtx gad c m' z zq, MonadRandom rnd)
+          => SK (c m' z) -> c m' z -> rnd (KSHint gad (c m' zq))
 ksHint skout val = do -- rnd monad
   let valq = reduce val
-      valgad = encode valq
-  -- CJP: clunky, but that's what we get without a MonadTagged
-  samples <- DT.mapM (\as -> replicateM (length as) (lweSample skout)) valgad
-  return $ zipWith (+) <$> (map P.const <$> valgad) <*> samples
+      valgad = encode @gad valq
+  samples <- replicateM (length valgad) (lweSample skout)
+  return $ KSHint $ zipWith (+) (P.const <$> valgad) samples
+
+-- | A hint to switch a linear ciphertext under \( s_{\text{in}} \) to
+-- a linear one under \( s_{\text{out}} \).
+ksLinearHint :: forall gad c m' z zq' rnd . (KSHintCtx gad c m' z zq', MonadRandom rnd)
+  => SK (c m' z) -- sout
+  -> SK (c m' z) -- sin
+  -> rnd (KSHint gad (c m' zq'))
+ksLinearHint skout (SK _ sin) = ksHint skout sin
+
+-- | A hint to switch a quadratic ciphertext to a linear
+-- one under the same key.
+ksQuadCircHint :: forall gad c m' z zq' rnd .
+  (KSHintCtx gad c m' z zq', Ring (c m' z), MonadRandom rnd)
+  => SK (c m' z) -> rnd (KSHint gad (c m' zq'))
+ksQuadCircHint sk@(SK _ s) = ksHint sk (s*s)
 
 -- poor man's module multiplication for knapsack
 (*>>) :: (Ring r, Functor f) => r -> f r -> f r
@@ -262,64 +281,44 @@ type SwitchCtx gad c m' zq =
    Reduce (DecompOf (c m' zq)) (c m' zq))
 
 -- Helper function: applies key-switch hint to a ring element.
-switch :: (SwitchCtx gad c m' zq, r'q ~ c m' zq)
-          => Tagged gad [Polynomial r'q] -> r'q -> Polynomial r'q
-switch hint c = untag $ knapsack <$> hint <*> (fmap reduce <$> decompose c)
+keySwitch :: forall gad c m' zq r'q . (SwitchCtx gad c m' zq, r'q ~ c m' zq)
+             => KSHint gad r'q -> r'q -> Polynomial r'q
+keySwitch (KSHint hint) c = knapsack hint $ reduce <$> decompose @gad c
 
 -- | Constraint synonym for key switching.
-type KeySwitchCtx gad c m' zp zq' = (ToSDCtx c m' zp zq', SwitchCtx gad c m' zq')
-
--- | Hint for a linear key switch
-newtype KSLinearHint gad r'q' = KSLHint (Tagged gad [Polynomial r'q'])
-  deriving (NFData)
-
--- | Hint for a circular quadratic key switch.
-newtype KSQuadCircHint gad r'q' = KSQHint (Tagged gad [Polynomial r'q'])
-  deriving (NFData)
-
--- | A hint to switch a linear ciphertext under \( s_{\text{in}} \) to
--- a linear one under \( s_{\text{out}} \).
-ksLinearHint :: (KSHintCtx gad c m' z zq', MonadRandom rnd)
-  => SK (c m' z) -- sout
-  -> SK (c m' z) -- sin
-  -> rnd (KSLinearHint gad (c m' zq'))
-ksLinearHint skout (SK _ sin) = KSLHint <$> ksHint skout sin
+type KeySwitchCtx gad c m' zp zq' =
+  (ToSDCtx c m' zp zq', SwitchCtx gad c m' zq')
 
 -- | Switch a linear ciphertext using the supplied hint.  (The input
 -- ciphertext may first need to be rescaled so that its modulus
 -- matches that of the hint.)
-keySwitchLinear :: (KeySwitchCtx gad c m' zp zq')
-  => KSLinearHint gad (c m' zq')
+keySwitchLinear :: forall gad c m m' zp zq' . (KeySwitchCtx gad c m' zp zq')
+  => KSHint gad (c m' zq')
   -> CT m zp (c m' zq')
   -> CT m zp (c m' zq')
-keySwitchLinear (KSLHint hint) ct =
+keySwitchLinear hint ct =
   let CT MSD k l c = toMSD ct
   in case coeffs c of
        []      -> ct
        [_]     -> ct
-       [c0,c1] -> CT MSD k l $ P.const c0 + (switch hint c1)
+       [c0,c1] -> CT MSD k l $ P.const c0 + keySwitch hint c1
 
--- | A hint to switch a quadratic ciphertext to a linear
--- one under the same key.
-ksQuadCircHint :: (KSHintCtx gad c m' z zq', Ring (c m' z), MonadRandom rnd)
-  => SK (c m' z) -> rnd (KSQuadCircHint gad (c m' zq'))
-ksQuadCircHint sk@(SK _ s) = KSQHint <$> ksHint sk (s*s)
-
--- | Switch a ciphertext of degree two or less (i.e., one with no more than three components)
--- to a ciphertext of degree one (or less) under the /same/ key, using the supplied hint.
--- (The input ciphertext may first need to be rescaled so that its
--- modulus matches that of the hint.)
-keySwitchQuadCirc :: (KeySwitchCtx gad c m' zp zq')
-  => KSQuadCircHint gad (c m' zq')
+-- | Switch a ciphertext of degree two or less (i.e., one with no more
+-- than three components) to a ciphertext of degree one (or less)
+-- under the /same/ key, using the supplied hint.  (The input
+-- ciphertext may first need to be rescaled so that its modulus
+-- matches that of the hint.)
+keySwitchQuadCirc :: forall gad c m m' zp zq' . (KeySwitchCtx gad c m' zp zq')
+  => KSHint gad (c m' zq')
   -> CT m zp (c m' zq')
   -> CT m zp (c m' zq')
-keySwitchQuadCirc (KSQHint hint) ct =
+keySwitchQuadCirc hint ct =
   let CT MSD k l c = toMSD ct
   in case coeffs c of
        []         -> ct
        [_]        -> ct
        [_,_]      -> ct
-       [c0,c1,c2] -> CT MSD k l $ P.fromCoeffs [c0,c1] + switch hint c2
+       [c0,c1,c2] -> CT MSD k l $ P.fromCoeffs [c0,c1] + keySwitch hint c2
 
 ---------- Misc homomorphic operations ----------
 
@@ -454,7 +453,7 @@ twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 
 -- | Auxilliary data needed to tunnel from \(\O_{r'}\) to \(\O_{s'}\).
 data TunnelHint gad c e r s e' r' s' zp zq =
-  TInfo (Linear c e' r' s' zq) [Tagged gad [Polynomial (c s' zq)]]
+  THint (Linear c e' r' s' zq) [KSHint gad (c s' zq)]
 
 -- e' ~ (e * ...) is not needed in this module, but is at use sites...
 -- | Constraint synonym for generating 'TunnelHint'.
@@ -480,11 +479,11 @@ tunnelHint :: forall gad c e r s e' r' s' z zp zq' rnd .
 tunnelHint f skout (SK _ sin) = -- generate hints
   (let f' = extendLin $ liftLin (Just Pow) f :: Linear c e' r' s' z
        f'q = reduce f' :: Linear c e' r' s' zq'
-       -- choice of basis here must match coeffs* basis below
+       -- choice of basis here must match coeffs* basis in tunnel (below)
        ps = proxy powBasis (Proxy::Proxy e')
        comps = (evalLin f' . (adviseCRT sin *)) <$> ps
-   in TInfo f'q <$> CM.mapM (ksHint skout) comps)
-    \\ lcmDivides (Proxy::Proxy r) (Proxy::Proxy e')
+   in THint f'q <$> (CM.mapM (ksHint skout) comps))
+  \\ lcmDivides @r @e'
 
 -- | Constraint synonym for ring tunneling.
 type TunnelCtx c r s e' r' s' zp zq' gad =
@@ -496,12 +495,12 @@ type TunnelCtx c r s e' r' s' zp zq' gad =
 -- | Homomorphically apply the \( E \)-linear function that maps the
 -- elements of the decoding basis of \( R/E \) to the corresponding
 -- \( S \)-elements in the input array.
-tunnel :: forall c gad e r s e' r' s' zp zq' .
+tunnel :: forall gad c e r s e' r' s' zp zq' .
   (TunnelCtx c r s e' r' s' zp zq' gad)
   => TunnelHint gad c e r s e' r' s' zp zq'
   -> CT r zp (c r' zq')
   -> CT s zp (c s' zq')
-tunnel (TInfo f'q hints) ct =
+tunnel (THint f'q hints) ct =
   (let CT MSD 0 s c = toMSD $ absorbGFactors ct
        [c0,c1] = coeffs c
        -- apply E-linear function to constant term c0
@@ -514,10 +513,10 @@ tunnel (TInfo f'q hints) ct =
        -- embedding (it matters).
        -- We may need to generalize switch or define an
        -- alternative.
-       c1s' = zipWith switch hints (embed <$> c1s)
+       c1s' = zipWith keySwitch hints (embed <$> c1s)
        c1' = sum c1s'
    in CT MSD 0 s $ P.const c0' + c1')
-    \\ lcmDivides (Proxy::Proxy r) (Proxy::Proxy e')
+    \\ lcmDivides @r @e'
 
 ---------- Utility instances ----------
 
@@ -529,7 +528,7 @@ instance (NFData r) => NFData (SK r) where
 
 instance (NFData (Linear c e' r' s' zq), NFData (c s' zq))
   => NFData (TunnelHint gad c e r s e' r' s' zp zq) where
-  rnf (TInfo l t) = rnf l `seq` rnf t
+  rnf (THint l t) = rnf l `seq` rnf t
 
 instance Show r => Show (SK r) where
   show (SK v r) = "(SK " ++ (show $ toRational v) ++ " " ++ (show r) ++ ")"
@@ -547,49 +546,45 @@ instance (Protoable rq, ProtoType rq ~ RqProduct) => Protoable (Polynomial rq) w
   fromProto (P.RqPolynomial x) = fromCoeffs <$> fromProto x
 
 instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ RqProduct)
-  => Protoable (KSLinearHint gad r'q') where
-  type ProtoType (KSLinearHint gad r'q') = P.KSHint
-  toProto (KSLHint cs) =
+  => Protoable (KSHint gad r'q') where
+  type ProtoType (KSHint gad r'q') = P.KSHint
+
+  toProto (KSHint cs) =
     P.KSHint
-      (toProto $ proxy cs (Proxy::Proxy gad))
+      (toProto cs)
       (toProto $ typeRepFingerprint $ typeRep (Proxy::Proxy gad))
+
   fromProto (P.KSHint poly gadrepr') = do
     let gadrepr = toProto $ typeRepFingerprint $ typeRep (Proxy::Proxy gad)
     if gadrepr == gadrepr'
-    then (KSLHint . tag) <$> fromProto poly
+    then KSHint <$> fromProto poly
     else error $ "Expected gadget " ++ (show $ typeRep (Proxy::Proxy gad))
 
-instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ RqProduct)
-  => Protoable (KSQuadCircHint gad r'q') where
-  type ProtoType (KSQuadCircHint gad r'q') = P.KSHint
-  toProto (KSQHint x) = toProto $ KSLHint x
-  fromProto y = do
-    (KSLHint x) <- fromProto y
-    return $ KSQHint x
-
 instance (Mod zp, Typeable gad,
-          Protoable (Linear c e' r' s' zq),
-          Protoable (KSLinearHint gad (c s' zq)), Reflects s Int, Reflects r Int, Reflects e Int)
+          Protoable (Linear c e' r' s' zq), Protoable (KSHint gad (c s' zq)),
+          Reflects s Int, Reflects r Int, Reflects e Int)
   => Protoable (TunnelHint gad c e r s e' r' s' zp zq) where
   type ProtoType (TunnelHint gad c e r s e' r' s' zp zq) = P.TunnelHint
-  toProto (TInfo linf hints) =
+
+  toProto (THint linf hints) =
     P.TunnelHint
       (toProto linf)
-      (toProto $ KSLHint <$> hints)
-      (fromIntegral (proxy value (Proxy::Proxy e) :: Int))
-      (fromIntegral (proxy value (Proxy::Proxy r) :: Int))
-      (fromIntegral (proxy value (Proxy::Proxy s) :: Int))
-      (fromIntegral $ proxy modulus (Proxy::Proxy zp))
+      (toProto hints)
+      (fromIntegral (value @e :: Int))
+      (fromIntegral (value @r :: Int))
+      (fromIntegral (value @s :: Int))
+      (fromIntegral $ modulus @zp)
+
   fromProto (P.TunnelHint linf hints e r s p) =
-    let e' = fromIntegral $ (proxy value (Proxy::Proxy e) :: Int)
-        r' = fromIntegral $ (proxy value (Proxy::Proxy r) :: Int)
-        s' = fromIntegral $ (proxy value (Proxy::Proxy s) :: Int)
-        p' = fromIntegral $ proxy modulus (Proxy::Proxy zp)
+    let e' = fromIntegral $ (value @e :: Int)
+        r' = fromIntegral $ (value @r :: Int)
+        s' = fromIntegral $ (value @s :: Int)
+        p' = fromIntegral $ modulus @zp
     in if p' == p && e' == e && r' == r && s' == s
        then do
          linf' <- fromProto linf
-         hs <- (map (\(KSLHint x) -> x)) <$> fromProto hints
-         return $ TInfo linf' hs
+         hs <- fromProto hints
+         return $ THint linf' hs
        else error $ "Error reading TunnelHint proto data:" ++
               "\nexpected p=" ++ show p' ++ ", got " ++ show p ++
               "\nexpected e=" ++ show e' ++ ", got " ++ show e ++
