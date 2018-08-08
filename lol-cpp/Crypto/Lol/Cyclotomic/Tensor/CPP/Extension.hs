@@ -11,7 +11,6 @@ Portability : POSIX
 CPP Tensor-specific functions for embedding/twacing in various bases.
 -}
 
-{-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -19,7 +18,6 @@ CPP Tensor-specific functions for embedding/twacing in various bases.
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
@@ -60,8 +58,8 @@ backpermute' :: (Storable a) =>
 {-# INLINABLE backpermute' #-}
 backpermute' is v = generate (U.length is) (\i -> v ! (is U.! i))
 
-embedPow', embedDec' :: forall m m' r . (m `Divides` m', Additive r, Storable r)
-                     => (Vector r -> Vector r)
+embedPow', embedDec' :: (Additive r, Storable r, m `Divides` m')
+                     => Tagged '(m, m') (Vector r -> Vector r)
 {-# INLINABLE embedPow' #-}
 {-# INLINABLE embedDec' #-}
 -- | Embeds an vector in the powerful basis of the @m@th cyclotomic
@@ -71,61 +69,61 @@ embedPow' = (\indices arr -> generate (U.length indices) $ \idx ->
   let (j0,j1) = indices U.! idx
   in if j0 == 0
      then arr ! j1
-     else zero) $ baseIndicesPow @m @m'
+     else zero) <$> baseIndicesPow
 -- | Same as 'embedPow'', but for the decoding basis.
 embedDec' = (\indices arr -> generate (U.length indices)
   (\idx -> maybe LP.zero
     (\(sh,b) -> if b then negate (arr ! sh) else arr ! sh)
-    (indices U.! idx))) $ baseIndicesDec @m @m'
+    (indices U.! idx))) <$> baseIndicesDec
 
 -- | Embeds an vector in the CRT basis of the the mth cyclotomic ring
 -- to an vector in the CRT basis of the m'th cyclotomic ring when @m | m'@
-embedCRT' :: forall m m' mon r . (m `Divides` m', CRTrans mon r, Storable r)
-          => mon (Vector r -> Vector r)
+embedCRT' :: forall mon m m' r . (CRTrans mon r, Storable r, m `Divides` m')
+          => TaggedT '(m, m') mon (Vector r -> Vector r)
 embedCRT' =
-  (proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r)) >>
-  (pure (backpermute' $ baseIndicesCRT @m @m'))
+  (lift (proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r))) >>
+  (pureT $ backpermute' <$> baseIndicesCRT)
 
 -- | maps a vector in the powerful/decoding basis, representing an
 -- O_m' element, to a vector of arrays representing O_m elements in
 -- the same type of basis
-coeffs' :: forall m m' r . (m `Divides` m', Storable r)
-        => Vector r -> [Vector r]
+coeffs' :: (Storable r, m `Divides` m')
+        => Tagged '(m, m') (Vector r -> [Vector r])
 coeffs' = flip (\x -> V.toList . V.map (`backpermute'` x))
-          $ extIndicesCoeffs @m @m'
+          <$> extIndicesCoeffs
 
 -- | The "tweaked trace" function in either the powerful or decoding
 -- basis of the m'th cyclotomic ring to the mth cyclotomic ring when
 -- @m | m'@.
 twacePowDec' :: forall m m' r . (Storable r, m `Divides` m')
-             => Vector r -> Vector r
+             => Tagged '(m, m') (Vector r -> Vector r)
 {-# INLINABLE twacePowDec' #-}
-twacePowDec' = backpermute' $ extIndicesPowDec @m @m'
+twacePowDec' = backpermute' <$> extIndicesPowDec
 
-kronToVec :: forall m mon r . (Monad mon, Fact m, Ring r, Storable r)
-  => mon (Kron r) -> mon (Vector r)
+kronToVec :: forall mon m r . (Monad mon, Fact m, Ring r, Storable r)
+  => TaggedT m mon (Kron r) -> TaggedT m mon (Vector r)
 kronToVec v = do
   vmat <- v
-  let n = totientFact @m
+  let n = proxy totientFact (Proxy::Proxy m)
   return $ generate n (flip (indexK vmat) 0)
 
 twaceCRT' :: forall mon m m' r .
              (Storable r, CRTrans mon r, m `Divides` m')
-             => mon (Vector r -> Vector r)
+             => TaggedT '(m, m') mon (Vector r -> Vector r)
 {-# INLINE twaceCRT' #-}
-twaceCRT' = do
-  g' <- kronToVec @m' $ gCRTK @m'
-  gInv <- kronToVec @m $ gInvCRTK @m
-  embed <- embedCRT' @m @m'
+twaceCRT' = tagT $ do
+  g' <- proxyT (kronToVec gCRTK) (Proxy::Proxy m')
+  gInv <- proxyT (kronToVec gInvCRTK) (Proxy::Proxy m)
+  embed <- proxyT embedCRT' (Proxy::Proxy '(m,m'))
+  indices <- pure $ proxy extIndicesCRT (Proxy::Proxy '(m,m'))
   (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m')
-  let phi  = totientFact @m
-      phi' = totientFact @m'
-      mhat = fromIntegral $ valueHatFact @m
+  let phi = proxy totientFact (Proxy::Proxy m)
+      phi' = proxy totientFact (Proxy::Proxy m')
+      mhat = fromIntegral $ proxy valueHatFact (Proxy::Proxy m)
       hatRatioInv = m'hatinv * mhat
       reltot = phi' `div` phi
       -- tweak = mhat * g' / (m'hat * g)
       tweak = SV.map (* hatRatioInv) $ SV.zipWith (*) (embed gInv) g'
-      indices = extIndicesCRT @m @m'
   return $ \ arr -> -- take true trace after mul-by-tweak
     let v = backpermute' indices (SV.zipWith (*) tweak arr)
     in generate phi $ \i -> foldl1' (+) $ SV.unsafeSlice (i*reltot) reltot v
@@ -133,33 +131,34 @@ twaceCRT' = do
 -- | The powerful extension basis, wrt the powerful basis.
 -- Outputs a list of vectors in O_m' that are an O_m basis for O_m'
 powBasisPow' :: forall m m' r . (m `Divides` m', Ring r, SV.Storable r)
-  => [SV.Vector r]
-powBasisPow' =
-  let (_, phi, phi', _) = indexInfo @m @m'
-      idxs = baseIndicesPow @m @m'
-  in LP.map (\k -> generate phi' $ \j ->
-                let (j0,j1) = idxs U.! j
-                in if j0==k && j1==0 then one else zero)
+                => Tagged '(m, m') [SV.Vector r]
+powBasisPow' = do
+  (_, phi, phi', _) <- indexInfo
+  idxs <- baseIndicesPow
+  return $ LP.map (\k -> generate phi' $ \j ->
+                           let (j0,j1) = idxs U.! j
+                          in if j0==k && j1==0 then one else zero)
     [0..phi' `div` phi - 1]
 
 -- | A list of vectors representing the mod-p CRT set of the
 -- extension O_m'/O_m
 crtSetDec' :: forall m m' fp .
   (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m', SV.Storable fp)
-  => [SV.Vector fp]
+  => Tagged '(m, m') [SV.Vector fp]
 crtSetDec' =
-  let p = valuePrime @(CharOf fp)
-      phi = totientFact @m'
-      d = order @m' p
-      h :: Int = valueHatFact @m'
+  let m'p = Proxy :: Proxy m'
+      p = proxy valuePrime (Proxy::Proxy (CharOf fp))
+      phi = proxy totientFact m'p
+      d = proxy (order p) m'p
+      h :: Int = proxy valueHatFact m'p
       hinv = recip $ fromIntegral h
-  in reify d $ \(_::Proxy d) ->
-    let twCRTs' :: Kron (GF fp d)
-          = fromMaybe (error "internal error: crtSetDec': twCRTs") $ twCRTs @m'
-        zmsToIdx = T.zmsToIndexFact @m'
-        elt j i = indexK twCRTs' j (zmsToIdx i)
-        trace' = trace :: GF fp d -> fp -- to avoid recomputing powTraces
-        cosets = partitionCosets @m @m' p
-      in LP.map (\is -> generate phi
-                        (\j -> hinv * trace'
-                               (LP.sum $ LP.map (elt j) is))) cosets
+  in reify d $ \(_::Proxy d) -> do
+      let twCRTs' :: Kron (GF fp d)
+            = fromMaybe (error "internal error: crtSetDec': twCRTs") $ proxyT twCRTs m'p
+          zmsToIdx = proxy T.zmsToIndexFact m'p
+          elt j i = indexK twCRTs' j (zmsToIdx i)
+          trace' = trace :: GF fp d -> fp -- to avoid recomputing powTraces
+      cosets <- partitionCosets p
+      return $ LP.map (\is -> generate phi
+                          (\j -> hinv * trace'
+                                      (LP.sum $ LP.map (elt j) is))) cosets
