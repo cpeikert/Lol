@@ -28,29 +28,29 @@ calls in a type-safe way.
 {-# OPTIONS_GHC -fno-warn-unticked-promoted-constructors #-}
 
 module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
-(dcrtZq, dcrtinvZq
-,dlZq, dlinvZq
-,dmulgpowZq, dmulgdecZq
-,dginvpowZq, dginvdecZq
-,dmulZq
-,dcrtC, dcrtinvC
-,dlC, dlinvC
-,dmulgpowC, dmulgdecC
-,dginvpowC, dginvdecC
-,dmulC
-,dlDouble, dlinvDouble
-,dmulgpowDouble, dmulgdecDouble
-,dginvpowDouble, dginvdecDouble
-,dgaussdecDouble
-,dnormDouble
-,dlRRq,dlinvRRq
-,dlInt64, dlinvInt64
-,dmulgpowInt64, dmulgdecInt64
-,dginvpowInt64, dginvdecInt64
-,dnormInt64
-,marshalFactors
-,CPP
-,withArray, withPtrArray
+( dcrtZq, dcrtinvZq
+, dlZq, dlinvZq
+, dmulgpowZq, dmulgdecZq
+, dginvpowZq, dginvdecZq
+, dmulZq
+, dcrtC, dcrtinvC
+, dlC, dlinvC
+, dmulgpowC, dmulgdecC
+, dginvpowC, dginvdecC
+, dmulC
+, dlDouble, dlinvDouble
+, dmulgpowDouble, dmulgdecDouble
+, dginvpowDouble, dginvdecDouble
+, dgaussdecDouble
+, dnormDouble
+, dlRRq,dlinvRRq
+, dlInt64, dlinvInt64
+, dmulgpowInt64, dmulgdecInt64
+, dginvpowInt64, dginvdecInt64
+, dnormInt64
+, marshalFactors
+, CPP
+, withArray, withPtrArray
 ) where
 
 import Crypto.Lol.Prelude              as LP (Complex, PP, Proxy (..),
