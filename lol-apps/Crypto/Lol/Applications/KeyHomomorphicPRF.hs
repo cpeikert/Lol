@@ -11,20 +11,22 @@ Portability : POSIX
 Key-homomorphic PRF from <http://web.eecs.umich.edu/~cpeikert/pubs/kh-prf.pdf [BP14]>.
 -}
 
-{-# LANGUAGE ConstraintKinds      #-}
-{-# LANGUAGE DataKinds            #-}
-{-# LANGUAGE FlexibleContexts     #-}
-{-# LANGUAGE FlexibleInstances    #-}
-{-# LANGUAGE GADTs                #-}
-{-# LANGUAGE NoImplicitPrelude    #-}
-{-# LANGUAGE PolyKinds            #-}
-{-# LANGUAGE RecordWildCards      #-}
-{-# LANGUAGE ScopedTypeVariables  #-}
-{-# LANGUAGE StandaloneDeriving   #-}
-{-# LANGUAGE TemplateHaskell      #-}
-{-# LANGUAGE TypeFamilies         #-}
-{-# LANGUAGE TypeOperators        #-}
-{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE RecordWildCards       #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE TemplateHaskell       #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Crypto.Lol.Applications.KeyHomomorphicPRF
 ( FBT(..), SFBT, SizeFBT, FBTC, singFBT
@@ -73,7 +75,7 @@ newtype PRFKey n a = Key { key :: Matrix a }
 -- | Generate an @n@-dimensional secret key over @rq@.
 genKey :: forall rq rnd n . (MonadRandom rnd, Random rq, Reflects n Int)
        => rnd (PRFKey n rq)
-genKey = fmap Key $ randomMtx 1 $ proxy value (Proxy :: Proxy n)
+genKey = fmap Key $ randomMtx 1 $ value @n
 
 -- | PRF public parameters for an @n@-dimension secret key over @a@,
 -- using a gadget indicated by @gad@.
@@ -85,8 +87,8 @@ data PRFParams n gad a = Params { a0 :: (Matrix a), a1 :: (Matrix a) }
 genParams :: forall gad rq rnd n .
             (MonadRandom rnd, Random rq, Reflects n Int, Gadget gad rq)
           => rnd (PRFParams n gad rq)
-genParams = let len = length $ untag (gadget :: Tagged gad [rq])
-                n   = proxy value (Proxy :: Proxy n)
+genParams = let len = length $ gadget @gad @rq
+                n   = value @n
             in Params <$> (randomMtx n (n*len)) <*> (randomMtx n (n*len))
 
 -- | A random matrix having a given number of rows and columns.
@@ -140,7 +142,7 @@ updateState' t p st x = case t of
                      str = updateState' r p (right' <$> st) xr
                      al   = matrix $ root' stl
                      ar   = matrix $ root' str
-                     ar'  = reduce <$> proxy (decomposeMatrix ar) (Proxy :: Proxy gad)
+                     ar'  = reduce <$> decomposeMatrix @gad ar
                  in I (BSM x (al*ar')) stl str
 
 updateState :: Decompose gad rq
