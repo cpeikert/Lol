@@ -32,8 +32,8 @@ module Crypto.Lol.Tests.ZqTests (zqTests) where
 import Crypto.Lol
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Utils.ShowType
-import Crypto.Lol.Utils.Tests
-    (Gen, Test, chooseAny, testGroup, testWithGen)
+import Crypto.Lol.Utils.Tests    (Gen, Test, chooseAny, testGroup,
+                                  testWithGen)
 
 import Control.Monad.Random
 
@@ -74,9 +74,8 @@ deriving instance Show (ModRep r) => Show (LiftedMod r)
 
 instance (Mod r, Random (ModRep r), ToInteger (ModRep r))
   => Random (LiftedMod r) where
-  random =
-    let q = modulus @r
-    in \g -> let (x,g') = randomR (0,q-1) g in (LMod x, g')
+  random = let q = modulus @r
+           in \g -> let (x,g') = randomR (0,q-1) g in (LMod x, g')
   randomR = error "randomR not defined for `LiftedMod`"
 
 
