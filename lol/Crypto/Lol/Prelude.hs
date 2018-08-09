@@ -109,7 +109,7 @@ class (Additive a, Additive b) => Subgroup a b where
   fromSubgroup :: a -> b
 
 -- | Represents that @b@ is a quotient group of @a@.
-class (Additive a, Additive b) => Reduce a b where
+class Reduce a b where
   reduce :: a -> b
 
 -- | Represents that @b@ can be lifted to a "short" @a@ congruent to @b@.
