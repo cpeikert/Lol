@@ -18,11 +18,11 @@ Portability : POSIX
 // current behavior (taking rus, rather than ruInv) matches RT
 void primeD (double *y, hDim_t lts, hDim_t rts, hDim_t p, hDim_t rustride, Complex* ru)
 {
-	if(p == 2) {
+  if(p == 2) {
     return;
   }
   hDim_t blockOffset, modOffset, tensorOffset;
-	double *tempSpace = (double*)malloc((p-1)*sizeof(double));
+  double *tempSpace = (double*)lolAlloc((p-1)*sizeof(double));
   hDim_t temp1 = rts*(p-1);
   for(blockOffset = 0; blockOffset < lts; blockOffset++) {
     hDim_t temp2 = blockOffset*temp1;
@@ -60,5 +60,5 @@ void ppD (double *y, hDim_t lts, hDim_t rts, PrimeExponent pe, Complex *ru)
 //the contents of y will be destroyed, but should be initialized in Haskell-land to independent Guassians over the reals
 extern "C" void tensorGaussianDec (double *y, hDim_t totm, PrimeExponent *peArr, hShort_t sizeOfPE, Complex** ru)
 {
-	tensorFuserCRT (y, ppD, totm, peArr, sizeOfPE, ru, 0);
+  tensorFuserCRT (y, ppD, totm, peArr, sizeOfPE, ru, 0);
 }

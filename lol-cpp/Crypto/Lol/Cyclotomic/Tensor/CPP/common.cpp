@@ -9,6 +9,7 @@ Stability   : experimental
 Portability : POSIX
 */
 
+#include <cstdio>
 #include "types.h"
 
 hInt_t Zq::q; // should be in zq.cpp; here due to GHC #12152
@@ -24,4 +25,15 @@ hDim_t ipow(hDim_t base, hShort_t exp)
     base *= base;
   }
   return result;
+}
+
+void* lolAlloc(size_t size)
+{
+    void *ret = malloc(size);
+    if (ret == NULL && size != 0) {
+        fprintf(stderr, "FATAL: Out of memory");
+        fflush(stderr);
+        exit(1);
+    }
+    return ret;
 }
