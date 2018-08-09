@@ -239,6 +239,9 @@ embedCRT = hasCRTFuncs @t @m' @r *>
            (snd <$> crtExtFuncs)
 
 fKron :: forall m r mon . (Fact m, Monad mon)
+          -- higher-rank argument needs to be tagged (pp can't be
+          -- ambiguous) because otherwise we can't invoke fKron on an
+          -- ambiguous forall'd value
          => (forall pp . (PPow pp) => TaggedT pp mon (KronC r))
          -> mon (Kron r)
 fKron mat = go $ sUnF (sing :: SFactored m)
@@ -254,6 +257,9 @@ fKron mat = go $ sUnF (sing :: SFactored m)
 -- prime \(p\) to \(\vec{1}_(p^{e-1}) \otimes M\), where \(\vec{1}\)
 -- denotes the all-1s vector.
 ppKron :: forall pp r mon . (PPow pp, Monad mon)
+          -- higher-rank argument needs to be tagged (pp can't be
+          -- ambiguous) because otherwise we can't invoke ppKron on an
+          -- ambiguous forall'd value
           => (forall p . (Prime p) => TaggedT p mon (KronC r))
           -> TaggedT pp mon (KronC r)
 ppKron mat = tagT $ case (sing :: SPrimePower pp) of
