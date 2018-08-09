@@ -62,8 +62,7 @@ instance RealField r => Additive.C (RRq q r) where
 reduce' :: forall q r . (Reflects q r, RealField r) => r -> RRq q r
 reduce' r = RRq $ fraction $ r / value @q -- scale down
 
-instance (Reflects q r, RealField r, Additive (RRq q r))
-  => Reduce r (RRq q r) where
+instance (Reflects q r, RealField r) => Reduce r (RRq q r) where
   reduce = reduce'
 
 type instance LiftOf (RRq q r) = r
