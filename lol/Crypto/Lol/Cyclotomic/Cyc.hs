@@ -93,7 +93,6 @@ import           Control.Arrow
 import           Control.DeepSeq
 import           Control.Monad.Identity
 import           Control.Monad.Random   hiding (lift)
-import           Data.Coerce
 import           Data.Constraint        ((:-), Dict (..), (\\))
 import qualified Data.Constraint        as C
 import           Data.Foldable          (Foldable)
@@ -843,7 +842,7 @@ instance (Gadget gad (ZqBasic q z),
 -- can't auto-derive because of ambiguity of gadget
 instance Gadget gad (CycG t m (ZqBasic q z))
   => Gadget gad (Cyc t m (ZqBasic q z)) where
-  gadget = coerce (gadget @gad :: [Cyc t m (ZqBasic q z)])
+  gadget = CycZqB <$> gadget @gad
 
 instance (Gadget gad (Cyc t m a), Gadget gad (Cyc t m b))
   => Gadget gad (Cyc t m (a,b)) where
@@ -956,10 +955,10 @@ instance (Correct gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
 instance Correct gad (CycG t m (ZqBasic q Int64))
   => Correct gad (Cyc t m (ZqBasic q Int64)) where
 
-  -- correct = (CycZqB *** fmap CycI64) . correct @gad . fmap unCycZqB
-  correct = coerce $
-    (correct @gad :: [Cyc t m (ZqBasic q Int64)]
-                  -> (Cyc t m (ZqBasic q Int64), [Cyc t m Int64]))
+  correct = (CycZqB *** fmap CycI64) . correct @gad . fmap unCycZqB
+  -- correct = coerce $
+  --   (correct @gad :: [CycG t m (ZqBasic q Int64)]
+  --                 -> (CycG t m (ZqBasic q Int64), [CycG t m Int64]))
 
 -- TODO: instance Correct gad (Cyc t m (a,b)) where
 -- seems hard; see Correct instance for pairs in Gadget.hs
