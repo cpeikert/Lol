@@ -247,12 +247,12 @@ instance (GFCtx fp d, Fact m, TensorPowDec t fp, Module (GF fp d) (t m fp))
   r *> (Pow v) = Pow $ r LP.*> v
 
 
-instance (Reduce a b, TensorPowDec t a, TensorPowDec t b, Fact m)
+instance (Fact m, Reduce a b, IFunctor t, IFElt t a, IFElt t b)
          => Reduce (CycRep t P m a) (CycRep t P m b) where
   reduce (Pow v) = Pow $ fmapI reduce v
   {-# INLINABLE reduce #-}
 
-instance (Reduce a b, TensorPowDec t a, TensorPowDec t b, Fact m)
+instance (Fact m, Reduce a b, IFunctor t, IFElt t a, IFElt t b)
     => Reduce (CycRep t D m a) (CycRep t D m b) where
   reduce (Dec v) = Dec $ fmapI reduce v
   {-# INLINABLE reduce #-}
@@ -263,12 +263,12 @@ instance (Reduce a b, TensorPowDec t a, TensorPowDec t b, Fact m)
 type instance LiftOf (CycRep t P m r) = CycRep t P m (LiftOf r)
 type instance LiftOf (CycRep t D m r) = CycRep t D m (LiftOf r)
 
-instance (Lift' r, TensorPowDec t r, TensorPowDec t (LiftOf r), Fact m)
+instance (Lift' r, IFunctor t, IFElt t r, IFElt t (LiftOf r), Fact m)
          => Lift' (CycRep t P m r) where
   lift (Pow v) = Pow $ fmapI lift v
   {-# INLINABLE lift #-}
 
-instance (Lift' r, TensorPowDec t r, TensorPowDec t (LiftOf r), Fact m)
+instance (Lift' r, IFunctor t, IFElt t r, IFElt t (LiftOf r), Fact m)
          => Lift' (CycRep t D m r) where
   lift (Dec v) = Dec $ fmapI lift v
   {-# INLINABLE lift #-}
