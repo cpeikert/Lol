@@ -32,6 +32,7 @@ void* lolAlloc(size_t size)
     void *ret = malloc(size);
     if (ret == NULL && size != 0) {
         fprintf(stderr, "FATAL: Out of memory");
+        fflush(stderr);
         exit(1);
     }
     return ret;
