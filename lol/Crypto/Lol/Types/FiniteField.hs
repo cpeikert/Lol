@@ -102,7 +102,8 @@ instance (GFCtx fp d) => Field.C (GF fp d) where
                            in GF a
 
 instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
-  crtInfo :: forall m . (Reflects m Int) => TaggedT m Maybe (CRTInfo (GF fp d))
+  -- https://ghc.haskell.org/trac/ghc/wiki/Migration/8.2#KindgeneralizationandMonoLocalBinds
+  crtInfo :: forall (m :: k) . (Reflects m Int) => TaggedT m Maybe (CRTInfo (GF fp d))
   crtInfo = tagT $ (,) <$> omegaPow <*> scalarInv
     where
       omegaPow :: Maybe (Int -> GF fp d)
