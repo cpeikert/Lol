@@ -224,8 +224,8 @@ prop_ksLin :: forall t m m' z zp (zq :: *) (gad :: *) . (z ~ LiftOf zp, _)
      -> IO Bool
 prop_ksLin _ (pt, skin, skout) = do
   ct <- encrypt skin pt
-  kslHint :: KSHint gad (Cyc t m' zq) <- ksLinearHint skout skin
-  let ct' = keySwitchLinear kslHint ct :: CT m zp (Cyc t m' zq)
+  hint :: KSHint gad (Cyc t m' zq) <- ksLinearHint skout skin
+  let ct' = keySwitchLinear hint ct :: CT m zp (Cyc t m' zq)
       pt' = decrypt skout ct'
   return $ pt == pt'
 
@@ -236,8 +236,8 @@ prop_ksQuad :: forall t m m' z zp zq (gad :: *) . (z ~ LiftOf zp, _)
 prop_ksQuad _ (pt1, pt2, sk) = do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 <- encrypt sk pt2
-  ksqHint :: KSHint gad (Cyc t m' zq) <- ksQuadCircHint sk
-  let ct' = keySwitchQuadCirc ksqHint $ ct1*ct2
+  hint :: KSHint gad (Cyc t m' zq) <- ksQuadCircHint sk
+  let ct' = keySwitchQuadCirc hint $ ct1*ct2
       ptProd = pt1*pt2
       pt' = decrypt sk ct'
   return $ ptProd == pt'
