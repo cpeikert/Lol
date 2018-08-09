@@ -16,7 +16,7 @@
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
 
-resolver: lts-8.2
+resolver: lts-12.5
 compiler-check: newer-minor
 
 # User packages to be built.
@@ -48,14 +48,9 @@ packages:
 # Dependency packages to be pulled from upstream that are not in the resolver
 
 extra-deps:
-- non-negative-0.1.1
-- numeric-prelude-0.4.2
-- tagged-transformer-0.8
-- syntactic-3.6.3
-- type-natural-0.7.1.3
-- equational-reasoning-0.4.1.1
-- monomorphic-0.0.3.3
-#
+- type-natural-0.8.2.0
+- equational-reasoning-0.5.1.0
+- monadcryptorandom-0.7.2.1
 - nist-beacon-0.2.0.0
 
 # Override default flag values for local packages and extra-deps
