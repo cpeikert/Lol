@@ -75,8 +75,8 @@ import           Crypto.Lol.Cyclotomic.CycRep   hiding (coeffsDec,
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
-import           Crypto.Lol.Cyclotomic.Tensor   (TensorCRT, TensorCRTSet,
-                                                 TensorG, TensorGSqNorm,
+import           Crypto.Lol.Cyclotomic.Tensor   (TensorCRTSet,
+                                                 TensorGSqNorm,
                                                  TensorGaussian,
                                                  TensorPowDec)
 import           Crypto.Lol.Gadget
@@ -88,14 +88,13 @@ import           Crypto.Lol.Types.IFunctor
 import           Crypto.Lol.Types.Proto
 import           Crypto.Lol.Types.ZPP
 
-import           Control.Applicative    hiding ((*>))
+import           Control.Applicative  hiding ((*>))
 import           Control.Arrow
 import           Control.DeepSeq
-import           Control.Monad.Identity
-import           Control.Monad.Random   hiding (lift)
-import           Data.Constraint        ((:-), Dict (..), (\\))
-import qualified Data.Constraint        as C
-import           Data.Foldable          (Foldable)
+import           Control.Monad.Random hiding (lift)
+import           Data.Constraint      ((:-), Dict (..), (\\))
+import qualified Data.Constraint      as C
+import           Data.Foldable        (Foldable)
 import           Data.Traversable
 import           Language.Haskell.TH
 
@@ -222,9 +221,9 @@ instance (Fact m, CRTElt t r,
   foldrCyc (Just L.Pow) f acc (Pow u) = foldr f acc u
   foldrCyc (Just L.Dec) f acc (Dec u) = foldr f acc u
   foldrCyc Nothing f acc c = foldrCyc (Just L.Pow) f acc c
-  foldrCyc powbas@(Just L.Pow) f acc c@(Dec u) = foldrCyc powbas f acc (toPow' c)
-  foldrCyc decbas@(Just L.Dec) f acc c@(Pow u) = foldrCyc decbas f acc (toDec' c)
-  foldrCyc bas f acc c@(CRT u) = foldrCyc bas f acc (toPow' c)
+  foldrCyc powbas@(Just L.Pow) f acc c@(Dec _) = foldrCyc powbas f acc (toPow' c)
+  foldrCyc decbas@(Just L.Dec) f acc c@(Pow _) = foldrCyc decbas f acc (toDec' c)
+  foldrCyc bas f acc c@(CRT _) = foldrCyc bas f acc (toPow' c)
   foldrCyc bas f acc (Sub u) = foldrCyc bas f acc u
 
 instance (Fact m, CRTElt t a, IFunctor t, IFElt t a, IFElt t b)
@@ -668,7 +667,7 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r) -- ZT, ID for superclass
   twace (Sub (c :: CycG t l r)) = Sub (twace c :: CycG t (FGCD l m) r)
                                   \\ gcdDivides @l @m
 
-  powBasis :: forall m m' a . (m `Divides` m') => Tagged m [CycG t m' r]
+  powBasis :: forall m m' . (m `Divides` m') => Tagged m [CycG t m' r]
   powBasis = tag $ Pow <$> R.powBasis @m
 
   coeffsCyc L.Pow c' = Pow <$> R.coeffsPow (unCycGPow c')
@@ -705,7 +704,7 @@ instance (TensorPowDec t (RRq q r)) => ExtensionCyc (Cyc t) (RRq q r) where
   embed (DecRRq u) = PowRRq $ embedPow $ toPow u
   twace (PowRRq u) = PowRRq $ twacePow u
   twace (DecRRq u) = DecRRq $ twaceDec u
-  powBasis :: forall m m' a . (m `Divides` m') => Tagged m [Cyc t m' (RRq q r)]
+  powBasis :: forall m m' . (m `Divides` m') => Tagged m [Cyc t m' (RRq q r)]
   powBasis = tag $ PowRRq <$> R.powBasis @m
   coeffsCyc L.Pow (PowRRq c) = PowRRq <$> R.coeffsPow c
   coeffsCyc L.Dec (DecRRq c) = DecRRq <$> R.coeffsDec c
