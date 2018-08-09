@@ -399,12 +399,6 @@ deriving instance Additive (CycG t m Double) => Additive.C (Cyc t m Double)
 deriving instance Additive (CycG t m Int64) => Additive.C (Cyc t m Int64)
 deriving instance Additive (CycG t m (ZqBasic q z)) => Additive.C (Cyc t m (ZqBasic q z))
 
--- CJP: need at least a basic TensorPowDec t Integer implementation to do this
-instance Additive.C (Cyc t m Integer) where
-  (+) = error "TODO: implement Additive for Cyc t m Integer"
-  zero = error "TODO: implement Additive for Cyc t m Integer"
-  negate = error "TODO: implement Additive for Cyc t m Integer"
-
 instance (Additive (Cyc t m a), Additive (Cyc t m b))
   => Additive.C (Cyc t m (a,b)) where
   zero = CycPair zero zero
