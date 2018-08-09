@@ -453,7 +453,8 @@ powBasis = fmap Pow $ untag $ powBasisPow @t @r @m
 -- represented with respect to the powerful basis (which seems to be
 -- the best choice for typical use cases).
 crtSet :: forall m m' p mbar m'bar t r .
-           (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r), mbar ~ PFree p m, m'bar ~ PFree p m',
+           (m `Divides` m', ZPP r,
+            p ~ CharOf (ZpOf r), mbar ~ PFree p m, m'bar ~ PFree p m',
             CRTElt t r, TensorCRTSet t (ZpOf r))
           => [CycRep t P m' r]
 {-# INLINABLE crtSet #-}
@@ -467,6 +468,8 @@ crtSet =
       -- time), switching back to pow basis each time so that we don't
       -- lose precision!  (This fixes a bug witnessed for moderate
       -- values of e.)
+      expon :: (Fact m'bar, ToPowDec (CycRep t) rep r)
+        => Int -> CycRep t rep m'bar r -> CycRep t P m'bar r
       expon 1  = toPow
       expon e' = toPowCE . (^p) . toCRT . expon (e'-1)
       pp  = Proxy::Proxy p
