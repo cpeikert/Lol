@@ -61,20 +61,19 @@ singletons [d|
                        deriving (Show, Eq)
 
             instance Ord Pos where
-              compare O O          = EQ
-              compare O (S _)      = LT
-              compare (S _) O      = GT
-              compare (S a) (S b)  = compare a b
+              compare O O         = EQ
+              compare O (S _)     = LT
+              compare (S _) O     = GT
+              compare (S a) (S b) = compare a b
 
             addPos :: Pos -> Pos -> Pos
-            addPos O b      = S b
-            addPos (S a) b  = S $ addPos a b
+            addPos O b     = S b
+            addPos (S a) b = S $ addPos a b
 
             subPos :: Pos -> Pos -> Pos
-            subPos (S a) O      = a
-            subPos (S a) (S b)  = subPos a b
-            subPos O _          = error "Invalid call to subPos: a <= b"
-
+            subPos (S a) O     = a
+            subPos (S a) (S b) = subPos a b
+            subPos O _         = error "Invalid call to subPos: a <= b"
            |]
 
 -- not promotable due to numeric output
@@ -82,7 +81,7 @@ singletons [d|
 -- | Convert a 'Pos' to an integral type.
 {-# INLINABLE posToInt #-}
 posToInt :: ToInteger.C z => Pos -> z
-posToInt O = one
+posToInt O     = one
 posToInt (S a) = one + posToInt a
 
 singletons [d|
@@ -120,7 +119,7 @@ intToPos _ = error "cannot convert non-positive value to a Pos"
 -- | Convert a 'Bin' to an integral type.
 {-# INLINABLE binToInt #-}
 binToInt :: ToInteger.C z => Bin -> z
-binToInt B1 = one
+binToInt B1     = one
 binToInt (D0 a) = 2 * binToInt a
 binToInt (D1 a) = 1 + 2 * binToInt a
 
@@ -129,7 +128,7 @@ intToBin :: ToInteger.C z => z -> Bin
 intToBin 1 = B1
 intToBin x | x > 0 =
   case even x of
-    True -> D0 $ intToBin $ x `div` 2
+    True  -> D0 $ intToBin $ x `div` 2
     False -> D1 $ intToBin $ x `div` 2
 
 -- | Kind-restricted synonym for 'SingI'.
@@ -151,9 +150,9 @@ reifyPosI n k = reifyPos n (\(p::SPos p) -> withSingI p $ k (Proxy::Proxy p))
 -- | Reify a 'Bin' as a singleton.
 reifyBin :: Int -> (forall b . SBin b -> a) -> a
 reifyBin x _ | x < 1  = error $ "reifyBin: non-positive x = " ++ show x
-reifyBin 1 k          = k SB1
+reifyBin 1 k = k SB1
 reifyBin x k | even x = reifyBin (x `div` 2) (k . SD0)
-reifyBin x k          = reifyBin (x `div` 2) (k . SD1)
+reifyBin x k = reifyBin (x `div` 2) (k . SD1)
 
 -- | Reify a 'Bin' for a 'SingI' constraint.
 reifyBinI :: Int -> (forall b proxy . BinC b => proxy b -> a) -> a
@@ -176,7 +175,7 @@ binType n
                     (0,1) -> conT 'B1
                     (q,0) -> conT 'D0 `appT` binType q
                     (q,1) -> conT 'D1 `appT` binType q
-                    _ -> fail "internal error in PosBinTH.bin"
+                    _     -> fail "internal error in PosBinTH.bin"
 
 posDec, binDec :: Int -> DecQ
 -- | Template Haskell splice that defines the 'Pos' type synonym @P@\(n\).
