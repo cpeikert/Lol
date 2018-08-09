@@ -288,13 +288,13 @@ correctZ q b =
 
       -- | Yield @(q \bar{D}) \cdot w@, given precomputed first entry
       qbarD :: [z] -> z -> [z]
-      qbarD [] x = [x]
+      qbarD [] x      = [x]
       qbarD (w0:ws) x = x : qbarD ws (b*x - q*w0)
 
       -- | Yield the difference between the input vectors, along with
       -- their final entry.
       subLast :: [z] -> [z] -> ([z], z)
-      subLast [v0] [v'0] = let y = v0-v'0 in ([y], y)
+      subLast [v0] [v'0]        = let y = v0-v'0 in ([y], y)
       subLast (v0:vs) (v'0:v's) = first ((v0-v'0):) $ subLast vs v's
 
 instance (Reflects q z, ToInteger z, Reflects b z)
