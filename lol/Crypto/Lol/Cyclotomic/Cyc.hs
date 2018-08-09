@@ -213,7 +213,7 @@ instance (UnCyc t a, UnCyc t b, IFunctor t, IFElt t a, IFElt t b, IFElt t (a,b))
   unCycPow (CycPair a b) = zipWithI (,) (unCycPow a) (unCycPow b)
   unCycDec (CycPair a b) = zipWithI (,) (unCycDec a) (unCycDec b)
 
----------- Category theoretic instances ----------
+---------- Category-theoretic instances ----------
 
 instance (Fact m, CRTElt t r, ForallFact1 Foldable t,
           Traversable (CycRep t P m), Traversable (CycRep t D m))
@@ -226,6 +226,29 @@ instance (Fact m, CRTElt t r, ForallFact1 Foldable t,
   foldrCyc b@(Just L.Pow) f acc c       = foldrCyc b f acc $ toPow' c
   foldrCyc b@(Just L.Dec) f acc c       = foldrCyc b f acc $ toDec' c
   foldrCyc Nothing        f acc c       = foldrCyc Nothing f acc $ toPow' c
+
+instance (FoldableCyc (CycG t m) Double) => FoldableCyc (Cyc t m) Double where
+  foldrCyc bas f acc = foldrCyc bas f acc . unCycDbl
+
+instance (FoldableCyc (CycG t m) Int64) => FoldableCyc (Cyc t m) Int64 where
+  foldrCyc bas f acc = foldrCyc bas f acc . unCycI64
+
+instance (FoldableCyc (CycG t m) (ZqBasic q z)) => FoldableCyc (Cyc t m) (ZqBasic q z) where
+  foldrCyc bas f acc = foldrCyc bas f acc . unCycZqB
+
+-- No instance for CycPair -- is one possible?
+
+-- No instance for Cyc over Integer without TensorPowDec CT Integer,
+-- because we need toDec and toPow.
+
+instance (Fact m, TensorPowDec t (RRq q r),
+          ForallFact1 Traversable t, ForallFact1 Applicative t)
+    => FoldableCyc (Cyc t m) (RRq q r) where
+  foldrCyc (Just L.Pow) f acc = foldr f acc . unCycPow
+  foldrCyc (Just L.Dec) f acc = foldr f acc . unCycDec
+  foldrCyc Nothing      f acc = foldrCyc (Just L.Pow) f acc
+
+--- FunctorCyc
 
 instance (Fact m, CRTElt t a, IFunctor t, IFElt t a, IFElt t b)
   => FunctorCyc (CycG t m) a b where
@@ -1110,28 +1133,6 @@ instance (Fact m, CRTElt t Double, TensorPowDec t (RRq q Double),
   toProto (PowRRq x) = toProto $ toDec x
   toProto (DecRRq x) = toProto x
   fromProto x = DecRRq <$> fromProto x
-
----------- Instances of FoldableCyc ----------
-
-instance (Fact m, FoldableCyc (CycG t m) Double) => FoldableCyc (Cyc t m) Double where
-  foldrCyc bas f acc (CycDbl u) = foldrCyc bas f acc u
-
-instance (Fact m, FoldableCyc (CycG t m) Int64) => FoldableCyc (Cyc t m) Int64 where
-  foldrCyc bas f acc (CycI64 u) = foldrCyc bas f acc u
-
-instance (Fact m, FoldableCyc (CycG t m) (ZqBasic q z)) => FoldableCyc (Cyc t m) (ZqBasic q z) where
-  foldrCyc bas f acc (CycZqB u) = foldrCyc bas f acc u
-
--- No instance for CycPair is possible.
-
--- No instance for Cyc over Integer without TensorPowDec CT Integer, since we need to use toDec and
--- toPow as defined in CycRep.
-
-instance (Fact m, TensorPowDec t (RRq q r), Foldable (CycRep t P m), Foldable (CycRep t D m))
-    => FoldableCyc (Cyc t m) (RRq q r) where
-  foldrCyc (Just L.Pow) f acc c = foldr f acc (unCycPow c)
-  foldrCyc (Just L.Dec) f acc c = foldr f acc (unCycDec c)
-  foldrCyc Nothing f acc c      = foldrCyc (Just L.Pow) f acc c
 
 ---------- TH instances of FunctorCyc ----------
 
