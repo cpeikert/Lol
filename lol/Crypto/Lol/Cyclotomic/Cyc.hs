@@ -215,16 +215,17 @@ instance (UnCyc t a, UnCyc t b, IFunctor t, IFElt t a, IFElt t b, IFElt t (a,b))
 
 ---------- Category theoretic instances ----------
 
-instance (Fact m, CRTElt t r,
-          Traversable (CycRep t P m), Traversable (CycRep t D m), ForallFact1 Foldable t)
+instance (Fact m, CRTElt t r, ForallFact1 Foldable t,
+          Traversable (CycRep t P m), Traversable (CycRep t D m))
     => FoldableCyc (CycG t m) r where
-  foldrCyc (Just L.Pow) f acc (Pow u) = foldr f acc u
-  foldrCyc (Just L.Dec) f acc (Dec u) = foldr f acc u
-  foldrCyc Nothing f acc c = foldrCyc (Just L.Pow) f acc c
-  foldrCyc powbas@(Just L.Pow) f acc c@(Dec _) = foldrCyc powbas f acc (toPow' c)
-  foldrCyc decbas@(Just L.Dec) f acc c@(Pow _) = foldrCyc decbas f acc (toDec' c)
-  foldrCyc bas f acc c@(CRT _) = foldrCyc bas f acc (toPow' c)
-  foldrCyc bas f acc (Sub u) = foldrCyc bas f acc u
+  foldrCyc (Just L.Pow)   f acc (Pow u) = foldr f acc u
+  foldrCyc (Just L.Dec)   f acc (Dec u) = foldr f acc u
+  foldrCyc Nothing        f acc (Pow u) = foldr f acc u
+  foldrCyc Nothing        f acc (Dec u) = foldr f acc u
+
+  foldrCyc b@(Just L.Pow) f acc c       = foldrCyc b f acc $ toPow' c
+  foldrCyc b@(Just L.Dec) f acc c       = foldrCyc b f acc $ toDec' c
+  foldrCyc Nothing        f acc c       = foldrCyc Nothing f acc $ toPow' c
 
 instance (Fact m, CRTElt t a, IFunctor t, IFElt t a, IFElt t b)
   => FunctorCyc (CycG t m) a b where
