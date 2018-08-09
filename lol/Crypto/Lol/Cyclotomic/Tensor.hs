@@ -64,7 +64,7 @@ import           Algebra.Module          as Module (C)
 import           Control.Applicative
 import           Control.Monad.Random
 import           Data.Foldable           (Foldable)
-import           Data.Singletons.Prelude hiding ((:-))
+import           Data.Singletons.Prelude
 import           Data.Traversable
 import           Data.Tuple              (swap)
 import qualified Data.Vector             as V
