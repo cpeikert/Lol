@@ -8,16 +8,16 @@ Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
-Tensor-polymorphic tests for  cryptographic applications. Note that tests for
-HomomPRF are included in the example.
+Tensor-polymorphic tests for  cryptographic applications.
 -}
 
 module Crypto.Lol.Applications.Tests
 (
 -- * Default tests and parameters
- module Crypto.Lol.Applications.Tests.Default
+  module Crypto.Lol.Applications.Tests.Default
 -- * Tests for various types of functions in SymmSHE
-,module Crypto.Lol.Applications.Tests.SHETests) where
+, module Crypto.Lol.Applications.Tests.SHETests
+) where
 
 import Crypto.Lol.Applications.Tests.Default
 import Crypto.Lol.Applications.Tests.SHETests
