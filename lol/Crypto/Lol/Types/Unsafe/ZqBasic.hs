@@ -117,7 +117,7 @@ instance (PPow pp, zq ~ ZqBasic pp z,
 instance (Reflects q z, ToInteger z) => Reduce z (ZqBasic q z) where
   reduce = reduce'
 
-instance (Reflects q z, ToInteger z, Additive (ZqBasic q z)) => Reduce Integer (ZqBasic q z) where
+instance (Reflects q z, ToInteger z, Ring z) => Reduce Integer (ZqBasic q z) where
   reduce = fromInteger
 
 type instance LiftOf (ZqBasic q z) = z
