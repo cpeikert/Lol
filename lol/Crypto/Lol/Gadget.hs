@@ -37,7 +37,6 @@ import MathObj.Matrix hiding (one, zero, zipWith)
 
 import Control.Applicative
 import Control.Arrow
-import Data.Traversable
 
 -- | Dummy type representing the gadget \( [1] \).
 data TrivGad
