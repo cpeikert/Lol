@@ -17,6 +17,7 @@ template Haskell splices in the same module.
 
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE EmptyCase            #-}
 {-# LANGUAGE GADTs                #-}
 {-# LANGUAGE InstanceSigs         #-}
 {-# LANGUAGE KindSignatures       #-}
