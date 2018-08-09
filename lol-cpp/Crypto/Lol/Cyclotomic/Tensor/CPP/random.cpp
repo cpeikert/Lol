@@ -22,7 +22,7 @@ void primeD (double *y, hDim_t lts, hDim_t rts, hDim_t p, hDim_t rustride, Compl
     return;
   }
   hDim_t blockOffset, modOffset, tensorOffset;
-	double *tempSpace = (double*)malloc((p-1)*sizeof(double));
+	double *tempSpace = (double*)lolAlloc((p-1)*sizeof(double));
   hDim_t temp1 = rts*(p-1);
   for(blockOffset = 0; blockOffset < lts; blockOffset++) {
     hDim_t temp2 = blockOffset*temp1;

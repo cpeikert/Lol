@@ -38,7 +38,7 @@ template <typename ring> void pNormSq (ring* y, hDim_t lts, hDim_t rts, hDim_t p
 
 extern "C" void tensorNormSqR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  hInt_t* tempSpace = (hInt_t*)malloc(totm*sizeof(hInt_t));
+  hInt_t* tempSpace = (hInt_t*)lolAlloc(totm*sizeof(hInt_t));
   for(hDim_t i = 0; i < totm; i++) {
     tempSpace[i]=y[i];
   }
@@ -58,7 +58,7 @@ extern "C" void tensorNormSqR (hInt_t* y, hDim_t totm, PrimeExponent* peArr, hSh
 
 extern "C" void tensorNormSqD (double* y, hDim_t totm, PrimeExponent* peArr, hShort_t sizeOfPE)
 {
-  double* tempSpace = (double*)malloc(totm*sizeof(double));
+  double* tempSpace = (double*)lolAlloc(totm*sizeof(double));
   for(hDim_t i = 0; i < totm; i++) {
     tempSpace[i]=y[i];
   }

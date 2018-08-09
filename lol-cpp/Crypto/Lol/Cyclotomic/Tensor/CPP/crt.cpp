@@ -321,7 +321,7 @@ template <typename ring> void crtp (ring* y, hDim_t lts, hDim_t rts,
     }
   }
   else {
-    ring* tempSpace = (ring*)malloc((p-1)*sizeof(ring));
+    ring* tempSpace = (ring*)lolAlloc((p-1)*sizeof(ring));
     hDim_t temp1 = rts*(p-1);
     for(hDim_t blockOffset = 0; blockOffset < lts; blockOffset++) {
       hDim_t temp2 = blockOffset*temp1;
@@ -430,7 +430,7 @@ template <typename ring> void crtpinv (ring* y, hDim_t lts, hDim_t rts,
     }
   }
   else {
-    ring* tempSpace = (ring*)malloc((p-1)*sizeof(ring));
+    ring* tempSpace = (ring*)lolAlloc((p-1)*sizeof(ring));
     hDim_t temp1 = rts*(p-1);
     for(hDim_t blockOffset = 0; blockOffset < lts; blockOffset++) {
       hDim_t temp2 = blockOffset*temp1;
@@ -522,7 +522,7 @@ template <typename ring> void ppcrt (ring* y, hDim_t lts, hDim_t rts,
   hDim_t mprime = ipow(p,e-1);
   ring* temp = 0;
   if(p >= DFTP_GENERIC_SIZE) {
-    temp = (ring*)malloc(p*sizeof(ring));
+    temp = (ring*)lolAlloc(p*sizeof(ring));
   }
 
   crtp (y, lts*mprime, rts, p, mprime, ru);
@@ -544,7 +544,7 @@ template <typename ring> void ppcrtinv (ring* y, hDim_t lts, hDim_t rts,
   hDim_t mprime = ipow(p,e-1);
   ring* temp = 0;
   if(p >= DFTP_GENERIC_SIZE) {
-    temp = (ring*)malloc(p*sizeof(ring));
+    temp = (ring*)lolAlloc(p*sizeof(ring));
   }
 
   pe.exponent -= 1;
