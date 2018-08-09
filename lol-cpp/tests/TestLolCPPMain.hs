@@ -27,4 +27,4 @@ main = defaultMainWithArgs
           , cpxTensorTests (Proxy::Proxy CT)
           , cycTests (Proxy::Proxy CT)
           ]
-          ["--maximum-generated-tests=10"]
+          ["--maximum-generated-tests=5"]
