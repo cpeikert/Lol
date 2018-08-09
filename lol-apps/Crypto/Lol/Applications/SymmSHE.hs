@@ -246,8 +246,7 @@ type KSHintCtx gad c m' z zq = (LWECtx c m' z zq, Gadget gad (c m' zq))
 ksHint :: forall gad c m' z zq rnd . (KSHintCtx gad c m' z zq, MonadRandom rnd)
           => SK (c m' z) -> c m' z -> rnd (KSHint gad (c m' zq))
 ksHint skout val = do -- rnd monad
-  let valq = reduce val
-      valgad = encode @gad valq
+  let valgad = encode @gad $ reduce val
   samples <- replicateM (length valgad) (lweSample skout)
   return $ KSHint $ zipWith (+) (P.const <$> valgad) samples
 
