@@ -892,8 +892,7 @@ instance (ForallFact2 (Gadget gad) (Cyc t) a,
 
 -----
 
-instance (Fact m, Reduce a b, CRTElt t a, ZeroTestable a,
-          CRTElt t b, ZeroTestable b) -- to satisfy Reduce superclasses
+instance (Fact m, Reduce a b, CRTElt t a, TensorPowDec t b)
   => Reduce (CycG t m a) (CycG t m b) where
   reduce (Pow u)                 = Pow    $ reduce u
   reduce (Dec u)                 = Dec    $ reduce u
@@ -905,14 +904,12 @@ instance (Reduce (CycG t m Int64) (CycG t m (ZqBasic q Int64)))
   => Reduce (Cyc t m Int64) (Cyc t m (ZqBasic q Int64)) where
   reduce = CycZqB . reduce . unCycI64
 
-instance (Fact m, Reflects q Int64, CRTElt t (ZqBasic q Int64), -- superclass
-          Additive (Cyc t m Integer)) -- superclass
+instance (Fact m, Reflects q Int64, ForallFact1 Applicative t)
   => Reduce (Cyc t m Integer) (Cyc t m (ZqBasic q Int64)) where
   reduce (PowIgr u) = CycZqB $ Pow $ fmap reduce u
   reduce (DecIgr u) = CycZqB $ Dec $ fmap reduce u
 
-instance (Fact m, Reflects q Double, CRTElt t Double, TensorPowDec t (RRq q Double),
-          FunctorCyc (Cyc t m) Double (RRq q Double))
+instance (Reflects q Double, FunctorCyc (Cyc t m) Double (RRq q Double))
   => Reduce (Cyc t m Double) (Cyc t m (RRq q Double)) where
   reduce = fmapCyc Nothing reduce
 
