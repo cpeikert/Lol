@@ -5,7 +5,7 @@ name:                lol-cpp
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.0.0.4
+version:             0.1.0.0
 synopsis:            A fast C++ backend for <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -88,15 +88,15 @@ library
     Crypto.Lol.Cyclotomic.Tensor.CPP.Instances
 
   build-depends:
-    base >= 4.9 && < 4.10,
-    constraints < 0.10,
-    deepseq >= 1.4.1.1 && < 1.5,
-    lol >= 0.6.0.0 && < 0.8,
-    MonadRandom >= 0.2 && < 0.6,
-    mtl >= 2.2.1 && < 2.3,
-    numeric-prelude >= 0.4.2 && < 0.5,
-    reflection >= 1.5.1 && < 2.2,
-    vector>=0.11 && < 0.13
+    base,
+    constraints,
+    deepseq,
+    lol >= 0.7.0.0 && < 0.8,
+    MonadRandom,
+    mtl,
+    numeric-prelude,
+    reflection,
+    vector
 
   other-extensions: TemplateHaskell
 
@@ -110,8 +110,8 @@ Benchmark bench-lol-cpp
   ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
 
   build-depends:
-    base >= 4.9 && < 4.10,
-    DRBG < 0.6,
+    base,
+    DRBG,
     lol >= 0.7.0.0 && < 0.8,
     lol-cpp
 
@@ -127,12 +127,12 @@ Benchmark bench-lol-apps-cpp
   ghc-options: -O2 -funfolding-creation-threshold=15000 -funfolding-use-threshold=1000
 
   build-depends:
-    base >= 4.9 && < 4.10,
-    DRBG < 0.6,
+    base,
+    DRBG,
     lol >= 0.7.0.0 && < 0.8,
     lol-apps >= 0.2.1 && < 0.3,
     lol-cpp,
-    MonadRandom >= 0.2 && < 0.6
+    MonadRandom
 
 test-suite test-lol-cpp
   type:             exitcode-stdio-1.0
@@ -143,10 +143,10 @@ test-suite test-lol-cpp
   ghc-options:      -threaded -O2
 
   build-depends:
-    base >= 4.9 && < 4.10,
+    base,
     lol >= 0.7.0.0 && < 0.8,
     lol-cpp,
-    test-framework < 0.9
+    test-framework
 
 test-suite test-lol-apps-cpp
   type:             exitcode-stdio-1.0
@@ -159,11 +159,11 @@ test-suite test-lol-apps-cpp
   ghc-options:      -threaded -O2
 
   build-depends:
-    base >= 4.9 && < 4.10,
+    base,
     lol >= 0.7.0.0 && < 0.8,
     lol-apps >= 0.2.1 && < 0.3,
     lol-cpp,
-    test-framework < 0.9
+    test-framework
 
 executable homomprf-cpp
   hs-source-dirs: examples
@@ -176,7 +176,7 @@ executable homomprf-cpp
   ghc-options: -threaded -rtsopts -O2
 
   build-depends:
-    base >= 4.9 && < 4.10,
+    base,
     lol-apps >= 0.2.1 && < 0.3,
     lol-cpp
 
@@ -191,7 +191,7 @@ executable khprf-cpp
   ghc-options: -threaded -rtsopts -O2
 
   build-depends:
-    base >= 4.9 && < 4.10,
+    base,
     lol-apps >= 0.2.1 && < 0.3,
     lol-cpp
 
@@ -206,6 +206,6 @@ executable symmshe-cpp
   ghc-options: -threaded -rtsopts -O2
 
   build-depends:
-    base >= 4.9 && < 4.10,
+    base,
     lol-apps >= 0.2.1 && < 0.3,
     lol-cpp
