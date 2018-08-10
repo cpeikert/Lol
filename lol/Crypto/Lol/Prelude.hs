@@ -59,8 +59,8 @@ module Crypto.Lol.Prelude
 
 import Crypto.Lol.Factored
 import Crypto.Lol.Types.Numeric
-import Crypto.Lol.Types.Unsafe.Complex (Complex (), cis, fromReal, imag,
-                                        real, roundComplex)
+import Crypto.Lol.Types.Unsafe.Complex (Complex, cis, fromReal, imag, real,
+                                        roundComplex)
 
 import Algebra.Field          as Field (C)
 import Algebra.IntegralDomain as IntegralDomain (C)
