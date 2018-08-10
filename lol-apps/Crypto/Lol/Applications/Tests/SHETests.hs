@@ -54,10 +54,10 @@ instance (GenSKCtx c m' z Double) => Random (SK (c m' z)) where
   randomR = error "randomR not defined for SK"
 
 consGens2 :: Gen a -> Gen b -> Gen (a, b)
-consGens2 g h = liftA2 (,) g h
+consGens2 = liftA2 (,)
 
 consGens3 :: Gen a -> Gen b -> Gen c -> Gen (a, b, c)
-consGens3 g h i = liftA3 (,,) g h i
+consGens3 = liftA3 (,,)
 
 sheTests :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (zp :: *) (zq :: *) . _
          => Proxy '(m,m',zp,zq) -> Proxy t -> Test
@@ -134,7 +134,7 @@ prop_encDec :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
   => Proxy '(t,m,m',zp,zq) -> (PT (Cyc t m zp), SK (Cyc t m' z)) -> IO Bool
 prop_encDec _ (x, sk) = do
   y :: CT m zp (Cyc t m' zq) <- encrypt sk x
-  let x' = decrypt sk $ y
+  let x' = decrypt sk y
   return $ x == x'
 
 prop_addPub :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
@@ -177,7 +177,7 @@ prop_ctadd2 _ (pt1, pt2, sk) = do
   ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
   -- no-op to induce unequal scale values
-  let ct' = ct1 + (modSwitchPT ct2)
+  let ct' = ct1 + modSwitchPT ct2
       pt' = decrypt sk ct'
   return $ pt1+pt2 == pt'
 
@@ -212,7 +212,7 @@ prop_modSwPT _ (pt, sk) = do
   y :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   let p = modulus @zp
       p' = modulus @zp'
-      z = (fromIntegral $ p `div` p')*y
+      z = fromIntegral (p `div` p')*y
       x = decrypt sk z
       y' = modSwitchPT z :: CT m zp' (Cyc t m' zq)
       x'' = decrypt sk y'
@@ -281,8 +281,8 @@ prop_tunnel _ (x, skin, skout) = do
       basisSize = totr `div` tote
   -- choose a random linear function of the appropriate size
   bs :: [Cyc t s zp] <- replicateM basisSize getRandom
-  let f = linearDec bs \\ (gcdDivides @r @s) :: Linear c e r s zp
-      expected = evalLin f x \\ (gcdDivides @r @s)
+  let f = linearDec bs \\ gcdDivides @r @s :: Linear c e r s zp
+      expected = evalLin f x \\ gcdDivides @r @s
   y :: CT r zp (Cyc t r' zq) <- encrypt skin x
   hints :: TunnelHint gad c e r s e' r' s' zp zq <- tunnelHint f skout skin
   let y' = tunnel hints y :: CT s zp (Cyc t s' zq)
