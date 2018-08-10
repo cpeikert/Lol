@@ -41,9 +41,9 @@ import Criterion
 simpleCycRepBenches1 :: forall t m r (gen :: *) . _
   => Proxy '(t,m,r) -> Proxy gen -> IO Benchmark
 simpleCycRepBenches1 _ _ = do
-  x1 :: CycRep t P m (r, r) <- getRandom
-  let x1' = toDec x1
-  (Right x2) :: CycRepPC t m (r, r) <- getRandom
+--  x1 :: CycRep t P m (r, r) <- getRandom
+--  let x1' = toDec x1
+--  (Right x2) :: CycRepPC t m (r, r) <- getRandom
   x3 :: CycRepEC t m r <- pcToEC <$> getRandom
   x4 :: CycRep t P m r <- getRandom
   let x5 = toDec x4
@@ -78,7 +78,7 @@ simpleCycRepBenches2 _ = do
   let x5 = toDec x4
   (Right x6) :: CycRepPC t m' r <- getRandom
   x7 :: CycRep t P m r <- getRandom
-  let x8 = toDec x7
+--  let x8 = toDec x7
   (Right x9) :: CycRepPC t m r <- getRandom
   return $ bgroup "SCycRep" [
     bench "twacePow" $ nf (twacePow  :: CycRep t P m' r -> CycRep t P m  r) x4,
@@ -90,4 +90,4 @@ simpleCycRepBenches2 _ = do
     ]
 
 pcToEC :: CycRepPC t m r -> CycRepEC t m r
-pcToEC (Right x) = (Right x)
+pcToEC (Right x) = Right x
