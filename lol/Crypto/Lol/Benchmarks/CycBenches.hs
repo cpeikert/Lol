@@ -75,7 +75,7 @@ cycBenches2 ptmmr =
 {-# INLINABLE bench_mul #-}
 -- no CRT conversion, just coefficient-wise multiplication
 bench_mul :: _ => Cyc t m r -> Cyc t m r -> Cyc t m r
-bench_mul a b = (adviseCRT a) * (adviseCRT b)
+bench_mul a b = adviseCRT a * adviseCRT b
 
 {-# INLINABLE bench_crt #-}
 -- convert input from Pow basis to CRT basis
