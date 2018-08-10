@@ -145,8 +145,7 @@ singletons [d|
                 GT -> pp : ppMul pp' pps'
 
             ppsMul :: [PrimePower] -> [PrimePower] -> [PrimePower]
-            ppsMul [] ys = ys
-            ppsMul (pp:pps) ys = ppsMul pps (ppMul pp ys)
+            ppsMul pps ys = foldl (flip ppMul) ys pps
 
             |]
 
@@ -225,16 +224,16 @@ singletons [d|
               where go [] = []
                     go (pp@(PP (p',_)) : ps) =
                       if p == p' then ps
-                      else pp : (go ps)
+                      else pp : go ps
             |]
 
 -- | Contraint 'c' holds for 't m' for any 'Fact m'.
 class ForallFact1 c t where
-  entailFact1 :: (Fact m) :- (c (t m))
+  entailFact1 :: Fact m :- c (t m)
 
 -- | Contraint 'c' holds for 't m r' for any 'Fact m'.
 class ForallFact2 c t r where
-  entailFact2 :: (Fact m) :- (c (t m r))
+  entailFact2 :: Fact m :- c (t m r)
 
 -- | Type (family) synonym for division of 'Factored' types.
 type a / b = FDiv a b
@@ -270,7 +269,7 @@ reifyPPow (p,e) k = reifyPrime p (\sp -> reifyPos e (k . SPP . STuple2 sp))
 -- | Reify a 'PrimePower' for a 'PPow' constraint.
 reifyPPowI :: (Int,Int) -> (forall pp proxy. PPow pp => proxy pp -> a) -> a
 reifyPPowI pp k =
-  reifyPPow pp $ (\(p::SPrimePower p) -> withSingI p $ k (Proxy::Proxy p))
+  reifyPPow pp (\(p::SPrimePower p) -> withSingI p $ k (Proxy::Proxy p))
 
 -- | Reify a 'Factored' as a singleton.
 reifyFact :: Int -> (forall m . SFactored m -> a) -> a
@@ -279,12 +278,12 @@ reifyFact m k = let pps = factorize m in reifyPPs pps $ k . SF
                     -> (forall (pps :: [PrimePower]) . Sing pps -> a) -> a
         reifyPPs [] c = c SNil
         reifyPPs (pp:pps) c =
-          reifyPPow pp (\spp -> reifyPPs pps (\sm' -> c $ SCons spp sm'))
+          reifyPPow pp (\spp -> reifyPPs pps (c . SCons spp))
 
 -- | Reify a 'Factored' for a 'Fact' constraint.
 reifyFactI :: Int -> (forall m proxy. Fact m => proxy m -> a) -> a
 reifyFactI pps k =
-  reifyFact pps $ (\(m::SFactored m) -> withSingI m $ k (Proxy::Proxy m))
+  reifyFact pps (\(m::SFactored m) -> withSingI m $ k (Proxy::Proxy m))
 
 -- | Constraint synonym for divisibility of 'Factored' types.
 type Divides m m' = (Fact m, Fact m', FDivides m m' ~ 'True)
@@ -332,7 +331,7 @@ lcmDivides =
 -- the LCM of two divisors of \( m \) also divides \( m \).
 lcm2Divides :: forall m1 m2 m l .
                ((m1 `Divides` m, m2 `Divides` m, l ~ FLCM m1 m2) :-
-                (m1 `Divides` l, m2 `Divides` l, (FLCM m1 m2) `Divides` m))
+                (m1 `Divides` l, m2 `Divides` l, FLCM m1 m2 `Divides` m))
 lcm2Divides =
   Sub $ withSingI (sFLCM (sing :: SFactored m1) (sing :: SFactored m2))
   Dict \\ coerceFDivs @(FLCM m1 m2) @m \\ lcmDivides @m1 @m2
@@ -352,7 +351,7 @@ pSplitTheorems =
 -- if \( m \mid m' \), then \( \text{p-free}(m) \mid \text{p-free}(m') \).
 pFreeDivides :: forall p m m' .
                 ((Prime p, m `Divides` m') :-
-                 ((PFree p m) `Divides` (PFree p m')))
+                 (PFree p m `Divides` PFree p m'))
 pFreeDivides =
   Sub $ withSingI (sPFree (sing :: SPrimeBin p) (sing :: SFactored m)) $
         withSingI (sPFree (sing :: SPrimeBin p) (sing :: SFactored m')) $
@@ -484,8 +483,8 @@ ppType (p,e) = conT 'PP `appT`
 -- small-to-moderate-sized arguments (any reasonable cyclotomic index
 -- should be OK).
 fType :: Int -> TypeQ
-fType n = conT 'F `appT` (foldr (\pp -> appT (promotedConsT `appT` ppType pp))
-                                promotedNilT $ factorize n)
+fType n = conT 'F `appT` foldr (\pp -> appT (promotedConsT `appT` ppType pp))
+          promotedNilT (factorize n)
 
 -- | Template Haskell splice that defines the 'PrimeBin' type synonym
 -- @Prime@\(p\) for a positive prime integer \( p \).
