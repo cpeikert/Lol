@@ -55,7 +55,7 @@ import Math.NumberTheory.Primes.Testing
 
 import Control.Applicative
 import Control.Arrow
-import Control.DeepSeq        (NFData)
+import Control.DeepSeq        (NFData, force)
 import Data.Maybe
 import NumericPrelude.Numeric as NP (round)
 import System.Random
@@ -142,9 +142,9 @@ instance (Reflects p z, Reflects q z, ToInteger z, Field (ZqBasic q z), Field (Z
 -- generator of \(\Z_q^*\) and raising it to the \( (q-1)/m\) power.
 -- Therefore, outputs for different values of \(m\) are consistent,
 -- i.e., \(\omega_{m'}^(m'/m) = \omega_m\).
-principalRootUnity ::
-    forall m q z . (Reflects m Int, Reflects q z, ToInteger z, Enumerable (ZqBasic q z))
-               => TaggedT m Maybe (Int -> ZqBasic q z)
+principalRootUnity :: forall m q z .
+  (Reflects m Int, Reflects q z, ToInteger z, Enum z, NFData z)
+  => TaggedT m Maybe (Int -> ZqBasic q z)
 principalRootUnity =        -- use Integers for all intermediate calcs
   let qval = fromIntegral (value @q :: z)
       mval = value @m
@@ -160,7 +160,7 @@ principalRootUnity =        -- use Integers for all intermediate calcs
             then let (mq,mr) = order `divMod` fromIntegral mval
                  in if mr == 0
                     then let omega = head (filter isGen values) ^ mq
-                             omegaPows = V.iterateN mval (*omega) one
+                             omegaPows = force $ V.iterateN mval (*omega) one
                          in Just $ (omegaPows V.!) . (`mod` mval)
                     else Nothing
             else Nothing       -- fail if q composite
@@ -170,9 +170,10 @@ mhatInv :: forall m q z . (Reflects m Int, Reflects q z, ToInteger z, PID z)
 mhatInv = tagT $ reduce' <$>
           ((`modinv` value @q) $ fromIntegral $ valueHat (value @m :: Int))
 
--- instance of CRTrans
-instance (Reflects q z, ToInteger z, PID z, Enumerable (ZqBasic q z))
+instance (Reflects q z, ToInteger z, PID z, Enum z, NFData z)
          => CRTrans Maybe (ZqBasic q z) where
+  {-# NOINLINE  crtInfo #-}
+  {-# INLINABLE crtInfo #-}
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
 -- | Embeds into the complex numbers \( \C \).
