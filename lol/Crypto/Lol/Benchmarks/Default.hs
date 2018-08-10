@@ -24,10 +24,10 @@ Default high-level benchmarks for 'Crypto.Lol.Cyclotomic.Tensor' implementations
 module Crypto.Lol.Benchmarks.Default (defaultLolBenches, oneIdxBenches, twoIdxBenches) where
 
 import Crypto.Lol
-import Crypto.Lol.Benchmarks.TensorBenches
-import Crypto.Lol.Benchmarks.CycRepBenches
 import Crypto.Lol.Benchmarks.CycBenches
-import Crypto.Lol.Utils.Benchmarks (bgroup, Benchmark)
+import Crypto.Lol.Benchmarks.CycRepBenches
+import Crypto.Lol.Benchmarks.TensorBenches
+import Crypto.Lol.Utils.Benchmarks         (Benchmark, bgroup)
 import Crypto.Lol.Utils.ShowType
 
 -- | Benchmark parameters reported in the paper. We suggest running these benchmarks
@@ -36,7 +36,7 @@ import Crypto.Lol.Utils.ShowType
 {-# INLINABLE defaultLolBenches #-}
 defaultLolBenches :: _ => Proxy t -> Proxy h -> [Benchmark]
 defaultLolBenches pt phash = [
-  bgroup "Single Index" $ (($ phash) . ($ pt)) <$> [
+  bgroup "Single Index" $ ($ phash) . ($ pt) <$> [
     oneIdxBenches (Proxy::Proxy '(F1024,        Zq 12289)),
     oneIdxBenches (Proxy::Proxy '(F2048,        Zq 12289)),
     oneIdxBenches (Proxy::Proxy '(F64*F27,      Zq 3457)),
@@ -52,7 +52,7 @@ defaultLolBenches pt phash = [
 oneIdxBenches :: forall t m r gen . _ => Proxy '(m,r) -> Proxy t -> Proxy gen -> Benchmark
 oneIdxBenches _ _ pgen =
   let ptmr = Proxy :: Proxy '(t,m,r)
-  in bgroup (showType ptmr) $ (($ pgen) . ($ ptmr)) <$> [tensorBenches1, cycRepBenches1, cycBenches1]
+  in bgroup (showType ptmr) $ ($ pgen) . ($ ptmr) <$> [tensorBenches1, cycRepBenches1, cycBenches1]
 
 -- | Collection of all inter-ring operations at all levels of the library.
 {-# INLINABLE twoIdxBenches #-}
