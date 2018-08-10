@@ -81,7 +81,7 @@ instance (GFCtx fp d) => Enumerable (GF fp d) where
 
 instance (Random fp, Reflects d Int) => Random (GF fp d) where
   random = let d = value @d
-           in runRand $ (GF . fromCoeffs) <$> replicateM d (liftRand random)
+           in runRand $ GF . fromCoeffs <$> replicateM d (liftRand random)
   {-# INLINABLE random #-}
 
   randomR _ = error "randomR non-sensical for GF"
@@ -134,7 +134,7 @@ instance (Additive fp, Ring (GF fp d), Reflects d Int)
     in if n `mod` dval /= 0 then
                 error $ "FiniteField: d (= " ++ show dval ++
                           ") does not divide n (= " ++ show n ++ ")"
-       else Coeffs $ concat ((toList . (r *) . fromList) <$> chunksOf dval fps)
+       else Coeffs $ concat (toList . (r *) . fromList <$> chunksOf dval fps)
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []
