@@ -20,7 +20,7 @@ build-type:          Simple
 extra-source-files:  README, CHANGES.md, Lol.proto, RLWE.proto
 cabal-version:       >= 1.10
 description:
-    Λ ∘ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
+    Λ ⚬ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
     For a detailed description of interfaces and functionality, see
     <https://eprint.iacr.org/2015/1134 Λ ∘ λ: Functional Lattice Cryptography>.
     Backends for the library include <https://hackage.haskell.org/package/lol-cpp lol-cpp>
