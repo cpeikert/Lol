@@ -83,8 +83,8 @@ embedDec' = tag $ (\indices arr -> generate (U.length indices)
 embedCRT' :: forall m m' mon r . (CRTrans mon r, Storable r, m `Divides` m')
           => TaggedT '(m, m') mon (Vector r -> Vector r)
 embedCRT' =
-  (lift (proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r))) >>
-  (tagT $ pure $ backpermute' $ baseIndicesCRT @m @m')
+  lift (proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r)) >>
+  tagT (pure $ backpermute' $ baseIndicesCRT @m @m')
 
 -- | maps a vector in the powerful/decoding basis, representing an
 -- O_m' element, to a vector of arrays representing O_m elements in
@@ -110,8 +110,8 @@ twaceCRT' :: forall mon m m' r .
              => TaggedT '(m, m') mon (Vector r -> Vector r)
 {-# INLINE twaceCRT' #-}
 twaceCRT' = tagT $ do
-  g'    <- kronToVec @m' <$> (gCRTK @m')
-  gInv  <- kronToVec @m  <$> (gInvCRTK @m)
+  g'    <- kronToVec @m' <$> gCRTK @m'
+  gInv  <- kronToVec @m  <$> gInvCRTK @m
   embed <- untagT $ embedCRT' @m @m'
   (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m')
   let phi = totientFact @m
