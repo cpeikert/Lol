@@ -176,6 +176,7 @@ dotp a b = sum $ zipWith (*) a b
 
 -- | Trace into the prime subfield.
 trace :: forall fp d . (GFCtx fp d) => GF fp d -> fp
+{-# NOINLINE trace #-}
 trace = let ts = proxy powTraces (Proxy::Proxy (GF fp d))
         in \(GF f) -> dotp ts (coeffs f)
 

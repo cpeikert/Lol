@@ -37,8 +37,8 @@ import Crypto.Lol.Prelude           as LP hiding (lift, null)
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZmStar
 
-
 import Control.Applicative hiding (empty)
+import Control.DeepSeq     (NFData)
 import Control.Monad.Trans (lift)
 
 import           Data.Maybe
@@ -108,7 +108,7 @@ kronToVec v = generate (totientFact @m) (flip (indexK v) 0)
 twaceCRT' :: forall mon m m' r .
              (Storable r, CRTrans mon r, m `Divides` m')
              => TaggedT '(m, m') mon (Vector r -> Vector r)
-{-# INLINE twaceCRT' #-}
+{-# INLINABLE twaceCRT' #-}
 twaceCRT' = tagT $ do
   g'    <- kronToVec @m' <$> gCRTK @m'
   gInv  <- kronToVec @m  <$> gInvCRTK @m
@@ -141,8 +141,10 @@ powBasisPow' = do
 -- | A list of vectors representing the mod-p CRT set of the
 -- extension O_m'/O_m
 crtSetDec' :: forall m m' fp .
-  (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m', SV.Storable fp)
+  (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m',
+   SV.Storable fp, NFData fp)
   => Tagged '(m, m') [SV.Vector fp]
+{-# INLINABLE crtSetDec' #-}
 crtSetDec' =
   let p = valuePrime @(CharOf fp)
       phi = totientFact @m'
@@ -154,8 +156,7 @@ crtSetDec' =
             = fromMaybe (error "internal error: crtSetDec': twCRTs") $ twCRTs @m'
           zmsToIdx = T.zmsToIndexFact @m'
           elt j i = indexK twCRTs' j (zmsToIdx i)
-          trace' = trace :: GF fp d -> fp -- to avoid recomputing powTraces
           cosets = partitionCosets @m @m' p
       return $ LP.map (\is -> generate phi
-                          (\j -> hinv * trace'
+                          (\j -> hinv * trace
                                       (LP.sum $ LP.map (elt j) is))) cosets
