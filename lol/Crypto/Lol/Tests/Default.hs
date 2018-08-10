@@ -26,21 +26,22 @@ module Crypto.Lol.Tests.Default (
   cycTests, cpxTensorTests, dblTensorTests, defaultZqTests, int64TensorTests, zqTensorTests
 ) where
 
-import Crypto.Lol (Cyc, Int64)
+import Crypto.Lol                        (Cyc, Int64)
 import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Factored
 import Crypto.Lol.Tests.CycTests
 import Crypto.Lol.Tests.TensorTests
 import Crypto.Lol.Tests.ZqTests
-import Crypto.Lol.Utils.ShowType
-import Crypto.Lol.Utils.Tests (choose, chooseAny, testGroup, Test, Gen)
 import Crypto.Lol.Types.IrreducibleChar2 ()
-import Crypto.Lol.Types.Unsafe.Complex (Complex)
+import Crypto.Lol.Types.Unsafe.Complex   (Complex)
+import Crypto.Lol.Utils.ShowType
+import Crypto.Lol.Utils.Tests            (Gen, Test, choose, chooseAny,
+                                          testGroup)
 
-import qualified Algebra.Ring    as Ring (fromInteger)
-import Control.Monad.Random
-import Control.Applicative (liftA2)
-import Data.Proxy
+import qualified Algebra.Ring         as Ring (fromInteger)
+import           Control.Applicative  (liftA2)
+import           Control.Monad.Random
+import           Data.Proxy
 
 type CpxDbl = Complex Double
 
@@ -98,7 +99,7 @@ unifCycTests2 _ _ =
 
 -- | Default parameters for 'Crypto.Lol.Types.Unsafe.ZqBasic' tests.
 defaultZqTests :: Test
-defaultZqTests = testGroup "Zq Tests" $ [
+defaultZqTests = testGroup "Zq Tests" [
   zqTests (Proxy::Proxy (Zq 3)),
   zqTests (Proxy::Proxy (Zq 7)),
   zqTests (Proxy::Proxy (Zq (3 ** 5))),
