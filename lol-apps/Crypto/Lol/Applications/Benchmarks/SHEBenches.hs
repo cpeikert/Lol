@@ -45,6 +45,9 @@ import Crypto.Lol.Types
 import Crypto.Lol.Types.ZPP
 import Crypto.Random
 
+-- must come after imports
+{-# ANN module "HLint: ignore Use camelCase" #-}
+
 sheBenches :: forall t m m' zp zq gen rnd . (MonadRandom rnd, _)
   => Proxy '(m,m',zp,zq) -> Proxy gen -> Proxy t -> rnd Benchmark
 sheBenches _ _ _ = do
