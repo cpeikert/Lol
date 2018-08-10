@@ -36,7 +36,7 @@ import Crypto.Lol.Benchmarks (bgroup, Benchmark, Zq, type (**))
 defaultSHEBenches :: forall t gad gen rnd . (MonadRandom rnd, _)
                   => Proxy t -> Proxy gad -> Proxy gen -> rnd [Benchmark]
 defaultSHEBenches pt pgad pgen  = sequence [
-  fmap (bgroup "SHE") $ sequence $ (($ pt) . ($ pgen)) <$>
+  fmap (bgroup "SHE") $ sequence $ ($ pt) . ($ pgen) <$>
     [sheBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
      sheBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
   fmap (bgroup "Dec") $ sequence $ ($ pt) <$>
@@ -45,10 +45,10 @@ defaultSHEBenches pt pgad pgen  = sequence [
   fmap (bgroup "Rescale") $ sequence $ ($ pt) <$>
     [rescaleBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq 1017857, Zq (1032193 ** 1017857))),
      rescaleBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq 1008001, Zq (1065601 ** 1008001)))],
-  fmap (bgroup "KeySwitch") $ sequence $ (($ pt) . ($ pgad)) <$>
+  fmap (bgroup "KeySwitch") $ sequence $ ($ pt) . ($ pgad) <$>
     [keySwitchBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq (1017857 ** 1032193))),
      keySwitchBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq (1008001 ** 1065601)))],
-  fmap (bgroup "Tunnel") $ sequence $ (($ pt) . ($ pgad)) <$>
+  fmap (bgroup "Tunnel") $ sequence $ ($ pt) . ($ pgad) <$>
     [tunnelBenches {- H0 -> H1 -} (Proxy::Proxy '(F128,
                                                   F128 * F7 * F13,
                                                   F64 * F7, F64 * F7 * F13,
