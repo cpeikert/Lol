@@ -34,6 +34,9 @@ import Crypto.Lol.Types
 import Crypto.Lol.Utils.Benchmarks  (Benchmark, bgroup, mkBench, mkBenchIO)
 import Crypto.Random
 
+-- must come after imports
+{-# ANN module "HLint: ignore Use camelCase" #-}
+
 -- | Benchmarks for single-index 'CycRep' operations.
 -- There must be a CRT basis for \(O_m\) over @r@.
 -- These cover the same functions as @cycBenches1@, but may have different

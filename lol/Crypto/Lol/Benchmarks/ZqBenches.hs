@@ -23,15 +23,18 @@ module Crypto.Lol.Benchmarks.ZqBenches (zqBenches) where
 
 import Crypto.Lol
 
-import Control.Applicative
-import Control.Monad
-import Control.Monad.Random hiding (lift)
-import qualified Data.Vector.Unboxed as U
-import qualified Data.Array.Repa as R
+import           Control.Applicative
+import           Control.Monad
+import           Control.Monad.Random hiding (lift)
+import qualified Data.Array.Repa      as R
+import qualified Data.Vector.Unboxed  as U
 
-import Utils
-import GenArgs
 import Benchmarks
+import GenArgs
+import Utils
+
+-- must come after imports
+{-# ANN module "HLint: ignore Use camelCase" #-}
 
 type Arr = R.Array R.U R.DIM1
 

@@ -53,5 +53,5 @@ ctBenches (Proxy :: Proxy '(t,m,r)) (Proxy::Proxy (gen :: *)) = do
     bench "lift"        $ nf (fmapT lift) x2,
     bench "error"       $ nf (evalRand (fmapT (roundMult one) <$>
                            (CT <$> cDispatchGaussian
-                             (0.1 :: Double) :: Rand (CryptoRand gen) (T M Double))) :: CryptoRand gen -> (t m Int64)) gen
+                             (0.1 :: Double) :: Rand (CryptoRand gen) (T M Double))) :: CryptoRand gen -> t m Int64) gen
     ]
