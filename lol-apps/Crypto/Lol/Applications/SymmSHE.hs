@@ -78,7 +78,6 @@ import Control.DeepSeq
 import Control.Monad        as CM
 import Control.Monad.Random hiding (lift)
 import Data.Maybe
-import Data.Traversable     as DT
 import Data.Typeable
 
 import MathObj.Polynomial as P
@@ -115,7 +114,7 @@ type GenSKCtx c m z v =
 -- | Generates a secret key with (index-independent) scaled variance
 -- parameter \( v \); see 'roundedGaussian'.
 genSK :: (GenSKCtx c m z v, MonadRandom rnd) => v -> rnd (SK (c m z))
-genSK v = liftM (SK v) $ roundedGaussian v
+genSK v = SK v <$> roundedGaussian v
 
 -- | Generates a secret key with the same scaled variance
 -- as the given secret key.
@@ -301,6 +300,7 @@ keySwitchLinear hint ct =
        []      -> ct
        [_]     -> ct
        [c0,c1] -> CT MSD k l $ P.const c0 + keySwitch hint c1
+       _       -> error "keySwitchLinear: not a linear ciphertext"
 
 -- | Switch a ciphertext of degree two or less (i.e., one with no more
 -- than three components) to a ciphertext of degree one (or less)
@@ -318,6 +318,7 @@ keySwitchQuadCirc hint ct =
        [_]        -> ct
        [_,_]      -> ct
        [c0,c1,c2] -> CT MSD k l $ P.fromCoeffs [c0,c1] + keySwitch hint c2
+       _          -> error "keySwitchQuadCirc: not a degree <= 2 ciphertext"
 
 ---------- Misc homomorphic operations ----------
 
@@ -334,7 +335,7 @@ addPublic :: forall c m m' zp zq . AddPublicCtx c m m' zp zq
 addPublic b ct = let CT LSD k l c = toLSD ct in
   let -- multiply public value by appropriate power of g and divide by the
       -- scale, to match the form of the ciphertext
-      b' :: c m zq = reduce $ liftPow $ (recip l) *> (iterate mulG b !! k)
+      b' :: c m zq = reduce $ liftPow $ recip l *> (iterate mulG b !! k)
   in CT LSD k l $ c + P.const (embed b')
 
 -- | Homomorphically multiply a public \(\mathbb{Z}_p\) value to an
@@ -375,8 +376,8 @@ instance (Lift' zp, Reduce (LiftOf zp) zq, -- mulScalar
   -- the scales, g-exponents of ciphertexts, and MSD/LSD types must match.
   ct1@(CT enc1 k1 l1 c1) + ct2@(CT enc2 k2 l2 c2)
     | l1 /= l2 =
-        let (CT enc' k' _ c') = mulScalar (l1*(recip l2)) ct1
-        in (CT enc' k' l2 c') + ct2
+        let (CT enc' k' _ c') = mulScalar (l1 * recip l2) ct1
+        in CT enc' k' l2 c' + ct2
     | k1 < k2 = iterate mulGCT ct1 !! (k2-k1) + ct2
     | k1 > k2 = ct1 + iterate mulGCT ct2 !! (k1-k2)
     | enc1 == LSD && enc2 == MSD = toMSD ct1 + ct2
@@ -479,8 +480,8 @@ tunnelHint f skout (SK _ sin) = -- generate hints
   (let f' = extendLin $ liftLin (Just Pow) f :: Linear c e' r' s' z
        -- choice of basis here must match coeffs* basis in tunnel (below)
        ps = proxy powBasis (Proxy::Proxy e')
-       comps = (evalLin f' . (adviseCRT sin *)) <$> ps
-   in THint (reduce f') <$> (CM.mapM (ksHint skout) comps))
+       comps = evalLin f' . (adviseCRT sin *) <$> ps
+   in THint (reduce f') <$> CM.mapM (ksHint skout) comps)
   \\ lcmDivides @r @e'
 
 -- | Constraint synonym for ring tunneling.
@@ -529,14 +530,14 @@ instance (NFData (Linear c e' r' s' zq), NFData (c s' zq))
   rnf (THint l t) = rnf l `seq` rnf t
 
 instance Show r => Show (SK r) where
-  show (SK v r) = "(SK " ++ (show $ toRational v) ++ " " ++ (show r) ++ ")"
+  show (SK v r) = "(SK " ++ show (toRational v) ++ " " ++ show r ++ ")"
 
 ----- Protoable instances
 
 instance (Protoable r, ProtoType r ~ R) => Protoable (SK r) where
   type ProtoType (SK r) = P.SecretKey
   toProto (SK v r) = P.SecretKey (toProto r) (realToField v)
-  fromProto (P.SecretKey r v) = (SK v) <$> fromProto r
+  fromProto (P.SecretKey r v) = SK v <$> fromProto r
 
 instance (Protoable rq, ProtoType rq ~ RqProduct) => Protoable (Polynomial rq) where
   type ProtoType (Polynomial rq) = P.RqPolynomial
@@ -556,7 +557,7 @@ instance (Typeable gad, Protoable r'q', ProtoType r'q' ~ RqProduct)
     let gadrepr = toProto $ typeRepFingerprint $ typeRep (Proxy::Proxy gad)
     if gadrepr == gadrepr'
     then KSHint <$> fromProto poly
-    else error $ "Expected gadget " ++ (show $ typeRep (Proxy::Proxy gad))
+    else error $ "Expected gadget " ++ show (typeRep (Proxy::Proxy gad))
 
 instance (Mod zp, Typeable gad,
           Protoable (Linear c e' r' s' zq), Protoable (KSHint gad (c s' zq)),
@@ -574,10 +575,10 @@ instance (Mod zp, Typeable gad,
       (fromIntegral $ modulus @zp)
 
   fromProto (P.TunnelHint linf hints e r s p) =
-    let e' = fromIntegral $ (value @e :: Int)
-        r' = fromIntegral $ (value @r :: Int)
-        s' = fromIntegral $ (value @s :: Int)
-        p' = fromIntegral $ modulus @zp
+    let e' = fromIntegral (value @e :: Int)
+        r' = fromIntegral (value @r :: Int)
+        s' = fromIntegral (value @s :: Int)
+        p' = fromIntegral (modulus @zp)
     in if p' == p && e' == e && r' == r && s' == s
        then do
          linf' <- fromProto linf
