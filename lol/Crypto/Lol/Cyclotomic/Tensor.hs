@@ -280,6 +280,7 @@ data Kron r = MNil | MKron (Kron r) (KronC r) -- snoc list
 -- | Extract the @(i,j)@ element of a 'Kron'.
 indexK :: Ring r => Kron r -> Int -> Int -> r
 indexK MNil 0 0 = LP.one
+indexK MNil i j = error $ "indexK MNil out of bounds: i = " ++ show i ++ ", j = " ++ show j
 indexK (MKron m (MC r c mc)) i j =
   let (iq,ir) = i `divMod` r
       (jq,jr) = j `divMod` c
