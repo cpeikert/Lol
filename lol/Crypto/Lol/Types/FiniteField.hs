@@ -101,9 +101,11 @@ instance (GFCtx fp d) => Field.C (GF fp d) where
           in \(GF f) -> let (_,(a,_)) = extendedGCD f g
                            in GF a
 
-instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
+instance (GFCtx fp d, NFData fp) => CRTrans Maybe (GF fp d) where
   -- https://ghc.haskell.org/trac/ghc/wiki/Migration/8.2#KindgeneralizationandMonoLocalBinds
   crtInfo :: forall (m :: k) . (Reflects m Int) => TaggedT m Maybe (CRTInfo (GF fp d))
+  {-# NOINLINE  crtInfo #-}
+  {-# INLINABLE crtInfo #-}
   crtInfo = tagT $ (,) <$> omegaPow <*> scalarInv
     where
       omegaPow :: Maybe (Int -> GF fp d)
@@ -113,7 +115,7 @@ instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
             (q,r) = (size'-1) `quotRem` mval
             gen = head $ filter isPrimitive values
             omega = gen^q
-            omegaPows = V.iterateN mval (*omega) one
+            omegaPows = force $ V.iterateN mval (*omega) one
         in if r == 0
            then Just $ (omegaPows V.!) . (`mod` mval)
            else Nothing
