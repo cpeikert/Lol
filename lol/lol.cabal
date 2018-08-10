@@ -46,15 +46,12 @@ Flag opt
 
 library
   default-language:   Haskell2010
-  ghc-options: -fwarn-dodgy-imports
+  ghc-options: -fexpose-all-unfoldings
+               -fwarn-dodgy-imports 
 
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
 
-  -- ghc optimizations
-  if flag(opt)
-    -- makes lift much faster!
-    ghc-options: -funfolding-use-threshold1000
   exposed-modules:
     Crypto.Lol
     Crypto.Lol.Types
@@ -168,7 +165,7 @@ test-suite test-lol
   main-is:            LolTestsMain.hs
   ghc-options:        -main-is LolTestsMain
   hs-source-dirs:     tests
-  ghc-options:        -threaded
+  ghc-options:        -fexpose-all-unfoldings
 
   build-depends:
     base,
