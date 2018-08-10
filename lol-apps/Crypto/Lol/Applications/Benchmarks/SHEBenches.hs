@@ -47,11 +47,11 @@ import Crypto.Random
 
 sheBenches :: forall t m m' zp zq gen rnd . (MonadRandom rnd, _)
   => Proxy '(m,m',zp,zq) -> Proxy gen -> Proxy t -> rnd Benchmark
-sheBenches _ pgen _ = do
+sheBenches _ _ _ = do
   let ptmmrr = Proxy::Proxy '(t,m,m',zp,zq)
       ptmmrrg = Proxy::Proxy '(t,m,m',zp,zq,gen)
   sk <- genSK (1 :: Double)
-  return $ bgroup (showType ptmmrr ++ "/SymmSHE") $ [
+  return $ bgroup (showType ptmmrr ++ "/SymmSHE") [
     mkBenchIO "encrypt"   (bench_enc ptmmrrg sk zero),
     mkBenchIO "*"         (bench_mul ptmmrr zero zero sk),
     mkBenchIO "addPublic" (bench_addPublic ptmmrr zero zero sk),
@@ -77,7 +77,7 @@ rescaleBenches _ _ = do
 
 keySwitchBenches :: forall t m m' zp zq gad rnd . (MonadRandom rnd, _)
   => Proxy '(m,m',zp,zq) -> Proxy gad -> Proxy t -> rnd Benchmark
-keySwitchBenches _ pgad _ = do
+keySwitchBenches _ _ _ = do
   let ptmmrr = Proxy::Proxy '(t,m,m',zp,zq)
       ptmmrrg = Proxy::Proxy '(t,m,m',zp,zq,gad)
   sk <- genSK (1 :: Double)
@@ -103,9 +103,8 @@ bench_enc :: forall t m m' z zp (zq :: *) (gen :: *) . (z ~ LiftOf zp,  _)
      -> SK (Cyc t m' z)
      -> PT (Cyc t m zp)
      -> IO (CT m zp (Cyc t m' zq))
-bench_enc _ sk pt = do
-  gen <- newGenIO
-  return $ evalRand (encrypt sk pt :: Rand (CryptoRand gen) (CT m zp (Cyc t m' zq))) gen
+bench_enc _ sk pt =
+  evalRand (encrypt sk pt :: Rand (CryptoRand gen) (CT m zp (Cyc t m' zq))) <$> newGenIO
 
 -- requires zq to be Liftable
 bench_dec :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
@@ -117,7 +116,7 @@ bench_dec _ pt sk = do
   ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   evalRandIO $ return $ decrypt sk ct
 
-bench_mul :: forall t m m' z zp zq rnd . (z ~ LiftOf zp, LiftOf zp ~ ModRep zp, _)
+bench_mul :: forall t m m' z zp zq . (z ~ LiftOf zp, LiftOf zp ~ ModRep zp, _)
   => Proxy '(t,m,m',zp,zq)
      -> PT (Cyc t m zp)
      -> PT (Cyc t m zp)
