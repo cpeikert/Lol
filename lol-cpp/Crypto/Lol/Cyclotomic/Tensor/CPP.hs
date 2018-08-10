@@ -26,7 +26,6 @@ Wrapper for a C++ implementation of 'Tensor' interfaces.
 {-# LANGUAGE RoleAnnotations            #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
 {-# LANGUAGE StandaloneDeriving         #-}
-{-# LANGUAGE TupleSections              #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
@@ -51,7 +50,7 @@ import Data.Constraint              hiding ((***))
 import Data.Int
 import Data.Maybe
 import Data.Traversable             as T
-import Data.Vector.Generic          as V (fromList, toList, unzip)
+import Data.Vector.Generic          as V (fromList, toList)
 import Data.Vector.Storable         as SV (Vector, and, convert, foldl',
                                            fromList, generate, length, map,
                                            replicate, replicateM, thaw,
@@ -115,7 +114,7 @@ instance (ForallFact2 Protoable IZipVector r, Fact m, Storable r) => Protoable (
   toProto x@(CT _) = toProto $ toZV x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
   toProto (ZV x) = toProto x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
 
-  fromProto x = toCT <$> ZV <$> fromProto x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
+  fromProto x = toCT . ZV <$> fromProto x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
 
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
@@ -177,7 +176,7 @@ instance (GFCtx fp d, Fact m, Additive (CT m fp))
     ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $ unCoeffs $ r *> Coeffs $ V.toList $ unIZipVector zv
 
 instance (Fact m, Ring r, Storable r) => Ring.C (CT m r) where
-  (*) a b = zipWithI (*) a b
+  (*) = zipWithI (*)
   fromInteger i = CT $ repl $ fromInteger i
 
 -- Need this for the ForallFact2 Module entailment below
@@ -187,7 +186,7 @@ instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
 -- x is approximately equal to y iff all their components are approximately equal
 instance (ApproxEqual r, Storable r) => ApproxEqual (CT m r) where
   (CT (CT' x)) =~= (CT (CT' y)) = SV.and $ SV.zipWith (=~=) x y
-  x@_ =~= y@_ = (toCT x) =~= (toCT y)
+  x@_ =~= y@_ = toCT x =~= toCT y
 
 ---------- Category-theoretic instances ----------
 
@@ -200,6 +199,7 @@ instance Fact m => Applicative (CT m) where
 
   (ZV f) <*> (ZV a) = ZV (f <*> a)
   f@(ZV _) <*> v@(CT _) = f <*> toZV v
+  (CT _) <*> _ = error "CPP: internal error: function held by CT"
 
 instance Fact m => Foldable (CT m) where
   -- Foldable instance is implied by Traversable
@@ -431,7 +431,7 @@ instance (Reflects q Int64, Reflects q Double) => TensorPowDec CT (RRq q Double)
 
   coeffs = wrapM $ coerceCoeffs coeffs'
 
-  powBasisPow :: forall m m' . m `Divides` m' => Tagged m [CT m' (RRq q Double)]
+  powBasisPow :: forall m m' . (m `Divides` m') => Tagged m [CT m' (RRq q Double)]
   powBasisPow =
     let zqBasis = (CT <$>) <$> coerceBasis powBasisPow' :: Tagged m [CT m' (ZqBasic q Int64)] in
     (fmapI fromSubgroup <$>) <$> zqBasis
@@ -607,7 +607,7 @@ instance (Storable r, Random r, Fact m) => Random (CT' m r) where
   random = runRand $ replM (liftRand random)
 
   -- Interpret the range component-wise
-  randomR (CT' a, CT' b) = runRand $ (CT' . SV.fromList) <$> l
+  randomR (CT' a, CT' b) = runRand $ CT' . SV.fromList <$> l
     where l = zipWithM (\x y -> liftRand $ randomR (x, y)) (SV.toList a) (SV.toList b)
 
 instance (Storable r, Random (CT' m r)) => Random (CT m r) where
@@ -615,7 +615,7 @@ instance (Storable r, Random (CT' m r)) => Random (CT m r) where
   random = runRand $ CT <$> liftRand random
 
   -- Drop to the CT' instance
-  randomR (CT a, CT b) = runRand $ CT <$> (liftRand $ randomR (a, b))
+  randomR (CT a, CT b) = runRand $ CT <$> liftRand (randomR (a, b))
   randomR (a@_, b@_)   = randomR (toCT a, toCT b)
 
 instance (NFData r) => NFData (CT m r) where
@@ -658,3 +658,14 @@ gCRT, gInvCRT :: forall m mon r .
   (Storable r, CRTrans mon r, Fact m) => mon (CT' m r)
 gCRT    = wrapVector <$> gCRTK    @m
 gInvCRT = wrapVector <$> gInvCRTK @m
+
+
+
+
+
+
+
+
+
+
+
