@@ -26,14 +26,12 @@ performance for 'Cyc' in some cases.
 
 module Crypto.Lol.Benchmarks.CycRepBenches (cycRepBenches1, cycRepBenches2) where
 
-import Control.Applicative
 import Control.Monad.Random hiding (lift)
 
-import Crypto.Lol.Utils.Benchmarks (bgroup, mkBench, mkBenchIO, Benchmark)
 import Crypto.Lol.Cyclotomic.CycRep
-import Crypto.Lol.Cyclotomic.Language (mulG)
 import Crypto.Lol.Prelude
 import Crypto.Lol.Types
+import Crypto.Lol.Utils.Benchmarks  (Benchmark, bgroup, mkBench, mkBenchIO)
 import Crypto.Random
 
 -- | Benchmarks for single-index 'CycRep' operations.
@@ -79,7 +77,6 @@ cycRepBenches2 ptmmr =
       zEC' = zero :: CycRepEC t m' r
       zPC' = ecToPC zEC'
       zPow = zero :: CycRep t P m r
-      zDec = zero :: CycRep t D m r
       zEC = zero :: CycRepEC t m r
       zPC = ecToPC zEC
       benches = [
@@ -92,14 +89,14 @@ cycRepBenches2 ptmmr =
   bgroup "CycRep" benches
 
 pcToEC :: CycRepPC t m r -> CycRepEC t m r
-pcToEC (Right x) = (Right x)
+pcToEC (Right x) = Right x
 
 ecToPC :: CycRepEC t m r -> CycRepPC t m r
-ecToPC (Right x) = (Right x)
+ecToPC (Right x) = Right x
 
 {-# INLINE bench_mul #-}
 bench_mul :: _ => CycRepPC t m r -> CycRepPC t m r -> CycRepEC t m r
-bench_mul a b = (pcToEC a) * (pcToEC b)
+bench_mul a b = pcToEC a * pcToEC b
 
 {-# INLINE bench_crt #-}
 -- convert input from Pow basis to CRT basis
