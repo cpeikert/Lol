@@ -25,11 +25,13 @@ import Control.Applicative
 import Control.DeepSeq
 import Control.Monad.Random hiding (fromList, split)
 
-import Crypto.Lol hiding (replicate)
-import Crypto.Lol.Benchmarks (bgroup, mkBench, showType, ArgType, Benchmark)
-import Crypto.Lol.Types
+import Crypto.Lol                                hiding (replicate)
 import Crypto.Lol.Applications.KeyHomomorphicPRF
+import Crypto.Lol.Benchmarks                     (ArgType, Benchmark,
+                                                  bgroup, mkBench,
+                                                  showType)
 import Crypto.Lol.Reflects
+import Crypto.Lol.Types
 
 type M = F64
 type N = 1
@@ -70,7 +72,7 @@ khprfBenches pts _ = do
       xs  = take 32 values
       x   = head xs
       prp = Proxy :: Proxy (Rp ts)
-  return $ [
+  return [
     bgroup "KHPRF" [
       bgroup (showType pts) [
         bgroup "Solo" [
@@ -85,22 +87,22 @@ khprfBenches pts _ = do
           mkBench "right-amortized"    (prfAmortizedBench prp sr params key) xs]]]]
 
 prfBench :: forall t n gad rq rp .
-    (Rescale rq rp, Decompose gad rq, FBTC t, NFData rp)
+  (Rescale rq rp, Decompose gad rq, FBTC t, NFData rp)
   => Proxy rp
-     -> SFBT t
-     -> PRFParams n gad rq
-     -> PRFKey n rq
-     -> BitString (SizeFBT t)
-     -> Matrix rp
-prfBench _ t p s x = prf t p s x
+  -> SFBT t
+  -> PRFParams n gad rq
+  -> PRFKey n rq
+  -> BitString (SizeFBT t)
+  -> Matrix rp
+prfBench _ = prf
 
 prfAmortizedBench :: forall t n gad rq rp .
-    (Rescale rq rp, Decompose gad rq, NFData rp)
+  (Rescale rq rp, Decompose gad rq, NFData rp)
   => Proxy rp
-     -> SFBT t
-     -> PRFParams n gad rq
-     -> PRFKey n rq
-     -> [BitString (SizeFBT t)]
-     -> [Matrix rp]
+  -> SFBT t
+  -> PRFParams n gad rq
+  -> PRFKey n rq
+  -> [BitString (SizeFBT t)]
+  -> [Matrix rp]
 prfAmortizedBench _ t p s xs =
   run $ sequence $ prfAmortized t p s <$> xs
