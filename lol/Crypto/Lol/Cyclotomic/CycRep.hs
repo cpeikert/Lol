@@ -472,10 +472,7 @@ crtSet =
         => Int -> CycRep t rep m'bar r -> CycRep t P m'bar r
       expon 1  = toPow
       expon e' = toPowCE . (^p) . toCRT . expon (e'-1)
-      pp  = Proxy::Proxy p
-      pm  = Proxy::Proxy m
-      pm' = Proxy::Proxy m'
-  in (embedPow . expon e . Dec . fmapI liftZp) <$>
+  in embedPow . expon e . Dec . fmapI liftZp <$>
      (untag $ crtSetDec @t @_ @mbar :: [t m'bar (ZpOf r)])
      \\ pFreeDivides @p @m @m' \\ pSplitTheorems @p @m \\ pSplitTheorems @p @m'
 
