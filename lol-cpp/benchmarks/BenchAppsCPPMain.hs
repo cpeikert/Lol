@@ -24,7 +24,7 @@ import Crypto.Random.DRBG
 
 main :: IO ()
 main = do
-  let o = (defaultTableOpts Nothing)
+  let o = defaultTableOpts Nothing
       pct = Proxy::Proxy CT
   sheBenches <- defaultSHEBenches pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG)
   khprfBenches <- defaultKHPRFBenches pct (Proxy::Proxy (BaseBGad 2))
