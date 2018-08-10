@@ -74,5 +74,5 @@ errorBound =
     bsq = C.errorBound @m v eps -- continuous bound
     csq = C.tailGaussian @m eps
     fsq = (2 ^ length ps) * n * csq
-  in ceiling $ fsq + bsq + 2*(sqrt bsq)*(sqrt fsq)
+  in ceiling $ fsq + bsq + 2 * sqrt bsq * sqrt fsq
 
