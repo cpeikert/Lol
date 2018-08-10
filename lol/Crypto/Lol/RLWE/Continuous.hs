@@ -14,12 +14,12 @@ Portability : POSIX
 Functions and types for working with continuous ring-LWE samples.
 -}
 
-{-# LANGUAGE AllowAmbiguousTypes   #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE FlexibleContexts      #-}
-{-# LANGUAGE RebindableSyntax      #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds     #-}
+{-# LANGUAGE FlexibleContexts    #-}
+{-# LANGUAGE RebindableSyntax    #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeApplications    #-}
 
 module Crypto.Lol.RLWE.Continuous where
 
@@ -63,7 +63,7 @@ errorGSqNorm :: (RLWECtx cm zq rrq, Lift' rrq, FunctorCyc cm rrq (LiftOf rrq),
                  GSqNormCyc cm (LiftOf rrq))
              => cm zq -> Sample cm zq rrq -> LiftOf rrq
 {-# INLINABLE errorGSqNorm #-}
-errorGSqNorm = (fmap gSqNorm) . errorTerm
+errorGSqNorm = fmap gSqNorm . errorTerm
 
 -- | Gives \( c^2 \) such that the Gaussian mass outside a ball of
 -- radius \( c \) is approximately \( \epsilon \) (i.e., the Gaussian
@@ -73,7 +73,7 @@ tailGaussian :: forall m v . (Fact m, Ord v, Transcendental v) => v -> v
 tailGaussian eps =
   let n = fromIntegral $ totientFact @m
       stabilize x =
-        let x' = (1/2 + (log (2 * pi * x))/2 - (log eps)/n)/pi
+        let x' = (1/2 + log (2 * pi * x)/2 - log eps/n)/pi
         in if x'-x < 0.0001 then x' else stabilize x'
   in stabilize $ 1/(2*pi)
 
