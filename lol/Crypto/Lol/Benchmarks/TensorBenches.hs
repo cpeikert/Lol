@@ -28,11 +28,11 @@ module Crypto.Lol.Benchmarks.TensorBenches (tensorBenches1, tensorBenches2) wher
 import Control.Applicative
 import Control.Monad.Random hiding (lift)
 
-import Crypto.Lol.Utils.Benchmarks (bgroup, mkBench, mkBenchIO, Benchmark)
-import Crypto.Lol.Prelude
 import Crypto.Lol.Cyclotomic.Tensor
+import Crypto.Lol.Prelude
 import Crypto.Lol.Types
 import Crypto.Lol.Types.IFunctor
+import Crypto.Lol.Utils.Benchmarks  (Benchmark, bgroup, mkBench, mkBenchIO)
 import Crypto.Random
 
 -- | Benchmarks for single-index 'Tensor' operations.
@@ -141,12 +141,11 @@ bench_divGCRT = fromJust' "TensorBenches.bench_divGCRT" divGCRT
 -- generate a rounded error term
 bench_errRounded :: forall t m r gen . (Fact m, CryptoRandomGen gen, TensorPowDec t r, _)
   => Proxy '(t,m,r) -> Proxy gen -> Double -> IO (t m (LiftOf r))
-bench_errRounded _ _ v = do
-  gen <- newGenIO
-  return $ evalRand
-    (fmapI (roundMult one) <$>
-      (tweakedGaussianDec v :: Rand (CryptoRand gen) (t m Double)) :: Rand (CryptoRand gen)
-                                                                           (t m (LiftOf r))) gen
+bench_errRounded _ _ v =
+  evalRand
+  (fmapI (roundMult one) <$>
+    (tweakedGaussianDec v :: Rand (CryptoRand gen) (t m Double)) :: Rand (CryptoRand gen)
+                                                                         (t m (LiftOf r))) <$> newGenIO
 
 -- EAC: due to GHC bug #12634, I have to give these a little more help than the corresponding functions
 -- in UCyc and Cyc benches. Not a huge deal.
