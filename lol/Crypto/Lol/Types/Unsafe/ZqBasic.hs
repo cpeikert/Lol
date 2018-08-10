@@ -168,7 +168,7 @@ principalRootUnity =        -- use Integers for all intermediate calcs
 mhatInv :: forall m q z . (Reflects m Int, Reflects q z, ToInteger z, PID z)
            => TaggedT m Maybe (ZqBasic q z)
 mhatInv = tagT $ reduce' <$>
-          ((`modinv` (value @q)) $ fromIntegral $ valueHat $ (value @m :: Int))
+          ((`modinv` value @q) $ fromIntegral $ valueHat (value @m :: Int))
 
 -- instance of CRTrans
 instance (Reflects q z, ToInteger z, PID z, Enumerable (ZqBasic q z))
