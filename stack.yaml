@@ -43,7 +43,6 @@ packages:
 - lol-cpp/
 - lol-apps/
 # - lol-repa/
-# - rlwe-challenges/
 
 # Dependency packages to be pulled from upstream that are not in the resolver
 
