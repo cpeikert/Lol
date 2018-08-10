@@ -11,7 +11,6 @@ Portability : POSIX
 Pretty-printing for benchmark results across levels of the Lol stack.
 -}
 
-{-# LANGUAGE BangPatterns          #-}
 {-# LANGUAGE RecordWildCards       #-}
 -- EAC: https://ghc.haskell.org/trac/ghc/ticket/13352
 {-# LANGUAGE DuplicateRecordFields #-}
@@ -28,7 +27,7 @@ import Criterion.Types
 
 import Crypto.Lol.Utils.PrettyPrint
 
-import Data.List (nub, groupBy, transpose)
+import Data.List           (groupBy, nub, transpose)
 import System.Console.ANSI
 import System.IO
 import Text.Printf

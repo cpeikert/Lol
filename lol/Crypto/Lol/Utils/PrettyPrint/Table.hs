@@ -11,7 +11,6 @@ Portability : POSIX
 Pretty-printing for benchmark results within a single level of the Lol stack.
 -}
 
-{-# LANGUAGE BangPatterns    #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Crypto.Lol.Utils.PrettyPrint.Table
@@ -21,12 +20,12 @@ module Crypto.Lol.Utils.PrettyPrint.Table
 
 import Control.Monad (forM_, when)
 
-import Criterion.Types
 import Criterion.Measurement (secs)
+import Criterion.Types
 
 import Crypto.Lol.Utils.PrettyPrint
 
-import Data.List (nub, groupBy, transpose)
+import Data.List   (groupBy, nub, transpose)
 import System.IO
 import Text.Printf
 
@@ -57,7 +56,7 @@ optsToInternal TOpts{..} bnch =
 defaultTableOpts :: Maybe String -> TableOpts
 defaultTableOpts lvl =
   case lvl of
-    Nothing -> go ""
+    Nothing  -> go ""
     (Just l) -> go l
   where go level =
           TOpts {verb = Progress,
@@ -81,7 +80,7 @@ printTable _ [] = return ()
 printTable o rpts = do
   let colLbls = nub $ map (getBenchParams . reportName) rpts
       exName = reportName $ head rpts
-  printf (testName o) $ (getTableName exName) ++ "/" ++ (getBenchLvl exName)
+  printf (testName o) $ getTableName exName ++ "/" ++ getBenchLvl exName
   mapM_ (printf (col o)) colLbls
   printf "\n"
   let rpts' = transpose $ groupBy (\a b -> getBenchParams (reportName a) == getBenchParams (reportName b)) rpts
