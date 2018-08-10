@@ -1158,5 +1158,5 @@ let types = [ [t| Int64 |]
        |]
     -- CJP TODO: if/when we get a way to convert Integer between Pow
     -- and Dec, we can also have instances that go *from* Integer
-  in liftA concat $ sequence $
+  in fmap concat $ sequence $
      (mkIFunctorCyc <$> types <*> types) ++ (mkFunctorCyc <$> types)
