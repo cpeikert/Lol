@@ -172,7 +172,6 @@ mhatInv = tagT $ reduce' <$>
 
 instance (Reflects q z, ToInteger z, PID z, Enum z, NFData z)
          => CRTrans Maybe (ZqBasic q z) where
-  {-# NOINLINE  crtInfo #-}
   {-# INLINABLE crtInfo #-}
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
