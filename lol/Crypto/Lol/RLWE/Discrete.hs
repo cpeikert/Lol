@@ -24,7 +24,6 @@ module Crypto.Lol.RLWE.Discrete where
 import Crypto.Lol
 import Crypto.Lol.RLWE.Continuous as C (errorBound, tailGaussian)
 
-import Control.Applicative
 import Control.Monad.Random
 
 -- | A discrete RLWE sample \( (a,b) \in R_q \times R_q \).
@@ -75,4 +74,3 @@ errorBound =
     csq = C.tailGaussian @m eps
     fsq = (2 ^ length ps) * n * csq
   in ceiling $ fsq + bsq + 2 * sqrt bsq * sqrt fsq
-
