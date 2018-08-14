@@ -11,15 +11,11 @@ Portability : POSIX
   \( \def\Z{\mathbb{Z}} \)
   \( \def\C{\mathbb{C}} \)
 
-An implementation of the quotient ring \(\Z_q = \Z/(q\Z)\).
-This module is "unsafe" because it exports the 'ZqBasic' constructor.
-This module should only be used to make tensor-specific instances for 'ZqBasic'.
-The safe way to use this type is to import "Crypto.Lol.Types".
-
-EAC: It may help GHC do specialization at higher levels of the library
-if we "simplify" constraints in this module. For example, replace the
-(Additive (ZqBasic q z)) constraint on the Reduce instance with
-(Additive z)
+An implementation of the quotient ring \(\Z_q = \Z/(q\Z)\).  This
+module is "unsafe" because it exports the 'ZqBasic' constructor.  This
+module should only be used to make tensor-specific instances for
+'ZqBasic'.  The safe way to use this type is to import
+"Crypto.Lol.Types".
 -}
 
 {-# LANGUAGE AllowAmbiguousTypes        #-}
