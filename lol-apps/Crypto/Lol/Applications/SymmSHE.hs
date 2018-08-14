@@ -181,13 +181,13 @@ toLSD, toMSD :: forall c m m' zp zq .
 toMSD = let (zpScale, zqScale :: zq) = lsdToMSD
         in \ct@(CT enc k l c) -> case enc of
           MSD -> ct
-          LSD -> CT MSD k (zpScale * l) ((zqScale *>) <$> c)
+          LSD -> CT MSD k (zpScale * l) (zqScale *> c)
 
 -- | Convert a ciphertext to LSD encoding.
 toLSD = let (zpScale, zqScale :: zq) = msdToLSD
         in \ct@(CT enc k l c) -> case enc of
           LSD -> ct
-          MSD -> CT LSD k (zpScale * l) ((zqScale *>) <$> c)
+          MSD -> CT LSD k (zpScale * l) (zqScale *> c)
 
 ---------- Modulus switching ----------
 
