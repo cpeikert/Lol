@@ -25,7 +25,6 @@ module Crypto.Lol.RLWE.Continuous where
 
 import Crypto.Lol
 
-import Control.Applicative
 import Control.Monad.Random
 
 -- | A continuous RLWE sample \( (a,b) \in R_q \times K/(qR) \).  The
