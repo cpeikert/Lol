@@ -53,7 +53,8 @@ SK, PT, CT -- don't export constructors!
 -- * Constraint synonyms
 , GenSKCtx, EncryptCtx, ToSDCtx
 , ErrorTermCtx, DecryptCtx
-, AddPublicCtx, MulPublicCtx, ModSwitchPTCtx
+, AddPublicCtx, MulPublicCtx
+, ModSwitchCtx, ModSwitchPTCtx
 , KSHintCtx, KeySwitchCtx
 , TunnelHintCtx, TunnelCtx
 , SwitchCtx, LWECtx -- these are internal, but exported for better docs
@@ -197,13 +198,18 @@ modSwitchMSD c = case coeffs c of
   []    -> fromCoeffs []
   c0:c' -> fromCoeffs $ rescaleDec c0 : map rescalePow c'
 
+type ModSwitchCtx c m' zp zq zq' =
+  (RescaleCyc (c m') zq zq', ToSDCtx c m' zp zq)
+
 -- | Rescale a ciphertext to a new modulus.
-modSwitch :: (RescaleCyc (c m') zq zq', ToSDCtx c m' zp zq) => CT m zp (c m' zq) -> CT m zp (c m' zq')
+modSwitch :: (ModSwitchCtx c m' zp zq zq')
+          => CT m zp (c m' zq) -> CT m zp (c m' zq')
 modSwitch ct = let CT MSD k l c = toMSD ct
                in CT MSD k l $ modSwitchMSD c
 
 -- | Constraint synonym for modulus switching.
-type ModSwitchPTCtx c m' zp zp' zq = (Lift' zp, Reduce (LiftOf zp) zp', ToSDCtx c m' zp zq)
+type ModSwitchPTCtx c m' zp zp' zq =
+  (Lift' zp, Reduce (LiftOf zp) zp', ToSDCtx c m' zp zq)
 
 -- | Homomorphically divide a plaintext that is known to be a multiple
 -- of \( (p/p') \) by that factor, thereby scaling the plaintext modulus
