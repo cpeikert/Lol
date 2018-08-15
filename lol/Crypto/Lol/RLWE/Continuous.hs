@@ -20,6 +20,7 @@ Functions and types for working with continuous ring-LWE samples.
 {-# LANGUAGE RebindableSyntax    #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications    #-}
+{-# LANGUAGE TypeFamilies        #-}
 
 module Crypto.Lol.RLWE.Continuous where
 
@@ -50,7 +51,8 @@ sample svar s = let s' = adviseCRT s in do
   return (a, as + reduce e)
 
 -- | The error term of an RLWE sample, given the purported secret.
-errorTerm :: (RLWECtx cm zq rrq, Lift' rrq, FunctorCyc cm rrq (LiftOf rrq))
+errorTerm :: (RLWECtx cm zq rrq, Lift' rrq, FunctorCyc cm rrq (LiftOf rrq),
+              LiftCyc (cm rrq), LiftOf (cm rrq) ~ cm (LiftOf rrq))
           => cm zq -> Sample cm zq rrq -> cm (LiftOf rrq)
 {-# INLINABLE errorTerm #-}
 errorTerm s = let s' = adviseCRT s
@@ -59,7 +61,8 @@ errorTerm s = let s' = adviseCRT s
 -- | The 'gSqNorm' of the error term of an RLWE sample, given the
 -- purported secret.
 errorGSqNorm :: (RLWECtx cm zq rrq, Lift' rrq, FunctorCyc cm rrq (LiftOf rrq),
-                 GSqNormCyc cm (LiftOf rrq))
+                 GSqNormCyc cm (LiftOf rrq),
+                 LiftCyc (cm rrq), LiftOf (cm rrq) ~ cm (LiftOf rrq))
              => cm zq -> Sample cm zq rrq -> LiftOf rrq
 {-# INLINABLE errorGSqNorm #-}
 errorGSqNorm = fmap gSqNorm . errorTerm

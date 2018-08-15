@@ -650,6 +650,12 @@ instance (Fact m, GaussianCyc (Cyc t m Double), FunctorCyc (Cyc t m) Double Int6
 
 -----
 
+instance (Lift' r, FunctorCyc (Cyc t m) r (LiftOf r)) => LiftCyc (Cyc t m r) where
+  liftCyc = flip fmapCyc lift
+
+-----
+
+
 instance (Fact m, TensorGaussian t q) => GaussianCyc (CycG t m q) where
   tweakedGaussian = fmap Dec . R.tweakedGaussian
 

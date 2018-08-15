@@ -102,7 +102,7 @@ type instance LiftOf (Linear c e r s zp) = Linear c e r s (LiftOf zp)
 -- | Lift the linear function in the specified basis (or any, if
 -- 'Nothing' is given).  The powerful basis is generally best,
 -- geometrically.
-liftLin :: (LiftCyc (c s) zp)
+liftLin :: (LiftCyc (c s zp), LiftOf (c s zp) ~ c s (LiftOf zp))
   => Maybe Basis -> Linear c e r s zp -> Linear c e r s (LiftOf zp)
 liftLin b (RD ys) = RD $ liftCyc b <$> ys
 
