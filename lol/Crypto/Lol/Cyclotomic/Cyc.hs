@@ -831,6 +831,10 @@ instance (Fact m, Rescale (RRq q r) (RRq p r), TensorPowDec t (RRq q r), TensorP
   rescaleCyc L.Dec (DecRRq u) = DecRRq $ rescale u
   rescaleCyc L.Dec (PowRRq u) = DecRRq $ rescale $ toDec u
 
+-- | no-op rescale on pairs
+instance RescaleCyc (Cyc t m) (a,b) (a,b) where
+  rescaleCyc = const id
+
 -- | rescale up by one additional modulus
 instance (Fact m, Reflects q z, Reduce z b, ZeroTestable z,
           CRTElt t (ZqBasic q z), Module.C b (Cyc t m b))
