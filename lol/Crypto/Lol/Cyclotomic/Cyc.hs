@@ -640,17 +640,20 @@ instance (Fact m, TensorGSqNorm t Int64, CRTElt t Int64) -- copied
 
 ----
 
-instance (Fact m, GaussianCyc (Cyc t m Double), FunctorCyc (Cyc t m) Double Int64)
+-- | uses 'Double' for the intermediate Gaussian sample
+instance (Fact m, TensorGaussian t Double, FunctorCyc (Cyc t m) Double Int64)
   => RoundedGaussianCyc (Cyc t m Int64) where
-  -- We include the type signature here so we can use 'rnd' in the function body
-  roundedGaussian :: forall v rnd . (ToRational v, MonadRandom rnd) => v -> rnd (Cyc t m Int64)
+  roundedGaussian :: forall v rnd . (ToRational v, MonadRandom rnd)
+                  => v -> rnd (Cyc t m Int64)
+  {-# INLINABLE roundedGaussian #-}
   roundedGaussian svar =
-    let sample = (L.tweakedGaussian svar) :: rnd (Cyc t m Double)
-    in (fmapCyc (Just L.Dec) (roundMult one)) <$> sample
+    fmapCyc (Just L.Dec) (roundMult one) <$>
+    (L.tweakedGaussian svar :: rnd (Cyc t m Double))
 
 -----
 
 instance (Lift' r, FunctorCyc (Cyc t m) r (LiftOf r)) => LiftCyc (Cyc t m r) where
+  {-# INLINABLE liftCyc #-}
   liftCyc = flip fmapCyc lift
 
 -----
@@ -670,7 +673,7 @@ instance (TensorGaussian t Double, IFElt t Double, IFunctor t, Fact m, Mod zp,
   {-# INLINABLE cosetGaussian #-}
   cosetGaussian v = (Dec <$>) . R.cosetGaussian v . unCycGDec
 
--- | uses 'Double' precision for the intermediate Gaussian samples
+-- | uses 'Double' for the intermediate Gaussian samples
 instance (CosetGaussianCyc (CycG t m (ZqBasic q Int64)))
   => CosetGaussianCyc (Cyc t m (ZqBasic q Int64)) where
   cosetGaussian v = fmap CycI64 . L.cosetGaussian v . unCycZqB
