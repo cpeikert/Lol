@@ -141,12 +141,11 @@ encrypt (SK svar s) =
 
 -- | Constraint synonym for extracting the error term of a ciphertext.
 type ErrorTermCtx c m' z zp zq =
-  (ToSDCtx c m' zp zq, Ring (c m' zq), Reduce (c m' z) (c m' zq),
-   LiftCyc (c m' zq), LiftOf (c m' zq) ~ c m' (LiftOf zq))
+  (ToSDCtx c m' zp zq, Ring (c m' zq), Reduce (c m' z) (c m' zq), LiftCyc (c m' zq))
 
 -- | Extract the error term of a ciphertext.
 errorTerm :: ErrorTermCtx c m' z zp zq
-          => SK (c m' z) -> CT m zp (c m' zq) -> c m' (LiftOf zq)
+          => SK (c m' z) -> CT m zp (c m' zq) -> LiftOf (c m' zq)
 errorTerm (SK _ s) = let sq = reduce s in
   \ct -> let (CT LSD _ _ c) = toLSD ct
          in liftDec $ evaluate c sq
@@ -158,7 +157,7 @@ divG' = fromJust . divG
 -- | Constraint synonym for decryption.
 type DecryptCtx c m m' z zp zq =
   (ErrorTermCtx c m' z zp zq, Cyclotomic (c m' zp), Module zp (c m zp),
-   Reduce (c m' (LiftOf zq)) (c m' zp), ExtensionCyc c zp, m `Divides` m')
+   Reduce (LiftOf (c m' zq)) (c m' zp), ExtensionCyc c zp, m `Divides` m')
 
 -- | Decrypt a ciphertext.
 decrypt :: forall c m m' z zp zq . DecryptCtx c m m' z zp zq
@@ -332,8 +331,7 @@ keySwitchQuadCirc hint ct =
 -- | Constraint synonym for adding a public value to an encrypted value.
 type AddPublicCtx c m m' zp zq =
   (ToSDCtx c m' zp zq, Cyclotomic (c m zp), Module zp (c m zp),
-   LiftCyc (c m zp), LiftOf (c m zp) ~ c m (LiftOf zp),
-   Reduce (c m (LiftOf zp)) (c m zq),
+   LiftCyc (c m zp), Reduce (LiftOf (c m zp)) (c m zq),
    ExtensionCyc c zq, m `Divides` m')
 
 -- | Homomorphically add a public \( R_p \) value to an encrypted
@@ -357,8 +355,7 @@ mulScalar a (CT enc k l c) =
 
 -- | Constraint synonym for multiplying a public value with an encrypted value.
 type MulPublicCtx c m m' zp zq =
-  (LiftCyc (c m zp), LiftOf (c m zp) ~ c m (LiftOf zp),
-   Reduce (c m (LiftOf zp)) (c m zq),
+  (LiftCyc (c m zp), Reduce (LiftOf (c m zp)) (c m zq),
    ExtensionCyc c zq, m `Divides` m', Ring (c m' zq))
 
 -- | Homomorphically multiply an encrypted value by a public \( R_p \)
@@ -416,8 +413,7 @@ instance (ToSDCtx c m' zp zq, Additive (CT m zp (c m' zq)))
 -- | Constraint synonym for 'absorbGFactors'.
 type AbsorbGCtx c m' zp zq =
   (Ring (c m' zp), Ring (c m' zq), Cyclotomic (c m' zp), Cyclotomic (c m' zq),
-   LiftCyc (c m' zp), LiftOf (c m' zp) ~ c m' (LiftOf zp),
-   Reduce (c m' (LiftOf zp)) (c m' zq))
+   LiftCyc (c m' zp), Reduce (LiftOf (c m' zp)) (c m' zq))
 
 -- | "Absorb" the powers of \( g \) associated with the ciphertext, at
 -- the cost of some increase in noise. This is usually needed before

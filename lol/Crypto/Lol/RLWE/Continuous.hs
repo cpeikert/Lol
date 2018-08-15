@@ -51,8 +51,8 @@ sample svar s = let s' = adviseCRT s in do
   return (a, as + reduce e)
 
 -- | The error term of an RLWE sample, given the purported secret.
-errorTerm :: (RLWECtx cm zq rrq, LiftCyc (cm rrq), LiftOf (cm rrq) ~ cm (LiftOf rrq))
-          => cm zq -> Sample cm zq rrq -> cm (LiftOf rrq)
+errorTerm :: (RLWECtx cm zq rrq, LiftCyc (cm rrq))
+          => cm zq -> Sample cm zq rrq -> LiftOf (cm rrq)
 {-# INLINABLE errorTerm #-}
 errorTerm s = let s' = adviseCRT s
               in \(a,b) -> liftDec $ b - fmapDec fromSubgroup (a * s')
