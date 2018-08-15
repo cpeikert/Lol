@@ -263,8 +263,17 @@ instance (Fact m, CRTElt t a, IFunctor t, IFElt t a, IFElt t b)
   fmapCyc (Just L.Dec) f = Dec . fmapI f . unCycGDec
   fmapCyc Nothing      f = fmapCyc (Just L.Pow) f
 
--- CJP: the rest of the instances are autogen'd at end of file, to
--- avoid scoping problems
+instance (Fact m, ForallFact1 Applicative t)
+  => FunctorCyc (Cyc t m) Integer Integer where
+  fmapCyc (Just L.Pow) f (PowIgr u) = PowIgr $ fmap f u
+  fmapCyc (Just L.Dec) f (DecIgr u) = DecIgr $ fmap f u
+  fmapCyc Nothing      f (PowIgr u) = PowIgr $ fmap f u
+  fmapCyc Nothing      f (DecIgr u) = DecIgr $ fmap f u
+  fmapCyc _            _ _          =
+    error "Cyc.fmapCyc Integer->Integer: mismatched bases, implementation TODO"
+
+-- CJP: the rest of the FunctorCyc instances are autogen'd at end of
+-- file, to avoid scoping problems
 
 ---------- Algebraic instances ----------
 
