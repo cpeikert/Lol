@@ -61,28 +61,12 @@ class GaussianCyc cmq where
   -- \), where \( D \) has scaled variance \( v \).
   tweakedGaussian :: (ToRational v, MonadRandom rnd) => v -> rnd cmq
 
--- | Convenient type synonym that looks like a class constraint.
-type RoundedGaussianCyc cm z =
-  (ToInteger z, GaussianCyc (cm Double), FunctorCyc cm Double z)
-
--- | Sample from the tweaked Gaussian with given scaled variance,
--- deterministically rounded using the decoding basis.
-roundedGaussian :: forall cm z v rnd .
-  (RoundedGaussianCyc cm z, ToRational v, MonadRandom rnd)
-  => v -> rnd (cm z)
-roundedGaussian svar = fmapCyc (Just Dec) (roundMult one) <$>
-                       (tweakedGaussian svar :: rnd (cm Double))
-
-{-
-
 -- | Sampling from /discretized/ tweaked Gaussian distributions over
 -- cyclotomic number rings.
 class RoundedGaussianCyc cmz where
   -- | Sample from the tweaked Gaussian with given scaled variance,
   -- deterministically rounded using the decoding basis.
   roundedGaussian :: (ToRational v, MonadRandom rnd) => v -> rnd cmz
-
--}
 
 -- CJP TODO: see if we can implement cosetGaussian generically using
 -- ZipWithCyc class

@@ -638,6 +638,16 @@ instance (Fact m, TensorGSqNorm t Int64, CRTElt t Int64) -- copied
   => GSqNormCyc (Cyc t m) Int64 where
   gSqNorm = gSqNorm . unCycI64
 
+----
+
+instance (Fact m, GaussianCyc (Cyc t m Double), FunctorCyc (Cyc t m) Double Int64)
+  => RoundedGaussianCyc (Cyc t m Int64) where
+  -- We include the type signature here so we can use 'rnd' in the function body
+  roundedGaussian :: forall v rnd . (ToRational v, MonadRandom rnd) => v -> rnd (Cyc t m Int64)
+  roundedGaussian svar =
+    let sample = (L.tweakedGaussian svar) :: rnd (Cyc t m Double)
+    in (fmapCyc (Just L.Dec) (roundMult one)) <$> sample
+
 -----
 
 instance (Fact m, TensorGaussian t q) => GaussianCyc (CycG t m q) where

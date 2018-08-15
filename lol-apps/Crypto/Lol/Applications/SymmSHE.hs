@@ -110,7 +110,7 @@ data CT m zp r'q =
 
 -- | Constraint synonym for generating a secret key.
 type GenSKCtx c m z v =
-  (ToInteger z, RoundedGaussianCyc (c m) z, ToRational v, NFData v)
+  (ToInteger z, RoundedGaussianCyc (c m z), ToRational v, NFData v)
 
 -- | Generates a secret key with (index-independent) scaled variance
 -- parameter \( v \); see 'roundedGaussian'.
@@ -222,7 +222,7 @@ modSwitchPT ct = let CT MSD k l c = toMSD ct in
 
 -- | Constraint synonym for generating a ring-LWE sample.
 type LWECtx c m' z zq =
-  (Cyclotomic (c m' zq), RoundedGaussianCyc (c m') z, Reduce (c m' z) (c m' zq),
+  (Cyclotomic (c m' zq), RoundedGaussianCyc (c m' z), Reduce (c m' z) (c m' zq),
    Random (c m' zq), Ring (c m' zq))
 
 -- An LWE sample for a given secret (corresponding to a linear
