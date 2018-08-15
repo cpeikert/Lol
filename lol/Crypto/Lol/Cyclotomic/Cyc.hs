@@ -215,8 +215,8 @@ instance (UnCyc t a, UnCyc t b, IFunctor t, IFElt t a, IFElt t b, IFElt t (a,b))
 
 ---------- Category-theoretic instances ----------
 
-instance (Fact m, CRTElt t r, ForallFact1 Foldable t,
-          Traversable (CycRep t P m), Traversable (CycRep t D m))
+instance (Fact m, CRTElt t r,
+          ForallFact1 Applicative t, ForallFact1 Traversable t)
     => FoldableCyc (CycG t m) r where
   foldrCyc (Just L.Pow)   f acc (Pow u) = foldr f acc u
   foldrCyc (Just L.Dec)   f acc (Dec u) = foldr f acc u
@@ -233,16 +233,23 @@ instance (FoldableCyc (CycG t m) Double) => FoldableCyc (Cyc t m) Double where
 instance (FoldableCyc (CycG t m) Int64) => FoldableCyc (Cyc t m) Int64 where
   foldrCyc bas f acc = foldrCyc bas f acc . unCycI64
 
-instance (FoldableCyc (CycG t m) (ZqBasic q z)) => FoldableCyc (Cyc t m) (ZqBasic q z) where
+instance (FoldableCyc (CycG t m) (ZqBasic q z))
+  => FoldableCyc (Cyc t m) (ZqBasic q z) where
   foldrCyc bas f acc = foldrCyc bas f acc . unCycZqB
 
 -- No instance for CycPair -- is one possible?
 
--- No instance for Cyc over Integer without TensorPowDec CT Integer,
--- because we need toDec and toPow.
+instance (Fact m, ForallFact1 Applicative t, ForallFact1 Traversable t)
+  => FoldableCyc (Cyc t m) Integer where
+  foldrCyc (Just L.Pow) f acc (PowIgr u) = foldr f acc u
+  foldrCyc (Just L.Dec) f acc (DecIgr u) = foldr f acc u
+  foldrCyc Nothing      f acc (PowIgr u) = foldr f acc u
+  foldrCyc Nothing      f acc (DecIgr u) = foldr f acc u
+  foldrCyc _            _ _   _          =
+    error "Cyc.foldrCyc over Integer: mismatched bases, implementation TODO."
 
 instance (Fact m, TensorPowDec t (RRq q r),
-          ForallFact1 Traversable t, ForallFact1 Applicative t)
+          ForallFact1 Applicative t, ForallFact1 Traversable t)
     => FoldableCyc (Cyc t m) (RRq q r) where
   foldrCyc (Just L.Pow) f acc = foldr f acc . unCycPow
   foldrCyc (Just L.Dec) f acc = foldr f acc . unCycDec
