@@ -55,7 +55,8 @@ Flag with-execs
 
 library
   default-language:   Haskell2010
-  ghc-options: -fexpose-all-unfoldings
+  ghc-options: -funbox-strict-fields
+              -- -fexpose-all-unfoldings
                -fwarn-dodgy-imports
   cc-options: -std=c++11
   Include-dirs: Crypto/Lol/Cyclotomic/Tensor/CPP
@@ -136,6 +137,7 @@ test-suite test-lol-cpp
   default-language: Haskell2010
   main-is:          TestLolCPPMain.hs
   ghc-options: -main-is TestLolCPPMain
+               -funbox-strict-fields
 --               -fspecialise-aggressively
 --               -fexpose-all-unfoldings
                -fwarn-dodgy-imports

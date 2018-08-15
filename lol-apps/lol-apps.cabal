@@ -48,7 +48,7 @@ library
   -- ghc optimizations
   if flag(opt)
     ghc-options: -funbox-strict-fields -fwarn-dodgy-imports
-    ghc-options: -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000
+    ghc-options: -fliberate-case -funfolding-keeness-factor=1000
 
   exposed-modules:
     Crypto.Lol.Applications.KeyHomomorphicPRF
