@@ -816,8 +816,8 @@ instance (Fact m, Rescale (RRq q r) (RRq p r), TensorPowDec t (RRq q r), TensorP
   rescaleCyc L.Dec (PowRRq u) = DecRRq $ rescale $ toDec u
 
 -- | rescale up by one additional modulus
-instance (Fact m, Reflects q z, Reduce z b, CRTElt t (ZqBasic q z), ZeroTestable z,
-          Module.C b (Cyc t m b))
+instance (Fact m, Reflects q z, Reduce z b, ZeroTestable z,
+          CRTElt t (ZqBasic q z), Module.C b (Cyc t m b))
   => RescaleCyc (Cyc t m) b (ZqBasic q z, b) where
 
   rescaleCyc = let q :: z = value @q
