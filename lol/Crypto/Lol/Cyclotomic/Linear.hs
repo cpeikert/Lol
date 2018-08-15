@@ -33,7 +33,7 @@ over a common subring.
 
 module Crypto.Lol.Cyclotomic.Linear
 ( Linear, ExtendLinCtx
-, linearDec, evalLin, liftLin, extendLin
+, linearDec, evalLin, liftLin, fmapLin, extendLin
 ) where
 
 import Crypto.Lol.Cyclotomic.Language
@@ -105,6 +105,10 @@ type instance LiftOf (Linear c e r s zp) = Linear c e r s (LiftOf zp)
 liftLin :: (LiftCyc (c s zp), LiftOf (c s zp) ~ c s (LiftOf zp))
   => Maybe Basis -> Linear c e r s zp -> Linear c e r s (LiftOf zp)
 liftLin b (RD ys) = RD $ liftCyc b <$> ys
+
+-- | Change the underlying cyclotomic representation.
+fmapLin :: (c s z -> c' s z) -> Linear c e r s z -> Linear c' e r s z
+fmapLin f (RD cs) = RD (f <$> cs)
 
 -- | A convenient constraint synonym for extending a linear function
 -- to larger rings.
