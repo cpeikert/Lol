@@ -68,9 +68,6 @@ class RoundedGaussianCyc cmz where
   -- deterministically rounded using the decoding basis.
   roundedGaussian :: (ToRational v, MonadRandom rnd) => v -> rnd cmz
 
--- CJP TODO: see if we can implement cosetGaussian generically using
--- ZipWithCyc class
-
 -- | Sampling from tweaked Gaussian distributions, discretized to
 -- mod-p cosets of cyclotomic number rings.
 class CosetGaussianCyc rp where
@@ -137,9 +134,9 @@ reduceCyc = fmapAny reduce
 
 -- | Lift a cyclotomic in a specified basis.
 class LiftCyc cmr where
--- | Lift in the specified basis (where 'Nothing' indicates that
--- any 'Basis' may be used).
-  liftCyc :: Maybe Basis -> cmr -> (LiftOf cmr)
+  -- | Lift in the specified basis (where 'Nothing' indicates that any
+  -- 'Basis' may be used).
+  liftCyc :: Maybe Basis -> cmr -> LiftOf cmr
 
 liftAny, liftPow, liftDec :: LiftCyc cmr => cmr -> LiftOf cmr
 liftAny = liftCyc   Nothing
