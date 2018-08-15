@@ -466,12 +466,12 @@ data TunnelHint gad c e r s e' r' s' zp zq =
 type TunnelHintCtx c e r s e' r' s' z zp zq' gad =
   (ExtendLinCtx c e r s e' r' s' zp, -- extendLin
    e' ~ (e * (r' / r)),     -- convenience; implied by prev constraint
-   Fact r, z ~ LiftOf zp, LiftOf (c s zp) ~ c s (LiftOf zp),
-   KSHintCtx gad c s' z zq',          -- ksHint
-   LiftCyc (c s zp),                  -- liftLin
-   ExtensionCyc c z, e' `Divides` r', -- powBasis
-   Reduce (c s' z) (c s' zq'),
-   Cyclotomic (c r' z),         -- adviseCRT
+   Fact r, z ~ LiftOf zp,   -- entailment (\\)
+   KSHintCtx gad c s' z zq',                  -- ksHint
+   LiftCyc (c s zp), LiftOf (c s zp) ~ c s z, -- liftLin
+   ExtensionCyc c z, e' `Divides` r',         -- powBasis
+   Reduce (c s' z) (c s' zq'),                -- reduce f'
+   Cyclotomic (c r' z),                       -- adviseCRT
    Ring (c r' z), Ring (c s' z), Random (c s' zq'), Gadget gad (c s' zq'))
 
 -- | Generates auxilliary data needed to tunnel from \( \O_{r'} \) to
