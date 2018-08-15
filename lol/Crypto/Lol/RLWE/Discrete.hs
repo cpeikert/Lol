@@ -45,7 +45,7 @@ sample svar s = let s' = adviseCRT s in do
   return (a, a * s' + reduce e)
 
 -- | The error term of an RLWE sample, given the purported secret.
-errorTerm :: (RLWECtx cm zq, Lift' zq, LiftCyc (cm zq), LiftOf (cm zq) ~ cm (LiftOf zq))
+errorTerm :: (RLWECtx cm zq, LiftCyc (cm zq), LiftOf (cm zq) ~ cm (LiftOf zq))
           => cm zq -> Sample cm zq -> cm (LiftOf zq)
 {-# INLINABLE errorTerm #-}
 errorTerm s = let s' = adviseCRT s
@@ -53,7 +53,7 @@ errorTerm s = let s' = adviseCRT s
 
 -- | The 'gSqNorm' of the error term of an RLWE sample, given the
 -- purported secret.
-errorGSqNorm :: (RLWECtx cm zq, Lift' zq, GSqNormCyc cm (LiftOf zq),
+errorGSqNorm :: (RLWECtx cm zq, GSqNormCyc cm (LiftOf zq),
                  LiftCyc (cm zq), LiftOf (cm zq) ~ cm (LiftOf zq))
              => cm zq -> Sample cm zq -> LiftOf zq
 {-# INLINABLE errorGSqNorm #-}
