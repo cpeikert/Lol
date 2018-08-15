@@ -60,17 +60,17 @@ import           Data.Word
 newtype Linear c (e::Factored) (r::Factored) (s::Factored) z = RD [c s z]
   deriving Show
 
-deriving instance NFData (c s z) => NFData (Linear c e r s z)
-
 -- some params are phantom but matter for safety
 type role Linear representational representational representational nominal nominal
+
+deriving instance NFData (c s z) => NFData (Linear c e r s z)
 
 -- | Construct an \(E\)-linear function given a list of its output values
 -- (in \(S\)) on the relative decoding basis of \(R/E\).  The number of
 -- elements in the list must not exceed the size of the basis.
 linearDec :: forall c e r s z .
              (e `Divides` r, e `Divides` s, Cyclotomic (c s z), ExtensionCyc c z)
-             => [c s z] -> Linear c e r s z
+          => [c s z] -> Linear c e r s z
 linearDec ys = let ps = proxy powBasis (Proxy::Proxy e) `asTypeOf` ys
                in if length ys <= length ps then RD (adviseCRT <$> ys)
                else error $ "linearDec: too many entries: "
@@ -80,7 +80,7 @@ linearDec ys = let ps = proxy powBasis (Proxy::Proxy e) `asTypeOf` ys
 -- | Evaluates the given linear function on the input.
 evalLin :: forall c e r s z .
            (e `Divides` r, e `Divides` s, Ring (c s z), ExtensionCyc c z)
-           => Linear c e r s z -> c r z -> c s z
+        => Linear c e r s z -> c r z -> c s z
 evalLin (RD ys) r = sum (zipWith (*) ys $ embed <$> (coeffsDec r :: [c e z]))
 
 instance Additive (c s z) => Additive.C (Linear c e r s z) where
@@ -121,8 +121,8 @@ type ExtendLinCtx c e r s e' r' s' z =
 -- | Extend an \(E\)-linear function \(R\to S\) to an \(E'\)-linear
 -- function \(R'\to S'\).
 extendLin :: forall c e r s e' r' s' z .
-  (ExtendLinCtx c e r s e' r' s' z)
-  => Linear c e r s z -> Linear c e' r' s' z
+             (ExtendLinCtx c e r s e' r' s' z)
+          => Linear c e r s z -> Linear c e' r' s' z
 -- need the indexing:
 -- dec_{R'/E'} <-> dec_{R'/(R+E')} \otimes dec_{(R+E')/E'}
 --               = dec_{R'/(R+E')} \otimes dec_{R/E}.
