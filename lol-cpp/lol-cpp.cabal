@@ -102,35 +102,35 @@ library
 
   other-extensions: TemplateHaskell
 
-Benchmark bench-lol-cpp
-  type:             exitcode-stdio-1.0
-  default-language: Haskell2010
-  main-is:          BenchLolCPPMain.hs
-  ghc-options:      -main-is BenchLolCPPMain
-  hs-source-dirs:   benchmarks
+-- Benchmark bench-lol-cpp
+--   type:             exitcode-stdio-1.0
+--   default-language: Haskell2010
+--   main-is:          BenchLolCPPMain.hs
+--   ghc-options:      -main-is BenchLolCPPMain
+--   hs-source-dirs:   benchmarks
 
-  build-depends:
-    base,
-    DRBG,
-    lol >= 0.7.0.0 && < 0.8,
-    lol-cpp
+--   build-depends:
+--     base,
+--     DRBG,
+--     lol >= 0.7.0.0 && < 0.8,
+--     lol-cpp
 
-Benchmark bench-lol-apps-cpp
-  type:             exitcode-stdio-1.0
-  default-language: Haskell2010
-  main-is:          BenchAppsCPPMain.hs
-  ghc-options:      -main-is BenchAppsCPPMain
-  if !flag(with-apps)
-    buildable: False
-  hs-source-dirs:   benchmarks
+-- Benchmark bench-lol-apps-cpp
+--   type:             exitcode-stdio-1.0
+--   default-language: Haskell2010
+--   main-is:          BenchAppsCPPMain.hs
+--   ghc-options:      -main-is BenchAppsCPPMain
+--   if !flag(with-apps)
+--     buildable: False
+--   hs-source-dirs:   benchmarks
 
-  build-depends:
-    base,
-    DRBG,
-    lol >= 0.7.0.0 && < 0.8,
-    lol-apps >= 0.2.1 && < 0.3,
-    lol-cpp,
-    MonadRandom
+--   build-depends:
+--     base,
+--     DRBG,
+--     lol >= 0.7.0.0 && < 0.8,
+--     lol-apps >= 0.2.1 && < 0.3,
+--     lol-cpp,
+--     MonadRandom
 
 test-suite test-lol-cpp
   type:             exitcode-stdio-1.0
