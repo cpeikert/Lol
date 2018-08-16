@@ -45,11 +45,6 @@ library
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3
 
-  -- ghc optimizations
-  if flag(opt)
-    ghc-options: -funbox-strict-fields -fwarn-dodgy-imports
-    ghc-options: -fliberate-case -funfolding-keeness-factor=1000
-
   exposed-modules:
     Crypto.Lol.Applications.KeyHomomorphicPRF
     Crypto.Lol.Applications.SymmSHE
