@@ -7,9 +7,9 @@ This branch is master. It should always be compiling!
 
 This repository contains several Haskell libraries:
 
-  * The `lol` directory contains the Haskell library Λ ○ λ (Lol),
+  * The `lol` directory contains the Haskell library Λ ⚬ λ (Lol),
     described in the paper
-    [Λ ○ λ: Functional Lattice Cryptography](https://eprint.iacr.org/2015/1134). More
+    [Λ ⚬ λ: Functional Lattice Cryptography](https://eprint.iacr.org/2015/1134). More
     documentation can be found on
     [Hackage](https://hackage.haskell.org/package/lol). This is the
     core of the project, and you'll need to install it to use anything
