@@ -82,27 +82,31 @@ type role ZqBasic nominal representational
 --deriving instance (U.Unbox i) => M.MVector U.MVector (ZqBasic q i)
 --deriving instance (U.Unbox i) => U.Unbox (ZqBasic q i)
 
-{-# INLINABLE reduce' #-}
-reduce' :: forall q z . (Reflects q z, ToInteger z) => z -> ZqBasic q z
+reduce' :: forall q z . (Reflects q z, IntegralDomain z) => z -> ZqBasic q z
 reduce' = ZqB . (`mod` value @q)
+{-# INLINABLE reduce' #-}
+{-# SPECIALIZE reduce' :: Reflects q Int64 => Int64 -> ZqBasic q Int64 #-}
 
 -- puts value in range [-q/2, q/2)
-decode' :: forall q z . (Reflects q z, ToInteger z) => ZqBasic q z -> z
+decode' :: forall q z . (Reflects q z, Ring z, Ord z) => ZqBasic q z -> z
 decode' = let qval = value @q
           in \(ZqB x) -> if 2 * x < qval then x else x - qval
+{-# INLINABLE decode' #-}
+--{-# SPECIALIZE decode' :: Reflects q Int64 => ZqBasic q Int64 -> Int64 #-}
 
-instance (Reflects q z, ToInteger z, Enum z) => Enumerable (ZqBasic q z) where
+instance (Reflects q z, Ring z, Enum z) => Enumerable (ZqBasic q z) where
+  --{-# SPECIALIZE instance (Reflects q Int64) => Enumerable (ZqBasic q Int64) #-}
   values = ZqB <$> [0..(value @q - 1)]
 
 instance (Reflects q z, ToInteger z) => Mod (ZqBasic q z) where
+  --{-# SPECIALIZE instance (Reflects q Int64) => Mod (ZqBasic q Int64) #-}
   type ModRep (ZqBasic q z) = z
 
   modulus = value @q
 
 type instance CharOf (ZqBasic p z) = p
 
-instance (PPow pp, zq ~ ZqBasic pp z,
-          PrimeField (ZpOf zq), Ring zq)
+instance (PPow pp, zq ~ ZqBasic pp z, PrimeField (ZpOf zq), Ring zq)
          => ZPP (ZqBasic (pp :: PrimePower) z) where
 
   type ZpOf (ZqBasic pp z) = ZqBasic (PrimePP pp) z
@@ -110,24 +114,31 @@ instance (PPow pp, zq ~ ZqBasic pp z,
   modulusZPP = ppPPow @pp
   liftZp = ZqB . unZqB
 
-instance (Reflects q z, ToInteger z) => Reduce z (ZqBasic q z) where
+instance (Reflects q z, IntegralDomain z) => Reduce z (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Reduce Int64 (ZqBasic q Int64) #-}
   reduce = reduce'
 
-instance (Reflects q z, ToInteger z, Ring z) => Reduce Integer (ZqBasic q z) where
+instance (Reflects q z, ToInteger z) => Reduce Integer (ZqBasic q z) where
+  --{-# SPECIALIZE instance (Reflects q Int64) => Reduce Integer (ZqBasic q Int64) #-}
   reduce = fromInteger
 
 type instance LiftOf (ZqBasic q z) = z
 
-instance (Reflects q z, ToInteger z) => Lift' (ZqBasic q z) where
+instance (Reflects q z, Ring z, Ord z, IntegralDomain z)
+  => Lift' (ZqBasic q z) where
+  --{-# SPECIALIZE instance (Reflects q Int64) => Lift' (ZqBasic q Int64) #-}
   lift = decode'
 
 instance (Reflects q z, ToInteger z, Reflects q' z, Ring z)
          => Rescale (ZqBasic q z) (ZqBasic q' z) where
+  --{-# SPECIALIZE instance (Reflects q Int64, Reflects q' Int64) => Rescale (ZqBasic q Int64) (ZqBasic q' Int64) #-}
 
   rescale = rescaleMod
 
-instance (Reflects p z, Reflects q z, ToInteger z, Field (ZqBasic q z), Field (ZqBasic p z))
+instance (Reflects p z, Reflects q z, IntegralDomain z,
+          Field (ZqBasic q z), Field (ZqBasic p z))
          => Encode (ZqBasic p z) (ZqBasic q z) where
+  --{-# SPECIALIZE instance (Reflects p Int64, Reflects q Int64) => Encode (ZqBasic p Int64) (ZqBasic q Int64) #-}
 
   lsdToMSD = let pval = value @p
                  negqval = negate $ value @q
@@ -168,18 +179,24 @@ mhatInv = tagT $ reduce' <$>
 
 instance (Reflects q z, ToInteger z, PID z, Enum z, NFData z)
          => CRTrans Maybe (ZqBasic q z) where
+  --{-# SPECIALIZE instance (Reflects q Int64) => CRTrans Maybe (ZqBasic q Int64) #-}
+
   {-# INLINABLE crtInfo #-}
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
 -- | Embeds into the complex numbers \( \C \).
-instance (Reflects q z, ToInteger z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
+instance (Reflects q z, ToInteger z, Ring (ZqBasic q z))
+  => CRTEmbed (ZqBasic q z) where
+  --{-# SPECIALIZE instance (Reflects q Int64) => CRTEmbed (ZqBasic q Int64) #-}
+
   type CRTExt (ZqBasic q z) = Complex Double
 
   toExt (ZqB x) = fromReal $ fromIntegral x
   fromExt = reduce' . NP.round . real
 
 -- instance of Additive
-instance (Reflects q z, ToInteger z, Additive z) => Additive.C (ZqBasic q z) where
+instance (Reflects q z, IntegralDomain z) => Additive.C (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Additive.C (ZqBasic q Int64) #-}
 
   {-# INLINABLE zero #-}
   zero = ZqB zero
@@ -191,7 +208,9 @@ instance (Reflects q z, ToInteger z, Additive z) => Additive.C (ZqBasic q z) whe
   negate (ZqB x) = reduce' $ negate x
 
 -- instance of Ring
-instance (Reflects q z, ToInteger z, Ring z) => Ring.C (ZqBasic q z) where
+instance (Reflects q z, ToInteger z) => Ring.C (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Ring.C (ZqBasic q Int64) #-}
+
   {-# INLINABLE (*) #-}
   (ZqB x) * (ZqB y) = reduce' $ x * y
 
@@ -203,6 +222,7 @@ instance (Reflects q z, ToInteger z, Ring z) => Ring.C (ZqBasic q z) where
 
 -- instance of Field
 instance (Reflects q z, ToInteger z, PID z, Show z) => Field.C (ZqBasic q z) where
+  --{-# SPECIALIZE instance (Reflects q Int64) => Field.C (ZqBasic q Int64) #-}
 
   {-# INLINABLE recip #-}
   recip = let qval = value @q
@@ -212,7 +232,9 @@ instance (Reflects q z, ToInteger z, PID z, Show z) => Field.C (ZqBasic q z) whe
                          show x ++ "\t" ++ show qval) $ modinv x qval
 
 -- (canonical) instance of IntegralDomain, needed for Cyclotomics
-instance (Reflects q z, ToInteger z, Field (ZqBasic q z)) => IntegralDomain.C (ZqBasic q z) where
+instance (Reflects q z, ToInteger z, PID z, Show z)
+  => IntegralDomain.C (ZqBasic q z) where
+  --{-# SPECIALIZE instance (Reflects q Int64) => IntegralDomain.C (ZqBasic q Int64) #-}
   divMod a b = (a/b, zero)
 
 -- Gadget-related instances
@@ -304,7 +326,7 @@ instance (Reflects q z, ToInteger z, Reflects b z)
               in (head tv - reduce (head es), es)
 
 -- instance of Random
-instance (Reflects q z, ToInteger z, Random z) => Random (ZqBasic q z) where
+instance (Reflects q z, Ring z, Random z) => Random (ZqBasic q z) where
   random = let high = value @q - 1
            in \g -> let (x,g') = randomR (0,high) g
                     in (ZqB x, g')
