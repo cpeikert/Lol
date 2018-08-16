@@ -702,14 +702,14 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r) -- ZT, ID for superclass
   => ExtensionCyc (CycG t) r where
 
   -- lazily embed
-  embed :: forall t m m' r . (m `Divides` m')
+  embed :: forall m m' . (m `Divides` m')
             => CycG t m r -> CycG t m' r
   embed (Scalar c) = Scalar c           -- keep as scalar
   embed (Sub (c :: CycG t l r)) = Sub c -- keep as subring element
     \\ transDivides @l @m @m'
   embed c = Sub c
 
-  twace :: forall t m m' r .
+  twace :: forall m m' .
           (CRTElt t r, ZeroTestable r, IntegralDomain r, m `Divides` m')
        => CycG t m' r -> CycG t m r
   twace (Pow u) = Pow $ twacePow u
