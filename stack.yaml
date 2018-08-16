@@ -48,6 +48,10 @@ packages:
 
 extra-deps:
 - monadcryptorandom-0.7.2.1
+# for LTS-8.2:
+- numeric-prelude-0.4.3
+- tagged-transformer-0.8.1
+- non-negative-0.1.2
 
 # Override default flag values for local packages and extra-deps
 
