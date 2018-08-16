@@ -435,13 +435,13 @@ twaceCRTE x@(CRTE _ v) =
 -- with respect to the relative powerful \(\O_m\)-basis.
 coeffsPow :: (TensorPowDec t r, m `Divides` m') => CycRep t P m' r -> [CycRep t P m r]
 {-# INLINABLE coeffsPow #-}
-coeffsPow (Pow v) = LP.map Pow $ coeffs v
+coeffsPow (Pow v) = Pow <$> coeffs v
 
 -- | Yield the \(\O_m\)-coefficients of an \(\O_{m'}\) element,
 -- with respect to the relative decoding \(\O_m\)-basis.
 coeffsDec :: (TensorPowDec t r, m `Divides` m') => CycRep t D m' r -> [CycRep t D m r]
 {-# INLINABLE coeffsDec #-}
-coeffsDec (Dec v) = LP.map Dec $ coeffs v
+coeffsDec (Dec v) = Dec <$> coeffs v
 
 -- | The relative powerful basis of \(\O_{m'} / \O_m\).
 powBasis :: forall m m' t r .
