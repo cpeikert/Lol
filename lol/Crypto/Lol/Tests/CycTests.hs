@@ -48,7 +48,7 @@ cycTests2 _ cycGen =
   let ptmmr = Proxy::Proxy '(t,m,m',r)
   in testGroup (showType ptmmr) [
       testWithoutGen "crtSet" (prop_crtSet_pairs ptmmr),
-      testWithGen "coeffsPow" (prop_coeffsBasis ptmmr) cycGen]
+      testWithGen "coeffsPow" (prop_coeffsPow ptmmr) cycGen]
 
 prop_mulgPow :: _ => Cyc t m r -> Bool
 prop_mulgPow x =
@@ -65,9 +65,9 @@ prop_mulgCRT x =
   let y = adviseCRT x in
   y == fromJust' "prop_mulgCRT failed divisibility!" (divG $ mulG y)
 
-prop_coeffsBasis :: forall t m m' r . _ => Proxy '(t,m,m',r) -> Cyc t m' r -> Bool
-prop_coeffsBasis _ x =
-  let xs = map embed (coeffsCyc Pow x :: [Cyc t m r])
+prop_coeffsPow :: forall t m m' r . _ => Proxy '(t,m,m',r) -> Cyc t m' r -> Bool
+prop_coeffsPow _ x =
+  let xs = map embed (coeffsPow x :: [Cyc t m r])
       bs = proxy powBasis (Proxy::Proxy m)
   in sum (zipWith (*) xs bs) == x
 
