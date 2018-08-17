@@ -606,29 +606,9 @@ instance (Fact m, CRTElt t r, ZeroTestable r, IntegralDomain r)
   adviseDec = toDec'
   adviseCRT = toCRT'
 
--- CJP: can't derive instances here because Cyc isn't the *last*
--- argument of the class
-
-instance Cyclotomic (CycG t m Double) => Cyclotomic (Cyc t m Double) where
-  mulG      = CycDbl . mulG      . unCycDbl
-  divG      = fmap CycDbl . divG . unCycDbl
-  advisePow = CycDbl . advisePow . unCycDbl
-  adviseDec = CycDbl . adviseDec . unCycDbl
-  adviseCRT = CycDbl . adviseCRT . unCycDbl
-
-instance Cyclotomic (CycG t m Int64) => Cyclotomic (Cyc t m Int64) where
-  mulG      = CycI64 . mulG      . unCycI64
-  divG      = fmap CycI64 . divG . unCycI64
-  advisePow = CycI64 . advisePow . unCycI64
-  adviseDec = CycI64 . adviseDec . unCycI64
-  adviseCRT = CycI64 . adviseCRT . unCycI64
-
-instance Cyclotomic (CycG t m (ZqBasic q z)) => Cyclotomic (Cyc t m (ZqBasic q z)) where
-  mulG      = CycZqB . mulG      . unCycZqB
-  divG      = fmap CycZqB . divG . unCycZqB
-  advisePow = CycZqB . advisePow . unCycZqB
-  adviseDec = CycZqB . adviseDec . unCycZqB
-  adviseCRT = CycZqB . adviseCRT . unCycZqB
+deriving instance Cyclotomic (CycG t m Double) => Cyclotomic (Cyc t m Double)
+deriving instance Cyclotomic (CycG t m Int64)  => Cyclotomic (Cyc t m Int64)
+deriving instance Cyclotomic (CycG t m (ZqBasic q z)) => Cyclotomic (Cyc t m (ZqBasic q z))
 
 instance (Cyclotomic (Cyc t m a), Cyclotomic (Cyc t m b))
   => Cyclotomic (Cyc t m (a,b)) where
