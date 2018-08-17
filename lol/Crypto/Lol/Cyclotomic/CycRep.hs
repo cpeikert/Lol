@@ -110,12 +110,16 @@ data C
 -- base ring.
 data E
 
-newtype instance CycRep t P m r = Pow  (t m r)
-newtype instance CycRep t D m r = Dec  (t m r)
-data    instance CycRep t C m r = CRTC !(CSentinel t m r) !(t m r)
+newtype instance CycRep t P m r = Pow  (t m r) deriving (Eq, ZeroTestable.C)
+newtype instance CycRep t D m r = Dec  (t m r) deriving (Eq, ZeroTestable.C)
+
+-- C/ESentinel enforces invariant that exactly one of the following
+-- two can be created for a given (t,m,r).
+data    instance CycRep t C m r = CRTC !(CSentinel t m r) !(t m r) deriving (Eq)
+-- can't derive ZT due to sentinel
+
 data    instance CycRep t E m r = CRTE !(ESentinel t m r) !(t m (CRTExt r))
--- C/ESentinel enforces invariant that exactly one of these can be
--- created for a given (t,m,r).
+-- no Eq due to precision
 
 -- | Convenient synonym for either CRT representation.
 type CycRepEC t m r = Either (CycRep t E m r) (CycRep t C m r)
@@ -138,20 +142,12 @@ scalarCRT r = case crtSentinel of
   Left  s -> Left  $ CRTE s $ runIdentity T.scalarCRT $ toExt r
 {-# INLINABLE scalarCRT #-}
 
--- Eq instances
-
-deriving instance Eq (t m r) => Eq (CycRep t P m r)
-deriving instance Eq (t m r) => Eq (CycRep t D m r)
-deriving instance Eq (t m r) => Eq (CycRep t C m r)
-
--- no Eq instance for E due to precision
 
 ---------- Numeric Prelude instances ----------
 
 -- ZeroTestable instances
 
-deriving instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t P m r)
-deriving instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t D m r)
+-- ZT for P,D derived above
 
 instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
   -- can't derive this because of sentinel
