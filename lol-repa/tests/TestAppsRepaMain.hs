@@ -13,14 +13,14 @@ Main driver for lol-apps tests with RT.
 
 module TestAppsRepaMain where
 
-import Crypto.Lol (TrivGad)
-import Crypto.Lol.Cyclotomic.Tensor.Repa
+import Crypto.Lol                        (TrivGad)
 import Crypto.Lol.Applications.Tests
+import Crypto.Lol.Cyclotomic.Tensor.Repa
 import Data.Proxy
 
 import Test.Framework
 
 main :: IO ()
 main = do
-  flip defaultMainWithArgs ["--threads=1","--maximum-generated-tests=100"] $
+  flip defaultMainWithArgs ["--threads=1","--maximum-generated-tests=20"] $
     defaultAppsTests (Proxy::Proxy RT) (Proxy::Proxy TrivGad)
