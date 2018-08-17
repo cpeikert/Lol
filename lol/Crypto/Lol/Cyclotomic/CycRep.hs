@@ -69,6 +69,7 @@ import Crypto.Lol.Cyclotomic.Tensor      hiding (divGDec, divGPow,
                                           mulGDec, mulGPow, scalarCRT,
                                           scalarPow, twaceCRT)
 import Crypto.Lol.Prelude                as LP
+import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IFunctor
 import Crypto.Lol.Types.Proto
@@ -161,6 +162,10 @@ instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
 -- underlying tensor? Would this require using ForallFact2 Additive.C?
 
 instance (TensorPowDec t r, Fact m) => Additive.C (CycRep t P m r) where
+  {-# SPECIALIZE instance (TensorPowDec t Int64, Fact m) => Additive.C (CycRep t P m Int64) #-}
+  {-# SPECIALIZE instance (TensorPowDec t Double, Fact m) => Additive.C (CycRep t P m Double) #-}
+  {-# SPECIALIZE instance (TensorPowDec t (ZqBasic q Int64), Fact m) => Additive.C (CycRep t P m (ZqBasic q Int64)) #-}
+
   zero = Pow $ T.scalarPow zero
   (Pow v1) + (Pow v2) = Pow $ zipWithI (+) v1 v2
   (Pow v1) - (Pow v2) = Pow $ zipWithI (-) v1 v2
@@ -171,6 +176,10 @@ instance (TensorPowDec t r, Fact m) => Additive.C (CycRep t P m r) where
   {-# INLINABLE negate #-}
 
 instance (TensorPowDec t r, Fact m) => Additive.C (CycRep t D m r) where
+  {-# SPECIALIZE instance (TensorPowDec t Int64, Fact m) => Additive.C (CycRep t D m Int64) #-}
+  {-# SPECIALIZE instance (TensorPowDec t Double, Fact m) => Additive.C (CycRep t D m Double) #-}
+  {-# SPECIALIZE instance (TensorPowDec t (ZqBasic q Int64), Fact m) => Additive.C (CycRep t D m (ZqBasic q Int64)) #-}
+
   zero = Dec $ T.scalarPow zero -- scalarPow works because it's zero
   (Dec v1) + (Dec v2) = Dec $ zipWithI (+) v1 v2
   (Dec v1) - (Dec v2) = Dec $ zipWithI (-) v1 v2
@@ -183,6 +192,9 @@ instance (TensorPowDec t r, Fact m) => Additive.C (CycRep t D m r) where
 -- | only for appropriate CRT representation (otherwise 'zero' would
 -- violate internal invariant)
 instance (Fact m, CRTElt t r) => Additive.C (CycRepEC t m r) where
+  {-# SPECIALIZE instance (Fact m, CRTElt t Int64) => Additive.C (CycRepEC t m Int64) #-}
+  {-# SPECIALIZE instance (Fact m, CRTElt t Double) => Additive.C (CycRepEC t m Double) #-}
+  {-# SPECIALIZE instance (Fact m, CRTElt t (ZqBasic q Int64)) => Additive.C (CycRepEC t m (ZqBasic q Int64)) #-}
 
   zero = scalarCRT zero
 
@@ -206,6 +218,9 @@ instance (Fact m, CRTElt t r) => Additive.C (CycRepEC t m r) where
 
 -- | only for appropriate CRT representation
 instance (Fact m, CRTElt t r) => Ring.C (CycRepEC t m r) where
+  {-# SPECIALIZE instance (Fact m, CRTElt t Int64) => Ring.C (CycRepEC t m Int64) #-}
+  {-# SPECIALIZE instance (Fact m, CRTElt t Double) => Ring.C (CycRepEC t m Double) #-}
+  {-# SPECIALIZE instance (Fact m, CRTElt t (ZqBasic q Int64)) => Ring.C (CycRepEC t m (ZqBasic q Int64)) #-}
 
   one = scalarCRT one
   fromInteger c = scalarCRT $ fromInteger c
@@ -220,14 +235,25 @@ instance (Fact m, CRTElt t r) => Ring.C (CycRepEC t m r) where
 
 
 instance (Ring r, TensorPowDec t r, Fact m) => Module.C r (CycRep t P m r) where
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t Int64) => Module.C Int64 (CycRep t P m Int64) #-}
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t Double) => Module.C Double (CycRep t P m Double) #-}
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t (ZqBasic q Int64), Reflects q Int64) => Module.C (ZqBasic q Int64) (CycRep t P m (ZqBasic q Int64)) #-}
+
   r *> (Pow v) = Pow $ fmapI (r *) v
   {-# INLINABLE (*>) #-}
 
 instance (Ring r, TensorPowDec t r, Fact m) => Module.C r (CycRep t D m r) where
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t Int64) => Module.C Int64 (CycRep t D m Int64) #-}
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t Double) => Module.C Double (CycRep t D m Double) #-}
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t (ZqBasic q Int64), Reflects q Int64) => Module.C (ZqBasic q Int64) (CycRep t D m (ZqBasic q Int64)) #-}
+
   r *> (Dec v) = Dec $ fmapI (r *) v
   {-# INLINABLE (*>) #-}
 
 instance (CRTElt t r, Fact m) => Module.C r (CycRepEC t m r) where
+  {-# SPECIALIZE instance (CRTElt t Int64, Fact m) => Module.C Int64 (CycRepEC t m Int64) #-}
+  {-# SPECIALIZE instance (CRTElt t Double, Fact m) => Module.C Double (CycRepEC t m Double) #-}
+  {-# SPECIALIZE instance (CRTElt t (ZqBasic q Int64), Fact m) => Module.C (ZqBasic q Int64) (CycRepEC t m (ZqBasic q Int64)) #-}
 
   r *> (Right (CRTC s v)) = Right $ CRTC s $ fmapI (r *) v
   r *> (Left (CRTE s v)) = Left $ CRTE s $ fmapI (toExt r *) v
@@ -245,11 +271,15 @@ instance (GFCtx fp d, Fact m, TensorPowDec t fp, Module (GF fp d) (t m fp))
 
 instance (Fact m, Reduce a b, IFunctor t, IFElt t a, IFElt t b)
          => Reduce (CycRep t P m a) (CycRep t P m b) where
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64, IFunctor t, IFElt t Int64, IFElt t (ZqBasic q Int64)) => Reduce (CycRep t P m Int64) (CycRep t P m (ZqBasic q Int64)) #-}
+
   reduce (Pow v) = Pow $ fmapI reduce v
   {-# INLINABLE reduce #-}
 
 instance (Fact m, Reduce a b, IFunctor t, IFElt t a, IFElt t b)
     => Reduce (CycRep t D m a) (CycRep t D m b) where
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64, IFunctor t, IFElt t Int64, IFElt t (ZqBasic q Int64)) => Reduce (CycRep t D m Int64) (CycRep t D m (ZqBasic q Int64)) #-}
+
   reduce (Dec v) = Dec $ fmapI reduce v
   {-# INLINABLE reduce #-}
 
@@ -259,13 +289,17 @@ instance (Fact m, Reduce a b, IFunctor t, IFElt t a, IFElt t b)
 type instance LiftOf (CycRep t P m r) = CycRep t P m (LiftOf r)
 type instance LiftOf (CycRep t D m r) = CycRep t D m (LiftOf r)
 
-instance (Lift' r, IFunctor t, IFElt t r, IFElt t (LiftOf r), Fact m)
+instance (Fact m, Lift' r, IFunctor t, IFElt t r, IFElt t (LiftOf r))
          => Lift' (CycRep t P m r) where
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64, IFunctor t, IFElt t Int64, IFElt t (ZqBasic q Int64)) => Lift' (CycRep t P m (ZqBasic q Int64)) #-}
+
   lift (Pow v) = Pow $ fmapI lift v
   {-# INLINABLE lift #-}
 
 instance (Lift' r, IFunctor t, IFElt t r, IFElt t (LiftOf r), Fact m)
          => Lift' (CycRep t D m r) where
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64, IFunctor t, IFElt t Int64, IFElt t (ZqBasic q Int64)) => Lift' (CycRep t D m (ZqBasic q Int64)) #-}
+
   lift (Dec v) = Dec $ fmapI lift v
   {-# INLINABLE lift #-}
 
@@ -291,13 +325,16 @@ instance (Rescale a b, TensorPowDec t a, TensorPowDec t b, Fact m)
 -- satisfied anyway (e.g., Ring for P rep).
 
 mulGPow :: (Fact m, TensorG t r) => CycRep t P m r -> CycRep t P m r
+{-# INLINABLE mulGPow #-}
 mulGPow (Pow v) = Pow $ T.mulGPow v
 
 mulGDec :: (Fact m, TensorG t r) => CycRep t D m r -> CycRep t D m r
+{-# INLINABLE mulGDec #-}
 mulGDec (Dec v) = Dec $ T.mulGDec v
 
 mulGCRTC :: (Fact m, TensorCRT t Maybe r)
          => CycRep t C m r -> CycRep t C m r
+{-# INLINABLE mulGCRTC #-}
 mulGCRTC (CRTC s v) = CRTC s $ mulGCRTCS s v
 
 -- Note: We do not implement divGCRTE because we can't tell whether
@@ -326,15 +363,15 @@ divGCRTC (CRTC s v) = CRTC s $ divGCRTCS s v
 -- the canonical embedding, namely,
 -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\) .
 gSqNormDec :: (TensorGSqNorm t r, Fact m) => CycRep t D m r -> r
-gSqNormDec (Dec v) = T.gSqNormDec v
 {-# INLINABLE gSqNormDec #-}
+gSqNormDec (Dec v) = T.gSqNormDec v
 
 -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\) in
 -- the decoding basis, where \(D\) has scaled variance \(v\).
 tweakedGaussian :: (TensorGaussian t q, MonadRandom rnd, Fact m, ToRational v)
                    => v -> rnd (CycRep t D m q)
-tweakedGaussian = fmap Dec . tweakedGaussianDec
 {-# INLINABLE tweakedGaussian #-}
+tweakedGaussian = fmap Dec . tweakedGaussianDec
 
 -- | Sample from the tweaked Gaussian with given scaled variance,
 -- deterministically rounded using the decoding basis. (This
@@ -398,13 +435,13 @@ embedCRTE x@(CRTE _ v) =
 -- | Twace into a subring, for the powerful basis.
 twacePow :: (TensorPowDec t r, m `Divides` m')
          => CycRep t P m' r -> CycRep t P m r
-twacePow (Pow v) = Pow $ twacePowDec v
 {-# INLINABLE twacePow #-}
+twacePow (Pow v) = Pow $ twacePowDec v
 
 -- | Twace into a subring, for the decoding basis.
 twaceDec :: (TensorPowDec t r, m `Divides` m') => CycRep t D m' r -> CycRep t D m r
-twaceDec (Dec v) = Dec $ twacePowDec v
 {-# INLINABLE twaceDec #-}
+twaceDec (Dec v) = Dec $ twacePowDec v
 
 -- | Twace into a subring, for the CRT basis.  (The output is an
 -- 'Either' because the subring might not support 'C'.)
