@@ -588,6 +588,10 @@ deriving instance (Ring (GF (ZqBasic q z) d),
 
 instance (Fact m, CRTElt t r, ZeroTestable r, IntegralDomain r)
   => Cyclotomic (CycG t m r) where
+  {-# SPECIALIZE instance (Fact m, CRTElt t Int64) => Cyclotomic (CycG t m Int64) #-}
+  {-# SPECIALIZE instance (Fact m, CRTElt t Double) => Cyclotomic (CycG t m Double) #-}
+  {-# SPECIALIZE instance (Fact m, CRTElt t (ZqBasic q Int64), Reflects q Int64) => Cyclotomic (CycG t m (ZqBasic q Int64)) #-}
+
   mulG (Pow u)         = Pow $ R.mulGPow u
   mulG (Dec u)         = Dec $ R.mulGDec u
   mulG (CRT (Left u))  = Pow $ R.mulGPow $ toPow u -- go to Pow for precision
