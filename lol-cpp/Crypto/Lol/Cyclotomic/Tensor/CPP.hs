@@ -295,8 +295,8 @@ instance Reflects q Int64 => TensorCRT CT Maybe (ZqBasic q Int64) where
 
   crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT')
 
-  {-# INLINABLE crtFuncs #-}
-  {-# INLINE crtExtFuncs #-}
+  {-# NOINLINE crtFuncs #-}
+  {-# NOINLINE crtExtFuncs #-}
 
 instance TensorPowDec CT (Complex Double) where
   scalarPow = CT . scalarPow'
@@ -343,13 +343,14 @@ instance TensorCRT CT Identity (Complex Double) where
 
   crtExtFuncs = (,) <$> (wrap <$> coerceTw twaceCRT') <*> (wrap <$> coerceEm embedCRT')
 
+  {-# NOINLINE crtFuncs #-}
+  {-# NOINLINE crtExtFuncs #-}
+
 instance TensorCRT CT Maybe (Complex Double) where
-  crtFuncs = return $ runIdentity crtFuncs
-
+  crtFuncs    = return $ runIdentity crtFuncs
   crtExtFuncs = return $ runIdentity crtExtFuncs
-
-  {-# INLINABLE crtFuncs #-}
-  {-# INLINE crtExtFuncs #-}
+  {-# NOINLINE crtFuncs #-}
+  {-# NOINLINE crtExtFuncs #-}
 
 instance TensorPowDec CT Double where
   scalarPow = CT . scalarPow'
@@ -389,6 +390,8 @@ instance TensorG CT Double where
 instance TensorCRT CT Maybe Double where
   crtFuncs    = Nothing
   crtExtFuncs = Nothing
+  {-# INLINABLE crtFuncs #-}
+  {-# INLINABLE crtExtFuncs #-}
 
 instance TensorGSqNorm CT Double where
   gSqNormDec (CT v) = untag gSqNormDecDouble v
@@ -434,6 +437,8 @@ instance TensorG CT Int64 where
 instance TensorCRT CT Maybe Int64 where
   crtFuncs    = Nothing
   crtExtFuncs = Nothing
+  {-# INLINABLE crtFuncs #-}
+  {-# INLINABLE crtExtFuncs #-}
 
 instance TensorGSqNorm CT Int64 where
   gSqNormDec (CT v) = untag gSqNormDecInt64 v
