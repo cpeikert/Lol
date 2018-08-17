@@ -42,7 +42,7 @@ import Crypto.Lol.Factored
 import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
 -- for specialization
---import Crypto.Lol.Types.Unsafe.ZqBasic
+import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB, unZqB)
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Field        as Field (C)
@@ -180,16 +180,16 @@ dotp a b = sum $ zipWith (*) a b
 
 -- | Trace into the prime subfield.
 trace :: forall fp d . (GFCtx fp d) => GF fp d -> fp
-{-# NOINLINE trace #-}
+{-# SPECIALIZE trace :: (Prime p, Reflects d Int, Reflects p Int64, IrreduciblePoly (ZqBasic p Int64)) => GF (ZqBasic p Int64) d -> ZqBasic p Int64 #-}
 trace = let ts = proxy powTraces (Proxy::Proxy (GF fp d))
         in \(GF f) -> dotp ts (coeffs f)
 
 -- | Traces of the power basis elements \(\{1, x, x^2, \ldots, x^{d-1}\}\).
 powTraces :: forall fp d . (GFCtx fp d) => Tagged (GF fp d) [fp]
 powTraces =
-  --DT.trace ("FiniteField.powTraces: p = " ++
-  --          show (value @(CharOf fp)) :: Int) ++
-  --          ", d = " ++ show (value @d :: Int)) $
+  -- DT.trace ("FiniteField.powTraces: p = " ++
+  --           show (valuePrime @(CharOf fp) :: Int) ++
+  --            ", d = " ++ show (value @d :: Int)) $
   tag $ map trace' $ take (value @d) $ iterate (* GF (X ^^ 1)) (one :: GF fp d)
 
 -- helper that computes trace via brute force: sum frobenius
