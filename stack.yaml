@@ -16,7 +16,7 @@
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
 
-resolver: lts-8.2
+resolver: lts-12.5
 compiler-check: newer-minor
 
 # User packages to be built.
@@ -48,10 +48,6 @@ packages:
 
 extra-deps:
 - monadcryptorandom-0.7.2.1
-# for LTS-8.2:
-- numeric-prelude-0.4.3
-- tagged-transformer-0.8.1
-- non-negative-0.1.2
 
 ghc-options:
     "$locals": -O2 -fexpose-all-unfoldings -fwarn-dodgy-imports -fspec-constr-count=10
