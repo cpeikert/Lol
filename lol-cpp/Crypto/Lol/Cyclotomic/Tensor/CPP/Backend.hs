@@ -53,9 +53,7 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
 , withArray, withPtrArray
 ) where
 
-import Crypto.Lol.Prelude              as LP (Complex, PP, Proxy (..),
-                                              Tagged, map, mapM_, proxy,
-                                              tag)
+import Crypto.Lol.Prelude              as LP (Complex, PP, map, mapM_)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.RRq
 import Crypto.Lol.Types.Unsafe.ZqBasic
