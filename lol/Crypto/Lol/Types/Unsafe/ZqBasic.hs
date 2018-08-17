@@ -69,6 +69,7 @@ import qualified Algebra.ZeroTestable   as ZeroTestable (C)
 goodQs :: (ToInteger a) => a -> a -> [a]
 goodQs m lower = filter (isPrime . toInteger) $
   iterate (+m) $ lower + ((m-lower) `mod` m) + 1
+{-# SPECIALIZE goodQs :: Int64 -> Int64 -> [Int64] #-}
 
 -- | The ring \(\Z_q\) of integers modulo 'q', using underlying integer
 -- type 'z'.
@@ -85,21 +86,19 @@ type role ZqBasic nominal representational
 reduce' :: forall q z . (Reflects q z, IntegralDomain z) => z -> ZqBasic q z
 reduce' = ZqB . (`mod` value @q)
 {-# INLINABLE reduce' #-}
-{-# SPECIALIZE reduce' :: Reflects q Int64 => Int64 -> ZqBasic q Int64 #-}
 
 -- puts value in range [-q/2, q/2)
 decode' :: forall q z . (Reflects q z, Ring z, Ord z) => ZqBasic q z -> z
 decode' = let qval = value @q
           in \(ZqB x) -> if 2 * x < qval then x else x - qval
 {-# INLINABLE decode' #-}
---{-# SPECIALIZE decode' :: Reflects q Int64 => ZqBasic q Int64 -> Int64 #-}
 
 instance (Reflects q z, Ring z, Enum z) => Enumerable (ZqBasic q z) where
-  --{-# SPECIALIZE instance (Reflects q Int64) => Enumerable (ZqBasic q Int64) #-}
+  {-# SPECIALIZE instance (Reflects q Int64) => Enumerable (ZqBasic q Int64) #-}
   values = ZqB <$> [0..(value @q - 1)]
 
 instance (Reflects q z, ToInteger z) => Mod (ZqBasic q z) where
-  --{-# SPECIALIZE instance (Reflects q Int64) => Mod (ZqBasic q Int64) #-}
+  {-# SPECIALIZE instance (Reflects q Int64) => Mod (ZqBasic q Int64) #-}
   type ModRep (ZqBasic q z) = z
 
   modulus = value @q
@@ -119,26 +118,26 @@ instance (Reflects q z, IntegralDomain z) => Reduce z (ZqBasic q z) where
   reduce = reduce'
 
 instance (Reflects q z, ToInteger z) => Reduce Integer (ZqBasic q z) where
-  --{-# SPECIALIZE instance (Reflects q Int64) => Reduce Integer (ZqBasic q Int64) #-}
+  {-# SPECIALIZE instance (Reflects q Int64) => Reduce Integer (ZqBasic q Int64) #-}
   reduce = fromInteger
 
 type instance LiftOf (ZqBasic q z) = z
 
 instance (Reflects q z, Ring z, Ord z, IntegralDomain z)
   => Lift' (ZqBasic q z) where
-  --{-# SPECIALIZE instance (Reflects q Int64) => Lift' (ZqBasic q Int64) #-}
+  {-# SPECIALIZE instance (Reflects q Int64) => Lift' (ZqBasic q Int64) #-}
   lift = decode'
 
 instance (Reflects q z, ToInteger z, Reflects q' z, Ring z)
          => Rescale (ZqBasic q z) (ZqBasic q' z) where
-  --{-# SPECIALIZE instance (Reflects q Int64, Reflects q' Int64) => Rescale (ZqBasic q Int64) (ZqBasic q' Int64) #-}
+  {-# SPECIALIZE instance (Reflects q Int64, Reflects q' Int64) => Rescale (ZqBasic q Int64) (ZqBasic q' Int64) #-}
 
   rescale = rescaleMod
 
 instance (Reflects p z, Reflects q z, IntegralDomain z,
           Field (ZqBasic q z), Field (ZqBasic p z))
          => Encode (ZqBasic p z) (ZqBasic q z) where
-  --{-# SPECIALIZE instance (Reflects p Int64, Reflects q Int64) => Encode (ZqBasic p Int64) (ZqBasic q Int64) #-}
+  {-# SPECIALIZE instance (Reflects p Int64, Reflects q Int64) => Encode (ZqBasic p Int64) (ZqBasic q Int64) #-}
 
   lsdToMSD = let pval = value @p
                  negqval = negate $ value @q
@@ -179,7 +178,7 @@ mhatInv = tagT $ reduce' <$>
 
 instance (Reflects q z, ToInteger z, PID z, Enum z, NFData z)
          => CRTrans Maybe (ZqBasic q z) where
-  --{-# SPECIALIZE instance (Reflects q Int64) => CRTrans Maybe (ZqBasic q Int64) #-}
+  {-# SPECIALIZE instance (Reflects q Int64) => CRTrans Maybe (ZqBasic q Int64) #-}
 
   {-# INLINABLE crtInfo #-}
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
@@ -187,7 +186,7 @@ instance (Reflects q z, ToInteger z, PID z, Enum z, NFData z)
 -- | Embeds into the complex numbers \( \C \).
 instance (Reflects q z, ToInteger z, Ring (ZqBasic q z))
   => CRTEmbed (ZqBasic q z) where
-  --{-# SPECIALIZE instance (Reflects q Int64) => CRTEmbed (ZqBasic q Int64) #-}
+  {-# SPECIALIZE instance (Reflects q Int64) => CRTEmbed (ZqBasic q Int64) #-}
 
   type CRTExt (ZqBasic q z) = Complex Double
 
@@ -222,7 +221,7 @@ instance (Reflects q z, ToInteger z) => Ring.C (ZqBasic q z) where
 
 -- instance of Field
 instance (Reflects q z, ToInteger z, PID z, Show z) => Field.C (ZqBasic q z) where
-  --{-# SPECIALIZE instance (Reflects q Int64) => Field.C (ZqBasic q Int64) #-}
+  {-# SPECIALIZE instance (Reflects q Int64) => Field.C (ZqBasic q Int64) #-}
 
   {-# INLINABLE recip #-}
   recip = let qval = value @q
@@ -234,18 +233,21 @@ instance (Reflects q z, ToInteger z, PID z, Show z) => Field.C (ZqBasic q z) whe
 -- (canonical) instance of IntegralDomain, needed for Cyclotomics
 instance (Reflects q z, ToInteger z, PID z, Show z)
   => IntegralDomain.C (ZqBasic q z) where
-  --{-# SPECIALIZE instance (Reflects q Int64) => IntegralDomain.C (ZqBasic q Int64) #-}
+  {-# SPECIALIZE instance (Reflects q Int64) => IntegralDomain.C (ZqBasic q Int64) #-}
   divMod a b = (a/b, zero)
 
 -- Gadget-related instances
 instance (Reflects q z, ToInteger z) => Gadget TrivGad (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Gadget TrivGad (ZqBasic q Int64) #-}
   gadget = [one]
 
 instance (Reflects q z, ToInteger z) => Decompose TrivGad (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Decompose TrivGad (ZqBasic q Int64) #-}
   type DecompOf (ZqBasic q z) = z
   decompose x = [lift x]
 
 instance (Reflects q z, ToInteger z, Ring z) => Correct TrivGad (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Correct TrivGad (ZqBasic q Int64) #-}
   correct [b] = (b, [zero])
   correct _   = error "Correct TrivGad: wrong length"
 
@@ -262,6 +264,7 @@ gadgetZ b q = take (gadlen b q) $ iterate (*b) one
 
 instance (Reflects q z, ToInteger z, RealIntegral z, Reflects b z)
          => Gadget (BaseBGad b) (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64, Reflects b Int64) => Gadget (BaseBGad b) (ZqBasic q Int64) #-}
 
   gadget = let qval = value @q
                bval = value @b
@@ -269,6 +272,8 @@ instance (Reflects q z, ToInteger z, RealIntegral z, Reflects b z)
 
 instance (Reflects q z, ToInteger z, Reflects b z)
     => Decompose (BaseBGad b) (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64, Reflects b Int64) => Decompose (BaseBGad b) (ZqBasic q Int64) #-}
+
   type DecompOf (ZqBasic q z) = z
   decompose = let qval = value @q
                   bval = value @b
@@ -317,6 +322,7 @@ correctZ q b =
 
 instance (Reflects q z, ToInteger z, Reflects b z)
     => Correct (BaseBGad b) (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64, Reflects b Int64) => Correct (BaseBGad b) (ZqBasic q Int64) #-}
 
   correct =
     let qval = value @q
@@ -327,6 +333,7 @@ instance (Reflects q z, ToInteger z, Reflects b z)
 
 -- instance of Random
 instance (Reflects q z, Ring z, Random z) => Random (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Random (ZqBasic q Int64) #-}
   random = let high = value @q - 1
            in \g -> let (x,g') = randomR (0,high) g
                     in (ZqB x, g')
