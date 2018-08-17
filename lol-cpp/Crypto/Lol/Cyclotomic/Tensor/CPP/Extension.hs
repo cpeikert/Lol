@@ -32,9 +32,12 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Extension
 ) where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Cyclotomic.Tensor as T
-import Crypto.Lol.Prelude           as LP hiding (lift, null)
+import Crypto.Lol.Cyclotomic.Tensor               as T
+import Crypto.Lol.Cyclotomic.Tensor.CPP.Instances ()
+import Crypto.Lol.Prelude                         as LP hiding (lift, null)
+import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
+import Crypto.Lol.Types.Unsafe.ZqBasic            hiding (ZqB, unZqB)
 import Crypto.Lol.Types.ZmStar
 
 import Control.Applicative hiding (empty)
@@ -140,19 +143,20 @@ powBasisPow' = do
 
 -- | A list of vectors representing the mod-p CRT set of the
 -- extension O_m'/O_m
-crtSetDec' :: forall m m' fp .
-  (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m',
-   SV.Storable fp, NFData fp)
-  => Tagged '(m, m') [SV.Vector fp]
+crtSetDec' :: forall m m' p .
+  (m `Divides` m', Prime p, Coprime (PToF p) m',
+   Reflects p Int64, IrreduciblePoly (ZqBasic p Int64))
+-- previously:  ToInteger z, Enum z, SV.Storable z, NFData z
+  => Tagged '(m, m') [SV.Vector (ZqBasic p Int64)]
 {-# INLINABLE crtSetDec' #-}
 crtSetDec' =
-  let p = valuePrime @(CharOf fp)
+  let p = valuePrime @p
       phi = totientFact @m'
       d = order @m' p
       h :: Int = valueHatFact @m'
       hinv = recip $ fromIntegral h
   in reify d $ \(_::Proxy d) -> do
-      let twCRTs' :: Kron (GF fp d)
+      let twCRTs' :: Kron (GF (ZqBasic p Int64) d)
             = fromMaybe (error "internal error: crtSetDec': twCRTs") $ twCRTs @m'
           zmsToIdx = T.zmsToIndexFact @m'
           elt j i = indexK twCRTs' j (zmsToIdx i)
