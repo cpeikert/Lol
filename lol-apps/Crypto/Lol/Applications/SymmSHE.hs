@@ -137,7 +137,7 @@ encrypt (SK svar s) =
   in \pt -> do
     e <- cosetGaussian svar (embed pt :: c m' zp)
     c1 <- getRandom
-    return $! CT LSD zero one $ fromCoeffs [reduce e - c1 * sq, c1]
+    return $ CT LSD zero one $ fromCoeffs [reduce e - c1 * sq, c1]
 
 -- | Constraint synonym for extracting the error term of a ciphertext.
 type ErrorTermCtx c m' z zp zq =
