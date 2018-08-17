@@ -41,9 +41,8 @@ module Crypto.Lol.Types.Unsafe.ZqBasic
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Gadget
-import Crypto.Lol.Prelude           as LP
+import Crypto.Lol.Prelude  as LP
 import Crypto.Lol.Reflects
-import Crypto.Lol.Types.FiniteField
 
 import Math.NumberTheory.Primes.Factorisation
 import Math.NumberTheory.Primes.Testing
