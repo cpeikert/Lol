@@ -103,30 +103,39 @@ instance Show (ArgType CT) where
   show _ = "CT"
 
 instance Eq r => Eq (CT m r) where
+  {-# SPECIALIZE instance Eq (CT m Int64) #-}
+  {-# SPECIALIZE instance Eq (CT m Double) #-}
+  {-# SPECIALIZE instance Eq (CT m (Complex Double)) #-}
+  {-# SPECIALIZE instance Eq (CT m (ZqBasic q Int64)) #-}
+
   (ZV x) == (ZV y) = x == y
   (CT x) == (CT y) = x == y
   x@(CT _) == y = x == toCT y
   y == x@(CT _) = x == toCT y
 
-instance (ForallFact2 Protoable IZipVector r, Fact m, Storable r) => Protoable (CT m r) where
-  type ProtoType (CT m r) = ProtoType (IZipVector m r)
-
-  toProto x@(CT _) = toProto $ toZV x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
-  toProto (ZV x) = toProto x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
-
-  fromProto x = toCT . ZV <$> fromProto x \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
-
 toCT :: (Storable r) => CT m r -> CT m r
 toCT v@(CT _) = v
 toCT (ZV v)   = CT $ zvToCT' v
+{-# SPECIALIZE toCT :: CT m Int64 -> CT m Int64 #-}
+{-# SPECIALIZE toCT :: CT m Double -> CT m Double #-}
+{-# SPECIALIZE toCT :: CT m (Complex Double) -> CT m (Complex Double) #-}
+{-# SPECIALIZE toCT :: CT m (ZqBasic q Int64) -> CT m (ZqBasic q Int64) #-}
 
 toZV :: (Fact m) => CT m r -> CT m r
 toZV (CT (CT' v)) = ZV $ fromMaybe (error "toZV: internal error") $
                     iZipVector $ convert v
 toZV v@(ZV _) = v
+{-# SPECIALIZE toZV :: Fact m => CT m Int64 -> CT m Int64 #-}
+{-# SPECIALIZE toZV :: Fact m => CT m Double -> CT m Double #-}
+{-# SPECIALIZE toZV :: Fact m => CT m (Complex Double) -> CT m (Complex Double) #-}
+{-# SPECIALIZE toZV :: Fact m => CT m (ZqBasic q Int64) -> CT m (ZqBasic q Int64) #-}
 
 zvToCT' :: forall m r . (Storable r) => IZipVector m r -> CT' m r
 zvToCT' v = coerce (convert $ unIZipVector v :: Vector r)
+{-# SPECIALIZE zvToCT' :: IZipVector m Int64 -> CT' m Int64 #-}
+{-# SPECIALIZE zvToCT' :: IZipVector m Double -> CT' m Double #-}
+{-# SPECIALIZE zvToCT' :: IZipVector m (Complex Double) -> CT' m (Complex Double) #-}
+{-# SPECIALIZE zvToCT' :: IZipVector m (ZqBasic q Int64) -> CT' m (ZqBasic q Int64) #-}
 
 wrap :: (Storable s, Storable r) => (CT' l s -> CT' m r) -> (CT l s -> CT m r)
 {-# INLINABLE wrap #-}
@@ -156,6 +165,11 @@ type family Em r where
 --      which used a (very fast) C function for (*) and (+)
 instance (Additive r, Storable r, Fact m)
   => Additive.C (CT m r) where
+  {-# SPECIALIZE instance Fact m => Additive.C (CT m Int64) #-}
+  {-# SPECIALIZE instance Fact m => Additive.C (CT m Double) #-}
+  {-# SPECIALIZE instance Fact m => Additive.C (CT m (Complex Double)) #-}
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64) => Additive.C (CT m (ZqBasic q Int64)) #-}
+
   (CT (CT' a)) + (CT (CT' b)) = CT $ CT' $ SV.zipWith (+) a b
   a + b = toCT a + toCT b
   negate (CT (CT' a)) = CT $ CT' $ SV.map negate a -- EAC: This probably should be converted to C code
@@ -176,11 +190,20 @@ instance (GFCtx fp d, Fact m, Additive (CT m fp))
     ZV zv -> ZV $ fromJust $ iZipVector $ V.fromList $ unCoeffs $ r *> Coeffs $ V.toList $ unIZipVector zv
 
 instance (Fact m, Ring r, Storable r) => Ring.C (CT m r) where
+  {-# SPECIALIZE instance Fact m => Ring.C (CT m Int64) #-}
+  {-# SPECIALIZE instance Fact m => Ring.C (CT m Double) #-}
+  {-# SPECIALIZE instance Fact m => Ring.C (CT m (Complex Double)) #-}
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64) => Ring.C (CT m (ZqBasic q Int64)) #-}
+
   (*) = zipWithI (*)
   fromInteger i = CT $ repl $ fromInteger i
 
 -- Need this for the ForallFact2 Module entailment below
 instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
+  {-# SPECIALIZE instance Fact m => Module.C Int64 (CT m Int64) #-}
+  {-# SPECIALIZE instance Fact m => Module.C Double (CT m Double) #-}
+  {-# SPECIALIZE instance Fact m => Module.C (Complex Double) (CT m (Complex Double)) #-}
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64) => Module.C (ZqBasic q Int64) (CT m (ZqBasic q Int64)) #-}
   (*>) r = wrap $ coerce $ SV.map (r*)
 
 -- x is approximately equal to y iff all their components are approximately equal
@@ -212,8 +235,8 @@ instance Fact m => Traversable (CT m) where
 instance TensorGaussian CT Double where
   tweakedGaussianDec v = CT <$> cDispatchGaussianDouble v
 
-instance (TensorPowDec CT (ZqBasic q Int64), PrimeField (ZqBasic q Int64))
-    => TensorCRTSet CT (ZqBasic q Int64) where
+instance (Reflects q Int64, Prime q, IrreduciblePoly (ZqBasic q Int64))
+  => TensorCRTSet CT (ZqBasic q Int64) where
   crtSetDec = (CT <$>) <$> coerceBasis crtSetDec'
 
 instance IFunctor CT where
@@ -505,7 +528,7 @@ coerceBasis = coerce
 
 dispatchGInv :: forall m r . (Storable r, Fact m)
              => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO Int16)
-                 -> CT' m r -> Maybe (CT' m r)
+             -> CT' m r -> Maybe (CT' m r)
 dispatchGInv f =
   let factors = marshalFactors $ ppsFact @m
       totm = fromIntegral $ totientFact @m
@@ -520,8 +543,8 @@ dispatchGInv f =
     else return Nothing
 
 withBasicArgs :: forall m r . (Fact m, Storable r)
-  => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
-     -> CT' m r -> IO (CT' m r)
+              => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
+              -> CT' m r -> IO (CT' m r)
 withBasicArgs f =
   let factors = marshalFactors $ ppsFact @m
       totm = fromIntegral $ totientFact @m
@@ -534,8 +557,8 @@ withBasicArgs f =
     CT' <$> unsafeFreeze yout
 
 basicDispatch :: (Storable r, Fact m)
-                 => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
-                     -> CT' m r -> CT' m r
+              => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
+              -> CT' m r -> CT' m r
 basicDispatch f = unsafePerformIO . withBasicArgs f
 
 gSqNormDecDouble :: Fact m => Tagged m (CT' m Double -> Double)
@@ -545,7 +568,7 @@ gSqNormDecInt64 :: Fact m => Tagged m (CT' m Int64 -> Int64)
 gSqNormDecInt64 = return $ (!0) . unCT' . unsafePerformIO . withBasicArgs dnormInt64
 
 ctCRTZq :: (Fact m, Reflects q Int64, CRTrans mon (ZqBasic q Int64))
-           => TaggedT m mon (CT' m (ZqBasic q Int64) -> CT' m (ZqBasic q Int64))
+        => TaggedT m mon (CT' m (ZqBasic q Int64) -> CT' m (ZqBasic q Int64))
 ctCRTZq = do
   ru' <- ru
   return $ \x -> unsafePerformIO $
@@ -553,7 +576,7 @@ ctCRTZq = do
 
 -- CTensor CRT^(-1) functions take inverse rus
 ctCRTInvZq :: (Fact m, Reflects q Int64, CRTrans mon (ZqBasic q Int64))
-              => TaggedT m mon (CT' m (ZqBasic q Int64) -> CT' m (ZqBasic q Int64))
+           => TaggedT m mon (CT' m (ZqBasic q Int64) -> CT' m (ZqBasic q Int64))
 ctCRTInvZq = do
   mhatInv <- snd <$> crtInfo
   ruinv' <- ruInv
@@ -561,7 +584,7 @@ ctCRTInvZq = do
     withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinvZq ruptr))
 
 ctCRTC :: (CRTrans mon (Complex Double), Fact m)
-          => TaggedT m mon (CT' m (Complex Double) -> CT' m (Complex Double))
+       => TaggedT m mon (CT' m (Complex Double) -> CT' m (Complex Double))
 ctCRTC = do
   ru' <- ru
   return $ \x -> unsafePerformIO $
@@ -577,8 +600,8 @@ ctCRTInvC = do
     withPtrArray ruinv' (\ruptr -> with mhatInv (flip withBasicArgs x . dcrtinvC ruptr))
 
 cZipDispatch :: forall m r . (Storable r, Fact m)
-  => (Ptr r -> Ptr r -> Int64 -> IO ())
-  -> Tagged m (CT' m r -> CT' m r -> CT' m r)
+             => (Ptr r -> Ptr r -> Int64 -> IO ())
+             -> Tagged m (CT' m r -> CT' m r -> CT' m r)
 cZipDispatch f = do -- in Tagged m
   let totm = fromIntegral $ totientFact @m
   return $ coerce $ \a b -> unsafePerformIO $ do
@@ -588,8 +611,9 @@ cZipDispatch f = do -- in Tagged m
         f pout pin totm))
     unsafeFreeze yout
 
-cDispatchGaussianDouble :: forall m var rnd . (Fact m, ToRational var, MonadRandom rnd)
-  => var -> rnd (CT' m Double)
+cDispatchGaussianDouble :: forall m var rnd .
+                           (Fact m, ToRational var, MonadRandom rnd)
+                        => var -> rnd (CT' m Double)
 cDispatchGaussianDouble var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m rnd
   let totm = totientFact @m
       mval = valueFact @m
@@ -603,24 +627,55 @@ cDispatchGaussianDouble var = flip proxyT (Proxy::Proxy m) $ do -- in TaggedT m 
 ---------- Misc instances and arithmetic ----------
 
 instance (Storable r, Random r, Fact m) => Random (CT' m r) where
-  --{-# INLINABLE random #-}
+  {-# SPECIALIZE instance Fact m => Random (CT' m Int64) #-}
+  {-# SPECIALIZE instance Fact m => Random (CT' m Double) #-}
+  {-# SPECIALIZE instance Fact m => Random (CT' m (Complex Double)) #-}
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64) => Random (CT' m (ZqBasic q Int64)) #-}
+
   random = runRand $ replM (liftRand random)
 
   -- Interpret the range component-wise
   randomR (CT' a, CT' b) = runRand $ CT' . SV.fromList <$> l
     where l = zipWithM (\x y -> liftRand $ randomR (x, y)) (SV.toList a) (SV.toList b)
 
-instance (Storable r, Random (CT' m r)) => Random (CT m r) where
-  --{-# INLINABLE random #-}
+  {-# INLINABLE random #-}
+  {-# INLINABLE randomR #-}
+
+instance (Storable r, Random r, Fact m) => Random (CT m r) where
+  {-# SPECIALIZE instance Fact m => Random (CT m Int64) #-}
+  {-# SPECIALIZE instance Fact m => Random (CT m Double) #-}
+  {-# SPECIALIZE instance Fact m => Random (CT m (Complex Double)) #-}
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64) => Random (CT m (ZqBasic q Int64)) #-}
+
   random = runRand $ CT <$> liftRand random
 
   -- Drop to the CT' instance
   randomR (CT a, CT b) = runRand $ CT <$> liftRand (randomR (a, b))
   randomR (a@_, b@_)   = randomR (toCT a, toCT b)
 
+  {-# INLINABLE random #-}
+  {-# INLINABLE randomR #-}
+
 instance (NFData r) => NFData (CT m r) where
+  {-# SPECIALIZE instance NFData (CT m Int64) #-}
+  {-# SPECIALIZE instance NFData (CT m Double) #-}
+  {-# SPECIALIZE instance NFData (CT m (Complex Double)) #-}
+  {-# SPECIALIZE instance NFData (CT m (ZqBasic q Int64)) #-}
+
   rnf (CT v) = rnf v
   rnf (ZV v) = rnf v
+
+instance (ForallFact2 Protoable IZipVector r, Fact m, Storable r)
+  => Protoable (CT m r) where
+  type ProtoType (CT m r) = ProtoType (IZipVector m r)
+
+  toProto x@(CT _) = toProto $ toZV x
+    \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
+  toProto (ZV x) = toProto x
+    \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
+
+  fromProto x = toCT . ZV <$> fromProto x
+    \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
 
 repl :: forall m r . (Fact m, Storable r) => r -> CT' m r
 repl = let n = totientFact @m
