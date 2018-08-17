@@ -77,7 +77,7 @@ import Crypto.Lol.PosBin
 import Control.Arrow
 import Data.Constraint           hiding ((***), (&&&))
 import Data.List                 hiding ((\\))
-import Data.Singletons.Prelude   hiding (type (*), type (:-))
+import Data.Singletons.Prelude   hiding (type (*))
 import Data.Singletons.TH
 import Language.Haskell.TH
 
