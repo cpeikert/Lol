@@ -14,21 +14,23 @@ Symmetric-key somewhat homomorphic encryption.  See Section 4 of
 <http://eprint.iacr.org/2015/1134> for mathematical description.
 -}
 
-{-# LANGUAGE AllowAmbiguousTypes        #-}
-{-# LANGUAGE ConstraintKinds            #-}
-{-# LANGUAGE DataKinds                  #-}
-{-# LANGUAGE FlexibleContexts           #-}
-{-# LANGUAGE FlexibleInstances          #-}
-{-# LANGUAGE GADTs                      #-}
-{-# LANGUAGE GeneralizedNewtypeDeriving #-}
-{-# LANGUAGE MultiParamTypeClasses      #-}
-{-# LANGUAGE NoImplicitPrelude          #-}
-{-# LANGUAGE PolyKinds                  #-}
-{-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE TypeApplications           #-}
-{-# LANGUAGE TypeFamilies               #-}
-{-# LANGUAGE TypeOperators              #-}
-{-# LANGUAGE UndecidableInstances       #-}
+{-# LANGUAGE AllowAmbiguousTypes   #-}
+{-# LANGUAGE ConstraintKinds       #-}
+{-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE DeriveAnyClass        #-}
+{-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE GADTs                 #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoImplicitPrelude     #-}
+{-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving    #-}
+{-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
+{-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE UndecidableInstances  #-}
 
 module Crypto.Lol.Applications.SymmSHE
 (
@@ -80,6 +82,7 @@ import Control.Monad        as CM
 import Control.Monad.Random hiding (lift)
 import Data.Maybe
 import Data.Typeable
+import GHC.Generics         (Generic)
 
 import MathObj.Polynomial as P
 
@@ -91,7 +94,7 @@ data SK r where
 type PT rp = rp
 
 -- | Ciphertext encoding type
-data Encoding = MSD | LSD deriving (Show, Eq)
+data Encoding = MSD | LSD deriving (Show, Eq, Generic, NFData)
 
 -- | Ciphertext over \( R'_q \) encrypting a plaintext in \( R_p \)\,
 -- where \( R=\mathcal{O}_m \).
@@ -101,7 +104,9 @@ data CT m zp r'q =
   !Int                          -- accumulated power of g_m' in c(s)
   !zp                           -- factor to mul by upon decryption
   !(Polynomial r'q)             -- the polynomial c(s)
-  deriving (Show)
+  deriving (Show, Generic)
+
+deriving instance (NFData zp, NFData r'q) => NFData (CT m zp r'q)
 
 -- Note: do *not* give an Eq instance for CT, because it's not
 -- meaningful to compare ciphertexts for equality
@@ -239,7 +244,7 @@ lweSample (SK svar s) =
 
 -- | Key-switch hint.
 newtype KSHint gad r'q' = KSHint [Polynomial r'q']
-  deriving (NFData)
+  deriving (Generic, NFData)
 
 -- | Constraint synonym for generating key-switch hints.
 type KSHintCtx gad c m' z zq = (LWECtx c m' z zq, Gadget gad (c m' zq))
@@ -460,6 +465,12 @@ twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 -- | Auxilliary data needed to tunnel from \(\O_{r'}\) to \(\O_{s'}\).
 data TunnelHint gad c e r s e' r' s' zp zq =
   THint (Linear c e' r' s' zq) [KSHint gad (c s' zq)]
+  deriving (Generic)
+
+deriving instance (Show   (c s' zq), Show (KSHint gad (c s' zq)))
+  => Show   (TunnelHint gad c e r s e' r' s' zp zq)
+deriving instance (NFData (c s' zq))
+  => NFData (TunnelHint gad c e r s e' r' s' zp zq)
 
 -- e' ~ (e * ...) is not needed in this module, but is at use sites...
 -- | Constraint synonym for generating 'TunnelHint'.
@@ -525,15 +536,8 @@ tunnel (THint f'q hints) ct =
 
 ---------- Utility instances ----------
 
-instance (NFData zp, NFData r'q) => NFData (CT m zp r'q) where
-  rnf (CT _ k sc cs) = rnf k `seq` rnf sc `seq` rnf cs
-
 instance (NFData r) => NFData (SK r) where
   rnf (SK v s) = rnf v `seq` rnf s
-
-instance (NFData (Linear c e' r' s' zq), NFData (c s' zq))
-  => NFData (TunnelHint gad c e r s e' r' s' zp zq) where
-  rnf (THint l t) = rnf l `seq` rnf t
 
 instance Show r => Show (SK r) where
   show (SK v r) = "(SK " ++ show (toRational v) ++ " " ++ show r ++ ")"
