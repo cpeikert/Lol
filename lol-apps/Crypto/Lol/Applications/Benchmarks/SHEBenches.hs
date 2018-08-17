@@ -34,15 +34,13 @@ module Crypto.Lol.Applications.Benchmarks.SHEBenches
 ) where
 
 import Control.Applicative
-import Control.DeepSeq
 import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol
 import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Benchmarks           (Benchmark, bgroup, mkBench,
-                                        mkBenchIO, showType)
+import Crypto.Lol.Benchmarks           (Benchmark, bgroup, mkBenchIO,
+                                        showType)
 import Crypto.Lol.Types
-import Crypto.Lol.Types.ZPP
 import Crypto.Random
 
 -- must come after imports

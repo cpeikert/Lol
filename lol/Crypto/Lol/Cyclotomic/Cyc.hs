@@ -86,7 +86,6 @@ import           Crypto.Lol.Types               (RRq, ZqBasic)
 import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.IFunctor
 import           Crypto.Lol.Types.Proto
-import           Crypto.Lol.Types.ZPP
 
 import           Control.Applicative  hiding ((*>))
 import           Control.Arrow
@@ -775,9 +774,11 @@ embed' (Sub (c :: CycG t k r)) = embed' c \\ transDivides @k @l @m
 
 -----
 
-instance (ZPP r, CRTElt t r, TensorCRTSet t (ZpOf r), ExtensionCyc (CycG t) r)
-  => CRTSetCyc (CycG t) r where
-  crtSet :: forall m m' . (m `Divides` m') => Tagged m [CycG t m' r]
+instance (PPow pp, Prime (PrimePP pp), zpp ~ ZqBasic pp z, ToInteger z,
+          CRTElt t zpp, TensorCRTSet t (ZqBasic (PrimePP pp) z),
+          ExtensionCyc (CycG t) zpp)
+  => CRTSetCyc (CycG t) (ZqBasic pp z) where
+  crtSet :: forall m m' . (m `Divides` m') => Tagged m [CycG t m' zpp]
   crtSet = tag $ Pow <$> R.crtSet @m
   {-# INLINABLE crtSet #-}
 

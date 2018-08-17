@@ -80,7 +80,6 @@ library
     Crypto.Lol.Types.Random
     Crypto.Lol.Types.Unsafe.RRq
     Crypto.Lol.Types.ZmStar
-    Crypto.Lol.Types.ZPP
     Crypto.Lol.Types.Unsafe.ZqBasic
 
     Crypto.Proto.Lol

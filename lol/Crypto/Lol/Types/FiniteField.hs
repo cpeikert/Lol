@@ -41,6 +41,8 @@ import Crypto.Lol.CRTrans
 import Crypto.Lol.Factored
 import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
+-- for specialization
+--import Crypto.Lol.Types.Unsafe.ZqBasic
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Field        as Field (C)
@@ -87,6 +89,7 @@ instance (Random fp, Reflects d Int) => Random (GF fp d) where
   randomR _ = error "randomR non-sensical for GF"
 
 instance (GFCtx fp d) => Ring.C (GF fp d) where
+  --{-# SPECIALIZE instance Ring.C (GF (ZqBasic q Int64) d) #-}
 
   one = GF one
 

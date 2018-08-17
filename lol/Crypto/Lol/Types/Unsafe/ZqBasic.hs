@@ -44,7 +44,6 @@ import Crypto.Lol.Gadget
 import Crypto.Lol.Prelude           as LP
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
-import Crypto.Lol.Types.ZPP
 
 import Math.NumberTheory.Primes.Factorisation
 import Math.NumberTheory.Primes.Testing
@@ -105,19 +104,11 @@ instance (Reflects q z, ToInteger z) => Mod (ZqBasic q z) where
 
 type instance CharOf (ZqBasic p z) = p
 
-instance (PPow pp, zq ~ ZqBasic pp z, PrimeField (ZpOf zq), Ring zq)
-         => ZPP (ZqBasic (pp :: PrimePower) z) where
-
-  type ZpOf (ZqBasic pp z) = ZqBasic (PrimePP pp) z
-
-  modulusZPP = ppPPow @pp
-  liftZp = ZqB . unZqB
-
 instance (Reflects q z, IntegralDomain z) => Reduce z (ZqBasic q z) where
   {-# SPECIALIZE instance (Reflects q Int64) => Reduce Int64 (ZqBasic q Int64) #-}
   reduce = reduce'
 
-instance (Reflects q z, ToInteger z) => Reduce Integer (ZqBasic q z) where
+instance {-# OVERLAPPING #-} (Reflects q z, ToInteger z) => Reduce Integer (ZqBasic q z) where
   {-# SPECIALIZE instance (Reflects q Int64) => Reduce Integer (ZqBasic q Int64) #-}
   reduce = fromInteger
 

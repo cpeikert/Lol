@@ -72,7 +72,7 @@ import Crypto.Lol.Prelude                as LP
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IFunctor
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.ZPP
+import Crypto.Lol.Types.Unsafe.ZqBasic
 
 import qualified Crypto.Lol.Cyclotomic.Tensor as T
 
@@ -452,28 +452,28 @@ powBasis = fmap Pow $ untag $ powBasisPow @t @r @m
 -- | The relative mod-\(r\) CRT set of \(\O_{m'} / \O_m\),
 -- represented with respect to the powerful basis (which seems to be
 -- the best choice for typical use cases).
-crtSet :: forall m m' p mbar m'bar t r .
-           (m `Divides` m', ZPP r,
-            p ~ CharOf (ZpOf r), mbar ~ PFree p m, m'bar ~ PFree p m',
-            CRTElt t r, TensorCRTSet t (ZpOf r))
-          => [CycRep t P m' r]
+crtSet :: forall m m' pp p mbar m'bar t z zpp .
+          (m `Divides` m', p ~ PrimePP pp, mbar ~ PFree p m, m'bar ~ PFree p m',
+           PPow pp, Prime p, zpp ~ ZqBasic pp z,
+           ToInteger z, CRTElt t zpp, TensorCRTSet t (ZqBasic p z))
+       => [CycRep t P m' (ZqBasic pp z)]
 {-# INLINABLE crtSet #-}
 crtSet =
   -- CJP: consider using traceEvent or traceMarker
   --DT.trace ("CycRep.crtSet: m = " ++
   --          show (proxy valueFact (Proxy::Proxy m)) ++ ", m'= " ++
   --          show (proxy valueFact (Proxy::Proxy m'))) $
-  let (p,e) = modulusZPP @r
+  let (p,e) = ppPPow @pp
       -- raise to the p^(e-1) power iteratively (one factor of p at a
       -- time), switching back to pow basis each time so that we don't
       -- lose precision!  (This fixes a bug witnessed for moderate
       -- values of e.)
-      expon :: (Fact m'bar, ToPowDec (CycRep t) rep r)
-        => Int -> CycRep t rep m'bar r -> CycRep t P m'bar r
+      expon :: (Fact m'bar, ToPowDec (CycRep t) rep (ZqBasic pp z))
+        => Int -> CycRep t rep m'bar zpp -> CycRep t P m'bar zpp
       expon 1  = toPow
       expon e' = toPowCE . (^p) . toCRT . expon (e'-1)
-  in embedPow . expon e . Dec . fmapI liftZp <$>
-     (untag $ crtSetDec @t @_ @mbar :: [t m'bar (ZpOf r)])
+  in embedPow . expon e . Dec . fmapI (ZqB . unZqB) <$> -- safe!
+     (untag $ crtSetDec @t @_ @mbar :: [t m'bar (ZqBasic p z)])
      \\ pFreeDivides @p @m @m' \\ pSplitTheorems @p @m \\ pSplitTheorems @p @m'
 
 
