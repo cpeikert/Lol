@@ -19,6 +19,7 @@ Wrapper for a C++ implementation of 'Tensor' interfaces.
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RankNTypes                 #-}
@@ -113,40 +114,35 @@ instance Eq r => Eq (CT m r) where
   x@(CT _) == y = x == toCT y
   y == x@(CT _) = x == toCT y
 
+{-# INLINE toCT #-}
 toCT :: (Storable r) => CT m r -> CT m r
-toCT v@(CT _) = v
-toCT (ZV v)   = CT $ zvToCT' v
-{-# SPECIALIZE toCT :: CT m Int64 -> CT m Int64 #-}
-{-# SPECIALIZE toCT :: CT m Double -> CT m Double #-}
-{-# SPECIALIZE toCT :: CT m (Complex Double) -> CT m (Complex Double) #-}
-{-# SPECIALIZE toCT :: CT m (ZqBasic q Int64) -> CT m (ZqBasic q Int64) #-}
+toCT = \case
+  v@(CT _) -> v
+  (ZV v)   -> CT $ zvToCT' v
 
+{-# INLINE toZV #-}
 toZV :: (Fact m) => CT m r -> CT m r
-toZV (CT (CT' v)) = ZV $ fromMaybe (error "toZV: internal error") $
-                    iZipVector $ convert v
-toZV v@(ZV _) = v
-{-# SPECIALIZE toZV :: Fact m => CT m Int64 -> CT m Int64 #-}
-{-# SPECIALIZE toZV :: Fact m => CT m Double -> CT m Double #-}
-{-# SPECIALIZE toZV :: Fact m => CT m (Complex Double) -> CT m (Complex Double) #-}
-{-# SPECIALIZE toZV :: Fact m => CT m (ZqBasic q Int64) -> CT m (ZqBasic q Int64) #-}
+toZV = \case
+  (CT (CT' v)) -> ZV $ fromMaybe (error "toZV: internal error") $
+                  iZipVector $ convert v
+  v@(ZV _)     -> v
 
+{-# INLINE zvToCT' #-}
 zvToCT' :: forall m r . (Storable r) => IZipVector m r -> CT' m r
-zvToCT' v = coerce (convert $ unIZipVector v :: Vector r)
-{-# SPECIALIZE zvToCT' :: IZipVector m Int64 -> CT' m Int64 #-}
-{-# SPECIALIZE zvToCT' :: IZipVector m Double -> CT' m Double #-}
-{-# SPECIALIZE zvToCT' :: IZipVector m (Complex Double) -> CT' m (Complex Double) #-}
-{-# SPECIALIZE zvToCT' :: IZipVector m (ZqBasic q Int64) -> CT' m (ZqBasic q Int64) #-}
+zvToCT' = CT' . convert . unIZipVector
 
+{-# INLINE wrap #-}
 wrap :: (Storable s, Storable r) => (CT' l s -> CT' m r) -> (CT l s -> CT m r)
-{-# INLINABLE wrap #-}
-wrap f (CT v) = CT $ f v
-wrap f (ZV v) = CT $ f $ zvToCT' v
+wrap f = \case
+  (CT v) -> CT $ f v
+  (ZV v) -> CT $ f $ zvToCT' v
 
+{-# INLINE wrapM #-}
 wrapM :: (Storable s, Storable r, Monad mon) => (CT' l s -> mon (CT' m r))
          -> (CT l s -> mon (CT m r))
-{-# INLINABLE wrapM #-}
-wrapM f (CT v) = CT <$> f v
-wrapM f (ZV v) = CT <$> f (zvToCT' v)
+wrapM f = \case
+  (CT v) -> CT <$> f v
+  (ZV v) -> CT <$> f (zvToCT' v)
 
 -- convert an CT' *twace* signature to Tagged one
 type family Tw (r :: *) :: * where
@@ -178,7 +174,6 @@ instance (Additive r, Storable r, Fact m)
   zero = CT $ repl zero
 
 instance (ZeroTestable r, Storable r) => ZeroTestable.C (CT m r) where
-  --{-# INLINABLE isZero #-}
   isZero (CT (CT' a)) = SV.foldl' (\ b x -> b && isZero x) True a
   isZero (ZV v)       = isZero v
 
@@ -561,6 +556,7 @@ withBasicArgs f =
         f pout totm pfac numFacts))
     CT' <$> unsafeFreeze yout
 
+{-# INLINE basicDispatch #-}
 basicDispatch :: (Storable r, Fact m)
               => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
               -> CT' m r -> CT' m r
