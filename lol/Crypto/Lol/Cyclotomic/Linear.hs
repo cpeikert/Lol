@@ -128,10 +128,11 @@ extendLin :: forall c e r s e' r' s' z .
 --               = dec_{R'/(R+E')} \otimes dec_{R/E}.
 extendLin (RD ys) =
   let yvec  = V.fromList ys
+      ylen  = V.length yvec
       idxs  = baseIndicesPow @(FLCM r e') @r'
       y'vec = V.generate (U.length idxs) $ \idx ->
         let (j0,j1) = idxs U.! idx
-        in if j0 == 0 then embed (yvec V.! j1) else zero
+        in if j0 == 0 && j1 < ylen then embed (yvec V.! j1) else zero
   in RD $ V.toList y'vec
 
 instance (Reflects e Word32, Reflects r Word32,
