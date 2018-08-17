@@ -103,7 +103,7 @@ library
     Crypto.Lol.Utils.ShowType
 
     Crypto.Lol.Tests
-    --Crypto.Lol.Benchmarks
+    Crypto.Lol.Benchmarks
 
   other-modules:
     Crypto.Lol.Cyclotomic.CRTSentinel
@@ -113,20 +113,20 @@ library
     Crypto.Lol.PosBinDefs
 
     Crypto.Lol.Utils.Tests
-    --Crypto.Lol.Utils.Benchmarks
-    --Crypto.Lol.Utils.PrettyPrint
-    --Crypto.Lol.Utils.PrettyPrint.Diagnostic
-    --Crypto.Lol.Utils.PrettyPrint.Table
+    Crypto.Lol.Utils.Benchmarks
+    Crypto.Lol.Utils.PrettyPrint
+    Crypto.Lol.Utils.PrettyPrint.Diagnostic
+    Crypto.Lol.Utils.PrettyPrint.Table
 
     Crypto.Lol.Tests.CycTests
     Crypto.Lol.Tests.Default
     Crypto.Lol.Tests.TensorTests
     Crypto.Lol.Tests.ZqTests
 
-    --Crypto.Lol.Benchmarks.CycBenches
-    --Crypto.Lol.Benchmarks.Default
-    --Crypto.Lol.Benchmarks.TensorBenches
-    --Crypto.Lol.Benchmarks.CycRepBenches
+    Crypto.Lol.Benchmarks.CycBenches
+    Crypto.Lol.Benchmarks.Default
+    Crypto.Lol.Benchmarks.TensorBenches
+    Crypto.Lol.Benchmarks.CycRepBenches
 
   build-depends:
     ansi-terminal,
