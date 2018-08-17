@@ -50,7 +50,7 @@ extra-deps:
 - monadcryptorandom-0.7.2.1
 
 ghc-options:
-    "$locals": -O2 -fexpose-all-unfoldings -fwarn-dodgy-imports -fspec-constr-count=10
+    "$locals": -O1 -fexpose-all-unfoldings -fwarn-dodgy-imports -fspec-constr-count=10
 
 # Override default flag values for local packages and extra-deps
 
