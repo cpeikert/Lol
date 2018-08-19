@@ -1040,7 +1040,8 @@ toCRT' (Sub c)    = toCRT' $ embed' $ toCRT' c
 
 ---------- Utility instances ----------
 
-instance (Fact m, ForallFact2 Random t r, CRTElt t r) => Random (CycG t m r) where
+instance (Random (t m r), Fact m, TensorCRT t Maybe r)
+  => Random (CycG t m r) where
   random g = let (u,g') = random g
              in (either Pow (CRT . Right) u, g')
   {-# INLINABLE random #-}
