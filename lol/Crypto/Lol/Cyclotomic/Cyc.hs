@@ -712,19 +712,20 @@ instance (CRTElt t r, ZeroTestable r, IntegralDomain r) -- ZT, ID for superclass
   coeffsCyc L.Pow c' = Pow <$> R.coeffsPow (unCycGPow c')
   coeffsCyc L.Dec c' = Dec <$> R.coeffsDec (unCycGDec c')
 
-instance ExtensionCyc (CycG t) Double => ExtensionCyc (Cyc t) Double where
+instance CRTElt t Double => ExtensionCyc (Cyc t) Double where
   embed = CycDbl . embed . unCycDbl
   twace = CycDbl . twace . unCycDbl
   powBasis = (CycDbl <$>) <$> powBasis
   coeffsCyc b = fmap CycDbl . coeffsCyc b . unCycDbl
 
-instance ExtensionCyc (CycG t) Int64 => ExtensionCyc (Cyc t) Int64 where
+instance CRTElt t Int64 => ExtensionCyc (Cyc t) Int64 where
   embed = CycI64 . embed . unCycI64
   twace = CycI64 . twace . unCycI64
   powBasis = (CycI64 <$>) <$> powBasis
   coeffsCyc b = fmap CycI64 . coeffsCyc b . unCycI64
 
-instance ExtensionCyc (CycG t) (ZqBasic q z) => ExtensionCyc (Cyc t) (ZqBasic q z) where
+instance (ExtensionCyc (CycG t) (ZqBasic q z))
+  => ExtensionCyc (Cyc t) (ZqBasic q z) where
   embed = CycZqB . embed . unCycZqB
   twace = CycZqB . twace . unCycZqB
   powBasis = (CycZqB <$>) <$> powBasis
