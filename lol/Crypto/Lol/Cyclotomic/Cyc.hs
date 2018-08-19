@@ -1052,30 +1052,34 @@ deriving instance Random (CycG t m Int64)         => Random (Cyc t m Int64)
 deriving instance Random (CycG t m (ZqBasic q z)) => Random (Cyc t m (ZqBasic q z))
 
 instance (Random (Cyc t m a), Random (Cyc t m b)) => Random (Cyc t m (a,b)) where
+  {-# SPECIALIZE instance (Fact m, Random (t m (ZqBasic q Int64)), TensorCRT t Maybe (ZqBasic q Int64), Random (Cyc t m b)) => Random (Cyc t m (ZqBasic q Int64, b)) #-}
   random g = let (a,g') = random g
                  (b,g'') = random g'
                  in (CycPair a b, g'')
   randomR _ = error "randomR non-sensical for Cyc"
+  {-# INLINABLE random #-}
 
-instance (Fact m, ForallFact2 Random t Integer) => Random (Cyc t m Integer) where
+instance (Random (t m Integer), Fact m) => Random (Cyc t m Integer) where
   random g = let (u,g') = random g in (PowIgr u, g')
   randomR = error "randomR nonsensical for Cyc over Integer"
+  {-# INLINABLE random #-}
 
-instance (Fact m, ForallFact2 Random t (RRq q r))
+instance (Random (t m (RRq q r)))
   => Random (Cyc t m (RRq q r)) where
   random g = let (u,g') = random g in (PowRRq u, g')
   randomR = error "randomR nonsensical for Cyc over (RRq q r)"
+  {-# INLINABLE random #-}
 
 -----
 
 instance (Fact m, ForallFact2 Show t r, ForallFact2 Show t (CRTExt r), Show r)
   => Show (CycG t m r) where
-  show (Pow x)         = "Cyc.Pow " ++ show x
-  show (Dec x)         = "Cyc.Dec " ++ show x
-  show (CRT (Left x))  = "Cyc.CRT " ++ show x
-  show (CRT (Right x)) = "Cyc.CRT " ++ show x
+  show (Pow x)         = "Cyc.Pow "    ++ show x
+  show (Dec x)         = "Cyc.Dec "    ++ show x
+  show (CRT (Left x))  = "Cyc.CRT "    ++ show x
+  show (CRT (Right x)) = "Cyc.CRT "    ++ show x
   show (Scalar x)      = "Cyc.Scalar " ++ show x
-  show (Sub x)         = "Cyc.Sub " ++ show x
+  show (Sub x)         = "Cyc.Sub "    ++ show x
 
 deriving instance Show (CycG t m Double)        => Show (Cyc t m Double)
 deriving instance Show (CycG t m Int64)         => Show (Cyc t m Int64)
