@@ -36,7 +36,7 @@ Flag llvm
   -- If you enable this and get errors like "Error: can't resolve
   -- `.rodata' {.rodata section}" then GHC doesn't like your version
   -- of LLVM!
-  Default:      False
+  Default:      True
 
 Flag opt
   Description: Turn on library optimizations
@@ -55,7 +55,7 @@ Flag with-execs
 
 library
   default-language:   Haskell2010
-  cc-options: -std=c++11
+  cc-options: -std=c++11 -O3
   Include-dirs: Crypto/Lol/Cyclotomic/Tensor/CPP
   -- Due to #12152, the file containing the definition of `Zq::q` must
   -- be linked first, otherwise dynamic linking (`cabal repl` or
@@ -76,7 +76,7 @@ library
              Crypto/Lol/Cyclotomic/Tensor/CPP/zq.cpp
 
   if flag(llvm)
-    ghc-options: -fllvm -optlo-O3
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
 
   exposed-modules:
     Crypto.Lol.Cyclotomic.Tensor.CPP
@@ -104,6 +104,8 @@ Benchmark bench-lol-cpp
   default-language: Haskell2010
   main-is:          BenchLolCPPMain.hs
   ghc-options:      -main-is BenchLolCPPMain
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
   hs-source-dirs:   benchmarks
 
   build-depends:
@@ -117,6 +119,8 @@ Benchmark bench-lol-apps-cpp
   default-language: Haskell2010
   main-is:          BenchAppsCPPMain.hs
   ghc-options:      -main-is BenchAppsCPPMain
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
   if !flag(with-apps)
     buildable: False
   hs-source-dirs:   benchmarks
@@ -134,6 +138,8 @@ test-suite test-lol-cpp
   default-language: Haskell2010
   main-is:          TestLolCPPMain.hs
   ghc-options: -main-is TestLolCPPMain
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
   hs-source-dirs:   tests
 
   build-depends:
@@ -147,6 +153,8 @@ test-suite test-lol-apps-cpp
   default-language: Haskell2010
   main-is:          TestAppsCPPMain.hs
   ghc-options: -main-is TestAppsCPPMain
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
   if !flag(with-apps)
     buildable: False
   hs-source-dirs:   tests
@@ -162,9 +170,11 @@ executable homomprf-cpp
   hs-source-dirs: examples
   default-language: Haskell2010
   main-is: HomomPRFCPPMain.hs
+  ghc-options: -main-is HomomPRFCPPMain
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
   if !flag(with-apps) || !flag(with-execs)
     buildable: False
-  ghc-options: -main-is HomomPRFCPPMain
   build-depends:
     base,
     lol-apps >= 0.2.1 && < 0.3,
@@ -174,9 +184,11 @@ executable khprf-cpp
   hs-source-dirs: examples
   default-language: Haskell2010
   main-is: KHPRFCPPMain.hs
+  ghc-options: -main-is KHPRFCPPMain
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
   if !flag(with-apps) || !flag(with-execs)
     buildable: False
-  ghc-options: -main-is KHPRFCPPMain
   build-depends:
     base,
     lol-apps >= 0.2.1 && < 0.3,
@@ -186,9 +198,11 @@ executable symmshe-cpp
   hs-source-dirs:   examples
   default-language: Haskell2010
   main-is:          SHECPPMain.hs
+  ghc-options: -main-is SHECPPMain
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
   if !flag(with-apps) || !flag(with-execs)
     buildable: False
-  ghc-options: -main-is SHECPPMain
   build-depends:
     base,
     lol-apps >= 0.2.1 && < 0.3,
