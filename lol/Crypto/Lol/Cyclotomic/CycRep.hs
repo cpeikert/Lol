@@ -140,7 +140,8 @@ type CycRepEC t m r = Either (CycRep t E m r) (CycRep t C m r)
 type CycRepPC t m r = Either (CycRep t P m r) (CycRep t C m r)
 
 -- | Constraints needed for CRT-related operations on 'CycRep' data.
-type CRTElt t r = (TensorG t r, TensorCRT t Maybe r, TensorCRT t Identity (CRTExt r), CRTEmbed r)
+type CRTElt t r = (TensorG t r, CRTEmbed r,
+                   TensorCRT t Maybe r, TensorCRT t Identity (CRTExt r))
 
 -- | Embed a scalar from the base ring.
 scalarPow :: (TensorPowDec t r, Fact m) => r -> CycRep t P m r
@@ -712,25 +713,43 @@ instance (Fact m, ForallFact1 Traversable t,
 
 ---------- Utility instances ----------
 
-instance (Fact m, ForallFact2 Random t r) => Random (CycRep t P m r) where
-  random g = let (v,g') = random g \\ (entailFact2 :: Fact m :- Random (t m r))
+{- CJP: only need these Eq instances for GADT version of CycRep; for
+   data family they are auto-derived.
+
+instance (Eq (t m r)) => Eq (CycRep t P m r) where
+  Pow a == Pow b = a == b
+
+instance (Eq (t m r)) => Eq (CycRep t D m r) where
+  Dec a == Dec b = a == b
+
+instance (Eq (t m r)) => Eq (CycRep t C m r) where
+  CRTC _ a == CRTC _ b = a == b
+
+-}
+
+instance (Random (t m r)) => Random (CycRep t P m r) where
+  random g = let (v,g') = random g
              in (Pow v, g')
   randomR _ = error "randomR non-sensical for CycRep"
 
-instance (Fact m, ForallFact2 Random t r) => Random (CycRep t D m r) where
-  random g = let (v,g') = random g \\ (entailFact2 :: Fact m :- Random (t m r))
+instance (Random (t m r)) => Random (CycRep t D m r) where
+  random g = let (v,g') = random g
              in (Dec v, g')
   randomR _ = error "randomR non-sensical for CycRep"
 
-instance (Fact m, ForallFact2 Random t r, CRTElt t r) => Random (CycRepPC t m r) where
+instance (Random (t m r), Fact m, TensorCRT t Maybe r)
+  => Random (CycRepPC t m r) where
   -- create in CRTC basis if possible, otherwise in powerful
   random = let cons = case crtSentinel of
                  Left  _ -> Left  . Pow
                  Right s -> Right . CRTC s
            in \g -> let (v,g') = random g
-                                 \\ (entailFact2 :: Fact m :- Random (t m r))
                     in (cons v, g')
   randomR _ = error "randomR non-sensical for CycRep"
+
+-- CJP: these Show and NFData instances need ForallFact2 constraints
+-- because Cyc.Show doesn't know m in advance, thanks to Sub
+-- constructor
 
 instance (Fact m, ForallFact2 Show t r) => Show (CycRep t P m r) where
   show (Pow x) = "CycRep.Pow " ++ show x
