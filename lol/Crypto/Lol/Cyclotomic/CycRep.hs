@@ -33,6 +33,7 @@ the internal linear transforms and other operations it performs.
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RankNTypes                 #-}
@@ -99,8 +100,6 @@ import Data.Traversable
 -- (e.g., 'P', 'D', 'C', 'E'); @r@ is the base ring of the
 -- coefficients (e.g., \(\Z\), \(\Z_q\)).
 
-data family CycRep (t :: Factored -> * -> *) rep (m :: Factored) r
-
 -- | Nullary index type representing the powerful basis.
 data P
 -- | Nullary index type representing the decoding basis.
@@ -110,6 +109,8 @@ data C
 -- | Nullary index type representing the CRT basis over extension of
 -- base ring.
 data E
+
+data family CycRep (t :: Factored -> * -> *) rep (m :: Factored) r
 
 newtype instance CycRep t P m r = Pow  (t m r) deriving (Eq, ZeroTestable.C)
 newtype instance CycRep t D m r = Dec  (t m r) deriving (Eq, ZeroTestable.C)
@@ -121,6 +122,16 @@ data    instance CycRep t C m r = CRTC !(CSentinel t m r) !(t m r) deriving (Eq)
 
 data    instance CycRep t E m r = CRTE !(ESentinel t m r) !(t m (CRTExt r))
 -- no Eq due to precision
+
+{- CJP: old GADT definition of CycRep, which seems less
+   runtime-efficient than the data family definition.
+
+data CycRep t rep (m :: Factored) r where
+  Pow  :: !(t m r) -> CycRep t P m r
+  Dec  :: !(t m r) -> CycRep t D m r
+  CRTC :: !(CSentinel t m r) -> !(t m r) -> CycRep t C m r
+  CRTE :: !(ESentinel t m r) -> !(t m (CRTExt r)) -> CycRep t E m r
+-}
 
 -- | Convenient synonym for either CRT representation.
 type CycRepEC t m r = Either (CycRep t E m r) (CycRep t C m r)
@@ -148,11 +159,25 @@ scalarCRT r = case crtSentinel of
 
 -- ZeroTestable instances
 
--- ZT for P,D derived above
+{- CJP: only need these instances for GADT version of CycRep; for data
+   family they are auto-derived.
+
+instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t P m r) where
+  isZero (Pow v) = isZero v
+  {-# INLINABLE isZero #-}
+
+instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t D m r) where
+  isZero (Dec v) = isZero v
+  {-# INLINABLE isZero #-}
+
+-}
+
+-- ZT for P,D auto-derived
 
 instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
   -- can't derive this because of sentinel
   isZero (CRTC _ v) = isZero v
+  {-# INLINABLE isZero #-}
 
 -- no ZT instance for E due to precision
 
@@ -501,7 +526,7 @@ crtSet =
       -- time), switching back to pow basis each time so that we don't
       -- lose precision!  (This fixes a bug witnessed for moderate
       -- values of e.)
-      expon :: (Fact m'bar, ToPowDec (CycRep t) rep (ZqBasic pp z))
+      expon :: (Fact m'bar, ToPowDec t rep (ZqBasic pp z))
         => Int -> CycRep t rep m'bar zpp -> CycRep t P m'bar zpp
       expon 1  = toPow
       expon e' = toPowCE . (^p) . toCRT . expon (e'-1)
@@ -512,46 +537,92 @@ crtSet =
 
 --------- Changing representation ------------------
 
-class ToPowDec c rep r where
+class ToPowDec t rep r where
   -- | Convert to powerful-basis representation.
-  toPow :: (Fact m) => c rep m r -> c P m r
+  toPow :: (Fact m) => CycRep t rep m r -> CycRep t P m r
   -- | Convert to decoding-basis representation.
-  toDec :: (Fact m) => c rep m r -> c D m r
+  toDec :: (Fact m) => CycRep t rep m r -> CycRep t D m r
 
 -- | separate class because some base rings don't have a CRT basis
-class ToCRT c rep r where
+class ToCRT t rep r where
   -- | Convert to an appropriate CRT-basis representation.
-  toCRT :: (Fact m) => c rep m r -> Either (c E m r) (c C m r)
+  toCRT :: (Fact m) => CycRep t rep m r -> Either (CycRep t E m r) (CycRep t C m r)
 
-instance TensorPowDec t r => ToPowDec (CycRep t) P r where
+instance TensorPowDec t r => ToPowDec t P r where
   toPow = id
   toDec (Pow v) = Dec $ powToDec v
+  {-# INLINABLE toPow #-}
+  {-# INLINABLE toDec #-}
 
-instance CRTElt t r => ToCRT (CycRep t) P r where
+instance CRTElt t r => ToCRT t P r where
   toCRT (Pow v) = case crtSentinel of
                     Right s -> Right $ CRTC s $ crtCS s v
                     Left  s -> Left  $ CRTE s $ runIdentity crt $ fmapI toExt v
+  {-# INLINABLE toCRT #-}
 
-instance TensorPowDec t r => ToPowDec (CycRep t) D r where
+instance TensorPowDec t r => ToPowDec t D r where
   toPow (Dec v) = Pow $ decToPow v
   toDec = id
+  {-# INLINABLE toPow #-}
+  {-# INLINABLE toDec #-}
 
-instance CRTElt t r => ToCRT (CycRep t) D r where
+instance CRTElt t r => ToCRT t D r where
   toCRT = toCRT . toPow
+  {-# INLINABLE toCRT #-}
 
-instance CRTElt t r => ToPowDec (CycRep t) C r where
+instance CRTElt t r => ToPowDec t C r where
   toPow (CRTC s v) = Pow $ crtInvCS s v
   toDec = toDec . toPow
+  {-# INLINABLE toPow #-}
+  {-# INLINABLE toDec #-}
 
-instance ToCRT (CycRep t) C r where
+instance ToCRT t C r where
   toCRT = Right
+  {-# INLINABLE toCRT #-}
 
-instance CRTElt t r => ToPowDec (CycRep t) E r where
+instance CRTElt t r => ToPowDec t E r where
   toPow (CRTE _ v) = Pow $ fmapI fromExt $ runIdentity crtInv v
   toDec = toDec . toPow
+  {-# INLINABLE toPow #-}
+  {-# INLINABLE toDec #-}
 
-instance ToCRT (CycRep t) E r where
+instance ToCRT t E r where
   toCRT = Left
+  {-# INLINABLE toCRT #-}
+
+{- CJP: non-class-based toPow etc., which can be defined for CycRep as a
+   GADT or data family. But it doesn't quite work for us because the
+   'CRTElt t r' constraint is too strong for 'r ~ RRq q Double', which
+   can't have a CRTrans instance.
+
+{-# INLINABLE toPow #-}
+toPow :: (Fact m, CRTElt t r) => CycRep t rep m r -> CycRep t P m r
+toPow = \case
+  c@(Pow _)  -> c
+  (Dec  v)   -> Pow $ decToPow v
+  (CRTC s v) -> Pow $ crtInvCS s v
+  (CRTE _ v) -> Pow $ fmapI fromExt $ runIdentity crtInv v
+
+{-# INLINABLE toDec #-}
+toDec :: (Fact m, CRTElt t r) => CycRep t rep m r -> CycRep t D m r
+toDec = \case
+  c@(Dec _)  -> c
+  (Pow  v)   -> Dec $ powToDec v
+  (CRTC s v) -> Dec $ powToDec $ crtInvCS s v
+  (CRTE _ v) -> Dec $ powToDec $ fmapI fromExt $ runIdentity crtInv v
+
+{-# INLINABLE toCRT #-}
+toCRT :: (Fact m, CRTElt t r) => CycRep t rep m r -> CycRepEC t m r
+toCRT = \case
+  c@(CRTC _ _) -> Right c
+  c@(CRTE _ _) -> Left c
+  (Pow v)      -> go v
+  (Dec v)      -> go $ decToPow v
+  where go v =
+          case crtSentinel of
+            Right s -> Right $ CRTC s $ crtCS s v
+            Left  s -> Left  $ CRTE s $ runIdentity crt $ fmapI toExt v
+-}
 
 -- | Convenient version of 'toPow' for 'Either' CRT basis type.
 toPowCE :: (Fact m, CRTElt t r) => CycRepEC t m r -> CycRep t P m r
