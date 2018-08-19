@@ -789,12 +789,15 @@ instance (RescaleCyc (Cyc t m) a b, Fact m,
           Additive (Cyc t m a), Additive (Cyc t m b)) -- superclasses
  => Rescale (Cyc t m a) (Cyc t m b) where
   rescale = rescaleCyc L.Pow
+  {-# INLINABLE rescale #-}
 
 -- CJP: can we avoid incoherent instances by changing instance heads
 -- and using overlapping instances with isomorphism constraints?
 
-instance {-# INCOHERENT #-} (Fact m, Rescale a b, CRTElt t a, TensorPowDec t b)
+instance (Fact m, Rescale a b, CRTElt t a, TensorPowDec t b)
   => RescaleCyc (CycG t m) a b where
+  {-# SPECIALIZE instance (Fact m, Reflects q1 Int64, Reflects q2 Int64, CRTElt t (ZqBasic q1 Int64), TensorPowDec t (ZqBasic q2 Int64)) => RescaleCyc (CycG t m) (ZqBasic q1 Int64) (ZqBasic q2 Int64) #-}
+
   -- Optimized for subring constructors, for powerful basis.
   -- Analogs for decoding basis are not quite correct, because (* -1)
   -- doesn't commute with 'rescale' due to tiebreakers!
