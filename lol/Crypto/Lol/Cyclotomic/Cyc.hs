@@ -75,7 +75,7 @@ import           Crypto.Lol.Cyclotomic.CycRep   hiding (coeffsDec,
 import qualified Crypto.Lol.Cyclotomic.CycRep   as R
 import           Crypto.Lol.Cyclotomic.Language hiding (Dec, Pow)
 import qualified Crypto.Lol.Cyclotomic.Language as L
-import           Crypto.Lol.Cyclotomic.Tensor   (TensorCRTSet,
+import           Crypto.Lol.Cyclotomic.Tensor   (TensorCRT, TensorCRTSet,
                                                  TensorGSqNorm,
                                                  TensorGaussian,
                                                  TensorPowDec)
@@ -616,6 +616,8 @@ deriving instance Cyclotomic (CycG t m (ZqBasic q z)) => Cyclotomic (Cyc t m (Zq
 
 instance (Cyclotomic (Cyc t m a), Cyclotomic (Cyc t m b))
   => Cyclotomic (Cyc t m (a,b)) where
+  {-# SPECIALIZE instance (Fact m, CRTElt t (ZqBasic q Int64), Reflects q Int64, Cyclotomic (Cyc t m b)) => Cyclotomic (Cyc t m (ZqBasic q Int64, b)) #-}
+
   mulG (CycPair a b) = CycPair (mulG a) (mulG b)
   divG (CycPair a b) = CycPair <$> divG a <*> divG b
   advisePow (CycPair a b) = CycPair (advisePow a) (advisePow b)
@@ -652,6 +654,8 @@ instance (Fact m, TensorGaussian t Double, FunctorCyc (Cyc t m) Double Int64)
 -----
 
 instance (Lift' r, FunctorCyc (Cyc t m) r (LiftOf r)) => LiftCyc (Cyc t m r) where
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64, UnCyc t (ZqBasic q Int64), UnCyc t Int64, IFunctor t, IFElt t (ZqBasic q Int64), IFElt t Int64) => LiftCyc (Cyc t m (ZqBasic q Int64)) #-}
+
   {-# INLINABLE liftCyc #-}
   liftCyc = flip fmapCyc lift
 
@@ -683,18 +687,18 @@ instance (CosetGaussianCyc (CycG t m (ZqBasic q Int64)))
 
 instance (CRTElt t r, ZeroTestable r, IntegralDomain r) -- ZT, ID for superclass
   => ExtensionCyc (CycG t) r where
+  {-# SPECIALIZE instance (CRTElt t Int64)  => ExtensionCyc (CycG t) Int64  #-}
+  {-# SPECIALIZE instance (CRTElt t Double) => ExtensionCyc (CycG t) Double #-}
+  {-# SPECIALIZE instance (CRTElt t (ZqBasic q Int64), Reflects q Int64) => ExtensionCyc (CycG t) (ZqBasic q Int64) #-}
 
   -- lazily embed
-  embed :: forall m m' . (m `Divides` m')
-            => CycG t m r -> CycG t m' r
+  embed :: forall m m' . (m `Divides` m') => CycG t m r -> CycG t m' r
   embed (Scalar c) = Scalar c           -- keep as scalar
   embed (Sub (c :: CycG t l r)) = Sub c -- keep as subring element
     \\ transDivides @l @m @m'
   embed c = Sub c
 
-  twace :: forall m m' .
-          (CRTElt t r, ZeroTestable r, IntegralDomain r, m `Divides` m')
-       => CycG t m' r -> CycG t m r
+  twace :: forall m m' . (m `Divides` m') => CycG t m' r -> CycG t m r
   twace (Pow u) = Pow $ twacePow u
   twace (Dec u) = Dec $ twaceDec u
   twace (CRT u) = either (cycPE . twaceCRTE) (cycPC . twaceCRTC) u
@@ -728,6 +732,8 @@ instance ExtensionCyc (CycG t) (ZqBasic q z) => ExtensionCyc (Cyc t) (ZqBasic q 
 
 instance (ExtensionCyc (Cyc t) a, ExtensionCyc (Cyc t) b)
   => ExtensionCyc (Cyc t) (a,b) where
+  {-# SPECIALIZE instance (ExtensionCyc (Cyc t) (ZqBasic q Int64), ExtensionCyc (Cyc t) b) => ExtensionCyc (Cyc t) (ZqBasic q Int64, b) #-}
+
   embed (CycPair a b) = CycPair (embed a) (embed b)
   twace (CycPair a b) = CycPair (twace a) (twace b)
   powBasis = zipWith CycPair <$> powBasis <*> powBasis
