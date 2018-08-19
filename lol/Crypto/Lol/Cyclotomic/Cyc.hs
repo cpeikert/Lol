@@ -769,6 +769,7 @@ instance (PPow pp, Prime (PrimePP pp), zpp ~ ZqBasic pp z, ToInteger z,
 instance (CRTSetCyc (CycG t) (ZqBasic q z))
   => CRTSetCyc (Cyc t) (ZqBasic q z) where
   crtSet = (CycZqB <$>) <$> crtSet
+  {-# INLINABLE crtSet #-}
 
 -- CJP TODO?: instance CRTSetCyc (Cyc t) (a,b)
 
@@ -797,8 +798,8 @@ instance {-# INCOHERENT #-} (Fact m, Rescale a b, CRTElt t a, TensorPowDec t b)
   rescaleCyc L.Dec c          = Dec $ fmapI rescale $ unCycGDec c
   {-# INLINABLE rescaleCyc #-}
 
--- | identity rescale
-instance RescaleCyc (CycG t m) a a where
+-- | identity rescale (more specific)
+instance {-# OVERLAPPING #-} RescaleCyc (CycG t m) a a where
   -- No-op rescale
   rescaleCyc _ = id
   {-# INLINABLE rescaleCyc #-}
@@ -807,18 +808,22 @@ instance RescaleCyc (CycG t m) a a where
 instance (RescaleCyc (CycG t m) (ZqBasic q z) (ZqBasic p z))
   => RescaleCyc (Cyc t m) (ZqBasic q z) (ZqBasic p z) where
   rescaleCyc b = CycZqB . rescaleCyc b . unCycZqB
+  {-# INLINABLE rescaleCyc #-}
 
 -- | rescale from one modulus to another
-instance (Fact m, Rescale (RRq q r) (RRq p r), TensorPowDec t (RRq q r), TensorPowDec t (RRq p r))
+instance (Fact m, Rescale (RRq q r) (RRq p r),
+          TensorPowDec t (RRq q r), TensorPowDec t (RRq p r))
   => RescaleCyc (Cyc t m) (RRq q r) (RRq p r) where
   rescaleCyc L.Pow (PowRRq u) = PowRRq $ rescale u
   rescaleCyc L.Pow (DecRRq u) = PowRRq $ rescale $ toPow u
   rescaleCyc L.Dec (DecRRq u) = DecRRq $ rescale u
   rescaleCyc L.Dec (PowRRq u) = DecRRq $ rescale $ toDec u
+  {-# INLINABLE rescaleCyc #-}
 
--- | no-op rescale on pairs
+-- | no-op rescale for Cyc over pairs
 instance RescaleCyc (Cyc t m) (a,b) (a,b) where
   rescaleCyc = const id
+  {-# INLINABLE rescaleCyc #-}
 
 -- | rescale up by one additional modulus
 instance (Fact m, Reflects q z, Reduce z b, ZeroTestable z,
@@ -828,6 +833,7 @@ instance (Fact m, Reflects q z, Reduce z b, ZeroTestable z,
   rescaleCyc = let q :: z = value @q
                -- same method works for any basis
                in \_ b -> CycPair zero $ (reduce q :: b) *> b
+  {-# INLINABLE rescaleCyc #-}
 
 -- | specialized (faster) rescale-down by a single \(\Z_q\)
 instance (ToInteger z, Reflects q z, Reduce z b, Field b,
@@ -840,6 +846,7 @@ instance (ToInteger z, Reflects q z, Reduce z b, Field b,
     let q :: z = value @q
         x      = liftCyc (Just bas) a
     in recip (reduce q :: b) *> (b - reduceCyc x)
+  {-# INLINABLE rescaleCyc #-}
 
 -- CJP: do we really need these? Just have client call rescaleCyc
 -- multiple times?
@@ -883,11 +890,13 @@ instance (Gadget gad (ZqBasic q z),
 instance Gadget gad (CycG t m (ZqBasic q z))
   => Gadget gad (Cyc t m (ZqBasic q z)) where
   gadget = CycZqB <$> gadget @gad
+  {-# INLINABLE gadget #-}
 
 instance (Gadget gad (Cyc t m a), Gadget gad (Cyc t m b))
   => Gadget gad (Cyc t m (a,b)) where
   gadget = (++) (flip CycPair zero <$> gadget @gad)
                 (     CycPair zero <$> gadget @gad)
+  {-# INLINABLE gadget #-}
 
 -- ForallFact2 in case they're useful
 
@@ -916,23 +925,28 @@ instance (Fact m, Reduce a b, CRTElt t a, TensorPowDec t b)
   reduce (CRT u)                 = Pow    $ reduce $ either toPow toPow u
   reduce (Scalar c)              = Scalar $ reduce c
   reduce (Sub (c :: CycG t l a)) = Sub (reduce c :: CycG t l b)
+  {-# INLINABLE reduce #-}
 
 instance (Reduce (CycG t m Int64) (CycG t m (ZqBasic q Int64)))
   => Reduce (Cyc t m Int64) (Cyc t m (ZqBasic q Int64)) where
   reduce = CycZqB . reduce . unCycI64
+  {-# INLINABLE reduce #-}
 
 instance (Fact m, Reflects q Int64, ForallFact1 Applicative t)
   => Reduce (Cyc t m Integer) (Cyc t m (ZqBasic q Int64)) where
   reduce (PowIgr u) = CycZqB $ Pow $ fmap reduce u
   reduce (DecIgr u) = CycZqB $ Dec $ fmap reduce u
+  {-# INLINABLE reduce #-}
 
 instance (Reflects q Double, FunctorCyc (Cyc t m) Double (RRq q Double))
   => Reduce (Cyc t m Double) (Cyc t m (RRq q Double)) where
   reduce = fmapCyc Nothing reduce
+  {-# INLINABLE reduce #-}
 
 instance (Reduce (Cyc t m z) (Cyc t m a), Reduce (Cyc t m z) (Cyc t m b))
   => Reduce (Cyc t m z) (Cyc t m (a,b)) where
   reduce z = CycPair (reduce z) (reduce z)
+  {-# INLINABLE reduce #-}
 
 -- | promoted from base ring, using the powerful basis for best geometry
 instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
@@ -948,11 +962,9 @@ instance (Decompose gad (ZqBasic q z), CRTElt t (ZqBasic q z), Fact m,
   -- correct because we decompose in powerful basis
   decompose (Scalar c) = Scalar <$> decompose @gad c
   decompose (Sub c) = Sub <$> decompose @gad c
-
   -- traverse: Traversable (CycRep t P m) and Applicative ZipList
   decompose (Pow u) = getZipList $ Pow <$> traverse (ZipList . decompose @gad) u
   decompose c = decompose @gad $ toPow' c
-
   {-# INLINABLE decompose #-}
 
 -- specific to Int64 because we need to know constructor for lift type
@@ -963,6 +975,7 @@ instance (Decompose gad (CycG t m (ZqBasic q Int64)),
 
   type DecompOf (Cyc t m (ZqBasic q Int64)) = Cyc t m Int64
   decompose (CycZqB c) = CycI64 <$> decompose @gad c
+  {-# INLINABLE decompose #-}
 
 instance (Decompose gad (Cyc t m a), Decompose gad (Cyc t m b),
          DecompOf (Cyc t m a) ~ DecompOf (Cyc t m b),
@@ -971,6 +984,7 @@ instance (Decompose gad (Cyc t m a), Decompose gad (Cyc t m b),
   => Decompose gad (Cyc t m (a,b)) where
   type DecompOf (Cyc t m (a,b)) = DecompOf (Cyc t m a)
   decompose (CycPair a b) = (++) (decompose @gad a) (decompose @gad b)
+  {-# INLINABLE decompose #-}
 
 -----
 
@@ -993,6 +1007,7 @@ instance Correct gad (CycG t m (ZqBasic q Int64))
   => Correct gad (Cyc t m (ZqBasic q Int64)) where
 
   correct = (CycZqB *** fmap CycI64) . correct @gad . fmap unCycZqB
+  {-# INLINABLE correct #-}
   -- correct = coerce $
   --   (correct @gad :: [CycG t m (ZqBasic q Int64)]
   --                 -> (CycG t m (ZqBasic q Int64), [CycG t m Int64]))
