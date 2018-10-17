@@ -387,6 +387,8 @@ zmsToIndexPP (p,_) i = let (i1,i0) = i `divMod` p
 -- they all have such a factorization. The first argument is the list
 -- of \((\varphi(m),\varphi(m'))\) pairs for the (merged) prime powers
 -- of \(m\),\(m'\).
+{-# INLINE toIndexPair #-}
+{-# INLINE fromIndexPair #-}
 toIndexPair :: [(Int,Int)] -> Int -> (Int,Int)
 fromIndexPair :: [(Int,Int)] -> (Int,Int) -> Int
 

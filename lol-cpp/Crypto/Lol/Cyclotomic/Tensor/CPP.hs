@@ -108,6 +108,7 @@ instance Eq r => Eq (CT m r) where
   {-# SPECIALIZE instance Eq (CT m Double) #-}
   {-# SPECIALIZE instance Eq (CT m (Complex Double)) #-}
   {-# SPECIALIZE instance Eq (CT m (ZqBasic q Int64)) #-}
+  {-# SPECIALIZE instance Eq (CT m (RRq q Double)) #-}
 
   (ZV x) == (ZV y) = x == y
   (CT x) == (CT y) = x == y
@@ -165,6 +166,7 @@ instance (Additive r, Storable r, Fact m)
   {-# SPECIALIZE instance Fact m => Additive.C (CT m Double) #-}
   {-# SPECIALIZE instance Fact m => Additive.C (CT m (Complex Double)) #-}
   {-# SPECIALIZE instance (Fact m, Reflects q Int64) => Additive.C (CT m (ZqBasic q Int64)) #-}
+  {-# SPECIALIZE instance Fact m => Additive.C (CT m (RRq q Double)) #-}
 
   (CT (CT' a)) + (CT (CT' b)) = CT $ CT' $ SV.zipWith (+) a b
   a + b = toCT a + toCT b
@@ -526,14 +528,15 @@ coerceBasis = coerce
 
 ---------- Helper Functions for dispatch ----------
 
+{-# INLINE dispatchGInv #-}
 dispatchGInv :: forall m r . (Storable r, Fact m)
              => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO Int16)
              -> CT' m r -> Maybe (CT' m r)
-dispatchGInv f =
+dispatchGInv =
   let factors = marshalFactors $ ppsFact @m
       totm = fromIntegral $ totientFact @m
       numFacts = fromIntegral $ SV.length factors
-  in \(CT' x) -> unsafePerformIO $ do
+  in \f (CT' x) -> unsafePerformIO $ do
     yout <- SV.thaw x
     ret <- SM.unsafeWith yout (\pout ->
              SV.unsafeWith factors (\pfac ->
@@ -542,14 +545,15 @@ dispatchGInv f =
     then Just . CT' <$> unsafeFreeze yout
     else return Nothing
 
+{-# INLINE withBasicArgs #-}
 withBasicArgs :: forall m r . (Fact m, Storable r)
               => (Ptr r -> Int64 -> Ptr CPP -> Int16 -> IO ())
               -> CT' m r -> IO (CT' m r)
-withBasicArgs f =
+withBasicArgs =
   let factors = marshalFactors $ ppsFact @m
       totm = fromIntegral $ totientFact @m
       numFacts = fromIntegral $ SV.length factors
-  in \(CT' x) -> do
+  in \f (CT' x) -> do
     yout <- SV.thaw x
     SM.unsafeWith yout (\pout ->
       SV.unsafeWith factors (\pfac ->
@@ -632,6 +636,7 @@ instance (Storable r, Random r, Fact m) => Random (CT' m r) where
   {-# SPECIALIZE instance Fact m => Random (CT' m Double) #-}
   {-# SPECIALIZE instance Fact m => Random (CT' m (Complex Double)) #-}
   {-# SPECIALIZE instance (Fact m, Reflects q Int64) => Random (CT' m (ZqBasic q Int64)) #-}
+  {-# SPECIALIZE instance Fact m => Random (CT' m (RRq q Double)) #-}
 
   random = runRand $ replM (liftRand random)
 
@@ -647,6 +652,7 @@ instance (Storable r, Random r, Fact m) => Random (CT m r) where
   {-# SPECIALIZE instance Fact m => Random (CT m Double) #-}
   {-# SPECIALIZE instance Fact m => Random (CT m (Complex Double)) #-}
   {-# SPECIALIZE instance (Fact m, Reflects q Int64) => Random (CT m (ZqBasic q Int64)) #-}
+  {-# SPECIALIZE instance Fact m => Random (CT m (RRq q Double)) #-}
 
   random = runRand $ CT <$> liftRand random
 
@@ -662,6 +668,7 @@ instance (NFData r) => NFData (CT m r) where
   {-# SPECIALIZE instance NFData (CT m Double) #-}
   {-# SPECIALIZE instance NFData (CT m (Complex Double)) #-}
   {-# SPECIALIZE instance NFData (CT m (ZqBasic q Int64)) #-}
+  {-# SPECIALIZE instance NFData (CT m (RRq q Double)) #-}
 
   rnf (CT v) = rnf v
   rnf (ZV v) = rnf v
@@ -678,6 +685,7 @@ instance (ForallFact2 Protoable IZipVector r, Fact m, Storable r)
   fromProto x = toCT . ZV <$> fromProto x
     \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
 
+{-# INLINE repl #-}
 repl :: forall m r . (Fact m, Storable r) => r -> CT' m r
 repl = let n = totientFact @m
        in coerce . SV.replicate n
@@ -687,12 +695,15 @@ replM :: forall m r mon . (Fact m, Storable r, Monad mon)
 replM = let n = totientFact @m
         in fmap coerce . SV.replicateM n
 
+{-# INLINE scalarPow' #-}
 scalarPow' :: forall m r . (Fact m, Additive r, Storable r) => r -> CT' m r
 -- constant-term coefficient is first entry wrt powerful basis
 scalarPow' =
   let n = totientFact @m
   in \r -> CT' $ generate n (\i -> if i == 0 then r else zero)
 
+{-# INLINE ru #-}
+{-# INLINE ruInv #-}
 ru, ruInv :: forall m mon r . (CRTrans mon r, Fact m, Storable r)
    => TaggedT m mon [Vector r]
 ru = do
@@ -710,18 +721,8 @@ ruInv = do
 wrapVector :: forall m r . (Fact m, Ring r, Storable r) => Kron r -> CT' m r
 wrapVector v = CT' $ generate (totientFact @m) (flip (indexK v) 0)
 
-gCRT, gInvCRT :: forall m mon r .
-  (Storable r, CRTrans mon r, Fact m) => mon (CT' m r)
+{-# INLINE gCRT #-}
+{-# INLINE gInvCRT #-}
+gCRT, gInvCRT :: forall m mon r . (Storable r, CRTrans mon r, Fact m) => mon (CT' m r)
 gCRT    = wrapVector <$> gCRTK    @m
 gInvCRT = wrapVector <$> gInvCRTK @m
-
-
-
-
-
-
-
-
-
-
-
