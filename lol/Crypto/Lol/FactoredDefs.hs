@@ -15,13 +15,16 @@ template Haskell splices in the same module.
 {-# LANGUAGE AllowAmbiguousTypes   #-}
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
+{-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE InstanceSigs          #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE NoStarIsType          #-}
 {-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
+{-# LANGUAGE StandaloneDeriving    #-}
 {-# LANGUAGE TemplateHaskell       #-}
 {-# LANGUAGE TypeApplications      #-}
 {-# LANGUAGE TypeFamilies          #-}
@@ -75,9 +78,9 @@ module Crypto.Lol.FactoredDefs
 import Crypto.Lol.PosBin
 
 import Control.Arrow
-import Data.Constraint           hiding ((***), (&&&))
-import Data.List                 hiding ((\\))
-import Data.Singletons.Prelude   hiding (type (*))
+import Data.Constraint         hiding ((&&&), (***))
+import Data.List               hiding ((\\))
+import Data.Singletons.Prelude hiding (type (*))
 import Data.Singletons.TH
 import Language.Haskell.TH
 

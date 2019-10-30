@@ -14,6 +14,7 @@ which can be used to verify a 'Crypto.Lol.Cyclotomic.Tensor' implementation.
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE NoStarIsType          #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -39,7 +40,6 @@ import Crypto.Lol.Utils.Tests            (Gen, Test, choose, chooseAny,
                                           testGroup)
 
 import qualified Algebra.Ring         as Ring (fromInteger)
-import           Control.Applicative  (liftA2)
 import           Control.Monad.Random
 import           Data.Proxy
 

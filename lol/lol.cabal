@@ -39,7 +39,7 @@ Flag llvm
   -- If you enable this and get errors like "Error: can't resolve
   -- `.rodata' {.rodata section}" then GHC doesn't like your version
   -- of LLVM!
-  Default:      True
+  Default:     False
 
 Flag opt
   Description: Turn on library optimizations
@@ -135,6 +135,7 @@ library
     constraints,
     containers,
     criterion,
+    criterion-measurement,
     crypto-api,
     data-default,
     deepseq,
