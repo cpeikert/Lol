@@ -13,6 +13,7 @@ Mostly-monomorphized benchmarks for lol-apps.
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE NoStarIsType          #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
@@ -29,9 +30,11 @@ module Crypto.Lol.Applications.Benchmarks.Default
 import Control.Monad.Random
 
 import Crypto.Lol
-import Crypto.Lol.Applications.Benchmarks.SHEBenches
 import Crypto.Lol.Applications.Benchmarks.KHPRFBenches
-import Crypto.Lol.Benchmarks (bgroup, Benchmark, Zq, type (**))
+import Crypto.Lol.Applications.Benchmarks.SHEBenches
+import Crypto.Lol.Benchmarks                           (type (**),
+                                                        Benchmark, Zq,
+                                                        bgroup)
 
 defaultSHEBenches :: forall t gad gen rnd . (MonadRandom rnd, _)
                   => Proxy t -> Proxy gad -> Proxy gen -> rnd [Benchmark]

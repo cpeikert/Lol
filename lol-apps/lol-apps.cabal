@@ -32,7 +32,7 @@ Flag llvm
   Description:  Compile via LLVM. This produces much better object code,
                 but you need to have the LLVM compiler installed.
 
-  Default:      True
+  Default:      False
 
 Flag opt
   Description: Turn on library optimizations
