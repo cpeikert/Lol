@@ -55,8 +55,6 @@ module Crypto.Lol.FactoredDefs
 , fGCD, FGCD, fLCM, FLCM, Coprime
 , fOddRadical, FOddRadical
 , pFree, PFree
--- * Entailments
-, ForallFact1(..), ForallFact2(..)
 -- * Reflections
 , ppsFact, valueFact, totientFact, radicalFact, oddRadicalFact, valueHatFact
 , ppPPow, primePPow, exponentPPow, valuePPow, totientPPow, radicalPPow, oddRadicalPPow, valueHatPPow
@@ -229,14 +227,6 @@ singletons [d|
                       if p == p' then ps
                       else pp : go ps
             |]
-
--- | Contraint 'c' holds for 't m' for any 'Fact m'.
-class ForallFact1 c t where
-  entailFact1 :: Fact m :- c (t m)
-
--- | Contraint 'c' holds for 't m r' for any 'Fact m'.
-class ForallFact2 c t r where
-  entailFact2 :: Fact m :- c (t m r)
 
 -- | Type (family) synonym for division of 'Factored' types.
 type a / b = FDiv a b

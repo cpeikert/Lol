@@ -195,7 +195,6 @@ instance (Fact m, Ring r, Storable r) => Ring.C (CT m r) where
   (*) = zipWithI (*)
   fromInteger i = CT $ repl $ fromInteger i
 
--- Need this for the ForallFact2 Module entailment below
 instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
   {-# SPECIALIZE instance Fact m => Module.C Int64 (CT m Int64) #-}
   {-# SPECIALIZE instance Fact m => Module.C Double (CT m Double) #-}
@@ -470,44 +469,6 @@ instance (Reflects q Int64, Reflects q Double) => TensorPowDec CT (RRq q Double)
   {-# INLINABLE coeffs #-}
   {-# INLINABLE powBasisPow #-}
 
----------- Entailments for CT ----------
-
-instance Show r => ForallFact2 Show CT r where
-  entailFact2 = Sub Dict
-
-instance Eq r => ForallFact2 Eq CT r where
-  entailFact2 = Sub Dict
-
-instance (Ring r, Storable r) => ForallFact2 (Module.C r) CT r where
-  entailFact2 = Sub Dict
-
-instance ForallFact1 Functor CT where
-  entailFact1 = Sub Dict
-
-instance ForallFact1 Foldable CT where
-  entailFact1 = Sub Dict
-
-instance ForallFact1 Applicative CT where
-  entailFact1 = Sub Dict
-
-instance ForallFact1 Traversable CT where
-  entailFact1 = Sub Dict
-
-instance (ZeroTestable r, Storable r) => ForallFact2 ZeroTestable.C CT r where
-  entailFact2 = Sub Dict
-
-instance (Additive fp, Storable fp, GFCtx fp d) => ForallFact2 (Module.C (GF fp d)) CT fp where
-  entailFact2 = Sub Dict
-
-instance (Random r, Storable r) => ForallFact2 Random CT r where
-  entailFact2 = Sub Dict
-
-instance (NFData r) => ForallFact2 NFData CT r where
-  entailFact2 = Sub Dict
-
-instance (ForallFact2 Protoable IZipVector r, Storable r) => ForallFact2 Protoable CT r where
-  entailFact2 = Sub Dict
-
 ---------- Helper functions for coercion ----------
 
 coerceTw :: (Functor mon) => TaggedT '(m, m') mon (Vector r -> Vector r) -> mon (CT' m' r -> CT' m r)
@@ -673,17 +634,14 @@ instance (NFData r) => NFData (CT m r) where
   rnf (CT v) = rnf v
   rnf (ZV v) = rnf v
 
-instance (ForallFact2 Protoable IZipVector r, Fact m, Storable r)
+instance (Protoable (IZipVector m r), Fact m, Storable r)
   => Protoable (CT m r) where
   type ProtoType (CT m r) = ProtoType (IZipVector m r)
 
   toProto x@(CT _) = toProto $ toZV x
-    \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
-  toProto (ZV x) = toProto x
-    \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
+  toProto (ZV x)   = toProto x
 
   fromProto x = toCT . ZV <$> fromProto x
-    \\ (entailFact2 :: Fact m :- Protoable (IZipVector m r))
 
 {-# INLINE repl #-}
 repl :: forall m r . (Fact m, Storable r) => r -> CT' m r

@@ -185,7 +185,7 @@ instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
 -- Additive instances
 
 -- TODO: replace these implementations to use Additive instance of
--- underlying tensor? Would this require using ForallFact2 Additive.C?
+-- underlying tensor? Would this require (forall m . Fact m => Additive (t m))?
 
 instance (TensorPowDec t r, Fact m) => Additive.C (CycRep t P m r) where
   {-# SPECIALIZE instance (TensorPowDec t Int64, Fact m) => Additive.C (CycRep t P m Int64) #-}
@@ -649,30 +649,26 @@ instance IFunctor t => IFunctor (CycRep t D) where
   zipWithI f (Dec v) (Dec w) = Dec $ zipWithI f v w
 
 -- | apply coefficient-wise
-instance Applicative (CycRep t P m) => Functor (CycRep t P m) where
-  -- Functor instance is implied by Applicative laws
+instance Functor (t m) => Functor (CycRep t P m) where
   {-# INLINABLE fmap #-}
-  fmap f x = pure f <*> x
+  fmap f (Pow x) = Pow $ f <$> x
 
 -- | apply coefficient-wise
-instance Applicative (CycRep t D m) => Functor (CycRep t D m) where
-  -- Functor instance is implied by Applicative laws
+instance Functor (t m) => Functor (CycRep t D m) where
   {-# INLINABLE fmap #-}
-  fmap f x = pure f <*> x
+  fmap f (Dec x) = Dec $ f <$> x
 
 -- No Functor instance for C, because CRTrans a doesn't imply CRTrans b.
 
-instance (Fact m, ForallFact1 Applicative t) => Applicative (CycRep t P m) where
-  pure = Pow . pure \\ (entailFact1 :: Fact m :- Applicative (t m))
+instance Applicative (t m) => Applicative (CycRep t P m) where
+  pure = Pow . pure
   (Pow f) <*> (Pow v) = Pow $ f <*> v
-                        \\ (entailFact1 :: Fact m :- Applicative (t m))
   {-# INLINABLE pure #-}
   {-# INLINABLE (<*>) #-}
 
-instance (Fact m, ForallFact1 Applicative t) => Applicative (CycRep t D m) where
-  pure = Dec . pure \\ (entailFact1 :: Fact m :- Applicative (t m))
+instance Applicative (t m) => Applicative (CycRep t D m) where
+  pure = Dec . pure
   (Dec f) <*> (Dec v) = Dec $ f <*> v
-                        \\ (entailFact1 :: Fact m :- Applicative (t m))
   {-# INLINABLE pure #-}
   {-# INLINABLE (<*>) #-}
 
@@ -680,52 +676,29 @@ instance (Fact m, ForallFact1 Applicative t) => Applicative (CycRep t D m) where
 -- the invariant.  Moreover, `CRTrans (a -> b)` and `CRTrans a`
 -- doesn't imply `CRTrans b`.
 
-instance Traversable (CycRep t P m) => Foldable (CycRep t P m) where
-  -- Foldable instance implied by Traversable instance
-  foldMap = foldMapDefault
+instance Foldable (t m) => Foldable (CycRep t P m) where
+  foldr f z (Pow x) = foldr f z x
 
-instance Traversable (CycRep t D m) => Foldable (CycRep t D m) where
-  -- Foldable instance implied by Traversable instance
-  foldMap = foldMapDefault
+instance Foldable (t m) => Foldable (CycRep t D m) where
+  foldr f z (Dec x) = foldr f z x
 
 -- no Traversable for C, but it is Foldable
-instance (Fact m, ForallFact1 Foldable t) => Foldable (CycRep t C m) where
+instance Foldable (t m) => Foldable (CycRep t C m) where
   foldr f b (CRTC _ v) = foldr f b v
-                         \\ (entailFact1 :: Fact m :- Foldable (t m))
 
-instance (Fact m, ForallFact1 Traversable t,
-          ForallFact1 Applicative t) -- satisfy superclass
-  => Traversable (CycRep t P m) where
+instance Traversable (t m) => Traversable (CycRep t P m) where
   {-# INLINABLE traverse #-}
   traverse f (Pow v) = Pow <$> traverse f v
-                       \\ (entailFact1 :: Fact m :- Traversable (t m))
 
-instance (Fact m, ForallFact1 Traversable t,
-          ForallFact1 Applicative t) -- satisfy superclass
-  => Traversable (CycRep t D m) where
+instance Traversable (t m) => Traversable (CycRep t D m) where
   {-# INLINABLE traverse #-}
   traverse f (Dec v) = Dec <$> traverse f v
-                       \\ (entailFact1 :: Fact m :- Traversable (t m))
 
--- CJP: no Traversable instance for C, because CRTrans for a doesn't
--- imply it for b.
+-- CJP: no Traversable instance for C, because no Functor instance
+-- (see above)
 
 
 ---------- Utility instances ----------
-
-{- CJP: only need these Eq instances for GADT version of CycRep; for
-   data family they are auto-derived.
-
-instance (Eq (t m r)) => Eq (CycRep t P m r) where
-  Pow a == Pow b = a == b
-
-instance (Eq (t m r)) => Eq (CycRep t D m r) where
-  Dec a == Dec b = a == b
-
-instance (Eq (t m r)) => Eq (CycRep t C m r) where
-  CRTC _ a == CRTC _ b = a == b
-
--}
 
 instance (Random (t m r)) => Random (CycRep t P m r) where
   random g = let (v,g') = random g
@@ -747,42 +720,33 @@ instance (Random (t m r), Fact m, TensorCRT t Maybe r)
                     in (cons v, g')
   randomR _ = error "randomR non-sensical for CycRep"
 
--- CJP: these Show and NFData instances need ForallFact2 constraints
--- because Cyc.Show doesn't know m in advance, thanks to Sub
--- constructor
-
-instance (Fact m, ForallFact2 Show t r) => Show (CycRep t P m r) where
+instance (Show (t m r)) => Show (CycRep t P m r) where
   show (Pow x) = "CycRep.Pow " ++ show x
-                 \\ (entailFact2 :: Fact m :- Show (t m r))
 
-instance (Fact m, ForallFact2 Show t r) => Show (CycRep t D m r) where
+instance (Show (t m r)) => Show (CycRep t D m r) where
   show (Dec x) = "CycRep.Dec " ++ show x
-                 \\ (entailFact2 :: Fact m :- Show (t m r))
 
-instance (Fact m, ForallFact2 Show t r) => Show (CycRep t C m r) where
+instance (Show (t m r)) => Show (CycRep t C m r) where
   show (CRTC _ x) = "CycRep.CRTC " ++ show x
-                    \\ (entailFact2 :: Fact m :- Show (t m r))
 
-instance (Fact m, ForallFact2 Show t (CRTExt r)) => Show (CycRep t E m r) where
+instance (Show (t m (CRTExt r))) => Show (CycRep t E m r) where
   show (CRTE _ x) = "CycRep.CRTE " ++ show x
-                    \\ (entailFact2 :: Fact m :- Show (t m (CRTExt r)))
 
 
-instance (Fact m, ForallFact2 NFData t r) => NFData (CycRep t P m r) where
-  rnf (Pow x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m r))
+instance (NFData (t m r)) => NFData (CycRep t P m r) where
+  rnf (Pow x) = rnf x
 
-instance (Fact m, ForallFact2 NFData t r) => NFData (CycRep t D m r) where
-  rnf (Dec x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m r))
+instance (NFData (t m r)) => NFData (CycRep t D m r) where
+  rnf (Dec x) = rnf x
 
-instance (Fact m, ForallFact2 NFData t r) => NFData (CycRep t C m r) where
-  rnf (CRTC _ x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m r))
+instance (NFData (t m r)) => NFData (CycRep t C m r) where
+  rnf (CRTC _ x) = rnf x
 
-instance (Fact m, ForallFact2 NFData t (CRTExt r)) => NFData (CycRep t E m r) where
-  rnf (CRTE _ x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m (CRTExt r)))
+instance (NFData (t m (CRTExt r))) => NFData (CycRep t E m r) where
+  rnf (CRTE _ x) = rnf x
 
 
-
-instance (Fact m, ForallFact2 Protoable t r) => Protoable (CycRep t D m r) where
+instance (Protoable (t m r)) => Protoable (CycRep t D m r) where
   type ProtoType (CycRep t D m r) = ProtoType (t m r)
-  toProto (Dec t) = toProto t \\ (entailFact2 :: Fact m :- Protoable (t m r))
-  fromProto t = Dec <$> fromProto t \\ (entailFact2 :: Fact m :- Protoable (t m r))
+  toProto (Dec t) = toProto t
+  fromProto t = Dec <$> fromProto t
