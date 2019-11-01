@@ -27,8 +27,10 @@ Tests for the 'Tensor' interface.
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Tests.TensorTests
-( tensorCrtTests1, tensorCrtTests2, tensorTests1, tensorTests2
-) where
+(
+  tensorCrtTests1, tensorCrtTests2, tensorTests1, tensorTests2
+)
+where
 
 import Crypto.Lol
 import Crypto.Lol.Cyclotomic.Tensor
