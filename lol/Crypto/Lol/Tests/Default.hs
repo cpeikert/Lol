@@ -57,29 +57,28 @@ boundedInt64Gen = choose (-100, 100)
 int64TensorGen :: forall t m . _ => Gen (t m Int64)
 int64TensorGen = choose (Ring.fromInteger (-100), Ring.fromInteger 100)
 
-unifTensorTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> Test
+unifTensorTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> Test
 unifTensorTests1 _ _ =
   let tensorGen = chooseAny :: Gen (t m r) in
   tensorTests1 tensorGen
 
-unifTensorTests2 :: forall t m m' r . (Random (t m r), _) => Proxy '(m,m',r) -> Proxy t -> Test
+unifTensorTests2 :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> Test
 unifTensorTests2 _ _ =
   let tensorGen = chooseAny :: Gen (t m r) in
   tensorTests2 (Proxy::Proxy '(t,m,m',r)) tensorGen
 
-unifTensorCrtTests2 :: forall t m m' r . (Random (t m r), _) => Proxy '(m,m',r) -> Proxy t -> Test
+unifTensorCrtTests2 :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> Test
 unifTensorCrtTests2 _ _ =
   let tensorGen = chooseAny :: Gen (t m r) in
   tensorCrtTests2 (Proxy::Proxy '(t,m,m',r)) tensorGen
 
-unifTensorCrtTests1 :: forall t m r . (Random r, Random (t m r), _) => Proxy '(m,r) -> Proxy t -> Test
+unifTensorCrtTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> Test
 unifTensorCrtTests1 _ _ =
   let ringGen   = chooseAny :: Gen r
       tensorGen = chooseAny :: Gen (t m r) in
   tensorCrtTests1 ringGen tensorGen
 
-boundedInt64TensorTests1 :: forall t m . (TensorPowDec t Int64, Fact m, _)
-  => Proxy m -> Proxy t -> Test
+boundedInt64TensorTests1 :: forall t m . _ => Proxy m -> Proxy t -> Test
 boundedInt64TensorTests1 _ _ = tensorTests1 (int64TensorGen :: Gen (t m Int64))
 
 boundedInt64TensorTests2 :: forall t m m' . _ => Proxy '(m,m') -> Proxy t -> Test
@@ -87,12 +86,12 @@ boundedInt64TensorTests2 _ _ = tensorTests2
                                  (Proxy::Proxy '(t,m,m',Int64))
                                  (int64TensorGen :: Gen (t m Int64))
 
-unifCycTests1 :: forall t m r . (Random (Cyc t m r), _) => Proxy '(m,r) -> Proxy t -> Test
+unifCycTests1 :: forall t m r . _ => Proxy '(m,r) -> Proxy t -> Test
 unifCycTests1 _ _ =
   let cycGen = chooseAny :: Gen (Cyc t m r) in
   cycTests1 cycGen
 
-unifCycTests2 :: forall t m m' r . (Random (Cyc t m' r), _) => Proxy '(m,m',r) -> Proxy t -> Test
+unifCycTests2 :: forall t m m' r . _ => Proxy '(m,m',r) -> Proxy t -> Test
 unifCycTests2 _ _ =
   let cycGen = chooseAny :: Gen (Cyc t m' r) in
   cycTests2 (Proxy::Proxy '(t,m,m',r)) cycGen

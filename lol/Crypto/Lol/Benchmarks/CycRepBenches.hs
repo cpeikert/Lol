@@ -42,8 +42,7 @@ import Crypto.Random
 -- These cover the same functions as @cycBenches1@, but may have different
 -- performance due to how GHC interacts with Lol.
 {-# INLINABLE cycRepBenches1 #-}
-cycRepBenches1 :: forall (t :: Factored -> * -> *) (m :: Factored) (r :: *) gen . _
-            => Proxy '(t,m,r) -> Proxy gen -> Benchmark
+cycRepBenches1 :: forall t m r gen . _ => Proxy '(t,m,r) -> Proxy gen -> Benchmark
 cycRepBenches1 ptmr pgen =
   let zDec = zero :: CycRep t D m r
       zPow = zero :: CycRep t P m r
@@ -71,9 +70,7 @@ cycRepBenches1 ptmr pgen =
 -- These cover the same functions as @cycBenches2@, but may have different
 -- performance due to how GHC interacts with Lol.
 {-# INLINE cycRepBenches2 #-}
-cycRepBenches2 :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (r :: *) .
-                  (m `Divides` m', _)
-               => Proxy '(t,m,m',r) -> Benchmark
+cycRepBenches2 :: forall t m m' r . _ => Proxy '(t,m,m',r) -> Benchmark
 cycRepBenches2 ptmmr =
   let zPow' = zero :: CycRep t P m' r
       zDec' = zero :: CycRep t D m' r
@@ -109,7 +106,7 @@ bench_crt = toCRT
 {-# INLINABLE bench_crtInv #-}
 -- convert input from CRT basis to Pow basis
 -- EAC: This is slow without explicitly mentioning CRTElt. Possibly related to constraint synonym issues?
-bench_crtInv :: (CRTElt t r, _) => CycRepPC t m r -> CycRep t P m r
+bench_crtInv :: _ => CycRepPC t m r -> CycRep t P m r
 bench_crtInv (Right a) = toPow a
 
 {-# INLINE bench_l #-}
@@ -159,7 +156,7 @@ bench_divGCRT = either (error "bench_divGCRT expected a CRTC") divGCRTC
 
 {-# INLINABLE bench_errRounded #-}
 -- generate a rounded error term
-bench_errRounded :: forall t m r gen . (Fact m, CryptoRandomGen gen, _)
+bench_errRounded :: forall t m r gen . _
                  => Proxy '(t,m,r) -> Proxy gen -> Double -> IO (CycRep t D m (LiftOf r))
 bench_errRounded _ _ v = do
   gen <- newGenIO
@@ -167,22 +164,22 @@ bench_errRounded _ _ v = do
   return $ evalRand e gen
 
 {-# INLINE bench_twacePow #-}
-bench_twacePow :: forall t m m' r . (Fact m, _)
+bench_twacePow :: forall t m m' r . _
   => Proxy '(t,m,m',r) -> CycRep t P m' r -> CycRep t P m r
 bench_twacePow _ = twacePow
 
 {-# INLINE bench_twaceDec #-}
-bench_twaceDec :: forall t m m' r . (Fact m, _)
+bench_twaceDec :: forall t m m' r . _
   => Proxy '(t,m,m',r) -> CycRep t D m' r -> CycRep t D m r
 bench_twaceDec _ = twaceDec
 
 {-# INLINE bench_twaceCRT #-}
-bench_twaceCRT :: forall t m m' r . (Fact m, _)
+bench_twaceCRT :: forall t m m' r . _
   => Proxy '(t,m,m',r) -> CycRepPC t m' r -> CycRepPC t m r
 bench_twaceCRT _ (Right a) = twaceCRTC a
 
 {-# INLINE bench_embedPow #-}
-bench_embedPow :: forall t m m' r . (Fact m', _)
+bench_embedPow :: forall t m m' r . _
   => Proxy '(t,m,m',r) -> CycRep t P m r -> CycRep t P m' r
 bench_embedPow _ = embedPow
 
@@ -194,6 +191,6 @@ bench_embedDec _ = embedDec
 -}
 
 {-# INLINE bench_embedCRT #-}
-bench_embedCRT :: forall t m m' r . (Fact m', _)
+bench_embedCRT :: forall t m m' r . _
   => Proxy '(t,m,m',r) -> CycRepPC t m r -> CycRepPC t m' r
 bench_embedCRT _ (Right a) = embedCRTC a
