@@ -119,7 +119,7 @@ instance (Fact m) => Protoable (IZipVector m Int64) where
         ys' = V.fromList $ F.toList xs
         len = F.length xs
     unless (m' == fromIntegral m) $ throwError $
-2      "An error occurred while reading the proto type for CT.\n\
+      "An error occurred while reading the proto type for CT.\n\
       \Expected m=" ++ show m' ++ ", got " ++ show m
     unless (len == n) $ throwError $
       "An error occurred while reading the proto type for CT.\n\
