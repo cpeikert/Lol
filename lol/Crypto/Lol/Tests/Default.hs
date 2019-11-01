@@ -4,12 +4,12 @@ Description : High-level tensor tests.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
-Maintainer  : ecrockett0@email.com
+Maintainer  : ecrockett0@gmail.com
 Stability   : experimental
 Portability : POSIX
 
-High-level test groups and parameters,
-which can be used to verify a 'Crypto.Lol.Cyclotomic.Tensor' implementation.
+High-level test groups and parameters, which can be used to verify a
+'Crypto.Lol.Cyclotomic.Tensor' implementation.
 -}
 
 {-# LANGUAGE DataKinds             #-}
@@ -17,6 +17,7 @@ which can be used to verify a 'Crypto.Lol.Cyclotomic.Tensor' implementation.
 {-# LANGUAGE NoStarIsType          #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -24,11 +25,12 @@ which can be used to verify a 'Crypto.Lol.Cyclotomic.Tensor' implementation.
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Tests.Default (
-  cycTests, cpxTensorTests, dblTensorTests, defaultZqTests, int64TensorTests, zqTensorTests
-) where
+  defaultZqTests, -- cycTests,
+  cpxTensorTests, dblTensorTests, int64TensorTests, zqTensorTests
+  )
+where
 
 import Crypto.Lol                        (Cyc, Int64)
-import Crypto.Lol.Cyclotomic.Tensor
 import Crypto.Lol.Factored
 import Crypto.Lol.Tests.CycTests
 import Crypto.Lol.Tests.TensorTests
@@ -39,8 +41,7 @@ import Crypto.Lol.Utils.ShowType
 import Crypto.Lol.Utils.Tests            (Gen, Test, choose, chooseAny,
                                           testGroup)
 
-import qualified Algebra.Ring         as Ring (fromInteger)
-import           Control.Monad.Random
+import qualified Algebra.Ring as Ring (fromInteger)
 import           Data.Proxy
 
 type CpxDbl = Complex Double
@@ -276,7 +277,7 @@ cpxTensorTests pt =
   testGroup "All Tensor-like Tests over Complex Double" [
     uniIndexWithoutCrt, uniIndexWithCrt, multiIndexWithoutCrt, multiIndexWithCrt]
 
-cycTests :: _ => Proxy t -> Test
+--cycTests :: (zq179 ~ Zq 179, forall m' . Fact m' => (Show (t m' zq179), Eq (t m' zq179), Show (t m' (Complex Double))), _) => Proxy t -> Test
 cycTests pt =
   let uniIndex = testGroup "Single-Index Cyc Tests over ZqBasic" $ ($ pt) <$> [
         unifCycTests1 (Proxy::Proxy '(F7,  Zq 29)),
@@ -291,8 +292,10 @@ cycTests pt =
         unifCycTests1 (Proxy::Proxy '(F42, ZQ1)),
         unifCycTests1 (Proxy::Proxy '(F42, Zq 1024)),
         unifCycTests1 (Proxy::Proxy '(F42, ZQ2)),
-        unifCycTests1 (Proxy::Proxy '(F89, Zq 179))]
+        unifCycTests1 (Proxy::Proxy '(F89, Zq 179))
+        ]
       multiIndex = testGroup "Multi-Index Cyc Tests over ZqBasic" $ ($ pt) <$> [
+{-
         unifCycTests2 (Proxy::Proxy '(H01, H1, Zq PP2)),
         unifCycTests2 (Proxy::Proxy '(H01, H1, Zq PP4)),
         unifCycTests2 (Proxy::Proxy '(H01, H1, Zq PP8)),
@@ -319,8 +322,10 @@ cycTests pt =
         unifCycTests2 (Proxy::Proxy '(F7, F7*F13, Zq PP2)),
         unifCycTests2 (Proxy::Proxy '(F7, F7*F13, Zq PP4)),
         unifCycTests2 (Proxy::Proxy '(F1, F7, Zq PP8)),
-        unifCycTests2 (Proxy::Proxy '(F1, F7, Zq PP2))] in
-      testGroup "All Cyc Tests over ZqBasic" [uniIndex, multiIndex]
+        unifCycTests2 (Proxy::Proxy '(F1, F7, Zq PP2))
+-}
+        ]
+  in testGroup "All Cyc Tests over ZqBasic" [uniIndex, multiIndex]
 
 -- three 24-bit moduli, enough to handle rounding for p=32 (depth-4 circuit at ~17 bits per mul)
 type ZQ1 = Zq 18869761
