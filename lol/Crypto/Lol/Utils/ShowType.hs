@@ -39,7 +39,7 @@ module Crypto.Lol.Utils.ShowType
 
 import Crypto.Lol                      (BaseBGad, Complex, Fact, Int64,
                                         Mod (..), Proxy (..), TrivGad,
-                                        proxy, valueFact)
+                                        valueFact)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
