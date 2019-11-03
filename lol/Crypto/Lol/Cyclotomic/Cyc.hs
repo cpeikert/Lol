@@ -92,8 +92,7 @@ import           Control.Applicative  hiding ((*>))
 import           Control.Arrow
 import           Control.DeepSeq
 import           Control.Monad.Random hiding (lift)
-import           Data.Constraint      ((:-), Dict (..), (\\))
-import qualified Data.Constraint      as C
+import           Data.Constraint      ((\\))
 import           Data.Foldable        (Foldable)
 import           Data.Traversable
 import           Language.Haskell.TH
