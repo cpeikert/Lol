@@ -16,6 +16,7 @@ Mostly-monomorphized benchmarks for lol-apps.
 {-# LANGUAGE NoStarIsType          #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -27,7 +28,7 @@ module Crypto.Lol.Applications.Benchmarks.Default
  , defaultKHPRFBenches
  ) where
 
-import Control.Monad.Random
+import Control.DeepSeq (NFData)
 
 import Crypto.Lol
 import Crypto.Lol.Applications.Benchmarks.KHPRFBenches
@@ -36,7 +37,7 @@ import Crypto.Lol.Benchmarks                           (type (**),
                                                         Benchmark, Zq,
                                                         bgroup)
 
-defaultSHEBenches :: forall t gad gen rnd . (MonadRandom rnd, _)
+defaultSHEBenches :: (forall m r . (Fact m, NFData r) => NFData (t m r), _)
                   => Proxy t -> Proxy gad -> Proxy gen -> rnd [Benchmark]
 defaultSHEBenches pt pgad pgen  = sequence [
   fmap (bgroup "SHE") $ sequence $ ($ pt) . ($ pgen) <$>
@@ -83,5 +84,6 @@ defaultSHEBenches pt pgad pgen  = sequence [
                                                   Zq 3144961))]]
 
 
-defaultKHPRFBenches :: _ => Proxy t -> Proxy gad -> rnd [Benchmark]
+defaultKHPRFBenches :: (forall m r . (Fact m, NFData r) => NFData (t m r), _)
+ => Proxy t -> Proxy gad -> rnd [Benchmark]
 defaultKHPRFBenches = khprfBenches

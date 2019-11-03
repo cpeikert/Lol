@@ -15,6 +15,7 @@ Example using SymmSHE.
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
@@ -64,7 +65,8 @@ type CTRing2 t = CT PTIndex PTZq (Cyc t CTIndex CTZq2)
 type SKRing t = Cyc t CTIndex (LiftOf PTZq)
 
 -- | Simple example of how to use the SymmSHE application.
-sheMain :: forall t . (_) => Proxy t -> IO ()
+sheMain :: forall t . (forall m r . (Fact m, Eq r) => Eq (t m r), _)
+  => Proxy t -> IO ()
 sheMain _ = do
   plaintext <- getRandom
   sk :: SK (SKRing t) <- genSK (1 :: Double)

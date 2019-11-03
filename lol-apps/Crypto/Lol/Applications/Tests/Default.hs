@@ -16,25 +16,24 @@ Mostly-monomorphized tests for lol-apps.
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Applications.Tests.Default (defaultAppsTests) where
-
-import Control.Monad.Random
-
-import Crypto.Lol                             (Cyc)
-import Crypto.Lol.Applications.SymmSHE
 import Crypto.Lol.Applications.Tests.SHETests
 import Crypto.Lol.Factored
-import Crypto.Lol.Gadget
 import Crypto.Lol.Tests
 
 import Data.Proxy
 
-defaultAppsTests :: _ => Proxy t -> Proxy gad -> [Test]
+defaultAppsTests ::
+  (forall m r . (Fact m, Show r, Eq r) => (Show (t m r), Eq (t m r)),
+   _)
+  => Proxy t -> Proxy gad -> [Test]
 defaultAppsTests pt pgad  =
   [testGroup "SHE" $ ($ pt) <$> [
     sheTests (Proxy::Proxy '(F7, F7, Zq 2,Zq (19393921 ** 18869761))),
