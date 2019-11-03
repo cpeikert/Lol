@@ -996,7 +996,7 @@ instance (Random (t m (RRq q r)))
 -----
 
 instance (Show r, Fact m, r' ~ CRTExt r, -- workaround TF in q'd constraint
-          forall m' . Fact m' => (Show (t m' r'), Show (t m' r)))
+          forall m' . Fact m' => (Show (t m' r), Show (t m' r')))
   => Show (CycG t m r) where
   show (Pow x)         = "Cyc.Pow "    ++ show x
   show (Dec x)         = "Cyc.Dec "    ++ show x
@@ -1017,7 +1017,7 @@ deriving instance (Show (t m (RRq q r))) => Show (Cyc t m (RRq q r))
 -----
 
 instance (NFData r, Fact m, r' ~ CRTExt r,
-          forall m' . Fact m' => (NFData (t m' r'), NFData (t m' r)))
+          forall m' . Fact m' => (NFData (t m' r), NFData (t m' r')))
   => NFData (CycG t m r) where
   rnf (Pow u)    = rnf u
   rnf (Dec u)    = rnf u
