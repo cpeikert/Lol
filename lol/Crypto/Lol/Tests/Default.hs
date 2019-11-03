@@ -30,23 +30,19 @@ module Crypto.Lol.Tests.Default (
   )
 where
 
-import Crypto.Lol                        (Cyc, Int64, ToInteger)
+import Crypto.Lol                        (Cyc, Int64)
 import Crypto.Lol.Factored
-import Crypto.Lol.Reflects
 import Crypto.Lol.Tests.CycTests
 import Crypto.Lol.Tests.TensorTests
 import Crypto.Lol.Tests.ZqTests
 import Crypto.Lol.Types.IrreducibleChar2 ()
 import Crypto.Lol.Types.Unsafe.Complex   (Complex)
-import Crypto.Lol.Types.Unsafe.ZqBasic   (ZqBasic)
 import Crypto.Lol.Utils.ShowType
 import Crypto.Lol.Utils.Tests            (Gen, Test, choose, chooseAny,
                                           testGroup)
 
 import qualified Algebra.Ring as Ring (fromInteger)
 
-import Control.Monad.Random
-import Data.Kind
 import Data.Proxy
 
 type CpxDbl = Complex Double
@@ -282,11 +278,8 @@ cpxTensorTests pt =
   testGroup "All Tensor-like Tests over Complex Double" [
     uniIndexWithoutCrt, uniIndexWithCrt, multiIndexWithoutCrt, multiIndexWithCrt]
 
-cycTests :: (forall m   . Fact m => (Show (t m (Complex Double))),
-             -- even need to quantify over all kinds of q
-             forall m k (q::k) . (Fact m, Reflects q Int64) =>
-             (Eq     (t m (ZqBasic q Int64)),
-              Show   (t m (ZqBasic q Int64))),
+cycTests :: (forall m r . (Fact m, Eq r)   => Eq   (t m r),
+             forall m r . (Fact m, Show r) => Show (t m r),
              _)
   => Proxy t -> Test
 cycTests pt =
