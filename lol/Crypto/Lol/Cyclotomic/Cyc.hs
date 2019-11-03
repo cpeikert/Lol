@@ -88,14 +88,14 @@ import           Crypto.Lol.Types.FiniteField
 import           Crypto.Lol.Types.IFunctor
 import           Crypto.Lol.Types.Proto
 
-import           Control.Applicative  hiding ((*>))
-import           Control.Arrow
-import           Control.DeepSeq
-import           Control.Monad.Random hiding (lift)
-import           Data.Constraint      ((\\))
-import           Data.Foldable        (Foldable)
-import           Data.Traversable
-import           Language.Haskell.TH
+import Control.Applicative  hiding ((*>))
+import Control.Arrow
+import Control.DeepSeq
+import Control.Monad.Random hiding (lift)
+import Data.Constraint      ((\\))
+import Data.Foldable        (Foldable)
+import Data.Traversable
+import Language.Haskell.TH
 
 -- | Underlying GADT for a cyclotomic ring in one of several
 -- representations.
