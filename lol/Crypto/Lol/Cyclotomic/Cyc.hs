@@ -351,7 +351,7 @@ instance (Fact m, CRTElt t r, ZeroTestable r) => Additive.C (CycG t m r) where
   -- Sub plus Sub: work in compositum
   -- EAC: would like to convert c2 to basis of c1 before embedding
   (Sub (c1 :: CycG t m1 r)) + (Sub (c2 :: CycG t m2 r)) =
-    (Sub $ (embed' c1 :: CycG t (FLCM m1 m2) r) + embed' c2)
+    Sub ((embed' c1 :: CycG t (FLCM m1 m2) r) + embed' c2)
     \\ lcm2Divides @m1 @m2 @m
 
   -- SCALAR PLUS SOMETHING ELSE
@@ -443,7 +443,7 @@ instance (Fact m, CRTElt t r, ZeroTestable r) => Ring.C (CycG t m r) where
   -- TWO SUBS: work in a CRT rep for compositum
   (Sub (c1 :: CycG t m1 r)) * (Sub (c2 :: CycG t m2 r)) =
     -- re-wrap c1, c2 as Subs of the composition, and force them to CRT
-    (Sub $ (toCRT' $ Sub c1 :: CycG t (FLCM m1 m2) r) * toCRT' (Sub c2))
+    Sub ((toCRT' $ Sub c1 :: CycG t (FLCM m1 m2) r) * toCRT' (Sub c2))
     \\ lcm2Divides @m1 @m2 @m
 
   -- ELSE: work in appropriate CRT rep
