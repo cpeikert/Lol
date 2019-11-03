@@ -25,24 +25,29 @@ High-level test groups and parameters, which can be used to verify a
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Tests.Default (
-  defaultZqTests, -- cycTests,
+  defaultZqTests, cycTests,
   cpxTensorTests, dblTensorTests, int64TensorTests, zqTensorTests
   )
 where
 
-import Crypto.Lol                        (Cyc, Int64)
+import Crypto.Lol                        (Cyc, Int64, ToInteger)
 import Crypto.Lol.Factored
+import Crypto.Lol.Reflects
 import Crypto.Lol.Tests.CycTests
 import Crypto.Lol.Tests.TensorTests
 import Crypto.Lol.Tests.ZqTests
 import Crypto.Lol.Types.IrreducibleChar2 ()
 import Crypto.Lol.Types.Unsafe.Complex   (Complex)
+import Crypto.Lol.Types.Unsafe.ZqBasic   (ZqBasic)
 import Crypto.Lol.Utils.ShowType
 import Crypto.Lol.Utils.Tests            (Gen, Test, choose, chooseAny,
                                           testGroup)
 
 import qualified Algebra.Ring as Ring (fromInteger)
-import           Data.Proxy
+
+import Control.Monad.Random
+import Data.Kind
+import Data.Proxy
 
 type CpxDbl = Complex Double
 
@@ -277,7 +282,13 @@ cpxTensorTests pt =
   testGroup "All Tensor-like Tests over Complex Double" [
     uniIndexWithoutCrt, uniIndexWithCrt, multiIndexWithoutCrt, multiIndexWithCrt]
 
---cycTests :: (zq179 ~ Zq 179, forall m' . Fact m' => (Show (t m' zq179), Eq (t m' zq179), Show (t m' (Complex Double))), _) => Proxy t -> Test
+cycTests :: (forall m   . Fact m => (Show (t m (Complex Double))),
+             -- even need to quantify over all kinds of q
+             forall m k (q::k) . (Fact m, Reflects q Int64) =>
+             (Eq     (t m (ZqBasic q Int64)),
+              Show   (t m (ZqBasic q Int64))),
+             _)
+  => Proxy t -> Test
 cycTests pt =
   let uniIndex = testGroup "Single-Index Cyc Tests over ZqBasic" $ ($ pt) <$> [
         unifCycTests1 (Proxy::Proxy '(F7,  Zq 29)),
@@ -295,7 +306,6 @@ cycTests pt =
         unifCycTests1 (Proxy::Proxy '(F89, Zq 179))
         ]
       multiIndex = testGroup "Multi-Index Cyc Tests over ZqBasic" $ ($ pt) <$> [
-{-
         unifCycTests2 (Proxy::Proxy '(H01, H1, Zq PP2)),
         unifCycTests2 (Proxy::Proxy '(H01, H1, Zq PP4)),
         unifCycTests2 (Proxy::Proxy '(H01, H1, Zq PP8)),
@@ -323,7 +333,6 @@ cycTests pt =
         unifCycTests2 (Proxy::Proxy '(F7, F7*F13, Zq PP4)),
         unifCycTests2 (Proxy::Proxy '(F1, F7, Zq PP8)),
         unifCycTests2 (Proxy::Proxy '(F1, F7, Zq PP2))
--}
         ]
   in testGroup "All Cyc Tests over ZqBasic" [uniIndex, multiIndex]
 
