@@ -442,7 +442,7 @@ mulCT ct1 ct2 = mulCT ct2 ct1
 
 ---------- Ring switching ----------
 
-type AbsorbGCtx' c m' zp zq k =
+type AbsorbGCtx c m' zp zq k =
   (Ring (c m' zp), Ring (c m' zq), Cyclotomic (c m' zp), Cyclotomic (c m' zq),
    LiftCyc (c m' zp), Reduce (LiftOf (c m' zp)) (c m' zq), KnownNat k)
 
@@ -452,25 +452,15 @@ type AbsorbGCtx' c m' zp zq k =
 -- changing the index of the ciphertext ring.
 
 
-class AbsorbGFactors k where
-  absorbGFactors :: forall c zp zq m m' . AbsorbGCtx' c m' zp zq k
-                    => CT k m zp (c m' zq) -> CT 0 m zp (c m' zq)
-
-
-instance AbsorbGFactors 0 where
-  absorbGFactors = id
-
-instance (1 <= k) => AbsorbGFactors k where
-  absorbGFactors = absorbGFactors'
-    -- TODO: get rid of this. adding an instance sig to absorbGFactors makes GHC complain for some reason
-    where absorbGFactors' :: forall c zp zq m m' k. (1 <= k, AbsorbGCtx' c m' zp zq k)
+absorbGFactors :: forall c zp zq m m' k. (AbsorbGCtx c m' zp zq k)
             => CT k m zp (c m' zq) -> CT 0 m zp (c m' zq)
-          absorbGFactors' ct@(CT enc l r) = let d :: c m' zp = iterate divG' one !! (reifyNat @k)
-                                                rep = adviseCRT $ reduce $ liftPow d
-                                             in CT enc l $ (rep *) <$> r
+absorbGFactors ct@(CT enc l r) = let k = reifyNat @k
+                                  in if k == 0
+                                        then CT enc l r
+                                        else let d :: c m' zp = iterate divG' one !! k
+                                                 rep = adviseCRT $ reduce $ liftPow d
+                                              in CT enc l $ (rep *) <$> r
 
--- | Constraint synonym for 'absorbGFactors'.
-type AbsorbGCtx c m' zp zq k = (AbsorbGCtx' c m' zp zq k, AbsorbGFactors k)
 
 -- | Embed a ciphertext in \( R' \) encrypting a plaintext in \( R \) to
 -- a ciphertext in \( T' \) encrypting a plaintext in \( T \). The target
