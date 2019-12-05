@@ -39,29 +39,29 @@ module Crypto.Lol.Applications.SymmSHE
 -- * Data types
 SK, PT, CT -- don't export constructors!
 -- * Keygen, encryption, decryption
-{-, genSK, genAnotherSK-}
-{-, encrypt-}
-{-, errorTerm, decrypt-}
-{--- * Arithmetic with public values-}
-{-, addPublic, mulPublic-}
-{--- * Modulus switching-}
-{-, modSwitch, modSwitchPT-}
-{--- * Key switching-}
-{-, KSHint-}
-{-, ksLinearHint, ksQuadCircHint-}
-{-, keySwitchLinear, keySwitchQuadCirc-}
-{--- * Ring switching-}
-{-, embedSK, embedCT, twaceCT-}
-{-, TunnelHint, tunnelHint-}
-{-, tunnel-}
-{--- * Constraint synonyms-}
-{-, GenSKCtx, EncryptCtx, ToSDCtx-}
-{-, ErrorTermCtx, DecryptCtx-}
-{-, AddPublicCtx, MulPublicCtx-}
-{-, ModSwitchCtx, ModSwitchPTCtx-}
-{-, KSHintCtx, KeySwitchCtx-}
-{-, TunnelHintCtx, TunnelCtx-}
-{-, SwitchCtx, LWECtx -- these are internal, but exported for better docs-}
+, genSK, genAnotherSK
+, encrypt
+, errorTerm, decrypt
+-- * Arithmetic with public values
+, addPublic, mulPublic
+-- * Modulus switching
+, modSwitch, modSwitchPT
+-- * Key switching
+, KSHint
+, ksLinearHint, ksQuadCircHint
+, keySwitchLinear, keySwitchQuadCirc
+-- * Ring switching
+, embedSK, embedCT, twaceCT
+, TunnelHint, tunnelHint
+, tunnel
+-- * Constraint synonyms
+, GenSKCtx, EncryptCtx, ToSDCtx
+, ErrorTermCtx, DecryptCtx
+, AddPublicCtx, MulPublicCtx
+, ModSwitchCtx, ModSwitchPTCtx
+, KSHintCtx, KeySwitchCtx
+, TunnelHintCtx, TunnelCtx
+, SwitchCtx, LWECtx -- these are internal, but exported for better docs
 ) where
 
 import qualified Algebra.Additive as Additive (C)
