@@ -49,6 +49,7 @@ packages:
 extra-deps:
 - monadcryptorandom-0.7.2.1
 - DRBG-0.5.5
+- ghc-typelits-natnormalise-0.6.2
 
 ghc-options:
     "$locals": -O1 -fexpose-all-unfoldings -fwarn-dodgy-imports

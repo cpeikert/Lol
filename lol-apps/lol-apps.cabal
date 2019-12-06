@@ -87,4 +87,5 @@ library
     test-framework,
     time,
     QuickCheck,
+    ghc-typelits-natnormalise,
     constraints
