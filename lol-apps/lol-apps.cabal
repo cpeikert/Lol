@@ -86,4 +86,6 @@ library
     split,
     test-framework,
     time,
-    QuickCheck
+    QuickCheck,
+    ghc-typelits-natnormalise,
+    constraints

@@ -34,7 +34,7 @@ Symmetric-key somewhat homomorphic encryption.  See Section 4 of
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-module Crypto.Lol.Applications.SymmSHE
+module Crypto.Lol.Applications.SymmSHE 
 (
 -- * Data types
 SK, PT, CT -- don't export constructors!
@@ -89,7 +89,7 @@ import Data.Typeable
 import GHC.Generics         (Generic)
 import GHC.TypeLits  hiding (type (*), Mod)
 import Data.Type.Bool
-import Data.Singletons.Prelude (Max, Compare)
+import Data.Singletons.Prelude (Max)
 import Unsafe.Coerce
 
 import MathObj.Polynomial as P
@@ -395,29 +395,30 @@ increaseK ct = let d = reifyNat @k2 - reifyNat @k1
 
 
 -- Assert to compiler that k1 <= Max k1 k2 (it can't infer this otherwise)
-lessThanMax :: (() :- (k1 <= Max k1 k2))
-lessThanMax = Sub $ unsafeCoerce (Dict :: Dict ())
+atMostMax :: (() :- (k1 <= Max k1 k2))
+atMostMax = Sub $ unsafeCoerce (Dict :: Dict ())
 
 -- Assert to compiler that if KnownNat k1 and KnownNat k2 are satisfied, then KnownNat (Max k1 k2) is as well
-knownNatMax :: ((KnownNat k1, KnownNat k2) :- KnownNat (Max k1 k2))
-knownNatMax = Sub $ unsafeCoerce (Dict :: Dict ())
+knownNatMax :: forall k1 k2 . (KnownNat k1, KnownNat k2) => (() :- KnownNat (Max k1 k2))
+knownNatMax = let k1 = natVal (Proxy::Proxy k1)
+                  k2 = natVal (Proxy::Proxy k2)
+               in if k1 > k2
+                     then Sub $ unsafeCoerce (Dict :: Dict (KnownNat k1))
+                     else Sub $ unsafeCoerce (Dict :: Dict (KnownNat k2))
 
 -- Useful specialization of increaseK using the above assertions
 increaseKToMax :: forall k2 k1 m zp r'q. (KnownNat k1, KnownNat k2, Cyclotomic r'q)
   => CT k1 m zp r'q -> CT (Max k1 k2) m zp r'q
-increaseKToMax ct = increaseK ct \\ lessThanMax @k1 @k2 \\ knownNatMax @k1 @k2
+increaseKToMax ct = increaseK ct \\ atMostMax @k1 @k2 \\ knownNatMax @k1 @k2
 
-
-changeZp :: (Lift' zp, Reduce (LiftOf zp) zq, Module zq (c m' zq), Field.C zp)
-  => zp -> CT k m zp (c m' zq) -> CT k m zp (c m' zq)
-changeZp l ct@(CT _ l' _) = let (CT enc _ c) = mulScalar (l' * recip l) ct
-                  in CT enc l c
 
 addCT :: forall k1 k2 m c m' zq zp. 
   (KnownNat k1, KnownNat k2, Lift' zp, Reduce (LiftOf zp) zq, ToSDCtx c m' zp zq, Eq zp, m `Divides` m')
   => CT k1 m zp (c m' zq) -> CT k2 m zp (c m' zq) -> CT (Max k1 k2) m zp (c m' zq)
 addCT ct1@(CT enc1 l1 c1) ct2@(CT enc2 l2 c2)
-  | l1 /= l2 = addCT (changeZp l2 ct1) ct2 
+  | l1 /= l2 = let (CT enc _ c) = mulScalar (l1 * recip l2) ct1 
+                   ct1' = CT enc l2 c :: CT k1 m zp (c m' zq)
+                in addCT ct1' ct2
   | enc1 == LSD && enc2 == MSD = addCT (toMSD ct1) ct2
   | enc1 == MSD && enc2 == LSD = addCT ct1 (toMSD ct2)
   | otherwise = let (CT _ _ c1') = increaseKToMax @k2 ct1
