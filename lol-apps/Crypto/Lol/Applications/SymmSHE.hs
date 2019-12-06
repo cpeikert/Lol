@@ -402,9 +402,9 @@ atMostMax = Sub $ unsafeCoerce (Dict :: Dict ())
 knownNatMax :: forall k1 k2 . (KnownNat k1, KnownNat k2) => (() :- KnownNat (Max k1 k2))
 knownNatMax = let k1 = natVal (Proxy::Proxy k1)
                   k2 = natVal (Proxy::Proxy k2)
-               in if k1 > k2
-                     then Sub $ unsafeCoerce (Dict :: Dict (KnownNat k1))
-                     else Sub $ unsafeCoerce (Dict :: Dict (KnownNat k2))
+               in Sub $ if k1 > k2
+                           then unsafeCoerce (Dict :: Dict (KnownNat k1))
+                           else unsafeCoerce (Dict :: Dict (KnownNat k2))
 
 -- Useful specialization of increaseK using the above assertions
 increaseKToMax :: forall k2 k1 m zp r'q. (KnownNat k1, KnownNat k2, Cyclotomic r'q)
