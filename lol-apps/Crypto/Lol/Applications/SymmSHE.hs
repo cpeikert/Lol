@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
 {-|
 Module      : Crypto.Lol.Applications.SymmSHE
 Description : Symmetric-key homomorphic encryption.
