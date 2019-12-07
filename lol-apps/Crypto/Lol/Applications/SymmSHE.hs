@@ -400,17 +400,14 @@ atMostMax = Sub $ unsafeCoerce (Dict :: Dict ())
 
 -- Assert to compiler that if KnownNat k1 and KnownNat k2 are satisfied, then KnownNat (Max k1 k2) is as well
 knownNatMax :: forall k1 k2 . ((KnownNat k1, KnownNat k2) :- KnownNat (Max k1 k2))
-knownNatMax = Sub $ let k1 = natVal (Proxy::Proxy k1)
-                        k2 = natVal (Proxy::Proxy k2)
-                     in if k1 > k2
-                           then unsafeCoerce (Dict :: Dict (KnownNat k1))
-                           else unsafeCoerce (Dict :: Dict (KnownNat k2))
+knownNatMax = Sub $ if natVal (Proxy :: Proxy k1) > natVal (Proxy :: Proxy k2)
+                       then unsafeCoerce (Dict :: Dict (KnownNat k1))
+                       else unsafeCoerce (Dict :: Dict (KnownNat k2))
 
 -- Useful specialization of increaseK using the above assertions
 increaseKToMax :: forall k2 k1 m zp r'q. (KnownNat k1, KnownNat k2, Cyclotomic r'q)
   => CT k1 m zp r'q -> CT (Max k1 k2) m zp r'q
 increaseKToMax ct = increaseK ct \\ atMostMax @k1 @k2 \\ knownNatMax @k1 @k2
-
 
 addCT :: forall k1 k2 m c m' zq zp. 
   (KnownNat k1, KnownNat k2, Lift' zp, Reduce (LiftOf zp) zq, ToSDCtx c m' zp zq, Eq zp, m `Divides` m')
