@@ -399,10 +399,10 @@ atMostMax :: (() :- (k1 <= Max k1 k2))
 atMostMax = Sub $ unsafeCoerce (Dict :: Dict ())
 
 -- Assert to compiler that if KnownNat k1 and KnownNat k2 are satisfied, then KnownNat (Max k1 k2) is as well
-knownNatMax :: forall k1 k2 . (KnownNat k1, KnownNat k2) => (() :- KnownNat (Max k1 k2))
-knownNatMax = let k1 = natVal (Proxy::Proxy k1)
-                  k2 = natVal (Proxy::Proxy k2)
-               in Sub $ if k1 > k2
+knownNatMax :: forall k1 k2 . ((KnownNat k1, KnownNat k2) :- KnownNat (Max k1 k2))
+knownNatMax = Sub $ let k1 = natVal (Proxy::Proxy k1)
+                        k2 = natVal (Proxy::Proxy k2)
+                     in if k1 > k2
                            then unsafeCoerce (Dict :: Dict (KnownNat k1))
                            else unsafeCoerce (Dict :: Dict (KnownNat k2))
 
