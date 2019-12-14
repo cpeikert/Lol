@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.Normalise #-}
 {-|
 Module      : Crypto.Lol.Applications.SymmSHE
 Description : Symmetric-key homomorphic encryption.
@@ -34,7 +33,7 @@ Symmetric-key somewhat homomorphic encryption.  See Section 4 of
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-module Crypto.Lol.Applications.SymmSHE 
+module Crypto.Lol.Applications.SymmSHE
 (
 -- * Data types
 SK, PT, CT -- don't export constructors!
@@ -66,7 +65,6 @@ SK, PT, CT -- don't export constructors!
 
 import qualified Algebra.Additive as Additive (C)
 import qualified Algebra.Ring     as Ring (C)
-import qualified Algebra.Field    as Field (C)
 
 import Crypto.Lol             hiding (sin)
 import Crypto.Lol.Reflects
@@ -84,16 +82,10 @@ import Control.DeepSeq
 import Control.Monad        as CM
 import Control.Monad.Random hiding (lift)
 import Data.Maybe
-import Data.Constraint
 import Data.Typeable
 import GHC.Generics         (Generic)
-import GHC.TypeLits  hiding (type (*), Mod)
-import Data.Type.Bool
-import Data.Singletons.Prelude (Max)
-import Unsafe.Coerce
 
 import MathObj.Polynomial as P
-
 
 -- | secret key
 data SK r where
@@ -106,15 +98,16 @@ type PT rp = rp
 data Encoding = MSD | LSD deriving (Show, Eq, Generic, NFData)
 
 -- | Ciphertext over \( R'_q \) encrypting a plaintext in \( R_p \)\,
--- where \( R=\mathcal{O}_m \)
-data CT k m zp r'q =
+-- where \( R=\mathcal{O}_m \).
+data CT m zp r'q =
   CT
   !Encoding                     -- MSD/LSD encoding
+  !Int                          -- accumulated power of g_m' in c(s)
   !zp                           -- factor to mul by upon decryption
   !(Polynomial r'q)             -- the polynomial c(s)
   deriving (Show, Generic)
 
-deriving instance (NFData zp, NFData r'q) => NFData (CT k m zp r'q)
+deriving instance (NFData zp, NFData r'q) => NFData (CT m zp r'q)
 
 -- Note: do *not* give an Eq instance for CT, because it's not
 -- meaningful to compare ciphertexts for equality
@@ -142,15 +135,15 @@ type EncryptCtx c m m' z zp zq =
    CosetGaussianCyc (c m' zp), ExtensionCyc c zp,  m `Divides` m')
 
 -- | Encrypt a plaintext under a secret key.
-encrypt :: forall c m m' z zp zq rnd k.
+encrypt :: forall c m m' z zp zq rnd .
   (EncryptCtx c m m' z zp zq, MonadRandom rnd)
-  => SK (c m' z) -> PT (c m zp) -> rnd (CT 0 m zp (c m' zq))
+  => SK (c m' z) -> PT (c m zp) -> rnd (CT m zp (c m' zq))
 encrypt (SK svar s) =
   let sq = adviseCRT $ reduce s
   in \pt -> do
     e <- cosetGaussian svar (embed pt :: c m' zp)
     c1 <- getRandom
-    return $ CT LSD one $ fromCoeffs [reduce e - c1 * sq, c1]
+    return $ CT LSD zero one $ fromCoeffs [reduce e - c1 * sq, c1]
 
 -- | Constraint synonym for extracting the error term of a ciphertext.
 type ErrorTermCtx c m' z zp zq =
@@ -158,31 +151,27 @@ type ErrorTermCtx c m' z zp zq =
 
 -- | Extract the error term of a ciphertext.
 errorTerm :: ErrorTermCtx c m' z zp zq
-          => SK (c m' z) -> CT k m zp (c m' zq) -> LiftOf (c m' zq)
+          => SK (c m' z) -> CT m zp (c m' zq) -> LiftOf (c m' zq)
 errorTerm (SK _ s) = let sq = reduce s in
-  \ct -> let (CT LSD _ c) = toLSD ct
+  \ct -> let (CT LSD _ _ c) = toLSD ct
          in liftDec $ evaluate c sq
 
 -- for when we know the division must succeed
 divG' :: (Cyclotomic c) => c -> c
 divG' = fromJust . divG
 
--- thin wrapper around natVal with a more general output
-reifyNat :: forall k b . (KnownNat k, Ring.C b) => b
-reifyNat = fromIntegral $ natVal (Proxy::Proxy k)
-
 -- | Constraint synonym for decryption.
-type DecryptCtx c m m' z zp zq k =
+type DecryptCtx c m m' z zp zq =
   (ErrorTermCtx c m' z zp zq, Cyclotomic (c m' zp), Module zp (c m zp),
-   Reduce (LiftOf (c m' zq)) (c m' zp), ExtensionCyc c zp, m `Divides` m', KnownNat k)
+   Reduce (LiftOf (c m' zq)) (c m' zp), ExtensionCyc c zp, m `Divides` m')
 
 -- | Decrypt a ciphertext.
-decrypt :: forall c m m' z zp zq k . DecryptCtx c m m' z zp zq k
-        => SK (c m' z) -> CT k m zp (c m' zq) -> PT (c m zp)
+decrypt :: forall c m m' z zp zq . DecryptCtx c m m' z zp zq
+           => SK (c m' z) -> CT m zp (c m' zq) -> PT (c m zp)
 decrypt sk ct =
-  let ct'@(CT LSD l _) = toLSD ct
+  let ct'@(CT LSD k l _) = toLSD ct
   in let e :: c m' zp = reduce $ errorTerm sk ct'
-      in l *> twace (iterate divG' e !! reifyNat @k)
+     in l *> twace (iterate divG' e !! k)
 
 ---------- LSD/MSD switching ----------
 
@@ -190,22 +179,22 @@ decrypt sk ct =
 type ToSDCtx c m' zp zq =
   (Encode zp zq, Cyclotomic (c m' zq), Ring (c m' zq), Module zq (c m' zq))
 
-toLSD, toMSD :: forall c m m' zp zq k.
-  ToSDCtx c m' zp zq => CT k m zp (c m' zq) -> CT k m zp (c m' zq)
+toLSD, toMSD :: forall c m m' zp zq .
+  ToSDCtx c m' zp zq => CT m zp (c m' zq) -> CT m zp (c m' zq)
 
 -- CJP: reduce duplication in these functions?  They differ in only two places
 
 -- | Convert a ciphertext to MSD encoding.
 toMSD = let (zpScale, zqScale :: zq) = lsdToMSD
-        in \ct@(CT enc l c) -> case enc of
+        in \ct@(CT enc k l c) -> case enc of
           MSD -> ct
-          LSD -> CT MSD (zpScale * l) (zqScale *> c)
+          LSD -> CT MSD k (zpScale * l) (zqScale *> c)
 
 -- | Convert a ciphertext to LSD encoding.
 toLSD = let (zpScale, zqScale :: zq) = msdToLSD
-        in \ct@(CT enc l c) -> case enc of
+        in \ct@(CT enc k l c) -> case enc of
           LSD -> ct
-          MSD -> CT LSD (zpScale * l) (zqScale *> c)
+          MSD -> CT LSD k (zpScale * l) (zqScale *> c)
 
 ---------- Modulus switching ----------
 
@@ -220,9 +209,9 @@ type ModSwitchCtx c m' zp zq zq' =
 
 -- | Rescale a ciphertext to a new modulus.
 modSwitch :: (ModSwitchCtx c m' zp zq zq')
-          => CT k m zp (c m' zq) -> CT k m zp (c m' zq')
-modSwitch ct = let CT MSD l c = toMSD ct
-               in CT MSD l $ modSwitchMSD c
+          => CT m zp (c m' zq) -> CT m zp (c m' zq')
+modSwitch ct = let CT MSD k l c = toMSD ct
+               in CT MSD k l $ modSwitchMSD c
 
 -- | Constraint synonym for modulus switching.
 type ModSwitchPTCtx c m' zp zp' zq =
@@ -231,9 +220,9 @@ type ModSwitchPTCtx c m' zp zp' zq =
 -- | Homomorphically divide a plaintext that is known to be a multiple
 -- of \( (p/p') \) by that factor, thereby scaling the plaintext modulus
 -- from \( p \) to \( p' \).
-modSwitchPT :: ModSwitchPTCtx c m' zp zp' zq => CT k m zp (c m' zq) -> CT k m zp' (c m' zq)
-modSwitchPT ct = let CT MSD l c = toMSD ct in
-    CT MSD (reduce (lift l)) c
+modSwitchPT :: ModSwitchPTCtx c m' zp zp' zq => CT m zp (c m' zq) -> CT m zp' (c m' zq)
+modSwitchPT ct = let CT MSD k l c = toMSD ct in
+    CT MSD k (reduce (lift l)) c
 
 ---------- Key switching ----------
 
@@ -313,16 +302,16 @@ type KeySwitchCtx gad c m' zp zq' =
 -- | Switch a linear ciphertext using the supplied hint.  (The input
 -- ciphertext may first need to be rescaled so that its modulus
 -- matches that of the hint.)
-keySwitchLinear :: forall gad c m m' zp zq' k. (KeySwitchCtx gad c m' zp zq')
+keySwitchLinear :: forall gad c m m' zp zq' . (KeySwitchCtx gad c m' zp zq')
   => KSHint gad (c m' zq')
-  -> CT k m zp (c m' zq')
-  -> CT k m zp (c m' zq')
+  -> CT m zp (c m' zq')
+  -> CT m zp (c m' zq')
 keySwitchLinear hint ct =
-  let CT MSD l c = toMSD ct
+  let CT MSD k l c = toMSD ct
   in case coeffs c of
        []      -> ct
        [_]     -> ct
-       [c0,c1] -> CT MSD l $ P.const c0 + keySwitch hint c1
+       [c0,c1] -> CT MSD k l $ P.const c0 + keySwitch hint c1
        _       -> error "keySwitchLinear: not a linear ciphertext"
 
 -- | Switch a ciphertext of degree two or less (i.e., one with no more
@@ -330,45 +319,45 @@ keySwitchLinear hint ct =
 -- under the /same/ key, using the supplied hint.  (The input
 -- ciphertext may first need to be rescaled so that its modulus
 -- matches that of the hint.)
-keySwitchQuadCirc :: forall gad c m m' zp zq' k. (KeySwitchCtx gad c m' zp zq')
+keySwitchQuadCirc :: forall gad c m m' zp zq' . (KeySwitchCtx gad c m' zp zq')
   => KSHint gad (c m' zq')
-  -> CT k m zp (c m' zq')
-  -> CT k m zp (c m' zq')
+  -> CT m zp (c m' zq')
+  -> CT m zp (c m' zq')
 keySwitchQuadCirc hint ct =
-  let CT MSD l c = toMSD ct
+  let CT MSD k l c = toMSD ct
   in case coeffs c of
        []         -> ct
        [_]        -> ct
        [_,_]      -> ct
-       [c0,c1,c2] -> CT MSD l $ P.fromCoeffs [c0,c1] + keySwitch hint c2
+       [c0,c1,c2] -> CT MSD k l $ P.fromCoeffs [c0,c1] + keySwitch hint c2
        _          -> error "keySwitchQuadCirc: not a degree <= 2 ciphertext"
 
 ---------- Misc homomorphic operations ----------
 
 -- | Constraint synonym for adding a public value to an encrypted value.
-type AddPublicCtx c m m' zp zq k =
+type AddPublicCtx c m m' zp zq =
   (ToSDCtx c m' zp zq, Cyclotomic (c m zp), Module zp (c m zp),
    LiftCyc (c m zp), Reduce (LiftOf (c m zp)) (c m zq),
-   ExtensionCyc c zq, m `Divides` m', KnownNat k)
+   ExtensionCyc c zq, m `Divides` m')
 
 -- | Homomorphically add a public \( R_p \) value to an encrypted
 -- value.
-addPublic :: forall c m m' zp zq k. AddPublicCtx c m m' zp zq k
-          => c m zp -> CT k m zp (c m' zq) -> CT k m zp (c m' zq)
-addPublic b ct = let CT LSD l c = toLSD ct in
+addPublic :: forall c m m' zp zq . AddPublicCtx c m m' zp zq
+          => c m zp -> CT m zp (c m' zq) -> CT m zp (c m' zq)
+addPublic b ct = let CT LSD k l c = toLSD ct in
   let -- multiply public value by appropriate power of g and divide by the
       -- scale, to match the form of the ciphertext
-      b' :: c m zq = reduce $ liftPow $ recip l *> (iterate mulG b !! (reifyNat @k))
-  in CT LSD l $ c + P.const (embed b')
+      b' :: c m zq = reduce $ liftPow $ recip l *> (iterate mulG b !! k)
+  in CT LSD k l $ c + P.const (embed b')
 
 -- | Homomorphically multiply a public \(\mathbb{Z}_p\) value to an
 -- encrypted value.
-mulScalar :: forall zp zq c m m' k.
+mulScalar :: forall zp zq c m m' .
   (Lift' zp, Reduce (LiftOf zp) zq, Module zq (c m' zq))
-    => zp -> CT k m zp (c m' zq) -> CT k m zp (c m' zq)
-mulScalar a (CT enc l c) =
+  => zp -> CT m zp (c m' zq) -> CT m zp (c m' zq)
+mulScalar a (CT enc k l c) =
   let a' :: zq = reduce $ lift a
-  in CT enc l $ (a' *>) <$> c
+  in CT enc k l $ (a' *>) <$> c
 
 -- | Constraint synonym for multiplying a public value with an encrypted value.
 type MulPublicCtx c m m' zp zq =
@@ -377,102 +366,87 @@ type MulPublicCtx c m m' zp zq =
 
 -- | Homomorphically multiply an encrypted value by a public \( R_p \)
 -- value.
-mulPublic :: forall c m m' zp zq k. MulPublicCtx c m m' zp zq
-          => c m zp -> CT k m zp (c m' zq) -> CT k m zp (c m' zq)
-mulPublic a (CT enc l r) =
+mulPublic :: forall c m m' zp zq . MulPublicCtx c m m' zp zq
+             => c m zp -> CT m zp (c m' zq) -> CT m zp (c m' zq)
+mulPublic a (CT enc k l r) =
   let a' = embed (reduce $ liftPow a :: c m zq)
-  in CT enc l $ (a' *) <$> r
+  in CT enc k l $ (a' *) <$> r
 
 -- | Increment the internal \( g \) exponent without changing the
 -- encrypted message.
-increaseK :: forall k2 k1 m zp r'q .
-  (KnownNat k1, KnownNat k2, k1 <= k2, Cyclotomic r'q)
-  => CT k1 m zp r'q -> CT k2 m zp r'q
-increaseK ct = let d = reifyNat @k2 - reifyNat @k1
-                   mulGCT (CT enc l c) = CT enc l $ mulG <$> c
-                   (CT enc l c) = (iterate mulGCT ct) !! d
-                in CT enc l c
+mulGCT :: (Cyclotomic r'q) => CT m zp r'q -> CT m zp r'q
+mulGCT (CT enc k l c) = CT enc (k+1) l $ mulG <$> c
 
+---------- NumericPrelude instances ----------
 
--- Assert to compiler that k1 <= Max k1 k2 (it can't infer this otherwise)
-atMostMax :: (() :- (k1 <= Max k1 k2))
-atMostMax = Sub $ unsafeCoerce (Dict :: Dict ())
+instance (Lift' zp, Reduce (LiftOf zp) zq, -- mulScalar
+          ToSDCtx c m' zp zq, Eq zp, m `Divides` m')
+         => Additive.C (CT m zp (c m' zq)) where
 
--- Assert to compiler that if KnownNat k1 and KnownNat k2 are satisfied, then KnownNat (Max k1 k2) is as well
-knownNatMax :: forall k1 k2 . ((KnownNat k1, KnownNat k2) :- KnownNat (Max k1 k2))
-knownNatMax = Sub $ if natVal (Proxy :: Proxy k1) > natVal (Proxy :: Proxy k2)
-                       then unsafeCoerce (Dict :: Dict (KnownNat k1))
-                       else unsafeCoerce (Dict :: Dict (KnownNat k2))
+  zero = CT LSD 0 one zero
 
--- Useful specialization of increaseK using the above assertions
-increaseKToMax :: forall k2 k1 m zp r'q. (KnownNat k1, KnownNat k2, Cyclotomic r'q)
-  => CT k1 m zp r'q -> CT (Max k1 k2) m zp r'q
-increaseKToMax ct = increaseK ct \\ atMostMax @k1 @k2 \\ knownNatMax @k1 @k2
+  -- the scales, g-exponents of ciphertexts, and MSD/LSD types must match.
+  ct1@(CT enc1 k1 l1 c1) + ct2@(CT enc2 k2 l2 c2)
+    | l1 /= l2 =
+        let (CT enc' k' _ c') = mulScalar (l1 * recip l2) ct1
+        in CT enc' k' l2 c' + ct2
+    | k1 < k2 = iterate mulGCT ct1 !! (k2-k1) + ct2
+    | k1 > k2 = ct1 + iterate mulGCT ct2 !! (k1-k2)
+    | enc1 == LSD && enc2 == MSD = toMSD ct1 + ct2
+    | enc1 == MSD && enc2 == LSD = ct1 + toMSD ct2
+    | otherwise = CT enc1 k1 l1 $ c1 + c2
 
-addCT :: forall k1 k2 m c m' zq zp. 
-  (KnownNat k1, KnownNat k2, Lift' zp, Reduce (LiftOf zp) zq, ToSDCtx c m' zp zq, Eq zp, m `Divides` m')
-  => CT k1 m zp (c m' zq) -> CT k2 m zp (c m' zq) -> CT (Max k1 k2) m zp (c m' zq)
-addCT ct1@(CT enc1 l1 c1) ct2@(CT enc2 l2 c2)
-  | l1 /= l2 = let (CT enc _ c) = mulScalar (l1 * recip l2) ct1 
-                   ct1' = CT enc l2 c :: CT k1 m zp (c m' zq)
-                in addCT ct1' ct2
-  | enc1 == LSD && enc2 == MSD = addCT (toMSD ct1) ct2
-  | enc1 == MSD && enc2 == LSD = addCT ct1 (toMSD ct2)
-  | otherwise = let (CT _ _ c1') = increaseKToMax @k2 ct1
-                    (CT _ _ c2') = increaseKToMax @k1 ct2
-                 in CT enc1 l1 $ c1' + c2'
+  negate (CT enc k l c) = CT enc k l $ negate <$> c
 
-zeroCT :: (Ring.C zp, Additive.C (c m' zq)) => CT 0 m zp (c m' zq)
-zeroCT = CT LSD one zero
+instance (ToSDCtx c m' zp zq, Additive (CT m zp (c m' zq)))
+  => Ring.C (CT m zp (c m' zq)) where
 
-negateCT :: Additive.C (c m' zq) => CT k m zp (c m' zq) -> CT k m zp (c m' zq)
-negateCT (CT enc l c) = CT enc l $ negate <$> c
+  one = CT LSD 0 one one
 
-oneCT :: (Ring.C zp, Ring.C (c m' zq)) => CT 0 m zp (c m' zq)
-oneCT = CT LSD one one
+  -- need at least one ct to be in LSD form
+  ct1@(CT MSD _ _ _) * ct2@(CT MSD _ _ _) = toLSD ct1 * ct2
 
-mulCT :: (ToSDCtx c m' zp zq) => CT k1 m zp (c m' zq) -> CT k2 m zp (c m' zq) -> CT (k1+k2+1) m zp (c m' zq)
--- need at least one ct to be in LSD form
-mulCT ct1@(CT MSD _ _) ct2@(CT MSD _ _) = mulCT (toLSD ct1) ct2
-mulCT ct1@(CT LSD l1 c1) ct2@(CT enc2 l2 c2) = CT enc2 (l1 * l2) (mulG <$> c1 * c2) -- mulg b g so error maintains invariant: error * g is "round"
-mulCT ct1 ct2 = mulCT ct2 ct1
+  -- first is in LSD
+  (CT LSD k1 l1 c1) * (CT d2 k2 l2 c2) =
+    -- mul by g so error maintains invariant: error*g is "round"
+    CT d2 (k1+k2+1) (l1*l2) (mulG <$> c1 * c2)
 
+  -- else, second must be in LSD
+  ct1 * ct2 = ct2 * ct1
 
 ---------- Ring switching ----------
 
-type AbsorbGCtx c m' zp zq k =
+-- | Constraint synonym for 'absorbGFactors'.
+type AbsorbGCtx c m' zp zq =
   (Ring (c m' zp), Ring (c m' zq), Cyclotomic (c m' zp), Cyclotomic (c m' zq),
-   LiftCyc (c m' zp), Reduce (LiftOf (c m' zp)) (c m' zq), KnownNat k)
-
+   LiftCyc (c m' zp), Reduce (LiftOf (c m' zp)) (c m' zq))
 
 -- | "Absorb" the powers of \( g \) associated with the ciphertext, at
 -- the cost of some increase in noise. This is usually needed before
 -- changing the index of the ciphertext ring.
-
-
-absorbGFactors :: forall c zp zq m m' k. (AbsorbGCtx c m' zp zq k)
-            => CT k m zp (c m' zq) -> CT 0 m zp (c m' zq)
-absorbGFactors ct@(CT enc l r) = let k = reifyNat @k
-                                  in if k == 0
-                                        then CT enc l r
-                                        else let d :: c m' zp = iterate divG' one !! k
-                                                 rep = adviseCRT $ reduce $ liftPow d
-                                              in CT enc l $ (rep *) <$> r
-
+absorbGFactors :: forall c zp zq m m' . AbsorbGCtx c m' zp zq
+                  => CT m zp (c m' zq) -> CT m zp (c m' zq)
+absorbGFactors ct@(CT enc k l r)
+  | k == 0 = ct
+  | k > 0 = let d :: c m' zp = iterate divG' one !! k
+                rep = adviseCRT $ reduce $ liftPow d
+            in CT enc 0 l $ (rep *) <$> r
+  | otherwise = error "k < 0 in absorbGFactors"
 
 -- | Embed a ciphertext in \( R' \) encrypting a plaintext in \( R \) to
 -- a ciphertext in \( T' \) encrypting a plaintext in \( T \). The target
 -- ciphertext ring \( T' \) must contain both the the source ciphertext
 -- ring \( R' \) and the target plaintext ring \( T \).
 embedCT :: (r `Divides` r', s `Divides` s', r `Divides` s, r' `Divides` s', ExtensionCyc c zq)
-        => CT 0 r zp (c r' zq) -> CT 0 s zp (c s' zq)
+           => CT r zp (c r' zq) -> CT s zp (c s' zq)
 -- We could call absorbGFactors first, insead of error.  Embedding
 -- *essentially* maintains the invariant that noise*g is "round."
 -- While g'/g can be non-spherical, it only stretches by at most a
 -- factor of 2 per new odd prime.  We *cannot* multiply by g, then
 -- embed, then divide by g' because the result would not remain in R'.
 -- So this is the best we can do.
-embedCT (CT d l c) = CT d l (embed <$> c)
+embedCT (CT d 0 l c) = CT d 0 l (embed <$> c)
+embedCT _ = error "embedCT requires 0 factors of g; call aborbGFactors first"
 
 -- | Embed a secret key from a subring into a superring.
 embedSK :: (m `Divides` m', ExtensionCyc c z) => SK (c m z) -> SK (c m' z)
@@ -484,9 +458,10 @@ embedSK (SK v s) = SK v $ embed s
 -- \).  Here we make the stricter requirement that \( s = \gcd(s', t)
 -- \).
 twaceCT :: (r `Divides` r', s' `Divides` r', s ~ (FGCD s' r), ExtensionCyc c zq)
-        => CT 0 r zp (c r' zq) -> CT 0 s zp (c s' zq)
+           => CT r zp (c r' zq) -> CT s zp (c s' zq)
 -- we could call absorbGFactors first, insead of error
-twaceCT (CT d l c) = CT d l (twace <$> c)
+twaceCT (CT d 0 l c) = CT d 0 l (twace <$> c)
+twaceCT _ = error "twaceCT requires 0 factors of g; call absorbGFactors first"
 
 -- | Auxilliary data needed to tunnel from \(\O_{r'}\) to \(\O_{s'}\).
 data TunnelHint gad c e r s e' r' s' zp zq =
@@ -528,22 +503,22 @@ tunnelHint f skout (SK _ sin) = -- generate hints
   \\ lcmDivides @r @e'
 
 -- | Constraint synonym for ring tunneling.
-type TunnelCtx c r s e' r' s' zp zq' gad k =
+type TunnelCtx c r s e' r' s' zp zq' gad =
   (Fact r, Fact s, e' `Divides` r', e' `Divides` s', ExtensionCyc c zq', -- evalLin
    ToSDCtx c r' zp zq',                     -- toMSD
-   AbsorbGCtx c r' zp zq' k,                -- absorbGFactors
+   AbsorbGCtx c r' zp zq',                  -- absorbGFactors
    SwitchCtx gad c s' zq')                  -- switch
 
 -- | Homomorphically apply the \( E \)-linear function that maps the
 -- elements of the decoding basis of \( R/E \) to the corresponding
 -- \( S \)-elements in the input array.
-tunnel :: forall gad c e r s e' r' s' zp zq' k .
-  (TunnelCtx c r s e' r' s' zp zq' gad k)
+tunnel :: forall gad c e r s e' r' s' zp zq' .
+  (TunnelCtx c r s e' r' s' zp zq' gad)
   => TunnelHint gad c e r s e' r' s' zp zq'
-  -> CT k r zp (c r' zq')
-  -> CT 0 s zp (c s' zq')
+  -> CT r zp (c r' zq')
+  -> CT s zp (c s' zq')
 tunnel (THint f'q hints) ct =
-  (let CT MSD s c = toMSD $ absorbGFactors ct
+  (let CT MSD 0 s c = toMSD $ absorbGFactors ct
        [c0,c1] = coeffs c
        -- apply E-linear function to constant term c0
        c0' = evalLin f'q c0
@@ -557,7 +532,7 @@ tunnel (THint f'q hints) ct =
        -- alternative.
        c1s' = zipWith keySwitch hints (embed <$> c1s)
        c1' = sum c1s'
-   in CT MSD s $ P.const c0' + c1')
+   in CT MSD 0 s $ P.const c0' + c1')
     \\ lcmDivides @r @e'
 
 ---------- Utility instances ----------
