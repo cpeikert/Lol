@@ -86,4 +86,5 @@ library
     split,
     test-framework,
     time,
-    QuickCheck
+    QuickCheck,
+    constraints

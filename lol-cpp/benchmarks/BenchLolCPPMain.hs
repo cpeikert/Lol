@@ -15,6 +15,7 @@ Main driver for lol benchmarks with CPP.
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns        #-}
 {-# LANGUAGE TypeOperators         #-}
+{-# LANGUAGE NoStarIsType          #-}
 
 module BenchLolCPPMain where
 
@@ -68,6 +69,7 @@ tableMain = do
 -}
 diagnosticMain :: IO ()
 diagnosticMain = do
+  return ()
   let opts = defaultDiagnosticOpts{levels=ls, benches=bs}
   let b1 = bgroup "Single Index"
              [oneIdxBenches (Proxy::Proxy '(F64*F9*F25, Zq 14401)) (Proxy::Proxy CT) (Proxy::Proxy HashDRBG)]
