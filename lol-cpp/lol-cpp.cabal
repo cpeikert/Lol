@@ -5,7 +5,7 @@ name:                lol-cpp
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.1.0.0
+version:             0.2.0.0
 synopsis:            A fast C++ backend for <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -90,7 +90,7 @@ library
     base,
     constraints,
     deepseq,
-    lol >= 0.7.0.0 && < 0.8,
+    lol >= 0.8.0.0 && < 0.9,
     MonadRandom,
     mtl,
     numeric-prelude,

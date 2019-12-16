@@ -5,7 +5,7 @@ name:                lol-apps
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.2.1.0
+version:             0.3.0.0
 synopsis:            Lattice-based cryptographic applications using <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -76,7 +76,7 @@ library
     crypto-api,
     deepseq,
     filepath,
-    lol >= 0.7.0.0 && < 0.8,
+    lol >= 0.8.0.0 && < 0.9,
     mtl,
     numeric-prelude,
     options,
