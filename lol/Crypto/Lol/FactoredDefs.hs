@@ -27,6 +27,7 @@ template Haskell splices in the same module.
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE NoStarIsType          #-}
 
 {-# OPTIONS_GHC -fno-warn-unused-binds          #-}
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
@@ -37,7 +38,7 @@ module Crypto.Lol.FactoredDefs
   Factored, SFactored, Fact, fType, fDec
 , reifyFact, reifyFactI, intToFact
 -- * Prime powers
-, PrimePower(..), SPrimePower, Sing(SPP), PPow, ppType, ppDec
+, PrimePower(..), SPrimePower(SPP), PPow, ppType, ppDec
 , reifyPPow, reifyPPowI
 -- * Primes
 , PrimeBin, SPrimeBin, Prime, pType, pDec
@@ -77,7 +78,7 @@ import Crypto.Lol.PosBin
 import Control.Arrow
 import Data.Constraint           hiding ((***), (&&&))
 import Data.List                 hiding ((\\))
-import Data.Singletons.Prelude   hiding ((:-))
+import Data.Singletons.Prelude   hiding ((:-), type (*))
 import Data.Singletons.TH
 import Language.Haskell.TH
 

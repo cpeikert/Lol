@@ -36,7 +36,7 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
 import Data.List as L (foldl', transpose)
-import Data.Map  (Map, elems, empty, insertWith')
+import Data.Map.Strict (Map, elems, empty, insertWith)
 import Data.Set  as S (Set, difference, findMin, fromList, map, null)
 
 
@@ -79,7 +79,7 @@ partitionCosets p =
       -- a map from cosets of Z_m^* / <p> to their preimages under the
       -- natural homomorphism
       partition =
-        L.foldl' (\cmap x -> insertWith' (++) (S.map (reduce . lift) x) [x] cmap)
+        L.foldl' (\cmap x -> insertWith (++) (S.map (reduce . lift) x) [x] cmap)
           (empty :: Map (Set (ZqBasic m Int)) [Set (ZqBasic m' Int)])
           m'cosets
       -- transpose the map to get a list of list of sets, where for each

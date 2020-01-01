@@ -31,6 +31,8 @@ import Crypto.Lol.Types
 import Crypto.Lol.Applications.KeyHomomorphicPRF
 import Crypto.Lol.Reflects
 
+import Data.Singletons.TH
+
 type M = F64
 type N = 1
 type Q = 256

@@ -17,6 +17,7 @@ template Haskell splices in the same module.
 
 {-# LANGUAGE ConstraintKinds      #-}
 {-# LANGUAGE DataKinds            #-}
+{-# LANGUAGE EmptyCase            #-}
 {-# LANGUAGE GADTs                #-}
 {-# LANGUAGE InstanceSigs         #-}
 {-# LANGUAGE KindSignatures       #-}
@@ -25,6 +26,7 @@ template Haskell splices in the same module.
 {-# LANGUAGE RebindableSyntax     #-}
 {-# LANGUAGE ScopedTypeVariables  #-}
 {-# LANGUAGE TemplateHaskell      #-}
+{-# LANGUAGE TypeApplications     #-}
 {-# LANGUAGE TypeFamilies         #-}
 {-# LANGUAGE UndecidableInstances #-}
 
@@ -33,12 +35,12 @@ template Haskell splices in the same module.
 
 module Crypto.Lol.PosBinDefs
 ( -- * Positive naturals in Peano representation
-  Pos(..), Sing(SO, SS), SPos, PosC, posType, posDec
+  Pos(..), SPos(SO, SS), SPos, PosC, posType, posDec
 , reifyPos, reifyPosI, posToInt, intToPos
 , addPos, sAddPos, AddPos, subPos, sSubPos, SubPos
 , OSym0, SSym0, SSym1, AddPosSym0, AddPosSym1, SubPosSym0, SubPosSym1
   -- * Positive naturals in binary representation
-, Bin(..), Sing(SB1, SD0, SD1), SBin, BinC, binType, binDec
+, Bin(..), SBin(SB1, SD0, SD1), SBin, BinC, binType, binDec
 , reifyBin, reifyBinI, binToInt, intToBin
 , B1Sym0, D0Sym0, D0Sym1, D1Sym0, D1Sym1
   -- * Miscellaneous
@@ -162,7 +164,7 @@ reifyBinI n k = reifyBin n (\(b::SBin b) -> withSingI b $ k (Proxy::Proxy b))
 -- representing a given 'Int', e.g., @$(posType 8)@.
 posType :: Int -> TypeQ
 posType n
-    | n <= 0 = fail $ "posType: non-positive argument n = " ++ show n
+    | n <= 0 = error $ "posType: non-positive argument n = " ++ show n
     | n == 1 = conT 'O
     | otherwise = conT 'S `appT` posType (n-1)
 
@@ -170,12 +172,12 @@ posType n
 -- representing a given 'Int', e.g., @$(binType 89)@.
 binType :: Int -> TypeQ
 binType n
-    | n <= 0 = fail $ "binType: non-positive argument n = " ++ show n
+    | n <= 0 = error $ "binType: non-positive argument n = " ++ show n
     | otherwise = case n `quotRem` 2 of
                     (0,1) -> conT 'B1
                     (q,0) -> conT 'D0 `appT` binType q
                     (q,1) -> conT 'D1 `appT` binType q
-                    _ -> fail "internal error in PosBinTH.bin"
+                    _ -> error "internal error in PosBinTH.bin"
 
 posDec, binDec :: Int -> DecQ
 -- | Template Haskell splice that defines the 'Pos' type synonym @P@\(n\).

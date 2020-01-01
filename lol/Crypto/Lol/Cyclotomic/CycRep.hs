@@ -463,12 +463,15 @@ crtSet =
   --          show (proxy valueFact (Proxy::Proxy m)) ++ ", m'= " ++
   --          show (proxy valueFact (Proxy::Proxy m'))) $
   let (p,e) = modulusZPP @r
+
       -- raise to the p^(e-1) power iteratively (one factor of p at a
       -- time), switching back to pow basis each time so that we don't
       -- lose precision!  (This fixes a bug witnessed for moderate
       -- values of e.)
+      expon :: (Eq t1, Ring.C t1, ToPowDec (CycRep t0) rep0 r0, TensorG t0 r0, TensorCRT t0 Maybe r0, TensorCRT t0 Identity (CRTExt r0), CRTEmbed r0, Fact m0) => t1 -> CycRep t0 rep0 m0 r0 -> CycRep t0 P m0 r0
       expon 1  = toPow
       expon e' = toPowCE . (^p) . toCRT . expon (e'-1)
+
       pp  = Proxy::Proxy p
       pm  = Proxy::Proxy m
       pm' = Proxy::Proxy m'

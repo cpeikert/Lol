@@ -43,7 +43,7 @@ import Crypto.Lol                      (BaseBGad, Complex, Fact, Int64,
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
-import GHC.TypeLits
+import GHC.TypeLits hiding (Mod)
 
 -- | Convenient syntax for multiplication of moduli in a 'Zq'.
 infixr 9 **

@@ -14,6 +14,7 @@ Main driver for lol benchmarks with CPP.
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE NoStarIsType          #-}
 {-# LANGUAGE TypeOperators         #-}
 
 module BenchLolCPPMain where

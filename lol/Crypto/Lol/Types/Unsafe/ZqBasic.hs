@@ -50,8 +50,7 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.ZPP
 
-import Math.NumberTheory.Primes.Factorisation
-import Math.NumberTheory.Primes.Testing
+import Math.NumberTheory.Primes
 
 import Control.Applicative
 import Control.Arrow
@@ -71,7 +70,7 @@ import qualified Algebra.ZeroTestable   as ZeroTestable (C)
 -- | An infinite list of primes greater than @lower@ and congruent to
 -- 1 mod @m@.
 goodQs :: (ToInteger a) => a -> a -> [a]
-goodQs m lower = filter (isPrime . toInteger) $
+goodQs m lower = filter (isJust . isPrime . toInteger) $
   iterate (+m) $ lower + ((m-lower) `mod` m) + 1
 
 -- | The ring \(\Z_q\) of integers modulo 'q', using underlying integer
@@ -151,12 +150,12 @@ principalRootUnity =        -- use Integers for all intermediate calcs
       -- order of Zq^* (assuming q prime)
       order = qval-1
       -- the primes dividing the order of Zq^*
-      pfactors = fst <$> factorise order
+      pfactors = unPrime . fst <$> (factorise @Integer) order
       -- the powers we need to check
       exps = div order <$> pfactors
       -- whether an element is a generator of Zq^*
       isGen x = (x^order == one) && all (\e -> x^e /= one) exps
-  in tagT $ if isPrime qval -- for simplicity, require q to be prime
+  in tagT $ if isJust (isPrime qval) -- for simplicity, require q to be prime
             then let (mq,mr) = order `divMod` fromIntegral mval
                  in if mr == 0
                     then let omega = head (filter isGen values) ^ mq

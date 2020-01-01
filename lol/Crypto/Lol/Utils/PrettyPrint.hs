@@ -38,7 +38,7 @@ import Criterion.Types
 
 import qualified Data.Map as Map
 
-import Statistics.Resampling.Bootstrap (Estimate(..))
+import Statistics.Types (Estimate(..))
 
 -- | Verbosity of benchmark output.
 data Verb = Progress  -- ^ prints a \'.\' when each benchmark completes
