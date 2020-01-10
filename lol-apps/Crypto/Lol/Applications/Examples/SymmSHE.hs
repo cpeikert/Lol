@@ -73,7 +73,7 @@ sheMain _ = do
   -- encrypt with a single modulus
   ciphertext :: CTRing1 _ t <- encrypt sk plaintext
 
-  let ct1 = 2*ciphertext
+  let ct1 = mulPublic 2 ciphertext
       pt1 = decrypt sk ct1
   print $ "Test1 (expect TRUE): " ++ show (2*plaintext == pt1)
 
