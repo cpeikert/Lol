@@ -187,9 +187,9 @@ trace = let ts = proxy powTraces (Proxy::Proxy (GF fp d))
 -- | Traces of the power basis elements \(\{1, x, x^2, \ldots, x^{d-1}\}\).
 powTraces :: forall fp d . (GFCtx fp d) => Tagged (GF fp d) [fp]
 powTraces =
-  DT.trace ("FiniteField.powTraces: p = " ++
-            show (valuePrime @(CharOf fp) :: Int) ++
-            ", d = " ++ show (value @d :: Int)) $
+  {-DT.trace ("FiniteField.powTraces: p = " ++-}
+            {-show (valuePrime @(CharOf fp) :: Int) ++-}
+            {-", d = " ++ show (value @d :: Int)) $-}
   tag $ map trace' $ take (value @d) $ iterate (* GF (X ^^ 1)) (one :: GF fp d)
 
 -- helper that computes trace via brute force: sum frobenius

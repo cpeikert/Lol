@@ -111,7 +111,7 @@ Benchmark bench-lol-cpp
   build-depends:
     base,
     DRBG,
-    lol >= 0.7.0.0 && < 0.8,
+    lol >= 0.8.0.0 && < 0.9,
     lol-cpp
 
 Benchmark bench-lol-apps-cpp
@@ -128,8 +128,8 @@ Benchmark bench-lol-apps-cpp
   build-depends:
     base,
     DRBG,
-    lol >= 0.7.0.0 && < 0.8,
-    lol-apps >= 0.2.1 && < 0.3,
+    lol >= 0.8.0.0 && < 0.9,
+    lol-apps >= 0.3 && < 0.4,
     lol-cpp,
     MonadRandom
 
@@ -144,7 +144,7 @@ test-suite test-lol-cpp
 
   build-depends:
     base,
-    lol >= 0.7.0.0 && < 0.8,
+    lol >= 0.8.0.0 && < 0.9,
     lol-cpp,
     test-framework
 
@@ -161,8 +161,8 @@ test-suite test-lol-apps-cpp
 
   build-depends:
     base,
-    lol >= 0.7.0.0 && < 0.8,
-    lol-apps >= 0.2.1 && < 0.3,
+    lol >= 0.8.0.0 && < 0.9,
+    lol-apps >= 0.3 && < 0.4,
     lol-cpp,
     test-framework
 
@@ -177,7 +177,7 @@ executable khprf-cpp
     buildable: False
   build-depends:
     base,
-    lol-apps >= 0.2.1 && < 0.3,
+    lol-apps >= 0.3 && < 0.4,
     lol-cpp
 
 executable symmshe-cpp
@@ -191,5 +191,5 @@ executable symmshe-cpp
     buildable: False
   build-depends:
     base,
-    lol-apps >= 0.2.1 && < 0.3,
+    lol-apps >= 0.3 && < 0.4,
     lol-cpp
