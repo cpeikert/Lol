@@ -68,5 +68,6 @@ notifications:
   email:
     recipients:
       - cpeikert@alum.mit.edu
+      - cmlsharp@umich.edu
     on_success: change
     on_failure: always
