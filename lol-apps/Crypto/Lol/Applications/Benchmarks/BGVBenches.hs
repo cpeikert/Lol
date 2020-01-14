@@ -1,6 +1,6 @@
 {-|
-Module      : Crypto.Lol.Applications.Benchmarks.SHEBenches
-Description : Benchmarks for SymmSHE.
+Module      : Crypto.Lol.Applications.Benchmarks.BGVBenches
+Description : Benchmarks for SymmBGV.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
@@ -8,7 +8,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Benchmarks for SymmSHE.
+Benchmarks for SymmBGV.
 -}
 
 {-# LANGUAGE DataKinds             #-}
@@ -25,11 +25,11 @@ Benchmarks for SymmSHE.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Applications.Benchmarks.SHEBenches
+module Crypto.Lol.Applications.Benchmarks.BGVBenches
 ( decBenches
 , keySwitchBenches
 , rescaleBenches
-, sheBenches
+, bgvBenches
 , tunnelBenches
 ) where
 
@@ -37,7 +37,7 @@ import Control.Applicative
 import Control.Monad.Random hiding (lift)
 
 import Crypto.Lol
-import Crypto.Lol.Applications.SymmSHE
+import Crypto.Lol.Applications.SymmBGV
 import Crypto.Lol.Benchmarks           (Benchmark, bgroup, mkBenchIO,
                                         showType)
 import Crypto.Lol.Types
@@ -46,13 +46,13 @@ import Crypto.Random
 -- must come after imports
 {-# ANN module "HLint: ignore Use camelCase" #-}
 
-sheBenches :: forall t m m' zp zq gen rnd . (MonadRandom rnd, _)
+bgvBenches :: forall t m m' zp zq gen rnd . (MonadRandom rnd, _)
   => Proxy '(m,m',zp,zq) -> Proxy gen -> Proxy t -> rnd Benchmark
-sheBenches _ _ _ = do
+bgvBenches _ _ _ = do
   let ptmmrr = Proxy::Proxy '(t,m,m',zp,zq)
       ptmmrrg = Proxy::Proxy '(t,m,m',zp,zq,gen)
   sk <- genSK (1 :: Double)
-  return $ bgroup (showType ptmmrr ++ "/SymmSHE") [
+  return $ bgroup (showType ptmmrr ++ "/SymmBGV") [
     mkBenchIO "encrypt"   (bench_enc ptmmrrg sk zero),
     mkBenchIO "*"         (bench_mul ptmmrr zero zero sk),
     mkBenchIO "addPublic" (bench_addPublic ptmmrr zero zero sk),
@@ -64,7 +64,7 @@ decBenches :: forall t m m' zp zq rnd . (MonadRandom rnd, _)
 decBenches _ _ = do
   let ptmmrr = Proxy::Proxy '(t,m,m',zp,zq)
   sk <- genSK (1 :: Double)
-  return $ bgroup (showType ptmmrr ++ "/SymmSHE")
+  return $ bgroup (showType ptmmrr ++ "/SymmBGV")
                   [mkBenchIO "decrypt" (bench_dec ptmmrr zero sk)]
 
 -- must be able to round from zq' to zq
@@ -73,7 +73,7 @@ rescaleBenches :: forall t m m' zp zq zq' rnd . (MonadRandom rnd, _)
 rescaleBenches _ _ = do
   let ptmmrrr = Proxy::Proxy '(t,m,m',zp,zq,zq')
   sk <- genSK (1 :: Double)
-  return $ bgroup (showType ptmmrrr ++ "/SymmSHE")
+  return $ bgroup (showType ptmmrrr ++ "/SymmBGV")
                   [mkBenchIO "rescale" (bench_rescale ptmmrrr zero sk)]
 
 keySwitchBenches :: forall t m m' zp zq gad rnd . (MonadRandom rnd, _)
@@ -82,7 +82,7 @@ keySwitchBenches _ _ _ = do
   let ptmmrr = Proxy::Proxy '(t,m,m',zp,zq)
       ptmmrrg = Proxy::Proxy '(t,m,m',zp,zq,gad)
   sk <- genSK (1 :: Double)
-  return $ bgroup (showType ptmmrr ++ "/SymmSHE")
+  return $ bgroup (showType ptmmrr ++ "/SymmBGV")
                   [mkBenchIO "keySwitchQuadCirc" (bench_keySwQ ptmmrrg zero sk)]
 
 tunnelBenches :: forall t r r' s s' zp zq gad rnd . (MonadRandom rnd, _)
@@ -92,7 +92,7 @@ tunnelBenches _ _ _ = do
   -- These SKs are different types, so we gotta make 2 of them
   sk1 <- genSK (1 :: Double)
   sk2 <- genSK (1 :: Double)
-  return $ bgroup (showType p ++ "/SymmSHE")
+  return $ bgroup (showType p ++ "/SymmBGV")
                   [mkBenchIO "tunnel" (bench_tunnel p zero sk1 sk2)]
 
 

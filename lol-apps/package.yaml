@@ -6,7 +6,7 @@ synopsis: Lattice-based cryptographic applications using <https://hackage.haskel
 extra-source-files:
   - README
   - CHANGES.md
-  - SHE.proto
+  - BGV.proto
 description: >
   This library contains example cryptographic applications built using
   <https://hackage.haskell.org/package/lol Lol>,
@@ -22,26 +22,26 @@ library:
     <<: *commonLLVMFlag
   exposed-modules:
     - Crypto.Lol.Applications.KeyHomomorphicPRF
-    - Crypto.Lol.Applications.SymmSHE
+    - Crypto.Lol.Applications.SymmBGV
 
-    - Crypto.Proto.SHE
-    - Crypto.Proto.SHE.KSHint
-    - Crypto.Proto.SHE.RqPolynomial
-    - Crypto.Proto.SHE.SecretKey
-    - Crypto.Proto.SHE.TunnelHint
+    - Crypto.Proto.BGV
+    - Crypto.Proto.BGV.KSHint
+    - Crypto.Proto.BGV.RqPolynomial
+    - Crypto.Proto.BGV.SecretKey
+    - Crypto.Proto.BGV.TunnelHint
 
     - Crypto.Lol.Applications.Tests
     - Crypto.Lol.Applications.Benchmarks
     - Crypto.Lol.Applications.Examples
 
   other-modules:
-    - Crypto.Lol.Applications.Tests.SHETests
+    - Crypto.Lol.Applications.Tests.BGVTests
     - Crypto.Lol.Applications.Tests.Default
     - Crypto.Lol.Applications.Benchmarks.KHPRFBenches
-    - Crypto.Lol.Applications.Benchmarks.SHEBenches
+    - Crypto.Lol.Applications.Benchmarks.BGVBenches
     - Crypto.Lol.Applications.Benchmarks.Default
     - Crypto.Lol.Applications.Examples.KHPRF
-    - Crypto.Lol.Applications.Examples.SymmSHE
+    - Crypto.Lol.Applications.Examples.SymmBGV
   dependencies:
     - name: lol 
       version: ">= 0.8.0.0 && < 0.9"

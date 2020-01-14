@@ -1,6 +1,6 @@
 {-|
-Module      : Crypto.Lol.Applications.Tests.SHETests
-Description : Tests for SymmSHE.
+Module      : Crypto.Lol.Applications.Tests.BGVTests
+Description : Tests for SymmBGV.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
@@ -8,7 +8,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Tests for SymmSHE.
+Tests for SymmBGV.
 -}
 
 {-# LANGUAGE AllowAmbiguousTypes   #-}
@@ -27,11 +27,11 @@ Tests for SymmSHE.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Applications.Tests.SHETests
+module Crypto.Lol.Applications.Tests.BGVTests
 ( decTest
 , ksTests
 , modSwPTTest
-, sheTests
+, bgvTests
 , tunnelTests
 , twemTests
 ) where
@@ -41,7 +41,7 @@ import Control.Monad
 import Control.Monad.Random
 
 import Crypto.Lol
-import Crypto.Lol.Applications.SymmSHE
+import Crypto.Lol.Applications.SymmBGV
 import Crypto.Lol.Tests                (Gen, Test, chooseAny, showType,
                                         testGroup, testIOWithGen,
                                         testWithGen)
@@ -59,9 +59,9 @@ consGens2 = liftA2 (,)
 consGens3 :: Gen a -> Gen b -> Gen c -> Gen (a, b, c)
 consGens3 = liftA3 (,,)
 
-sheTests :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (zp :: *) (zq :: *) . _
+bgvTests :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (zp :: *) (zq :: *) . _
          => Proxy '(m,m',zp,zq) -> Proxy t -> Test
-sheTests _ _ =
+bgvTests _ _ =
   let ptmmrr = Proxy::Proxy '(t,m,m',zp,zq)
       gpt = chooseAny :: Gen (PT (Cyc t m zp))
       gsk = chooseAny :: Gen (SK (Cyc t m' (LiftOf zp)))

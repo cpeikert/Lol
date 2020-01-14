@@ -15,9 +15,9 @@ module Crypto.Lol.Applications.Tests
 (
 -- * Default tests and parameters
   module Crypto.Lol.Applications.Tests.Default
--- * Tests for various types of functions in SymmSHE
-, module Crypto.Lol.Applications.Tests.SHETests
+-- * Tests for various types of functions in SymmBGV
+, module Crypto.Lol.Applications.Tests.BGVTests
 ) where
 
 import Crypto.Lol.Applications.Tests.Default
-import Crypto.Lol.Applications.Tests.SHETests
+import Crypto.Lol.Applications.Tests.BGVTests

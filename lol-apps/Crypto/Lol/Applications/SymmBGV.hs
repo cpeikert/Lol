@@ -1,5 +1,5 @@
 {-|
-Module      : Crypto.Lol.Applications.SymmSHE
+Module      : Crypto.Lol.Applications.SymmBGV
 Description : Symmetric-key homomorphic encryption.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
@@ -33,7 +33,7 @@ Symmetric-key somewhat homomorphic encryption.  See Section 4 of
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE UndecidableInstances  #-}
 
-module Crypto.Lol.Applications.SymmSHE
+module Crypto.Lol.Applications.SymmBGV
 (
 -- * Data types
 SK, PT, CT -- don't export constructors!
@@ -74,10 +74,10 @@ import Crypto.Lol.Types.Proto
 
 import           Crypto.Proto.Lol.R            (R)
 import           Crypto.Proto.Lol.RqProduct    (RqProduct)
-import qualified Crypto.Proto.SHE.KSHint       as P
-import qualified Crypto.Proto.SHE.RqPolynomial as P
-import qualified Crypto.Proto.SHE.SecretKey    as P
-import qualified Crypto.Proto.SHE.TunnelHint   as P
+import qualified Crypto.Proto.BGV.KSHint       as P
+import qualified Crypto.Proto.BGV.RqPolynomial as P
+import qualified Crypto.Proto.BGV.SecretKey    as P
+import qualified Crypto.Proto.BGV.TunnelHint   as P
 
 import Control.Applicative  hiding ((*>))
 import Control.DeepSeq

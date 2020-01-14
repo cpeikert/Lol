@@ -1,6 +1,6 @@
 {-|
-Module      : Crypto.Lol.Applications.Examples.SymmSHE
-Description : Example using SymmSHE.
+Module      : Crypto.Lol.Applications.Examples.SymmBGV
+Description : Example using SymmBGV.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
@@ -8,7 +8,7 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Example using SymmSHE.
+Example using SymmBGV.
 -}
 
 {-# LANGUAGE DataKinds             #-}
@@ -22,10 +22,10 @@ Example using SymmSHE.
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Applications.Examples.SymmSHE (sheMain) where
+module Crypto.Lol.Applications.Examples.SymmBGV (bgvMain) where
 
 import Crypto.Lol                      hiding ((^))
-import Crypto.Lol.Applications.SymmSHE
+import Crypto.Lol.Applications.SymmBGV
 import Crypto.Lol.Types
 
 import Algebra.Ring ((^))
@@ -64,10 +64,10 @@ type CTRing1 d t = CT d PTIndex PTZq (Cyc t CTIndex CTZq1)
 type CTRing2 d t = CT d PTIndex PTZq (Cyc t CTIndex CTZq2)
 type SKRing t = Cyc t CTIndex (LiftOf PTZq)
 
--- | Simple example of how to use the SymmSHE application.
-sheMain :: forall t . (forall m r . (Fact m, Eq r) => Eq (t m r), _)
+-- | Simple example of how to use the SymmBGV application.
+bgvMain :: forall t . (forall m r . (Fact m, Eq r) => Eq (t m r), _)
   => Proxy t -> IO ()
-sheMain _ = do
+bgvMain _ = do
   plaintext <- getRandom
   sk :: SK (SKRing t) <- genSK (1 :: Double)
   -- encrypt with a single modulus

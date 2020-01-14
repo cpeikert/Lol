@@ -1,6 +1,6 @@
 Overview of applications:
 
-* SymmSHE.hs gives an implementation of a symmetric-key,
+* SymmBGV.hs gives an implementation of a BGV-style, symmetric-key,
   somewhat-homomorphic encryption scheme that is essentially
   equivalent to the one from the toolkit paper [LPR'13].
 
@@ -12,6 +12,6 @@ Overview of applications:
   PRF.
 
 Note that an example using each application can be found in the 'examples'
-directory. Tests and benchmarks for SHE and KeyHomomorphicPRF are provided in
+directory. Tests and benchmarks for BGV and KeyHomomorphicPRF are provided in
 the 'tests' and 'benchmarks' directories. Tests and benchmarks for HomomPRF are
 included in the example for HomomPRF.

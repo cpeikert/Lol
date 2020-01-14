@@ -24,7 +24,7 @@ Mostly-monomorphized benchmarks for lol-apps.
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Applications.Benchmarks.Default
- ( defaultSHEBenches
+ ( defaultBGVBenches
  , defaultKHPRFBenches
  ) where
 
@@ -32,17 +32,17 @@ import Control.DeepSeq (NFData)
 
 import Crypto.Lol
 import Crypto.Lol.Applications.Benchmarks.KHPRFBenches
-import Crypto.Lol.Applications.Benchmarks.SHEBenches
+import Crypto.Lol.Applications.Benchmarks.BGVBenches
 import Crypto.Lol.Benchmarks                           (type (**),
                                                         Benchmark, Zq,
                                                         bgroup)
 
-defaultSHEBenches :: (forall m r . (Fact m, NFData r) => NFData (t m r), _)
+defaultBGVBenches :: (forall m r . (Fact m, NFData r) => NFData (t m r), _)
                   => Proxy t -> Proxy gad -> Proxy gen -> rnd [Benchmark]
-defaultSHEBenches pt pgad pgen  = sequence [
-  fmap (bgroup "SHE") $ sequence $ ($ pt) . ($ pgen) <$>
-    [sheBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
-     sheBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
+defaultBGVBenches pt pgad pgen  = sequence [
+  fmap (bgroup "BGV") $ sequence $ ($ pt) . ($ pgen) <$>
+    [bgvBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
+     bgvBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
   fmap (bgroup "Dec") $ sequence $ ($ pt) <$>
     [decBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
      decBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],

@@ -26,6 +26,6 @@ main :: IO ()
 main = do
   let o = defaultTableOpts Nothing
       pct = Proxy::Proxy CT
-  sheBenches <- defaultSHEBenches pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG)
+  bgvBenches <- defaultBGVBenches pct (Proxy::Proxy TrivGad) (Proxy::Proxy HashDRBG)
   khprfBenches <- defaultKHPRFBenches pct (Proxy::Proxy (BaseBGad 2))
-  mapM_ (prettyBenchesTable o) (sheBenches ++ khprfBenches)
+  mapM_ (prettyBenchesTable o) (bgvBenches ++ khprfBenches)
