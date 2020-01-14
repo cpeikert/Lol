@@ -134,6 +134,7 @@ library:
 tests:
   test-lol:
     main: LolTestsMain.hs
+    ghc-options: -main-is LolTestsMain
     source-dirs: tests
     dependencies:
       - base

@@ -62,12 +62,36 @@ library:
     - vector
 
 
+_with_apps_flag: &withAppsLogic
+  condition: "!flag(with-apps)"
+  buildable: false
+
+tests:
+  test-lol-apps-cpp:
+    main: TestAppsCPPMain.hs
+    ghc-options: -main-is TestAppsCPPMain
+    when:
+      - *commonLLVMFlag
+      - *withAppsLogic
+    source-dirs: tests
+    dependencies:
+      - base
+      - name: lol
+        version: ">= 0.8.0.0 && < 0.9"
+      - name: lol-apps
+        version: ">= 0.3 && < 0.4"
+      - lol-cpp
+      - test-framework
+
+
 benchmarks:
   bench-lol-cpp:
     when:
       <<: *commonLLVMFlag
     main: BenchLolCPPMain.hs
+    ghc-options: -main-is BenchLolCPPMain
     source-dirs: benchmarks
+    other-modules: []
     dependencies:
       - base
       - DRBG
@@ -76,11 +100,12 @@ benchmarks:
       - lol-cpp
   bench-lol-apps-cpp:
     main: BenchAppsCPPMain.hs
+    ghc-options: -main-is BenchAppsCPPMain
     when:
       - *commonLLVMFlag
-      - condition: "!flag(with-apps)"
-        buildable: false
+      - *withAppsLogic
     source-dirs: benchmarks
+    other-modules: []
     dependencies:
       - base
       - DRBG
