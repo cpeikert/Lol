@@ -30,7 +30,8 @@ flags:
 
 
 library:
-  <<: *commonLLVMFlag
+  when:
+    <<: *commonLLVMFlag
   cc-options: -std=c++11 -O3
   include-dirs: Crypto/Lol/Cyclotomic/Tensor/CPP
   # Due to #12152, the file containing the definition of `Zq::q` must
@@ -63,7 +64,8 @@ library:
 
 benchmarks:
   bench-lol-cpp:
-    <<: *commonLLVMFlag
+    when:
+      <<: *commonLLVMFlag
     main: BenchLolCPPMain.hs
     source-dirs: benchmarks
     dependencies:
@@ -73,11 +75,11 @@ benchmarks:
         version: ">= 0.8.0.0 && < 0.9"
       - lol-cpp
   bench-lol-apps-cpp:
-    <<: *commonLLVMFlag
     main: BenchAppsCPPMain.hs
     when:
-      condition: "!flag(with-apps)"
-      buildable: false
+      - *commonLLVMFlag
+      - condition: "!flag(with-apps)"
+        buildable: false
     source-dirs: benchmarks
     dependencies:
       - base

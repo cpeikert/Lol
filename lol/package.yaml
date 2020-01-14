@@ -22,7 +22,8 @@ flags:
   <<: *commonFlags
 
 library:
-  <<: *commonLLVMFlag
+  when: 
+    <<: *commonLLVMFlag
   dependencies: 
     - ansi-terminal
     - arithmoi

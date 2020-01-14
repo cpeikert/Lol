@@ -21,6 +21,5 @@
     default: true
     manual: false
 - &commonLLVMFlag
-  when:
-    condition: flag(llvm)
-    ghc-options: -fllvm -optlo-O3 -pgmlo opt
+  condition: flag(llvm)
+  ghc-options: -fllvm -optlo-O3 -pgmlo opt

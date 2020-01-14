@@ -18,8 +18,8 @@ flags:
   <<: *commonFlags
 
 library:
-  <<: *commonLLVMFlag
-
+  when: 
+    <<: *commonLLVMFlag
   exposed-modules:
     - Crypto.Lol.Applications.KeyHomomorphicPRF
     - Crypto.Lol.Applications.SymmSHE
