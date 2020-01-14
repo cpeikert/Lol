@@ -1,0 +1,90 @@
+_common: !include "../common.yaml"
+
+name: lol-cpp
+version: 0.2.0.0
+synopsis:            A fast C++ backend for <https://hackage.haskell.org/package/lol lol>.
+category:            Crypto
+stability:           experimental
+build-type:          Simple
+extra-source-files: 
+  - README
+  - CHANGES.md
+  - Crypto/Lol/Cyclotomic/Tensor/CPP/*.h
+  - Crypto/Lol/Cyclotomic/Tensor/CPP/*.cpp
+description: >
+  Λ ⚬ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
+  This package provides a C++ implementation of Lol's Tensor interface.
+
+<<: *commonPrelude
+
+flags:
+  <<: *commonFlags
+  with-apps:
+    description: When this flag is enabled, lol-apps tests and benchmarks are buildable.
+    manual: false
+    default: true
+  with-execs:
+    description: When this flag and `with-apps` are both enabled, the lol-apps executables are buildable
+    default: false
+    manual: false
+
+
+library:
+  <<: *commonLLVMFlag
+  cc-options: -std=c++11 -O3
+  include-dirs: Crypto/Lol/Cyclotomic/Tensor/CPP
+  # Due to #12152, the file containing the definition of `Zq::q` must
+  # be linked first, otherwise dynamic linking (`cabal repl` or
+  # `stack ghci`) results in the error: "Loading temp shared object
+  # failed: /tmp/ghc54651_0/libghc_1.so: undefined symbol _ZN2Zq1qE"
+  # For `cabal repl`, we can simply reorder the list so that the file
+  # that should be linked first comes first in the list. However
+  # `stack ghci` always links alphabetically, so we really just have
+  # to define `Zq::q` in the first file alphabetically.
+  c-sources: Crypto/Lol/Cyclotomic/Tensor/CPP/*.cpp
+  exposed-modules:
+    - Crypto.Lol.Cyclotomic.Tensor.CPP
+  other-modules:
+    - Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
+    - Crypto.Lol.Cyclotomic.Tensor.CPP.Extension
+    - Crypto.Lol.Cyclotomic.Tensor.CPP.Instances
+  dependencies:
+    - base
+    - constraints
+    - deepseq
+    - name: lol
+      version: ">= 0.8.0.0 && < 0.9"
+    - MonadRandom
+    - mtl
+    - numeric-prelude
+    - reflection
+    - vector
+
+
+benchmarks:
+  bench-lol-cpp:
+    <<: *commonLLVMFlag
+    main: BenchLolCPPMain.hs
+    source-dirs: benchmarks
+    dependencies:
+      - base
+      - DRBG
+      - name: lol
+        version: ">= 0.8.0.0 && < 0.9"
+      - lol-cpp
+  bench-lol-apps-cpp:
+    <<: *commonLLVMFlag
+    main: BenchAppsCPPMain.hs
+    when:
+      condition: "!flag(with-apps)"
+      buildable: false
+    source-dirs: benchmarks
+    dependencies:
+      - base
+      - DRBG
+      - name: lol
+        version: ">= 0.8.0.0 && < 0.9"
+      - lol-cpp
+      - name: lol-apps
+        version: ">= 0.3 && < 0.4"
+      - MonadRandom

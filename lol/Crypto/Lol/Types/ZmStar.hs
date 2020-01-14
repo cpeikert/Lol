@@ -36,7 +36,7 @@ import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
 import Data.List as L (foldl', transpose)
-import Data.Map  (Map, elems, empty, insertWith)
+import Data.Map.Strict  (Map, elems, empty, insertWith)
 import Data.Set  as S (Set, difference, findMin, fromList, map, null)
 
 

@@ -1,0 +1,65 @@
+_common: !include "../common.yaml"
+
+name: lol-apps
+version: 0.3.0.0
+synopsis: Lattice-based cryptographic applications using <https://hackage.haskell.org/package/lol lol>.
+extra-source-files:
+  - README
+  - CHANGES.md
+  - SHE.proto
+description: >
+  This library contains example cryptographic applications built using
+  <https://hackage.haskell.org/package/lol Lol>,
+  a general-purpose library for ring-based lattice cryptography.
+
+<<: *commonPrelude
+
+flags:
+  <<: *commonFlags
+
+library:
+  <<: *commonLLVMFlag
+
+  exposed-modules:
+    - Crypto.Lol.Applications.KeyHomomorphicPRF
+    - Crypto.Lol.Applications.SymmSHE
+
+    - Crypto.Proto.SHE
+    - Crypto.Proto.SHE.KSHint
+    - Crypto.Proto.SHE.RqPolynomial
+    - Crypto.Proto.SHE.SecretKey
+    - Crypto.Proto.SHE.TunnelHint
+
+    - Crypto.Lol.Applications.Tests
+    - Crypto.Lol.Applications.Benchmarks
+    - Crypto.Lol.Applications.Examples
+
+  other-modules:
+    - Crypto.Lol.Applications.Tests.SHETests
+    - Crypto.Lol.Applications.Tests.Default
+    - Crypto.Lol.Applications.Benchmarks.KHPRFBenches
+    - Crypto.Lol.Applications.Benchmarks.SHEBenches
+    - Crypto.Lol.Applications.Benchmarks.Default
+    - Crypto.Lol.Applications.Examples.KHPRF
+    - Crypto.Lol.Applications.Examples.SymmSHE
+  dependencies:
+    - name: lol 
+      version: ">= 0.8.0.0 && < 0.9"
+    - DRBG
+    - MonadRandom
+    - base
+    - containers
+    - crypto-api
+    - deepseq
+    - filepath
+    - mtl
+    - numeric-prelude
+    - options
+    - protocol-buffers
+    - protocol-buffers-descriptor
+    - singletons
+    - split
+    - test-framework
+    - time
+    - QuickCheck
+    - constraints
