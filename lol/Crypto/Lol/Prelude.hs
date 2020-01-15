@@ -145,7 +145,7 @@ msdToLSD = (recip *** recip) lsdToMSD
 
 -- | A default implementation of rescaling for 'Mod' types.
 rescaleMod :: forall a b .
-              (Mod a, Mod b, (ModRep a) ~ (ModRep b),
+              (Mod a, Mod b, ModRep a ~ ModRep b,
                Lift a (ModRep b), Ring b)
               => a -> b
 {-# INLINABLE rescaleMod #-}
