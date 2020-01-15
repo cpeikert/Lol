@@ -51,38 +51,37 @@ defaultBGVBenches pt pgad pgen  = sequence [
      rescaleBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq 1008001, Zq (1065601 ** 1008001)))],
   fmap (bgroup "KeySwitch") $ sequence $ ($ pt) . ($ pgad) <$>
     [keySwitchBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq (1017857 ** 1032193))),
-     keySwitchBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq (1008001 ** 1065601)))]
-  ]
-  {-fmap (bgroup "Tunnel") $ sequence $ ($ pt) . ($ pgad) <$>-}
-    {-[tunnelBenches {- H0 -> H1 -} (Proxy::Proxy '(F128,-}
-                                                  {-F128 * F7 * F13,-}
-                                                  {-F64 * F7, F64 * F7 * F13,-}
-                                                  {-Zq PP32,-}
-                                                  {-Zq 3144961)),-}
-     {-tunnelBenches {- H1 -> H2 -} (Proxy::Proxy '(F64 * F7,-}
-                                                  {-F64 * F7 * F13,-}
-                                                  {-F32 * F7 * F13,-}
-                                                  {-F32 * F7 * F13,-}
-                                                  {-Zq PP32,-}
-                                                  {-Zq 3144961)),-}
-     {-tunnelBenches {- H2 -> H3 -} (Proxy::Proxy '(F32 * F7 * F13,-}
-                                                  {-F32 * F7 * F13,-}
-                                                  {-F8 * F5 * F7 * F13,-}
-                                                  {-F8 * F5 * F7 *F13,-}
-                                                  {-Zq PP32,-}
-                                                  {-Zq 3144961)),-}
-     {-tunnelBenches {- H3 -> H4 -} (Proxy::Proxy '(F8 * F5 * F7 * F13,-}
-                                                  {-F8 * F5 * F7 *F13,-}
-                                                  {-F4 * F3 * F5 * F7 * F13,-}
-                                                  {-F4 * F3 * F5 * F7 * F13,-}
-                                                  {-Zq PP32,-}
-                                                  {-Zq 3144961)),-}
-     {-tunnelBenches {- H4 -> H5 -} (Proxy::Proxy '(F4 * F3 * F5 * F7 * F13,-}
-                                                  {-F4 * F3 * F5 * F7 *F13,-}
-                                                  {-F9 * F5 * F7 * F13,-}
-                                                  {-F9 * F5 * F7 * F13,-}
-                                                  {-Zq PP32,-}
-                                                  {-Zq 3144961))]]-}
+     keySwitchBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq (1008001 ** 1065601)))],
+  fmap (bgroup "Tunnel") $ sequence $ ($ pt) . ($ pgad) <$>
+    [tunnelBenches {- H0 -> H1 -} (Proxy::Proxy '(F128,
+                                                  F128 * F7 * F13,
+                                                  F64 * F7, F64 * F7 * F13,
+                                                  Zq PP32,
+                                                  Zq 3144961)),
+     tunnelBenches {- H1 -> H2 -} (Proxy::Proxy '(F64 * F7,
+                                                  F64 * F7 * F13,
+                                                  F32 * F7 * F13,
+                                                  F32 * F7 * F13,
+                                                  Zq PP32,
+                                                  Zq 3144961)),
+     tunnelBenches {- H2 -> H3 -} (Proxy::Proxy '(F32 * F7 * F13,
+                                                  F32 * F7 * F13,
+                                                  F8 * F5 * F7 * F13,
+                                                  F8 * F5 * F7 *F13,
+                                                  Zq PP32,
+                                                  Zq 3144961)),
+     tunnelBenches {- H3 -> H4 -} (Proxy::Proxy '(F8 * F5 * F7 * F13,
+                                                  F8 * F5 * F7 *F13,
+                                                  F4 * F3 * F5 * F7 * F13,
+                                                  F4 * F3 * F5 * F7 * F13,
+                                                  Zq PP32,
+                                                  Zq 3144961)),
+     tunnelBenches {- H4 -> H5 -} (Proxy::Proxy '(F4 * F3 * F5 * F7 * F13,
+                                                  F4 * F3 * F5 * F7 *F13,
+                                                  F9 * F5 * F7 * F13,
+                                                  F9 * F5 * F7 * F13,
+                                                  Zq PP32,
+                                                  Zq 3144961))]]
 
 
 defaultKHPRFBenches :: (forall m r . (Fact m, NFData r) => NFData (t m r), _)
