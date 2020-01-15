@@ -106,9 +106,7 @@ instance (Correct gad a, Correct gad b,
     => Correct gad (a,b) where
 
   correct =
-    let gada = gadget @gad @a
-        gadb = gadget @gad @b
-        ka = length gada
+    let ka = length $ gadget @gad @a
         qaval = toInteger $ modulus @a
         qbval = toInteger $ modulus @b
         qamod = fromIntegral qaval
