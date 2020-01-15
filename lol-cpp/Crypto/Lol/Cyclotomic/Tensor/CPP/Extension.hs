@@ -41,7 +41,6 @@ import Crypto.Lol.Types.Unsafe.ZqBasic            hiding (ZqB, unZqB)
 import Crypto.Lol.Types.ZmStar
 
 import Control.Applicative hiding (empty)
-import Control.DeepSeq     (NFData)
 import Control.Monad.Trans (lift)
 
 import           Data.Maybe
