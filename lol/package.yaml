@@ -9,12 +9,14 @@ extra-source-files:
   - Lol.proto
   - RLWE.proto
 description: >
-  Λ ⚬ λ (Lol) is a general-purpose library for ring-based lattice cryptography.
-  For a detailed description of interfaces and functionality, see
-  <https://eprint.iacr.org/2015/1134 Λ ⚬ λ: Functional Lattice Cryptography>.
-  Backends for the library include <https://hackage.haskell.org/package/lol-cpp lol-cpp>
-  and <https://hackage.haskell.org/package/lol-repa lol-repa>.
-  For example cryptographic applications, see <https://hackage.haskell.org/package/lol-apps lol-apps>.
+  Λ ⚬ λ (Lol) is a general-purpose library for ring-based lattice
+  cryptography.  For a detailed description of interfaces and
+  functionality, see <https://eprint.iacr.org/2015/1134 Λ ⚬ λ:
+  Functional Lattice Cryptography>. The main backend for the library
+  is <https://hackage.haskell.org/package/lol-cpp lol-cpp>
+  (<https://hackage.haskell.org/package/lol-repa lol-repa> is
+  currently out of date). For example cryptographic applications, see
+  <https://hackage.haskell.org/package/lol-apps lol-apps>.
 
 <<: *commonPrelude
 
