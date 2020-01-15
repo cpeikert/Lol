@@ -18,7 +18,6 @@ template Haskell splices in the same module.
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE InstanceSigs          #-}
-{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE NoStarIsType          #-}
 {-# LANGUAGE PolyKinds             #-}
