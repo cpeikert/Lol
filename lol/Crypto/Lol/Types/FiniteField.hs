@@ -51,7 +51,7 @@ import Algebra.Ring         as Ring (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 import MathObj.Polynomial
 
-import Math.NumberTheory.Primes       (factorise, unPrime)
+import Math.NumberTheory.Primes (factorise, unPrime)
 
 import           Control.Applicative  hiding ((*>))
 import           Control.DeepSeq
@@ -60,7 +60,7 @@ import           Control.Monad.Random (liftRand, runRand)
 import qualified Data.Vector          as V
 import           System.Random
 
-import qualified Debug.Trace as DT
+-- import qualified Debug.Trace as DT
 
 -- | A finite field of given degree over \(\F_p\).
 newtype GF fp d = GF (Polynomial fp)
@@ -170,7 +170,7 @@ size = uncurry (^) <$> sizePP
 
 isPrimitive :: forall fp d . (GFCtx fp d) => GF fp d -> Bool
 isPrimitive = let q = proxy size (Proxy :: Proxy (GF fp d))
-                  ps = map (fromIntegral . unPrime . fst) $ (factorise @Integer) $
+                  ps = map (fromIntegral . unPrime . fst) $ factorise @Integer $
                        fromIntegral $ q-1
                   exps = map ((q-1) `div`) ps
               in \g -> not (isZero g) && all (\e -> g^e /= 1) exps
