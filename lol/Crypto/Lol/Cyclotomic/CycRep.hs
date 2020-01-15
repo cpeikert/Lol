@@ -33,13 +33,11 @@ the internal linear transforms and other operations it performs.
 {-# LANGUAGE GADTs                      #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE InstanceSigs               #-}
-{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE PolyKinds                  #-}
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RebindableSyntax           #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
@@ -87,7 +85,6 @@ import Control.Applicative    as A
 import Control.DeepSeq
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.Random   hiding (ap, lift)
-import Data.Constraint
 import Data.Foldable          as F
 import Data.Traversable
 
