@@ -47,7 +47,6 @@ import Control.Monad.Random
 import Control.Monad.Trans    as T (lift)
 
 import Data.Coerce
-import Data.Constraint              hiding ((***))
 import Data.Int
 import Data.Maybe
 import Data.Traversable             as T
@@ -205,7 +204,7 @@ instance (Fact m, Ring r, Storable r) => Module.C r (CT m r) where
 -- x is approximately equal to y iff all their components are approximately equal
 instance (ApproxEqual r, Storable r) => ApproxEqual (CT m r) where
   (CT (CT' x)) =~= (CT (CT' y)) = SV.and $ SV.zipWith (=~=) x y
-  x@_ =~= y@_ = toCT x =~= toCT y
+  x =~= y = toCT x =~= toCT y
 
 ---------- Category-theoretic instances ----------
 
@@ -619,7 +618,7 @@ instance (Storable r, Random r, Fact m) => Random (CT m r) where
 
   -- Drop to the CT' instance
   randomR (CT a, CT b) = runRand $ CT <$> liftRand (randomR (a, b))
-  randomR (a@_, b@_)   = randomR (toCT a, toCT b)
+  randomR (a, b)       = randomR (toCT a, toCT b)
 
   {-# INLINABLE random #-}
   {-# INLINABLE randomR #-}
