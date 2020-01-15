@@ -17,8 +17,8 @@ Symmetric-key somewhat homomorphic encryption.  See Section 4 of
 {-# LANGUAGE ConstraintKinds       #-}
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DeriveAnyClass        #-}
-{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE DeriveGeneric         #-}
+{-# LANGUAGE DerivingStrategies    #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
@@ -65,30 +65,27 @@ SK, PT, CT -- don't export constructors!
 , SwitchCtx, LWECtx -- these are internal, but exported for better docs
 ) where
 
-import qualified Algebra.Additive as Additive (C)
-import qualified Algebra.Ring     as Ring (C)
-
 import Crypto.Lol             hiding (sin)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Proto
 
-import           Crypto.Proto.Lol.R            (R)
-import           Crypto.Proto.Lol.RqProduct    (RqProduct)
 import qualified Crypto.Proto.BGV.KSHint       as P
 import qualified Crypto.Proto.BGV.RqPolynomial as P
 import qualified Crypto.Proto.BGV.SecretKey    as P
 import qualified Crypto.Proto.BGV.TunnelHint   as P
+import           Crypto.Proto.Lol.R            (R)
+import           Crypto.Proto.Lol.RqProduct    (RqProduct)
 
-import Control.Applicative  hiding ((*>))
+import Control.Applicative     hiding ((*>))
 import Control.DeepSeq
-import Control.Monad        as CM
-import Control.Monad.Random hiding (lift)
-import Data.Maybe
-import Data.Typeable
-import GHC.Generics         (Generic)
-import Data.Singletons.Prelude (Max)
-import GHC.TypeLits (type (+))
+import Control.Monad           as CM
+import Control.Monad.Random    hiding (lift)
 import Data.Constraint
+import Data.Maybe
+import Data.Singletons.Prelude (Max)
+import Data.Typeable
+import GHC.Generics            (Generic)
+import GHC.TypeLits            (type (+))
 import Unsafe.Coerce
 
 import MathObj.Polynomial as P
@@ -393,9 +390,9 @@ addCT :: forall c m m' zp zq d1 d2 .
          ToSDCtx c m' zp zq, Eq zp, m `Divides` m')
            => CT d1 m zp (c m' zq) -> CT d2 m zp (c m' zq) -> CT (Max d1 d2) m zp (c m' zq)
 addCT ct1@(CT enc1 k1 l1 c1) ct2@(CT enc2 k2 l2 c2)
-  | l1 /= l2 = 
+  | l1 /= l2 =
     let (CT enc' k' _ c') = mulScalar (l1 * recip l2) ct1
-        ct1' = CT @d1 enc' k' l2 c' 
+        ct1' = CT @d1 enc' k' l2 c'
      in addCT ct1' ct2
   | k1 < k2 = addCT (iterate mulGCT ct1 !! (k2-k1)) ct2
   | k1 > k2 = addCT ct1 $ iterate mulGCT ct2 !! (k1-k2)
@@ -449,7 +446,7 @@ embedCT :: (r `Divides` r', s `Divides` s', r `Divides` s, r' `Divides` s', Exte
 -- factor of 2 per new odd prime.  We *cannot* multiply by g, then
 -- embed, then divide by g' because the result would not remain in R'.
 -- So this is the best we can do.
-embedCT ct = let (CT d k l c) = absorbGFactors ct
+embedCT ct = let (CT d _ l c) = absorbGFactors ct
               in CT d 0 l (embed <$> c)
 
 -- | Embed a secret key from a subring into a superring.
@@ -463,7 +460,7 @@ embedSK (SK v s) = SK v $ embed s
 -- \).
 twaceCT :: (r `Divides` r', s' `Divides` r', s ~ (FGCD s' r), ExtensionCyc c zq, AbsorbGCtx c r' zp zq)
            => CT d r zp (c r' zq) -> CT d s zp (c s' zq)
-twaceCT ct = let (CT d k l c) = absorbGFactors ct
+twaceCT ct = let (CT d _ l c) = absorbGFactors ct
               in CT d 0 l (twace <$> c)
 
 -- | Auxilliary data needed to tunnel from \(\O_{r'}\) to \(\O_{s'}\).
