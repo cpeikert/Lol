@@ -21,7 +21,6 @@ template Haskell splices in the same module.
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE InstanceSigs          #-}
-{-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE PolyKinds             #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -130,9 +129,9 @@ binToInt (D1 a) = 1 + 2 * binToInt a
 intToBin :: ToInteger.C z => z -> Bin
 intToBin 1 = B1
 intToBin x | x > 0 =
-  case even x of
-    True  -> D0 $ intToBin $ x `div` 2
-    False -> D1 $ intToBin $ x `div` 2
+             if even x
+             then D0 $ intToBin $ x `div` 2
+             else D1 $ intToBin $ x `div` 2
 
 -- | Kind-restricted synonym for 'SingI'.
 type PosC (p :: Pos) = SingI p
