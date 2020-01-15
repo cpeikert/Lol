@@ -150,24 +150,18 @@ bench_errRounded _ _ v =
     (tweakedGaussianDec v :: Rand (CryptoRand gen) (t m Double)) :: Rand (CryptoRand gen)
                                                                          (t m (LiftOf r))) <$> newGenIO
 
--- EAC: due to GHC bug #12634, I have to give these a little more help than the corresponding functions
--- in UCyc and Cyc benches. Not a huge deal.
 {-# INLINABLE bench_twacePow #-}
-bench_twacePow :: forall t (m :: Factored) (m' :: Factored) r . (TensorPowDec t r, Fact m, _)
-  => Proxy '(t,m,m',r) -> t m' r -> t m r
+bench_twacePow :: forall t m m' r . _ => Proxy '(t,m,m',r) -> t m' r -> t m r
 bench_twacePow _ = twacePowDec
 
 {-# INLINABLE bench_twaceCRT #-}
-bench_twaceCRT :: forall t m m' r . (TensorPowDec t r, Fact m, _)
-  => Proxy '(t,m,m',r) -> t m' r -> t m r
+bench_twaceCRT :: forall t m m' r . _ => Proxy '(t,m,m',r) -> t m' r -> t m r
 bench_twaceCRT _ = fromJust' "TensorBenches.bench_twaceCRT" twaceCRT
 
 {-# INLINABLE bench_embedPow #-}
-bench_embedPow :: forall t m m' r . (TensorPowDec t r, Fact m', _)
-  => Proxy '(t,m,m',r) -> t m r -> t m' r
+bench_embedPow :: forall t m m' r . _ => Proxy '(t,m,m',r) -> t m r -> t m' r
 bench_embedPow _ = embedPow
 
 {-# INLINABLE bench_embedCRT #-}
-bench_embedCRT :: forall t m m' r . (TensorPowDec t r, Fact m', _)
-  => Proxy '(t,m,m',r) -> t m r -> t m' r
+bench_embedCRT :: forall t m m' r . _ => Proxy '(t,m,m',r) -> t m r -> t m' r
 bench_embedCRT _ = fromJust' "TensorBenches.bench_embedCRT" embedCRT
