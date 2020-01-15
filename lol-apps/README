@@ -2,16 +2,16 @@ Overview of applications:
 
 * SymmBGV.hs gives an implementation of a BGV-style, symmetric-key,
   somewhat-homomorphic encryption scheme that is essentially
-  equivalent to the one from the toolkit paper [LPR'13].
+  equivalent to the one from the Ring-LWE toolkit paper [LPR'13].
 
-* KeyHomomorphicPRF.hs gives an implementation of the
-  key-homomorphic pseudo-random function from Banerjee
-  and Peikert in Crypto 2014 ([BP14]).
+* KeyHomomorphicPRF.hs gives an implementation of the key-homomorphic
+  pseudorandom function from Banerjee and Peikert in Crypto 2014
+  [BP'14].
 
-* HomomPRF provides an interface for the homomorphic evaluation of the [BP14]
-  PRF.
+* HomomPRF provides an interface for the homomorphic evaluation of the
+  [BP'14] PRF.
 
-Note that an example using each application can be found in the 'examples'
-directory. Tests and benchmarks for BGV and KeyHomomorphicPRF are provided in
-the 'tests' and 'benchmarks' directories. Tests and benchmarks for HomomPRF are
-included in the example for HomomPRF.
+An example using each application can be found in the 'examples'
+directory. Tests and benchmarks for SymmBGV and KeyHomomorphicPRF are
+provided in the 'tests' and 'benchmarks' directories. Tests and
+benchmarks for HomomPRF are included in the example for HomomPRF.
