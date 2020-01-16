@@ -32,11 +32,13 @@ module Crypto.Lol.Cyclotomic.Tensor.CPP.Extension
 ) where
 
 import Crypto.Lol.CRTrans
-import Crypto.Lol.Cyclotomic.Tensor as T
-import Crypto.Lol.Prelude           as LP hiding (lift, null)
+import Crypto.Lol.Cyclotomic.Tensor               as T
+import Crypto.Lol.Cyclotomic.Tensor.CPP.Instances ()
+import Crypto.Lol.Prelude                         as LP hiding (lift, null)
+import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
+import Crypto.Lol.Types.Unsafe.ZqBasic            hiding (ZqB, unZqB)
 import Crypto.Lol.Types.ZmStar
-
 
 import Control.Applicative hiding (empty)
 import Control.Monad.Trans (lift)
@@ -83,8 +85,8 @@ embedDec' = tag $ (\indices arr -> generate (U.length indices)
 embedCRT' :: forall m m' mon r . (CRTrans mon r, Storable r, m `Divides` m')
           => TaggedT '(m, m') mon (Vector r -> Vector r)
 embedCRT' =
-  (lift (proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r))) >>
-  (tagT $ pure $ backpermute' $ baseIndicesCRT @m @m')
+  lift (proxyT crtInfo (Proxy::Proxy m') :: mon (CRTInfo r)) >>
+  tagT (pure $ backpermute' $ baseIndicesCRT @m @m')
 
 -- | maps a vector in the powerful/decoding basis, representing an
 -- O_m' element, to a vector of arrays representing O_m elements in
@@ -108,10 +110,10 @@ kronToVec v = generate (totientFact @m) (flip (indexK v) 0)
 twaceCRT' :: forall mon m m' r .
              (Storable r, CRTrans mon r, m `Divides` m')
              => TaggedT '(m, m') mon (Vector r -> Vector r)
-{-# INLINE twaceCRT' #-}
+{-# INLINABLE twaceCRT' #-}
 twaceCRT' = tagT $ do
-  g'    <- kronToVec @m' <$> (gCRTK @m')
-  gInv  <- kronToVec @m  <$> (gInvCRTK @m)
+  g'    <- kronToVec @m' <$> gCRTK @m'
+  gInv  <- kronToVec @m  <$> gInvCRTK @m
   embed <- untagT $ embedCRT' @m @m'
   (_, m'hatinv) <- proxyT crtInfo (Proxy::Proxy m')
   let phi = totientFact @m
@@ -140,22 +142,24 @@ powBasisPow' = do
 
 -- | A list of vectors representing the mod-p CRT set of the
 -- extension O_m'/O_m
-crtSetDec' :: forall m m' fp .
-  (m `Divides` m', PrimeField fp, Coprime (PToF (CharOf fp)) m', SV.Storable fp)
-  => Tagged '(m, m') [SV.Vector fp]
+crtSetDec' :: forall m m' p .
+  (m `Divides` m', Prime p, Coprime (PToF p) m',
+   Reflects p Int64, IrreduciblePoly (ZqBasic p Int64))
+-- previously:  ToInteger z, Enum z, SV.Storable z, NFData z
+  => Tagged '(m, m') [SV.Vector (ZqBasic p Int64)]
+{-# INLINABLE crtSetDec' #-}
 crtSetDec' =
-  let p = valuePrime @(CharOf fp)
+  let p = valuePrime @p
       phi = totientFact @m'
       d = order @m' p
       h :: Int = valueHatFact @m'
       hinv = recip $ fromIntegral h
   in reify d $ \(_::Proxy d) -> do
-      let twCRTs' :: Kron (GF fp d)
+      let twCRTs' :: Kron (GF (ZqBasic p Int64) d)
             = fromMaybe (error "internal error: crtSetDec': twCRTs") $ twCRTs @m'
           zmsToIdx = T.zmsToIndexFact @m'
           elt j i = indexK twCRTs' j (zmsToIdx i)
-          trace' = trace :: GF fp d -> fp -- to avoid recomputing powTraces
           cosets = partitionCosets @m @m' p
       return $ LP.map (\is -> generate phi
-                          (\j -> hinv * trace'
+                          (\j -> hinv * trace
                                       (LP.sum $ LP.map (elt j) is))) cosets

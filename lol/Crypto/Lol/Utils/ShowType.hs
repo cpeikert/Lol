@@ -39,11 +39,11 @@ module Crypto.Lol.Utils.ShowType
 
 import Crypto.Lol                      (BaseBGad, Complex, Fact, Int64,
                                         Mod (..), Proxy (..), TrivGad,
-                                        proxy, valueFact)
+                                        valueFact)
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB)
 
-import GHC.TypeLits
+import GHC.TypeLits hiding (Mod)
 
 -- | Convenient syntax for multiplication of moduli in a 'Zq'.
 infixr 9 **
@@ -57,7 +57,7 @@ type family Zq (a :: k) :: * where
 
 type family (f :: (k1 -> k2)) <$>  (xs :: [k1]) where
   f <$> '[] = '[]
-  f <$> (x ': xs) = (f x) ': (f <$> xs)
+  f <$> (x ': xs) = f x ': (f <$> xs)
 
 type family (fs :: [k1 -> k2]) <*> (xs :: [k1]) where
   fs <*> xs = Go fs xs xs
@@ -65,7 +65,7 @@ type family (fs :: [k1 -> k2]) <*> (xs :: [k1]) where
 type family Go (fs :: [k1 -> k2]) (xs :: [k1]) (ys :: [k1]) where
   Go '[] xs ys = '[]
   Go (f ': fs) '[] ys = Go fs ys ys
-  Go (f ': fs) (x ': xs) ys = (f x) ': (Go (f ': fs) xs ys)
+  Go (f ': fs) (x ': xs) ys = f x ': Go (f ': fs) xs ys
 
 
 -- | Wrapper type for printing test/benchmark names.

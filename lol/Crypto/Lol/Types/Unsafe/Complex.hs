@@ -21,11 +21,10 @@ The safe way to use this type is to import "Crypto.Lol.Types".
 {-# LANGUAGE MultiParamTypeClasses      #-}
 {-# LANGUAGE RebindableSyntax           #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeFamilies               #-}
 
-module Crypto.Lol.Types.Unsafe.Complex (
-  Complex(..)
+module Crypto.Lol.Types.Unsafe.Complex
+( Complex(..)
 , roundComplex
 , cis, real, imag, fromReal
 ) where

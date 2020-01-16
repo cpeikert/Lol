@@ -1,0 +1,25 @@
+- &commonPrelude
+  github: cpeikert/lol
+  author: 
+    - Eric Crockett <ecrockett0@gmail.com>
+    - Chris Peikert <cpeikert@alum.mit.edu>
+  copyright:
+    - Eric Crockett
+    - Chris Peikert
+  maintainer:
+    - Eric Crockett <ecrockett@gmail.com>
+    - Chad Sharp <cmlsharp@umich.edu>
+  category: Crypto
+  stability: experimental
+- &commonFlags
+  llvm:
+    description: Compile via LLVM. This produces much better object code, but you need to have the LLVM compiler installed.
+    manual: false
+    default: false
+  opt:
+    description: Turn on library optimizations
+    default: true
+    manual: false
+- &commonLLVMFlag
+  condition: flag(llvm)
+  ghc-options: -fllvm -optlo-O3 -pgmlo opt

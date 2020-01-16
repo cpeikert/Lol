@@ -30,6 +30,7 @@ module Crypto.Lol.Cyclotomic.CRTSentinel
 , embedCRTCS, twaceCRTCS
 ) where
 
+import Data.Functor
 import Data.Maybe
 
 import Crypto.Lol.Cyclotomic.Tensor
@@ -40,13 +41,13 @@ data ESentinel t m r = ESentinel deriving (Eq, Show)
 
 crtSentinel :: (TensorCRT t Maybe r, Fact m)
                => Either (ESentinel t m r) (CSentinel t m r)
-crtSentinel = fromMaybe (Left ESentinel) (Right <$> crtCSentinel)
+crtSentinel = maybe (Left ESentinel) Right crtCSentinel
 {-# INLINABLE crtSentinel #-}
 
 crtCSentinel :: forall t m r .
                 (TensorCRT t Maybe r, Fact m)
                 => Maybe (CSentinel t m r)
-crtCSentinel = hasCRTFuncs @t @m @r *> pure CSentinel
+crtCSentinel = hasCRTFuncs @t @m @r $> CSentinel
 {-# INLINABLE crtCSentinel #-}
 
 crtESentinel :: (TensorCRT t Maybe r, Fact m)

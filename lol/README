@@ -1,64 +1,74 @@
-
-This package is primarily a library providing interfaces for lattice cryptography
-primitives. There are two main interfaces: 'Cyclotomic' and 'Tensor'. The
-Cyclotomic interface is the outward-facing API that is used to build cryptographic
-applications like pseudo-random functions, encryption, etc. The Tensor interface allows
-multiple backends to implement the functionality used by the Cyclotomic interface.
-Unless you are writing a new backend implementation, you shouldn't need to
-understand the Tensor interface. However, you *will* need an implementation of the
-Tensor interface in order to test, benchmark, and run applications.
+This package is primarily a library providing high-level interfaces
+for lattice cryptography primitives. There are two main collections of
+interfaces: 'Cyclotomic' and 'Tensor'. The Cyclotomic interface can be
+used to build cryptographic primitives like encryption, pseudorandom
+functions, etc. The lower-level Tensor interface allows multiple
+backends to implement the functionality used by the Cyclotomic
+interface.  Unless you are writing a new backend implementation, you
+do not need to understand the Tensor interface. However, you *will*
+need an implementation of the Tensor interface in order to test,
+benchmark, and run applications.
 
 Most of the functionality in Lol is exported by two modules:
 
-* 'Crypto.Lol' exports the primary *interfaces* of Lol
+* 'Crypto.Lol' exports the primary *interfaces* of Lol.
 
-* 'Crypto.Lol.Types' exports concrete types that would be used by most
-  instantiations.
+* 'Crypto.Lol.Types' exports concrete types that would tend to be used
+  by most instantiations.
 
-For a brief introduction to relevant mathematical notation, see 'Crypto.Lol'.
+For a brief introduction to the relevant mathematical notation, see
+'Crypto.Lol'.
 
 Overview of key modules, roughly from highest- to lowest-level:
 
 Cyclotomic layer:
-* 'Crypto.Lol.Cyclotomic.Cyc', which defines an interface for using cyclotomic
-  fields, rings \( R \), and quotient rings \( R_q=R/qR \); as well as many
-  other commonly used operations, e.g., converting
-  between rings, decoding and decomposing elements, modulus
-  reduction/rounding, etc. 'Cyc' is a safe wrapper around the
-  'UCyc' type, which exposes some representation-dependent operations.
-  'UCyc' (and hence 'Cyc') is implemented using a generic 'Tensor'
-  (described below).
 
+* 'Crypto.Lol.Cyclotomic.Cyc' defines an interface for using
+  cyclotomic fields \( K \), rings \( R \), and quotient rings \(
+  R_q=R/qR \); as well as many other commonly used operations, e.g.,
+  converting between rings; reducing, lifting, and decomposing
+  elements; modulus reduction/rounding; etc. 'Cyc' is a safe wrapper
+  around the 'CycRep' type, which exposes some
+  representation-dependent operations.  'CycRep' (and hence 'Cyc') is
+  implemented using a generic 'Tensor' (described below).
 
 Tensor layer:
-* 'Crypto.Lol.Cyclotomic.Tensor', which defines a class that encapsulates all
-  the necessary linear transformations for operating on representations of
-  \( R \)- and \( R_q \)-elements, e.g., the CRT transform, converting between
-  the powerful and decoding bases, generating error terms, etc.
 
-* You will need an implementation of the 'Tensor' interface in order to use Lol.
-  Two implementations can be found at
+* 'Crypto.Lol.Cyclotomic.Tensor' defines interfaces that encapsulate
+  all the necessary linear transformations for operating on
+  representations of \( R \)- and \( R_q \)-elements, e.g., the CRT
+  transform, converting between the powerful and decoding bases,
+  generating error terms, etc.
+
+* You will need an implementation of the 'Tensor' interface in order
+  to use Lol. The main up-to-date implementation is
   <https://hackage.haskell.org/package/lol-cpp lol-cpp>
-  and <https://hackage.haskell.org/package/lol-repa lol-repa>.
+  (<https://hackage.haskell.org/package/lol-repa lol-repa> is out of
+  date).
 
+Base-ring layer:
 
-Base ring layer:
-* 'Crypto.Lol.Types.FiniteField', which gives an unoptimized implementation of
-  finite field arithmetic. To use this module, you will need an instance of
-  'IrreduciblePoly'. These instances provide irreducible polynomials
-  for various degrees and base fields.  One (orphan) instance is provided for
-  characteristic 2 fields of size up to 2^128 in
-  'Crypto.Lol.Types.IrreducibleChar2', and is exported by 'Crypto.Lol.Types'.
-  If you need to use an unsupported finite field,  define your own
-  instance of 'IrreduciblePoly' and do **not** import 'IrreducibleChar2'.
+* 'Crypto.Lol.Types.FiniteField' gives an unoptimized implementation
+  of finite-field arithmetic. To use this module, you will need an
+  instance of 'IrreduciblePoly', which provides irreducible
+  polynomials for various degrees and base fields. One (orphan)
+  instance is provided for characteristic-2 fields of size up to 2^128
+  in 'Crypto.Lol.Types.IrreducibleChar2', and is exported by
+  'Crypto.Lol.Types'.  If you need to use an unsupported finite field,
+  define your own instance of 'IrreduciblePoly' and do **not** import
+  'IrreducibleChar2'.
 
-* 'Crypto.Lol.Types.Unsafe.ZqBasic', which is a basic implementation of
-  \( \Z_q=\Z/q\Z \) arithmetic.
+* 'Crypto.Lol.Types.Unsafe.ZqBasic', which is a basic implementation
+  of \( \Z_q=\Z/q\Z \) arithmetic.
 
 * 'Crypto.Lol.Factored', which contains type-level support code for
-  factored integers. It also supports "reifying" 'Int's at runtime as static
-  types and "reflecting" those types as integers back to the code..
-  'Factored' types are mainly used to represent cyclotomic indices.
+  factored integers. It also supports "reifying" 'Int's at runtime as
+  static types and "reflecting" those types as integer
+  values. 'Factored' types are mainly used to represent cyclotomic
+  indices.
 
-Tests and benchmarks can be found in the packages <https://hackage.haskell.org/package/lol-tests lol-tests> and <https://hackage.haskell.org/package/lol-benches lol-benches>,
-respectively, though they are instantiated in individual tensors.
+A collection of polymorphic tests and benchmarks can be found in the
+packages <https://hackage.haskell.org/package/lol-tests lol-tests> and
+<https://hackage.haskell.org/package/lol-benches lol-benches>,
+respectively. These tests should be (and are) instantiated for
+specific 'Tensor' backends by the corresponding tensor packages.

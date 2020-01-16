@@ -53,7 +53,7 @@ realGaussians ::
 {-# INLINABLE realGaussians #-}
 realGaussians var n
     | odd n = V.tail <$> realGaussians var (n+1) -- O(1) tail
-    | otherwise = (V.fromList . uncurry (++) . unzip) <$>
+    | otherwise = V.fromList . uncurry (++) . unzip <$>
                   replicateM (n `div` 2) (realGaussian var)
 
 -- | Execute an action repeatedly until its result fails to satisfy a predicate,

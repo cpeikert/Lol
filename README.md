@@ -15,38 +15,33 @@ This repository contains several Haskell libraries:
     core of the project, and you'll need to install it to use anything
     else.
 
-  * The `apps` directory contains example cryptographic applications
+  * The `lol-apps` directory contains example cryptographic applications
     built using Lol. If you are interested in using our example
     applications, you will need this library. It is on Hackage
     [here](https://hackage.haskell.org/package/lol-apps). If you are
     just writing your own applications, you don't need to install this
     library.
 
-  * The `challenges` directory contains code to generate and verify
-    RLWE and RLWR challenges, which are described [here](https://web.eecs.umich.edu/~cpeikert/rlwe-challenges).
+  * The `lol-cpp` directory contains a C++ backend "tensor"
+    implementation.
 
-  * The `compiler` directory contains an unmaintained, primitive FHE
-    compiler for Lol. Eventually, this will work in conjuction with
-    lol-apps to transform plaintext descriptions of algorithms into
-    their homomorphic counterparts.
+Developing in the Lol ecosystem:
 
-Developing in the lol ecosystem:
-Compiling the lol ecosystem takes a long time. If you are just doing development,
-you probably don't need to compile (with optimizations) the ecosystem. Instead,
-you can develop interactively. Run
+Compiling the Lol packages takes a long time. If you are just doing
+development, you probably don't need to compile (with optimizations)
+the whole ecosystem. Instead, you can develop interactively. Run
 ```
-> stack build lol lol-cpp lol-repa lol-tests lol-benches rlwe-challenges lol-apps --dependencies-only
+> stack build lol lol-cpp lol-apps lol-tests lol-benches --dependencies-only
 ```
-to build all third-party dependencies of the lol ecosystem, then you can
+to build all third-party dependencies of the Lol ecosystem, then you can
 develop with
 ```
 > ./ghci path/to/file
-```
-This command builds the C++ library for `lol-cpp` and the loads
-all imported files from the lol ecosystem from source.
+``` 
+This command builds the C++ library for `lol-cpp` and loads all
+imported files from the Lol ecosystem from source.
 
 You can load all top-level executables with `./ghci AllMain.hs`.
-
 
 Installing Lol:
 
@@ -62,9 +57,10 @@ or
 > stack setup
 > stack install lol-apps
 ```
-You can run unit tests with `stack test <package>`. You can run microbenchmarks with `stack bench <package>`. Currently `lol-cpp`, `lol-repa`, and `lol-apps`
-have tests and benchmarks.
+You can run unit tests with `stack test <package>`. You can run
+microbenchmarks with `stack bench <package>`. Currently `lol-cpp`
+and `lol-apps` have tests and benchmarks.
 
 The `lol-apps` package includes examples of how to use each
 application. These are built automatically when you install
-lol-apps.
+`lol-apps`.

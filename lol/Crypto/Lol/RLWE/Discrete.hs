@@ -18,13 +18,13 @@ Functions and types for working with discretized ring-LWE samples.
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeApplications      #-}
+{-# LANGUAGE TypeFamilies          #-}
 
 module Crypto.Lol.RLWE.Discrete where
 
 import Crypto.Lol
 import Crypto.Lol.RLWE.Continuous as C (errorBound, tailGaussian)
 
-import Control.Applicative
 import Control.Monad.Random
 
 -- | A discrete RLWE sample \( (a,b) \in R_q \times R_q \).
@@ -35,7 +35,7 @@ type RLWECtx cm zq = (Cyclotomic (cm zq), Ring (cm zq), Reduce (cm (LiftOf zq)) 
 
 -- | A discrete RLWE sample with the given scaled variance and secret.
 sample :: forall rnd v cm zq .
-  (RLWECtx cm zq, Random (cm zq), RoundedGaussianCyc cm (LiftOf zq),
+  (RLWECtx cm zq, Random (cm zq), RoundedGaussianCyc (cm (LiftOf zq)),
    MonadRandom rnd, ToRational v)
   => v -> cm zq -> rnd (Sample cm zq)
 {-# INLINABLE sample #-}
@@ -45,16 +45,16 @@ sample svar s = let s' = adviseCRT s in do
   return (a, a * s' + reduce e)
 
 -- | The error term of an RLWE sample, given the purported secret.
-errorTerm :: (RLWECtx cm zq, Lift' zq, FunctorCyc cm zq (LiftOf zq))
-          => cm zq -> Sample cm zq -> cm (LiftOf zq)
+errorTerm :: (RLWECtx cm zq, LiftCyc (cm zq))
+          => cm zq -> Sample cm zq -> LiftOf (cm zq)
 {-# INLINABLE errorTerm #-}
 errorTerm s = let s' = adviseCRT s
               in \(a,b) -> liftDec $ b - a * s'
 
 -- | The 'gSqNorm' of the error term of an RLWE sample, given the
 -- purported secret.
-errorGSqNorm :: (RLWECtx cm zq, Lift' zq, FunctorCyc cm zq (LiftOf zq),
-                 GSqNormCyc cm (LiftOf zq))
+errorGSqNorm :: (RLWECtx cm zq, GSqNormCyc cm (LiftOf zq),
+                 LiftCyc (cm zq), LiftOf (cm zq) ~ cm (LiftOf zq))
              => cm zq -> Sample cm zq -> LiftOf zq
 {-# INLINABLE errorGSqNorm #-}
 errorGSqNorm s = gSqNorm . errorTerm s
@@ -74,5 +74,4 @@ errorBound =
     bsq = C.errorBound @m v eps -- continuous bound
     csq = C.tailGaussian @m eps
     fsq = (2 ^ length ps) * n * csq
-  in ceiling $ fsq + bsq + 2*(sqrt bsq)*(sqrt fsq)
-
+  in ceiling $ fsq + bsq + 2 * sqrt bsq * sqrt fsq

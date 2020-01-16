@@ -31,11 +31,13 @@ import Crypto.Lol.Types
 import Crypto.Lol.Utils.Benchmarks (Benchmark, bgroup, mkBench, mkBenchIO)
 import Crypto.Random
 
+-- must come after imports
+{-# ANN module "HLint: ignore Use camelCase" #-}
+
 -- | Benchmarks for single-index 'Cyc' operations.
 -- There must be a CRT basis for \(O_m\) over @r@.
 {-# INLINABLE cycBenches1 #-}
-cycBenches1 :: forall (t :: Factored -> * -> *) (m :: Factored) (r :: *) gen . _
-            => Proxy '(t,m,r) -> Proxy gen -> Benchmark
+cycBenches1 :: forall t m r gen . _ => Proxy '(t,m,r) -> Proxy gen -> Benchmark
 cycBenches1 ptmr pgen =
   let z = zero :: Cyc t m r
       errorBench = mkBenchIO "error" (bench_errRounded ptmr pgen 0.1)
@@ -57,9 +59,7 @@ cycBenches1 ptmr pgen =
 -- | Benchmarks for inter-ring 'Cyc' operations.
 -- There must be a CRT basis for \(O_{m'}\) over @r@.
 {-# INLINABLE cycBenches2 #-}
-cycBenches2 :: forall (t :: Factored -> * -> *) (m :: Factored) (m' :: Factored) (r :: *) .
-               (m `Divides` m', _)
-            => Proxy '(t,m,m',r) -> Benchmark
+cycBenches2 :: forall t m m' r . _ => Proxy '(t,m,m',r) -> Benchmark
 cycBenches2 ptmmr =
   let z' = zero :: Cyc t m' r
       z = zero :: Cyc t m r
@@ -75,7 +75,7 @@ cycBenches2 ptmmr =
 {-# INLINABLE bench_mul #-}
 -- no CRT conversion, just coefficient-wise multiplication
 bench_mul :: _ => Cyc t m r -> Cyc t m r -> Cyc t m r
-bench_mul a b = (adviseCRT a) * (adviseCRT b)
+bench_mul a b = adviseCRT a * adviseCRT b
 
 {-# INLINABLE bench_crt #-}
 -- convert input from Pow basis to CRT basis
@@ -134,7 +134,7 @@ bench_divGCRT = divG . adviseCRT
 
 {-# INLINABLE bench_errRounded #-}
 -- generate a rounded error term
-bench_errRounded :: forall (t :: Factored -> * -> *) m (r :: *) gen . (Fact m, CryptoRandomGen gen, _)
+bench_errRounded :: forall t m r gen . _
                  => Proxy '(t,m,r) -> Proxy gen -> Double -> IO (Cyc t m (LiftOf r))
 bench_errRounded _ _ v = do
   gen <- newGenIO
@@ -147,26 +147,26 @@ bench_twacePow :: forall t m m' r . _
 bench_twacePow _ = (twace :: Cyc t m' r -> Cyc t m r) . advisePow
 
 {-# INLINE bench_twaceDec #-}
-bench_twaceDec :: forall t m m' r . (Fact m, _)
+bench_twaceDec :: forall t m m' r . _
   => Proxy '(t,m,m',r) -> Cyc t m' r -> Cyc t m r
 bench_twaceDec _ = (twace :: Cyc t m' r -> Cyc t m r) . adviseDec
 
 {-# INLINE bench_twaceCRT #-}
-bench_twaceCRT :: forall t m m' r . (Fact m, _)
+bench_twaceCRT :: forall t m m' r . _
   => Proxy '(t,m,m',r) -> Cyc t m' r -> Cyc t m r
 bench_twaceCRT _ = (twace :: Cyc t m' r -> Cyc t m r) . adviseCRT
 
 {-# INLINE bench_embedPow #-}
-bench_embedPow :: forall t m m' r . (Fact m', _)
+bench_embedPow :: forall t m m' r . _
   => Proxy '(t,m,m',r) -> Cyc t m r -> Cyc t m' r
 bench_embedPow _ = (advisePow . embed :: Cyc t m r -> Cyc t m' r) . advisePow
 
 {-# INLINE bench_embedDec #-}
-bench_embedDec :: forall t m m' r . (Fact m', _)
+bench_embedDec :: forall t m m' r . _
   => Proxy '(t,m,m',r) -> Cyc t m r -> Cyc t m' r
 bench_embedDec _ = (adviseDec . embed :: Cyc t m r -> Cyc t m' r) . adviseDec
 
 {-# INLINE bench_embedCRT #-}
-bench_embedCRT :: forall t m m' r . (Fact m', _)
+bench_embedCRT :: forall t m m' r . _
   => Proxy '(t,m,m',r) -> Cyc t m r -> Cyc t m' r
 bench_embedCRT _ = (adviseCRT . embed :: Cyc t m r -> Cyc t m' r) . adviseCRT

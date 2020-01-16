@@ -32,7 +32,8 @@ import Data.Map   hiding (map)
 import Data.Maybe (fromMaybe)
 
 instance (CharOf a ~ Prime2, Field a) => IrreduciblePoly a where
-  irreduciblePoly :: forall d . (Reflects d Int) => Tagged d (Polynomial a)
+  -- https://ghc.haskell.org/trac/ghc/wiki/Migration/8.2#KindgeneralizationandMonoLocalBinds
+  irreduciblePoly :: forall (d :: k) . (Reflects d Int) => Tagged d (Polynomial a)
   irreduciblePoly = do
     let n = value @d
     return $ flip fromMaybe (lookup n polyMap) $ error $
@@ -46,7 +47,7 @@ polyMap :: (Ring fp) => Map Int (Polynomial fp)
 polyMap = fromList $ map (\xs -> (head xs, coeffsToPoly xs)) coeffs
 
 coeffsToPoly :: (Ring fp) => [Int] -> Polynomial fp
-coeffsToPoly xs = (sum $ map (X^^) xs) + 1
+coeffsToPoly xs = sum (map (X^^) xs) + 1
 
 -- The list below is small portion of the table
 -- "Table of Low-Weight binary Irreducible Polynomials" at

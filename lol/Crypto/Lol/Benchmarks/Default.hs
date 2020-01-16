@@ -13,36 +13,44 @@ Default high-level benchmarks for 'Crypto.Lol.Cyclotomic.Tensor' implementations
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE NoStarIsType          #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Benchmarks.Default (defaultLolBenches, oneIdxBenches, twoIdxBenches) where
+module Crypto.Lol.Benchmarks.Default
+( defaultLolBenches, oneIdxBenches, twoIdxBenches
+) where
 
 import Crypto.Lol
-import Crypto.Lol.Benchmarks.TensorBenches
-import Crypto.Lol.Benchmarks.CycRepBenches
 import Crypto.Lol.Benchmarks.CycBenches
-import Crypto.Lol.Utils.Benchmarks (bgroup, Benchmark)
+import Crypto.Lol.Benchmarks.CycRepBenches
+import Crypto.Lol.Benchmarks.TensorBenches
+import Crypto.Lol.Utils.Benchmarks         (Benchmark, bgroup)
 import Crypto.Lol.Utils.ShowType
+
+import Control.DeepSeq (NFData)
 
 -- | Benchmark parameters reported in the paper. We suggest running these benchmarks
 -- to quickly compare performance on your system or with your
 -- 'Crypto.Lol.Cyclotomic.Tensor' backend.
 {-# INLINABLE defaultLolBenches #-}
-defaultLolBenches :: _ => Proxy t -> Proxy h -> [Benchmark]
+defaultLolBenches ::
+  (forall m r . (Fact m, NFData r) => NFData (t m r), _)
+  => Proxy t -> Proxy h -> [Benchmark]
 defaultLolBenches pt phash = [
-  bgroup "Single Index" $ (($ phash) . ($ pt)) <$> [
+  bgroup "Single Index" $ ($ phash) . ($ pt) <$> [
     oneIdxBenches (Proxy::Proxy '(F1024,        Zq 12289)),
     oneIdxBenches (Proxy::Proxy '(F2048,        Zq 12289)),
     oneIdxBenches (Proxy::Proxy '(F64*F27,      Zq 3457)),
     oneIdxBenches (Proxy::Proxy '(F64*F81,      Zq 10369)),
     oneIdxBenches (Proxy::Proxy '(F64*F9*F25,   Zq 14401))],
-  bgroup"Twace-Embed" $ ($ pt) <$> [
+  bgroup "Twace-Embed" $ ($ pt) <$> [
     twoIdxBenches (Proxy::Proxy '(F8*F7*F13,  F32*F7*F13,   Zq 8737)),
     twoIdxBenches (Proxy::Proxy '(F8*F7*F13,  F8*F5*F7*F13, Zq 14561)),
     twoIdxBenches (Proxy::Proxy '(F128,       F128*F7*F13,  Zq 23297))]]
@@ -52,7 +60,7 @@ defaultLolBenches pt phash = [
 oneIdxBenches :: forall t m r gen . _ => Proxy '(m,r) -> Proxy t -> Proxy gen -> Benchmark
 oneIdxBenches _ _ pgen =
   let ptmr = Proxy :: Proxy '(t,m,r)
-  in bgroup (showType ptmr) $ (($ pgen) . ($ ptmr)) <$> [tensorBenches1, cycRepBenches1, cycBenches1]
+  in bgroup (showType ptmr) $ ($ pgen) . ($ ptmr) <$> [tensorBenches1, cycRepBenches1, cycBenches1]
 
 -- | Collection of all inter-ring operations at all levels of the library.
 {-# INLINABLE twoIdxBenches #-}

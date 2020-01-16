@@ -20,4 +20,4 @@ import Test.Framework
 
 main :: IO ()
 main = defaultMainWithArgs
-  (defaultLolTests (Proxy::Proxy RT)) ["--threads=1","--maximum-generated-tests=100"]
+  (defaultLolTests (Proxy::Proxy RT)) ["--threads=1","--maximum-generated-tests=20"]

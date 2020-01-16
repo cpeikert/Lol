@@ -26,6 +26,7 @@ indexing.
 {-# LANGUAGE MultiParamTypeClasses   #-}
 {-# LANGUAGE NoImplicitPrelude       #-}
 {-# LANGUAGE PolyKinds               #-}
+{-# LANGUAGE QuantifiedConstraints   #-}
 {-# LANGUAGE RankNTypes              #-}
 {-# LANGUAGE ScopedTypeVariables     #-}
 {-# LANGUAGE TupleSections           #-}
@@ -63,8 +64,7 @@ import Crypto.Lol.Types.IFunctor
 import           Algebra.Module          as Module (C)
 import           Control.Applicative
 import           Control.Monad.Random
-import           Data.Foldable           (Foldable)
-import           Data.Singletons.Prelude hiding ((:-))
+import           Data.Singletons.Prelude
 import           Data.Traversable
 import           Data.Tuple              (swap)
 import qualified Data.Vector             as V
@@ -87,10 +87,7 @@ import qualified Data.Vector.Unboxed     as U
 -- inputs for each method is determined by the linear transform it
 -- implements.
 
-class (ForallFact1 Functor  t, ForallFact1 Applicative t,
-       ForallFact1 Foldable t, ForallFact1 Traversable t,
-       -- include Functor and Foldable because the other ForallFact1
-       -- constraints don't imply them
+class (forall m . Fact m => (Applicative (t m), Traversable (t m)),
        IFunctor t, IFElt t r, Additive r)
   => TensorPowDec t r where
 
@@ -136,7 +133,8 @@ class TensorPowDec t r => TensorG t r where
 
 -- | Encapsulates functions related to the Chinese-remainder
 -- representation/transform.
-class (TensorPowDec t r, CRTrans mon r, ForallFact2 (Module.C r) t r)
+class (TensorPowDec t r, CRTrans mon r,
+       forall m . Fact m => (Module.C r) (t m r))
   => TensorCRT t mon r where
   -- | A tuple of all the operations relating to the CRT basis, in a
   -- single 'Maybe' value for safety.  Clients should typically not
@@ -280,6 +278,7 @@ data Kron r = MNil | MKron (Kron r) (KronC r) -- snoc list
 -- | Extract the @(i,j)@ element of a 'Kron'.
 indexK :: Ring r => Kron r -> Int -> Int -> r
 indexK MNil 0 0 = LP.one
+indexK MNil i j = error $ "indexK MNil out of bounds: i = " ++ show i ++ ", j = " ++ show j
 indexK (MKron m (MC r c mc)) i j =
   let (iq,ir) = i `divMod` r
       (jq,jr) = j `divMod` c
@@ -386,6 +385,8 @@ zmsToIndexPP (p,_) i = let (i1,i0) = i `divMod` p
 -- they all have such a factorization. The first argument is the list
 -- of \((\varphi(m),\varphi(m'))\) pairs for the (merged) prime powers
 -- of \(m\),\(m'\).
+{-# INLINE toIndexPair #-}
+{-# INLINE fromIndexPair #-}
 toIndexPair :: [(Int,Int)] -> Int -> (Int,Int)
 fromIndexPair :: [(Int,Int)] -> (Int,Int) -> Int
 

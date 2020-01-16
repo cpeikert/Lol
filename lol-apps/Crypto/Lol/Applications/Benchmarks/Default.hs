@@ -13,8 +13,10 @@ Mostly-monomorphized benchmarks for lol-apps.
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
+{-# LANGUAGE NoStarIsType          #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
@@ -22,33 +24,35 @@ Mostly-monomorphized benchmarks for lol-apps.
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Applications.Benchmarks.Default
- ( defaultSHEBenches
+ ( defaultBGVBenches
  , defaultKHPRFBenches
  ) where
 
-import Control.Monad.Random
+import Control.DeepSeq (NFData)
 
 import Crypto.Lol
-import Crypto.Lol.Applications.Benchmarks.SHEBenches
 import Crypto.Lol.Applications.Benchmarks.KHPRFBenches
-import Crypto.Lol.Benchmarks (bgroup, Benchmark, Zq, type (**))
+import Crypto.Lol.Applications.Benchmarks.BGVBenches
+import Crypto.Lol.Benchmarks                           (type (**),
+                                                        Benchmark, Zq,
+                                                        bgroup)
 
-defaultSHEBenches :: forall t gad gen rnd . (MonadRandom rnd, _)
+defaultBGVBenches :: (forall m r . (Fact m, NFData r) => NFData (t m r), _)
                   => Proxy t -> Proxy gad -> Proxy gen -> rnd [Benchmark]
-defaultSHEBenches pt pgad pgen  = sequence [
-  fmap (bgroup "SHE") $ sequence $ (($ pt) . ($ pgen)) <$>
-    [sheBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
-     sheBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
+defaultBGVBenches pt pgad pgen  = sequence [
+  fmap (bgroup "BGV") $ sequence $ ($ pt) . ($ pgen) <$>
+    [bgvBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
+     bgvBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
   fmap (bgroup "Dec") $ sequence $ ($ pt) <$>
     [decBenches (Proxy::Proxy '(F16, F1024, Zq 8,  Zq 1017857)),
      decBenches (Proxy::Proxy '(F16, F2048, Zq 16, Zq 1017857))],
   fmap (bgroup "Rescale") $ sequence $ ($ pt) <$>
     [rescaleBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq 1017857, Zq (1032193 ** 1017857))),
      rescaleBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq 1008001, Zq (1065601 ** 1008001)))],
-  fmap (bgroup "KeySwitch") $ sequence $ (($ pt) . ($ pgad)) <$>
+  fmap (bgroup "KeySwitch") $ sequence $ ($ pt) . ($ pgad) <$>
     [keySwitchBenches (Proxy::Proxy '(F32, F2048,      Zq 16, Zq (1017857 ** 1032193))),
      keySwitchBenches (Proxy::Proxy '(F32, F64*F9*F25, Zq 16, Zq (1008001 ** 1065601)))],
-  fmap (bgroup "Tunnel") $ sequence $ (($ pt) . ($ pgad)) <$>
+  fmap (bgroup "Tunnel") $ sequence $ ($ pt) . ($ pgad) <$>
     [tunnelBenches {- H0 -> H1 -} (Proxy::Proxy '(F128,
                                                   F128 * F7 * F13,
                                                   F64 * F7, F64 * F7 * F13,
@@ -80,5 +84,6 @@ defaultSHEBenches pt pgad pgen  = sequence [
                                                   Zq 3144961))]]
 
 
-defaultKHPRFBenches :: _ => Proxy t -> Proxy gad -> rnd [Benchmark]
+defaultKHPRFBenches :: (forall m r . (Fact m, NFData r) => NFData (t m r), _)
+ => Proxy t -> Proxy gad -> rnd [Benchmark]
 defaultKHPRFBenches = khprfBenches

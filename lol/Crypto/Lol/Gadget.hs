@@ -69,7 +69,7 @@ class (Gadget gad u, Reduce (DecompOf u) u) => Decompose gad u where
 
 -- | Decompose a list entry-wise.
 decomposeList :: forall gad u . Decompose gad u => [u] -> [DecompOf u]
-decomposeList = concat . fmap (decompose @gad)
+decomposeList = concatMap (decompose @gad)
 
 -- | Decompose a matrix entry-wise.
 decomposeMatrix :: forall gad u . (Decompose gad u)
@@ -77,7 +77,7 @@ decomposeMatrix :: forall gad u . (Decompose gad u)
 decomposeMatrix =
   let l = length $ gadget @gad @u
   in \m -> fromColumns (l * numRows m) (numColumns m) $
-           decomposeList @gad <$> (columns m)
+           decomposeList @gad <$> columns m
 
 -- | Error correction relative to a gadget.
 class Gadget gad u => Correct gad u where
@@ -106,9 +106,7 @@ instance (Correct gad a, Correct gad b,
     => Correct gad (a,b) where
 
   correct =
-    let gada = gadget @gad @a
-        gadb = gadget @gad @b
-        ka = length gada
+    let ka = length $ gadget @gad @a
         qaval = toInteger $ modulus @a
         qbval = toInteger $ modulus @b
         qamod = fromIntegral qaval

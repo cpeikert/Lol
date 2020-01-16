@@ -16,43 +16,42 @@ Mostly-monomorphized tests for lol-apps.
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TypeFamilies          #-}
 {-# LANGUAGE TypeOperators         #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
 module Crypto.Lol.Applications.Tests.Default (defaultAppsTests) where
-
-import Control.Monad.Random
-
-import Crypto.Lol                             (Cyc)
-import Crypto.Lol.Applications.SymmSHE
-import Crypto.Lol.Applications.Tests.SHETests
+import Crypto.Lol.Applications.Tests.BGVTests
 import Crypto.Lol.Factored
-import Crypto.Lol.Gadget
 import Crypto.Lol.Tests
 
 import Data.Proxy
 
-defaultAppsTests :: _ => Proxy t -> Proxy gad -> [Test]
+defaultAppsTests ::
+  (forall m r . (Fact m, Show r, Eq r) => (Show (t m r), Eq (t m r)),
+   _)
+  => Proxy t -> Proxy gad -> [Test]
 defaultAppsTests pt pgad  =
-  [testGroup "SHE" $ ($ pt) <$> [
-    sheTests (Proxy::Proxy '(F7, F7, Zq 2,Zq (19393921 ** 18869761))),
-    sheTests (Proxy::Proxy '(F7, F21,Zq 2,Zq (19393921 ** 18869761))),
-    sheTests (Proxy::Proxy '(F2, F8, Zq 2,Zq 536871001)),
-    sheTests (Proxy::Proxy '(F1, F8, Zq 2,Zq 536871001)),
-    sheTests (Proxy::Proxy '(F4, F12,Zq 2,Zq 2148249601)),
-    sheTests (Proxy::Proxy '(F4, F8, Zq 3,Zq 2148249601)),
-    sheTests (Proxy::Proxy '(F7, F7, Zq 4,Zq (19393921 ** 18869761))),
-    sheTests (Proxy::Proxy '(F7, F21,Zq 4,Zq (19393921 ** 18869761))),
-    sheTests (Proxy::Proxy '(F1, F4, Zq 4,Zq 18869761)),
-    sheTests (Proxy::Proxy '(F4, F4, Zq 4,Zq 18869761)),
-    sheTests (Proxy::Proxy '(F14,F14,Zq 4,Zq 18869761)),
-    sheTests (Proxy::Proxy '(F28,F28,Zq 4,Zq 18869761)),
-    sheTests (Proxy::Proxy '(F28,F28,Zq 4,Zq 80221)),
-    sheTests (Proxy::Proxy '(F1, F8, Zq 4,Zq 536871001)),
-    sheTests (Proxy::Proxy '(F2, F8, Zq 4,Zq 536871001)),
-    sheTests (Proxy::Proxy '(F4, F12,Zq 8,Zq 2148249601)),
+  [testGroup "BGV" $ ($ pt) <$> [
+    bgvTests (Proxy::Proxy '(F7, F7, Zq 2,Zq (19393921 ** 18869761))),
+    bgvTests (Proxy::Proxy '(F7, F21,Zq 2,Zq (19393921 ** 18869761))),
+    bgvTests (Proxy::Proxy '(F2, F8, Zq 2,Zq 536871001)),
+    bgvTests (Proxy::Proxy '(F1, F8, Zq 2,Zq 536871001)),
+    bgvTests (Proxy::Proxy '(F4, F12,Zq 2,Zq 2148249601)),
+    bgvTests (Proxy::Proxy '(F4, F8, Zq 3,Zq 2148249601)),
+    bgvTests (Proxy::Proxy '(F7, F7, Zq 4,Zq (19393921 ** 18869761))),
+    bgvTests (Proxy::Proxy '(F7, F21,Zq 4,Zq (19393921 ** 18869761))),
+    bgvTests (Proxy::Proxy '(F1, F4, Zq 4,Zq 18869761)),
+    bgvTests (Proxy::Proxy '(F4, F4, Zq 4,Zq 18869761)),
+    bgvTests (Proxy::Proxy '(F14,F14,Zq 4,Zq 18869761)),
+    bgvTests (Proxy::Proxy '(F28,F28,Zq 4,Zq 18869761)),
+    bgvTests (Proxy::Proxy '(F28,F28,Zq 4,Zq 80221)),
+    bgvTests (Proxy::Proxy '(F1, F8, Zq 4,Zq 536871001)),
+    bgvTests (Proxy::Proxy '(F2, F8, Zq 4,Zq 536871001)),
+    bgvTests (Proxy::Proxy '(F4, F12,Zq 8,Zq 2148249601)),
 
     decTest (Proxy::Proxy '(F2, F8, Zq 2,Zq 536871001)),
     decTest (Proxy::Proxy '(F1, F8, Zq 2,Zq 536871001)),

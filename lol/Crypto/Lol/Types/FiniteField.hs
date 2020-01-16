@@ -41,6 +41,8 @@ import Crypto.Lol.CRTrans
 import Crypto.Lol.Factored
 import Crypto.Lol.Prelude
 import Crypto.Lol.Reflects
+-- for specialization
+import Crypto.Lol.Types.Unsafe.ZqBasic hiding (ZqB, unZqB)
 
 import Algebra.Additive     as Additive (C)
 import Algebra.Field        as Field (C)
@@ -49,7 +51,7 @@ import Algebra.Ring         as Ring (C)
 import Algebra.ZeroTestable as ZeroTestable (C)
 import MathObj.Polynomial
 
-import Math.NumberTheory.Primes.Factorisation
+import Math.NumberTheory.Primes (factorise, unPrime)
 
 import           Control.Applicative  hiding ((*>))
 import           Control.DeepSeq
@@ -58,7 +60,7 @@ import           Control.Monad.Random (liftRand, runRand)
 import qualified Data.Vector          as V
 import           System.Random
 
---import qualified Debug.Trace as DT
+-- import qualified Debug.Trace as DT
 
 -- | A finite field of given degree over \(\F_p\).
 newtype GF fp d = GF (Polynomial fp)
@@ -81,12 +83,13 @@ instance (GFCtx fp d) => Enumerable (GF fp d) where
 
 instance (Random fp, Reflects d Int) => Random (GF fp d) where
   random = let d = value @d
-           in runRand $ (GF . fromCoeffs) <$> replicateM d (liftRand random)
+           in runRand $ GF . fromCoeffs <$> replicateM d (liftRand random)
   {-# INLINABLE random #-}
 
   randomR _ = error "randomR non-sensical for GF"
 
 instance (GFCtx fp d) => Ring.C (GF fp d) where
+  --{-# SPECIALIZE instance Ring.C (GF (ZqBasic q Int64) d) #-}
 
   one = GF one
 
@@ -101,8 +104,10 @@ instance (GFCtx fp d) => Field.C (GF fp d) where
           in \(GF f) -> let (_,(a,_)) = extendedGCD f g
                            in GF a
 
-instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
-  crtInfo :: forall m . (Reflects m Int) => TaggedT m Maybe (CRTInfo (GF fp d))
+instance (GFCtx fp d, NFData fp) => CRTrans Maybe (GF fp d) where
+  -- https://ghc.haskell.org/trac/ghc/wiki/Migration/8.2#KindgeneralizationandMonoLocalBinds
+  crtInfo :: forall (m :: k) . (Reflects m Int) => TaggedT m Maybe (CRTInfo (GF fp d))
+  {-# INLINABLE crtInfo #-}
   crtInfo = tagT $ (,) <$> omegaPow <*> scalarInv
     where
       omegaPow :: Maybe (Int -> GF fp d)
@@ -112,7 +117,7 @@ instance (GFCtx fp d) => CRTrans Maybe (GF fp d) where
             (q,r) = (size'-1) `quotRem` mval
             gen = head $ filter isPrimitive values
             omega = gen^q
-            omegaPows = V.iterateN mval (*omega) one
+            omegaPows = force $ V.iterateN mval (*omega) one
         in if r == 0
            then Just $ (omegaPows V.!) . (`mod` mval)
            else Nothing
@@ -133,7 +138,7 @@ instance (Additive fp, Ring (GF fp d), Reflects d Int)
     in if n `mod` dval /= 0 then
                 error $ "FiniteField: d (= " ++ show dval ++
                           ") does not divide n (= " ++ show n ++ ")"
-       else Coeffs $ concat ((toList . (r *) . fromList) <$> chunksOf dval fps)
+       else Coeffs $ concat (toList . (r *) . fromList <$> chunksOf dval fps)
 
 chunksOf :: Int -> [a] -> [[a]]
 chunksOf _ [] = []
@@ -165,7 +170,7 @@ size = uncurry (^) <$> sizePP
 
 isPrimitive :: forall fp d . (GFCtx fp d) => GF fp d -> Bool
 isPrimitive = let q = proxy size (Proxy :: Proxy (GF fp d))
-                  ps = map (fromIntegral . fst) $ factorise $
+                  ps = map (fromIntegral . unPrime . fst) $ factorise @Integer $
                        fromIntegral $ q-1
                   exps = map ((q-1) `div`) ps
               in \g -> not (isZero g) && all (\e -> g^e /= 1) exps
@@ -175,15 +180,16 @@ dotp a b = sum $ zipWith (*) a b
 
 -- | Trace into the prime subfield.
 trace :: forall fp d . (GFCtx fp d) => GF fp d -> fp
+{-# SPECIALIZE trace :: (Prime p, Reflects d Int, Reflects p Int64, IrreduciblePoly (ZqBasic p Int64)) => GF (ZqBasic p Int64) d -> ZqBasic p Int64 #-}
 trace = let ts = proxy powTraces (Proxy::Proxy (GF fp d))
         in \(GF f) -> dotp ts (coeffs f)
 
 -- | Traces of the power basis elements \(\{1, x, x^2, \ldots, x^{d-1}\}\).
 powTraces :: forall fp d . (GFCtx fp d) => Tagged (GF fp d) [fp]
 powTraces =
-  --DT.trace ("FiniteField.powTraces: p = " ++
-  --          show (value @(CharOf fp)) :: Int) ++
-  --          ", d = " ++ show (value @d :: Int)) $
+  {-DT.trace ("FiniteField.powTraces: p = " ++-}
+            {-show (valuePrime @(CharOf fp) :: Int) ++-}
+            {-", d = " ++ show (value @d :: Int)) $-}
   tag $ map trace' $ take (value @d) $ iterate (* GF (X ^^ 1)) (one :: GF fp d)
 
 -- helper that computes trace via brute force: sum frobenius

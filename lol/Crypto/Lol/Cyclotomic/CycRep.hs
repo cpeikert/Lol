@@ -38,7 +38,6 @@ the internal linear transforms and other operations it performs.
 {-# LANGUAGE RankNTypes                 #-}
 {-# LANGUAGE RebindableSyntax           #-}
 {-# LANGUAGE ScopedTypeVariables        #-}
-{-# LANGUAGE StandaloneDeriving         #-}
 {-# LANGUAGE TypeApplications           #-}
 {-# LANGUAGE TypeFamilies               #-}
 {-# LANGUAGE TypeOperators              #-}
@@ -69,10 +68,11 @@ import Crypto.Lol.Cyclotomic.Tensor      hiding (divGDec, divGPow,
                                           mulGDec, mulGPow, scalarCRT,
                                           scalarPow, twaceCRT)
 import Crypto.Lol.Prelude                as LP
+import Crypto.Lol.Reflects
 import Crypto.Lol.Types.FiniteField
 import Crypto.Lol.Types.IFunctor
 import Crypto.Lol.Types.Proto
-import Crypto.Lol.Types.ZPP
+import Crypto.Lol.Types.Unsafe.ZqBasic
 
 import qualified Crypto.Lol.Cyclotomic.Tensor as T
 
@@ -85,7 +85,6 @@ import Control.Applicative    as A
 import Control.DeepSeq
 import Control.Monad.Identity (Identity (..))
 import Control.Monad.Random   hiding (ap, lift)
-import Data.Constraint
 import Data.Foldable          as F
 import Data.Traversable
 
@@ -98,8 +97,6 @@ import Data.Traversable
 -- (e.g., 'P', 'D', 'C', 'E'); @r@ is the base ring of the
 -- coefficients (e.g., \(\Z\), \(\Z_q\)).
 
-data family CycRep (t :: Factored -> * -> *) rep (m :: Factored) r
-
 -- | Nullary index type representing the powerful basis.
 data P
 -- | Nullary index type representing the decoding basis.
@@ -110,12 +107,28 @@ data C
 -- base ring.
 data E
 
-newtype instance CycRep t P m r = Pow  (t m r)
-newtype instance CycRep t D m r = Dec  (t m r)
-data    instance CycRep t C m r = CRTC !(CSentinel t m r) !(t m r)
+data family CycRep (t :: Factored -> * -> *) rep (m :: Factored) r
+
+newtype instance CycRep t P m r = Pow  (t m r) deriving (Eq, ZeroTestable.C)
+newtype instance CycRep t D m r = Dec  (t m r) deriving (Eq, ZeroTestable.C)
+
+-- C/ESentinel enforces invariant that exactly one of the following
+-- two can be created for a given (t,m,r).
+data    instance CycRep t C m r = CRTC !(CSentinel t m r) !(t m r) deriving (Eq)
+-- can't derive ZT due to sentinel
+
 data    instance CycRep t E m r = CRTE !(ESentinel t m r) !(t m (CRTExt r))
--- C/ESentinel enforces invariant that exactly one of these can be
--- created for a given (t,m,r).
+-- no Eq due to precision
+
+{- CJP: old GADT definition of CycRep, which seems less
+   runtime-efficient than the data family definition.
+
+data CycRep t rep (m :: Factored) r where
+  Pow  :: !(t m r) -> CycRep t P m r
+  Dec  :: !(t m r) -> CycRep t D m r
+  CRTC :: !(CSentinel t m r) -> !(t m r) -> CycRep t C m r
+  CRTE :: !(ESentinel t m r) -> !(t m (CRTExt r)) -> CycRep t E m r
+-}
 
 -- | Convenient synonym for either CRT representation.
 type CycRepEC t m r = Either (CycRep t E m r) (CycRep t C m r)
@@ -124,7 +137,8 @@ type CycRepEC t m r = Either (CycRep t E m r) (CycRep t C m r)
 type CycRepPC t m r = Either (CycRep t P m r) (CycRep t C m r)
 
 -- | Constraints needed for CRT-related operations on 'CycRep' data.
-type CRTElt t r = (TensorG t r, TensorCRT t Maybe r, TensorCRT t Identity (CRTExt r), CRTEmbed r)
+type CRTElt t r = (TensorG t r, CRTEmbed r,
+                   TensorCRT t Maybe r, TensorCRT t Identity (CRTExt r))
 
 -- | Embed a scalar from the base ring.
 scalarPow :: (TensorPowDec t r, Fact m) => r -> CycRep t P m r
@@ -138,33 +152,43 @@ scalarCRT r = case crtSentinel of
   Left  s -> Left  $ CRTE s $ runIdentity T.scalarCRT $ toExt r
 {-# INLINABLE scalarCRT #-}
 
--- Eq instances
-
-deriving instance Eq (t m r) => Eq (CycRep t P m r)
-deriving instance Eq (t m r) => Eq (CycRep t D m r)
-deriving instance Eq (t m r) => Eq (CycRep t C m r)
-
--- no Eq instance for E due to precision
 
 ---------- Numeric Prelude instances ----------
 
 -- ZeroTestable instances
 
-deriving instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t P m r)
-deriving instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t D m r)
+{- CJP: only need these instances for GADT version of CycRep; for data
+   family they are auto-derived.
+
+instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t P m r) where
+  isZero (Pow v) = isZero v
+  {-# INLINABLE isZero #-}
+
+instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t D m r) where
+  isZero (Dec v) = isZero v
+  {-# INLINABLE isZero #-}
+
+-}
+
+-- ZT for P,D auto-derived
 
 instance ZeroTestable (t m r) => ZeroTestable.C (CycRep t C m r) where
   -- can't derive this because of sentinel
   isZero (CRTC _ v) = isZero v
+  {-# INLINABLE isZero #-}
 
 -- no ZT instance for E due to precision
 
 -- Additive instances
 
 -- TODO: replace these implementations to use Additive instance of
--- underlying tensor? Would this require using ForallFact2 Additive.C?
+-- underlying tensor? Would this require (forall m . Fact m => Additive (t m))?
 
 instance (TensorPowDec t r, Fact m) => Additive.C (CycRep t P m r) where
+  {-# SPECIALIZE instance (TensorPowDec t Int64, Fact m) => Additive.C (CycRep t P m Int64) #-}
+  {-# SPECIALIZE instance (TensorPowDec t Double, Fact m) => Additive.C (CycRep t P m Double) #-}
+  {-# SPECIALIZE instance (TensorPowDec t (ZqBasic q Int64), Fact m) => Additive.C (CycRep t P m (ZqBasic q Int64)) #-}
+
   zero = Pow $ T.scalarPow zero
   (Pow v1) + (Pow v2) = Pow $ zipWithI (+) v1 v2
   (Pow v1) - (Pow v2) = Pow $ zipWithI (-) v1 v2
@@ -175,6 +199,10 @@ instance (TensorPowDec t r, Fact m) => Additive.C (CycRep t P m r) where
   {-# INLINABLE negate #-}
 
 instance (TensorPowDec t r, Fact m) => Additive.C (CycRep t D m r) where
+  {-# SPECIALIZE instance (TensorPowDec t Int64, Fact m) => Additive.C (CycRep t D m Int64) #-}
+  {-# SPECIALIZE instance (TensorPowDec t Double, Fact m) => Additive.C (CycRep t D m Double) #-}
+  {-# SPECIALIZE instance (TensorPowDec t (ZqBasic q Int64), Fact m) => Additive.C (CycRep t D m (ZqBasic q Int64)) #-}
+
   zero = Dec $ T.scalarPow zero -- scalarPow works because it's zero
   (Dec v1) + (Dec v2) = Dec $ zipWithI (+) v1 v2
   (Dec v1) - (Dec v2) = Dec $ zipWithI (-) v1 v2
@@ -187,6 +215,9 @@ instance (TensorPowDec t r, Fact m) => Additive.C (CycRep t D m r) where
 -- | only for appropriate CRT representation (otherwise 'zero' would
 -- violate internal invariant)
 instance (Fact m, CRTElt t r) => Additive.C (CycRepEC t m r) where
+  {-# SPECIALIZE instance (Fact m, CRTElt t Int64) => Additive.C (CycRepEC t m Int64) #-}
+  {-# SPECIALIZE instance (Fact m, CRTElt t Double) => Additive.C (CycRepEC t m Double) #-}
+  {-# SPECIALIZE instance (Fact m, CRTElt t (ZqBasic q Int64)) => Additive.C (CycRepEC t m (ZqBasic q Int64)) #-}
 
   zero = scalarCRT zero
 
@@ -210,6 +241,9 @@ instance (Fact m, CRTElt t r) => Additive.C (CycRepEC t m r) where
 
 -- | only for appropriate CRT representation
 instance (Fact m, CRTElt t r) => Ring.C (CycRepEC t m r) where
+  {-# SPECIALIZE instance (Fact m, CRTElt t Int64) => Ring.C (CycRepEC t m Int64) #-}
+  {-# SPECIALIZE instance (Fact m, CRTElt t Double) => Ring.C (CycRepEC t m Double) #-}
+  {-# SPECIALIZE instance (Fact m, CRTElt t (ZqBasic q Int64)) => Ring.C (CycRepEC t m (ZqBasic q Int64)) #-}
 
   one = scalarCRT one
   fromInteger c = scalarCRT $ fromInteger c
@@ -224,14 +258,25 @@ instance (Fact m, CRTElt t r) => Ring.C (CycRepEC t m r) where
 
 
 instance (Ring r, TensorPowDec t r, Fact m) => Module.C r (CycRep t P m r) where
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t Int64) => Module.C Int64 (CycRep t P m Int64) #-}
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t Double) => Module.C Double (CycRep t P m Double) #-}
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t (ZqBasic q Int64), Reflects q Int64) => Module.C (ZqBasic q Int64) (CycRep t P m (ZqBasic q Int64)) #-}
+
   r *> (Pow v) = Pow $ fmapI (r *) v
   {-# INLINABLE (*>) #-}
 
 instance (Ring r, TensorPowDec t r, Fact m) => Module.C r (CycRep t D m r) where
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t Int64) => Module.C Int64 (CycRep t D m Int64) #-}
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t Double) => Module.C Double (CycRep t D m Double) #-}
+  {-# SPECIALIZE instance (Fact m, TensorPowDec t (ZqBasic q Int64), Reflects q Int64) => Module.C (ZqBasic q Int64) (CycRep t D m (ZqBasic q Int64)) #-}
+
   r *> (Dec v) = Dec $ fmapI (r *) v
   {-# INLINABLE (*>) #-}
 
 instance (CRTElt t r, Fact m) => Module.C r (CycRepEC t m r) where
+  {-# SPECIALIZE instance (CRTElt t Int64, Fact m) => Module.C Int64 (CycRepEC t m Int64) #-}
+  {-# SPECIALIZE instance (CRTElt t Double, Fact m) => Module.C Double (CycRepEC t m Double) #-}
+  {-# SPECIALIZE instance (CRTElt t (ZqBasic q Int64), Fact m) => Module.C (ZqBasic q Int64) (CycRepEC t m (ZqBasic q Int64)) #-}
 
   r *> (Right (CRTC s v)) = Right $ CRTC s $ fmapI (r *) v
   r *> (Left (CRTE s v)) = Left $ CRTE s $ fmapI (toExt r *) v
@@ -249,11 +294,15 @@ instance (GFCtx fp d, Fact m, TensorPowDec t fp, Module (GF fp d) (t m fp))
 
 instance (Fact m, Reduce a b, IFunctor t, IFElt t a, IFElt t b)
          => Reduce (CycRep t P m a) (CycRep t P m b) where
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64, IFunctor t, IFElt t Int64, IFElt t (ZqBasic q Int64)) => Reduce (CycRep t P m Int64) (CycRep t P m (ZqBasic q Int64)) #-}
+
   reduce (Pow v) = Pow $ fmapI reduce v
   {-# INLINABLE reduce #-}
 
 instance (Fact m, Reduce a b, IFunctor t, IFElt t a, IFElt t b)
     => Reduce (CycRep t D m a) (CycRep t D m b) where
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64, IFunctor t, IFElt t Int64, IFElt t (ZqBasic q Int64)) => Reduce (CycRep t D m Int64) (CycRep t D m (ZqBasic q Int64)) #-}
+
   reduce (Dec v) = Dec $ fmapI reduce v
   {-# INLINABLE reduce #-}
 
@@ -263,13 +312,17 @@ instance (Fact m, Reduce a b, IFunctor t, IFElt t a, IFElt t b)
 type instance LiftOf (CycRep t P m r) = CycRep t P m (LiftOf r)
 type instance LiftOf (CycRep t D m r) = CycRep t D m (LiftOf r)
 
-instance (Lift' r, IFunctor t, IFElt t r, IFElt t (LiftOf r), Fact m)
+instance (Fact m, Lift' r, IFunctor t, IFElt t r, IFElt t (LiftOf r))
          => Lift' (CycRep t P m r) where
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64, IFunctor t, IFElt t Int64, IFElt t (ZqBasic q Int64)) => Lift' (CycRep t P m (ZqBasic q Int64)) #-}
+
   lift (Pow v) = Pow $ fmapI lift v
   {-# INLINABLE lift #-}
 
 instance (Lift' r, IFunctor t, IFElt t r, IFElt t (LiftOf r), Fact m)
          => Lift' (CycRep t D m r) where
+  {-# SPECIALIZE instance (Fact m, Reflects q Int64, IFunctor t, IFElt t Int64, IFElt t (ZqBasic q Int64)) => Lift' (CycRep t D m (ZqBasic q Int64)) #-}
+
   lift (Dec v) = Dec $ fmapI lift v
   {-# INLINABLE lift #-}
 
@@ -295,13 +348,16 @@ instance (Rescale a b, TensorPowDec t a, TensorPowDec t b, Fact m)
 -- satisfied anyway (e.g., Ring for P rep).
 
 mulGPow :: (Fact m, TensorG t r) => CycRep t P m r -> CycRep t P m r
+{-# INLINABLE mulGPow #-}
 mulGPow (Pow v) = Pow $ T.mulGPow v
 
 mulGDec :: (Fact m, TensorG t r) => CycRep t D m r -> CycRep t D m r
+{-# INLINABLE mulGDec #-}
 mulGDec (Dec v) = Dec $ T.mulGDec v
 
 mulGCRTC :: (Fact m, TensorCRT t Maybe r)
          => CycRep t C m r -> CycRep t C m r
+{-# INLINABLE mulGCRTC #-}
 mulGCRTC (CRTC s v) = CRTC s $ mulGCRTCS s v
 
 -- Note: We do not implement divGCRTE because we can't tell whether
@@ -330,15 +386,15 @@ divGCRTC (CRTC s v) = CRTC s $ divGCRTCS s v
 -- the canonical embedding, namely,
 -- \(\hat{m}^{-1} \cdot \| \sigma(g_m \cdot e) \|^2\) .
 gSqNormDec :: (TensorGSqNorm t r, Fact m) => CycRep t D m r -> r
-gSqNormDec (Dec v) = T.gSqNormDec v
 {-# INLINABLE gSqNormDec #-}
+gSqNormDec (Dec v) = T.gSqNormDec v
 
 -- | Sample from the "tweaked" Gaussian error distribution \(t\cdot D\) in
 -- the decoding basis, where \(D\) has scaled variance \(v\).
 tweakedGaussian :: (TensorGaussian t q, MonadRandom rnd, Fact m, ToRational v)
                    => v -> rnd (CycRep t D m q)
-tweakedGaussian = fmap Dec . tweakedGaussianDec
 {-# INLINABLE tweakedGaussian #-}
+tweakedGaussian = fmap Dec . tweakedGaussianDec
 
 -- | Sample from the tweaked Gaussian with given scaled variance,
 -- deterministically rounded using the decoding basis. (This
@@ -402,13 +458,13 @@ embedCRTE x@(CRTE _ v) =
 -- | Twace into a subring, for the powerful basis.
 twacePow :: (TensorPowDec t r, m `Divides` m')
          => CycRep t P m' r -> CycRep t P m r
-twacePow (Pow v) = Pow $ twacePowDec v
 {-# INLINABLE twacePow #-}
+twacePow (Pow v) = Pow $ twacePowDec v
 
 -- | Twace into a subring, for the decoding basis.
 twaceDec :: (TensorPowDec t r, m `Divides` m') => CycRep t D m' r -> CycRep t D m r
-twaceDec (Dec v) = Dec $ twacePowDec v
 {-# INLINABLE twaceDec #-}
+twaceDec (Dec v) = Dec $ twacePowDec v
 
 -- | Twace into a subring, for the CRT basis.  (The output is an
 -- 'Either' because the subring might not support 'C'.)
@@ -435,13 +491,13 @@ twaceCRTE x@(CRTE _ v) =
 -- with respect to the relative powerful \(\O_m\)-basis.
 coeffsPow :: (TensorPowDec t r, m `Divides` m') => CycRep t P m' r -> [CycRep t P m r]
 {-# INLINABLE coeffsPow #-}
-coeffsPow (Pow v) = LP.map Pow $ coeffs v
+coeffsPow (Pow v) = Pow <$> coeffs v
 
 -- | Yield the \(\O_m\)-coefficients of an \(\O_{m'}\) element,
 -- with respect to the relative decoding \(\O_m\)-basis.
 coeffsDec :: (TensorPowDec t r, m `Divides` m') => CycRep t D m' r -> [CycRep t D m r]
 {-# INLINABLE coeffsDec #-}
-coeffsDec (Dec v) = LP.map Dec $ coeffs v
+coeffsDec (Dec v) = Dec <$> coeffs v
 
 -- | The relative powerful basis of \(\O_{m'} / \O_m\).
 powBasis :: forall m m' t r .
@@ -452,73 +508,119 @@ powBasis = fmap Pow $ untag $ powBasisPow @t @r @m
 -- | The relative mod-\(r\) CRT set of \(\O_{m'} / \O_m\),
 -- represented with respect to the powerful basis (which seems to be
 -- the best choice for typical use cases).
-crtSet :: forall m m' p mbar m'bar t r .
-           (m `Divides` m', ZPP r, p ~ CharOf (ZpOf r), mbar ~ PFree p m, m'bar ~ PFree p m',
-            CRTElt t r, TensorCRTSet t (ZpOf r))
-          => [CycRep t P m' r]
+crtSet :: forall m m' pp p mbar m'bar t z zpp .
+          (m `Divides` m', p ~ PrimePP pp, mbar ~ PFree p m, m'bar ~ PFree p m',
+           PPow pp, Prime p, zpp ~ ZqBasic pp z,
+           ToInteger z, CRTElt t zpp, TensorCRTSet t (ZqBasic p z))
+       => [CycRep t P m' (ZqBasic pp z)]
 {-# INLINABLE crtSet #-}
 crtSet =
   -- CJP: consider using traceEvent or traceMarker
   --DT.trace ("CycRep.crtSet: m = " ++
   --          show (proxy valueFact (Proxy::Proxy m)) ++ ", m'= " ++
   --          show (proxy valueFact (Proxy::Proxy m'))) $
-  let (p,e) = modulusZPP @r
+  let (p,e) = ppPPow @pp
       -- raise to the p^(e-1) power iteratively (one factor of p at a
       -- time), switching back to pow basis each time so that we don't
       -- lose precision!  (This fixes a bug witnessed for moderate
       -- values of e.)
+      expon :: (Fact m'bar, ToPowDec t rep (ZqBasic pp z))
+        => Int -> CycRep t rep m'bar zpp -> CycRep t P m'bar zpp
       expon 1  = toPow
       expon e' = toPowCE . (^p) . toCRT . expon (e'-1)
-      pp  = Proxy::Proxy p
-      pm  = Proxy::Proxy m
-      pm' = Proxy::Proxy m'
-  in (embedPow . expon e . Dec . fmapI liftZp) <$>
-     (untag $ crtSetDec @t @_ @mbar :: [t m'bar (ZpOf r)])
+  in embedPow . expon e . Dec . fmapI (ZqB . unZqB) <$> -- safe!
+     (untag $ crtSetDec @t @_ @mbar :: [t m'bar (ZqBasic p z)])
      \\ pFreeDivides @p @m @m' \\ pSplitTheorems @p @m \\ pSplitTheorems @p @m'
 
 
 --------- Changing representation ------------------
 
-class ToPowDec c rep r where
+class ToPowDec t rep r where
   -- | Convert to powerful-basis representation.
-  toPow :: (Fact m) => c rep m r -> c P m r
+  toPow :: (Fact m) => CycRep t rep m r -> CycRep t P m r
   -- | Convert to decoding-basis representation.
-  toDec :: (Fact m) => c rep m r -> c D m r
+  toDec :: (Fact m) => CycRep t rep m r -> CycRep t D m r
 
 -- | separate class because some base rings don't have a CRT basis
-class ToCRT c rep r where
+class ToCRT t rep r where
   -- | Convert to an appropriate CRT-basis representation.
-  toCRT :: (Fact m) => c rep m r -> Either (c E m r) (c C m r)
+  toCRT :: (Fact m) => CycRep t rep m r -> Either (CycRep t E m r) (CycRep t C m r)
 
-instance TensorPowDec t r => ToPowDec (CycRep t) P r where
+instance TensorPowDec t r => ToPowDec t P r where
   toPow = id
   toDec (Pow v) = Dec $ powToDec v
+  {-# INLINABLE toPow #-}
+  {-# INLINABLE toDec #-}
 
-instance CRTElt t r => ToCRT (CycRep t) P r where
+instance CRTElt t r => ToCRT t P r where
   toCRT (Pow v) = case crtSentinel of
                     Right s -> Right $ CRTC s $ crtCS s v
                     Left  s -> Left  $ CRTE s $ runIdentity crt $ fmapI toExt v
+  {-# INLINABLE toCRT #-}
 
-instance TensorPowDec t r => ToPowDec (CycRep t) D r where
+instance TensorPowDec t r => ToPowDec t D r where
   toPow (Dec v) = Pow $ decToPow v
   toDec = id
+  {-# INLINABLE toPow #-}
+  {-# INLINABLE toDec #-}
 
-instance CRTElt t r => ToCRT (CycRep t) D r where
+instance CRTElt t r => ToCRT t D r where
   toCRT = toCRT . toPow
+  {-# INLINABLE toCRT #-}
 
-instance CRTElt t r => ToPowDec (CycRep t) C r where
+instance CRTElt t r => ToPowDec t C r where
   toPow (CRTC s v) = Pow $ crtInvCS s v
   toDec = toDec . toPow
+  {-# INLINABLE toPow #-}
+  {-# INLINABLE toDec #-}
 
-instance ToCRT (CycRep t) C r where
+instance ToCRT t C r where
   toCRT = Right
+  {-# INLINABLE toCRT #-}
 
-instance CRTElt t r => ToPowDec (CycRep t) E r where
+instance CRTElt t r => ToPowDec t E r where
   toPow (CRTE _ v) = Pow $ fmapI fromExt $ runIdentity crtInv v
   toDec = toDec . toPow
+  {-# INLINABLE toPow #-}
+  {-# INLINABLE toDec #-}
 
-instance ToCRT (CycRep t) E r where
+instance ToCRT t E r where
   toCRT = Left
+  {-# INLINABLE toCRT #-}
+
+{- CJP: non-class-based toPow etc., which can be defined for CycRep as a
+   GADT or data family. But it doesn't quite work for us because the
+   'CRTElt t r' constraint is too strong for 'r ~ RRq q Double', which
+   can't have a CRTrans instance.
+
+{-# INLINABLE toPow #-}
+toPow :: (Fact m, CRTElt t r) => CycRep t rep m r -> CycRep t P m r
+toPow = \case
+  c@(Pow _)  -> c
+  (Dec  v)   -> Pow $ decToPow v
+  (CRTC s v) -> Pow $ crtInvCS s v
+  (CRTE _ v) -> Pow $ fmapI fromExt $ runIdentity crtInv v
+
+{-# INLINABLE toDec #-}
+toDec :: (Fact m, CRTElt t r) => CycRep t rep m r -> CycRep t D m r
+toDec = \case
+  c@(Dec _)  -> c
+  (Pow  v)   -> Dec $ powToDec v
+  (CRTC s v) -> Dec $ powToDec $ crtInvCS s v
+  (CRTE _ v) -> Dec $ powToDec $ fmapI fromExt $ runIdentity crtInv v
+
+{-# INLINABLE toCRT #-}
+toCRT :: (Fact m, CRTElt t r) => CycRep t rep m r -> CycRepEC t m r
+toCRT = \case
+  c@(CRTC _ _) -> Right c
+  c@(CRTE _ _) -> Left c
+  (Pow v)      -> go v
+  (Dec v)      -> go $ decToPow v
+  where go v =
+          case crtSentinel of
+            Right s -> Right $ CRTC s $ crtCS s v
+            Left  s -> Left  $ CRTE s $ runIdentity crt $ fmapI toExt v
+-}
 
 -- | Convenient version of 'toPow' for 'Either' CRT basis type.
 toPowCE :: (Fact m, CRTElt t r) => CycRepEC t m r -> CycRep t P m r
@@ -544,30 +646,26 @@ instance IFunctor t => IFunctor (CycRep t D) where
   zipWithI f (Dec v) (Dec w) = Dec $ zipWithI f v w
 
 -- | apply coefficient-wise
-instance Applicative (CycRep t P m) => Functor (CycRep t P m) where
-  -- Functor instance is implied by Applicative laws
+instance Functor (t m) => Functor (CycRep t P m) where
   {-# INLINABLE fmap #-}
-  fmap f x = pure f <*> x
+  fmap f (Pow x) = Pow $ f <$> x
 
 -- | apply coefficient-wise
-instance Applicative (CycRep t D m) => Functor (CycRep t D m) where
-  -- Functor instance is implied by Applicative laws
+instance Functor (t m) => Functor (CycRep t D m) where
   {-# INLINABLE fmap #-}
-  fmap f x = pure f <*> x
+  fmap f (Dec x) = Dec $ f <$> x
 
 -- No Functor instance for C, because CRTrans a doesn't imply CRTrans b.
 
-instance (Fact m, ForallFact1 Applicative t) => Applicative (CycRep t P m) where
-  pure = Pow . pure \\ (entailFact1 :: Fact m :- Applicative (t m))
+instance Applicative (t m) => Applicative (CycRep t P m) where
+  pure = Pow . pure
   (Pow f) <*> (Pow v) = Pow $ f <*> v
-                        \\ (entailFact1 :: Fact m :- Applicative (t m))
   {-# INLINABLE pure #-}
   {-# INLINABLE (<*>) #-}
 
-instance (Fact m, ForallFact1 Applicative t) => Applicative (CycRep t D m) where
-  pure = Dec . pure \\ (entailFact1 :: Fact m :- Applicative (t m))
+instance Applicative (t m) => Applicative (CycRep t D m) where
+  pure = Dec . pure
   (Dec f) <*> (Dec v) = Dec $ f <*> v
-                        \\ (entailFact1 :: Fact m :- Applicative (t m))
   {-# INLINABLE pure #-}
   {-# INLINABLE (<*>) #-}
 
@@ -575,91 +673,77 @@ instance (Fact m, ForallFact1 Applicative t) => Applicative (CycRep t D m) where
 -- the invariant.  Moreover, `CRTrans (a -> b)` and `CRTrans a`
 -- doesn't imply `CRTrans b`.
 
-instance Traversable (CycRep t P m) => Foldable (CycRep t P m) where
-  -- Foldable instance implied by Traversable instance
-  foldMap = foldMapDefault
+instance Foldable (t m) => Foldable (CycRep t P m) where
+  foldr f z (Pow x) = foldr f z x
 
-instance Traversable (CycRep t D m) => Foldable (CycRep t D m) where
-  -- Foldable instance implied by Traversable instance
-  foldMap = foldMapDefault
+instance Foldable (t m) => Foldable (CycRep t D m) where
+  foldr f z (Dec x) = foldr f z x
 
 -- no Traversable for C, but it is Foldable
-instance (Fact m, ForallFact1 Foldable t) => Foldable (CycRep t C m) where
+instance Foldable (t m) => Foldable (CycRep t C m) where
   foldr f b (CRTC _ v) = foldr f b v
-                         \\ (entailFact1 :: Fact m :- Foldable (t m))
 
-instance (Fact m, ForallFact1 Traversable t,
-          ForallFact1 Applicative t) -- satisfy superclass
-  => Traversable (CycRep t P m) where
+instance Traversable (t m) => Traversable (CycRep t P m) where
   {-# INLINABLE traverse #-}
   traverse f (Pow v) = Pow <$> traverse f v
-                       \\ (entailFact1 :: Fact m :- Traversable (t m))
 
-instance (Fact m, ForallFact1 Traversable t,
-          ForallFact1 Applicative t) -- satisfy superclass
-  => Traversable (CycRep t D m) where
+instance Traversable (t m) => Traversable (CycRep t D m) where
   {-# INLINABLE traverse #-}
   traverse f (Dec v) = Dec <$> traverse f v
-                       \\ (entailFact1 :: Fact m :- Traversable (t m))
 
--- CJP: no Traversable instance for C, because CRTrans for a doesn't
--- imply it for b.
+-- CJP: no Traversable instance for C, because no Functor instance
+-- (see above)
 
 
 ---------- Utility instances ----------
 
-instance (Fact m, ForallFact2 Random t r) => Random (CycRep t P m r) where
-  random g = let (v,g') = random g \\ (entailFact2 :: Fact m :- Random (t m r))
+instance (Random (t m r)) => Random (CycRep t P m r) where
+  random g = let (v,g') = random g
              in (Pow v, g')
   randomR _ = error "randomR non-sensical for CycRep"
 
-instance (Fact m, ForallFact2 Random t r) => Random (CycRep t D m r) where
-  random g = let (v,g') = random g \\ (entailFact2 :: Fact m :- Random (t m r))
+instance (Random (t m r)) => Random (CycRep t D m r) where
+  random g = let (v,g') = random g
              in (Dec v, g')
   randomR _ = error "randomR non-sensical for CycRep"
 
-instance (Fact m, ForallFact2 Random t r, CRTElt t r) => Random (CycRepPC t m r) where
+instance (Random (t m r), Fact m, TensorCRT t Maybe r)
+  => Random (CycRepPC t m r) where
   -- create in CRTC basis if possible, otherwise in powerful
   random = let cons = case crtSentinel of
                  Left  _ -> Left  . Pow
                  Right s -> Right . CRTC s
            in \g -> let (v,g') = random g
-                                 \\ (entailFact2 :: Fact m :- Random (t m r))
                     in (cons v, g')
   randomR _ = error "randomR non-sensical for CycRep"
 
-instance (Fact m, ForallFact2 Show t r) => Show (CycRep t P m r) where
+instance (Show (t m r)) => Show (CycRep t P m r) where
   show (Pow x) = "CycRep.Pow " ++ show x
-                 \\ (entailFact2 :: Fact m :- Show (t m r))
 
-instance (Fact m, ForallFact2 Show t r) => Show (CycRep t D m r) where
+instance (Show (t m r)) => Show (CycRep t D m r) where
   show (Dec x) = "CycRep.Dec " ++ show x
-                 \\ (entailFact2 :: Fact m :- Show (t m r))
 
-instance (Fact m, ForallFact2 Show t r) => Show (CycRep t C m r) where
+instance (Show (t m r)) => Show (CycRep t C m r) where
   show (CRTC _ x) = "CycRep.CRTC " ++ show x
-                    \\ (entailFact2 :: Fact m :- Show (t m r))
 
-instance (Fact m, ForallFact2 Show t (CRTExt r)) => Show (CycRep t E m r) where
+instance (Show (t m (CRTExt r))) => Show (CycRep t E m r) where
   show (CRTE _ x) = "CycRep.CRTE " ++ show x
-                    \\ (entailFact2 :: Fact m :- Show (t m (CRTExt r)))
 
 
-instance (Fact m, ForallFact2 NFData t r) => NFData (CycRep t P m r) where
-  rnf (Pow x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m r))
+instance (NFData (t m r)) => NFData (CycRep t P m r) where
+  rnf (Pow x) = rnf x
 
-instance (Fact m, ForallFact2 NFData t r) => NFData (CycRep t D m r) where
-  rnf (Dec x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m r))
+instance (NFData (t m r)) => NFData (CycRep t D m r) where
+  rnf (Dec x) = rnf x
 
-instance (Fact m, ForallFact2 NFData t r) => NFData (CycRep t C m r) where
-  rnf (CRTC _ x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m r))
+instance (NFData (t m r)) => NFData (CycRep t C m r) where
+  rnf (CRTC _ x) = rnf x
 
-instance (Fact m, ForallFact2 NFData t (CRTExt r)) => NFData (CycRep t E m r) where
-  rnf (CRTE _ x) = rnf x \\ (entailFact2 :: Fact m :- NFData (t m (CRTExt r)))
+instance (NFData (t m (CRTExt r))) => NFData (CycRep t E m r) where
+  rnf (CRTE _ x) = rnf x
 
 
-
-instance (Fact m, ForallFact2 Protoable t r) => Protoable (CycRep t D m r) where
+instance (Protoable (t m r)) => Protoable (CycRep t D m r) where
   type ProtoType (CycRep t D m r) = ProtoType (t m r)
-  toProto (Dec t) = toProto t \\ (entailFact2 :: Fact m :- Protoable (t m r))
-  fromProto t = Dec <$> fromProto t \\ (entailFact2 :: Fact m :- Protoable (t m r))
+  toProto (Dec t) = toProto t
+  fromProto t = Dec <$> fromProto t

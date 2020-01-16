@@ -59,8 +59,8 @@ module Crypto.Lol.Prelude
 
 import Crypto.Lol.Factored
 import Crypto.Lol.Types.Numeric
-import Crypto.Lol.Types.Unsafe.Complex (Complex (), cis, fromReal, imag,
-                                        real, roundComplex)
+import Crypto.Lol.Types.Unsafe.Complex (Complex, cis, fromReal, imag, real,
+                                        roundComplex)
 
 import Algebra.Field          as Field (C)
 import Algebra.IntegralDomain as IntegralDomain (C)
@@ -145,7 +145,7 @@ msdToLSD = (recip *** recip) lsdToMSD
 
 -- | A default implementation of rescaling for 'Mod' types.
 rescaleMod :: forall a b .
-              (Mod a, Mod b, (ModRep a) ~ (ModRep b),
+              (Mod a, Mod b, ModRep a ~ ModRep b,
                Lift a (ModRep b), Ring b)
               => a -> b
 {-# INLINABLE rescaleMod #-}

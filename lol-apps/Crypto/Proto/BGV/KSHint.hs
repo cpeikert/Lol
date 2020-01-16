@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns, DeriveDataTypeable, DeriveGeneric, FlexibleInstances, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC  -fno-warn-unused-imports #-}
-module Crypto.Proto.SHE.KSHint (KSHint(..)) where
+module Crypto.Proto.BGV.KSHint (KSHint(..)) where
 import Prelude ((+), (/))
 import qualified Prelude as Prelude'
 import qualified Data.Typeable as Prelude'
@@ -8,9 +8,9 @@ import qualified GHC.Generics as Prelude'
 import qualified Data.Data as Prelude'
 import qualified Text.ProtocolBuffers.Header as P'
 import qualified Crypto.Proto.Lol.TypeRep as Crypto.Proto.Lol (TypeRep)
-import qualified Crypto.Proto.SHE.RqPolynomial as Crypto.Proto.SHE (RqPolynomial)
+import qualified Crypto.Proto.BGV.RqPolynomial as Crypto.Proto.BGV (RqPolynomial)
 
-data KSHint = KSHint{hint :: !(P'.Seq Crypto.Proto.SHE.RqPolynomial), gad :: !(Crypto.Proto.Lol.TypeRep)}
+data KSHint = KSHint{hint :: !(P'.Seq Crypto.Proto.BGV.RqPolynomial), gad :: !(Crypto.Proto.Lol.TypeRep)}
             deriving (Prelude'.Show, Prelude'.Eq, Prelude'.Ord, Prelude'.Typeable, Prelude'.Data, Prelude'.Generic)
 
 instance P'.Mergeable KSHint where
@@ -60,7 +60,7 @@ instance P'.ReflectDescriptor KSHint where
   getMessageInfo _ = P'.GetMessageInfo (P'.fromDistinctAscList [18]) (P'.fromDistinctAscList [10, 18])
   reflectDescriptorInfo _
    = Prelude'.read
-      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".crypto.proto.SHE.KSHint\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"SHE\"], baseName = MName \"KSHint\"}, descFilePath = [\"Crypto\",\"Proto\",\"SHE\",\"KSHint.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".crypto.proto.SHE.KSHint.hint\", haskellPrefix' = [], parentModule' = [MName \"Crypto\",MName \"Proto\",MName \"SHE\",MName \"KSHint\"], baseName' = FName \"hint\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".crypto.proto.SHE.RqPolynomial\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"SHE\"], baseName = MName \"RqPolynomial\"}), hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".crypto.proto.SHE.KSHint.gad\", haskellPrefix' = [], parentModule' = [MName \"Crypto\",MName \"Proto\",MName \"SHE\",MName \"KSHint\"], baseName' = FName \"gad\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".crypto.proto.lol.TypeRep\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"Lol\"], baseName = MName \"TypeRep\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
+      "DescriptorInfo {descName = ProtoName {protobufName = FIName \".crypto.proto.BGV.KSHint\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"BGV\"], baseName = MName \"KSHint\"}, descFilePath = [\"Crypto\",\"Proto\",\"BGV\",\"KSHint.hs\"], isGroup = False, fields = fromList [FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".crypto.proto.BGV.KSHint.hint\", haskellPrefix' = [], parentModule' = [MName \"Crypto\",MName \"Proto\",MName \"BGV\",MName \"KSHint\"], baseName' = FName \"hint\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 1}, wireTag = WireTag {getWireTag = 10}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = False, canRepeat = True, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".crypto.proto.BGV.RqPolynomial\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"BGV\"], baseName = MName \"RqPolynomial\"}), hsRawDefault = Nothing, hsDefault = Nothing},FieldInfo {fieldName = ProtoFName {protobufName' = FIName \".crypto.proto.BGV.KSHint.gad\", haskellPrefix' = [], parentModule' = [MName \"Crypto\",MName \"Proto\",MName \"BGV\",MName \"KSHint\"], baseName' = FName \"gad\", baseNamePrefix' = \"\"}, fieldNumber = FieldId {getFieldId = 2}, wireTag = WireTag {getWireTag = 18}, packedTag = Nothing, wireTagLength = 1, isPacked = False, isRequired = True, canRepeat = False, mightPack = False, typeCode = FieldType {getFieldType = 11}, typeName = Just (ProtoName {protobufName = FIName \".crypto.proto.lol.TypeRep\", haskellPrefix = [], parentModule = [MName \"Crypto\",MName \"Proto\",MName \"Lol\"], baseName = MName \"TypeRep\"}), hsRawDefault = Nothing, hsDefault = Nothing}], descOneofs = fromList [], keys = fromList [], extRanges = [], knownKeys = fromList [], storeUnknown = False, lazyFields = False, makeLenses = False}"
 
 instance P'.TextType KSHint where
   tellT = P'.tellSubMessage

@@ -14,10 +14,10 @@ benchmarks for HomomPRF are included in the example.
 
 module Crypto.Lol.Applications.Benchmarks
 ( module Crypto.Lol.Applications.Benchmarks.Default
-, module Crypto.Lol.Applications.Benchmarks.SHEBenches
+, module Crypto.Lol.Applications.Benchmarks.BGVBenches
 , module Crypto.Lol.Applications.Benchmarks.KHPRFBenches
 ) where
 
 import Crypto.Lol.Applications.Benchmarks.Default
-import Crypto.Lol.Applications.Benchmarks.SHEBenches
+import Crypto.Lol.Applications.Benchmarks.BGVBenches
 import Crypto.Lol.Applications.Benchmarks.KHPRFBenches

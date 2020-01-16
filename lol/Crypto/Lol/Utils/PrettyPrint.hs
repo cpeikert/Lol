@@ -11,34 +11,34 @@ Portability : POSIX
 Pretty-printing for benchmark results.
 -}
 
-{-# LANGUAGE BangPatterns    #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections   #-}
 
 module Crypto.Lol.Utils.PrettyPrint
-(getTableName
-,getBenchParams
-,getBenchLvl
-,getBenchFunc
-,getReports
-,getRuntime
-,col
-,testName
-,OptsInternal(..)
-,Verb(..)) where
+( getTableName
+, getBenchParams
+, getBenchLvl
+, getBenchFunc
+, getReports
+, getRuntime
+, col
+, testName
+, OptsInternal(..)
+, Verb(..)
+) where
 
-import Control.Monad (foldM, when)
+import Control.Monad          (foldM, when)
 import Control.Monad.IO.Class (liftIO)
 
-import Criterion.Internal (runAndAnalyseOne)
+import Criterion.Internal     (runAndAnalyseOne)
 import Criterion.Main.Options (defaultConfig)
-import Criterion.Measurement (initializeTime, secs)
-import Criterion.Monad (Criterion, withConfig)
+import Criterion.Measurement  (initializeTime, secs)
+import Criterion.Monad        (Criterion, withConfig)
 import Criterion.Types
 
 import qualified Data.Map as Map
 
-import Statistics.Resampling.Bootstrap (Estimate(..))
+import Statistics.Types (Estimate (..))
 
 -- | Verbosity of benchmark output.
 data Verb = Progress  -- ^ prints a \'.\' when each benchmark completes
@@ -98,22 +98,27 @@ summarizeBenchReports OptsInternal{..} b = do
           func  = getBenchFunc   name
       in (lvl `elem` levels) && (func `elem` benches) && (param `elem` params)
     -- if we find a Benchmark that we want to run (as determined by `select`)
-    go r@(rptIdx, reports) (benchPrefix, (Benchmark desc b')) | select benchName = do
+    go r@(rptIdx, reports) (benchPrefix, Benchmark desc b') |
+      select benchName = do
           -- get a single report
           when (verb == Abridged || verb == Full) $ liftIO $ putStr $ "benchmark " ++ benchName
           when (verb == Full) $ liftIO $ putStrLn ""
-          (Analysed rpt) <- runAndAnalyseOne rptIdx benchName b'
-          when (verb == Progress) $ liftIO $ putStr "."
-          when (verb == Abridged) $ liftIO $ putStrLn $ "..." ++ secs (getRuntime rpt)
-          -- return the report
-          return (rptIdx, rpt:reports)
-                                                              | otherwise = do
-          -- if we don't want to run this benchmark, print the name anyway.
-          liftIO $ putStrLn benchName
-          -- and return the input
-          return r
-      where benchName = addPrefix benchPrefix desc
-    go r (benchPrefix, (BenchGroup desc bs)) =
+          dr <- runAndAnalyseOne rptIdx benchName b'
+          case dr of
+            Measurement{} -> error "PrettyPrint Measurement" -- for Wmissing-monadfail-instances
+            (Analysed rpt) -> do
+              when (verb == Progress) $ liftIO $ putStr "."
+              when (verb == Abridged) $ liftIO $ putStrLn $ "..." ++ secs (getRuntime rpt)
+              -- return the report
+              return (rptIdx, rpt:reports)
+                                                            |
+      otherwise = do
+        -- if we don't want to run this benchmark, print the name anyway.
+        liftIO $ putStrLn benchName
+        -- and return the input
+        return r
+          where benchName = addPrefix benchPrefix desc
+    go r (benchPrefix, BenchGroup desc bs) =
       let lvlName = addPrefix benchPrefix desc -- append the description to the prefix
           bs' = map (lvlName,) bs
       in foldM go r bs'

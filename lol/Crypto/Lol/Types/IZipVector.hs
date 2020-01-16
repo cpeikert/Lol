@@ -52,7 +52,6 @@ import Control.DeepSeq
 import Control.Monad
 import Control.Monad.Except
 
-import Data.Constraint  hiding ((***))
 import Data.Foldable    as F
 import Data.Sequence    as S
 import Data.Traversable
@@ -258,15 +257,3 @@ fromProtoNestRight box unbox xs = do
   a' <- fromProto $ box $ singleton a
   bs' <- fromProto $ box bs
   return $ zipIZV a' bs'
-
-instance ForallFact2 Protoable IZipVector Int64 where
-  entailFact2 = Sub Dict
-
-instance Reflects q Int64 => ForallFact2 Protoable IZipVector (ZqBasic q Int64) where
-  entailFact2 = Sub Dict
-
-instance ForallFact2 Protoable IZipVector Double where
-  entailFact2 = Sub Dict
-
-instance Reflects q Double => ForallFact2 Protoable IZipVector (RRq q Double) where
-  entailFact2 = Sub Dict

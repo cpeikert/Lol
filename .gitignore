@@ -1,7 +1,7 @@
 reprof.py
 lol-cpp/lib
 **/*.prof
-**/.stack-work
+**/.stack-work*
 **/rlwe-secrets.tar.gz
 **/rlwe-challenges.*
 **/*.pyc
@@ -12,3 +12,8 @@ lol-cpp/lib
 **/*.hspp
 **/*.dyn_*
 **/.DS_Store
+*.lock
+*.bak
+lol/lol.cabal
+lol-apps/lol-apps.cabal
+lol-cpp/lol-cpp.cabal

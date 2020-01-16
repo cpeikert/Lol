@@ -1,10 +1,10 @@
-package crypto.proto.SHE;
+package crypto.proto.BGV;
 
-// proto messages for key switch hints and secret keys from SymmSHE
+// proto messages for key switch hints and secret keys from SymmBGV
 
 import "Lol.proto";
 
-// run this: hprotoc -I ../lol SHE.proto
+// run this: hprotoc -I ../lol BGV.proto
 
 message SecretKey {
   required crypto.proto.lol.R sk              = 1; // ring element

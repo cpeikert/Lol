@@ -11,15 +11,11 @@ Portability : POSIX
   \( \def\Z{\mathbb{Z}} \)
   \( \def\C{\mathbb{C}} \)
 
-An implementation of the quotient ring \(\Z_q = \Z/(q\Z)\).
-This module is "unsafe" because it exports the 'ZqBasic' constructor.
-This module should only be used to make tensor-specific instances for 'ZqBasic'.
-The safe way to use this type is to import "Crypto.Lol.Types".
-
-EAC: It may help GHC do specialization at higher levels of the library
-if we "simplify" constraints in this module. For example, replace the
-(Additive (ZqBasic q z)) constraint on the Reduce instance with
-(Additive z)
+An implementation of the quotient ring \(\Z_q = \Z/(q\Z)\).  This
+module is "unsafe" because it exports the 'ZqBasic' constructor.  This
+module should only be used to make tensor-specific instances for
+'ZqBasic'.  The safe way to use this type is to import
+"Crypto.Lol.Types".
 -}
 
 {-# LANGUAGE AllowAmbiguousTypes        #-}
@@ -45,17 +41,14 @@ module Crypto.Lol.Types.Unsafe.ZqBasic
 
 import Crypto.Lol.CRTrans
 import Crypto.Lol.Gadget
-import Crypto.Lol.Prelude           as LP
+import Crypto.Lol.Prelude  as LP
 import Crypto.Lol.Reflects
-import Crypto.Lol.Types.FiniteField
-import Crypto.Lol.Types.ZPP
 
-import Math.NumberTheory.Primes.Factorisation
-import Math.NumberTheory.Primes.Testing
+import Math.NumberTheory.Primes
 
 import Control.Applicative
 import Control.Arrow
-import Control.DeepSeq        (NFData)
+import Control.DeepSeq        (NFData, force)
 import Data.Maybe
 import NumericPrelude.Numeric as NP (round)
 import System.Random
@@ -71,8 +64,9 @@ import qualified Algebra.ZeroTestable   as ZeroTestable (C)
 -- | An infinite list of primes greater than @lower@ and congruent to
 -- 1 mod @m@.
 goodQs :: (ToInteger a) => a -> a -> [a]
-goodQs m lower = filter (isPrime . toInteger) $
+goodQs m lower = filter (isJust . isPrime . toInteger) $
   iterate (+m) $ lower + ((m-lower) `mod` m) + 1
+{-# SPECIALIZE goodQs :: Int64 -> Int64 -> [Int64] #-}
 
 -- | The ring \(\Z_q\) of integers modulo 'q', using underlying integer
 -- type 'z'.
@@ -86,52 +80,53 @@ type role ZqBasic nominal representational
 --deriving instance (U.Unbox i) => M.MVector U.MVector (ZqBasic q i)
 --deriving instance (U.Unbox i) => U.Unbox (ZqBasic q i)
 
-{-# INLINABLE reduce' #-}
-reduce' :: forall q z . (Reflects q z, ToInteger z) => z -> ZqBasic q z
+reduce' :: forall q z . (Reflects q z, IntegralDomain z) => z -> ZqBasic q z
 reduce' = ZqB . (`mod` value @q)
+{-# INLINABLE reduce' #-}
 
 -- puts value in range [-q/2, q/2)
-decode' :: forall q z . (Reflects q z, ToInteger z) => ZqBasic q z -> z
+decode' :: forall q z . (Reflects q z, Ring z, Ord z) => ZqBasic q z -> z
 decode' = let qval = value @q
           in \(ZqB x) -> if 2 * x < qval then x else x - qval
+{-# INLINABLE decode' #-}
 
-instance (Reflects q z, ToInteger z, Enum z) => Enumerable (ZqBasic q z) where
+instance (Reflects q z, Ring z, Enum z) => Enumerable (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Enumerable (ZqBasic q Int64) #-}
   values = ZqB <$> [0..(value @q - 1)]
 
 instance (Reflects q z, ToInteger z) => Mod (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Mod (ZqBasic q Int64) #-}
   type ModRep (ZqBasic q z) = z
 
   modulus = value @q
 
 type instance CharOf (ZqBasic p z) = p
 
-instance (PPow pp, zq ~ ZqBasic pp z,
-          PrimeField (ZpOf zq), Ring zq)
-         => ZPP (ZqBasic (pp :: PrimePower) z) where
-
-  type ZpOf (ZqBasic pp z) = ZqBasic (PrimePP pp) z
-
-  modulusZPP = ppPPow @pp
-  liftZp = ZqB . unZqB
-
-instance (Reflects q z, ToInteger z) => Reduce z (ZqBasic q z) where
+instance (Reflects q z, IntegralDomain z) => Reduce z (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Reduce Int64 (ZqBasic q Int64) #-}
   reduce = reduce'
 
-instance (Reflects q z, ToInteger z, Ring z) => Reduce Integer (ZqBasic q z) where
+instance {-# OVERLAPPING #-} (Reflects q z, ToInteger z) => Reduce Integer (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Reduce Integer (ZqBasic q Int64) #-}
   reduce = fromInteger
 
 type instance LiftOf (ZqBasic q z) = z
 
-instance (Reflects q z, ToInteger z) => Lift' (ZqBasic q z) where
+instance (Reflects q z, Ring z, Ord z, IntegralDomain z)
+  => Lift' (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Lift' (ZqBasic q Int64) #-}
   lift = decode'
 
 instance (Reflects q z, ToInteger z, Reflects q' z, Ring z)
          => Rescale (ZqBasic q z) (ZqBasic q' z) where
+  {-# SPECIALIZE instance (Reflects q Int64, Reflects q' Int64) => Rescale (ZqBasic q Int64) (ZqBasic q' Int64) #-}
 
   rescale = rescaleMod
 
-instance (Reflects p z, Reflects q z, ToInteger z, Field (ZqBasic q z), Field (ZqBasic p z))
+instance (Reflects p z, Reflects q z, IntegralDomain z,
+          Field (ZqBasic q z), Field (ZqBasic p z))
          => Encode (ZqBasic p z) (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects p Int64, Reflects q Int64) => Encode (ZqBasic p Int64) (ZqBasic q Int64) #-}
 
   lsdToMSD = let pval = value @p
                  negqval = negate $ value @q
@@ -142,25 +137,25 @@ instance (Reflects p z, Reflects q z, ToInteger z, Field (ZqBasic q z), Field (Z
 -- generator of \(\Z_q^*\) and raising it to the \( (q-1)/m\) power.
 -- Therefore, outputs for different values of \(m\) are consistent,
 -- i.e., \(\omega_{m'}^(m'/m) = \omega_m\).
-principalRootUnity ::
-    forall m q z . (Reflects m Int, Reflects q z, ToInteger z, Enumerable (ZqBasic q z))
-               => TaggedT m Maybe (Int -> ZqBasic q z)
+principalRootUnity :: forall m q z .
+  (Reflects m Int, Reflects q z, ToInteger z, Enum z, NFData z)
+  => TaggedT m Maybe (Int -> ZqBasic q z)
 principalRootUnity =        -- use Integers for all intermediate calcs
   let qval = fromIntegral (value @q :: z)
       mval = value @m
       -- order of Zq^* (assuming q prime)
       order = qval-1
       -- the primes dividing the order of Zq^*
-      pfactors = fst <$> factorise order
+      pfactors = unPrime . fst <$> (factorise @Integer) order
       -- the powers we need to check
       exps = div order <$> pfactors
       -- whether an element is a generator of Zq^*
       isGen x = (x^order == one) && all (\e -> x^e /= one) exps
-  in tagT $ if isPrime qval -- for simplicity, require q to be prime
+   in tagT $ if isJust (isPrime qval) -- for simplicity, require q to be prime
             then let (mq,mr) = order `divMod` fromIntegral mval
                  in if mr == 0
                     then let omega = head (filter isGen values) ^ mq
-                             omegaPows = V.iterateN mval (*omega) one
+                             omegaPows = force $ V.iterateN mval (*omega) one
                          in Just $ (omegaPows V.!) . (`mod` mval)
                     else Nothing
             else Nothing       -- fail if q composite
@@ -168,22 +163,28 @@ principalRootUnity =        -- use Integers for all intermediate calcs
 mhatInv :: forall m q z . (Reflects m Int, Reflects q z, ToInteger z, PID z)
            => TaggedT m Maybe (ZqBasic q z)
 mhatInv = tagT $ reduce' <$>
-          ((`modinv` (value @q)) $ fromIntegral $ valueHat $ (value @m :: Int))
+          (`modinv` value @q) (fromIntegral $ valueHat (value @m :: Int))
 
--- instance of CRTrans
-instance (Reflects q z, ToInteger z, PID z, Enumerable (ZqBasic q z))
+instance (Reflects q z, ToInteger z, PID z, Enum z, NFData z)
          => CRTrans Maybe (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => CRTrans Maybe (ZqBasic q Int64) #-}
+
+  {-# INLINABLE crtInfo #-}
   crtInfo = (,) <$> principalRootUnity <*> mhatInv
 
 -- | Embeds into the complex numbers \( \C \).
-instance (Reflects q z, ToInteger z, Ring (ZqBasic q z)) => CRTEmbed (ZqBasic q z) where
+instance (Reflects q z, ToInteger z, Ring (ZqBasic q z))
+  => CRTEmbed (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => CRTEmbed (ZqBasic q Int64) #-}
+
   type CRTExt (ZqBasic q z) = Complex Double
 
   toExt (ZqB x) = fromReal $ fromIntegral x
   fromExt = reduce' . NP.round . real
 
 -- instance of Additive
-instance (Reflects q z, ToInteger z, Additive z) => Additive.C (ZqBasic q z) where
+instance (Reflects q z, IntegralDomain z) => Additive.C (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Additive.C (ZqBasic q Int64) #-}
 
   {-# INLINABLE zero #-}
   zero = ZqB zero
@@ -195,7 +196,9 @@ instance (Reflects q z, ToInteger z, Additive z) => Additive.C (ZqBasic q z) whe
   negate (ZqB x) = reduce' $ negate x
 
 -- instance of Ring
-instance (Reflects q z, ToInteger z, Ring z) => Ring.C (ZqBasic q z) where
+instance (Reflects q z, ToInteger z) => Ring.C (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Ring.C (ZqBasic q Int64) #-}
+
   {-# INLINABLE (*) #-}
   (ZqB x) * (ZqB y) = reduce' $ x * y
 
@@ -207,6 +210,7 @@ instance (Reflects q z, ToInteger z, Ring z) => Ring.C (ZqBasic q z) where
 
 -- instance of Field
 instance (Reflects q z, ToInteger z, PID z, Show z) => Field.C (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Field.C (ZqBasic q Int64) #-}
 
   {-# INLINABLE recip #-}
   recip = let qval = value @q
@@ -216,18 +220,23 @@ instance (Reflects q z, ToInteger z, PID z, Show z) => Field.C (ZqBasic q z) whe
                          show x ++ "\t" ++ show qval) $ modinv x qval
 
 -- (canonical) instance of IntegralDomain, needed for Cyclotomics
-instance (Reflects q z, ToInteger z, Field (ZqBasic q z)) => IntegralDomain.C (ZqBasic q z) where
+instance (Reflects q z, ToInteger z, PID z, Show z)
+  => IntegralDomain.C (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => IntegralDomain.C (ZqBasic q Int64) #-}
   divMod a b = (a/b, zero)
 
 -- Gadget-related instances
 instance (Reflects q z, ToInteger z) => Gadget TrivGad (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Gadget TrivGad (ZqBasic q Int64) #-}
   gadget = [one]
 
 instance (Reflects q z, ToInteger z) => Decompose TrivGad (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Decompose TrivGad (ZqBasic q Int64) #-}
   type DecompOf (ZqBasic q z) = z
   decompose x = [lift x]
 
 instance (Reflects q z, ToInteger z, Ring z) => Correct TrivGad (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Correct TrivGad (ZqBasic q Int64) #-}
   correct [b] = (b, [zero])
   correct _   = error "Correct TrivGad: wrong length"
 
@@ -244,6 +253,7 @@ gadgetZ b q = take (gadlen b q) $ iterate (*b) one
 
 instance (Reflects q z, ToInteger z, RealIntegral z, Reflects b z)
          => Gadget (BaseBGad b) (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64, Reflects b Int64) => Gadget (BaseBGad b) (ZqBasic q Int64) #-}
 
   gadget = let qval = value @q
                bval = value @b
@@ -251,6 +261,8 @@ instance (Reflects q z, ToInteger z, RealIntegral z, Reflects b z)
 
 instance (Reflects q z, ToInteger z, Reflects b z)
     => Decompose (BaseBGad b) (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64, Reflects b Int64) => Decompose (BaseBGad b) (ZqBasic q Int64) #-}
+
   type DecompOf (ZqBasic q z) = z
   decompose = let qval = value @q
                   bval = value @b
@@ -299,6 +311,7 @@ correctZ q b =
 
 instance (Reflects q z, ToInteger z, Reflects b z)
     => Correct (BaseBGad b) (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64, Reflects b Int64) => Correct (BaseBGad b) (ZqBasic q Int64) #-}
 
   correct =
     let qval = value @q
@@ -308,7 +321,8 @@ instance (Reflects q z, ToInteger z, Reflects b z)
               in (head tv - reduce (head es), es)
 
 -- instance of Random
-instance (Reflects q z, ToInteger z, Random z) => Random (ZqBasic q z) where
+instance (Reflects q z, Ring z, Random z) => Random (ZqBasic q z) where
+  {-# SPECIALIZE instance (Reflects q Int64) => Random (ZqBasic q Int64) #-}
   random = let high = value @q - 1
            in \g -> let (x,g') = randomR (0,high) g
                     in (ZqB x, g')

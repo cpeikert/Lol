@@ -1,6 +1,6 @@
 {-|
-Module      : Crypto.Lol.Applications.Examples.SymmSHE
-Description : Example using SymmSHE.
+Module      : Crypto.Lol.Applications.Examples.SymmBGV
+Description : Example using SymmBGV.
 Copyright   : (c) Eric Crockett, 2011-2017
                   Chris Peikert, 2011-2017
 License     : GPL-3
@@ -8,23 +8,24 @@ Maintainer  : ecrockett0@email.com
 Stability   : experimental
 Portability : POSIX
 
-Example using SymmSHE.
+Example using SymmBGV.
 -}
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE PolyKinds             #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RebindableSyntax      #-}
 {-# LANGUAGE ScopedTypeVariables   #-}
 {-# LANGUAGE TemplateHaskell       #-}
 
 {-# OPTIONS_GHC -fno-warn-partial-type-signatures #-}
 
-module Crypto.Lol.Applications.Examples.SymmSHE (sheMain) where
+module Crypto.Lol.Applications.Examples.SymmBGV (bgvMain) where
 
 import Crypto.Lol                      hiding ((^))
-import Crypto.Lol.Applications.SymmSHE
+import Crypto.Lol.Applications.SymmBGV
 import Crypto.Lol.Types
 
 import Algebra.Ring ((^))
@@ -59,35 +60,36 @@ type CTZq3 = (Zq 537054337, CTZq2)
 
 type KSGad = TrivGad -- can also use (BaseBGad 2), for example
 
-type CTRing1 t = CT PTIndex PTZq (Cyc t CTIndex CTZq1)
-type CTRing2 t = CT PTIndex PTZq (Cyc t CTIndex CTZq2)
+type CTRing1 d t = CT d PTIndex PTZq (Cyc t CTIndex CTZq1)
+type CTRing2 d t = CT d PTIndex PTZq (Cyc t CTIndex CTZq2)
 type SKRing t = Cyc t CTIndex (LiftOf PTZq)
 
--- | Simple example of how to use the SymmSHE application.
-sheMain :: forall t . (_) => Proxy t -> IO ()
-sheMain _ = do
+-- | Simple example of how to use the SymmBGV application.
+bgvMain :: forall t . (forall m r . (Fact m, Eq r) => Eq (t m r), _)
+  => Proxy t -> IO ()
+bgvMain _ = do
   plaintext <- getRandom
   sk :: SK (SKRing t) <- genSK (1 :: Double)
   -- encrypt with a single modulus
-  ciphertext :: CTRing1 t <- encrypt sk plaintext
+  ciphertext :: CTRing1 _ t <- encrypt sk plaintext
 
-  let ct1 = 2*ciphertext
+  let ct1 = mulPublic 2 ciphertext
       pt1 = decrypt sk ct1
-  print $ "Test1 (expect TRUE): " ++ (show $ 2*plaintext == pt1)
+  print $ "Test1 (expect TRUE): " ++ show (2*plaintext == pt1)
 
   hint :: KSHint KSGad (Cyc t CTIndex CTZq2) <- ksQuadCircHint sk
-  let ct2 = modSwitch $ keySwitchQuadCirc hint $ modSwitch $ ciphertext*ciphertext
-      pt2 = decrypt sk (ct2 :: CTRing1 t)
+  let ct2 = modSwitch $ keySwitchQuadCirc hint $ modSwitch $ mulCT ciphertext ciphertext
+      pt2 = decrypt sk (ct2 :: CTRing1 _ t)
   -- note: this requires a *LARGE* CT modulus to succeed
-  print $ "Test2 (expect FALSE): " ++ (show $ plaintext*plaintext == pt2)
+  print $ "Test2 (expect FALSE): " ++ show (plaintext*plaintext == pt2)
 
   -- so we support using *several* small moduli:
   hint' :: KSHint KSGad (Cyc t CTIndex CTZq3) <- ksQuadCircHint sk
-  ciphertext' :: CTRing2 t <- encrypt sk plaintext
-  let ct3 = keySwitchQuadCirc hint' $ modSwitch $ ciphertext' * ciphertext'
+  ciphertext' :: CTRing2 _ t <- encrypt sk plaintext
+  let ct3 = keySwitchQuadCirc hint' $ modSwitch $ mulCT ciphertext' ciphertext'
       pt3 = decrypt sk ct3
-      ct3' = modSwitch ct3 :: CTRing1 t
+      ct3' = modSwitch ct3 :: CTRing1 _ t
       -- after rescaling, ct3' has a single modulus, so we can use normal decrypt
       pt3' = decrypt sk ct3'
-  print $ "Test3 (expect TRUE): " ++ (show $ (plaintext*plaintext == pt3) && (pt3' == pt3))
+  print $ "Test3 (expect TRUE): " ++ show ((plaintext*plaintext == pt3) && (pt3' == pt3))
 

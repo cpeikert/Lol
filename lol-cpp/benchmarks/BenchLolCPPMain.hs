@@ -13,7 +13,7 @@ Main driver for lol benchmarks with CPP.
 
 {-# LANGUAGE DataKinds             #-}
 {-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE NamedFieldPuns        #-}
+{-# LANGUAGE NoStarIsType          #-}
 {-# LANGUAGE TypeOperators         #-}
 
 module BenchLolCPPMain where
@@ -59,18 +59,12 @@ bs = [
 
 main :: IO ()
 main = diagnosticMain
-{-
-tableMain :: IO ()
-tableMain = do
-  let opts = (defaultTableOpts $ Just "UCyc"){benches=bs}
-  g1 <- defaultLolBenches (Proxy::Proxy CT) (Proxy::Proxy HashDRBG)
-  mapM_ (prettyBenchesTable opts) g1
--}
+
 diagnosticMain :: IO ()
 diagnosticMain = do
   let opts = defaultDiagnosticOpts{levels=ls, benches=bs}
-  let b1 = bgroup "Single Index"
-             [oneIdxBenches (Proxy::Proxy '(F64*F9*F25, Zq 14401)) (Proxy::Proxy CT) (Proxy::Proxy HashDRBG)]
-  let b2 = bgroup "Twace-Embed"
-             [twoIdxBenches (Proxy::Proxy '(F64*F9*F25, F64*F9*F25, Zq 14401)) (Proxy::Proxy CT)]
+      b1 = bgroup "Single Index"
+           [oneIdxBenches (Proxy::Proxy '(F64*F9*F25, Zq 14401)) (Proxy::Proxy CT) (Proxy::Proxy HashDRBG)]
+      b2 = bgroup "Twace-Embed"
+           [twoIdxBenches (Proxy::Proxy '(F64*F9*F25, F64*F9*F25, Zq 14401)) (Proxy::Proxy CT)]
   mapM_ (prettyBenchesDiagnostic opts) [b1,b2]

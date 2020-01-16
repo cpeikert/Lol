@@ -5,7 +5,7 @@ name:                lol-repa
 -- PVP summary:      +-+------- breaking API changes
 --                   | | +----- non-breaking API additions
 --                   | | | +--- code changes with no API change
-version:             0.0.0.3
+version:             0.0.0.4
 synopsis:            A repa backend for <https://hackage.haskell.org/package/lol lol>.
 homepage:            https://github.com/cpeikert/Lol
 Bug-Reports:         https://github.com/cpeikert/Lol/issues
@@ -77,7 +77,7 @@ library
     constraints < 0.10,
     data-default >= 0.3.0 && < 0.8,
     deepseq >= 1.4.1.1 && < 1.5,
-    lol >= 0.6.0.0 && < 0.8,
+    lol >= 0.8.0.0 && < 0.9,
     MonadRandom >= 0.2 && < 0.6,
     mtl >= 2.2.1 && < 2.3,
     numeric-prelude >= 0.4.2 && < 0.5,
@@ -102,7 +102,7 @@ Benchmark bench-lol-repa
   build-depends:
     base >= 4.9 && < 5,
     DRBG < 0.6,
-    lol >= 0.7.0.0 && < 0.8,
+    lol >= 0.8.0.0 && < 0.9,
     lol-repa
 
 Benchmark bench-lol-apps-repa
