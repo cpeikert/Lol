@@ -54,7 +54,7 @@ library:
     - constraints
     - deepseq
     - name: lol
-      version: ">= 0.8.0.0 && < 0.9"
+      version: ">= 0.7.0.0 && < 0.8"
     - MonadRandom
     - mtl
     - numeric-prelude
@@ -77,7 +77,7 @@ tests:
     dependencies:
       - base
       - name: lol
-        version: ">= 0.8.0.0 && < 0.9"
+        version: ">= 0.7.0.0 && < 0.8"
       - name: lol-apps
         version: ">= 0.3 && < 0.4"
       - lol-cpp
@@ -96,7 +96,7 @@ benchmarks:
       - base
       - DRBG
       - name: lol
-        version: ">= 0.8.0.0 && < 0.9"
+        version: ">= 0.7.0.0 && < 0.8"
       - lol-cpp
   bench-lol-apps-cpp:
     main: BenchAppsCPPMain.hs
@@ -110,7 +110,7 @@ benchmarks:
       - base
       - DRBG
       - name: lol
-        version: ">= 0.8.0.0 && < 0.9"
+        version: ">= 0.7.0.0 && < 0.8"
       - lol-cpp
       - name: lol-apps
         version: ">= 0.3 && < 0.4"

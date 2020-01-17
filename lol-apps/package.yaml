@@ -44,7 +44,7 @@ library:
     - Crypto.Lol.Applications.Examples.SymmBGV
   dependencies:
     - name: lol 
-      version: ">= 0.8.0.0 && < 0.9"
+      version: ">= 0.7.0.0 && < 0.8"
     - DRBG
     - MonadRandom
     - base

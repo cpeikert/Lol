@@ -1,7 +1,7 @@
 _common: !include "../common.yaml"
 
 name: lol
-version: 0.8.0.0
+version: 0.7.0.0
 synopsis: A library for lattice cryptography.
 extra-source-files:
   - README
