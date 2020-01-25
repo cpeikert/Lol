@@ -28,7 +28,7 @@ material for reading the documentation.
     numbers.
 
   * \( \Z_q = \Z/(q\Z) \) is the integers mod \( q \). \( \Z_q \) is
-    implemented in "Crypto.Lol.Types.ZqBasic".
+    implemented in "Crypto.Lol.Types.Unsafe.ZqBasic".
 
   * The finite field of order \( p \) is denoted \( \F_{p} \), and is
     implemented in "Crypto.Lol.Types.FiniteField".
@@ -58,7 +58,7 @@ module Crypto.Lol
 ) where
 
 import Crypto.Lol.Cyclotomic.Cyc
-import Crypto.Lol.Cyclotomic.Linear
 import Crypto.Lol.Cyclotomic.Language
+import Crypto.Lol.Cyclotomic.Linear
 import Crypto.Lol.Gadget
 import Crypto.Lol.Prelude
