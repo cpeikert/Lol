@@ -100,8 +100,8 @@ type PT rp = rp
 -- | Ciphertext encoding type
 data Encoding = MSD | LSD deriving (Show, Eq, Generic, NFData)
 
--- | Ciphertext of degree \(d\) over \( R'_q \) encrypting a plaintext in \( R_p \)\,
--- where \( R=\mathcal{O}_m \).
+-- | Ciphertext of degree (at most) \(d\) over \( R'_q \) encrypting a
+-- plaintext in \( R_p \)\, where \( R=\mathcal{O}_m \).
 data CT d m zp r'q =
   CT
   !Encoding                     -- MSD/LSD encoding
