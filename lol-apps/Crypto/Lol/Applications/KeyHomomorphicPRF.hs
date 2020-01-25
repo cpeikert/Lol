@@ -51,7 +51,7 @@ import qualified MathObj.Matrix as M
 
 singletons [d|
 
-        -- | A full binary tree (promoted to the type level by data
+        -- A full binary tree (promoted to the type level by data
         -- kinds, and singleton-ized): each node is either a leaf or
         -- has two children.
         data FBT = Leaf | Intern FBT FBT
@@ -104,8 +104,8 @@ data PRFState' t n gad rq where
   L :: BitStringMatrix 'Leaf rq
     -> PRFState' 'Leaf n gad rq
   I :: BitStringMatrix ('Intern l r) rq
-    -> PRFState' l n gad rq     -- | left child
-    -> PRFState' r n gad rq     -- | right child
+    -> PRFState' l n gad rq     -- ^ left child
+    -> PRFState' r n gad rq     -- ^ right child
     -> PRFState' ('Intern l r) n gad rq
 
 -- | A 'BitString' together with a 'Matrix.T'
@@ -128,10 +128,10 @@ root = root' . state'
 -- \mathbf{A}_T(x) \) and all intermediate values (see Definition 2.1
 -- of [BP14]).
 updateState' :: forall gad rq t n . Decompose gad rq
-  => SFBT t                     -- | singleton for the tree \( T \)
+  => SFBT t                     -- ^ singleton for the tree \( T \)
   -> PRFParams n gad rq
   -> Maybe (PRFState' t n gad rq)
-  -> BitString (SizeFBT t)      -- | input \( x \)
+  -> BitString (SizeFBT t)      -- ^ input \( x \)
   -> PRFState' t n gad rq
 updateState' t p st x = case t of
   SLeaf       -> L $ BSM x $ if head x then a1 p else a0 p
@@ -165,19 +165,19 @@ prfCore s st = rescale <$> (key s) * matrix (root st)
 
 -- | "Fresh" PRF computation, with no precomputed 'PRFState'.
 prf :: (Rescale rq rp, Decompose gad rq)
-  => SFBT t                     -- | singleton for the tree \( T \)
-  -> PRFParams n gad rq         -- | public parameters
-  -> PRFKey n rq                -- | secret key \( s \)
-  -> BitString (SizeFBT t)      -- | input \( x \)
+  => SFBT t                     -- ^ singleton for the tree \( T \)
+  -> PRFParams n gad rq         -- ^ public parameters
+  -> PRFKey n rq                -- ^ secret key \( s \)
+  -> BitString (SizeFBT t)      -- ^ input \( x \)
   -> Matrix rp
 prf = (fmap . fmap . fmap) fst . prfState
 
 -- | "Fresh" PRF computation that also outputs the resulting 'PRFState'.
 prfState :: (Rescale rq rp, Decompose gad rq)
-  => SFBT t                     -- | singleton for the tree \( T \)
-  -> PRFParams n gad rq         -- | public parameters
-  -> PRFKey n rq                -- | secret key \( s \)
-  -> BitString (SizeFBT t)      -- | input \( x \)
+  => SFBT t                     -- ^ singleton for the tree \( T \)
+  -> PRFParams n gad rq         -- ^ public parameters
+  -> PRFKey n rq                -- ^ secret key \( s \)
+  -> BitString (SizeFBT t)      -- ^ input \( x \)
   -> (Matrix rp, PRFState t n gad rq)
 prfState t p s x = let st = updateState t (Left p) x in (prfCore s st, st)
 
@@ -187,11 +187,11 @@ prfState t p s x = let st = updateState t (Left p) x in (prfCore s st, st)
 prfAmortized ::
   (Rescale rq rp, Decompose gad rq,
    MonadState (Maybe (PRFState t n gad rq)) m)
-  => SFBT t                     -- | singleton for the tree \( T \)
-  -> PRFParams n gad rq         -- | public parameters
-  -> PRFKey n rq                -- | secret key \( s \)
-  -> BitString (SizeFBT t)      -- | input \( x \)
-  -> m (Matrix rp)              -- | PRF output
+  => SFBT t                     -- ^ singleton for the tree \( T \)
+  -> PRFParams n gad rq         -- ^ public parameters
+  -> PRFKey n rq                -- ^ secret key \( s \)
+  -> BitString (SizeFBT t)      -- ^ input \( x \)
+  -> m (Matrix rp)              -- ^ PRF output
 prfAmortized t p s x = do
   fbt <- get
   let fbt' = updateState t (maybe (Left p) Right fbt) x
