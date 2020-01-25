@@ -1,4 +1,4 @@
-Changelog for lol project
+Changelog for lol-apps
 ================================
 
 0.2.1.0
