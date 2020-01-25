@@ -347,14 +347,17 @@ instance (Rescale a b, TensorPowDec t a, TensorPowDec t b, Fact m)
 -- wouldn't be efficient, and (2) their superclass constraints are not
 -- satisfied anyway (e.g., Ring for P rep).
 
+-- | multiply by the special element @g@
 mulGPow :: (Fact m, TensorG t r) => CycRep t P m r -> CycRep t P m r
 {-# INLINABLE mulGPow #-}
 mulGPow (Pow v) = Pow $ T.mulGPow v
 
+-- | multiply by the special element @g@
 mulGDec :: (Fact m, TensorG t r) => CycRep t D m r -> CycRep t D m r
 {-# INLINABLE mulGDec #-}
 mulGDec (Dec v) = Dec $ T.mulGDec v
 
+-- | multiply by the special element @g@
 mulGCRTC :: (Fact m, TensorCRT t Maybe r)
          => CycRep t C m r -> CycRep t C m r
 {-# INLINABLE mulGCRTC #-}
