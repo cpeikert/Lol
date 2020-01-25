@@ -123,6 +123,7 @@ class FoldableCyc cm a where
   -- any 'Basis' may be used).
   foldrCyc :: Maybe Basis -> (a -> b -> b) -> b -> cm a -> b
 
+-- | Convenient specializations of 'foldrCyc'.
 foldrAny, foldrPow, foldrDec :: FoldableCyc cm a => (a -> b -> b) -> b -> cm a -> b
 foldrAny = foldrCyc   Nothing
 foldrPow = foldrCyc $ Just Pow
@@ -138,6 +139,7 @@ class LiftCyc cmr where
   -- 'Basis' may be used).
   liftCyc :: Maybe Basis -> cmr -> LiftOf cmr
 
+-- | Convenient specializations of 'liftCyc'.
 liftAny, liftPow, liftDec :: LiftCyc cmr => cmr -> LiftOf cmr
 liftAny = liftCyc   Nothing
 liftPow = liftCyc $ Just Pow
