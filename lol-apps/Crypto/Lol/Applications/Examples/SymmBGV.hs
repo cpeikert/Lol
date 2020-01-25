@@ -64,7 +64,8 @@ type CTRing1 d t = CT d PTIndex PTZq (Cyc t CTIndex CTZq1)
 type CTRing2 d t = CT d PTIndex PTZq (Cyc t CTIndex CTZq2)
 type SKRing t = Cyc t CTIndex (LiftOf PTZq)
 
--- | Simple example of how to use the SymmBGV application.
+-- | Simple example of how to use the
+-- "Crypto.Lol.Applications.SymmBGV" application.
 bgvMain :: forall t . (forall m r . (Fact m, Eq r) => Eq (t m r), _)
   => Proxy t -> IO ()
 bgvMain _ = do
