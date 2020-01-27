@@ -88,7 +88,8 @@ import Data.Maybe
 import Data.Typeable
 import GHC.Generics            (Generic)
 
-import MathObj.Polynomial as P
+import qualified MathObj.Polynomial as P (degree)
+import           MathObj.Polynomial as P hiding (degree)
 
 -- | secret key
 data SK r where
