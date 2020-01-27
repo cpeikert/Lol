@@ -60,8 +60,8 @@ type CTZq3 = (Zq 537054337, CTZq2)
 
 type KSGad = TrivGad -- can also use (BaseBGad 2), for example
 
-type CTRing1 d t = CT d PTIndex PTZq (Cyc t CTIndex CTZq1)
-type CTRing2 d t = CT d PTIndex PTZq (Cyc t CTIndex CTZq2)
+type CTRing1 t = CT PTIndex PTZq (Cyc t CTIndex CTZq1)
+type CTRing2 t = CT PTIndex PTZq (Cyc t CTIndex CTZq2)
 type SKRing t = Cyc t CTIndex (LiftOf PTZq)
 
 -- | Simple example of how to use the
@@ -72,24 +72,24 @@ bgvMain _ = do
   plaintext <- getRandom
   sk :: SK (SKRing t) <- genSK (1 :: Double)
   -- encrypt with a single modulus
-  ciphertext :: CTRing1 _ t <- encrypt sk plaintext
+  ciphertext :: CTRing1 t <- encrypt sk plaintext
 
   let ct1 = mulPublic 2 ciphertext
       pt1 = decrypt sk ct1
   print $ "Test1 (expect TRUE): " ++ show (2*plaintext == pt1)
 
   hint :: KSHint KSGad (Cyc t CTIndex CTZq2) <- ksQuadCircHint sk
-  let ct2 = modSwitch $ keySwitchQuadCirc hint $ modSwitch $ mulCT ciphertext ciphertext
-      pt2 = decrypt sk (ct2 :: CTRing1 _ t)
+  let ct2 = modSwitch $ keySwitchQuadCirc hint $ modSwitch $ ciphertext * ciphertext
+      pt2 = decrypt sk (ct2 :: CTRing1 t)
   -- note: this requires a *LARGE* CT modulus to succeed
   print $ "Test2 (expect FALSE): " ++ show (plaintext*plaintext == pt2)
 
   -- so we support using *several* small moduli:
   hint' :: KSHint KSGad (Cyc t CTIndex CTZq3) <- ksQuadCircHint sk
-  ciphertext' :: CTRing2 _ t <- encrypt sk plaintext
-  let ct3 = keySwitchQuadCirc hint' $ modSwitch $ mulCT ciphertext' ciphertext'
+  ciphertext' :: CTRing2 t <- encrypt sk plaintext
+  let ct3 = keySwitchQuadCirc hint' $ modSwitch $ ciphertext' * ciphertext'
       pt3 = decrypt sk ct3
-      ct3' = modSwitch ct3 :: CTRing1 _ t
+      ct3' = modSwitch ct3 :: CTRing1 t
       -- after rescaling, ct3' has a single modulus, so we can use normal decrypt
       pt3' = decrypt sk ct3'
   print $ "Test3 (expect TRUE): " ++ show ((plaintext*plaintext == pt3) && (pt3' == pt3))

@@ -73,8 +73,8 @@ bgvTests _ _ =
   , testIOWithGen "CTAdd"      (prop_ctadd ptmmrr)   (consGens3 gpt gpt gsk)
   , testIOWithGen "CTAdd2"     (prop_ctadd2 ptmmrr)  (consGens3 gpt gpt gsk)
   , testIOWithGen "CTMul"      (prop_ctmul ptmmrr)   (consGens3 gpt gpt gsk)
-  {-, testWithGen   "CT zero"    (prop_ctzero ptmmrr)  gsk-}
-  {-, testWithGen   "CT one"     (prop_ctone ptmmrr)   gsk-}
+  , testWithGen   "CT zero"    (prop_ctzero ptmmrr)  gsk
+  , testWithGen   "CT one"     (prop_ctone ptmmrr)   gsk
   ]
 
 -- zq must be liftable
@@ -133,7 +133,7 @@ tunnelTests _ _ _ =
 prop_encDec :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
   => Proxy '(t,m,m',zp,zq) -> (PT (Cyc t m zp), SK (Cyc t m' z)) -> IO Bool
 prop_encDec _ (x, sk) = do
-  y :: CT _ m zp (Cyc t m' zq) <- encrypt sk x
+  y :: CT m zp (Cyc t m' zq) <- encrypt sk x
   let x' = decrypt sk y
   return $ x == x'
 
@@ -142,7 +142,7 @@ prop_addPub :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
      -> (Cyc t m zp, PT (Cyc t m zp), SK (Cyc t m' z))
      -> IO Bool
 prop_addPub _ (a, pt, sk) = do
-  ct :: CT _ m zp (Cyc t m' zq) <- encrypt sk pt
+  ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   let ct' = addPublic a ct
       pt' = decrypt sk ct'
   return $ pt' == (a+pt)
@@ -152,7 +152,7 @@ prop_mulPub :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
      -> (Cyc t m zp, PT (Cyc t m zp), SK (Cyc t m' z))
      -> IO Bool
 prop_mulPub _ (a, pt, sk) = do
-  ct :: CT _ m zp (Cyc t m' zq) <- encrypt sk pt
+  ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   let ct' = mulPublic a ct
       pt' = decrypt sk ct'
   return $ pt' == (a*pt)
@@ -162,9 +162,9 @@ prop_ctadd :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
      -> (PT (Cyc t m zp), PT (Cyc t m zp), SK (Cyc t m' z))
      -> IO Bool
 prop_ctadd _ (pt1, pt2, sk) = do
-  ct1 :: CT _ m zp (Cyc t m' zq) <- encrypt sk pt1
-  ct2 :: CT _ m zp (Cyc t m' zq) <- encrypt sk pt2
-  let ct' = addCT ct1 ct2
+  ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
+  ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
+  let ct' = ct1 + ct2
       pt' = decrypt sk ct'
   return $ pt1+pt2 == pt'
 
@@ -174,10 +174,10 @@ prop_ctadd2 :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
      -> (PT (Cyc t m zp), PT (Cyc t m zp), SK (Cyc t m' z))
      -> IO Bool
 prop_ctadd2 _ (pt1, pt2, sk) = do
-  ct1 :: CT _ m zp (Cyc t m' zq) <- encrypt sk pt1
-  ct2 :: CT _ m zp (Cyc t m' zq) <- encrypt sk pt2
+  ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
+  ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
   -- no-op to induce unequal scale values
-  let ct' = addCT ct1 $ modSwitchPT ct2
+  let ct' = ct1 + (modSwitchPT ct2)
       pt' = decrypt sk ct'
   return $ pt1+pt2 == pt'
 
@@ -186,36 +186,36 @@ prop_ctmul :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
      -> (PT (Cyc t m zp), PT (Cyc t m zp), SK (Cyc t m' z))
      -> IO Bool
 prop_ctmul _ (pt1, pt2, sk) = do
-  ct1 :: CT _ m zp (Cyc t m' zq) <- encrypt sk pt1
-  ct2 :: CT _ m zp (Cyc t m' zq) <- encrypt sk pt2
-  let ct' = mulCT ct1 ct2
+  ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
+  ct2 :: CT m zp (Cyc t m' zq) <- encrypt sk pt2
+  let ct' = ct1 * ct2
       pt' = decrypt sk ct'
   return $ pt1*pt2 == pt'
 
-{-prop_ctzero :: forall t m m' z zp (zq :: *) . (z ~ LiftOf zp, Fact m, _)-}
-  {-=> Proxy '(t,m,m',zp,zq)-}
-     {--> SK (Cyc t m' z)-}
-     {--> Bool-}
-{-prop_ctzero _ sk = zero == decrypt sk (zero :: CT m zp (Cyc t m' zq))-}
+prop_ctzero :: forall t m m' z zp (zq :: *) . (z ~ LiftOf zp, Fact m, _)
+  => Proxy '(t,m,m',zp,zq)
+     -> SK (Cyc t m' z)
+     -> Bool
+prop_ctzero _ sk = zero == decrypt sk (zero :: CT m zp (Cyc t m' zq))
 
-{-prop_ctone :: forall t m m' z zp (zq :: *) . (z ~ LiftOf zp, Fact m, _)-}
-  {-=> Proxy '(t,m,m',zp,zq)-}
-     {--> SK (Cyc t m' z)-}
-     {--> Bool-}
-{-prop_ctone _ sk = one == decrypt sk (one :: CT m zp (Cyc t m' zq))-}
+prop_ctone :: forall t m m' z zp (zq :: *) . (z ~ LiftOf zp, Fact m, _)
+  => Proxy '(t,m,m',zp,zq)
+     -> SK (Cyc t m' z)
+     -> Bool
+prop_ctone _ sk = one == decrypt sk (one :: CT m zp (Cyc t m' zq))
 
 prop_modSwPT :: forall t m m' z zp (zp' :: *) (zq :: *) . (z ~ LiftOf zp, _)
   => Proxy '(t,m,m',zp,zp',zq)
      -> (PT (Cyc t m zp), SK (Cyc t m' z))
      -> IO Bool
 prop_modSwPT _ (pt, sk) = do
-  y :: CT _ m zp (Cyc t m' zq) <- encrypt sk pt
+  y :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   let p = modulus @zp
       p' = modulus @zp'
   v <- encrypt sk $ fromIntegral $ p `div` p'
-  let z = mulCT v y
+  let z = v * y
       x = decrypt sk z
-      y' = modSwitchPT z :: CT 2 m zp' (Cyc t m' zq)
+      y' = modSwitchPT z :: CT m zp' (Cyc t m' zq)
       x'' = decrypt sk y'
   return $ x'' == rescaleCyc Dec x
 
@@ -226,7 +226,7 @@ prop_ksLin :: forall t m m' z zp (zq :: *) (gad :: *) . (z ~ LiftOf zp, _)
 prop_ksLin _ (pt, skin, skout) = do
   ct <- encrypt skin pt
   hint :: KSHint gad (Cyc t m' zq) <- ksLinearHint skout skin
-  let ct' = keySwitchLinear hint ct :: CT _ m zp (Cyc t m' zq)
+  let ct' = keySwitchLinear hint ct :: CT m zp (Cyc t m' zq)
       pt' = decrypt skout ct'
   return $ pt == pt'
 
@@ -235,10 +235,10 @@ prop_ksQuad :: forall t m m' z zp zq (gad :: *) . (z ~ LiftOf zp, m `Divides` m'
      -> (PT (Cyc t m zp), PT (Cyc t m zp), SK (Cyc t m' z))
      -> IO Bool
 prop_ksQuad _ (pt1, pt2, sk) = do
-  ct1 :: CT _ m zp (Cyc t m' zq) <- encrypt sk pt1
+  ct1 :: CT m zp (Cyc t m' zq) <- encrypt sk pt1
   ct2 <- encrypt sk pt2
   hint :: KSHint gad (Cyc t m' zq) <- ksQuadCircHint sk
-  let ct' = keySwitchQuadCirc hint $ mulCT ct1 ct2
+  let ct' = keySwitchQuadCirc hint $ ct1 * ct2
       ptProd = pt1*pt2
       pt' = decrypt sk ct'
   return $ ptProd == pt'
@@ -248,8 +248,8 @@ prop_ctembed :: forall t r r' s s' z zp (zq :: *) . (z ~ LiftOf zp, Fact s', Fac
      -> (PT (Cyc t r zp), SK (Cyc t r' z))
      -> IO Bool
 prop_ctembed _ (pt, sk) = do
-  ct :: CT _ r zp (Cyc t r' zq) <- encrypt sk pt
-  let ct' = embedCT ct :: CT _ s zp (Cyc t s' zq)
+  ct :: CT r zp (Cyc t r' zq) <- encrypt sk pt
+  let ct' = embedCT ct :: CT s zp (Cyc t s' zq)
       pt' = decrypt (embedSK sk) ct'
   return $ embed pt == pt'
 
@@ -259,8 +259,8 @@ prop_cttwace :: forall t r r' s s' z zp (zq :: *) . (z ~ LiftOf zp, Fact r, _)
      -> (PT (Cyc t s zp), SK (Cyc t r' z))
      -> IO Bool
 prop_cttwace _ (pt, sk) = do
-  ct :: CT _ s zp (Cyc t s' zq) <- encrypt (embedSK sk) pt
-  let ct' = twaceCT ct :: CT _ r zp (Cyc t r' zq)
+  ct :: CT s zp (Cyc t s' zq) <- encrypt (embedSK sk) pt
+  let ct' = twaceCT ct :: CT r zp (Cyc t r' zq)
       pt' = decrypt sk ct'
   return $ twace pt == pt'
 
@@ -284,8 +284,8 @@ prop_tunnel _ (x, skin, skout) = do
   bs :: [Cyc t s zp] <- replicateM basisSize getRandom
   let f = linearDec bs \\ gcdDivides @r @s :: Linear c e r s zp
       expected = evalLin f x \\ gcdDivides @r @s
-  y :: CT _ r zp (Cyc t r' zq) <- encrypt skin x
+  y :: CT r zp (Cyc t r' zq) <- encrypt skin x
   hints :: TunnelHint gad c e r s e' r' s' zp zq <- tunnelHint f skout skin
-  let y' = tunnel hints y :: CT _ s zp (Cyc t s' zq)
+  let y' = tunnel hints y :: CT s zp (Cyc t s' zq)
       actual = decrypt skout y' :: Cyc t s zp
   return $ expected == actual

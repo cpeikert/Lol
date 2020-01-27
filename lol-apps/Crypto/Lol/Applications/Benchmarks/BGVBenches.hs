@@ -103,9 +103,9 @@ bench_enc :: forall t m m' z zp (zq :: *) (gen :: *) . (z ~ LiftOf zp,  _)
   => Proxy '(t,m,m',zp,zq,gen)
      -> SK (Cyc t m' z)
      -> PT (Cyc t m zp)
-     -> IO (CT 1 m zp (Cyc t m' zq))
+     -> IO (CT m zp (Cyc t m' zq))
 bench_enc _ sk pt =
-  evalRand (encrypt sk pt :: Rand (CryptoRand gen) (CT 1 m zp (Cyc t m' zq))) <$> newGenIO
+  evalRand (encrypt sk pt :: Rand (CryptoRand gen) (CT m zp (Cyc t m' zq))) <$> newGenIO
 
 -- requires zq to be Liftable
 bench_dec :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
@@ -114,7 +114,7 @@ bench_dec :: forall t m m' z zp zq . (z ~ LiftOf zp, _)
      -> SK (Cyc t m' z)
      -> IO (PT (Cyc t m zp))
 bench_dec _ pt sk = do
-  ct :: CT 1 m zp (Cyc t m' zq) <- encrypt sk pt
+  ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   evalRandIO $ return $ decrypt sk ct
 
 bench_mul :: forall t m m' z zp zq . (z ~ LiftOf zp, LiftOf zp ~ ModRep zp, m `Divides` m', _)
@@ -122,20 +122,20 @@ bench_mul :: forall t m m' z zp zq . (z ~ LiftOf zp, LiftOf zp ~ ModRep zp, m `D
      -> PT (Cyc t m zp)
      -> PT (Cyc t m zp)
      -> SK (Cyc t m' z)
-     -> IO (CT 2 m zp (Cyc t m' zq))
+     -> IO (CT m zp (Cyc t m' zq))
 bench_mul _ pta ptb sk = do
-  a :: CT 1 m zp (Cyc t m' zq) <- encrypt sk pta
+  a :: CT m zp (Cyc t m' zq) <- encrypt sk pta
   b <- encrypt sk ptb
-  evalRandIO $ return $ mulCT a b
+  evalRandIO $ return $ a * b
 
 bench_addPublic :: forall t m m' z zp zq . (z ~ LiftOf zq, _)
   => Proxy '(t,m,m',zp,zq)
      -> Cyc t m zp
      -> PT (Cyc t m zp)
      -> SK (Cyc t m' z)
-     -> IO (CT 1 m zp (Cyc t m' zq))
+     -> IO (CT m zp (Cyc t m' zq))
 bench_addPublic _ a pt sk = do
-  ct :: CT 1 m zp (Cyc t m' zq) <- encrypt sk pt
+  ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   evalRandIO $ return $ addPublic a ct
 
 bench_mulPublic :: forall t m m' z zp zq . (z ~ LiftOf zq, _)
@@ -143,29 +143,29 @@ bench_mulPublic :: forall t m m' z zp zq . (z ~ LiftOf zq, _)
      -> Cyc t m zp
      -> PT (Cyc t m zp)
      -> SK (Cyc t m' z)
-     -> IO (CT 1 m zp (Cyc t m' zq))
+     -> IO (CT m zp (Cyc t m' zq))
 bench_mulPublic _ a pt sk = do
-  ct :: CT 1 m zp (Cyc t m' zq) <- encrypt sk pt
+  ct :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   evalRandIO $ return $ mulPublic a ct
 
 bench_rescale :: forall t m m' z zp (zq :: *) (zq' :: *) . (z ~ LiftOf zq, _)
   => Proxy '(t,m,m',zp,zq,zq')
      -> PT (Cyc t m zp)
      -> SK (Cyc t m' z)
-     -> IO (CT 1 m zp (Cyc t m' zq))
+     -> IO (CT m zp (Cyc t m' zq))
 bench_rescale _ pt sk = do
   ct <- encrypt sk pt
-  evalRandIO $ return $ (modSwitch :: CT 1 m zp (Cyc t m' zq') -> CT 1 m zp (Cyc t m' zq)) ct
+  evalRandIO $ return $ (modSwitch :: CT m zp (Cyc t m' zq') -> CT m zp (Cyc t m' zq)) ct
 
 bench_keySwQ :: forall t m m' z zp zq (gad :: *) . (z ~ LiftOf zp, _)
   => Proxy '(t,m,m',zp,zq,gad)
      -> PT (Cyc t m zp)
      -> SK (Cyc t m' z)
-     -> IO (CT 1 m zp (Cyc t m' zq))
+     -> IO (CT m zp (Cyc t m' zq))
 bench_keySwQ _ pt sk = do
-  x :: CT 1 m zp (Cyc t m' zq) <- encrypt sk pt
+  x :: CT m zp (Cyc t m' zq) <- encrypt sk pt
   ksqHint :: KSHint gad (Cyc t m' zq) <- ksQuadCircHint sk
-  let y = mulCT x x
+  let y = x * x
   evalRandIO $ return $ keySwitchQuadCirc ksqHint y
 
 {--- possible bug: If I enable -XPartialTypeSigs and add a ",_" to the constraint list below, GHC-}
@@ -185,7 +185,7 @@ bench_tunnel :: forall c t e e' r r' s s' z zp zq gad .
      -> PT (Cyc t r zp)
      -> SK (Cyc t r' z)
      -> SK (Cyc t s' z)
-     -> IO (CT 1 s zp (Cyc t s' zq))
+     -> IO (CT s zp (Cyc t s' zq))
 bench_tunnel _ pt skin skout = do
   x <- encrypt skin pt
   let crts :: [Cyc t s zp] = proxy crtSet (Proxy::Proxy e)
@@ -197,4 +197,4 @@ bench_tunnel _ pt skin skout = do
       linf :: Linear (Cyc t) e r s zp = linearDec (take (totr `div` tote) crts)
         \\ gcdDivides @r @s
   hints :: TunnelHint gad (Cyc t) e r s e' r' s' zp zq <- tunnelHint linf skout skin
-  evalRandIO $ return $ (tunnel hints :: CT _ r zp (Cyc t r' zq) -> CT _ s zp (Cyc t s' zq)) x
+  evalRandIO $ return $ (tunnel hints :: CT r zp (Cyc t r' zq) -> CT s zp (Cyc t s' zq)) x
