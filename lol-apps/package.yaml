@@ -1,4 +1,4 @@
-_common: !include "../common.yaml"
+_common: !include "./common.yaml"
 
 name: lol-apps
 version: 0.3.0.0

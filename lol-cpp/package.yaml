@@ -1,4 +1,4 @@
-_common: !include "../common.yaml"
+_common: !include "./common.yaml"
 
 name: lol-cpp
 version: 0.2.0.0
