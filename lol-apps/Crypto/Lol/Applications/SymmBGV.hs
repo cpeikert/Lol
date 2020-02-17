@@ -56,7 +56,7 @@ SK, PT, CT -- don't export constructors!
 -- * Arithmetic
 , addCT, mulCT, negateCT
 , AddCTCtx, MulCTCtx, NegateCTCtx
-, Max
+, Max, type (+)
 -- * Constraint synonyms
 , GenSKCtx, EncryptCtx, ToSDCtx
 , ErrorTermCtx, DecryptCtx
