@@ -55,6 +55,7 @@ SK, PT, CT -- don't export constructors!
 , tunnel
 -- * Arithmetic
 , addCT, mulCT, negateCT
+, AddCTCtx, MulCTCtx, NegateCTCtx
 -- * Constraint synonyms
 , GenSKCtx, EncryptCtx, ToSDCtx
 , ErrorTermCtx, DecryptCtx
@@ -385,10 +386,12 @@ mulGCT (CT enc k l c) = CT enc (k+1) l $ mulG <$> c
 
 ---------- Arithmetic operations ----------
 
-addCT :: forall c m m' zp zq d1 d2 .
-         (Lift' zp, Reduce (LiftOf zp) zq, -- mulScalar
-         ToSDCtx c m' zp zq, Eq zp, m `Divides` m')
-           => CT d1 m zp (c m' zq) -> CT d2 m zp (c m' zq) -> CT (Max d1 d2) m zp (c m' zq)
+type AddCTCtx c m m' zp zq = 
+  (Lift' zp, Reduce (LiftOf zp) zq, ToSDCtx c m' zp zq,
+   Eq zp, m `Divides` m')
+
+addCT :: forall c m m' zp zq d1 d2 . AddCTCtx c m m' zp zq
+         => CT d1 m zp (c m' zq) -> CT d2 m zp (c m' zq) -> CT (Max d1 d2) m zp (c m' zq)
 addCT ct1@(CT enc1 k1 l1 c1) ct2@(CT enc2 k2 l2 c2)
   | l1 /= l2 =
     let (CT enc' k' _ c') = mulScalar (l1 * recip l2) ct1
@@ -400,14 +403,18 @@ addCT ct1@(CT enc1 k1 l1 c1) ct2@(CT enc2 k2 l2 c2)
   | enc1 == MSD && enc2 == LSD = addCT ct1 $ toMSD ct2
   | otherwise = CT enc1 k1 l1 $ c1 + c2
 
-negateCT :: Additive (c m' zq) => CT d m zp (c m' zq) -> CT d m zp (c m' zq)
+type NegateCTCtx c m' zq = (Additive (c m' zq))
+
+negateCT :: NegateCTCtx c m' zq => CT d m zp (c m' zq) -> CT d m zp (c m' zq)
 negateCT (CT enc k l c) = CT enc k l $ negate <$> c
 
 -- Convince GHC that addition is symmetric
 symmetricAddition :: forall d1 d2. (() :- ((d1 + d2) ~ (d2 + d1)))
 symmetricAddition = Sub $ unsafeCoerce (Dict :: Dict ())
 
-mulCT :: forall c m m' zp zq d1 d2 . (ToSDCtx c m' zp zq)  => CT d1 m zp (c m' zq) -> CT d2 m zp (c m' zq) -> CT (d1 + d2) m zp (c m' zq)
+type MulCTCtx c m' zp zq = (ToSDCtx c m' zp zq)
+--
+mulCT :: forall c m m' zp zq d1 d2 . MulCTCtx c m' zp zq => CT d1 m zp (c m' zq) -> CT d2 m zp (c m' zq) -> CT (d1 + d2) m zp (c m' zq)
 -- need at least one ct to be in LSD form
 mulCT ct1@(CT MSD _ _ _) ct2@(CT MSD _ _ _) = mulCT (toLSD ct1) ct2
 -- first is in LSD
