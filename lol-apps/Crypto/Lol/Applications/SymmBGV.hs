@@ -87,7 +87,7 @@ import Data.Maybe
 import Data.Singletons.Prelude (Max)
 import Data.Typeable
 import GHC.Generics            (Generic)
-import GHC.TypeLits            (type (+))
+import GHC.TypeLits            (type (+), Nat)
 import Unsafe.Coerce
 
 import MathObj.Polynomial as P
@@ -104,7 +104,7 @@ data Encoding = MSD | LSD deriving (Show, Eq, Generic, NFData)
 
 -- | Ciphertext of degree (at most) \(d\) over \( R'_q \) encrypting a
 -- plaintext in \( R_p \)\, where \( R=\mathcal{O}_m \).
-data CT d m zp r'q =
+data CT (d :: Nat) m zp r'q =
   CT
   !Encoding                     -- MSD/LSD encoding
   !Int                          -- accumulated power of g_m' in c(s)
