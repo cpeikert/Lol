@@ -50,16 +50,15 @@ library:
     - Crypto.Lol.Cyclotomic.Tensor.CPP.Extension
     - Crypto.Lol.Cyclotomic.Tensor.CPP.Instances
   dependencies:
-    - base
-    - constraints
-    - deepseq
-    - name: lol
-      version: ">= 0.7.0.0 && < 0.8"
-    - MonadRandom
-    - mtl
-    - numeric-prelude
-    - reflection
-    - vector
+    - MonadRandom >= 0.5.1 && < 0.6
+    - base >= 4.12.0 && < 4.13
+    - mtl >= 2.2.2 && < 2.3
+    - deepseq >= 1.4.4 && < 1.5
+    - constraints >= 0.10 && < 0.11
+    - vector >= 0.12.0 && < 0.13
+    - numeric-prelude >= 0.4.3 && < 0.5
+    - reflection >= 2.1.5 && < 2.2
+    - lol >= 0.7.0.0 && < 0.8
 
 
 _with_apps_flag: &withAppsLogic

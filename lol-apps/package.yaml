@@ -43,23 +43,22 @@ library:
     - Crypto.Lol.Applications.Examples.KHPRF
     - Crypto.Lol.Applications.Examples.SymmBGV
   dependencies:
-    - name: lol 
-      version: ">= 0.7.0.0 && < 0.8"
-    - DRBG
-    - MonadRandom
-    - base
-    - containers
-    - crypto-api
-    - deepseq
-    - filepath
-    - mtl
-    - numeric-prelude
-    - options
-    - protocol-buffers
-    - protocol-buffers-descriptor
-    - singletons
-    - split
-    - test-framework
-    - time
-    - QuickCheck
-    - constraints
+    - lol >= 0.7.0.0 && < 0.8
+    - DRBG >= 0.5.5 && < 0.6
+    - base >= 4.12.0 && < 4.13
+    - deepseq >= 1.4.4 && < 1.5
+    - containers >= 0.6.0 && < 0.7
+    - crypto-api >= 0.13.3 && < 0.14
+    - time >= 1.8.0 && < 1.9
+    - filepath >= 1.4.2 && < 1.5
+    - mtl >= 2.2.2 && < 2.3
+    - MonadRandom >= 0.5.1 && < 0.6
+    - QuickCheck >= 2.13.2 && < 2.14
+    - constraints >= 0.10 && < 0.11
+    - numeric-prelude >= 0.4.3 && < 0.5
+    - protocol-buffers >= 2.4.13 && < 2.5
+    - protocol-buffers-descriptor >= 2.4.13 && < 2.5
+    - singletons >= 2.5.1 && < 2.6
+    - test-framework >= 0.8.2 && < 0.9
+    - options >= 1.2.1 && < 1.3
+    - split >= 0.2.3 && < 0.3
