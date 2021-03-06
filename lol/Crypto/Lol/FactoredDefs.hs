@@ -12,23 +12,28 @@ This sub-module exists only because we can't define and use
 template Haskell splices in the same module.
 -}
 
-{-# LANGUAGE AllowAmbiguousTypes   #-}
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE InstanceSigs          #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE NoStarIsType          #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE StandaloneDeriving    #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeApplications      #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE AllowAmbiguousTypes       #-}
+{-# LANGUAGE ConstraintKinds           #-}
+{-# LANGUAGE DataKinds                 #-}
+{-# LANGUAGE DefaultSignatures         #-}
+{-# LANGUAGE EmptyCase                 #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE InstanceSigs              #-}
+{-# LANGUAGE KindSignatures            #-}
+{-# LANGUAGE NoCUSKs                   #-}
+{-# LANGUAGE NoStarIsType              #-}
+{-# LANGUAGE PolyKinds                 #-}
+{-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE StandaloneKindSignatures  #-}
+{-# LANGUAGE TemplateHaskell           #-}
+{-# LANGUAGE TypeApplications          #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE TypeOperators             #-}
+{-# LANGUAGE UndecidableInstances      #-}
 
 {-# OPTIONS_GHC -fno-warn-unused-binds          #-}
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
@@ -39,7 +44,7 @@ module Crypto.Lol.FactoredDefs
   Factored, SFactored, Fact, fType, fDec
 , reifyFact, reifyFactI, intToFact
 -- * Prime powers
-, PrimePower(..), SPrimePower, Sing(SPP), PPow, ppType, ppDec
+, PrimePower(..), SPrimePower(..), PPow, ppType, ppDec
 , reifyPPow, reifyPPowI
 -- * Primes
 , PrimeBin, SPrimeBin, Prime, pType, pDec

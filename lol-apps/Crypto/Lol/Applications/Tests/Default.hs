@@ -31,9 +31,10 @@ import Crypto.Lol.Tests
 import Data.Proxy
 
 defaultAppsTests ::
-  (forall m r . (Fact m, Show r, Eq r) => (Show (t m r), Eq (t m r)),
-   _)
-  => Proxy t -> Proxy gad -> [Test]
+  ( forall m r. (Fact m, Show r, Eq r) => Show (t m r)
+  , forall m r. (Fact m, Show r, Eq r) => Eq (t m r)
+  , _
+  ) => Proxy t -> Proxy gad -> [Test]
 defaultAppsTests pt pgad  =
   [testGroup "BGV" $ ($ pt) <$> [
     bgvTests (Proxy::Proxy '(F7, F7, Zq 2,Zq (19393921 ** 18869761))),

@@ -33,6 +33,8 @@ import Crypto.Lol.Benchmarks                     (ArgType, Benchmark,
 import Crypto.Lol.Reflects
 import Crypto.Lol.Types
 
+import Data.Singletons
+
 type M = F64
 type N = 1
 type Q = 256

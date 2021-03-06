@@ -16,7 +16,7 @@
 #  name: custom-snapshot
 #  location: "./custom-snapshot.yaml"
 
-resolver: lts-14.20
+resolver: lts-17.5
 compiler-check: newer-minor
 
 # User packages to be built.
@@ -49,9 +49,14 @@ packages:
 extra-deps:
 - monadcryptorandom-0.7.2.1
 - DRBG-0.5.5
+- cipher-aes128-0.7.0.5
 
 ghc-options:
     "$locals": -O1 -fexpose-all-unfoldings -fwarn-dodgy-imports
+
+flags:
+    cryptonite:
+        use_target_attributes: false
 
 # Override default flag values for local packages and extra-deps
 
