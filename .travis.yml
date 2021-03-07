@@ -14,7 +14,7 @@ sudo: required
 
 # Do not choose a language; we provide our own build tools.
 language: generic
-dist: trusty
+dist: focal
 
 # Caching so the next build will be fast too.
 cache:
