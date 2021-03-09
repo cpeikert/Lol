@@ -1,7 +1,7 @@
 _common: !include "./common.yaml"
 
 name: lol-cpp
-version: 0.2.0.0
+version: 0.2.0.1
 synopsis:            A fast C++ backend for <https://hackage.haskell.org/package/lol lol>.
 category:            Crypto
 stability:           experimental
@@ -51,10 +51,10 @@ library:
     - Crypto.Lol.Cyclotomic.Tensor.CPP.Instances
   dependencies:
     - MonadRandom >= 0.5.1 && < 0.6
-    - base >= 4.12.0 && < 4.13
+    - base >= 4.14.0 && < 4.15
     - mtl >= 2.2.2 && < 2.3
     - deepseq >= 1.4.4 && < 1.5
-    - constraints >= 0.10 && < 0.11
+    - constraints >= 0.10 && < 0.14
     - vector >= 0.12.0 && < 0.13
     - numeric-prelude >= 0.4.3 && < 0.5
     - reflection >= 2.1.5 && < 2.2

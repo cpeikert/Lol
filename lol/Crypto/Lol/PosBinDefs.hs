@@ -15,33 +15,40 @@ This sub-module exists only because we can't define and use
 template Haskell splices in the same module.
 -}
 
-{-# LANGUAGE ConstraintKinds       #-}
-{-# LANGUAGE DataKinds             #-}
-{-# LANGUAGE EmptyCase             #-}
-{-# LANGUAGE FlexibleInstances     #-}
-{-# LANGUAGE GADTs                 #-}
-{-# LANGUAGE InstanceSigs          #-}
-{-# LANGUAGE PolyKinds             #-}
-{-# LANGUAGE QuantifiedConstraints #-}
-{-# LANGUAGE RankNTypes            #-}
-{-# LANGUAGE RebindableSyntax      #-}
-{-# LANGUAGE ScopedTypeVariables   #-}
-{-# LANGUAGE StandaloneDeriving    #-}
-{-# LANGUAGE TemplateHaskell       #-}
-{-# LANGUAGE TypeFamilies          #-}
-{-# LANGUAGE UndecidableInstances  #-}
+{-# LANGUAGE ConstraintKinds           #-}
+{-# LANGUAGE DataKinds                 #-}
+{-# LANGUAGE DefaultSignatures         #-}
+{-# LANGUAGE EmptyCase                 #-}
+{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE FlexibleContexts          #-}
+{-# LANGUAGE FlexibleInstances         #-}
+{-# LANGUAGE GADTs                     #-}
+{-# LANGUAGE InstanceSigs              #-}
+{-# LANGUAGE KindSignatures            #-}
+{-# LANGUAGE NoCUSKs                   #-}
+{-# LANGUAGE NoStarIsType              #-}
+{-# LANGUAGE PolyKinds                 #-}
+{-# LANGUAGE RankNTypes                #-}
+{-# LANGUAGE RebindableSyntax          #-}
+{-# LANGUAGE ScopedTypeVariables       #-}
+{-# LANGUAGE StandaloneKindSignatures  #-}
+{-# LANGUAGE TemplateHaskell           #-}
+{-# LANGUAGE TypeApplications          #-}
+{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE TypeOperators             #-}
+{-# LANGUAGE UndecidableInstances      #-}
 
 {-# OPTIONS_GHC -fno-warn-duplicate-exports     #-}
 {-# OPTIONS_GHC -fno-warn-redundant-constraints #-}
 
 module Crypto.Lol.PosBinDefs
 ( -- * Positive naturals in Peano representation
-  Pos(..), Sing(SO, SS), SPos, PosC, posType, posDec
+  Pos(..), SPos(..), PosC, posType, posDec
 , reifyPos, reifyPosI, posToInt, intToPos
 , addPos, sAddPos, AddPos, subPos, sSubPos, SubPos
 , OSym0, SSym0, SSym1, AddPosSym0, AddPosSym1, SubPosSym0, SubPosSym1
   -- * Positive naturals in binary representation
-, Bin(..), Sing(SB1, SD0, SD1), SBin, BinC, binType, binDec
+, Bin(..), SBin(..), BinC, binType, binDec
 , reifyBin, reifyBinI, binToInt, intToBin
 , B1Sym0, D0Sym0, D0Sym1, D1Sym0, D1Sym1
   -- * Miscellaneous
@@ -55,6 +62,7 @@ import Language.Haskell.TH
 
 import Algebra.ToInteger as ToInteger
 import NumericPrelude
+import Prelude           (fail)
 
 singletons [d|
             -- Positive naturals (1, 2, ...) in Peano representation.

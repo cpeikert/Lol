@@ -106,7 +106,7 @@ instance (GFCtx fp d) => Field.C (GF fp d) where
 
 instance (GFCtx fp d, NFData fp) => CRTrans Maybe (GF fp d) where
   -- https://ghc.haskell.org/trac/ghc/wiki/Migration/8.2#KindgeneralizationandMonoLocalBinds
-  crtInfo :: forall (m :: k) . (Reflects m Int) => TaggedT m Maybe (CRTInfo (GF fp d))
+  crtInfo :: forall k (m :: k) . (Reflects m Int) => TaggedT m Maybe (CRTInfo (GF fp d))
   {-# INLINABLE crtInfo #-}
   crtInfo = tagT $ (,) <$> omegaPow <*> scalarInv
     where

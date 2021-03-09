@@ -1,0 +1,156 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           lol
+version:        0.7.0.1
+synopsis:       A library for lattice cryptography.
+description:    Λ ⚬ λ (Lol) is a general-purpose library for ring-based lattice cryptography.  For a detailed description of interfaces and functionality, see <https://eprint.iacr.org/2015/1134 Λ ⚬ λ: Functional Lattice Cryptography>. The main backend for the library is <https://hackage.haskell.org/package/lol-cpp lol-cpp> (<https://hackage.haskell.org/package/lol-repa lol-repa> is currently out of date). For example cryptographic applications, see <https://hackage.haskell.org/package/lol-apps lol-apps>.
+category:       Crypto
+stability:      experimental
+homepage:       https://github.com/cpeikert/lol#readme
+bug-reports:    https://github.com/cpeikert/lol/issues
+author:         Eric Crockett <ecrockett0@gmail.com>,
+                Chris Peikert <cpeikert@alum.mit.edu>
+maintainer:     Eric Crockett <ecrockett@gmail.com>,
+                Chad Sharp <cmlsharp@umich.edu>
+copyright:      Eric Crockett,
+                Chris Peikert
+license:        GPL-3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README
+    CHANGES.md
+    Lol.proto
+    RLWE.proto
+
+source-repository head
+  type: git
+  location: https://github.com/cpeikert/lol
+
+flag llvm
+  description: Compile via LLVM. This produces much better object code, but you need to have the LLVM compiler installed.
+  manual: False
+  default: False
+
+flag opt
+  description: Turn on library optimizations
+  manual: False
+  default: True
+
+library
+  exposed-modules:
+      Crypto.Lol
+      Crypto.Lol.Types
+      Crypto.Lol.Factored
+      Crypto.Lol.Reflects
+      Crypto.Lol.CRTrans
+      Crypto.Lol.Gadget
+      Crypto.Lol.Prelude
+      Crypto.Lol.Cyclotomic.Cyc
+      Crypto.Lol.Cyclotomic.CycRep
+      Crypto.Lol.Cyclotomic.Language
+      Crypto.Lol.Cyclotomic.Linear
+      Crypto.Lol.RLWE.Continuous
+      Crypto.Lol.RLWE.Discrete
+      Crypto.Lol.RLWE.RLWR
+      Crypto.Lol.Cyclotomic.Tensor
+      Crypto.Lol.GaussRandom
+      Crypto.Lol.Types.Unsafe.Complex
+      Crypto.Lol.Types.FiniteField
+      Crypto.Lol.Types.IrreducibleChar2
+      Crypto.Lol.Types.IFunctor
+      Crypto.Lol.Types.IZipVector
+      Crypto.Lol.Types.Proto
+      Crypto.Lol.Types.Random
+      Crypto.Lol.Types.Unsafe.RRq
+      Crypto.Lol.Types.ZmStar
+      Crypto.Lol.Types.Unsafe.ZqBasic
+      Crypto.Proto.Lol
+      Crypto.Proto.Lol.LinearRq
+      Crypto.Proto.Lol.R
+      Crypto.Proto.Lol.Rq
+      Crypto.Proto.Lol.RqProduct
+      Crypto.Proto.Lol.K
+      Crypto.Proto.Lol.Kq
+      Crypto.Proto.Lol.KqProduct
+      Crypto.Proto.Lol.TypeRep
+      Crypto.Proto.RLWE
+      Crypto.Proto.RLWE.SampleContProduct
+      Crypto.Proto.RLWE.SampleDiscProduct
+      Crypto.Proto.RLWE.SampleRLWRProduct
+      Crypto.Proto.RLWE.SampleCont
+      Crypto.Proto.RLWE.SampleDisc
+      Crypto.Proto.RLWE.SampleRLWR
+      Crypto.Lol.Utils.ShowType
+      Crypto.Lol.Tests
+      Crypto.Lol.Benchmarks
+  other-modules:
+      Crypto.Lol.Cyclotomic.CRTSentinel
+      Crypto.Lol.FactoredDefs
+      Crypto.Lol.Types.Numeric
+      Crypto.Lol.PosBin
+      Crypto.Lol.PosBinDefs
+      Crypto.Lol.Utils.Tests
+      Crypto.Lol.Utils.Benchmarks
+      Crypto.Lol.Utils.PrettyPrint
+      Crypto.Lol.Utils.PrettyPrint.Diagnostic
+      Crypto.Lol.Utils.PrettyPrint.Table
+      Crypto.Lol.Tests.CycTests
+      Crypto.Lol.Tests.Default
+      Crypto.Lol.Tests.TensorTests
+      Crypto.Lol.Tests.ZqTests
+      Crypto.Lol.Benchmarks.CycBenches
+      Crypto.Lol.Benchmarks.Default
+      Crypto.Lol.Benchmarks.TensorBenches
+      Crypto.Lol.Benchmarks.CycRepBenches
+  build-depends:
+      MonadRandom >=0.5.1 && <0.6
+    , QuickCheck >=2.13.2 && <2.15
+    , ansi-terminal ==0.10.*
+    , arithmoi >=0.11.0 && <0.12
+    , base ==4.14.*
+    , bytestring >=0.10.8 && <0.12
+    , constraints >=0.10.1 && <0.14
+    , containers >=0.6.0 && <0.7
+    , criterion >=1.5.6 && <1.6
+    , criterion-measurement >=0.1.2 && <0.2
+    , crypto-api >=0.13.3 && <0.14
+    , data-default >=0.7.1 && <0.8
+    , deepseq >=1.4.4 && <1.5
+    , directory >=1.3.3 && <1.4
+    , monadcryptorandom >=0.7.2 && <0.8
+    , mtl >=2.2.2 && <2.3
+    , numeric-prelude >=0.4.3 && <0.5
+    , protocol-buffers >=2.4.12 && <2.5
+    , protocol-buffers-descriptor >=2.4.12 && <2.5
+    , random >=1.1 && <1.3
+    , reflection >=2.1.5 && <2.2
+    , singletons ==2.7.*
+    , statistics >=0.15.1 && <0.16
+    , tagged-transformer >=0.8.1 && <0.9
+    , template-haskell >=2.16.0 && <2.17
+    , test-framework >=0.8.2 && <0.9
+    , test-framework-quickcheck2 >=0.3.0 && <0.4
+    , vector >=0.12.0 && <0.13
+    , vector-th-unbox >=0.2.1 && <0.3
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
+  default-language: Haskell2010
+
+test-suite test-lol
+  type: exitcode-stdio-1.0
+  main-is: LolTestsMain.hs
+  other-modules:
+      Paths_lol
+  hs-source-dirs:
+      tests
+  ghc-options: -main-is LolTestsMain
+  build-depends:
+      base
+    , lol
+    , test-framework
+  default-language: Haskell2010

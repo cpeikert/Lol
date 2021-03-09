@@ -1,0 +1,151 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.34.4.
+--
+-- see: https://github.com/sol/hpack
+
+name:           lol-cpp
+version:        0.2.0.1
+synopsis:       A fast C++ backend for <https://hackage.haskell.org/package/lol lol>.
+description:    Λ ⚬ λ (Lol) is a general-purpose library for ring-based lattice cryptography. This package provides a C++ implementation of Lol's Tensor interface.
+category:       Crypto
+stability:      experimental
+homepage:       https://github.com/cpeikert/lol#readme
+bug-reports:    https://github.com/cpeikert/lol/issues
+author:         Eric Crockett <ecrockett0@gmail.com>,
+                Chris Peikert <cpeikert@alum.mit.edu>
+maintainer:     Eric Crockett <ecrockett@gmail.com>,
+                Chad Sharp <cmlsharp@umich.edu>
+copyright:      Eric Crockett,
+                Chris Peikert
+license:        GPL-3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README
+    CHANGES.md
+    Crypto/Lol/Cyclotomic/Tensor/CPP/common.h
+    Crypto/Lol/Cyclotomic/Tensor/CPP/tensor.h
+    Crypto/Lol/Cyclotomic/Tensor/CPP/types.h
+    Crypto/Lol/Cyclotomic/Tensor/CPP/common.cpp
+    Crypto/Lol/Cyclotomic/Tensor/CPP/crt.cpp
+    Crypto/Lol/Cyclotomic/Tensor/CPP/g.cpp
+    Crypto/Lol/Cyclotomic/Tensor/CPP/l.cpp
+    Crypto/Lol/Cyclotomic/Tensor/CPP/mul.cpp
+    Crypto/Lol/Cyclotomic/Tensor/CPP/norm.cpp
+    Crypto/Lol/Cyclotomic/Tensor/CPP/random.cpp
+    Crypto/Lol/Cyclotomic/Tensor/CPP/rrq.cpp
+    Crypto/Lol/Cyclotomic/Tensor/CPP/zq.cpp
+
+source-repository head
+  type: git
+  location: https://github.com/cpeikert/lol
+
+flag llvm
+  description: Compile via LLVM. This produces much better object code, but you need to have the LLVM compiler installed.
+  manual: False
+  default: False
+
+flag opt
+  description: Turn on library optimizations
+  manual: False
+  default: True
+
+flag with-apps
+  description: When this flag is enabled, lol-apps tests and benchmarks are buildable.
+  manual: False
+  default: True
+
+flag with-execs
+  description: When this flag and `with-apps` are both enabled, the lol-apps executables are buildable
+  manual: False
+  default: False
+
+library
+  exposed-modules:
+      Crypto.Lol.Cyclotomic.Tensor.CPP
+  other-modules:
+      Crypto.Lol.Cyclotomic.Tensor.CPP.Backend
+      Crypto.Lol.Cyclotomic.Tensor.CPP.Extension
+      Crypto.Lol.Cyclotomic.Tensor.CPP.Instances
+  cc-options: -std=c++11 -O3
+  include-dirs:
+      Crypto/Lol/Cyclotomic/Tensor/CPP
+  c-sources:
+      Crypto/Lol/Cyclotomic/Tensor/CPP/common.cpp
+      Crypto/Lol/Cyclotomic/Tensor/CPP/crt.cpp
+      Crypto/Lol/Cyclotomic/Tensor/CPP/g.cpp
+      Crypto/Lol/Cyclotomic/Tensor/CPP/l.cpp
+      Crypto/Lol/Cyclotomic/Tensor/CPP/mul.cpp
+      Crypto/Lol/Cyclotomic/Tensor/CPP/norm.cpp
+      Crypto/Lol/Cyclotomic/Tensor/CPP/random.cpp
+      Crypto/Lol/Cyclotomic/Tensor/CPP/rrq.cpp
+      Crypto/Lol/Cyclotomic/Tensor/CPP/zq.cpp
+  build-depends:
+      MonadRandom >=0.5.1 && <0.6
+    , base >=4.14.0 && <4.15
+    , constraints >=0.10 && <0.14
+    , deepseq >=1.4.4 && <1.5
+    , lol >=0.7.0.0 && <0.8
+    , mtl >=2.2.2 && <2.3
+    , numeric-prelude >=0.4.3 && <0.5
+    , reflection >=2.1.5 && <2.2
+    , vector >=0.12.0 && <0.13
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
+  default-language: Haskell2010
+
+test-suite test-lol-apps-cpp
+  type: exitcode-stdio-1.0
+  main-is: TestAppsCPPMain.hs
+  other-modules:
+      TestLolCPPMain
+      Paths_lol_cpp
+  hs-source-dirs:
+      tests
+  ghc-options: -main-is TestAppsCPPMain
+  build-depends:
+      base
+    , lol >=0.7.0.0 && <0.8
+    , lol-apps ==0.3.*
+    , lol-cpp
+    , test-framework
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
+  if !flag(with-apps)
+    buildable: False
+  default-language: Haskell2010
+
+benchmark bench-lol-apps-cpp
+  type: exitcode-stdio-1.0
+  main-is: BenchAppsCPPMain.hs
+  hs-source-dirs:
+      benchmarks
+  ghc-options: -main-is BenchAppsCPPMain
+  build-depends:
+      DRBG
+    , MonadRandom
+    , base
+    , lol >=0.7.0.0 && <0.8
+    , lol-apps ==0.3.*
+    , lol-cpp
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
+  if !flag(with-apps)
+    buildable: False
+  default-language: Haskell2010
+
+benchmark bench-lol-cpp
+  type: exitcode-stdio-1.0
+  main-is: BenchLolCPPMain.hs
+  hs-source-dirs:
+      benchmarks
+  ghc-options: -main-is BenchLolCPPMain
+  build-depends:
+      DRBG
+    , base
+    , lol >=0.7.0.0 && <0.8
+    , lol-cpp
+  if flag(llvm)
+    ghc-options: -fllvm -optlo-O3 -pgmlo opt
+  default-language: Haskell2010

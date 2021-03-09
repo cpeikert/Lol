@@ -1,7 +1,7 @@
 _common: !include "./common.yaml"
 
 name: lol-apps
-version: 0.3.0.0
+version: 0.3.0.1
 synopsis: Lattice-based cryptographic applications using <https://hackage.haskell.org/package/lol lol>.
 extra-source-files:
   - README
@@ -45,20 +45,20 @@ library:
   dependencies:
     - lol >= 0.7.0.0 && < 0.8
     - DRBG >= 0.5.5 && < 0.6
-    - base >= 4.12.0 && < 4.13
+    - base >= 4.14.0 && < 4.15
     - deepseq >= 1.4.4 && < 1.5
     - containers >= 0.6.0 && < 0.7
     - crypto-api >= 0.13.3 && < 0.14
-    - time >= 1.8.0 && < 1.9
+    - time >= 1.8.0 && < 1.12
     - filepath >= 1.4.2 && < 1.5
     - mtl >= 2.2.2 && < 2.3
     - MonadRandom >= 0.5.1 && < 0.6
-    - QuickCheck >= 2.13.2 && < 2.14
-    - constraints >= 0.10 && < 0.11
+    - QuickCheck >= 2.13.2 && < 2.15
+    - constraints >= 0.10.1 && < 0.14
     - numeric-prelude >= 0.4.3 && < 0.5
     - protocol-buffers >= 2.4.13 && < 2.5
     - protocol-buffers-descriptor >= 2.4.13 && < 2.5
-    - singletons >= 2.5.1 && < 2.6
+    - singletons >= 2.7 && < 2.8
     - test-framework >= 0.8.2 && < 0.9
     - options >= 1.2.1 && < 1.3
     - split >= 0.2.3 && < 0.3

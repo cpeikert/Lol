@@ -87,9 +87,13 @@ import qualified Data.Vector.Unboxed     as U
 -- inputs for each method is determined by the linear transform it
 -- implements.
 
-class (forall m . Fact m => (Applicative (t m), Traversable (t m)),
-       IFunctor t, IFElt t r, Additive r)
-  => TensorPowDec t r where
+class
+  ( forall m. Fact m => Applicative (t m)
+  , forall m. Fact m => Traversable (t m)
+  , IFunctor t
+  , IFElt t r
+  , Additive r
+  ) => TensorPowDec t r where
 
   -- | Convert a scalar to a tensor in the powerful basis.
   scalarPow :: Fact m => r -> t m r

@@ -33,7 +33,7 @@ import Data.Maybe (fromMaybe)
 
 instance (CharOf a ~ Prime2, Field a) => IrreduciblePoly a where
   -- https://ghc.haskell.org/trac/ghc/wiki/Migration/8.2#KindgeneralizationandMonoLocalBinds
-  irreduciblePoly :: forall (d :: k) . (Reflects d Int) => Tagged d (Polynomial a)
+  irreduciblePoly :: forall k (d :: k) . (Reflects d Int) => Tagged d (Polynomial a)
   irreduciblePoly = do
     let n = value @d
     return $ flip fromMaybe (lookup n polyMap) $ error $
