@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set +x
-
 package="$1"
 cabal_file="$package/$package.cabal"
 
@@ -13,6 +11,7 @@ fi
 hpack "$package"
 
 if ! git diff --quiet HEAD "$cabal_file"; then
-  echo "regenerating $cabal_file resulted in a change, please commit the changes to it." >&2
+  echo "regenerating $cabal_file resulted in a change, please apply the following patch:" >&2
+  git diff --patch --no-color HEAD "$cabal_file"
   exit 1
 fi
