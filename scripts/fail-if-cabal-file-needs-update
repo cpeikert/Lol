@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set +x
+
 package="$1"
 cabal_file="$package/$package.cabal"
 
@@ -8,7 +10,7 @@ if [[ -z "$package" ]]; then
   exit 1
 fi
 
-hpack "$package" &> /dev/null
+hpack "$package"
 
 if ! git diff --quiet HEAD "$cabal_file"; then
   echo "regenerating $cabal_file resulted in a change, please commit the changes to it." >&2
