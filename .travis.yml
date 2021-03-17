@@ -48,6 +48,10 @@ install:
 # - stack build lol-repa --no-terminal --install-ghc --test --bench --dependencies-only --flag lol-repa:with-execs
 
 script:
+- ./scripts/fail-if-cabal-file-needs-update lol
+- ./scripts/fail-if-cabal-file-needs-update lol-cpp
+- ./scripts/fail-if-cabal-file-needs-update lol-apps
+
 # Build the package, its tests, benchmarks, executables, (but not its
 # docs!) and run the tests
 
