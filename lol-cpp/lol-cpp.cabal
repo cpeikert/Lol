@@ -1,6 +1,6 @@
 cabal-version: 1.12
 
--- This file has been generated from package.yaml by hpack version 0.34.4.
+-- This file has been generated from package.yaml by hpack version 0.34.2.
 --
 -- see: https://github.com/sol/hpack
 
@@ -107,7 +107,7 @@ test-suite test-lol-apps-cpp
   build-depends:
       base
     , lol >=0.7.0.0 && <0.8
-    , lol-apps ==0.3.*
+    , lol-apps >=0.3 && <0.4
     , lol-cpp
     , test-framework
   if flag(llvm)
@@ -127,7 +127,7 @@ benchmark bench-lol-apps-cpp
     , MonadRandom
     , base
     , lol >=0.7.0.0 && <0.8
-    , lol-apps ==0.3.*
+    , lol-apps >=0.3 && <0.4
     , lol-cpp
   if flag(llvm)
     ghc-options: -fllvm -optlo-O3 -pgmlo opt
